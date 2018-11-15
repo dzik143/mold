@@ -1,0 +1,1107 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'AST.mold'
+import 'SymbolTable.mold'
+import 'ASTAnalyzer.mold'
+
+class ASTTranslator
+
+  # ----------------------------------------------------------------------------
+  #                                Init code
+  # ----------------------------------------------------------------------------
+
+  method constructor()
+    # TODO: Clean up this mess.
+    this.nextId          = 1
+    this.importedModules = {}
+    this.astAnalyzer     = new ASTAnalyzer(this)
+
+    # TODO: Remove redundant array if map iteration will work.
+    this.vtable        = {}
+    this.vtableKeys    = []
+    this.vtableKeysCnt = 0
+
+    this.symbolTable = new SymbolTable()
+
+    # TODO: Use null?
+    this.currentClassProto    = false
+    this.currentFunctionProto = false
+    this.lastReturnType       = 'unknown'
+    this.lastReturnClassName  = 'unknown'
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                             Error handlers
+  # ----------------------------------------------------------------------------
+
+  method _error(msg)
+    die('error: ' + msg)
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                            Built-in functions
+  # ----------------------------------------------------------------------------
+
+  method _callLen(x) -> rv
+    this._error('_callLen not implemented')
+  endmethod
+
+  method _callStr(x) -> rv
+    this._error('_callStr not implemented')
+  endmethod
+
+  method _callStrEscape(x) -> rv
+    this._error('_callStrEscape not implemented')
+  endmethod
+
+  method _callExit()
+    this._error('_callExit not implemented')
+  endmethod
+
+  method _callMoldWarning(msg)
+    this._error('_callMoldWarning not implemented')
+  endmethod
+
+  method _callMoldPrintToStdOut(msg)
+    this._error('_callMoldPrintToStdOut not implemented')
+  endmethod
+
+  method _callDie(msg)
+    this._error('_callDie not implemented')
+  endmethod
+
+  method _callMoldCreateObject(classProto) -> rv
+    this._error('_callMoldCreateObject not implemented')
+  endmethod
+
+  method _callMoldGetClassName(thiz) -> rv
+    this._error('_callMoldGetClassName not implemented')
+  endmethod
+
+  method _callMoldParseFile(filePath) -> rv
+    this._error('_callMoldParseFile not implemented')
+  endmethod
+
+  method _loadArgsVector() -> rv
+    this._error('_loadArgsVector not implemented')
+  endmethod
+
+  method _loadArgsCount() -> rv
+    this._error('_callLoadArgsCount not implemented')
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #            Methods, which should be overloaded in derived class
+  # ----------------------------------------------------------------------------
+
+  method _loadArray() -> rv
+    this._error('_loadArray() not implemented')
+  endmethod
+
+  method _loadMap() -> rv
+    this._error('_loadMap() not implemented')
+  endmethod
+
+  method _loadImm(value) -> rv
+    this._error('_loadImm() not implemented')
+  endmethod
+
+  method _loadVariable(name) -> rv
+    this._error('_loadVariable() not implemented')
+  endmethod
+
+  method _call(funcProto, params, paramsCnt) -> rv
+    this._error('_call() not implemented')
+  endmethod
+
+  method _invokeMethod(methodName, params, paramsCnt) -> rv
+    this._error('_invokeMethod() not implemented')
+  endmethod
+
+  method _callPrint(params, paramsCnt)
+    this._error('_callPrint() not implemented')
+  endmethod
+
+  method _typeof(value) -> rv
+    this._error('_typeof() not implemented')
+  endmethod
+
+  method _neg(value) -> rv
+    this._error('_neg() not implemented')
+  endmethod
+
+  method _add(x, y) -> rv
+    this._error('_add() not implemented')
+  endmethod
+
+  method _sub(x, y) -> rv
+    this._error('_sub() not implemented')
+  endmethod
+
+  method _mul(x, y) -> rv
+    this._error('_mul() not implemented')
+  endmethod
+
+  method _div(x, y) -> rv
+    this._error('_div() not implemented')
+  endmethod
+
+  method _idiv(x, y) -> rv
+    this._error('_idiv() not implemented')
+  endmethod
+
+  method _compareEQ(x, y) -> rv
+    this._error('_compareEQ() not implemented')
+  endmethod
+
+  method _compareNEQ(x, y) -> rv
+    this._error('_compareNEQ() not implemented')
+  endmethod
+
+  method _compareLT(x, y) -> rv
+    this._error('_compareLT() not implemented')
+  endmethod
+
+  method _compareLE(x, y) -> rv
+    this._error('_compareLE() not implemented')
+  endmethod
+
+  method _compareGT(x, y) -> rv
+    this._error('_compareGT() not implemented')
+  endmethod
+
+  method _compareGE(x, y) -> rv
+    this._error('_compareGE() not implemented')
+  endmethod
+
+  method _boolAnd(x, y) -> rv
+    this._error('_boolAnd() not implemented')
+  endmethod
+
+  method _boolOr(x, y) -> rv
+    this._error('_boolOr() not implemented')
+  endmethod
+
+  method _loadFromIndex(box, idx) -> rv
+    this._error('_loadFromIndex() not implemented')
+  endmethod
+
+  method _storeAtIndex(box, idx, value)
+    this._error('_storeAtIndex() not implemented')
+  endmethod
+
+  method _storeAtIndexAndDrop(rv, key, value)
+    this._storeAtIndex(rv, key, value)
+  endmethod
+
+  method _createObject(classProto) -> rv
+    this._error('_createObject() not implemented')
+  endmethod
+
+  method _dropRetVal()
+  endmethod
+
+  method _declareFunction(funcName, funcProto)
+  endmethod
+
+  method _declareClass(className, classProto)
+  endmethod
+
+  method _emitFunctionBody(funcName, funcProto)
+  endmethod
+
+  method _declareExternalFunction(funcName, funcProto)
+    symbolTable = this.symbolTable
+    symbolTable.insertFunction(funcName, funcProto)
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                         Internal helpers (private)
+  # ----------------------------------------------------------------------------
+
+  method _getNextId() -> rv
+    rv          = this.nextId
+    this.nextId = this.nextId + 1
+  endmethod
+
+  method _createTempVar() -> rv
+    rv = '_tmp' + str(this._getNextId())
+  endmethod
+
+  method _createTempLabel() -> rv
+    rv = '_l' + str(this._getNextId())
+  endmethod
+
+  method _verifyNumberOfParameters(name, paramsExpectedCnt, paramsPassedCnt)
+    if paramsPassedCnt isnt paramsExpectedCnt
+      die('error: ' + name + ' function requires exactly ' + str(paramsExpectedCnt) + ' parameter(s), but ' + str(paramsPassedCnt) + ' were passed')
+    endif
+  endmethod
+
+  method _createTempVarAndAssign(value) -> rv
+    rv = this._createTempVar()
+    this._declareAndAssign(rv, value)
+  endmethod
+
+  method _resolveImports(ast)
+    global AST_OPCODE_CALL
+
+    program     = ast['children'][0]
+    children    = program['children']
+    childrenCnt = program['childrenCnt']
+
+    newChildrenCnt = 0
+    newChildren    = []
+
+    for idx in 0 .. childrenCnt
+      child = children[idx]
+
+      if (child['opcode'] is AST_OPCODE_CALL) and (child['value'] is 'import')
+        # TODO: Verify parameters.
+        moduleName = child['children'][0]['value']
+
+        if typeof(this.importedModules[moduleName]) is 'undefined'
+          # Load only once.
+          this.importedModules[moduleName] = true
+
+          # NEW IMPLEMENTATION
+          # TODO: Enable new parser.
+          # TODO: SiImplify it.
+          #print 'Importing module', moduleName, '...'
+
+          source = __mold_loadFile(moduleName)
+
+          # Parse source into AST tree.
+          parser = new Parser()
+          parser._parse(source)
+          importedAst = parser.getAst()
+
+          # Convert AST to form understood by translator.
+          # TODO: Remove this step.
+          importedAst = importedAst.convert()
+
+
+          /* OLD IMPLEMENTATION
+          importedAst = moldParseFile(moduleName)
+          */
+
+          # Resolve imports recursively.
+          this._resolveImports(importedAst)
+
+          importedProgram     = importedAst['children'][0]
+          importedChildren    = importedProgram['children']
+          importedChildrenCnt = importedProgram['childrenCnt']
+
+          for jdx in 0 .. importedChildrenCnt
+            newChildren[newChildrenCnt] = importedChildren[jdx]
+            newChildrenCnt = newChildrenCnt + 1
+          endfor
+        endif
+      else
+        newChildren[newChildrenCnt] = child
+        newChildrenCnt = newChildrenCnt + 1
+      endif
+    endfor
+
+    program['childrenCnt'] = newChildrenCnt
+    program['children']    = newChildren
+  endmethod
+
+  method _declareGlobals(ast)
+    global AST_OPCODE_DECLARE
+    global AST_OPCODE_DECLARE_OR_ASSIGN
+    global AST_OPCODE_FUNCTION
+    global AST_OPCODE_CLASS
+    global AST_OPCODE_NOP
+    global AST_OPCODE_VARIABLE
+
+    # Emit variable declarations and mark declared functions.
+    program     = ast['children'][0]
+    children    = program['children']
+    childrenCnt = program['childrenCnt']
+
+    for idx in 0 .. childrenCnt
+      child  = children[idx]
+      opcode = child['opcode']
+
+      if (opcode is AST_OPCODE_DECLARE) or (opcode is AST_OPCODE_DECLARE_OR_ASSIGN)
+        # Variable declaration - move to top.
+        lval = child['children'][0]
+
+        if lval['opcode'] is AST_OPCODE_VARIABLE
+          # Direct variable usage, declare it at the top of emited code.
+          this._declareVariableIfNotSet(lval['value'])
+        endif
+
+      elif opcode is AST_OPCODE_FUNCTION
+        # Emit forward function declaration.
+        this._executeNode(child)
+        child['opcode'] = AST_OPCODE_NOP
+
+      elif opcode is AST_OPCODE_CLASS
+        # Create new slot for class vtable.
+        this._executeNode(child)
+        child['opcode'] = AST_OPCODE_NOP
+      endif
+    endfor
+  endmethod
+
+  method _declareAllUsedVariables(ast)
+    global AST_OPCODE_DECLARE
+    global AST_OPCODE_DECLARE_OR_ASSIGN
+    global AST_OPCODE_VARIABLE
+    global AST_OPCODE_CALL
+    global AST_OPCODE_CLASS
+    global AST_OPCODE_FUNCTION
+    global AST_OPCODE_NOP
+
+    opcode      = ast['opcode']
+    children    = ast['children']
+    childrenCnt = ast['childrenCnt']
+
+    if (opcode is AST_OPCODE_DECLARE) or (opcode is AST_OPCODE_DECLARE_OR_ASSIGN)
+      # Variable used as lvalue.
+      # Declare it if seen for first time.
+      lval = children[0]
+
+      if lval['opcode'] is AST_OPCODE_VARIABLE
+        # Direct variable usage, declare it at the top of emited code.
+        this._declareVariableIfNotSet(lval['value'])
+      endif
+
+    elif (opcode is AST_OPCODE_CALL) and (ast['value'] is 'global')
+      this._executeNode(ast)
+
+    elif (opcode is AST_OPCODE_CLASS) or (opcode is AST_OPCODE_FUNCTION)
+      # Class/method/function declaration. Do nothing.
+
+    elif (opcode is AST_OPCODE_NOP)
+      # No operation. Do nothing.
+
+    else
+      # Not assign node, go on.
+      for idx in 0 .. childrenCnt
+        this._declareAllUsedVariables(children[idx])
+      endfor
+    endif
+  endmethod
+
+  method _declareClassInternal(className, classProto)
+    methods               = classProto['vtable']
+    methodsAsFlatArray    = classProto['methodsAsFlatArray']
+    methodsAsFlatArrayCnt = classProto['methodsAsFlatArrayCnt']
+
+    for idx in 0 .. methodsAsFlatArrayCnt
+      methodName      = methodsAsFlatArray[idx]
+      methodProto     = methods[methodName]
+      methodParamsCnt = methodProto['paramsCnt']
+      methodFullName  = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
+
+      # TODO: Optimize it.
+      if this.vtable[methodFullName] is methodFullName
+        this._declareFunction(methodFullName, methodProto)
+      endif
+    endfor
+
+    for idx in 0 .. methodsAsFlatArrayCnt
+      methodName      = methodsAsFlatArray[idx]
+      methodProto     = methods[methodName]
+      methodParamsCnt = methodProto['paramsCnt']
+      methodFullName  = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
+
+      # TODO: Optimize it.
+      if this.vtable[methodFullName] is methodFullName
+        this.currentFunctionProto = methodProto
+        this._emitFunctionBody(methodFullName, methodProto)
+        this.currentFunctionProto = false
+      endif
+    endfor
+  endmethod
+
+  method _callSuper(params, paramsCnt)
+    methodProto = this.currentFunctionProto
+    classProto  = this.currentClassProto
+
+    if (methodProto is false) or (typeof(methodProto['fullName']) is 'undefined')
+      this._error('super called outside of class')
+
+    elif methodProto['name'] isnt 'constructor'
+      this._error('super called outside of constructor')
+
+    elif methodProto['name'] isnt 'constructor'
+      this._error('super called outside of constructor')
+
+    elif typeof(classProto['baseName']) is 'undefined'
+      this._error('class ' + classProto['name'] + ' has no base class')
+
+    elif typeof(methodProto['baseMethod']) is 'undefined'
+      this._error('class ' + classProto['baseName'] + ' has no constructor declared')
+
+    elif methodProto['paramsCnt'] isnt (paramsCnt + 1)
+      this._error('base constructor requires exactly ' + str(methodProto['paramsCnt']) + ' parameters, but ' + str(paramsCnt + 1) + ' were passed')
+
+    else
+      # Base constructor exists, inject this reference to call list.
+      newParams = ['__mold_this']
+      for idx in 0 .. paramsCnt
+        newParams[idx + 1] = params[idx]
+      endfor
+
+      # TODO: Remove this fix.
+      methodProto['isConstructor'] = true
+
+      this._call(methodProto['baseMethod'], newParams, paramsCnt + 1)
+    endif
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                         Function and class protos
+  # ----------------------------------------------------------------------------
+
+  method _getClassProto(className) -> rv
+    symbolTable = this.symbolTable
+    rv          = symbolTable.lookupClass(className)['proto']
+  endmethod
+
+  method _getMethodProto(className, methodName, paramsCnt) -> rv
+    symbolTable = this.symbolTable
+    rv          = symbolTable.lookupMethod(className, methodName, paramsCnt)
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                             Symbols (private)
+  # ----------------------------------------------------------------------------
+
+  method _isset(name) -> rv
+    symbolTable = this.symbolTable
+    rv          = symbolTable.isset(name)
+  endmethod
+
+  method _importGlobal(name)
+    symbolTable = this.symbolTable
+    symbolTable.importGlobal(name)
+  endmethod
+
+  method _declareVariableIfNotSet(name)
+    if this._isset(name) is false
+      this._declareVariable(name)
+    endif
+  endmethod
+
+  method _declareAndAssign(name, value)
+    this._declareVariable(name)
+    this._assign(name, value)
+  endmethod
+
+  method _declareVariable(name)
+    symbolTable = this.symbolTable
+    symbolTable.insertLocal(name)
+  endmethod
+
+  method _assign(name, value)
+    die('_assign() not implemented')
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                     Internal implementation (private)
+  # ----------------------------------------------------------------------------
+
+  method _evaluateNode(ast) -> rv
+    global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
+    global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+    global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
+    global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
+    global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
+    global AST_OPCODE_REFERENCE, AST_OPCODE_CALL
+    global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV
+    global AST_OPCODE_IDIV
+    global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
+    global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
+    global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+
+    rvType      = 'unknown'
+    rvClassName = 'unknown'
+
+    opcode      = ast['opcode']
+    value       = ast['value']
+    children    = ast['children']
+    childrenCnt = ast['childrenCnt']
+
+    if opcode is AST_DATA_ARRAY
+      rvType = 'array'
+
+      if typeof(value) is 'array'
+        rv = this._loadImm(value)
+
+      else
+        rv = this._loadArray()
+
+        for idx in 0 .. childrenCnt
+          key   = this._loadImm(idx)
+          value = this._evaluateNode(children[idx])
+          this._storeAtIndex(rv, key, value)
+        endfor
+      endif
+
+    elif opcode is AST_DATA_MAP
+      rvType = 'map'
+      rv = this._loadMap()
+
+      for idx in 0 .. childrenCnt step 2
+        key   = this._evaluateNode(children[idx])
+        value = this._evaluateNode(children[idx + 1])
+        this._storeAtIndex(rv, key, value)
+      endfor
+
+    elif (opcode < AST_OPCODE_PROGRAM)
+      # Imm data node, just return value.
+      rvType = 'imm'
+      rv     = this._loadImm(value)
+
+    elif opcode is AST_OPCODE_CALL
+      # foo(x,y,z...).
+      rv = this._evaluateNodeCall(ast)
+
+    elif opcode is AST_OPCODE_INVOKE_METHOD
+      # obj.foo(x, y, z, ...)
+      rv = this._evaluateNodeInvokeMethod(ast)
+
+    elif opcode is AST_OPCODE_VARIABLE
+      if value is 'argv'
+        # Built-in access to command line parametrs.
+        rvType = 'array'
+        rv     = this._loadArgsVector()
+
+      elif value is 'argc'
+        # Built-in access to command line parametrs.
+        rvType = 'integer'
+        rv     = this._loadArgsCount()
+
+      else
+        # Treat as ordinary variable.
+        rv = this._loadVariable(value)
+
+        # Try to determine variable type.
+        if value is 'this'
+          # This parameter, we known we're inside class declaration.
+          rvType = 'object'
+          if this.currentClassProto isnt false
+            rvClassName = this.currentClassProto['name']
+          endif
+
+        else
+          # Default way, ask symbol table.
+          symbolTable = this.symbolTable
+          symbolInfo  = symbolTable.lookup(value)
+          rvType      = symbolInfo['type']
+          rvClassName = symbolInfo['className']
+
+          if typeof(rvType) is 'undefined'
+            rvType = 'unknown'
+          endif
+
+          if typeof(rvClassName) is 'undefined'
+            rvClassName = 'unknown'
+          endif
+        endif
+      endif
+
+    elif opcode is AST_OPCODE_NEG
+      rv = this._neg(this._evaluateNode(children[0]))
+
+    elif opcode is AST_OPCODE_BOOL_AND
+      # Lazy 'and' operator.
+      rv = this._evaluateNodeLazyBoolAnd(children[0], children[1])
+
+    elif opcode is AST_OPCODE_BOOL_OR
+      # Lazy 'or' operator.
+      rv = this._evaluateNodeLazyBoolOr(children[0], children[1])
+
+    elif opcode is AST_OPCODE_CALL_NEW
+      classProto = this._getClassProto(value)
+      rv         = this._createObject(classProto)
+
+      # Call constructor if any.
+      methodProto = classProto['vtable']['constructor']
+
+      if typeof(methodProto) isnt 'undefined'
+        params      = [rv]
+        paramsCnt   = methodProto['paramsCnt']
+        this._verifyNumberOfParameters('constructor', paramsCnt, childrenCnt)
+
+        for idx in 1 .. childrenCnt
+          params[idx] = this._evaluateNode(children[idx])
+        endfor
+
+        # TODO: Remove this fix.
+        methodProto['isConstructor'] = true
+
+        this._call(methodProto, params, paramsCnt)
+      endif
+
+      rvType      = 'object'
+      rvClassName = value
+
+    elif childrenCnt is 2
+      # x OP y
+      left  = this._evaluateNode(children[0])
+      right = this._evaluateNode(children[1])
+
+      if opcode is AST_OPCODE_REFERENCE
+        # x[idx]
+        rv = this._loadFromIndex(left, right)
+
+        if (children[0]['value'] is 'this') and (children[1]['opcode'] is AST_DATA_STRING)
+          fieldName   = children[1]['value']
+          rvClassName = this.currentClassProto['propertyClassNames'][fieldName]
+        endif
+
+      elif opcode is AST_OPCODE_COMPARE_EQ
+        rvType = 'boolean'
+        rv     = this._compareEQ(left, right)
+
+      elif opcode is AST_OPCODE_COMPARE_NEQ
+        rvType = 'boolean'
+        rv     = this._compareNEQ(left, right)
+
+      elif opcode is AST_OPCODE_COMPARE_GT
+        rvType = 'boolean'
+        rv     = this._compareGT(left, right)
+
+      elif opcode is AST_OPCODE_COMPARE_GE
+        rvType = 'boolean'
+        rv     = this._compareGE(left, right)
+
+      elif opcode is AST_OPCODE_COMPARE_LT
+        rvType = 'boolean'
+        rv     = this._compareLT(left, right)
+
+      elif opcode is AST_OPCODE_COMPARE_LE
+        rvType = 'boolean'
+        rv = this._compareLE(left, right)
+
+      elif opcode is AST_OPCODE_ADD
+        rv = this._add(left, right)
+
+      elif opcode is AST_OPCODE_SUB
+        rv = this._sub(left, right)
+
+      elif opcode is AST_OPCODE_MUL
+        rv = this._mul(left, right)
+
+      elif opcode is AST_OPCODE_DIV
+        rv = this._div(left, right)
+
+      elif opcode is AST_OPCODE_IDIV
+        rv = this._idiv(left, right)
+      endif
+
+    else
+      die('error: unexpected rvalue node ' + str(opcode) + ' ' + str(value))
+    endif
+
+    this.lastReturnType      = rvType
+    this.lastReturnClassName = rvClassName
+  endmethod
+
+  method _evaluateNodeCall(ast) -> rv
+    rv          = false
+    funcName    = ast['value']
+    children    = ast['children']
+    childrenCnt = ast['childrenCnt']
+
+    # TODO: Handle in parser?
+    if funcName is 'super'
+      this._loadVariable('this')
+    endif
+
+    # Evaluate parameters.
+    params    = []
+    paramsCnt = childrenCnt
+
+    for idx in 0 .. childrenCnt
+      params[idx] = this._evaluateNode(children[idx])
+    endfor
+
+    if funcName is 'typeof'
+      # Built-in typeof.
+      this._verifyNumberOfParameters('built-in typeof', 1, paramsCnt)
+      rv = this._typeof(params[0])
+
+    elif funcName is 'print'
+      # Built-in print function.
+      this._callPrint(params, paramsCnt)
+
+    elif funcName is 'super'
+      this._callSuper(params, paramsCnt)
+
+    elif funcName is 'len'
+      this._verifyNumberOfParameters('built-in len', 1, paramsCnt)
+      rv = this._callLen(params[0])
+
+    elif funcName is 'str'
+      this._verifyNumberOfParameters('built-in str', 1, paramsCnt)
+      rv = this._callStr(params[0])
+
+    elif funcName is 'strescape'
+      this._verifyNumberOfParameters('built-in strescape', 1, paramsCnt)
+      rv = this._callStrEscape(params[0])
+
+    elif funcName is 'exit'
+      this._verifyNumberOfParameters('built-in exit', 0, paramsCnt)
+      this._callExit()
+
+    elif funcName is 'die'
+      this._verifyNumberOfParameters('built-in die', 1, paramsCnt)
+      this._callDie(params[0])
+
+    elif funcName is '__mold_createObject'
+      this._verifyNumberOfParameters('built-in __mold_createObject', 1, paramsCnt)
+      rv = this._callMoldCreateObject(params[0])
+
+    elif funcName is '__mold_getClassName'
+      this._verifyNumberOfParameters('built-in __mold_getClassName', 1, paramsCnt)
+      rv = this._callMoldGetClassName(params[0])
+
+    elif funcName is '__mold_warning'
+      this._verifyNumberOfParameters('built-in __mold_warning', 1, paramsCnt)
+      this._callMoldWarning(params[0])
+
+    elif funcName is '__mold_printToStdOutput'
+      this._verifyNumberOfParameters('built-in __mold_printToStdOutput', 1, paramsCnt)
+      this._callMoldPrintToStdOut(params[0])
+
+    elif (funcName is '__mold_parseFile') or (funcName is 'moldParseFile')
+      this._verifyNumberOfParameters('built-in __mold_parseFile', 1, paramsCnt)
+      rv = this._callMoldParseFile(params[0])
+
+    else
+      # Generic foo(x,y,z...) call.
+      symbolTable = this.symbolTable
+      funcEntry   = symbolTable.lookupFunction(funcName, childrenCnt)
+      funcProto   = funcEntry['proto']
+      rv = this._call(funcProto, params, paramsCnt)
+    endif
+  endmethod
+
+  method _evaluateNodeInvokeMethod(ast) -> rv
+    methodName  = ast['value']
+    children    = ast['children']
+    childrenCnt = ast['childrenCnt']
+
+    # Evaluate this and try to resolve static className
+    # (compilation time) if possible.
+    thiz      = this._evaluateNode(children[0])
+    className = this.lastReturnClassName
+
+    # Evaluate parameters.
+    params    = []
+    params[0] = thiz
+    paramsCnt = childrenCnt
+
+    for idx in 1 .. childrenCnt
+      params[idx] = this._evaluateNode(children[idx])
+    endfor
+
+    # Call method.
+    # TODO: Change to static call if possible.
+    #if className is 'unknown'
+      # Class name is unknown. Pure virtual (runtime) call needed.
+      rv = this._invokeMethod(methodName, params, paramsCnt)
+
+    #else
+    #  # TODO: Class name is known at compilation time. Just call
+    #  # target address.
+    #  methodProto = this._getMethodProto(className, methodName, paramsCnt)
+    #  rv          = this._call(methodProto, params, paramsCnt)
+    #endif
+  endmethod
+
+  method _evaluateNodeLazyBoolAnd(leftAst, rightAst) -> rv
+    this._error('_evaluateNodeBoolAnd() not implemented')
+  endmethod
+
+  method _evaluateNodeLazyBoolOr(leftAst, rightAst) -> rv
+    this._error('_evaluateNodeBoolOr() not implemented')
+  endmethod
+
+  method _executeNodeFor(iteratorName, valueStart, valueEnd, valueStep, bodyAst)
+    this._error('_executeNodeFor() not implemented')
+  endmethod
+
+  method _executeNodeWhile(condAst, bodyAst)
+    this._error('_executeNodeWhile() not implemented')
+  endmethod
+
+  method _executeNodeIf(cond, codeIfTrue, codeIfFalse)
+    this._error('_executeNodeIf() not implemented')
+  endmethod
+
+  method _executeNode(ast)
+    global AST_OPCODE_PROGRAM, AST_OPCODE_BLOCK, AST_OPCODE_DECLARE_OR_ASSIGN
+    global AST_OPCODE_FOR_VALUES_RANGE, AST_OPCODE_WHILE
+    global AST_OPCODE_CALL, AST_OPCODE_FUNCTION, AST_OPCODE_IF, AST_OPCODE_SWITCH
+    global AST_OPCODE_VARIABLE, AST_OPCODE_REFERENCE, AST_OPCODE_SWITCH_CASE_OTHERWISE
+    global AST_OPCODE_CLASS, AST_OPCODE_CLASS_METHOD, AST_OPCODE_INVOKE_METHOD
+    global AST_OPCODE_NOP, AST_DATA_STRING
+
+    # Fetch opcode.
+    opcode      = ast['opcode']
+    value       = ast['value']
+    children    = ast['children']
+    childrenCnt = ast['childrenCnt']
+
+    #print opcode, value
+
+    # Dispatch opcode.
+    if (opcode is AST_OPCODE_PROGRAM) or (opcode is AST_OPCODE_BLOCK)
+      for idx in 0 .. childrenCnt
+        this._executeNode(children[idx])
+      endfor
+
+    elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
+      # x = y
+      lval = children[0]
+
+      if lval['opcode'] is AST_OPCODE_VARIABLE
+        # x = y
+        lval = lval['value']
+        rval = this._evaluateNode(children[1])
+
+        # Assign new value.
+        if this._isset(lval) is false
+          this._declareAndAssign(lval, rval)
+        else
+          this._assign(lval, rval)
+        endif
+
+        # Save assigned type.
+        # TODO: Handle type mismatch.
+        symbolTable             = this.symbolTable
+        symbolInfo              = symbolTable.lookup(lval)
+        symbolInfo['type']      = this.lastReturnType
+        symbolInfo['className'] = this.lastReturnClassName
+
+      elif lval['opcode'] is AST_OPCODE_REFERENCE
+        # x[i] = y
+        boxNode   = lval['children'][0]
+        indexNode = lval['children'][1]
+
+        box   = this._evaluateNode(boxNode)
+        index = this._evaluateNode(indexNode)
+        rval  = this._evaluateNode(children[1])
+
+        if (boxNode['value'] is 'this') and (indexNode['opcode'] is AST_DATA_STRING)
+          fieldName = indexNode['value']
+          this.currentClassProto['propertyClassNames'][fieldName] = this.lastReturnClassName
+        endif
+
+        this._storeAtIndexAndDrop(box, index, rval)
+
+      else
+        die('error: unexpected rvalue node ' + str(lval['opcode']) + ' ' + str(lval['value']))
+      endif
+
+    elif opcode is AST_OPCODE_FOR_VALUES_RANGE
+      # for x in startIdx .. endIdx
+      # endfor
+      #
+      # for x in startIdx .. endIdx step y
+      # endfor
+
+      iteratorName = children[0]['value']
+      valueStep  = this._evaluateNode(children[3])
+      valueEnd   = this._evaluateNode(children[2])
+      valueStart = this._evaluateNode(children[1])
+      bodyAst    = children[4]
+
+      this._executeNodeFor(iteratorName, valueStart, valueEnd, valueStep, bodyAst)
+
+    elif opcode is AST_OPCODE_WHILE
+      # while (cond)
+      #   body...
+      # endwhile
+      condAst = children[0]
+      bodyAst = children[1]
+      this._executeNodeWhile(condAst, bodyAst)
+
+    elif opcode is AST_OPCODE_IF
+      cond        = this._evaluateNode(children[0])
+      codeIfTrue  = children[1]
+      codeIfFalse = children[2]
+      this._executeNodeIf(cond, codeIfTrue, codeIfFalse)
+
+    elif opcode is AST_OPCODE_FUNCTION
+      #
+      # NEW IMPLEMENTATION
+      #
+      # TODO: Enable when ready.
+      #
+
+      value     = ast['value']
+      funcProto = ast
+
+      funcProto['name']      = value['name']
+      funcProto['params']    = value['parameters']
+      funcProto['paramsCnt'] = len(value['parameters'])
+      funcProto['rv']        = value['rv']
+
+      funcName = value['name']
+
+      # OLD IMPLEMENTATION:
+      # funcName  = ast['name']
+      # funcProto = ast
+      # END OF OLD IMPLEMENTATION
+
+      # TODO: Handle x.y.z chain in parser.
+      symbolTable = this.symbolTable
+      symbolTable.insertFunction(funcName, funcProto)
+
+      this.currentFunctionProto = funcProto
+      this._declareFunction(funcName, funcProto)
+      this._emitFunctionBody(funcName, funcProto)
+      this.currentFunctionProto = false
+
+    elif opcode is AST_OPCODE_CALL
+      if value is 'global'
+        # Built-in global directive.
+
+        for idx in 0 .. childrenCnt
+          paramName = children[idx]['value']
+          if typeof(paramName) isnt 'string'
+            this._error('global directive expects string, but ' + typeof(paramName) + ' passed')
+          else
+            this._importGlobal(paramName)
+          endif
+        endfor
+
+      else
+        this._evaluateNodeCall(ast)
+        this._dropRetVal()
+      endif
+
+    elif opcode is AST_OPCODE_SWITCH
+      this._error('switch not implemented')
+
+    elif opcode is AST_OPCODE_CLASS
+      # Collect members.
+      # TODO: Avoid redundant methodsAsArray when map iteration will work.
+      className             = ast['name']
+      baseName              = ast['baseName']
+      vtable                = {}
+      baseMethods           = {}
+      methodsAsFlatArray    = []
+      methodsAsFlatArrayCnt = 0
+
+      # Import base class if any.
+      if typeof(baseName) isnt 'undefined'
+        # Derived class, build class by applying derived over base one.
+        baseProto = this._getClassProto(baseName)
+
+        # TODO: Rewrite it when map merge will be ready.
+        baseMethodsAsFlatArray    = baseProto['methodsAsFlatArray']
+        baseMethodsAsFlatArrayCnt = baseProto['methodsAsFlatArrayCnt']
+        baseMethods               = baseProto['vtable']
+
+        # Merge base class first.
+        for idx in 0 .. baseMethodsAsFlatArrayCnt
+          methodName      = baseMethodsAsFlatArray[idx]
+          methodProto     = baseMethods[methodName]
+          methodParamsCnt = methodProto['paramsCnt']
+          methodFullName  = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
+
+          this.vtable[methodFullName]         = baseMethods[methodName]['fullName']
+          this.vtableKeys[this.vtableKeysCnt] = methodFullName
+          this.vtableKeysCnt                  = this.vtableKeysCnt + 1
+
+          vtable[methodName] = methodProto
+          methodsAsFlatArray[methodsAsFlatArrayCnt] = methodName
+          methodsAsFlatArrayCnt = methodsAsFlatArrayCnt + 1
+        endfor
+      endif
+
+      # Apply current declared class.
+      for idx in 0 .. childrenCnt
+        child  = children[idx]
+        opcode = child['opcode']
+
+        if opcode is AST_OPCODE_CLASS_METHOD
+          methodName      = child['name']
+          methodParamsCnt = child['paramsCnt']
+          methodFullName  = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
+
+          child['fullName']  = methodFullName
+
+          this.vtable[methodFullName] = methodFullName
+
+          if typeof(vtable[methodName]) is 'undefined'
+            # Method seen first time.
+            methodsAsFlatArray[methodsAsFlatArrayCnt] = methodName
+            methodsAsFlatArrayCnt = methodsAsFlatArrayCnt + 1
+          endif
+
+          if typeof(baseMethods[methodName]) isnt 'undefined'
+            # Save proto of base method if any.
+            child['baseMethod'] = baseMethods[methodName]
+          else
+            this.vtableKeys[this.vtableKeysCnt] = methodFullName
+            this.vtableKeysCnt                  = this.vtableKeysCnt + 1
+          endif
+
+          vtable[methodName] = child
+        endif
+      endfor
+
+      # Declare new class.
+      classProto = {
+        'name': className,
+        'baseName': ast['baseName'],
+        'vtable': vtable,
+        'methodsAsFlatArray': methodsAsFlatArray,
+        'methodsAsFlatArrayCnt': methodsAsFlatArrayCnt,
+        'propertyClassNames': {}
+      }
+
+      symbolTable = this.symbolTable
+      symbolTable.insertClass(className, classProto)
+
+      this.currentClassProto = classProto
+      this._declareClassInternal(className, classProto)
+      this._declareClass(className, classProto)
+      this.currentClassProto = false
+
+    elif opcode is AST_OPCODE_INVOKE_METHOD
+      this._evaluateNodeInvokeMethod(ast)
+      this._dropRetVal()
+
+    elif opcode is AST_OPCODE_NOP
+      # Do nothing.
+
+    else
+      # Fatal - unknown node. Should never happen in production.
+      this._error('unknown opcode ' + str(opcode))
+    endif
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                                Public API
+  # ----------------------------------------------------------------------------
+
+  method run(ast)
+    this._resolveImports(ast)
+    this._declareGlobals(ast)
+    this._executeNode(ast)
+  endmethod
+endclass

@@ -1,0 +1,28 @@
+TEST "Empty source"
+EXPECTED_OUTPUT:
+-------------------------------------------------------------------------------
+
+TEST "Comments without code"
+
+#
+# Single line comment.
+#
+
+/*
+   Multiline comment
+*/
+-------------------------------------------------------------------------------
+
+TEST "Simple print"
+print "Hello mold!"
+
+EXPECTED_OUTPUT:
+Hello mold!
+-------------------------------------------------------------------------------
+
+TEST "Print with multiple args"
+print "Hello", "happy mold", "on", "my", "bread!"
+
+EXPECTED_OUTPUT:
+Hello happy mold on my bread!
+------------------------------------------------------------------------------

@@ -1,0 +1,195 @@
+TEST "Attemp to call undeclared function"
+foo()
+
+EXPECTED_ERROR:
+error: 'foo' was not declared in this scope
+-------------------------------------------------------------------------------
+
+TEST "Simple procedure (no parameters, no return value)"
+function foo()
+  print "foo() called"
+endfunction
+foo()
+
+EXPECTED_OUTPUT:
+foo() called
+-------------------------------------------------------------------------------
+
+TEST "Simple procedure (one parameter, no return value)"
+function foo(x)
+  print "foo() called with", x, "parameter"
+endfunction
+foo(1234)
+
+EXPECTED_OUTPUT:
+foo() called with 1234 parameter
+-------------------------------------------------------------------------------
+
+TEST "Simple function (no parameters)"
+function foo() -> rv
+  print "foo() called"
+  rv = 1234
+endfunction
+print foo()
+
+EXPECTED_OUTPUT:
+foo() called
+1234
+-------------------------------------------------------------------------------
+
+TEST "Simple function (two parameters, return value)"
+function divide(x,y) -> rv
+  rv = x/y
+endfunction
+print divide(1,2)
+
+EXPECTED_OUTPUT:
+0.500000
+--------------------------------------------------------------------------------
+
+TEST "Calls serie one by one"
+function foo1(x)
+  print 'foo1', x
+endfunction
+
+function foo2(x)
+  print 'foo2', x
+endfunction
+
+function foo3(x)
+  print 'foo3', x
+endfunction
+
+foo1(1)
+foo2(2)
+foo3(3)
+
+EXPECTED_OUTPUT:
+foo1 1
+foo2 2
+foo3 3
+--------------------------------------------------------------------------------
+
+TEST "Procedure with 3 parameters"
+function foo(x, y, z)
+  print 'x', x, 'y', y, 'z', z
+endfunction
+
+foo(1,2,3)
+
+EXPECTED_OUTPUT:
+x 1 y 2 z 3
+--------------------------------------------------------------------------------
+
+TEST "Nested function calls #1"
+function bar(x) -> rv
+  print("bar() called!")
+  rv = x + 2
+endfunction
+
+function foo(x) -> rv
+  print("foo() called!")
+  rv = bar(x) + 1
+endfunction
+
+print foo(1)
+
+EXPECTED_OUTPUT:
+foo() called!
+bar() called!
+4
+--------------------------------------------------------------------------------
+
+TEST "Nested function calls #2"
+
+function foo(n) -> rv
+  print 'foo(', n, ')'
+  rv = n
+endfunction
+
+function bar(n) -> rv
+  rv = foo(n-1) + foo(n-2)
+endfunction
+
+print bar(2)
+
+EXPECTED_OUTPUT:
+foo( 1 )
+foo( 0 )
+1
+--------------------------------------------------------------------------------
+
+TEST "Destroyed registers issue"
+
+function copy(x) -> rv
+  rv = x
+endfunction
+print copy(2) + copy(3)
+
+EXPECTED_OUTPUT:
+5
+--------------------------------------------------------------------------------
+
+TEST "Not cleaned return value bug"
+
+function foo(x) -> rv
+  if x is 1
+    rv = 'output'
+  endif
+endfunction
+
+print foo(1)
+print foo(0)
+
+EXPECTED_OUTPUT:
+output
+undefined
+EXPECTED_ERROR
+WARNING! Unset return variable 'rv' in 'foo' function.
+--------------------------------------------------------------------------------
+
+TEST "Immediately array in parameters list"
+
+function foo(v)
+  for i in 0 .. len(v)
+    print 'v[', i, '] =', v[i]
+  endfor
+endfunction
+
+foo([1,2,3,4,5])
+EXPECTED_OUTPUT:
+v[ 0 ] = 1
+v[ 1 ] = 2
+v[ 2 ] = 3
+v[ 3 ] = 4
+v[ 4 ] = 5
+--------------------------------------------------------------------------------
+
+TEST "Bug: Destroyed rv inside call chain"
+
+function getItem() -> rv
+  rv = 12345
+endfunction
+
+function foo() -> rv
+  rv    = []
+  rv[0] = getItem()
+endfunction
+
+print foo()
+
+EXPECTED_OUTPUT:
+[12345]
+--------------------------------------------------------------------------------
+
+TEST "Long call list"
+
+function foo(x1, x2, x3, x4, x5, x6, x7, x8)
+  print 'foo(', x1, x2, x3, x4, x5, x6, x7, x8, ')'
+endfunction
+    
+foo(1,2,3,4,5,6,7,8)
+
+EXPECTED_OUTPUT:
+foo( 1 2 3 4 5 6 7 8 )
+--------------------------------------------------------------------------------

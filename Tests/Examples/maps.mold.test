@@ -1,0 +1,112 @@
+TEST "Empty map"
+x = {}
+print 'typeof(x):', typeof(x)
+print 'x:', x
+print "x['key1'] =", x['key1']
+print "x['key2'] =", x['key2']
+print "x['key3'] =", x['key3']
+
+EXPECTED_OUTPUT:
+typeof(x): map
+x: {}
+x['key1'] = undefined
+x['key2'] = undefined
+x['key3'] = undefined
+-------------------------------------------------------------------------------
+
+TEST "Mixed types in one map"
+x = {'key1': 'value1', 'key2': 2, 'key3': 3.14}
+print 'typeof(x):', typeof(x)
+print 'x:', x
+print "x['key1'] =", x['key1']
+print "x['key2'] =", x['key2']
+print "x['key3'] =", x['key3']
+
+EXPECTED_OUTPUT:
+typeof(x): map
+x: {'key1': 'value1', 'key2': 2, 'key3': 3.140000}
+x['key1'] = value1
+x['key2'] = 2
+x['key3'] = 3.140000
+-------------------------------------------------------------------------------
+
+TEST "Set elements at runtime"
+
+# Start from empty array.
+x = {}
+print 'init      :', x
+
+# Modify elements.
+x['one'] = 1
+x['two'] = 'two'
+x['pi']  = 3.14
+print 'modified1 :', x
+
+# Modify elements once again.
+x['one'] = 'one'
+x['two'] = 2
+x['pi']  = 'pi'
+print 'modified2 :', x
+
+EXPECTED_OUTPUT:
+init      : {}
+modified1 : {'two': 'two', 'pi': 3.140000, 'one': 1}
+modified2 : {'two': 2, 'pi': 'pi', 'one': 'one'}
+-------------------------------------------------------------------------------
+
+TEST "Nested maps"
+x = {'key1': {'key2': {'key3': 'value'}}}
+
+# Print values stored in whole tree.
+print 'values'
+print '======'
+print "x                         :", x
+print "x['key1']                 :", x['key1']
+print "x['key1']['key2']         :", x['key1']['key2']
+print "x['key1']['key2']['key3'] :", x['key1']['key2']['key3']
+
+# Print types stored in whole tree.
+print 'types'
+print '======'
+print "typeof(x)                         :", typeof(x)
+print "typeof(x['key1'])                 :", typeof(x['key1'])
+print "typeof(x['key1']['key2'])         :", typeof(x['key1']['key2'])
+print "typeof(x['key1']['key2']['key3']) :", typeof(x['key1']['key2']['key3'])
+
+# Try to modify inner element.
+x['key1']['key2']['key3'] = 'new-value'
+print 'modify'
+print '======'
+print 'value after modify:', x['key1']['key2']['key3']
+
+EXPECTED_OUTPUT:
+values
+======
+x                         : {'key1': {'key2': {'key3': 'value'}}}
+x['key1']                 : {'key2': {'key3': 'value'}}
+x['key1']['key2']         : {'key3': 'value'}
+x['key1']['key2']['key3'] : value
+types
+======
+typeof(x)                         : map
+typeof(x['key1'])                 : map
+typeof(x['key1']['key2'])         : map
+typeof(x['key1']['key2']['key3']) : string
+modify
+======
+value after modify: new-value
+-------------------------------------------------------------------------------
+
+TEST "Bug: Repeated one key for different values"
+
+M = {}
+
+for i in 0 .. 10
+  M[str(i)] = i
+endfor
+
+print M
+
+EXPECTED_OUTPUT:
+{'0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9}
+-------------------------------------------------------------------------------

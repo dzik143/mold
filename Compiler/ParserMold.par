@@ -1,0 +1,407 @@
+/******************************************************************************/
+/*                                                                            */
+/* This file is part of Mold project.                                         */
+/* Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                  */
+/*                                                                            */
+/* The Mold code and any derived work however based on this software are      */ 
+/* copyright of Sylwester Wysocki. Redistribution and use of the present      */
+/* software is allowed according to terms specified in the file LICENSE       */ 
+/* which comes in the source distribution.                                    */
+/*                                                                            */
+/* All rights reserved.                                                       */
+/*                                                                            */
+/******************************************************************************/
+
+#!language "mold";
+#default action [* @@ = @1 *];
+#whitespaces @WHITE;
+
+@WHITE   ' ' | "/*" .* "*/" | '#' .* '\r\n'+;
+@EOL     '\r\n'+;
+@IDENT   'A-Za-z_' 'A-Za-z0-9_'* ;
+@STRING  '"' .* '"' | '\'' .* '\'' ;
+@FLOAT   '0-9'+ '.' '0-9'+;
+@TRUE    "true";
+@FALSE   "false";
+                           
+#left '=';
+#left '+' '-';
+#left '*' '/' "//";
+#left "is" "isnt" '<' '>' "<=" ">=";
+#left "and" "or";
+#left "not";
+
+//
+// Defining the grammar
+//
+
+program$ : stmt_list =program;
+
+stmt_list : stmt* [* @@ = null *] =block;
+
+stmt 
+  : lval '=' rval @EOL              =store
+  | "const" var '=' imm_array @EOL  =store
+  | function_call @EOL        
+  | method_call @EOL          
+  | stmt_import @EOL          
+  | function_declaration @EOL =function
+  | class_declaration @EOL    =class
+  | stmt_if @EOL              =if
+  | stmt_for @EOL             =for
+  | stmt_while @EOL           =while
+  | @EOL
+  ;
+
+//
+// Import module.
+//
+
+stmt_import 
+  : "import" module_name [* @@ = 'import' *] =call;
+  
+module_name 
+  : string =string;
+  
+//
+// Functions.
+//
+
+function_call 
+  : @IDENT '(' ')'           [* @@ = @1 *]       =call //[* @@ = {'name': @1, 'parameters': []} *]
+  | @IDENT '(' call_list ')' [* @@ = @1 *]       =call //[* @@ = {'name': @1, 'parameters': @3} *]
+  | "print" call_list_line   [* @@ = 'print' *]  =call //[* @@ = {'name': 'print', 'parameters': @2} *]
+  | "global" call_list_line  [* @@ = 'global' *] =call //[* @@ = {'name': 'print', 'parameters': @2} *]
+  ;
+
+function_begin
+  : "function" @IDENT '(' ')'                            [* @@ = {'name': @2, 'parameters': []} *]
+  | "function" @IDENT '(' ')' "->" @IDENT                [* @@ = {'name': @2, 'parameters': [], 'rv': @6} *]
+  | "function" @IDENT '(' parameter_list ')'             [* @@ = {'name': @2, 'parameters': @4} *]
+  | "function" @IDENT '(' parameter_list ')' "->" @IDENT [* @@ = {'name': @2, 'parameters': @4, 'rv': @7} *]
+  ;
+  
+function_end  
+  : "endfunction";
+  
+function_body 
+  : stmt_list;
+
+function_declaration :
+  function_begin @EOL function_body function_end;
+
+//
+// Comma separated lists.
+//
+
+parameter_list                     
+  : parameter_list ',' @IDENT      [* @1[len(@1)] = @3 
+                                      @@ =@1 *]
+  
+  | parameter_list ',' @EOL @IDENT [* @1[len(@1)] = @4 
+                                      @@ = @1 *]
+  
+  | @EOL parameter_list            [* @@ = @2 *]
+  | @IDENT                         [* @@ = [@1] *]
+  | @EOL
+  ;  
+
+call_list                     
+  : call_list ',' rval        [* @1[len(@1)] = @3 
+                                 @@ =@1 *]
+  
+  | call_list ',' @EOL rval   [* @1[len(@1)] = @4 
+                                 @@ = @1 *]
+  
+  | @EOL call_list            [* @@ = @2 *]
+  | call_list @EOL            [* @@ = @1 *]
+  | rval                      [* @@ = [@1] *]
+  | @EOL
+  ;  
+
+call_list_line
+  : call_list_line ',' rval [* @1[len(@1)] = @3 
+                               @@ =@1 *]
+  
+  | rval                    [* @@ = [@1] *]
+  ;  
+
+//
+// Key:value list.
+//
+
+key_value_list 
+  : key_value_list ',' map_key ':' map_val
+  | key_value_list ',' @EOL map_key ':' map_val
+  | key_value_list @EOL
+  | @EOL key_value_list
+  | map_key ':' map_val
+  | @EOL
+  ;  
+
+map_key : string =string;
+map_val : rval;
+
+value_list 
+  : value_list ',' rval
+  | value_list ',' @EOL rval
+  | value_list @EOL
+  | @EOL value_list
+  | rval
+  | @EOL
+  ;  
+  
+// TODO: Handle strings and bool too.
+imm_list
+  : imm_list ',' imm_list_item    [* @1[len(@1)] = @3 
+                                     @@ = @1 *]
+                            
+  | imm_list ',' @EOL imm_list_item [* @1[len(@1)] = @4
+                                       @@ = @1 *]
+                              
+  | imm_list @EOL [* @@ = @1 *]
+  | @EOL imm_list [* @@ = @2 *]
+  | imm_list_item [* @@ = [@1] *]
+  | @EOL
+  ;
+  
+imm_list_item
+  : integer  
+  | float    
+  | string
+  | bool
+  | expr_imm
+  | imm_array
+  ;  
+ 
+//
+// Comma separated identifiers list.
+//
+
+ident_list
+  : ident_list ',' @IDENT
+  | @IDENT
+  ;
+
+//
+// Classes.
+//
+
+class_begin 
+  : "class" @IDENT                  [* @@ = {'name': @2} *]
+  | "class" @IDENT "extends" @IDENT [* @@ = {'name': @2, 'baseName': @4} *]
+  ;
+            
+class_end         
+  : "endclass";
+  
+class_body        
+  : class_body_item*;
+  
+class_body_item   
+  : method_declaration | @EOL;
+  
+class_declaration 
+  : class_begin @EOL class_body class_end; 
+
+method_call                                
+  : expr '.' @IDENT '(' ')'           [* @@ = @3 *] =vcall
+  | expr '.' @IDENT '(' call_list ')' [* @@ = @3 *] =vcall
+  ;
+
+method_begin  
+  : "method" @IDENT '(' ')'                            [* @@ = {'name': @2, 'parameters': []} *]           
+  | "method" @IDENT '(' ')' "->" @IDENT                [* @@ = {'name': @2, 'parameters': [], 'rv': @6} *]
+  | "method" @IDENT '(' parameter_list ')'             [* @@ = {'name': @2, 'parameters': @4} *]          
+  | "method" @IDENT '(' parameter_list ')' "->" @IDENT [* @@ = {'name': @2, 'parameters': @4, 'rv': @7} *]
+  ;
+  
+method_end         
+  : "endmethod";
+  
+method_body        
+  : stmt_list;
+  
+method_declaration 
+  : method_begin @EOL method_body method_end =method;
+  
+//
+// Constructor call.
+//
+
+new_call
+  : new_begin @IDENT '(' ')'          [* @@ =  @2 *] =new
+  | new_begin @IDENT '('call_list ')' [* @@ =  @2 *] =new
+  ;
+
+new_begin
+ : "new" [* @@ = '__this_placeholder__' *] =var;
+  
+//
+// Expressions.
+//
+
+expr : expr '+' expr     =add     
+     | expr '-' expr     =sub
+     | expr '*' expr     =mul
+     | expr '/' expr     =div
+     | expr "//" expr    =idiv
+     | '(' expr ')'      
+     | '-' expr          =neg
+     | expr '[' expr ']' =index
+     | expr '.' member   =index
+     | imm
+     | logic
+     | var
+     ;
+
+//
+// Logical.
+//
+
+logic : logic "and" logic =band
+      | logic "or" logic  =bor
+      | "not" logic       =not
+      | rval "is" rval    =cmpeq
+      | rval "isnt" rval  =cmpne
+      | rval "<" rval     =cmplt
+      | rval "<=" rval    =cmple
+      | rval '>' rval     =cmpgt
+      | rval ">=" rval    =cmpge
+      | '(' logic ')'     [* @@ = @2 *]
+      | function_call
+      | method_call
+      | bool              =bool
+      ;
+                                         
+condition : logic;
+
+//
+// IF-ELSE-ENDIF
+//                                               
+
+stmt_if
+  : "if" condition @EOL stmt_list "endif"
+  | "if" condition @EOL stmt_list "else" stmt_list "endif"
+  | "if" condition @EOL stmt_list stmt_elif
+  ;
+
+stmt_elif
+  : "elif" condition @EOL stmt_list "endif"                   =elif
+  | "elif" condition @EOL stmt_list "else" stmt_list "endif"  =elif
+  | "elif" condition @EOL stmt_list stmt_elif                 =elif
+  ;  
+
+//
+// For loop.
+//
+
+stmt_for
+  : "for" var "in" rval ".." rval step?  stmt_list "endfor";
+
+step
+  : @EOL [* @@ = 1 *] =int
+  | "step" rval
+  ;
+  
+//
+// While loop.
+//
+
+stmt_while
+  : "while" logic @EOL stmt_list "endwhile";
+
+//
+// Array initializers.
+//
+
+rval_array 
+  : '[' ']'                
+  | '[' value_list ']'
+  ;
+
+imm_array
+  : '[' imm_list ']' [* @@ = @2 *] = array
+  ;
+  
+rval_map   
+  : '{' '}'
+  | '{' key_value_list '}'
+  ;
+
+//
+// L-value and R-value.
+//
+
+lval 
+  : var               //=loadr
+  | expr '[' expr ']' =index
+  | expr '.' member   =index
+  ;
+     
+rval 
+  : expr
+  | expr '[' expr ']' =index
+  | expr '.' member   =index
+  | var               //=load
+  | new_call          
+  | function_call     
+  | method_call       
+  | imm               
+  | rval_array        =array
+  | rval_map          =map
+  | logic
+  ;
+
+//
+// Basic leafs.
+//
+
+var : @IDENT =var;
+
+member : @IDENT =member;
+
+expr_imm
+  : expr_imm '+'  expr_imm [* @@ = @1 + @3 *]
+  | expr_imm '-'  expr_imm [* @@ = @1 - @3 *]
+  | expr_imm '*'  expr_imm [* @@ = @1 * @3 *]
+  | expr_imm '/'  expr_imm [* @@ = @1 / @3 *]
+  | expr_imm "//" expr_imm [* @@ = @1 // @3 *]
+  | '-' expr_imm           [* @@ = -@2 *]
+  | '(' expr_imm ')'       [* @@ = @2 *]
+  | imm
+  ;
+
+imm : integer   =int
+    | float     =float
+    | string    =string
+    ;
+
+number
+  : float
+  | integer
+  ;
+  
+integer
+  : '0-9'         [* @@ = ord(@1) - 48 *]
+  | integer '0-9' [* @@ = 10 * @1 + ord(@2) - 48 *]
+  ;
+
+float
+  : @FLOAT [* @@ = parseFloat(@1) *]
+  ;
+
+string
+  : @STRING [* @@ = '' 
+               # Remove quotas.
+               stringLen = len(@1)
+               for idx in 1 .. stringLen - 1
+                 @@ = @@ + @1[idx]
+               endfor
+            *]
+  ;
+
+bool
+  : @TRUE   [* @@ = true *]
+  | @FALSE  [* @@ = false *]
+  ;

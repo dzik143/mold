@@ -1,0 +1,211 @@
+TEST "Fibonacci (recursive)"
+function fib(n) -> rv
+  if n is 0
+    rv = 0
+  elif n is 1
+    rv = 1
+  else
+    rv = fib(n-1) + fib(n-2)
+  endif
+endfunction
+
+# Generate first 10 fibonacci numbers
+for i in 0..10
+  print fib(i)
+endfor
+
+EXPECTED_OUTPUT:
+0
+1
+1
+2
+3
+5
+8
+13
+21
+34
+--------------------------------------------------------------------------------
+
+TEST "Fibonacci (iterative)"
+# First two elements.
+preLast = 0
+last    = 1
+
+print preLast
+print last
+
+# fib(n) = fib(n-1) + fib(n-2)
+for i in 2..10
+  current = preLast + last
+  preLast = last
+  last    = current
+  print current
+endfor
+
+EXPECTED_OUTPUT:
+0
+1
+1
+2
+3
+5
+8
+13
+21
+34
+--------------------------------------------------------------------------------
+
+TEST "Bubble sort"
+
+function bubbleSort(A, n)
+  while n > 1
+    for i in 0..n-1
+      if A[i] > A[i+1]
+        # Swap elements.
+        tmp    = A[i]
+        A[i]   = A[i+1]
+        A[i+1] = tmp
+      endif
+    endfor
+    n = n - 1
+  endwhile
+endfunction
+
+#
+# Entry point.
+#
+
+# Input array we're going to sort.
+A = [4, 1, -8, 4, -53]
+print "input: ",  A
+
+# Sort!
+bubbleSort(A, 5)
+
+# Show sorted array.
+print "output:", A
+
+EXPECTED_OUTPUT:
+input:  [4, 1, -8, 4, -53]
+output: [-53, -8, 1, 4, 4]
+--------------------------------------------------------------------------------
+TEST "Erastotates"
+A     = []
+sqrtn = 10
+n     = sqrtn * sqrtn
+
+#
+# Init table with true values. All numers are potentially
+# primes at the beginning.
+#
+
+for i in 0..n
+  A[i] = true
+endfor
+
+#
+# Remove non-primes by searching multiples.
+#
+
+for i in 2..sqrtn
+  if A[i] is true
+    #
+    # Remove i^2, i^2+i, i^2+2i, i^2+3i...
+    # We know they can't be primes, becase they are muliply
+    # of some other number.
+    #
+
+    idxToRemove = i*i
+    while idxToRemove < n
+      A[idxToRemove] = false
+      idxToRemove    = idxToRemove + i
+    endwhile
+
+  endif
+endfor
+
+#
+# Show result.
+#
+
+for i in 2..n
+  if A[i] is true
+    print i
+  endif
+endfor
+
+EXPECTED_OUTPUT:
+2
+3
+5
+7
+11
+13
+17
+19
+23
+29
+31
+37
+41
+43
+47
+53
+59
+61
+67
+71
+73
+79
+83
+89
+97
+--------------------------------------------------------------------------------
+TEST "Ackermann function"
+function Ack(m, n) -> rv
+  if m is 0
+    rv = n + 1
+  elif n is 0
+    rv = Ack(m - 1, 1)
+  else
+    rv = Ack(m - 1, Ack(m, n - 1))
+  endif
+endfunction
+
+for m in 0..4
+  for n in 0..7
+    print 'Ack(', m, ',', n,') =', Ack(m, n)
+  endfor
+endfor
+
+EXPECTED_OUTPUT:
+Ack( 0 , 0 ) = 1
+Ack( 0 , 1 ) = 2
+Ack( 0 , 2 ) = 3
+Ack( 0 , 3 ) = 4
+Ack( 0 , 4 ) = 5
+Ack( 0 , 5 ) = 6
+Ack( 0 , 6 ) = 7
+Ack( 1 , 0 ) = 2
+Ack( 1 , 1 ) = 3
+Ack( 1 , 2 ) = 4
+Ack( 1 , 3 ) = 5
+Ack( 1 , 4 ) = 6
+Ack( 1 , 5 ) = 7
+Ack( 1 , 6 ) = 8
+Ack( 2 , 0 ) = 3
+Ack( 2 , 1 ) = 5
+Ack( 2 , 2 ) = 7
+Ack( 2 , 3 ) = 9
+Ack( 2 , 4 ) = 11
+Ack( 2 , 5 ) = 13
+Ack( 2 , 6 ) = 15
+Ack( 3 , 0 ) = 5
+Ack( 3 , 1 ) = 13
+Ack( 3 , 2 ) = 29
+Ack( 3 , 3 ) = 61
+Ack( 3 , 4 ) = 125
+Ack( 3 , 5 ) = 253
+Ack( 3 , 6 ) = 509
+--------------------------------------------------------------------------------

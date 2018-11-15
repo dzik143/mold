@@ -1,0 +1,71 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+class PipeAbstract
+
+  # ----------------------------------------------------------------------------
+  #                         Init functions (constructor)
+  # ----------------------------------------------------------------------------
+
+  method constructor()
+    this.outputObject     = false
+    this.buffer           = []
+    this.bufferingEnabled = false
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                     Internal implementation (private)
+  # ----------------------------------------------------------------------------
+
+  method _emitOneItem(item)
+    if this.bufferingEnabled is true
+      buffer      = this.buffer
+      cnt         = len(buffer)
+      buffer[cnt] = item
+    else
+      outputObject = this.outputObject
+      outputObject.processOneItem(item)
+    endif
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                                 Public API
+  # ----------------------------------------------------------------------------
+
+  method setOutputObject(outputObject)
+    this.outputObject = outputObject
+  endmethod
+
+  method processOneItem(item)
+  endmethod
+
+  method processArrayOfItems(items)
+    itemsCnt = len(items)
+    for idx in 0 .. itemsCnt
+      this.processOneItem(items[idx])
+    endfor
+  endmethod
+
+  method flush()
+    buffer       = this.buffer
+    bufferCnt    = len(buffer)
+    outputObject = this.outputObject
+
+    for idx in 0 .. bufferCnt
+      outputObject.processOneItem(buffer[idx])
+    endfor
+
+    this.buffer = []
+  endmethod
+endclass

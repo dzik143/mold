@@ -1,0 +1,572 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'ASTTranslator.mold'
+import 'MIR.mold'
+
+class ASTTranslatorMIR extends ASTTranslator
+
+  # ----------------------------------------------------------------------------
+  #                                Init code
+  # ----------------------------------------------------------------------------
+
+  method constructor()
+    super()
+    this.code = new MIRCode()
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                         Implement built-in functions
+  # ----------------------------------------------------------------------------
+
+  method _callStr(x) -> rv
+    code = this.code
+    code.conv2str()
+    rv = false
+  endmethod
+
+  method _callStrEscape(x) -> rv
+    this._error('_callStrEscape not implemented')
+  endmethod
+
+  method _callLen(x) -> rv
+    code = this.code
+    code.getLen()
+    rv = false
+  endmethod
+
+  method _callExit() -> rv
+    code = this.code
+    code.halt()
+    rv = false
+  endmethod
+
+  method _callMoldWarning(msg) -> rv
+    code = this.code
+    code.callPrintError(msg)
+    rv = false
+  endmethod
+
+  method _callMoldPrintToStdOut(msg) -> rv
+    code = this.code
+    code.callPrintToStdOut(msg)
+    rv = false
+  endmethod
+
+  method _callDie(msg)
+    code = this.code
+    code.callPrintError(msg)
+    code.drop()
+    code.halt()
+  endmethod
+
+  method _callMoldCreateObject(classProto) -> rv
+    code = this.code
+    code.createObject(classProto)
+    rv = false
+  endmethod
+
+  method _callMoldGetClassName(thiz) -> rv
+    #this._error('_callMoldGetClassName not implemented')
+    rv = false
+  endmethod
+
+  method _callMoldParseFile(filePath) -> rv
+    code = this.code
+    code.loadMoldSource()
+    rv = false
+  endmethod
+
+  method _loadArgsVector() -> rv
+    code = this.code
+    code.loadArgv()
+    rv = false
+  endmethod
+
+  method _loadArgsCount() -> rv
+    code = this.code
+    code.loadArgc()
+    rv = false
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                     Implement ASTTranslator interface
+  # ----------------------------------------------------------------------------
+
+  method _neg(value) -> rv
+    code = this.code
+    code.neg()
+    rv = false
+  endmethod
+
+  method _add(x, y) -> rv
+    code = this.code
+    code.add()
+    rv = false
+  endmethod
+
+  method _sub(x, y) -> rv
+    code = this.code
+    code.sub()
+    rv = false
+  endmethod
+
+  method _mul(x, y) -> rv
+    code = this.code
+    code.mul()
+    rv= false
+  endmethod
+
+  method _div(x, y) -> rv
+    code = this.code
+    code.div()
+    rv = false
+  endmethod
+
+  method _idiv(x, y) -> rv
+    code = this.code
+    code.idiv()
+    rv = false
+  endmethod
+
+  method _loadArray() -> rv
+    code = this.code
+    code.loadArray()
+    rv = false
+  endmethod
+
+  method _loadMap() -> rv
+    code = this.code
+    code.loadMap()
+    rv = false
+  endmethod
+
+  method _loadImm(value) -> rv
+    code = this.code
+    code.loadImm(value)
+    rv = false
+  endmethod
+
+  method _compareEQ(x, y) -> rv
+    code = this.code
+    code.cmpEQ()
+    rv = false
+  endmethod
+
+  method _compareNEQ(x, y) -> rv
+    code = this.code
+    code.cmpNEQ()
+    rv = false
+  endmethod
+
+  method _compareLT(x, y) -> rv
+    code = this.code
+    code.cmpLT()
+    rv = false
+  endmethod
+
+  method _compareLE(x, y) -> rv
+    code = this.code
+    code.cmpLE()
+    rv = false
+  endmethod
+
+  method _compareGT(x, y) -> rv
+    code = this.code
+    code.cmpGT()
+    rv = false
+  endmethod
+
+  method _compareGE(x, y) -> rv
+    code = this.code
+    code.cmpGE()
+    rv = false
+  endmethod
+
+#  method _boolAnd(x, y) -> rv
+#  endmethod
+
+#  method _boolOr(x, y) -> rv
+#  endmethod
+
+  method _loadVariable(name) -> rv
+    global SYMBOL_KIND_VAR_LOCAL
+    global SYMBOL_KIND_VAR_GLOBAL
+    global SYMBOL_KIND_VAR_PARAM
+    global SYMBOL_KIND_VAR_RETVAL
+
+    symbolTable = this.symbolTable
+    code        = this.code
+    info        = symbolTable.lookup(name)
+    kind        = info['kind']
+    id          = info['id']
+    rv          = false
+
+    if kind is SYMBOL_KIND_VAR_LOCAL
+      # Local variable
+      code.loadLocal(id)
+
+    elif kind is SYMBOL_KIND_VAR_GLOBAL
+      # Global variable
+      code.loadGlobal(id)
+
+    elif kind is SYMBOL_KIND_VAR_PARAM
+      # One of call parameters.
+      code.loadParamN(id)
+
+    elif kind is SYMBOL_KIND_VAR_RETVAL
+      # Return value of current function.
+      code.loadRetVal()
+
+    else
+      this._error("unexpected symbol kind '" + name + "' (" + str(kind) + ")")
+    endif
+  endmethod
+
+  method _assign(name, unusedValue)
+    global SYMBOL_KIND_VAR_LOCAL
+    global SYMBOL_KIND_VAR_GLOBAL
+    global SYMBOL_KIND_VAR_PARAM
+    global SYMBOL_KIND_VAR_RETVAL
+
+    symbolTable = this.symbolTable
+    code        = this.code
+    info        = symbolTable.lookup(name)
+    kind        = info['kind']
+    id          = info['id']
+
+    if kind is SYMBOL_KIND_VAR_LOCAL
+      # Local variable
+      code.storeLocal(id)
+
+    elif kind is SYMBOL_KIND_VAR_GLOBAL
+      # Global variable
+      code.storeGlobal(id)
+
+    elif kind is SYMBOL_KIND_VAR_PARAM
+      # One of call parameters.
+      code.storeParamN(id)
+
+    elif kind is SYMBOL_KIND_VAR_RETVAL
+      # Return value of current function.
+      code.storeRetVal()
+
+    else
+      this._error("unexpected symbol kind '" + name + "' (" + str(kind) + ")")
+    endif
+  endmethod
+
+  method _call(proto, params, paramsCnt) -> rv
+    code = this.code
+    code.call(proto)
+    rv = false
+  endmethod
+
+  method _callPrint(params, paramsCnt)
+    code = this.code
+    code.callPrint(paramsCnt)
+    rv = false
+  endmethod
+
+  method _typeof(value) -> rv
+    code = this.code
+    code.getTypeOf()
+    rv = false
+  endmethod
+
+  method _loadFromIndex(unusedBox, unusedIdx) -> rv
+    code = this.code
+    code.loadIndex()
+    rv = false
+  endmethod
+
+  method _storeAtIndex(unusedBox, unusedIdx, unusedValue)
+    code = this.code
+    code.storeIndex()
+  endmethod
+
+  method _storeAtIndexAndDrop(unusedBox, unusedIdx, unusedValue)
+    code = this.code
+    code.storeIndex()
+    code.drop()
+  endmethod
+
+  method _createObject(classProto) -> rv
+    code = this.code
+    code.createObject(classProto)
+    rv = false
+  endmethod
+
+  method _evaluateNodeLazyBoolAnd(leftAst, rightAst) -> rv
+    code       = this.code
+    endLabelId = code.createLabel()
+    rv         = false
+
+    code.loadImm(false)           # [false]
+    this._evaluateNode(leftAst)   # [false x]
+    code.jmpIfFalse(endLabelId)   # [false]
+
+    # Evaluate right node only if left is true.
+    this._evaluateNode(rightAst)  # [y]
+    code.moveBack()               # []
+    code.emitLabel(endLabelId)
+  endmethod
+
+  method _evaluateNodeLazyBoolOr(leftAst, rightAst) -> rv
+    code       = this.code
+    endLabelId = code.createLabel()
+    rv         = false
+
+    code.loadImm(true)            # [true]
+    this._evaluateNode(leftAst)   # [true x]
+    code.jmpIfTrue(endLabelId)    # [true]
+
+    # Evaluate right node only if left is false.
+    this._evaluateNode(rightAst)  # [y]
+    code.moveBack()               # []
+    code.emitLabel(endLabelId)
+  endmethod
+
+  method _invokeMethod(methodName, params, paramsCnt) -> rv
+    # TODO: Remove paramsCnt
+    code = this.code
+    code.vcall(methodName, paramsCnt)
+    rv = false
+  endmethod
+
+  method _executeNodeFor(iterName, valueStart, valueEnd, valueStep, bodyAst)
+    code        = this.code
+    symbolTable = this.symbolTable
+    loopLabelId = code.createLabel()
+    endLabelId  = code.createLabel()
+
+    # [step, endIdx, startIdx]
+    if this._isset(iterName) is false
+      symbolTable.insertLocalVolatile(iterName)
+    endif
+
+    iterId = symbolTable.lookup(iterName)['id']
+    code.storeLocal(iterId)
+
+    # [step, endIdx]
+    code.emitLabel(loopLabelId)
+      code.dup()                  # [step, endIdx, endIdx]
+      code.loadLocal(iterId)      # [step, endIdx, endIdx, idx]
+      code.cmpLE()                # [step, endIdx, true/false]
+      code.jmpIfTrue(endLabelId)  # [step, endIdx]
+
+      this._executeNode(bodyAst)
+
+      code.over()                 # [step, endIdx, step]
+      code.loadLocal(iterId)      # [step, endIdx, step, iterId]
+      code.add()                  # [step, endIdx, newIdx]
+      code.storeLocal(iterId)     # [step, endIdx]]
+      code.jmp(loopLabelId)       # [startIdx, endIdx, step]
+
+    code.emitLabel(endLabelId)
+    code.dropN(2)                 # []
+  endmethod
+
+  method _executeNodeWhile(condAst, bodyAst)
+    code        = this.code
+    loopLabelId = code.createLabel()
+    endLabelId  = code.createLabel()
+
+    code.emitLabel(loopLabelId)
+      # if (!cond) goto end
+      this._evaluateNode(condAst)
+      code.jmpIfFalse(endLabelId)
+
+      # Loop body
+      this._executeNode(bodyAst)
+      code.jmp(loopLabelId)
+
+    code.emitLabel(endLabelId)
+  endmethod
+
+  method _executeNodeIf(cond, codeIfTrue, codeIfFalse)
+    code         = this.code
+    falseLabelId = code.createLabel()
+    endLabelId   = code.createLabel()
+
+    code.jmpIfFalse(falseLabelId)
+    this._executeNode(codeIfTrue)
+
+    if typeof (codeIfFalse) isnt 'undefined'
+      code.jmp(endLabelId)
+      code.emitLabel(falseLabelId)
+      this._executeNode(codeIfFalse)
+    else
+      code.emitLabel(falseLabelId)
+    endif
+
+    code.emitLabel(endLabelId)
+  endmethod
+
+  method _declareFunction(funcName, funcProto)
+    code                 = this.code
+    funcProto['labelId'] = code.createLabel()
+  endmethod
+
+  method _declareClass(className, classProto)
+    code = this.code
+    code.createClass(classProto)
+  endmethod
+
+  method _emitFunctionBody(funcName, funcProto)
+    # __mold_warning '_emitFunctionBody ' + funcName
+
+    params      = funcProto['params']
+    paramsCnt   = funcProto['paramsCnt']
+    children    = funcProto['children']
+    childrenCnt = funcProto['childrenCnt']
+    codeAst     = children[0]
+    rvName      = funcProto['rv']
+
+    # TODO: Review it.
+    #if funcProto['name'] is 'constructor'
+    #  rvName = '__mold_this'
+    #endif
+
+    code        = this.code
+    symbolTable = this.symbolTable
+
+    labelId = funcProto['labelId']
+
+    code.emitLabel(labelId)
+
+    funcProto['ptr'] = code.resolveLabel(labelId)
+
+    code.comment('-----------------------------------------------')
+    code.comment('function ' + funcName)
+    code.comment('-----------------------------------------------')
+
+    symbolTable.enterScope()
+
+      code.beginProc(funcName, params, paramsCnt, rvName)
+
+      deepIdx = symbolTable.getDeep()
+      if deepIdx > 1
+        this._error('nested functions are not supported yet')
+      endif
+
+      # Insert call parameters to symbol table.
+      for idx in 0 .. paramsCnt
+        symbolTable.insertParam(params[idx], idx)
+      endfor
+
+      code.initFrame(paramsCnt)
+
+      # Translate function code.
+      # Declare variable to store return value.
+      if typeof(rvName) isnt 'undefined'
+        symbolTable.insertRetVal(rvName)
+      endif
+
+      # Translate code.
+      codeNodes    = codeAst['children']
+      codeNodesCnt = codeAst['childrenCnt']
+
+      for idx in 0 .. codeNodesCnt
+        this._executeNode(codeNodes[idx])
+      endfor
+
+      # Special case - constructor returns back this.
+      # TODO: Review it.
+      #if funcProto['name'] is 'constructor'
+      #  code.loadParamN(0)
+      #  code.storeRetVal()
+
+      if typeof(rvName) isnt 'undefined'
+        code.retValGuard(rvName, funcName)
+      endif
+
+      code.ret(paramsCnt)
+      code.endProc()
+
+    symbolTable.leaveScope()
+  endmethod
+
+  method _dropRetVal()
+    code = this.code
+    code.drop()
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                                Public API
+  # ----------------------------------------------------------------------------
+
+  method run(ast)
+    x    = []
+    noRv = x[0]
+
+    # Jmp to entry point.
+    code         = this.code
+    entryPointId = code.createLabel()
+    code.jmp(entryPointId)
+
+    # TODO: More-friendly API here.
+    __mold_openExternalModuleProto = {
+      'name': '__mold_openExternalModule',
+      'paramsCnt': 1,
+      'labelId': code.createExternalLabel('__MOLD_OpenExternalModule')
+    }
+    this._declareExternalFunction('__mold_openExternalModule', __mold_openExternalModuleProto)
+    code.createExternalProc('__MOLD_OpenExternalModule', 'variant', 1, 'variant', '__MOLD_OpenExternalModule')
+
+    # TODO: More-friendly API here.
+    __mold_loadExternalFunctionProto = {
+      'name': '__mold_loadExternalFunction',
+      'paramsCnt': 5,
+      'labelId': code.createExternalLabel('__MOLD_LoadExternalFunction')
+    }
+    this._declareExternalFunction('__mold_loadExternalFunction', __mold_loadExternalFunctionProto)
+    code.createExternalProc('__MOLD_LoadExternalFunction', 'variant', 5, 'variant', '__MOLD_LoadExternalFunction')
+
+    # TODO: More-friendly API here.
+    __mold_peekProto = {
+      'name': '__mold_peek',
+      'paramsCnt': 2,
+      'labelId': code.createExternalLabel('__MOLD_Peek')
+    }
+    this._declareExternalFunction('__mold_peek', __mold_peekProto)
+    code.createExternalProc('__MOLD_Peek', 'variant', 2, 'variant', '__MOLD_Peek')
+
+    # TODO: More-friendly API here.
+    __mold_loadFileProto = {
+      'name': '__mold_loadFile',
+      'paramsCnt': 1,
+      'labelId': code.createExternalLabel('__MOLD_LoadFile')
+    }
+    this._declareExternalFunction('__mold_loadFile', __mold_loadFileProto)
+    code.createExternalProc('__MOLD_LoadFile', 'variant', 1, 'variant', '__MOLD_LoadFile')
+
+    # Resolve imports recursively.
+    this._resolveImports(ast)
+    this._declareGlobals(ast)
+
+    # Translate main code behind entry point.
+    code.comment('-----------------------------------------------')
+    code.comment('entry point')
+    code.comment('-----------------------------------------------')
+
+    code.emitLabel(entryPointId)
+    code.beginProc('start', false, 0, noRv)
+    code.initFrame(0)
+
+    this._executeNode(ast)
+    code.ret(0)
+    code.endProc()
+  endmethod
+endclass

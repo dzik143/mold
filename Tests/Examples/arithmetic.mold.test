@@ -1,0 +1,145 @@
+TEST "Integer add/sub"
+print 0
+print -1
+print 2
+print 3+4
+print 4-5
+print 6+7+8+9
+print 10-11-12-13
+print 14+(15-16)
+print -(-(-(-(-(-(17))))))
+
+EXPECTED_OUTPUT:
+0
+-1
+2
+7
+-1
+30
+-26
+13
+17
+-------------------------------------------------------------------------------
+TEST "Integer mul/div"
+print 1*2
+print -2*3
+print -4*(5+6)
+print 7*(8-9)
+print 10//2
+print -9//3
+print -22//(5+6)
+print -7//(8-9)
+
+EXPECTED_OUTPUT:
+2
+-6
+-44
+-7
+5
+-3
+-2
+7
+-------------------------------------------------------------------------------
+
+TEST "Constant arithmetic"
+
+add_ii = 1   + 3
+add_if = 1   + 3.4
+add_fi = 1.2 + 3
+add_ff = 1.2 + 3.4
+
+sub_ii = 1   - 3
+sub_if = 1   - 3.4
+sub_fi = 1.2 - 3
+sub_ff = 1.2 - 3.4
+
+mul_ii = 1   * 3
+mul_if = 1   * 3.4
+mul_fi = 1.2 * 3
+mul_ff = 1.2 * 3.4
+
+div_ii = 1   / 3
+div_if = 1   / 3.4
+div_fi = 1.2 / 3
+div_ff = 1.2 / 3.4
+
+idiv_ii = 3   // 1
+idiv_fi = 3.4 // 1
+idiv_if = 3   // 1.2
+idiv_ff = 3.4 // 1.2
+
+print 'imm + imm'
+print '========='
+print add_ii, typeof(add_ii)
+print add_fi, typeof(add_fi)
+print add_if, typeof(add_if)
+print add_ff, typeof(add_ff)
+
+print ''
+print 'imm - imm'
+print '========='
+print sub_ii, typeof(sub_ii)
+print sub_fi, typeof(sub_fi)
+print sub_if, typeof(sub_if)
+print sub_ff, typeof(sub_ff)
+
+print ''
+print 'imm * imm'
+print '========='
+print mul_ii, typeof(mul_ii)
+print mul_fi, typeof(mul_fi)
+print mul_if, typeof(mul_if)
+print mul_ff, typeof(mul_ff)
+
+print ''
+print 'imm / imm'
+print '========='
+print div_ii, typeof(div_ii)
+print div_fi, typeof(div_fi)
+print div_if, typeof(div_if)
+print div_ff, typeof(div_ff)
+
+print ''
+print 'imm // imm'
+print '=========='
+print idiv_ii, typeof(idiv_ii)
+print idiv_fi, typeof(idiv_fi)
+print idiv_if, typeof(idiv_if)
+print idiv_ff, typeof(idiv_ff)
+
+EXPECTED_OUTPUT:
+imm + imm
+=========
+4 integer
+4.200000 float
+4.400000 float
+4.600000 float
+
+imm - imm
+=========
+-2 integer
+-1.800000 float
+-2.400000 float
+-2.200000 float
+
+imm * imm
+=========
+3 integer
+3.600000 float
+3.400000 float
+4.080000 float
+
+imm / imm
+=========
+0.333333 float
+0.400000 float
+0.294118 float
+0.352941 float
+
+imm // imm
+==========
+3 integer
+3 integer
+2 integer
+2 integer
+-------------------------------------------------------------------------------

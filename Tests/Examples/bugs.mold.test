@@ -1,0 +1,182 @@
+TEST "Bug: Conditional method call inside for loop"
+
+class Base
+  method foo(x)
+    print x, '!!! foo !!!'
+  endmethod
+
+  method bar(x)
+    print x, 'bar'
+  endmethod
+endclass
+
+base = new Base()
+
+for idx in 0 .. 5
+  print idx, 'begin'
+
+  if (idx is 3)
+    base.foo(idx)
+  else
+    base.bar(idx)
+  endif
+
+  print idx, 'end'
+endfor
+
+EXPECTED_OUTPUT:
+0 begin
+0 bar
+0 end
+1 begin
+1 bar
+1 end
+2 begin
+2 bar
+2 end
+3 begin
+3 !!! foo !!!
+3 end
+4 begin
+4 bar
+4 end
+-------------------------------------------------------------------------------
+TEST "Bug: Not verified parameters push before die() call"
+
+for idx in 0 .. 10
+  print idx
+
+  if false
+    die('error: unresolved call at address', idx)
+  endif
+endfor
+
+EXPECTED_ERROR:
+error: built-in die function requires exactly 1 parameter(s), but 2 were passed
+-------------------------------------------------------------------------------
+
+TEST "Bug: Not cleaned retval after die() call"
+
+for idx in 0 .. 10
+  print idx
+
+  if false
+    die('error message')
+  endif
+endfor
+
+EXPECTED_OUTPUT:
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+-------------------------------------------------------------------------------
+
+TEST "Bug: Unset register while calling calloc in str()"
+
+print 'before loop'
+for idx in 0 .. 1024
+  str(idx)
+endfor
+print 'after loop'
+
+EXPECTED_OUTPUT:
+before loop
+after loop
+-------------------------------------------------------------------------------
+TEST "Bug: Crash on hash conflict"
+
+x = {}
+x['SYMBOL_KIND_VAR_RETVAL'] = 1
+print x['SYMBOL_KIND_CLASS']
+
+EXPECTED_OUTPUT:
+undefined
+-------------------------------------------------------------------------------
+TEST "Bug: Destroyed [rv], if used in params list: rv = foo(rv)"
+
+function storeValue(box, idx, value)
+  box[idx] = value
+endfunction
+
+function foo() -> rv
+  rv = []
+  for idx in 0 .. 10
+    storeValue(rv, idx, idx)
+  endfor
+endfunction
+
+print foo()
+
+EXPECTED_OUTPUT:
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+-------------------------------------------------------------------------------
+TEST "Bug: Fake declaration brings to uninitialized variable"
+
+function foo()
+  if false
+    x = 1
+  endif
+  print str(x)
+endfunction
+
+foo()
+foo()
+
+EXPECTED_OUTPUT:
+undefined
+undefined
+-------------------------------------------------------------------------------
+TEST "Bug: Undefined source ptr in add/x64 code"
+
+x = []
+
+for i in 0 .. 1024
+  x[i] = i
+endfor
+
+for i in 0 .. 1024
+  if x[i] isnt i
+    die('error!')
+  endif
+endfor
+
+print 'ok'
+
+EXPECTED_OUTPUT:
+ok
+-------------------------------------------------------------------------------
+
+TEST "Bug: Concatenation with str(len(x)) result"
+
+x = 'AaaaaaaaaaaaaaaaaaaaaaaaaaaA'
+y = 'XxxxxxxxxxxxxxxxxxxxxxxxxxxX>>> ' + str(len(x)) + ' <<<YyyyyyyyyyyyyyyyyyyyyyyyyyyY'
+print y
+
+EXPECTED_OUTPUT:
+XxxxxxxxxxxxxxxxxxxxxxxxxxxX>>> 28 <<<YyyyyyyyyyyyyyyyyyyyyyyyyyyY
+-------------------------------------------------------------------------------
+
+TEST "Bug: Crash while releasing old array item"
+
+x    = []
+x[0] = {}
+x[0] = 1234 
+
+y      = {}
+y['a'] = {}
+y['a'] = 5678
+
+print 'x =', x
+print 'y =', y
+
+EXPECTED_OUTPUT:
+x = [1234]
+y = {'a': 5678}
+-------------------------------------------------------------------------------

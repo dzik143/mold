@@ -1,0 +1,638 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'ASTTranslator.mold'
+
+class ASTTranslatorC extends ASTTranslator
+
+  # ----------------------------------------------------------------------------
+  #                                Init code
+  # ----------------------------------------------------------------------------
+
+  method constructor()
+    super()
+    this.spacesCnt = 0
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                              Internal helpers
+  # ----------------------------------------------------------------------------
+
+  method _getSpaces() -> rv
+    rv = ''
+    for idx in 0 .. this.spacesCnt
+      rv = rv + '  '
+    endfor
+  endmethod
+
+  method _emitComment(msg)
+    print this._getSpaces() + '// ' + msg
+  endmethod
+
+  method _emitCommentHead(msg)
+    spc = this._getSpaces()
+    print ''
+    print spc + '// ------------------------------------------------'
+    print spc + '// ' + msg
+    print spc + '// ------------------------------------------------'
+    print ''
+  endmethod
+
+  method _emitCode(msg)
+    print this._getSpaces() + msg
+  endmethod
+
+  method _enterBlock()
+    this._emitCode('{')
+    this.spacesCnt = this.spacesCnt + 1
+  endmethod
+
+  method _leaveBlock()
+    this.spacesCnt = this.spacesCnt - 1
+    this._emitCode('}')
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                         Implement built-in functions
+  # ----------------------------------------------------------------------------
+
+  method _callLen(x) -> rv
+    rv = x + '.length()'
+  endmethod
+
+  method _callStr(x) -> rv
+    rv = x + '.toString()'
+  endmethod
+
+  method _callStrEscape(x) -> rv
+    rv = x + '.toStringEscapedForC()'
+  endmethod
+
+  method _callExit()
+    this._emitCode('exit(0);')
+  endmethod
+
+  method _callMoldWarning(msg)
+    this._emitCode('fprintf(stderr, "%s\n", ' + msg +'.toStdString().c_str());')
+  endmethod
+
+  method _callDie(msg)
+    this._callMoldWarning(msg)
+    this._callExit()
+  endmethod
+
+  method _callMoldCreateObject(classProto) -> rv
+    rv = 'Variant::createObject(' + classProto['name'] + '.toStdString().c_str())'
+  endmethod
+
+  method _callMoldGetClassName(thiz) -> rv
+    rv = thiz + '.getClassName()'
+  endmethod
+
+  method _callMoldParseFile(filePath) -> rv
+    rv = 'MoldUtils_LoadSourceFromFile(' + filePath + ')'
+  endmethod
+
+  method _loadArgsVector() -> rv
+    rv = '__mold_argv'
+  endmethod
+
+  method _loadArgsCount() -> rv
+    rv = '__mold_argc'
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                     Implement ASTTranslator interface
+  # ----------------------------------------------------------------------------
+
+  method _neg(value) -> rv
+    rv = this._createTempVarAndAssign('-' + value)
+  endmethod
+
+  method _add(x, y) -> rv
+    rv = this._createTempVarAndAssign(x + ' + ' + y)
+  endmethod
+
+  method _sub(x, y) -> rv
+    rv = this._createTempVarAndAssign(x + ' - ' + y)
+  endmethod
+
+  method _mul(x, y) -> rv
+    rv = this._createTempVarAndAssign(x + ' * ' + y)
+  endmethod
+
+  method _div(x, y) -> rv
+    rv = this._createTempVarAndAssign(x + ' / ' + y)
+  endmethod
+
+  method _idiv(x, y) -> rv
+    rv = this._createTempVarAndAssign(x + '.divAsInteger(' + y + ')')
+  endmethod
+
+  method _loadArray() -> rv
+    rv = this._createTempVarAndAssign('Variant::createArray()')
+  endmethod
+
+  method _loadMap() -> rv
+    rv = this._createTempVarAndAssign('Variant::createMap()')
+  endmethod
+
+  method _loadImm(value) -> rv
+    valueType = typeof(value)
+
+    if valueType is 'integer'
+      rv = this._createTempVarAndAssign('Variant::createInteger(' + str(value) + ')')
+
+    elif valueType is 'boolean'
+      rv = this._createTempVarAndAssign('Variant::createBoolean(' + str(value) + ')')
+
+    elif valueType is 'float'
+      rv = this._createTempVarAndAssign('Variant::createDouble(' + str(value) + ')')
+
+    elif valueType is 'string'
+      rv = this._createTempVarAndAssign('Variant::createString("' + strescape(value) + '")')
+    endif
+  endmethod
+
+  method _compareEQ(x, y) -> rv
+    rv = this._createTempVarAndAssign('(' + x + ' == ' + y + ')')
+  endmethod
+
+  method _compareNEQ(x, y) -> rv
+    rv = this._createTempVarAndAssign('(' + x + ' != ' + y + ')')
+  endmethod
+
+  method _compareLT(x, y) -> rv
+    rv = this._createTempVarAndAssign('(' + x + ' < ' + y + ')')
+  endmethod
+
+  method _compareLE(x, y) -> rv
+    rv = this._createTempVarAndAssign('(' + x + ' <= ' + y + ')')
+  endmethod
+
+  method _compareGT(x, y) -> rv
+    rv = this._createTempVarAndAssign('(' + x + ' > ' + y + ')')
+  endmethod
+
+  method _compareGE(x, y) -> rv
+    rv = this._createTempVarAndAssign('(' + x + ' >= ' + y + ')')
+  endmethod
+
+#  method _boolAnd(x, y) -> rv
+#  endmethod
+
+#  method _boolOr(x, y) -> rv
+#  endmethod
+
+  method _loadVariable(name) -> rv
+    symbolTable = this.symbolTable
+    info        = symbolTable.lookup(name)
+
+    if name is 'this'
+      rv = '__mold_this'
+    else
+      rv = name
+    endif
+  endmethod
+
+  method _declareVariable(name)
+    symbolTable = this.symbolTable
+    symbolTable.insertLocal(name)
+    this._emitCode('Variant ' + name + ';')
+  endmethod
+
+  method _declareAndAssign(name, value)
+    symbolTable = this.symbolTable
+    symbolTable.insertLocal(name)
+    this._emitCode('Variant ' + name + ' = ' + str(value) + ';')
+  endmethod
+
+  method _assign(name, value)
+    this._emitCode(name + ' = ' + str(value) + ';')
+  endmethod
+
+  method _buildFunctionCProto(name, params, paramsCnt) -> proto
+    # Build up function proto.
+    proto = 'Variant ' + name + '('
+    sep   = ''
+
+    for idx in 0 .. paramsCnt
+      paramName = params[idx]
+      if paramName is 'this'
+        paramName = '__mold_this'
+      endif
+
+      proto = proto + sep + 'Variant ' + paramName
+      sep   = ', '
+    endfor
+
+    proto = proto + ')'
+  endmethod
+
+  method _emitFunctionBody(funcName, funcProto)
+    symbolTable = this.symbolTable
+    params      = funcProto['params']
+    paramsCnt   = funcProto['paramsCnt']
+    children    = funcProto['children']
+    childrenCnt = funcProto['childrenCnt']
+    codeAst     = children[0]
+    rvName      = funcProto['rv']
+
+    this._emitCode(this._buildFunctionCProto(funcName, params, paramsCnt))
+
+    symbolTable.enterScope()
+    this._enterBlock()
+
+      deepIdx = symbolTable.getDeep()
+
+      if deepIdx > 1
+        this._error('nested functions are not supported yet')
+      endif
+
+      # DEBUG ONLY
+      # this._emitCode('fprintf(stderr, "-> ' + funcName + '()\n");')
+
+      # Translate function code.
+      # Declare variable to store return value.
+      # FIXME: Dirty hack to detect unset return value.
+      this._emitComment('Init return value')
+      this._declareAndAssign('_rv', 'Variant(-1)')
+
+      if typeof(rvName) isnt 'undefined'
+        this._declareAndAssign(rvName, 'Variant(-1)')
+      endif
+
+      # Insert call parameters to symbol table.
+      for idx in 0 .. paramsCnt
+        # Insert parameter to local symbol table.
+        # TODO: More elegant way.
+        paramName = params[idx]
+        if paramName is 'this'
+          symbolTable.insertParam('__mold_this', idx)
+        endif
+        symbolTable.insertParam(paramName, idx)
+      endfor
+
+      # Declare all used variables at the top of function.
+      this._emitComment('Variable declarations')
+      this._declareAllUsedVariables(codeAst)
+      modifiedVars = codeAst['modifiedVars']
+
+      # Translate code.
+      this._emitComment('Code')
+      codeNodes    = codeAst['children']
+      codeNodesCnt = codeAst['childrenCnt']
+
+      for idx in 0 .. codeNodesCnt
+        this._executeNode(codeNodes[idx])
+      endfor
+
+      # Set return value if any.
+      if typeof(rvName) isnt 'undefined'
+        this._emitComment('Set return value')
+        this._assign('_rv', rvName)
+
+        if (typeof(modifiedVars) is 'undefined') or (modifiedVars[rvName] isnt true)
+          # Return value is not set in most outer block.
+          # Add retval guard.
+          # FIXME: Dirty hack to detect unset return value.
+          unsetRvMsg = "WARNING! Unset return variable '" + rvName + "' in '" + funcName + "' function."
+
+          this._emitCode('if(_rv.type_ == -1)')
+          this._emitCode('{')
+          this._emitCode('  fprintf(stderr, "' + unsetRvMsg + '\n");')
+          this._emitCode('  _rv.type_ = 0;')
+          this._emitCode('}')
+        endif
+      endif
+
+      # DEBUG ONLY
+      # this._emitCode('fprintf(stderr, "<- ' + funcName + '()\n");')
+
+      # We always return internally created _rv even if it's
+      # really not used.
+      this._emitCode('return _rv;')
+
+    this._leaveBlock()
+    symbolTable.leaveScope()
+  endmethod
+
+  method _call(proto, params, paramsCnt) -> rv
+    paramsList = ''
+    sep        = ''
+
+    for idx in 0 .. paramsCnt
+      paramsList = paramsList + sep + params[idx]
+      sep        = ', '
+    endfor
+
+    name = proto['fullName']
+    if typeof(name) is 'undefined'
+      name = proto['name']
+    endif
+
+    rv = this._createTempVarAndAssign(name + '(' + paramsList + ')')
+  endmethod
+
+  method _invokeMethod(methodName, params, paramsCnt) -> rv
+    rv = this._createTempVar()
+
+    this._emitComment('invoke method ' + methodName)
+
+    # Build function proto.
+    cproto      = '(Variant (*)('
+    paramsList  = ''
+    sep         = ''
+
+    for idx in 0 .. paramsCnt
+      # Evaluate next parameter.
+      cproto     = cproto + sep + 'Variant '
+      paramsList = paramsList + sep + params[idx]
+      sep        = ', '
+    endfor
+
+    cproto = cproto + '))'
+
+    # Get class name from this pointer at runtime.
+    thiz           = params[0]
+    className      = thiz + '.getClassName().toStdString().c_str()'
+    methodFullName = 'string("__") + ' + className + ' + "_' + methodName + '$' + str(paramsCnt) + '"'
+    methodPtr      = this._createTempVar()
+    this._emitCode('void *' + methodPtr + ' = __mold_vtable[' + methodFullName + '];')
+
+    this._emitCode('if (' + methodPtr + ' == NULL)')
+      this._enterBlock()
+      this._emitCode('fprintf(stderr, "error: class ' + "'%s' has no method '%s'" + '\n", ' + className + ' ,"' + methodName + '");')
+      this._emitCode('exit(-1);')
+      this._leaveBlock()
+
+    # Build and emit call code.
+    this._emitCode('Variant ' + rv + ' = (' + cproto + methodPtr + ')(' + paramsList + ');')
+  endmethod
+
+  method _callPrint(params, paramsCnt)
+    paramsList  = ''
+    sep         = ''
+
+    for idx in 0 .. paramsCnt
+      paramsList = paramsList + sep + '&' + params[idx]
+      sep        = ', '
+    endfor
+
+    this._emitCode('Variant::vaprint(stdout, 0, ' + str(paramsCnt) + ', ' + paramsList + ');')
+  endmethod
+
+  method _typeof(value) -> rv
+    rv = this._createTempVarAndAssign('Variant::createString(' + value + '.getTypeName())')
+  endmethod
+
+  method _loadFromIndex(box, idx) -> rv
+    rv = this._createTempVarAndAssign(box + '.access(' + idx + ')')
+  endmethod
+
+  method _storeAtIndex(box, idx, value)
+    this._emitCode(box + '.access(' + str(idx) + ') = ' + value + ';')
+  endmethod
+
+  method _createObject(classProto) -> rv
+    name     = classProto['name']
+    baseName = classProto['baseName']
+
+    if typeof(baseName) is 'undefined'
+      rv = this._createTempVarAndAssign('Variant::createObject("' + name + '")')
+    else
+      rv = this._createTempVarAndAssign('Variant::createObject("' + name + '", "' + baseName + '")')
+    endif
+  endmethod
+
+  method _evaluateNodeLazyBoolAnd(leftAst, rightAst) -> rv
+    rv   = this._createTempVarAndAssign('Variant::createBoolean(0)')
+    lval = this._evaluateNode(leftAst)
+
+    this._emitCode('if (' + lval + '.isTrue())')
+      # Evaluate right node only if left is true.
+      this._enterBlock()
+      this._assign(rv, this._evaluateNode(rightAst))
+      this._leaveBlock()
+  endmethod
+
+  method _evaluateNodeLazyBoolOr(leftAst, rightAst) -> rv
+    rv   = this._createTempVarAndAssign('Variant::createBoolean(1)')
+    lval = this._evaluateNode(leftAst)
+
+    this._emitCode('if (' + lval + '.isFalse())')
+      # Evaluate right node only if left is false.
+      this._enterBlock()
+      this._assign(rv, this._evaluateNode(rightAst))
+      this._leaveBlock()
+  endmethod
+
+  method _executeNodeFor(idx, valueStart, valueEnd, valueStep, bodyAst)
+    # for x in startIdx .. endIdx
+    # endfor
+    #
+    # for x in startIdx .. endIdx step y
+    # endfor
+
+    symbolTable = this.symbolTable
+    if symbolTable.isset(idx) is false
+      symbolTable.insertLocal(idx)
+    endif
+
+    this._emitCode('for (Variant ' + idx + ' = ' + valueStart + '; (' + idx + ' < ' + valueEnd + ').isTrue(); ' + idx + ' = ' + idx + ' + ' + valueStep + ')')
+    this._enterBlock()
+      this._executeNode(bodyAst)
+    this._leaveBlock()
+  endmethod
+
+  method _executeNodeWhile(condAst, bodyAst)
+    # while(1)
+    # {
+    #   if (!cond) break;
+    #   body()
+    # }
+
+    cond = this._createTempVarAndAssign('Variant::createBoolean(1)')
+
+    this._emitCode('while (1)')
+    this._enterBlock()
+      this._assign(cond, this._evaluateNode(condAst))
+      this._emitCode('if (!' + cond + '.isTrue()) break;')
+      this._executeNode(bodyAst)
+    this._leaveBlock()
+  endmethod
+
+  method _executeNodeIf(cond, codeIfTrue, codeIfFalse)
+    # if (cond)
+    #   _codeIfTrue()
+    # else
+    #   _codeIfFalse()
+    # endif
+
+    this._emitCode('if (' + cond + '.isTrue())')
+      this._enterBlock()
+      this._executeNode(codeIfTrue)
+      this._leaveBlock()
+
+      if typeof(codeIfFalse) isnt 'undefined'
+        this._emitCode('else')
+        this._enterBlock()
+        this._executeNode(codeIfFalse)
+        this._leaveBlock()
+      endif
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                                Public API
+  # ----------------------------------------------------------------------------
+
+  method run(ast)
+    # Resolve imports recursively.
+    this._resolveImports(ast)
+
+    # Emit hard-coded headers.
+    this._emitCode('#include <Tegenaria/MoldUtils.h>')
+    this._emitCode('Variant __mold_argv;')
+    this._emitCode('Variant __mold_argc;')
+    this._emitCode('std::map<string, void *> __mold_vtable;')
+
+    astAnalyzer      = this.astAnalyzer
+    symbolTable      = this.symbolTable
+    globals          = astAnalyzer.collectGlobals(ast)
+    vars             = globals['vars']
+    varsCnt          = globals['varsCnt']
+    functionNodes    = globals['functionNodes']
+    functionNodesCnt = globals['functionNodesCnt']
+    classNodes       = globals['classNodes']
+    classNodesCnt    = globals['classNodesCnt']
+
+    # Declare global vars.
+    this._emitCommentHead('Global variables')
+    for idx in 0 .. varsCnt
+      var = vars[idx]
+      this._declareVariableIfNotSet(var)
+    endfor
+
+    # Declare functions.
+    this._emitCommentHead('Forward declarations: functions')
+    for idx in 0 .. functionNodesCnt
+      proto     = functionNodes[idx]
+      name      = proto['name']
+      params    = proto['params']
+      paramsCnt = proto['paramsCnt']
+      cproto    = this._buildFunctionCProto(name, params, paramsCnt)
+
+      this._emitCode(cproto + ';')
+      symbolTable.insertFunction(name, proto)
+    endfor
+
+    # Declare classes.
+    this._emitCommentHead('Forward declarations: classes')
+    for idx in 0 .. classNodesCnt
+      classNode  = classNodes[idx]
+      classProto = astAnalyzer.analyzeClassNode(classNode)
+      className  = classProto['name']
+      vtable     = classProto['vtable']
+      methods    = classProto['methodsAsFlatArray']
+      methodsCnt = classProto['methodsAsFlatArrayCnt']
+
+      symbolTable.insertClass(className, classProto)
+
+      this._emitComment('class ' + className)
+
+      for jdx in 0 .. methodsCnt
+        methodName      = methods[jdx]
+        methodProto     = vtable[methodName]
+        methodName      = methodProto['name']
+        methodFullName  = methodProto['fullName']
+        methodParams    = methodProto['params']
+        methodParamsCnt = methodProto['paramsCnt']
+
+        cproto = this._buildFunctionCProto(methodFullName, methodParams, methodParamsCnt)
+        this._emitCode(cproto + ';')
+      endfor
+    endfor
+
+    # Emit function bodies.
+    this._emitCommentHead('Function bodies')
+    for idx in 0 .. functionNodesCnt
+      proto = functionNodes[idx]
+      name  = proto['name']
+      this._emitFunctionBody(name, proto)
+    endfor
+
+    # Emit method bodies.
+    this._emitCommentHead('Method bodies')
+    for idx in 0 .. classNodesCnt
+      classNode  = classNodes[idx]
+      className  = classNode['name']
+      classProto = this._getClassProto(className)
+      vtable     = classProto['vtable']
+      methods    = classProto['methodsAsFlatArray']
+      methodsCnt = classProto['methodsAsFlatArrayCnt']
+
+      this.currentClassProto = classProto
+
+      this._emitComment('class ' + className)
+
+      for jdx in 0 .. methodsCnt
+        methodName      = methods[jdx]
+        methodProto     = vtable[methodName]
+        methodParamsCnt = methodProto['paramsCnt']
+        methodFullName  = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
+
+        this.currentFunctionProto = methodProto
+        this._emitFunctionBody(methodFullName, methodProto)
+        this.currentFunctionProto = false
+
+        # TODO: Optimize it.
+        this.vtable[methodFullName]         = methodFullName
+        this.vtableKeys[this.vtableKeysCnt] = methodFullName
+        this.vtableKeysCnt                  = this.vtableKeysCnt + 1
+      endfor
+
+      this.currentClassProto = false
+    endfor
+
+    # Entry point - we begin C main() function here.
+    this._emitCommentHead('Entry point')
+    this._emitCode('int main(int argc, char **argv)')
+    this._enterBlock()
+
+      # Convert C argv to Variant based.
+      this._emitComment('Init command line arguments')
+      this._emitCode('__mold_argc = Variant::createInteger(argc);')
+      this._emitCode('__mold_argv = Variant::createArray();')
+
+      this._emitCode('for (int i = 0; argv[i]; i++)')
+      this._emitCode('{')
+      this._emitCode('  __mold_argv.arrayPush(Variant::createString(argv[i]));')
+      this._emitCode('}')
+      this._emitCode('')
+
+      # TODO: Optimize it.
+      this._emitComment('Fill up vtable')
+      for idx in 0 .. this.vtableKeysCnt
+        methodName = this.vtableKeys[idx]
+        this._emitCode('__mold_vtable["' + methodName + '"] = (void *)' + this.vtable[methodName] + ';')
+      endfor
+      this._emitCode('')
+
+      # Translate main code behind entry point.
+      # TODO: Use super.run() if ready.
+      this._executeNode(ast)
+
+    this._leaveBlock()
+  endmethod
+endclass

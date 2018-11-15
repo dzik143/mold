@@ -1,0 +1,409 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'ASTTranslator.mold'
+import 'ASTAnalyzer.mold'
+
+class ASTInterpreter extends ASTTranslator
+
+  # ----------------------------------------------------------------------------
+  #                                Init code
+  # ----------------------------------------------------------------------------
+
+  method constructor()
+    super()
+    this.vars      = [[]]
+    this.callStack = []
+  endmethod
+
+  method _loadUndefined() -> rv
+    # TODO: Implement it in more elegant.
+    x  = []
+    rv = x[0] # Undefined here
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                         Implement built-in functions
+  # ----------------------------------------------------------------------------
+
+  method _callLen(x) -> rv
+    rv = len(x)
+  endmethod
+
+  method _callStr(x) -> rv
+    if typeof(x) is 'array'
+      itemsCnt = len(x)
+      rv  = '['
+      sep = ''
+      for idx in 0..itemsCnt
+        val = x[idx]
+
+        if typeof(val) is 'string'
+          rv = rv + sep + "'" + val + "'"
+        else
+          rv = rv + sep + this._callStr(val)
+        endif
+
+        sep = ', '
+      endfor
+      rv = rv + ']'
+
+    else
+      rv = str(x)
+    endif
+  endmethod
+
+#  method _callStrEscape(x) -> rv
+#    rv = strescape(x)
+#  endmethod
+
+  method _callExit()
+    exit()
+  endmethod
+
+  method _callMoldWarning(msg)
+    __mold_warning(msg)
+  endmethod
+
+  method _callDie(msg)
+    die(msg)
+  endmethod
+
+  method _callMoldCreateObject(classProto) -> rv
+    rv = __mold_createObject(classProto)
+  endmethod
+
+  method _callMoldGetClassName(thiz) -> rv
+    rv = __mold_getClassName(thiz)
+  endmethod
+
+  method _callMoldParseFile(filePath) -> rv
+    rv = __mold_parseFile(filePath)
+  endmethod
+
+  method _loadArgsVector() -> rv
+    rv = argv
+  endmethod
+
+  method _loadArgsCount() -> rv
+    rv = argc
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                     Implement ASTTranslator interface
+  # ----------------------------------------------------------------------------
+
+  method _neg(value) -> rv
+    rv = -value
+  endmethod
+
+  method _add(x, y) -> rv
+    rv = x + y
+  endmethod
+
+  method _sub(x, y) -> rv
+    rv = x - y
+  endmethod
+
+  method _mul(x, y) -> rv
+    rv = x * y
+  endmethod
+
+  method _div(x, y) -> rv
+    rv = x / y
+  endmethod
+
+  method _idiv(x, y) -> rv
+    rv = x // y
+  endmethod
+
+  method _loadArray() -> rv
+    rv = []
+  endmethod
+
+  method _loadMap() -> rv
+    rv = {}
+  endmethod
+
+  method _loadImm(value) -> rv
+    rv = value
+  endmethod
+
+  method _compareEQ(x, y) -> rv
+    rv = x is y
+  endmethod
+
+  method _compareNEQ(x, y) -> rv
+    rv = x isnt y
+  endmethod
+
+  method _compareLT(x, y) -> rv
+    rv = x < y
+  endmethod
+
+  method _compareLE(x, y) -> rv
+    rv = x <= y
+  endmethod
+
+  method _compareGT(x, y) -> rv
+    rv = x > y
+  endmethod
+
+  method _compareGE(x, y) -> rv
+    rv = x >= y
+  endmethod
+
+  method _boolAnd(x, y) -> rv
+    rv = (x is true) and (y is true)
+  endmethod
+
+  method _boolOr(x, y) -> rv
+    rv = (x is true) or (y is true)
+  endmethod
+
+  method _loadVariable(name) -> rv
+    global SYMBOL_KIND_VAR_LOCAL
+    global SYMBOL_KIND_VAR_GLOBAL
+    global SYMBOL_KIND_VAR_PARAM
+    global SYMBOL_KIND_VAR_RETVAL
+
+    symbolTable = this.symbolTable
+    info        = symbolTable.lookup(name)
+    deepIdx     = symbolTable.getDeep()
+    kind        = info['kind']
+    id          = info['id']
+
+    if kind is SYMBOL_KIND_VAR_LOCAL
+      # Local variable
+      rv = this.vars[deepIdx][id]
+
+    elif kind is SYMBOL_KIND_VAR_GLOBAL
+      # Global variable
+      rv = this.vars[0][id]
+
+    elif kind is SYMBOL_KIND_VAR_PARAM
+      # One of call parameters.
+      rv = this.vars[deepIdx][id]
+
+    elif kind is SYMBOL_KIND_VAR_RETVAL
+      # Return value of current function.
+      rv = this.vars[deepIdx][id]
+
+    else
+      this._error("unexpected symbol kind '" + name + "' (" + str(kind) + ")")
+    endif
+  endmethod
+
+  method _declareVariable(name)
+    symbolTable = this.symbolTable
+    symbolTable.insertLocal(name)
+  endmethod
+
+  method _assign(name, value)
+    global SYMBOL_KIND_VAR_LOCAL
+    global SYMBOL_KIND_VAR_GLOBAL
+    global SYMBOL_KIND_VAR_PARAM
+    global SYMBOL_KIND_VAR_RETVAL
+
+    symbolTable = this.symbolTable
+    deepIdx     = symbolTable.getDeep()
+    info        = symbolTable.lookup(name)
+    kind        = info['kind']
+    id          = info['id']
+
+    if kind is SYMBOL_KIND_VAR_LOCAL
+      # Local variable
+      this.vars[deepIdx][id] = value
+
+    elif kind is SYMBOL_KIND_VAR_GLOBAL
+      # Global variable
+      this.vars[0][id] = value
+
+    elif kind is SYMBOL_KIND_VAR_PARAM
+      # One of call parameters.
+      this.vars[deepIdx][id] = value
+
+    elif kind is SYMBOL_KIND_VAR_RETVAL
+      # Return value of current function.
+      this.vars[deepIdx][id] = value
+
+    else
+      this._error("unexpected symbol kind '" + name + "' (" + str(kind) + ")")
+    endif
+  endmethod
+
+  method _call(proto, params, paramsCnt) -> rv
+    name          = proto['name']
+    paramNames    = proto['params']
+    paramNamesCnt = proto['paramsCnt']
+    codeNodes     = proto['children']
+    codeNodesCnt  = proto['childrenCnt']
+    rvName        = proto['rv']
+    symbolTable   = this.symbolTable
+
+    symbolTable.enterScope()
+
+      # Clean up local vars.
+      deepIdx            = symbolTable.getDeep()
+      this.vars[deepIdx] = []
+
+      # Save proto of current running function/method.
+      # We use it to get superMethod().
+      this.callStack[deepIdx] = proto
+
+      # Init rv if any to detect is it set at exit.
+      # TODO: Better solution here.
+      if (typeof(rvName) isnt 'undefined')
+        this._declareAndAssign(rvName, '__mold_undefined_rv__')
+      endif
+
+      # Inject parameter values into function context.
+      # TODO: Optimize it.
+      for idx in 0 .. paramsCnt
+        this._declareAndAssign(paramNames[idx], params[idx])
+      endfor
+
+      # Execute code.
+      for idx in 0 .. codeNodesCnt
+        this._executeNode(codeNodes[idx])
+      endfor
+
+      # Check is return value set at exit if any.
+      # TODO: Better handling here?
+      if (typeof(rvName) is 'undefined')
+        rv = this._loadUndefined()
+      else
+        rv = this._loadVariable(rvName)
+        if (rv is '__mold_undefined_rv__')
+          __mold_warning("WARNING! Unset return variable 'rv' in '" + name + "' function.")
+          rv = this._loadUndefined()
+        endif
+      endif
+
+      # TODO: Use null.
+      this.callStack[deepIdx] = false
+
+    symbolTable.leaveScope()
+  endmethod
+
+  method _evaluateNodeInvokeMethod(ast) -> rv
+    children    = ast['children']
+    childrenCnt = ast['childrenCnt']
+    methodName  = ast['value']
+
+    # Lookup method proto.
+    thiz        = this._evaluateNode(children[0])
+    className   = __mold_getClassName(thiz)
+    methodProto = this._getMethodProto(className, methodName, childrenCnt)
+
+    # Evaluate parameters.
+    params    = [thiz]
+    paramsCnt = childrenCnt
+    for idx in 1 .. childrenCnt
+      params[idx] = this._evaluateNode(children[idx])
+    endfor
+
+    rv = this._call(methodProto, params, paramsCnt)
+  endmethod
+
+  method _callPrint(params, paramsCnt)
+    # Built-in print function.
+    msg = ''
+    sep = ''
+
+    # Build message one-by-one.
+    for idx in 0 .. paramsCnt
+      msg = msg + sep + this._callStr(params[idx])
+      sep = ' '
+    endfor
+
+    # Put result to stdout.
+    print msg
+  endmethod
+
+  method _callSuper(params, paramsCnt)
+    symbolTable  = this.symbolTable
+    deepIdx      = symbolTable.getDeep()
+    currentProto = this.callStack[deepIdx]
+
+    if (typeof(currentProto) is 'undefined') or (currentProto['name'] isnt 'constructor')
+      this._error('super called outside a constructor')
+    else
+      baseProto = currentProto['baseMethod']
+      if typeof(baseProto) is 'undefined'
+        this._error('base class has no constructor declared')
+
+      else
+        # TODO: Optimize it.
+        thiz      = this._loadVariable('this')
+        newParams = [thiz]
+        for idx in 0 .. paramsCnt
+          newParams[idx + 1] = params[idx]
+        endfor
+
+        this._call(baseProto, newParams, paramsCnt + 1)
+      endif
+    endif
+  endmethod
+
+  method _typeof(value) -> rv
+    rv = typeof(value)
+  endmethod
+
+  method _loadFromIndex(box, idx) -> rv
+    rv = box[idx]
+  endmethod
+
+  method _storeAtIndex(box, idx, value)
+    box[idx] = value
+  endmethod
+
+  method _createObject(classProto) -> rv
+    rv = __mold_createObject(classProto)
+  endmethod
+
+  method _evaluateNodeLazyBoolAnd(leftAst, rightAst) -> rv
+    # FIXME: Why 'is true' needed here?
+    rv = (this._evaluateNode(leftAst) is true) and (this._evaluateNode(rightAst) is true)
+  endmethod
+
+  method _evaluateNodeLazyBoolOr(leftAst, rightAst) -> rv
+    # FIXME: Why 'is true' needed here?
+    rv = (this._evaluateNode(leftAst) is true) or (this._evaluateNode(rightAst) is true)
+  endmethod
+
+  method _executeNodeFor(iteratorName, valueStart, valueEnd, valueStep, bodyAst)
+    this._declareVariableIfNotSet(iteratorName)
+    for idx in valueStart .. valueEnd step valueStep
+      this._assign(iteratorName, idx)
+      this._executeNode(bodyAst)
+    endfor
+  endmethod
+
+  method _executeNodeWhile(condAst, bodyAst)
+    # while (cond)
+    # endwhile
+    while(this._evaluateNode(condAst) is true)
+      this._executeNode(bodyAst)
+    endwhile
+  endmethod
+
+  method _executeNodeIf(cond, codeIfTrue, codeIfFalse)
+    if (cond is true)
+      this._executeNode(codeIfTrue)
+    elif typeof(codeIfFalse) isnt 'undefined'
+      this._executeNode(codeIfFalse)
+    endif
+  endmethod
+endclass

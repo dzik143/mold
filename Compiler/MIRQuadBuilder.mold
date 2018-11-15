@@ -1,0 +1,501 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'PipeAbstract.mold'
+import 'MIR.mold'
+import 'Stack.mold'
+
+class MIRQuadBuilder extends PipeAbstract
+  method constructor()
+    super()
+    this.lastOpcode   = 'nop'
+    this.consts       = []
+    this.constsCnt    = 0
+    this.tempVarCnt   = 0
+    this.stack        = new Stack()
+    this.resultCode   = []
+    this.tempsCnt     = -1
+    this.reuseTempsEnabled = true
+  endmethod
+
+  method createConst(value) -> rv
+    rv = 'const' + str(this.constsCnt)
+    this.consts[this.constsCnt] = value
+    this.constsCnt = this.constsCnt + 1
+  endmethod
+
+  method createTempVar() -> rv
+    if this.reuseTempsEnabled is true
+      # Temp variables are resuable.
+      # Search for first free one.
+      # TODO: Optimize it.
+      stackData    = this.stack.data
+      stackDataCnt = this.stack.size
+      busy         = true
+
+      this.tempVarCnt = 0
+
+      while busy is true
+        rv   = '.tmp' + str(this.tempVarCnt)
+        idx  = 0
+        busy = false
+
+        for idx in 0 .. stackDataCnt
+          if stackData[idx] is rv
+            busy = true
+          endif
+        endfor
+
+        if this.tempVarCnt > this.tempsCnt
+          this.tempsCnt = this.tempVarCnt
+        endif
+
+        this.tempVarCnt = this.tempVarCnt + 1
+      endwhile
+
+    else
+      # Emit SSA temps. Each temp can be emitted only one time.
+      rv = '.tmp' + str(this.tempVarCnt)
+      this.tempVarCnt = this.tempVarCnt + 1
+      this.tempsCnt   = this.tempsCnt + 1
+    endif
+  endmethod
+
+  method emitZeroArgsOpcode(opcode)
+    newQuad = [opcode]
+    this._emitOneItem(newQuad)
+  endmethod
+
+  method emitTargetOnlyOpcode(opcode, rv)
+    newQuad = [opcode, rv]
+    this._emitOneItem(newQuad)
+  endmethod
+
+  method emitOneArgOpcode(opcode, rv, x)
+    newQuad = [opcode, rv, x]
+    this._emitOneItem(newQuad)
+  endmethod
+
+  method emitTwoArgsOpcode(opcode, rv, x, y)
+    newQuad = [opcode, rv, x, y]
+    this._emitOneItem(newQuad)
+  endmethod
+
+  method emitComment(comment)
+    this.emitTargetOnlyOpcode('comment', comment)
+  endmethod
+
+  method emitLabel(label)
+    this.emitTargetOnlyOpcode('label', label)
+  endmethod
+
+  method emitMoveVariantOpcode(dst, src)
+    this.emitOneArgOpcode('move_variant', dst, src)
+  endmethod
+
+  method popOneArgAndEmitOpcode(opcode)
+    stack = this.stack
+    rv    = this.createTempVar()
+    x     = stack.pop()
+    stack.push(rv)
+    this.emitOneArgOpcode(opcode, rv, x)
+  endmethod
+
+  method popTwoArgsAndEmitOpcode(opcode)
+    stack = this.stack
+    rv    = this.createTempVar()
+    y     = stack.pop()
+    x     = stack.pop()
+    stack.push(rv)
+    this.emitTwoArgsOpcode(opcode, rv, x, y)
+  endmethod
+
+  method popParametersBeforeCall(paramsCnt) -> params
+    params = []
+    stack  = this.stack
+
+    for idx in 0 .. paramsCnt
+      # TODO: Simplify it after bug fix.
+      item = stack.peekN(paramsCnt - idx)
+      params[idx] = item
+    endfor
+
+    stack.eatN(paramsCnt)
+  endmethod
+
+  method run(codeObj)
+    global MIR_OPCODE_NOP, MIR_OPCODE_NEG, MIR_OPCODE_ADD, MIR_OPCODE_SUB
+    global MIR_OPCODE_MUL, MIR_OPCODE_DIV, MIR_OPCODE_IDIV, MIR_OPCODE_LOAD_IMM
+    global MIR_OPCODE_LOAD_ARRAY, MIR_OPCODE_LOAD_MAP, MIR_OPCODE_CMP_EQ
+    global MIR_OPCODE_CMP_NEQ, MIR_OPCODE_CMP_GT, MIR_OPCODE_CMP_GE
+    global MIR_OPCODE_CMP_LT, MIR_OPCODE_CMP_LE, MIR_OPCODE_LOAD_LOCAL
+    global MIR_OPCODE_LOAD_PARAMN, MIR_OPCODE_LOAD_GLOBAL, MIR_OPCODE_LOAD_RETVAL
+    global MIR_OPCODE_LOAD_INDEX, MIR_OPCODE_STORE_LOCAL, MIR_OPCODE_STORE_PARAMN
+    global MIR_OPCODE_STORE_GLOBAL, MIR_OPCODE_STORE_RETVAL, MIR_OPCODE_STORE_INDEX
+    global MIR_OPCODE_DROP, MIR_OPCODE_DROP_N, MIR_OPCODE_DUP, MIR_OPCODE_OVER
+    global MIR_OPCODE_TYPEOF, MIR_OPCODE_CREATE_OBJECT, MIR_OPCODE_GET_CLASSNAME
+    global MIR_OPCODE_VCALL, MIR_OPCODE_JMP, MIR_OPCODE_JMP_IF_TRUE
+    global MIR_OPCODE_JMP_IF_FALSE, MIR_OPCODE_CALL, MIR_OPCODE_RET
+    global MIR_OPCODE_PRINT, MIR_OPCODE_INIT_FRAME, MIR_OPCODE_RETVAL_GUARD
+    global MIR_OPCODE_CREATE_OBJECT, MIR_OPCODE_HALT, MIR_OPCODE_CONV2STR
+    global MIR_OPCODE_LOAD_MOLD_SOURCE, MIR_OPCODE_LOAD_ARGC, MIR_OPCODE_LOAD_ARGV
+    global MIR_OPCODE_GETLEN, MIR_OPCODE_MOVE_BACK, MIR_OPCODE_PRINT_ERROR
+    global MIR_OPCODE_PRINT_STDOUT
+
+    if this.outputObject is false
+      die('error: output object not set')
+    endif
+
+    #
+    # Fetch code and code metas.
+    #
+
+    code           = codeObj.code
+    codeCnt        = codeObj.codeCnt
+    labels         = codeObj.targetIps
+    labelsCnt      = codeObj.targetIpsCnt
+    globalsCnt     = codeObj.globalMax + 1
+    comments       = codeObj.comments
+    commentsCnt    = codeObj.commentsCnt
+    procedures     = codeObj.procedures
+    proceduresCnt  = codeObj.proceduresCnt
+    classListCnt   = codeObj.classListCnt
+    classList      = codeObj.classList
+    classMap       = codeObj.classMap
+    methodsMap     = codeObj.methodsMap
+    methodsList    = codeObj.methodsList
+    methodsListCnt = codeObj.methodsListCnt
+
+    commentIdx = 0
+    labelIdx   = 0
+    ip         = 0
+
+    #
+    # Translate code section.
+    #
+
+    for procIdx in 0 .. proceduresCnt
+      # Fetch procedure meta.
+      procMeta  = procedures[procIdx]
+
+      if procMeta['external'] isnt true
+        startAddr       = procMeta['startAddr']
+        endAddr         = procMeta['endAddr']
+        paramsCnt       = procMeta['paramsCnt']
+        localsCnt       = procMeta['localsCnt']
+        currentProcName = procMeta['name']
+        currentProcRv   = procMeta['rv']
+
+        stack = new Stack()
+
+        this.stack      = stack
+        this.tempsCnt   = -1
+        this.tempVarCnt = 0
+
+        # Emit comments just before procedure if any.
+        while (commentIdx < commentsCnt) and (comments[commentIdx][0] is startAddr)
+          this.emitComment(comments[commentIdx][1])
+          commentIdx = commentIdx + 1
+        endwhile
+
+        # Begin procedure.
+        paramsList = ''
+        sep        = ''
+
+        for idx in 0 .. paramsCnt
+          paramsList = paramsList + sep + 'param' + str(idx)
+          sep        = ', '
+        endfor
+
+        this.emitTargetOnlyOpcode('proc', procMeta)
+
+        # Translate procedure code.
+        for ip in startAddr .. endAddr
+
+          # Fetch instruction
+          item   = code[ip]
+          opcode = item[0]
+
+          arg1 = str(item[1])
+          arg2 = str(item[2])
+          arg  = arg1
+
+          # print item
+
+          # Emit comments if any.
+          while (commentIdx < commentsCnt) and (comments[commentIdx][0] is ip)
+            this.emitComment(comments[commentIdx][1])
+            commentIdx = commentIdx + 1
+          endwhile
+
+          # Emit label if any.
+          if (labelIdx < labelsCnt) and (labels[labelIdx] is ip)
+            newLabel = 'l' + str(labels[labelIdx])
+            this.emitLabel(newLabel)
+          endif
+
+          while (labelIdx < labelsCnt) and (labels[labelIdx] is ip)
+            labelIdx = labelIdx + 1
+          endwhile
+
+          # Dispatch opcode.
+          if opcode is MIR_OPCODE_NOP
+            this.emitZeroArgsOpcode('nop')
+
+          elif opcode is MIR_OPCODE_LOAD_IMM
+            value = item[1]
+            type  = typeof(value)
+
+            # New implementation.
+            if type is 'integer'
+              stack.push(item[1])
+              this.popOneArgAndEmitOpcode('conv_int64_to_variant')
+
+            elif type is 'float'
+              stack.push(item[1])
+              this.popOneArgAndEmitOpcode('conv_float64_to_variant')
+
+            elif type is 'boolean'
+              stack.push(item[1])
+              this.popOneArgAndEmitOpcode('conv_bool64_to_variant')
+
+            elif (type is 'string') or (type is 'array')
+              newConst = this.createConst(item[1])
+              stack.push(newConst)
+
+            else
+              die('error: unhandled imm type: ' + str(type))
+            endif
+
+          elif opcode is MIR_OPCODE_LOAD_ARRAY
+            rv = this.createTempVar()
+            this.emitTargetOnlyOpcode('create_array_variant', rv)
+            stack.push(rv)
+
+          elif opcode is MIR_OPCODE_LOAD_MAP
+            rv = this.createTempVar()
+            this.emitTargetOnlyOpcode('create_map_variant', rv)
+            stack.push(rv)
+
+          elif opcode is MIR_OPCODE_NEG
+            this.popOneArgAndEmitOpcode('neg_variant')
+
+          elif opcode is MIR_OPCODE_ADD
+            this.popTwoArgsAndEmitOpcode('add_variant')
+
+          elif opcode is MIR_OPCODE_MUL
+            this.popTwoArgsAndEmitOpcode('mul_variant')
+
+          elif opcode is MIR_OPCODE_SUB
+            this.popTwoArgsAndEmitOpcode('sub_variant')
+
+          elif opcode is MIR_OPCODE_DIV
+            this.popTwoArgsAndEmitOpcode('div_variant')
+
+          elif opcode is MIR_OPCODE_IDIV
+            this.popTwoArgsAndEmitOpcode('idiv_variant')
+
+          elif opcode is MIR_OPCODE_CMP_EQ
+            this.popTwoArgsAndEmitOpcode('cmp_eq_variant')
+
+          elif opcode is MIR_OPCODE_CMP_NEQ
+            this.popTwoArgsAndEmitOpcode('cmp_ne_variant')
+
+          elif opcode is MIR_OPCODE_CMP_LT
+            this.popTwoArgsAndEmitOpcode('cmp_lt_variant')
+
+          elif opcode is MIR_OPCODE_CMP_LE
+            this.popTwoArgsAndEmitOpcode('cmp_le_variant')
+
+          elif opcode is MIR_OPCODE_CMP_GT
+            this.popTwoArgsAndEmitOpcode('cmp_gt_variant')
+
+          elif opcode is MIR_OPCODE_CMP_GE
+            this.popTwoArgsAndEmitOpcode('cmp_ge_variant')
+
+          elif opcode is MIR_OPCODE_PRINT
+            paramsCnt = item[1]
+            params    = this.popParametersBeforeCall(paramsCnt)
+
+            this.emitTargetOnlyOpcode('print_array_of_variants_ln', params)
+            stack.push('<print:unused_rv>')
+
+          elif opcode is MIR_OPCODE_PRINT_STDOUT
+            this.emitTargetOnlyOpcode('print_out_variant', stack.pop())
+            stack.push('<print:unused_rv>')
+
+          elif opcode is MIR_OPCODE_PRINT_ERROR
+            this.emitTargetOnlyOpcode('print_err_variant', stack.pop())
+            stack.push('<print:unused_rv>')
+
+          elif opcode is MIR_OPCODE_LOAD_LOCAL
+            stack.push('.loc' + arg)
+
+          elif opcode is MIR_OPCODE_LOAD_INDEX
+            this.popTwoArgsAndEmitOpcode('load_index_variant')
+
+          elif opcode is MIR_OPCODE_LOAD_PARAMN
+            stack.push('.param' + arg)
+
+          elif opcode is MIR_OPCODE_LOAD_GLOBAL
+            stack.push('global' + arg)
+
+          elif opcode is MIR_OPCODE_LOAD_RETVAL
+            stack.push('rv')
+
+          elif opcode is MIR_OPCODE_STORE_LOCAL
+            this.emitMoveVariantOpcode('.loc' + arg, stack.pop())
+
+          elif opcode is MIR_OPCODE_STORE_PARAMN
+            this.emitMoveVariantOpcode('.param' + arg, stack.pop())
+
+          elif opcode is MIR_OPCODE_STORE_GLOBAL
+            this.emitMoveVariantOpcode('global' + arg, stack.pop())
+
+          elif opcode is MIR_OPCODE_STORE_RETVAL
+            this.emitMoveVariantOpcode('rv', stack.pop())
+
+          elif opcode is MIR_OPCODE_STORE_INDEX
+            val = stack.pop()
+            idx = stack.pop()
+            box = stack.pop()
+            this.emitTwoArgsOpcode('store_index_variant', box, idx, val)
+            stack.push(box)
+
+          elif opcode is MIR_OPCODE_JMP
+            this.emitTargetOnlyOpcode('jmp', 'l' + arg)
+
+          elif opcode is MIR_OPCODE_JMP_IF_TRUE
+            val = stack.pop()
+            this.emitOneArgOpcode('jmp_if_true_variant', 'l' + arg, val)
+
+          elif opcode is MIR_OPCODE_JMP_IF_FALSE
+            val = stack.pop()
+            this.emitOneArgOpcode('jmp_if_false_variant', 'l' + arg, val)
+
+          elif opcode is MIR_OPCODE_CALL
+            proto     = item[1]
+            paramsCnt = proto['paramsCnt']
+            rv        = this.createTempVar()
+            params    = this.popParametersBeforeCall(paramsCnt)
+            name      = proto['fullName']
+
+            if typeof(name) is 'undefined'
+              name = proto['name']
+            endif
+
+            this.emitTwoArgsOpcode('call', rv, name, params)
+
+            if proto['isConstructor'] is true
+              # TODO: Handle it in better way.
+              # We need it to avoid eating new result (this pointer)
+              # when constructor called just after.
+              stack.push(params[0])
+            else
+              stack.push(rv)
+            endif
+
+          elif opcode is MIR_OPCODE_INIT_FRAME
+            this.emitTargetOnlyOpcode('init_frame', procMeta)
+
+          elif opcode is MIR_OPCODE_TYPEOF
+            this.popOneArgAndEmitOpcode('typeof_variant')
+
+          elif opcode is MIR_OPCODE_GETLEN
+            this.popOneArgAndEmitOpcode('len_variant')
+
+          elif opcode is MIR_OPCODE_RET
+            this.emitZeroArgsOpcode('ret')
+
+          elif opcode is MIR_OPCODE_MOVE_BACK
+            src = stack.pop()
+            dst = stack.pop()
+            this.emitMoveVariantOpcode(dst, src)
+            stack.push(dst)
+
+          elif opcode is MIR_OPCODE_DROP
+            val = stack.pop()
+
+          elif opcode is MIR_OPCODE_DROP_N
+            stack.eatN(item[1])
+
+          elif opcode is MIR_OPCODE_DUP
+            stack.dup()
+
+          elif opcode is MIR_OPCODE_OVER
+            stack.over()
+
+          elif opcode is MIR_OPCODE_VCALL
+            rv        = this.createTempVar()
+            methodId  = methodsMap[arg1]
+            paramsCnt = item[2]
+
+            if typeof(methodId) is 'undefined'
+              die("error: object has no method '" + arg1 + "'")
+            endif
+
+            params = this.popParametersBeforeCall(paramsCnt)
+            this.emitTwoArgsOpcode('vcall', rv, methodId, params)
+            stack.push(rv)
+
+          elif opcode is MIR_OPCODE_LOAD_MOLD_SOURCE
+            die('error: MIR_OPCODE_LOAD_MOLD_SOURCE is obsolete')
+
+          elif opcode is MIR_OPCODE_LOAD_ARGV
+            stack.push('argv')
+
+          elif opcode is MIR_OPCODE_LOAD_ARGC
+            stack.push('argc')
+
+          elif opcode is MIR_OPCODE_RETVAL_GUARD
+            this.emitZeroArgsOpcode('rv_guard')
+
+          elif opcode is MIR_OPCODE_CREATE_OBJECT
+            if item[1] is false
+              # Dynamic code, adjust class proto at run-time.
+              die('error: missing classProto in MIR_OPCODE_CREATE_OBJECT')
+
+            else
+              # Static code, we got class proto inside MIR opcode.
+              rv         = this.createTempVar()
+              classProto = item[1]
+              className  = classProto['name']
+              this.emitOneArgOpcode('create_object', rv, className)
+              stack.push(rv)
+            endif
+
+          elif opcode is MIR_OPCODE_HALT
+            this.emitZeroArgsOpcode('halt')
+            stack.push('<error:unused_rv>')
+
+          elif opcode is MIR_OPCODE_CONV2STR
+            this.popOneArgAndEmitOpcode('str_variant')
+
+          else
+            die("unknown opcode '" + str(opcode) + "'")
+          endif
+        endfor
+
+        # Update proc metadata.
+        procMeta['tempsCnt'] = this.tempsCnt + 1
+
+        this.emitZeroArgsOpcode('endp')
+      endif
+    endfor
+
+    codeObj.consts    = this.consts
+    codeObj.constsCnt = this.constsCnt
+
+  endmethod
+endclass

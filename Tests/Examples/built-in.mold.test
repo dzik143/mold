@@ -1,0 +1,116 @@
+TEST "Built-in str"
+# TODO: Handle passing array/map to function directly.
+valueArray = [1,2,3]
+valueMap   = {'x':5, 'y':6, 'z':7}
+
+rvInteger = str(1234)
+rvFloat   = str(5.67)
+rvString  = str('text')
+rvTrue    = str(true)
+rvFalse   = str(false)
+rvArray   = str(valueArray)
+rvMap     = str(valueMap)
+
+print 'str(1234)                 :', typeof(rvInteger), rvInteger
+print 'str(5.67)                 :', typeof(rvFloat)  , rvFloat
+print 'str("text")               :', typeof(rvString) , rvString
+print 'str(true)                 :', typeof(rvTrue)   , rvTrue
+print 'str(false)                :', typeof(rvFalse)  , rvFalse
+print 'str([1,2,3]               :', typeof(rvArray)  , rvArray
+print "str({'x':5, 'y':6, 'z':7}):", typeof(rvMap)    , rvMap
+
+EXPECTED_OUTPUT:
+str(1234)                 : string 1234
+str(5.67)                 : string 5.670000
+str("text")               : string text
+str(true)                 : string true
+str(false)                : string false
+str([1,2,3]               : string [array]
+str({'x':5, 'y':6, 'z':7}): string [map]
+-------------------------------------------------------------------------------
+TEST "Built-in C-like strescape (skipped)"
+/*
+# TODO: Handle passing array/map to function directly.
+valueArray = [1,2,3]
+valueMap   = {'x':5, 'y':6, 'z':7}
+
+rvInteger = strescape(1234)
+rvFloat   = strescape(5.67)
+rvString1 = strescape('"double quoatas"')
+rvString2 = strescape("'single quoatas'")
+rvTrue    = strescape(true)
+rvFalse   = strescape(false)
+rvArray   = strescape(valueArray)
+rvMap     = strescape(valueMap)
+
+print 'str(1234)                 :', typeof(rvInteger), rvInteger
+print 'str(5.67)                 :', typeof(rvFloat)  , rvFloat
+print 'str("double quoatas")     :', typeof(rvString1), rvString1
+print "str('single quoatas')     :", typeof(rvString2), rvString2
+print 'str(true)                 :', typeof(rvTrue)   , rvTrue
+print 'str(false)                :', typeof(rvFalse)  , rvFalse
+print 'str([1,2,3]               :', typeof(rvArray)  , rvArray
+print "str({'x':5, 'y':6, 'z':7}):", typeof(rvMap)    , rvMap
+
+
+str(1234)                 : string 1234
+str(5.67)                 : string 5.670000
+str("double quoatas")     : string \"double quoatas\"
+str('single quoatas')     : string 'single quoatas'
+str(true)                 : string true
+str(false)                : string false
+str([1,2,3]               : string [array]
+str({'x':5, 'y':6, 'z':7}): string [map]
+*/
+EXPECTED_OUTPUT:
+-------------------------------------------------------------------------------
+TEST "Built-in exit"
+
+print 'before exit()'
+exit()
+print 'after exit()'
+
+EXPECTED_OUTPUT:
+before exit()
+-------------------------------------------------------------------------------
+TEST "Built-in die"
+
+print 'before die()'
+die("error: some test message")
+print 'after die()'
+
+EXPECTED_OUTPUT:
+before die()
+EXPECTED_ERROR:
+error: some test message
+-------------------------------------------------------------------------------
+TEST "Built-in len"
+# TODO: Handle passing array/map to function directly.
+valueArray = [1,2,3,4,5]
+valueMap   = {'x':5, 'y':6, 'z':7}
+
+rvInteger = len(1234)
+rvFloat   = len(5.67)
+rvString  = len('text')
+rvTrue    = len(true)
+rvFalse   = len(false)
+rvArray   = len(valueArray)
+rvMap     = len(valueMap)
+
+print 'len(1234)                 :', typeof(rvInteger), rvInteger
+print 'len(5.67)                 :', typeof(rvFloat)  , rvFloat
+print 'len("text")               :', typeof(rvString) , rvString
+print 'len(true)                 :', typeof(rvTrue)   , rvTrue
+print 'len(false)                :', typeof(rvFalse)  , rvFalse
+print 'len([1,2,3,4,5]           :', typeof(rvArray)  , rvArray
+print "len({'x':5, 'y':6, 'z':7}):", typeof(rvMap)    , rvMap
+
+EXPECTED_OUTPUT:
+len(1234)                 : integer 1
+len(5.67)                 : integer 1
+len("text")               : integer 4
+len(true)                 : integer 1
+len(false)                : integer 1
+len([1,2,3,4,5]           : integer 5
+len({'x':5, 'y':6, 'z':7}): integer 3
+-------------------------------------------------------------------------------

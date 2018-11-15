@@ -1,0 +1,686 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'MIR.mold'
+import 'Stack.mold'
+
+class CodeGeneratorX64
+
+  method lea(dst, src)
+    print '  lea ', dst, ', [', src, ']'
+  endmethod
+
+  method push(x)
+    print '  push', x
+  endmethod
+
+  method pop(x)
+    print '  pop', x
+  endmethod
+
+  method mov(dst,src)
+    print '  mov ', dst, ',', src
+  endmethod
+
+  method call(name)
+    print '  call ', name
+  endmethod
+
+  method call1(name, x)
+    this.lea('rcx', x)
+    this.call(name)
+  endmethod
+
+  method call2(name, x, y)
+    this.lea('rcx', x)
+    this.lea('rdx', y)
+    this.call(name)
+  endmethod
+
+  method call3(name, x, y, z)
+    this.lea('rcx', x)
+    this.lea('rdx', y)
+    this.lea('r8', z)
+    this.call(name)
+  endmethod
+
+  method call3AndDestroy(name, x, y, dst)
+    if (x is dst) or (y is dst)
+      this.lea('rcx', x)
+      this.lea('rdx', y)
+      this.lea('r8', dst)
+      this.call(name)
+    else
+      this.variantDestroy(dst)
+      this.call3(name, x, y, dst)
+    endif
+  endmethod
+
+  method variantMove(dst, src)
+    print '  lea rcx, [', dst, ']'
+    print '  lea rdx, [', src, ']'
+    print '  call __MOLD_VariantMove'
+  endmethod
+
+  method variantDestroy(x)
+    print '  lea  rcx, [', x, ']'
+    print '  call __MOLD_VariantDestroy'
+  endmethod
+
+  method variantMoveAndDestroy(dst, src)
+    this.variantDestroy(dst)
+    this.variantMove(dst, src)
+  endmethod
+
+  method pushParametersBeforeCall(params)
+    paramsCnt = len(params)
+    regParams = ['rcx', 'rdx', 'r8', 'r9']
+
+    if paramsCnt <= 4
+      regParamsCnt   = paramsCnt
+      stackParamsCnt = 0
+    else
+      regParamsCnt   = 4
+      stackParamsCnt = paramsCnt - 4
+    endif
+
+    for idx in 0 .. regParamsCnt
+      this.lea(regParams[idx], params[idx])
+    endfor
+
+    for idx in 4 .. paramsCnt
+      # TODO: Optimize it.
+      this.lea('rax', params[idx])
+      this.push('rax')
+    endfor
+  endmethod
+
+  method emitConstant(name, value, wantDeepIdx, deepIdx)
+    type = typeof(value)
+
+    if wantDeepIdx is deepIdx
+      if type is 'integer'
+        print name, 'Variant_t VARIANT_INTEGER, 0,', value
+
+      elif type is 'float'
+        print name, 'Variant_t VARIANT_DOUBLE, 0,', value
+
+      elif type is 'string'
+        print name, 'Variant_t VARIANT_STRING, 0,', name + '_buffer'
+
+      elif type is 'array'
+        print name, 'Variant_t VARIANT_ARRAY, 0,', name + '_buffer'
+
+      elif type is 'boolean'
+        if value is true
+          valueAsInteger = '1'
+        else
+          valueAsInteger = '0'
+        endif
+
+        print name, 'Variant_t VARIANT_BOOLEAN, 0,', valueAsInteger
+      else
+        print name, 'Variant_t [error: unhandled type], ???'
+      endif
+    endif
+
+    if type is 'array'
+      this.emitArrayBufferHead(name, value, wantDeepIdx, deepIdx + 1)
+    elif type is 'string'
+      this.emitStringBufferHead(name, value, wantDeepIdx, deepIdx + 1)
+    endif
+  endmethod
+
+  method emitStringBufferHead(name, value, wantDeep, deepIdx)
+    if wantDeep is deepIdx
+      bufferName      = name + '_buffer'
+      bufferNameBytes = name + '_bufferBytes'
+      print  bufferName, 'Buffer_t', len(value) + 1, ', -1, 0,', bufferNameBytes
+    endif
+
+    this.emitStringBufferContent(name, value, wantDeep, deepIdx + 1)
+  endmethod
+
+  method emitStringBufferContent(name, value, wantDeep, deepIdx)
+    if wantDeep is deepIdx
+      bufferNameBytes = name + '_bufferBytes'
+      bufferData      = '"'
+      stringLen       = len(value)
+
+      for characterIdx in 0 .. stringLen
+        character = value[characterIdx]
+
+        if character is '"'
+          bufferData = bufferData + '", 34, "'
+        else
+          bufferData = bufferData + character
+        endif
+      endfor
+
+      bufferData = bufferData + '"'
+
+      print bufferNameBytes, 'StringHead_t', stringLen
+      print ' db ', bufferData, ', 0'
+    endif
+  endmethod
+
+  method emitArrayBufferHead(name, items, wantDeepIdx, deepIdx)
+    itemsCnt = len(items)
+
+    if wantDeepIdx is deepIdx
+      bufferName      = name + '_buffer'
+      bufferNameBytes = name + '_bufferBytes'
+      print bufferName, 'Buffer_t', itemsCnt * 16, ', -1, 0,',  bufferNameBytes
+    endif
+
+    this.emitArrayBufferContent(name, items, wantDeepIdx, deepIdx + 1)
+  endmethod
+
+  method emitArrayBufferContent(name, items, wantDeepIdx, deepIdx)
+    itemsCnt = len(items)
+
+    if wantDeepIdx is deepIdx
+      bufferName      = name + '_buffer'
+      bufferNameBytes = name + '_bufferBytes'
+
+      print bufferNameBytes, 'dq', itemsCnt
+    endif
+
+    for itemIdx in 0 .. itemsCnt
+      this.emitConstant(name + '_' + str(itemIdx), items[itemIdx], wantDeepIdx, deepIdx)
+    endfor
+  endmethod
+
+  method run(codeObj)
+
+    #
+    # Common headers.
+    #
+
+    print 'format PE64 console 5.0'
+    print 'entry __MOLD_Main'
+    print "include 'win64a.inc'"
+
+    print '; ------------------------------------------------------------------------------'
+    print ';                                 Code section'
+    print '; ------------------------------------------------------------------------------'
+
+    print "section '.text' code readable executable"
+    print "stack 1024*1024*4"
+    print "include 'Variant.asm'"
+    print "rv EQU rdi"
+
+    #
+    # Fetch code and code metas.
+    #
+
+    quads    = codeObj.quads
+    quadsCnt = len(quads)
+
+    currentProcProto = false
+    currentProcName  = false
+    currentProcRv    = false
+
+    globalsCnt = codeObj.globalMax + 1
+
+    #
+    # Translate code section.
+    #
+
+    for quadIdx in 0 .. quadsCnt
+      # Fetch instruction
+      item   = quads[quadIdx]
+      opcode = item[0]
+      dst    = item[1]
+      x      = item[2]
+      y      = item[3]
+
+      #print opcode, dst, x, y
+
+      # Dispatch opcode.
+      if opcode is 'nop'
+        print '  nop'
+
+      elif opcode is 'comment'
+        print ';', dst
+
+      elif opcode is 'label'
+        print dst + ':'
+
+      elif opcode is 'move_variant'
+        this.variantDestroy(dst)
+        this.variantMove(dst, x)
+
+      elif opcode is 'typeof_variant'
+        this.variantDestroy(dst)
+        this.call2('__MOLD_VariantTypeOf', x, dst)
+
+      elif opcode is 'len_variant'
+        this.variantDestroy(dst)
+        this.call2('__MOLD_VariantLength', x, dst)
+
+      elif opcode is 'neg_variant'
+        this.variantDestroy(dst)
+        this.call2('__MOLD_VariantNeg', x, dst)
+
+      elif opcode is 'add_variant'
+        this.call3AndDestroy('__MOLD_VariantAdd', x, y, dst)
+
+      elif opcode is 'sub_variant'
+        this.call3AndDestroy('__MOLD_VariantSub', x, y, dst)
+
+      elif opcode is 'mul_variant'
+        this.call3AndDestroy('__MOLD_VariantMul', x, y, dst)
+
+      elif opcode is 'div_variant'
+        this.call3AndDestroy('__MOLD_VariantDiv', x, y, dst)
+
+      elif opcode is 'idiv_variant'
+        this.call3AndDestroy('__MOLD_VariantDivAsInteger', x, y, dst)
+
+      elif opcode is 'cmp_eq_variant'
+        this.call3AndDestroy('__MOLD_VariantCompareEQ', x, y, dst)
+
+      elif opcode is 'cmp_ne_variant'
+        this.call3AndDestroy('__MOLD_VariantCompareNE', x, y, dst)
+
+      elif opcode is 'cmp_lt_variant'
+        this.call3AndDestroy('__MOLD_VariantCompareLT', x, y, dst)
+
+      elif opcode is 'cmp_le_variant'
+        this.call3AndDestroy('__MOLD_VariantCompareLE', x, y, dst)
+
+      elif opcode is 'cmp_gt_variant'
+        this.call3AndDestroy('__MOLD_VariantCompareLT', y, x, dst)
+
+      elif opcode is 'cmp_ge_variant'
+        this.call3AndDestroy('__MOLD_VariantCompareLE', y, x, dst)
+
+      elif opcode is 'print_array_of_variants_ln'
+        params    = dst
+        paramsCnt = len(params)
+
+        if paramsCnt is 1
+          this.call1('__MOLD_PrintVariantLn', params[0])
+        else
+          newParams = [paramsCnt]
+          for idx in 0 .. paramsCnt
+            newParams[idx + 1] = params[idx]
+          endfor
+
+          this.pushParametersBeforeCall(newParams)
+
+          this.call('__MOLD_PrintArrayOfVariantsLn')
+
+          if paramsCnt > 4
+            print '  add rsp,', paramsCnt * 8 - 32
+          endif
+        endif
+
+      elif opcode is 'print_err_variant'
+        this.call1('__MOLD_PrintVariantToStdError', dst)
+
+      elif opcode is 'print_out_variant'
+        this.call1('__MOLD_PrintVariant', dst)
+
+      elif opcode is 'print_out_newline'
+        this.call('__MOLD_PrintNewLine')
+
+      elif opcode is 'print_out_space'
+        this.call('__MOLD_PrintSpace')
+
+      elif opcode is 'str_variant'
+        this.variantDestroy(dst)
+        this.call2('__MOLD_VariantConvertToString', x, dst)
+
+      elif opcode is 'call'
+        rv        = item[1]
+        name      = item[2]
+        params    = item[3]
+        paramsCnt = len(params)
+
+        this.variantDestroy(rv)
+        this.push('rdi')
+        this.pushParametersBeforeCall(params)
+        this.lea('rdi', rv)
+        this.mov('[rdi + Variant_t.type]', 'VARIANT_UNDEFINED')
+        this.call(name)
+        this.pop('rdi')
+
+        if paramsCnt > 4
+          print '  add rsp,', paramsCnt * 8 - 32
+        endif
+
+      elif opcode is 'vcall'
+        rv        = item[1]
+        methodId  = item[2]
+        params    = item[3]
+        paramsCnt = len(params)
+
+        this.variantDestroy(rv)
+        this.push('rdi')
+        this.pushParametersBeforeCall(params)
+
+        print '  lea  rdi, [', rv, ']'
+        print '  mov [rdi + Variant_t.type], VARIANT_UNDEFINED'
+        print '  mov  rax, [rcx + Variant_t.value]'
+        print '  mov  rax, [rax + Buffer_t.bytesPtr]'
+        print '  mov  rax, [rax + Object_t.vtable]'
+        print '  call qword [rax + 8*' + str(methodId) + ']'
+
+        this.pop('rdi')
+
+        if paramsCnt > 4
+          print '  add rsp,', paramsCnt * 8 - 32
+        endif
+
+      elif opcode is 'create_object'
+        this.variantDestroy(dst)
+        print '  lea  rcx, [', dst, ']'
+        print '  lea  rdx, [vtable_' + x + ']'
+        print '  call __MOLD_VariantObjectCreate'
+
+      elif opcode is 'conv_int64_to_variant'
+        this.variantDestroy(dst)
+        print '  mov [', dst, '+ Variant_t.type], VARIANT_INTEGER'
+        print '  mov [', dst, '+ Variant_t.value],', x
+
+      elif opcode is 'conv_float64_to_variant'
+        this.variantDestroy(dst)
+        print '  mov rax,', x
+        print '  mov [', dst, '+ Variant_t.type], VARIANT_DOUBLE'
+        print '  mov [', dst, '+ Variant_t.value], rax'
+
+      elif opcode is 'conv_bool64_to_variant'
+        this.variantDestroy(dst)
+        if x is true
+          val = 1
+        else
+          val = 0
+        endif
+
+        print '  mov [', dst, '+ Variant_t.type], VARIANT_BOOLEAN'
+        print '  mov [', dst, '+ Variant_t.value],', val
+
+      elif opcode is 'jmp_if_true_variant'
+        print '  cmp  [', x, ' + Variant_t.value], 0'
+        print '  jnz ', dst
+
+      elif opcode is 'jmp_if_false_variant'
+        print '  cmp  [', x, ' + Variant_t.value], 0'
+        print '  jz  ', dst
+
+      elif opcode is 'halt'
+        print '  mov  rcx, 0'
+        print '  call __MOLD_Halt'
+
+      elif opcode is 'ret'
+        print ''
+        print '; clean frame'
+        print '; -----------'
+
+        localsCnt  = currentProcProto['localsCnt']
+        tempsCnt   = currentProcProto['tempsCnt']
+
+        for idx in 0 .. localsCnt
+          this.variantDestroy('.loc' + str(idx))
+        endfor
+
+        for idx in 0 .. tempsCnt
+          this.variantDestroy('.tmp' + str(idx))
+        endfor
+
+        if (currentProcName is 'start') and (globalsCnt > 0)
+          for globalIdx in 0 .. globalsCnt
+            this.variantDestroy('global' + str(globalIdx))
+          endfor
+        endif
+
+        print '  add rsp, 32'
+        print '  ret'
+
+        if (typeof(currentProcRv) isnt 'undefined') and (currentProcName isnt 'constructor')
+          print ''
+          print '; return value guard'
+          print '; ------------------'
+          print '.errorUnsetRetVal:'
+          print '  invoke GetStdHandle, -12'
+          print '  invoke WriteFile, rax, .unsetRetValMsg, 56, NumberOfBytesWritten, 0'
+          print '  mov    [rdi + Variant_t.type], VARIANT_UNDEFINED'
+          print '  add    rsp, 32'
+          print '  ret'
+          print '  .unsetRetValMsg db "WARNING! Unset return variable ' + "'" + currentProcRv + "' in '" + currentProcName + "' function." + '", 13, 10'
+        endif
+
+      elif opcode is 'proc'
+        proto            = item[1]
+        currentProcProto = proto
+        currentProcName  = proto['name']
+        currentProcRv    = proto['rv']
+        print 'proc', currentProcName
+
+      elif opcode is 'endp'
+        print 'endp'
+
+      elif opcode is 'init_frame'
+        frame     = dst
+        localsCnt = frame['localsCnt']
+        tempsCnt  = frame['tempsCnt']
+        paramsCnt = frame['paramsCnt']
+        regParams = ['rcx','rdx', 'r8', 'r9']
+
+        print '; init frame'
+        print '; ----------'
+
+        for idx in 0 .. localsCnt
+          print '  local .loc' + str(idx), 'Variant_t'
+        endfor
+
+        for idx in 0 .. tempsCnt
+          print '  local .tmp' + str(idx), 'Variant_t'
+        endfor
+
+        for idx in 0 .. paramsCnt
+          print '  local .param' + str(idx) + ':Variant_t'
+        endfor
+
+        if paramsCnt <= 4
+          regParamsCnt = paramsCnt
+        else
+          regParamsCnt = 4
+        endif
+
+        for idx in 0 .. regParamsCnt
+          print '  movdqu xmm' + str(idx), ', [' + regParams[idx] + ']'
+        endfor
+
+        for idx in 0 .. regParamsCnt
+          print '  movdqu [.param' + str(idx) + '], xmm' + str(idx)
+        endfor
+
+        for idx in 4 .. paramsCnt
+          print '  mov    rax', ', [rbp + 16 + 8*' + str(paramsCnt - idx - 1) + ']'
+          print '  movdqu xmm0', ', [rax]'
+          print '  movdqu [.param' + str(idx) + '], xmm0'
+        endfor
+
+        if typeof(currentProcRv) isnt 'undefined'
+          print '  mov [rdi + Variant_t.type], -1'
+        endif
+
+        for idx in 0 .. localsCnt
+          print '  mov [.loc' + str(idx), ' + Variant_t.type], VARIANT_UNDEFINED'
+        endfor
+
+        for idx in 0 .. tempsCnt
+          print '  mov [.tmp' + str(idx), ' + Variant_t.type], VARIANT_UNDEFINED'
+        endfor
+
+        print '  sub rsp, 32'
+        print ''
+        print '; code'
+        print '; ----'
+
+      elif opcode is 'rv_guard'
+        print '  cmp  [rdi + Variant_t.type], -1'
+        print '  jz   .errorUnsetRetVal'
+
+      elif opcode is 'create_array_variant'
+        this.variantDestroy(dst)
+        this.call1('__MOLD_VariantArrayCreate', dst)
+
+      elif opcode is 'create_map_variant'
+        this.variantDestroy(dst)
+        this.call1('__MOLD_VariantMapCreate', dst)
+
+      elif opcode is 'store_index_variant'
+        # dst[x] := y
+        this.call3('__MOLD_VariantStoreAtIndex', dst, x, y)
+
+      elif opcode is 'load_index_variant'
+        # dst := x[y]
+        this.call3AndDestroy('__MOLD_VariantLoadFromIndex', x, y, dst)
+
+      elif opcode is 'jmp'
+       print '  jmp', dst
+
+      else
+        die('error: unhandled opcode "' + str(opcode) + '"')
+      endif
+    endfor
+
+    print 'endOfCodeSection:'
+
+    #
+    # Generate data section.
+    #
+
+    print '; ------------------------------------------------------------------------------'
+    print ';                                 Data section'
+    print '; ------------------------------------------------------------------------------'
+    print "section '.data' data readable writeable"
+
+    print "include 'CommonData.asm'"
+    print ''
+
+    consts    = codeObj.consts
+    constsCnt = codeObj.constsCnt
+
+    print '; Constants'
+    print '; ---------'
+
+    for deepIdx in 0 .. 16
+      print '; iter', deepIdx
+      for idx in 0 .. constsCnt
+        value = consts[idx]
+        name  = 'const' + str(idx)
+        this.emitConstant(name, value, deepIdx, 0)
+      endfor
+    endfor
+
+    print ''
+    print '; Global vars'
+    print '; -----------'
+
+    for idx in 0 .. codeObj.globalMax + 1
+      print 'global' + str(idx), 'Variant_t 0, 0, 0'
+    endfor
+
+    # Build vtables.
+    print ''
+    print '; vtables'
+    print '; -------'
+
+    classListCnt   = codeObj.classListCnt
+    classList      = codeObj.classList
+    classMap       = codeObj.classMap
+    methodsMap     = codeObj.methodsMap
+    methodsList    = codeObj.methodsList
+    methodsListCnt = codeObj.methodsListCnt
+
+    for classIdx in 0 .. classListCnt
+      classProto = classList[classIdx]
+      className  = classProto['name']
+      vtable     = classProto['vtable']
+
+      print 'vtable_' + className + ':'
+
+      for methodIdx in 0 .. methodsListCnt
+        methodName  = methodsList[methodIdx]
+        methodProto = vtable[methodName]
+
+        if typeof(methodProto) is 'undefined'
+          methodPtr = '__MOLD_NullMethodCalled'
+        else
+          methodPtr = methodProto['fullName']
+        endif
+
+        print '  dq', methodPtr, ';', methodName
+      endfor
+
+      print ''
+    endfor
+
+    #
+    # Generate imports section.
+    #
+
+    print '; ------------------------------------------------------------------------------'
+    print ';                                Imports section'
+    print '; ------------------------------------------------------------------------------'
+
+    print "section '.idata' import data readable writeable"
+    print "  include 'CommonImports.asm'"
+    print ''
+
+    #
+    # Generate debug section with symbols.
+    #
+
+    procedures     = codeObj.procedures
+    proceduresCnt  = codeObj.proceduresCnt
+
+    print '; ------------------------------------------------------------------------------'
+    print ';                                Debug section'
+    print '; ------------------------------------------------------------------------------'
+
+    print "section '.debug' data readable"
+
+    # Dump symbols.
+    print 'SymbolTable:'
+    print 'dq 0, 0'
+    print "include 'SymbolTableCommon.asm'"
+
+    for procIdx in 0 .. proceduresCnt
+      # Fetch procedure meta.
+      procName  = procedures[procIdx]['name']
+      print 'dq ', procName, ',', 'name_' + procName
+    endfor
+
+    print 'dq endOfCodeSection, name_endOfCodeSection'
+    print 'SymbolTableEnd:'
+    print 'dq 0, 0'
+    print ''
+
+    print 'SymbolTableNames:'
+    print "include 'SymbolTableCommonNames.asm'"
+    for procIdx in 0 .. proceduresCnt
+      # Fetch procedure meta.
+      procName  = procedures[procIdx]['name']
+      print 'name_' + procName, 'db', "'" + procName + "', 0"
+    endfor
+    print "name_endOfCodeSection db 'out of code section', 0"
+
+  endmethod
+endclass

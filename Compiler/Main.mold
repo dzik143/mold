@@ -1,0 +1,154 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'AST.mold'
+import 'ParserMold.mold'
+import 'ASTTranslator.mold'
+import 'ASTTranslatorMIR.mold'
+import 'MIRQuadBuilder.mold'
+import 'MIRQuadCollector.mold'
+import 'MIRQuadOptimizer.mold'
+import 'CodeGeneratorX64.mold'
+import 'VMachineStack.mold'
+
+# ------------------------------------------------------------------------------
+#                              Helper functions
+# ------------------------------------------------------------------------------
+
+function BadUsageError()
+  print 'Usage:'
+  print '  mold [-c] [--asm] [--mir0] [--mir] <input.mold>'
+  exit()
+endfunction
+
+# ------------------------------------------------------------------------------
+#                                Entry point
+# ------------------------------------------------------------------------------
+
+#
+# Parse command line parameters.
+#
+
+mode = 'interpreter'
+path = ''
+
+for idx in 1 .. argc
+  if argv[idx] is '-c'
+    # Compiler mode
+    # mold -c <file.mold>
+    mode = 'compiler'
+    print 'Error: compiler mode not implemented yet.'
+    print 'Try --asm option and assemble result by own instead.'
+    exit()
+
+  elif argv[idx] is '--asm'
+    # Generate assembler
+    mode = 'asm'
+
+  elif argv[idx] is '--mir0'
+    # Generate assembler
+    mode = 'mir0'
+
+  elif (argv[idx] is '--mir') or (argv[idx] is '--mir1')
+    # Generate assembler
+    mode = 'mir1'
+
+  elif argv[idx] is '--ast'
+    # Generate assembler
+    mode = 'ast'
+
+  elif argv[idx][0] is '-'
+    # Unknown -x switch.
+    BadUsageError()
+
+  else
+    # Unkown option - treat as filename.
+    path = argv[idx]
+  endif
+endfor
+
+if path is ''
+  BadUsageError()
+endif
+
+#
+# Load input file and build Abstract Syntax Tree (AST)
+#
+
+source = __mold_loadFile(path)
+
+# Parse source into AST tree.
+parser = new Parser()
+parser._parse(source)
+ast = parser.getAst()
+
+#
+# Dispatch working mode.
+#
+
+if mode is 'ast'
+  # Print AST only.
+  ast.print()
+
+else
+  # Convert AST to form understood by translator.
+  ast = ast.convert()
+
+  # Translate program to MIR (stack based).
+  astTranslator = new ASTTranslatorMIR()
+  astTranslator.run(ast)
+  code = astTranslator.code
+
+  if mode is 'mir0'
+    # Dump stack MIR only.
+    vm = new VMachineStack()
+    vm.loadCode(code)
+    vm.dumpCode()
+
+  elif mode is 'interpreter'
+    # Run mir0 based interpeter.
+    vm = new VMachineStack()
+    vm.loadCode(code)
+    vm.run()
+
+  else
+    # Prepare quads process toolchain.
+    # [Builder] -> [Optimizer] -> [Collector]
+    mirQuadBuilder   = new MIRQuadBuilder()
+    mirQuadCollector = new MIRQuadCollector()
+    mirQuadOptimizer = new MIRQuadOptimizer()
+
+    mirQuadBuilder.setOutputObject(mirQuadOptimizer)
+    mirQuadOptimizer.setOutputObject(mirQuadCollector)
+
+    # Run build quads process.
+    mirQuadBuilder.run(code)
+
+    if mode is 'mir1'
+      # Print MIR quads only
+      mirQuadCollector.printQuads()
+
+    elif mode is 'asm'
+      # TODO: Better way to pass quads + meta.
+      code.quads = mirQuadCollector.getQuads()
+
+      # Generate x64 code.
+      codeGenerator = new CodeGeneratorX64()
+      codeGenerator.run(code)
+
+    else
+      BadUsageError()
+    endif
+  endif
+endif

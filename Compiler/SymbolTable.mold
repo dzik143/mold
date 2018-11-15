@@ -1,0 +1,260 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+SYMBOL_KIND_VAR_LOCAL  = 1
+SYMBOL_KIND_VAR_GLOBAL = 2
+SYMBOL_KIND_VAR_PARAM  = 3
+SYMBOL_KIND_VAR_RETVAL = 4
+SYMBOL_KIND_CONST      = 5
+
+SYMBOL_KIND_FUNCTION   = 6
+SYMBOL_KIND_CLASS      = 7
+SYMBOL_KIND_METHOD     = 8
+
+SYMBOL_TYPE_VARIANT = 1
+
+class SymbolTable
+  method constructor()
+    this.deepIdx   = 0
+    this.deepMax   = 128
+    this.symbols   = [{}]
+    this.localCnt  = 0
+    this.globalCnt = 0
+    this.paramCnt  = 0
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                               Generic calls
+  # ----------------------------------------------------------------------------
+
+  method getDeep() -> rv
+    rv = this.deepIdx
+  endmethod
+
+  method insert(name, entry)
+    if typeof(this.symbols[this.deepIdx][name]) isnt 'undefined'
+      die("error: redeclaration of '" + name + "'")
+    else
+      this.symbols[this.deepIdx][name] = entry
+    endif
+  endmethod
+
+  method insertGlobal(name, entry)
+    if typeof(this.symbols[0][name]) isnt 'undefined'
+      die("error: redeclaration of global '" + name + "'")
+    else
+      this.symbols[0][name] = entry
+    endif
+  endmethod
+
+  method lookup(name) -> rv
+    rv = this.symbols[this.deepIdx][name]
+    if typeof(rv) is 'undefined'
+      die("error: '" + name + "' was not declared in this scope")
+    endif
+  endmethod
+
+  method lookupGlobal(name) -> rv
+    rv = this.symbols[0][name]
+    if typeof(rv) is 'undefined'
+      die("error: '" + name + "' was not declared in this scope")
+    endif
+  endmethod
+
+  method isset(name) -> rv
+    rv = typeof(this.symbols[this.deepIdx][name]) isnt 'undefined'
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                   Scopes (0=global, 1,2,3...=local)
+  # ----------------------------------------------------------------------------
+
+  method enterScope()
+    this.deepIdx = this.deepIdx + 1
+    this.symbols[this.deepIdx] = {}
+
+    # TODO: Review it, we want more than 2 scopes... ?
+    this.localCnt = 0
+    this.paramCnt = 0
+
+    if this.deepIdx > this.deepMax
+      die('error: too deep (' + str(this.deepIdx) + ')')
+    endif
+  endmethod
+
+  method leaveScope()
+    this.deepIdx = this.deepIdx - 1
+
+    if this.deepIdx < 0
+      die('error: unmatched scope leave')
+    endif
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                              Function helpers
+  # ----------------------------------------------------------------------------
+
+  method insertFunction(name, proto)
+    global SYMBOL_KIND_FUNCTION
+    newEntry = {
+      'name': name,
+      'kind': SYMBOL_KIND_FUNCTION,
+      'proto': proto
+    }
+    this.insertGlobal(name, newEntry)
+  endmethod
+
+  method lookupFunction(name, paramsCnt) -> rv
+    global SYMBOL_KIND_FUNCTION
+    rv = this.lookupGlobal(name)
+    if rv['kind'] isnt SYMBOL_KIND_FUNCTION
+      die("error: '" + name + "' is not a function")
+    elif rv['proto']['paramsCnt'] isnt paramsCnt
+      die("error: function '" + name + "' requires exactly " + str(rv['proto']['paramsCnt']) + ' parameters, but ' + str(paramsCnt) + ' were passed')
+    endif
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                               Class helpers
+  # ----------------------------------------------------------------------------
+
+  method insertClass(name, proto)
+    global SYMBOL_KIND_CLASS
+    newEntry = {
+      'name': name,
+      'kind': SYMBOL_KIND_CLASS,
+      'proto': proto
+    }
+    this.insert(name, newEntry)
+  endmethod
+
+  method lookupClass(name) -> rv
+    global SYMBOL_KIND_CLASS
+    rv = this.lookupGlobal(name)
+    if rv['kind'] isnt SYMBOL_KIND_CLASS
+      die("error: '" + name + "' is not a class")
+    endif
+  endmethod
+
+  method lookupMethod(className, methodName, paramsCnt) -> rv
+    rv = this.lookupClass(className)['proto']['vtable'][methodName]
+
+    if typeof(rv) is 'undefined'
+      die("error: class '" + className + "' has no method '" + methodName + "'")
+
+    elif rv['paramsCnt'] isnt paramsCnt
+      die("error: method '" + methodName + "' requires exactly " + str(rv['paramsCnt']) + ' parameters, but ' + str(paramsCnt) + ' were passed')
+    endif
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                               Variable helper
+  # ----------------------------------------------------------------------------
+
+  method insertLocal(name)
+    global SYMBOL_KIND_VAR_LOCAL
+    global SYMBOL_KIND_VAR_GLOBAL
+
+    if this.deepIdx is 0
+      kind  = SYMBOL_KIND_VAR_GLOBAL
+      newId = this.globalCnt
+      this.globalCnt = this.globalCnt + 1
+    else
+      kind  = SYMBOL_KIND_VAR_LOCAL
+      newId = this.localCnt
+      this.localCnt = this.localCnt + 1
+    endif
+
+    newEntry = {
+      'name': name,
+      'kind': kind,
+      'id': newId
+    }
+    this.insert(name, newEntry)
+
+  endmethod
+
+  method insertLocalVolatile(name)
+    global SYMBOL_KIND_VAR_LOCAL
+
+    newEntry = {
+      'name': name,
+      'kind': SYMBOL_KIND_VAR_LOCAL,
+      'id': this.localCnt
+    }
+    this.insert(name, newEntry)
+    this.localCnt = this.localCnt + 1
+  endmethod
+
+  method importGlobal(name)
+    global SYMBOL_KIND_VAR_GLOBAL
+
+    if this.deepIdx is 0
+      die('error: global directive used in global space')
+
+    elif this.isset(name) is true
+      # Symbol already declared in current scope.
+      # Check is it global.
+      symbolInfo = this.lookup(name)
+
+      if symbolInfo['kind'] is SYMBOL_KIND_VAR_GLOBAL
+        # It's already imported global. Do nothing.
+      else
+        # It's already declared as another kind.
+        die("error: conflicting declaration 'global " + name + "'")
+      endif
+
+    else
+      # Find symbol in global scope.
+      symbolInfo = this.lookupGlobal(name)
+
+      # Add entry in current scope.
+      newEntry = {
+        'name': name,
+        'kind': SYMBOL_KIND_VAR_GLOBAL,
+        'id': symbolInfo['id']
+      }
+      this.insert(name, newEntry)
+    endif
+  endmethod
+
+  method insertParam(name, id)
+    global SYMBOL_KIND_VAR_PARAM
+    newEntry = {
+      'name': name,
+      'kind': SYMBOL_KIND_VAR_PARAM,
+      'id': id
+    }
+    this.insert(name, newEntry)
+  endmethod
+
+  method insertRetVal(name)
+    global SYMBOL_KIND_VAR_RETVAL
+    newEntry = {
+      'name': name,
+      'kind': SYMBOL_KIND_VAR_RETVAL
+    }
+    this.insert(name, newEntry)
+  endmethod
+
+  method insertConst(name, value)
+    global SYMBOL_KIND_CONST
+    newEntry = {
+      'name': name,
+      'kind': SYMBOL_KIND_CONST,
+      'value': value
+    }
+    this.insert(name, newEntry)
+  endmethod
+endclass

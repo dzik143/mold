@@ -1,0 +1,80 @@
+TEST "Lazy boolean expressions"
+
+function getTrue() -> rv
+  print "getTrue() called"
+  rv = true
+endfunction
+
+function getFalse() -> rv
+  print "getFalse() called"
+  rv = false
+endfunction
+
+#
+# Lazy or
+#
+
+print 'false or false'
+rv = getFalse() or getFalse()
+print ""
+
+print 'false or true'
+rv = getFalse() or getTrue()
+print ""
+
+print 'true or false'
+rv = getTrue() or getFalse()
+print ""
+
+print 'true or true'
+rv = getTrue() or getTrue()
+print ""
+
+#
+# Lazy and
+#
+
+print 'false and false'
+rv = getFalse() and getFalse()
+print ""
+
+print 'false and true'
+rv = getFalse() and getTrue()
+print ""
+
+print 'true and false'
+rv = getTrue() and getFalse()
+print ""
+
+print 'true and true'
+rv = getTrue() and getTrue()
+
+EXPECTED_OUTPUT:
+false or false
+getFalse() called
+getFalse() called
+
+false or true
+getFalse() called
+getTrue() called
+
+true or false
+getTrue() called
+
+true or true
+getTrue() called
+
+false and false
+getFalse() called
+
+false and true
+getFalse() called
+
+true and false
+getTrue() called
+getFalse() called
+
+true and true
+getTrue() called
+getTrue() called
+--------------------------------------------------------------------------------

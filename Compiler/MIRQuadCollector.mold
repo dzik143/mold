@@ -1,0 +1,111 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'PipeAbstract.mold'
+
+class MIRQuadCollector extends PipeAbstract
+
+  # ----------------------------------------------------------------------------
+  #                         Init functions (constructor)
+  # ----------------------------------------------------------------------------
+
+  method constructor()
+    this.quads = []
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                        Internal helpers (private)
+  # ----------------------------------------------------------------------------
+
+  method _pad(item, desiredLen) -> rv
+    if typeof(item) is 'undefined'
+      # Undefined (probably unused) operand.
+      # Show nothing.
+      rv = ''
+
+    elif typeof(item) is 'array'
+      # Operand is an array.
+      # Render item-by-item.
+      # TODO: Handle complex data in built-in str().
+      rv  = '['
+      sep = ''
+
+      for idx in 0 .. len(item)
+        rv  = rv + sep + str(item[idx])
+        sep = ', '
+      endfor
+      rv = rv + ']'
+
+    else
+      # Default way.
+      rv      = str(item)
+      padCnt  = desiredLen - len(rv)
+
+      for idx in 0 .. padCnt
+        rv = rv + ' '
+      endfor
+    endif
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                                  Public API
+  # ----------------------------------------------------------------------------
+
+  method processOneItem(item)
+    cnt             = len(this.quads)
+    this.quads[cnt] = item
+  endmethod
+
+  method getQuads() -> rv
+    rv = this.quads
+  endmethod
+
+  method printQuads()
+    code    = this.quads
+    codeCnt = len(code)
+
+    for idx in 0 .. codeCnt
+      item    = code[idx]
+      opcode  = item[0]
+
+      if opcode is 'proc'
+        print 'proc', item[1]['name']
+
+      elif opcode is 'init_frame'
+        print '    init_frame'
+
+      elif opcode is 'endp'
+        print 'endp'
+
+      elif opcode is 'comment'
+        print ';', item[1]
+
+      elif opcode is 'label'
+        print item[1] + ':'
+
+      else
+        dst = item[1]
+        x   = item[2]
+        y   = item[3]
+
+        paddedOpcode = this._pad(opcode, 24)
+        paddedDst    = this._pad(dst, 7)
+        paddedX      = this._pad(x, 7)
+        paddedY      = this._pad(y, 7)
+
+        print '   ', paddedOpcode, paddedDst, paddedX, paddedY
+      endif
+    endfor
+  endmethod
+endclass

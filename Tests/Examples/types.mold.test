@@ -1,0 +1,141 @@
+TEST "Basic types"
+
+#
+# There are below built-in types:
+#   integer
+#   bool
+#   float
+#   string
+#
+# and below built-in operators:
+#   x+y
+#   x-y
+#   x*y
+#   x/y  (divide as float)
+#   x//y (divide as integer)
+#
+
+i1 = 1
+i2 = 2
+
+f1 = 3.4
+f2 = 5.6
+
+#
+# Create all possible combinations.
+#
+
+# x+y
+add_ii = i1 + i2
+add_if = i1 + f1
+add_fi = f1 + i1
+add_ff = f1 + f2
+
+print "x+y"
+print i1, "+", i2, "=", add_ii, "(", typeof(add_ii), ")"
+print i1, "+", f1, "=", add_if, "(", typeof(add_if), ")"
+print f1, "+", i1, "=", add_fi, "(", typeof(add_fi), ")"
+print f1, "+", f2, "=", add_ff, "(", typeof(add_ff), ")"
+print ""
+
+# x-y
+sub_ii = i1 - i2
+sub_if = i1 - f1
+sub_fi = f1 - i1
+sub_ff = f1 - f2
+
+print "x-y"
+print i1, "-", i2, "=", sub_ii, "(", typeof(sub_ii), ")"
+print i1, "-", f1, "=", sub_if, "(", typeof(sub_if), ")"
+print f1, "-", i1, "=", sub_fi, "(", typeof(sub_fi), ")"
+print f1, "-", f2, "=", sub_ff, "(", typeof(sub_ff), ")"
+print ""
+
+# x*y
+mul_ii = i1 * i2
+mul_if = i1 * f1
+mul_fi = f1 * i1
+mul_ff = f1 * f2
+
+print "x*y"
+print i1, "*", i2, "=", mul_ii, "(", typeof(mul_ii), ")"
+print i1, "*", f1, "=", mul_if, "(", typeof(mul_if), ")"
+print f1, "*", i1, "=", mul_fi, "(", typeof(mul_fi), ")"
+print f1, "*", f2, "=", mul_ff, "(", typeof(mul_ff), ")"
+print ""
+
+# x/y
+div_ii = i1 / i2
+div_if = i1 / f1
+div_fi = f1 / i1
+div_ff = f1 / f2
+
+print "x/y"
+print i1, "/", i2, "=", div_ii, "(", typeof(div_ii), ")"
+print i1, "/", f1, "=", div_if, "(", typeof(div_if), ")"
+print f1, "/", i1, "=", div_fi, "(", typeof(div_fi), ")"
+print f1, "/", f2, "=", div_ff, "(", typeof(div_ff), ")"
+print ""
+
+# x//y
+idiv_ii = i1 // i2
+idiv_if = i1 // f1
+idiv_fi = f1 // i1
+idiv_ff = f1 // f2
+
+print "x//y"
+print i1, "//", i2, "=", idiv_ii, "(", typeof(idiv_ii), ")"
+print i1, "//", f1, "=", idiv_if, "(", typeof(idiv_if), ")"
+print f1, "//", i1, "=", idiv_fi, "(", typeof(idiv_fi), ")"
+print f1, "//", f2, "=", idiv_ff, "(", typeof(idiv_ff), ")"
+
+EXPECTED_OUTPUT:
+x+y
+1 + 2 = 3 ( integer )
+1 + 3.400000 = 4.400000 ( float )
+3.400000 + 1 = 4.400000 ( float )
+3.400000 + 5.600000 = 9.000000 ( float )
+
+x-y
+1 - 2 = -1 ( integer )
+1 - 3.400000 = -2.400000 ( float )
+3.400000 - 1 = 2.400000 ( float )
+3.400000 - 5.600000 = -2.200000 ( float )
+
+x*y
+1 * 2 = 2 ( integer )
+1 * 3.400000 = 3.400000 ( float )
+3.400000 * 1 = 3.400000 ( float )
+3.400000 * 5.600000 = 19.040000 ( float )
+
+x/y
+1 / 2 = 0.500000 ( float )
+1 / 3.400000 = 0.294118 ( float )
+3.400000 / 1 = 3.400000 ( float )
+3.400000 / 5.600000 = 0.607143 ( float )
+
+x//y
+1 // 2 = 0 ( integer )
+1 // 3.400000 = 0 ( integer )
+3.400000 // 1 = 3 ( integer )
+3.400000 // 5.600000 = 0 ( integer )
+-------------------------------------------------------------------------------
+
+TEST "typeof(imm)"
+print "typeof('text'):", typeof('text')
+print "typeof(1234)  :", typeof(1234)
+print "typeof(-1234) :", typeof(-1234)
+print "typeof(3.14)  :", typeof(3.14)
+print "typeof(true)  :", typeof(true)
+print "typeof(false) :", typeof(false)
+#TODO: print "typeof([])    :", typeof([])
+#TODO: print "typeof({})    :", typeof({})
+
+EXPECTED_OUTPUT:
+typeof('text'): string
+typeof(1234)  : integer
+typeof(-1234) : integer
+typeof(3.14)  : float
+typeof(true)  : boolean
+typeof(false) : boolean
+-------------------------------------------------------------------------------

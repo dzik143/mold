@@ -1,0 +1,575 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'MIR.mold'
+import 'Stack.mold'
+
+class VMachineStackObject
+  method constructor(classProto)
+    this.classProto = classProto
+  endmethod
+endclass
+
+class VMachineStack
+  method constructor()
+    this.codeObj = false # use null
+    this.stack   = new Stack()
+  endmethod
+
+  method loadCode(code)
+    this.code = code
+  endmethod
+
+  method run()
+    global MIR_OPCODE_NOP, MIR_OPCODE_NEG, MIR_OPCODE_ADD, MIR_OPCODE_SUB
+    global MIR_OPCODE_MUL, MIR_OPCODE_DIV, MIR_OPCODE_IDIV, MIR_OPCODE_LOAD_IMM
+    global MIR_OPCODE_LOAD_ARRAY, MIR_OPCODE_LOAD_MAP, MIR_OPCODE_CMP_EQ
+    global MIR_OPCODE_CMP_NEQ, MIR_OPCODE_CMP_GT, MIR_OPCODE_CMP_GE
+    global MIR_OPCODE_CMP_LT, MIR_OPCODE_CMP_LE, MIR_OPCODE_LOAD_LOCAL
+    global MIR_OPCODE_LOAD_PARAMN, MIR_OPCODE_LOAD_GLOBAL, MIR_OPCODE_LOAD_RETVAL
+    global MIR_OPCODE_LOAD_INDEX, MIR_OPCODE_STORE_LOCAL, MIR_OPCODE_STORE_PARAMN
+    global MIR_OPCODE_STORE_GLOBAL, MIR_OPCODE_STORE_RETVAL, MIR_OPCODE_STORE_INDEX
+    global MIR_OPCODE_DROP, MIR_OPCODE_DROP_N, MIR_OPCODE_DUP, MIR_OPCODE_OVER
+    global MIR_OPCODE_TYPEOF, MIR_OPCODE_CREATE_OBJECT, MIR_OPCODE_GET_CLASSNAME
+    global MIR_OPCODE_VCALL, MIR_OPCODE_JMP, MIR_OPCODE_JMP_IF_TRUE
+    global MIR_OPCODE_JMP_IF_FALSE, MIR_OPCODE_CALL, MIR_OPCODE_RET
+    global MIR_OPCODE_PRINT, MIR_OPCODE_INIT_FRAME, MIR_OPCODE_RETVAL_GUARD
+    global MIR_OPCODE_CREATE_OBJECT, MIR_OPCODE_HALT, MIR_OPCODE_PRINT_STDOUT
+    global MIR_OPCODE_CONV2STR
+    global MIR_OPCODE_GETLEN, MIR_OPCODE_LOAD_ARGC, MIR_OPCODE_LOAD_ARGV
+    global MIR_OPCODE_LOAD_MOLD_SOURCE, MIR_OPCODE_MOVE_BACK, MIR_OPCODE_PRINT_ERROR
+
+
+    # TODO: Optimize it.
+    dataStack = [[]]
+    local     = dataStack[0]
+    heap      = []
+
+    codeObj   = this.code
+    code      = codeObj.code
+    codeCnt   = codeObj.codeCnt
+    labels    = codeObj.targetIps
+    labelsCnt = codeObj.targetIpsCnt
+
+    classListCnt   = codeObj.classListCnt
+    classList      = codeObj.classList
+    classMap       = codeObj.classMap
+    methodsMap     = codeObj.methodsMap
+    methodsList    = codeObj.methodsList
+    methodsListCnt = codeObj.methodsListCnt
+
+    stack = this.stack
+    ip    = 0
+
+    # Dirty hack: push main() return address out of code.
+    stack.push(99999999)
+
+    # TODO: Better handling of undefined retval.
+    x             = []
+    defaultRetVal = '__mold_unsetRetVal__'
+    badRetVal     = x[0]
+
+    deepIdx        = 0
+    paramBaseStack = []
+    retValStack    = []
+
+    while ip < codeCnt
+      # Fetch instruction
+      item   = code[ip]
+      opcode = item[0]
+
+      # Dispatch opcode.
+      if opcode is MIR_OPCODE_NOP
+        # Do nothing.
+
+      elif opcode is MIR_OPCODE_LOAD_IMM
+        stack.push(item[1])
+
+      elif opcode is MIR_OPCODE_LOAD_ARRAY
+        # TODO: Allow [] in call list.
+        newArray = []
+        stack.push(newArray)
+
+      elif opcode is MIR_OPCODE_LOAD_MAP
+        # TODO: Allow {} in call list.
+        newMap = {}
+        stack.push(newMap)
+
+      elif opcode is MIR_OPCODE_NEG
+        stack.push(-stack.pop())
+
+      elif opcode is MIR_OPCODE_ADD
+        last = stack.pop()
+        stack.push(stack.pop() + last)
+
+      elif opcode is MIR_OPCODE_MUL
+        last = stack.pop()
+        stack.push(stack.pop() * last)
+
+      elif opcode is MIR_OPCODE_SUB
+        last = stack.pop()
+        stack.push(stack.pop() - last)
+
+      elif opcode is MIR_OPCODE_DIV
+        last = stack.pop()
+        stack.push(stack.pop() / last)
+
+      elif opcode is MIR_OPCODE_IDIV
+        last = stack.pop()
+        stack.push(stack.pop() // last)
+
+      elif opcode is MIR_OPCODE_CMP_EQ
+        last = stack.pop()
+        stack.push(stack.pop() is last)
+
+      elif opcode is MIR_OPCODE_CMP_NEQ
+        last = stack.pop()
+        stack.push(stack.pop() isnt last)
+
+      elif opcode is MIR_OPCODE_CMP_LT
+        last = stack.pop()
+        stack.push(stack.pop() < last)
+
+      elif opcode is MIR_OPCODE_CMP_LE
+        last = stack.pop()
+        stack.push(stack.pop() <= last)
+
+      elif opcode is MIR_OPCODE_CMP_GT
+        last = stack.pop()
+        stack.push(stack.pop() > last)
+
+      elif opcode is MIR_OPCODE_CMP_GE
+        last = stack.pop()
+        stack.push(stack.pop() >= last)
+
+      elif opcode is MIR_OPCODE_DROP
+        stack.eat()
+
+      elif opcode is MIR_OPCODE_DROP_N
+        stack.eatN(item[1])
+
+      elif opcode is MIR_OPCODE_DUP
+        stack.dup()
+
+      elif opcode is MIR_OPCODE_OVER
+        stack.over()
+
+      elif opcode is MIR_OPCODE_LOAD_LOCAL
+        stack.push(local[item[1]])
+
+      elif opcode is MIR_OPCODE_LOAD_GLOBAL
+        stack.push(heap[item[1]])
+
+      elif opcode is MIR_OPCODE_CONV2STR
+        stack.push(str(stack.pop()))
+
+      elif opcode is MIR_OPCODE_GETLEN
+        stack.push(len(stack.pop()))
+
+      elif opcode is MIR_OPCODE_LOAD_INDEX
+        idx = stack.pop()
+        box = stack.pop()
+        stack.push(box[idx])
+
+      elif opcode is MIR_OPCODE_LOAD_PARAMN
+        paramBase  = paramBaseStack[deepIdx]
+        idx        = item[1]
+        paramValue = stack.getByAbsoluteIdx(paramBase + idx)
+        stack.push(paramValue)
+
+      elif opcode is MIR_OPCODE_STORE_LOCAL
+        local[item[1]] = stack.pop()
+
+      elif opcode is MIR_OPCODE_STORE_GLOBAL
+        heap[item[1]] = stack.pop()
+
+      elif opcode is MIR_OPCODE_STORE_PARAMN
+        paramBase  = paramBaseStack[deepIdx]
+        idx        = item[1]
+        stack.setByAbsoluteIdx(paramBase + idx, stack.pop())
+
+      elif opcode is MIR_OPCODE_STORE_INDEX
+        val = stack.pop()
+        idx = stack.pop()
+        box = stack.pop()
+
+        box[idx] = val
+        stack.push(box)
+
+      elif opcode is MIR_OPCODE_JMP
+        ip = item[1] - 1
+
+      elif opcode is MIR_OPCODE_JMP_IF_TRUE
+        if stack.pop() is true
+          ip = item[1] - 1
+        endif
+
+      elif opcode is MIR_OPCODE_JMP_IF_FALSE
+        if stack.pop() is false
+          ip = item[1] - 1
+        endif
+
+      elif opcode is MIR_OPCODE_MOVE_BACK
+        src = stack.pop()
+        dst = stack.pop()
+        stack.push(src)
+
+      elif opcode is MIR_OPCODE_CALL
+        stack.push(ip)
+
+        proto   = item[1]
+        ip      = proto['ptr'] - 1
+        deepIdx = deepIdx + 1
+        # TODO: Better handling here?
+        local              = []
+        dataStack[deepIdx] = local
+
+        if proto['isConstructor'] is true
+          # TODO: Handle it in better way.
+          # We need it to avoid eating new result (this pointer)
+          # when constructor called just after.
+          retValStack[deepIdx] = stack.peekN(proto['paramsCnt'] + 1)
+        else
+          retValStack[deepIdx] = defaultRetVal
+        endif
+
+      elif opcode is MIR_OPCODE_INIT_FRAME
+         paramBaseStack[deepIdx] = stack.size - item[1] - 1
+
+      elif opcode is MIR_OPCODE_TYPEOF
+        stack.push(typeof(stack.pop()))
+
+      elif opcode is MIR_OPCODE_RET
+        ip = stack.pop()
+        stack.eatN(item[1])
+        stack.push(retValStack[deepIdx])
+        deepIdx = deepIdx - 1
+        local   = dataStack[deepIdx]
+
+      elif opcode is MIR_OPCODE_RETVAL_GUARD
+        # TODO: More elegant way.
+        if retValStack[deepIdx] is defaultRetVal
+          __mold_warning("WARNING! Unset return variable '" + item[1] + "' in '" + item[2] + "' function.")
+          retValStack[deepIdx] = badRetVal
+        endif
+
+      elif opcode is MIR_OPCODE_LOAD_RETVAL
+        stack.push(retValStack[deepIdx])
+
+      elif opcode is MIR_OPCODE_STORE_RETVAL
+        retValStack[deepIdx] = stack.pop()
+
+      elif opcode is MIR_OPCODE_CREATE_OBJECT
+        classProto                 = item[1]
+        newObject                  = new VMachineStackObject(classProto)
+        newObject['__mold_vtable'] = classProto['vtable']
+
+        stack.push(newObject)
+
+      elif opcode is MIR_OPCODE_VCALL
+        # TODO: Remove arg2.
+        methodName  = item[1]
+        paramsCnt   = item[2]
+        thiz        = stack.peekN(paramsCnt)
+
+        vtable      = thiz['__mold_vtable']
+        methodProto = vtable[methodName]
+
+        if typeof(methodProto) is 'undefined'
+          die("error: object has no method '" + methodName + "'")
+        endif
+
+        if methodProto['paramsCnt'] isnt paramsCnt
+          die('error: ' + methodName + ' function requires exactly ' + str(methodProto['paramsCnt']) + ' parameter(s), but ' + str(paramsCnt) + ' were passed')
+        endif
+
+        stack.push(ip)
+        ip      = methodProto['ptr'] - 1
+        deepIdx = deepIdx + 1
+        # TODO: Better handling here?
+        retValStack[deepIdx] = defaultRetVal
+        local                = []
+        dataStack[deepIdx]   = local
+
+      elif opcode is MIR_OPCODE_PRINT
+        # Built-in print
+        paramsCnt = item[1]
+        msg       = ''
+        sep       = ''
+
+        # TODO: Optimize it.
+        for idx in 0 .. paramsCnt
+          __mold_printToStdOutput(sep)
+          __mold_printToStdOutput(stack.peekN(paramsCnt - idx))
+          sep = ' '
+        endfor
+        print ''
+        stack.eatN(paramsCnt - 1)
+
+      elif opcode is MIR_OPCODE_PRINT_STDOUT
+        __mold_printToStdOutput(stack.peek())
+
+      elif opcode is MIR_OPCODE_LOAD_ARGC
+        stack.push(argc)
+
+      elif opcode is MIR_OPCODE_LOAD_ARGV
+        stack.push(argv)
+
+      elif opcode is MIR_OPCODE_HALT
+        exit()
+
+      elif opcode is MIR_OPCODE_PRINT_ERROR
+        __mold_warning(stack.pop())
+        stack.push('__mold_warning_retval')
+
+      else
+        die("unknown opcode '" + str(opcode) + "'")
+      endif
+
+      ip = ip + 1
+    endwhile
+  endmethod
+
+  method dumpCode()
+    global MIR_OPCODE_NOP, MIR_OPCODE_NEG, MIR_OPCODE_ADD, MIR_OPCODE_SUB
+    global MIR_OPCODE_MUL, MIR_OPCODE_DIV, MIR_OPCODE_IDIV, MIR_OPCODE_LOAD_IMM
+    global MIR_OPCODE_LOAD_ARRAY, MIR_OPCODE_LOAD_MAP, MIR_OPCODE_CMP_EQ
+    global MIR_OPCODE_CMP_NEQ, MIR_OPCODE_CMP_GT, MIR_OPCODE_CMP_GE
+    global MIR_OPCODE_CMP_LT, MIR_OPCODE_CMP_LE, MIR_OPCODE_LOAD_LOCAL
+    global MIR_OPCODE_LOAD_PARAMN, MIR_OPCODE_LOAD_GLOBAL, MIR_OPCODE_LOAD_RETVAL
+    global MIR_OPCODE_LOAD_INDEX, MIR_OPCODE_STORE_LOCAL, MIR_OPCODE_STORE_PARAMN
+    global MIR_OPCODE_STORE_GLOBAL, MIR_OPCODE_STORE_RETVAL, MIR_OPCODE_STORE_INDEX
+    global MIR_OPCODE_DROP, MIR_OPCODE_DROP_N, MIR_OPCODE_DUP, MIR_OPCODE_OVER
+    global MIR_OPCODE_TYPEOF, MIR_OPCODE_CREATE_OBJECT, MIR_OPCODE_GET_CLASSNAME
+    global MIR_OPCODE_VCALL, MIR_OPCODE_JMP, MIR_OPCODE_JMP_IF_TRUE
+    global MIR_OPCODE_JMP_IF_FALSE, MIR_OPCODE_CALL, MIR_OPCODE_RET
+    global MIR_OPCODE_PRINT, MIR_OPCODE_INIT_FRAME, MIR_OPCODE_RETVAL_GUARD
+    global MIR_OPCODE_CREATE_OBJECT, MIR_OPCODE_HALT, MIR_OPCODE_CONV2STR
+    global MIR_OPCODE_GETLEN, MIR_OPCODE_MOVE_BACK, MIR_OPCODE_PRINT_ERROR
+    global MIR_OPCODE_LOAD_MOLD_SOURCE, MIR_OPCODE_LOAD_ARGC, MIR_OPCODE_LOAD_ARGV
+
+    codeObj     = this.code
+    code        = codeObj.code
+    codeCnt     = codeObj.codeCnt
+    labels      = codeObj.targetIps
+    labelsCnt   = codeObj.targetIpsCnt
+    comments    = codeObj.comments
+    commentsCnt = codeObj.commentsCnt
+    commentIdx  = 0
+    labelIdx    = 0
+    ip          = 0
+
+    for ip in 0 .. codeCnt
+      # Fetch instruction
+      item   = code[ip]
+      opcode = item[0]
+
+      arg1 = str(item[1])
+      arg2 = str(item[2])
+      arg  = arg1
+
+      # Emit comments if any.
+      while (commentIdx < commentsCnt) and (comments[commentIdx][0] is ip)
+        print ';', comments[commentIdx][1]
+        commentIdx = commentIdx + 1
+      endwhile
+
+      # Emit label if any.
+      while (labelIdx < labelsCnt) and (labels[labelIdx] is ip)
+        # TODO
+        labelIdAsText = str(labels[labelIdx])
+        print labelIdAsText + ':'
+        labelIdx = labelIdx + 1
+      endwhile
+
+      # Dispatch opcode.
+      if opcode is MIR_OPCODE_NOP
+        txt = 'nop'
+
+      elif opcode is MIR_OPCODE_LOAD_IMM
+        type = typeof(item[1])
+
+        if type is 'string'
+          if arg[0] is '"'
+            txt = "load.string '" + arg + "'"
+          else
+            txt = 'load.string "' + arg + '"'
+          endif
+
+        elif type is 'boolean'
+          txt = 'load.boolean ' + str(arg)
+
+        elif type is 'integer'
+          txt = 'load.integer ' + str(arg)
+
+        elif type is 'float'
+          txt = 'load.float ' + str(arg)
+
+        else
+          die('error: unhandled imm type')
+        endif
+
+      elif opcode is MIR_OPCODE_LOAD_ARRAY
+        txt = 'load.array'
+
+      elif opcode is MIR_OPCODE_LOAD_MAP
+        txt = 'load.map'
+
+      elif opcode is MIR_OPCODE_NEG
+        txt = 'neg'
+
+      elif opcode is MIR_OPCODE_ADD
+        txt = 'add'
+
+      elif opcode is MIR_OPCODE_MUL
+        txt = 'mul'
+
+      elif opcode is MIR_OPCODE_SUB
+        txt = 'sub'
+
+      elif opcode is MIR_OPCODE_DIV
+        txt = 'div'
+
+      elif opcode is MIR_OPCODE_IDIV
+        txt = 'idiv'
+
+      elif opcode is MIR_OPCODE_CMP_EQ
+        txt = 'cmp.eq'
+
+      elif opcode is MIR_OPCODE_CMP_NEQ
+        txt = 'cmp.neq'
+
+      elif opcode is MIR_OPCODE_CMP_LT
+        txt = 'cmp.lt'
+
+      elif opcode is MIR_OPCODE_CMP_LE
+        txt = 'cmp.le'
+
+      elif opcode is MIR_OPCODE_CMP_GT
+        txt = 'cmp.gt'
+
+      elif opcode is MIR_OPCODE_CMP_GE
+        txt = 'cmp.ge'
+
+      elif opcode is MIR_OPCODE_PRINT
+        txt = 'print ' + arg
+
+      elif opcode is MIR_OPCODE_LOAD_LOCAL
+        txt = 'load.local ' + arg
+
+      elif opcode is MIR_OPCODE_LOAD_INDEX
+        txt = 'load.index'
+
+      elif opcode is MIR_OPCODE_LOAD_PARAMN
+        txt = 'load.param ' + arg
+
+      elif opcode is MIR_OPCODE_LOAD_GLOBAL
+        txt = 'load.global ' + arg
+
+      elif opcode is MIR_OPCODE_LOAD_RETVAL
+        txt = 'load.retval'
+
+      elif opcode is MIR_OPCODE_LOAD_INDEX
+        txt = 'load.index'
+
+      elif opcode is MIR_OPCODE_STORE_LOCAL
+        txt = 'store.local ' + arg
+
+      elif opcode is MIR_OPCODE_STORE_PARAMN
+        txt = 'store.param ' + arg
+
+      elif opcode is MIR_OPCODE_STORE_GLOBAL
+        txt = 'store.global ' + arg
+
+      elif opcode is MIR_OPCODE_STORE_RETVAL
+        txt = 'store.retval'
+
+      elif opcode is MIR_OPCODE_STORE_INDEX
+        txt = 'store.index'
+
+      elif opcode is MIR_OPCODE_JMP
+        txt = 'jmp ' + arg
+
+      elif opcode is MIR_OPCODE_JMP_IF_TRUE
+        txt = 'jmp.if.true ' + arg
+
+      elif opcode is MIR_OPCODE_JMP_IF_FALSE
+        txt = 'jmp.if.false ' + arg
+
+      elif opcode is MIR_OPCODE_CALL
+        txt = 'call ' + arg
+
+      elif opcode is MIR_OPCODE_INIT_FRAME
+        txt = 'init.frame ' + arg
+
+      elif opcode is MIR_OPCODE_TYPEOF
+        txt = 'typeof'
+
+      elif opcode is MIR_OPCODE_RET
+        txt = 'ret ' + arg
+
+      elif opcode is MIR_OPCODE_DROP
+        txt = 'drop'
+
+      elif opcode is MIR_OPCODE_DROP_N
+        txt = 'dropn ' + arg
+
+      elif opcode is MIR_OPCODE_DUP
+        txt = 'dup'
+
+      elif opcode is MIR_OPCODE_OVER
+        txt = 'over'
+
+      elif opcode is MIR_OPCODE_VCALL
+        txt = 'vcall ' + arg1
+
+      elif opcode is MIR_OPCODE_RETVAL_GUARD
+        txt = 'retval.guard'
+
+      elif opcode is MIR_OPCODE_CREATE_OBJECT
+        txt = 'create.object ' + item[1]['name']
+
+      elif opcode is MIR_OPCODE_HALT
+        txt = 'halt'
+
+      elif opcode is MIR_OPCODE_CONV2STR
+        txt = 'str'
+
+      elif opcode is MIR_OPCODE_GETLEN
+        txt = 'len'
+
+      elif opcode is MIR_OPCODE_MOVE_BACK
+        txt = 'move.back'
+
+      elif opcode is MIR_OPCODE_PRINT_ERROR
+        txt = 'print.error'
+
+      elif opcode is MIR_OPCODE_LOAD_MOLD_SOURCE
+        txt = 'load.mold.source'
+
+      elif opcode is MIR_OPCODE_LOAD_ARGC
+        txt = 'load.argc'
+
+      elif opcode is MIR_OPCODE_LOAD_ARGV
+        txt = 'load.argv'
+
+      else
+        die("unknown opcode '" + str(opcode) + "'")
+      endif
+
+      print '  ' + txt
+
+    endfor
+  endmethod
+endclass

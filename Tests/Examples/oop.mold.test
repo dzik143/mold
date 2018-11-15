@@ -1,0 +1,431 @@
+TEST "Empty class"
+
+class Test
+endclass
+
+EXPECTED_OUTPUT:
+-------------------------------------------------------------------------------
+
+TEST "Class with one method"
+
+class Test1
+  method foo()
+    print 'Test1::foo()'
+  endmethod
+endclass
+
+class Test2
+  method foo()
+    print 'Test2::foo()'
+  endmethod
+endclass
+
+t1 = new Test1()
+t2 = new Test2()
+
+t1.foo()
+t2.foo()
+
+EXPECTED_OUTPUT:
+Test1::foo()
+Test2::foo()
+-------------------------------------------------------------------------------
+
+TEST "Call to undeclared method #1"
+
+class Test1
+  method foo()
+    print 'Test1::foo()'
+  endmethod
+endclass
+
+t1 = new Test1()
+t1.bar()
+
+EXPECTED_ERROR:
+error: object has no method 'bar'
+-------------------------------------------------------------------------------
+
+TEST "Call to undeclared method #2"
+
+class Test1
+  method foo()
+    x = this.bar()
+  endmethod
+endclass
+
+t1 = new Test1()
+t1.foo()
+
+EXPECTED_ERROR:
+error: object has no method 'bar'
+-------------------------------------------------------------------------------
+
+TEST "Constructors"
+
+class Test
+  method constructor(x, y, z)
+    print 'Test object created with parameters:', x, y, z
+  endmethod
+endclass
+
+t1 = new Test(1, 2, 3)
+t2 = new Test(4, 5, 6)
+
+EXPECTED_OUTPUT:
+Test object created with parameters: 1 2 3
+Test object created with parameters: 4 5 6
+-------------------------------------------------------------------------------
+
+TEST "Fields"
+
+class Animal
+  method constructor(name)
+    print 'Animal created:', name
+    this.name = name
+  endmethod
+
+  method sayHello()
+    print "Hello, I'm", this.name
+  endmethod
+endclass
+
+dzik     = new Animal('Dzik Ambrozy')
+paprotka = new Animal('Paprotka monika')
+
+dzik.sayHello()
+paprotka.sayHello()
+
+print 'dzik.name     =', dzik.name
+print 'paprotka.name =', paprotka.name
+
+EXPECTED_OUTPUT:
+Animal created: Dzik Ambrozy
+Animal created: Paprotka monika
+Hello, I'm Dzik Ambrozy
+Hello, I'm Paprotka monika
+dzik.name     = Dzik Ambrozy
+paprotka.name = Paprotka monika
+-------------------------------------------------------------------------------
+
+TEST "Derived class"
+
+class Base
+  method constructor()
+    print 'Base created'
+  endmethod
+
+  method foo()
+    print 'Base::foo called'
+  endmethod
+endclass
+
+class Derived extends Base
+  method constructor()
+    print 'Derived created'
+  endmethod
+endclass
+
+base    = new Base()
+derived = new Derived()
+
+base.foo()
+derived.foo()
+
+EXPECTED_OUTPUT:
+Base created
+Derived created
+Base::foo called
+Base::foo called
+-------------------------------------------------------------------------------
+
+TEST "Overload function by derive class"
+
+class Base
+  method constructor()
+    print 'Base created'
+  endmethod
+
+  method foo()
+    print 'Base::foo called'
+  endmethod
+endclass
+
+class Derived extends Base
+  method constructor()
+    print 'Derived created'
+  endmethod
+
+  method foo()
+    print 'Derived::foo called'
+  endmethod
+endclass
+
+base    = new Base()
+derived = new Derived()
+
+base.foo()
+derived.foo()
+
+EXPECTED_OUTPUT:
+Base created
+Derived created
+Base::foo called
+Derived::foo called
+-------------------------------------------------------------------------------
+
+TEST "Call super() explicite"
+
+class Base
+  method constructor(x)
+    print 'Base created with parameter', x
+  endmethod
+endclass
+
+class Derived extends Base
+  method constructor(x)
+    super(x + 1)
+    print 'Derived created with parameter', x
+  endmethod
+endclass
+
+derived = new Derived(1)
+
+EXPECTED_OUTPUT:
+Base created with parameter 2
+Derived created with parameter 1
+-------------------------------------------------------------------------------
+
+TEST "3 derived classes"
+
+class A
+  method constructor(x)
+    print 'A created with parameter', x
+  endmethod
+endclass
+
+class B extends A
+  method constructor(x)
+    super(x + 1)
+    print 'B created with parameter', x
+  endmethod
+endclass
+
+class C extends B
+  method constructor(x)
+    super(x + 1)
+    print 'C created with parameter', x
+  endmethod
+endclass
+
+x = new C(1)
+
+EXPECTED_OUTPUT:
+A created with parameter 3
+B created with parameter 2
+C created with parameter 1
+-------------------------------------------------------------------------------
+
+TEST "Method with return value"
+
+class Base
+  method getOne() -> rv
+    rv = 1
+  endmethod
+endclass
+
+base = new Base()
+print base.getOne()
+
+EXPECTED_OUTPUT:
+1
+-------------------------------------------------------------------------------
+
+TEST "Call this attribute's method"
+
+class Base
+  method foo()
+    print 'Base::foo()'
+  endmethod
+endclass
+
+class Derived extends Base
+  method foo()
+    print 'Derived::foo()'
+  endmethod
+endclass
+
+class Box
+  method constructor()
+    this.base    = new Base()
+    this.derived = new Derived()
+  endmethod
+
+  method bar()
+    # TODO: Handle this.x.y() chain.
+    base    = this.base
+    derived = this.derived
+
+    base.foo()
+    derived.foo()
+  endmethod
+endclass
+
+box = new Box()
+box.bar()
+
+EXPECTED_OUTPUT:
+Base::foo()
+Derived::foo()
+-------------------------------------------------------------------------------
+
+TEST "Virtual call"
+
+class Base
+  method foo()
+    print 'Base::foo()'
+  endmethod
+endclass
+
+class Derived extends Base
+  method foo()
+    print 'Derived::foo()'
+  endmethod
+endclass
+
+function ExecuteFoo(obj)
+  obj.foo()
+endfunction
+
+base    = new Base()
+derived = new Derived()
+
+ExecuteFoo(base)
+ExecuteFoo(derived)
+
+EXPECTED_OUTPUT:
+Base::foo()
+Derived::foo()
+-------------------------------------------------------------------------------
+
+TEST "Bug: Forward method call"
+
+class Base
+  method foo()
+    print 'Base::foo()'
+    this.bar()
+  endmethod
+
+  method bar()
+    print 'Base::bar()'
+  endmethod
+endclass
+
+base = new Base()
+base.foo()
+
+EXPECTED_OUTPUT:
+Base::foo()
+Base::bar()
+-------------------------------------------------------------------------------
+
+TEST "Bug: Not dropped method retval"
+
+class Base
+  method foo(x)
+    print 'Base::foo(', x, ')'
+  endmethod
+endclass
+
+base = new Base()
+
+for idx in 0 .. 5
+  base.foo(idx)
+endfor
+
+EXPECTED_OUTPUT:
+Base::foo( 0 )
+Base::foo( 1 )
+Base::foo( 2 )
+Base::foo( 3 )
+Base::foo( 4 )
+-------------------------------------------------------------------------------
+
+TEST "Bug: Not checked parameters count in vcall #1 (SKIPPED!)"
+/*
+class Base
+  method foo(x)
+    print 'foo(', x, ')'
+  endmethod
+endclass
+
+obj = new Base()
+obj.foo()
+
+EXPECTED_____ERROR:
+error: method 'foo' requires exactly 2 parameters, but 1 were passed
+*/
+
+print 'SKIPPED!'
+EXPECTED_OUTPUT:
+SKIPPED!
+-------------------------------------------------------------------------------
+
+TEST "Bug: Not checked parameters count in vcall #2 (SKIPPED!)"
+/*
+class Base
+  method foo(x)
+    print 'foo(', x, ')'
+  endmethod
+  
+  method bar()
+    this.foo()
+  endmethod
+endclass
+
+obj = new Base()
+obj.bar()
+
+EXPECTED____ERROR:
+error: method 'foo' requires exactly 2 parameters, but 1 were passed
+*/
+
+print 'SKIPPED!'
+EXPECTED_OUTPUT:
+SKIPPED!
+-------------------------------------------------------------------------------
+
+TEST "Bug: Overwritten this argument in 'x = x.getFoo()' vcall"
+
+class Base
+  method constructor()
+    this.foo = 'foo'
+  endmethod
+  
+  method getFoo() -> rv
+    rv = this.foo
+  endmethod
+endclass
+
+x = new Base()
+x = x.getFoo()
+print x
+
+EXPECTED_OUTPUT:
+foo
+-------------------------------------------------------------------------------
+
+TEST "Method with long call list"
+
+class Base
+  method foo(x1, x2, x3, x4, x5, x6, x7, x8)
+    print 'Base::foo(', x1, x2, x3, x4, x5, x6, x7, x8, ')'
+  endmethod
+endclass  
+
+obj = new Base()
+obj.foo(1,2,3,4,5,6,7,8)
+
+EXPECTED_OUTPUT:
+Base::foo( 1 2 3 4 5 6 7 8 )
+--------------------------------------------------------------------------------

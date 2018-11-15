@@ -1,0 +1,159 @@
+TEST "Attemp to access global without import (should fail)"
+
+x = 'global'
+function foo()
+  print x
+endfunction
+
+foo()
+
+EXPECTED_ERROR
+error: 'x' was not declared in this scope
+--------------------------------------------------------------------------------
+
+TEST "Attemp to import non-existing global"
+
+function foo()
+  global x
+endfunction
+foo()
+
+EXPECTED_ERROR
+error: 'x' was not declared in this scope
+--------------------------------------------------------------------------------
+
+TEST "Read global variable within function"
+
+x = 'global'
+
+function foo()
+  global x
+  print x
+endfunction
+
+print x
+foo()
+print x
+
+EXPECTED_OUTPUT
+global
+global
+global
+--------------------------------------------------------------------------------
+
+TEST "Attemp to import the same global twice"
+
+x = 'global'
+
+function foo()
+  global x
+  global x
+  print x
+endfunction
+
+print x
+foo()
+print x
+
+EXPECTED_OUTPUT
+global
+global
+global
+--------------------------------------------------------------------------------
+
+TEST "Modify global variable within function"
+
+x = 'global'
+function foo()
+  global x
+  x = 'local'
+  print x
+endfunction
+
+print x
+foo()
+print x
+
+EXPECTED_OUTPUT
+global
+local
+local
+--------------------------------------------------------------------------------
+
+TEST "Mask global by local argument"
+
+x = 'global'
+function foo(x)
+  print x
+endfunction
+
+print x
+foo('local')
+print x
+
+EXPECTED_OUTPUT:
+global
+local
+global
+--------------------------------------------------------------------------------
+
+TEST "Mask global by return value"
+
+rv = 'global'
+
+function foo() -> rv
+  rv = 'local'
+endfunction
+
+print rv
+print foo()
+print rv
+
+EXPECTED_OUTPUT:
+global
+local
+global
+--------------------------------------------------------------------------------
+
+TEST "Bug: Redefined global as local (undefined) when used as lvalue"
+
+NextId = 1234
+function GetNextId() -> rv
+  global NextId
+  rv     = NextId
+  NextId = NextId + 1
+endfunction
+
+print GetNextId()
+print GetNextId()
+print GetNextId()
+EXPECTED_OUTPUT:
+1234
+1235
+1236
+--------------------------------------------------------------------------------
+
+TEST "Bug: Treat undefined as undeclared"
+
+x = []
+y = x[0]
+print y
+
+EXPECTED_OUTPUT:
+undefined
+--------------------------------------------------------------------------------
+
+TEST "Attemp to import global, when local already defined"
+
+x = 'global'
+
+function foo()
+  x = 'local'
+  global x
+endfunction
+
+foo()
+
+EXPECTED_ERROR
+error: conflicting declaration 'global x'
+--------------------------------------------------------------------------------

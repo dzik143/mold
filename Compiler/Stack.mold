@@ -1,0 +1,85 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+class Stack
+  method constructor()
+    this.data = []
+    this.size = 0
+  endmethod
+
+  method getItems() -> rv
+    # TODO: Optimize it.
+    rv   = []
+    data = this.data
+    size = this.size
+
+    for idx in 0 .. size
+      rv[idx] = data[idx]
+    endfor
+  endmethod
+
+  method push(x)
+    this.data[this.size] = x
+    this.size = this.size + 1
+  endmethod
+
+  method pop() -> rv
+    if this.size is 0
+      die('error: stack is empty')
+    endif
+
+    this.size = this.size - 1
+    rv = this.data[this.size]
+  endmethod
+
+  method over()
+    this.push(this.data[this.size - 2])
+  endmethod
+
+  method dup()
+    this.push(this.data[this.size - 1])
+  endmethod
+
+  method eat()
+    this.pop()
+  endmethod
+
+  method eatN(n)
+    this.size = this.size - n
+  endmethod
+
+  method setByAbsoluteIdx(idx, val)
+    this.data[idx] = val
+  endmethod
+
+  method getByAbsoluteIdx(idx) -> rv
+    rv = this.data[idx]
+  endmethod
+
+  method peek() -> rv
+    if this.size > 0
+      rv = this.data[this.size - 1]
+    else
+      die('error: peek from empty stack')
+    endif
+  endmethod
+
+  method peekN(idx) -> rv
+    if this.size >= idx
+      rv = this.data[this.size - idx]
+    else
+      die('error: peek ' + str(idx) + ' item, but only ' + str(this.size) + ' availble')
+    endif
+  endmethod
+endclass

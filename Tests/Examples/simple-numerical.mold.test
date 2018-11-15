@@ -1,0 +1,38 @@
+TEST "sqrt(2) by Newton method"
+#
+# Calculate sqrt(2) using iterative (Netwton) method.
+#
+#        x             2
+# newX = - * (3 - S * x )
+#        2
+#
+
+S     = 1/2.0
+x     = 1
+delta = 1000000
+iter  = 0
+
+function abs(x) -> rv
+  if x < 0
+    rv = -x
+  else
+    rv = x
+  endif
+endfunction
+
+while delta > 0.00001
+  newX  = x/2 * (3 - S * x*x)
+  delta = abs(x - newX)
+  x     = newX
+  iter  = iter + 1
+
+  print 'iter', iter, ':', x, ', delta=', delta
+endwhile
+
+EXPECTED_OUTPUT:
+iter 1 : 1.250000 , delta= 0.250000
+iter 2 : 1.386719 , delta= 0.136719
+iter 3 : 1.413417 , delta= 0.026698
+iter 4 : 1.414213 , delta= 0.000796
+iter 5 : 1.414214 , delta= 0.000001
+-------------------------------------------------------------------------------

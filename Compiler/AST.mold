@@ -1,0 +1,77 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+# ------------------------------------------------------------------------------
+#                               Common constants
+# ------------------------------------------------------------------------------
+
+AST_DATA_INTEGER   = 1
+AST_DATA_FLOAT     = 2
+AST_DATA_DOUBLE    = 3
+AST_DATA_STRING    = 4
+AST_DATA_BOOL      = 5
+AST_DATA_PTR       = 6
+AST_DATA_NULL      = 7
+AST_DATA_UNDEFINED = 8
+AST_DATA_ARRAY     = 9
+AST_DATA_MAP       = 10
+
+AST_OPCODE_PROGRAM  = 100
+AST_OPCODE_BLOCK    = 101
+AST_OPCODE_FUNCTION = 102
+
+AST_OPCODE_CLASS         = 103
+AST_OPCODE_CLASS_METHOD  = 104
+AST_OPCODE_CLASS_FIELD   = 105
+AST_OPCODE_INVOKE_METHOD = 106
+AST_OPCODE_CALL_NEW      = 107
+AST_OPCODE_CALL_DELETE   = 108
+
+AST_OPCODE_IF               = 150
+AST_OPCODE_ELIF             = 'undefined'
+AST_OPCODE_GOTO             = 151
+AST_OPCODE_CALL             = 152
+AST_OPCODE_WHILE            = 153
+AST_OPCODE_FOR              = 154
+AST_OPCODE_FOR_VALUES_RANGE = 155
+AST_OPCODE_SWITCH           = 'obsolete'
+AST_OPCODE_SWITCH_CASE_OTHERWISE = 'obsolete'
+
+AST_OPCODE_DECLARE           = 200
+AST_OPCODE_VARIABLE          = 201
+AST_OPCODE_ASSIGN            = 202
+AST_OPCODE_REFERENCE         = 203
+AST_OPCODE_DECLARE_OR_ASSIGN = 204
+
+AST_OPCODE_NEG    = 301
+AST_OPCODE_ADD    = 302
+AST_OPCODE_SUB    = 303
+AST_OPCODE_MUL    = 304
+AST_OPCODE_DIV    = 305
+AST_OPCODE_INC    = 306
+AST_OPCODE_DEC    = 307
+AST_OPCODE_IDIV   = 308
+
+AST_OPCODE_COMPARE_EQ  = 400
+AST_OPCODE_COMPARE_NEQ = 401
+AST_OPCODE_COMPARE_GT  = 402
+AST_OPCODE_COMPARE_GE  = 403
+AST_OPCODE_COMPARE_LT  = 404
+AST_OPCODE_COMPARE_LE  = 405
+
+AST_OPCODE_BOOL_AND = 500
+AST_OPCODE_BOOL_OR  = 501
+AST_OPCODE_BOOL_NOT = 502
+
+AST_OPCODE_NOP = 999

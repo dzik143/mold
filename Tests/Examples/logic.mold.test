@@ -1,0 +1,275 @@
+TEST "Simple and/or"
+print 'true and true gives' , true and true
+print 'true and false gives', true and false
+print 'false and true gives', false and true
+print 'false and false gives', false and false
+
+print 'true or true gives' , true or true
+print 'true or false gives', true or false
+print 'false or true gives', false or true
+print 'false or false gives', false or false
+
+EXPECTED_OUTPUT:
+true and true gives true
+true and false gives false
+false and true gives false
+false and false gives false
+true or true gives true
+true or false gives true
+false or true gives true
+false or false gives false
+--------------------------------------------------------------------------------
+
+TEST "Simple if"
+x = 10
+
+if x is 0
+  print x, 'is 0: true'
+else
+  print x, 'is 0: false'
+endif
+
+if x isnt 0
+  print x, 'isnt 0: true'
+else
+  print x, 'isnt 0: false'
+endif
+
+if x is 10
+  print x, 'is 10: true'
+else
+  print x, 'is 10: false'
+endif
+
+if x < 0
+  print x, '< 0: true'
+else
+  print x, '< 0: false'
+endif
+
+if x > 0
+  print x, '> 0: true'
+else
+  print x, '> 0: false'
+endif
+
+if x <= 0
+  print x, '<= 0: true'
+else
+  print x, '<= 0: false'
+endif
+
+if x >= 0
+  print x, '>= 0: true'
+else
+  print x, '>= 0: false'
+endif
+
+if x <= 10
+  print x, '<= 10: true'
+else
+  print x, '<= 10: false'
+endif
+
+if x >= 10
+  print x, '>= 10: true'
+else
+  print x, '>= 10: false'
+endif
+
+EXPECTED_OUTPUT:
+10 is 0: false
+10 isnt 0: true
+10 is 10: true
+10 < 0: false
+10 > 0: true
+10 <= 0: false
+10 >= 0: true
+10 <= 10: true
+10 >= 10: true
+-------------------------------------------------------------------------------
+
+TEST "If with multiple conditions"
+
+function checkInRange(x, xMin, xMax)
+  if (x >= xMin) and (x <= xMax)
+    print 'Number', x, 'is in range <', xMin, ',', xMax, '>'
+  else
+    print 'Number', x, 'is NOT in range <', xMin, ',', xMax, '>'
+  endif
+
+endfunction
+
+function checkOutOfRange(x, xMin, xMax)
+  if (x < xMin) or (x > xMax)
+    print 'Number', x, 'is out of range <', xMin, ',', xMax, '>'
+  else
+    print 'Number', x, 'is NOT out of range <', xMin, ',', xMax, '>'
+  endif
+endfunction
+
+# Test X and Y condition
+print 'X and Y test'
+print '============'
+checkInRange(1,   1, 10)
+checkInRange(-10, 1, 10)
+checkInRange(11,  1, 10)
+
+# Test X or Y condition
+print 'X or Y test'
+print '==========='
+checkOutOfRange(1,   1, 10)
+checkOutOfRange(-10, 1, 10)
+checkOutOfRange(11,  1, 10)
+
+
+EXPECTED_OUTPUT:
+X and Y test
+============
+Number 1 is in range < 1 , 10 >
+Number -10 is NOT in range < 1 , 10 >
+Number 11 is NOT in range < 1 , 10 >
+X or Y test
+===========
+Number 1 is NOT out of range < 1 , 10 >
+Number -10 is out of range < 1 , 10 >
+Number 11 is out of range < 1 , 10 >
+-------------------------------------------------------------------------------
+
+TEST "Long and/or chains"
+
+if true or true or true or true or true or true or true
+  print 'true or true or true or ... is true'
+else
+  print 'true or true or true or ... is false'
+endif
+
+if false or false or false or false or false or false
+  print 'false or false or false or ... is true'
+else
+  print 'false or false or false or ... is false'
+endif
+
+if false and true and true and true and true and true
+  print 'false and true and true and ... is true'
+else
+  print 'false and true and true and ... is false'
+endif
+
+if true and true and true and true and true and false
+  print 'true and true ... and false is true'
+else
+  print 'true and true ... and false is false'
+endif
+
+x = 3
+if (x is 1) or (x is 2) or (x is 3) or (x is 4)
+  print 'x is 1 or 2 or 3 or 4 is true'
+else
+  print 'x is 1 or 2 or 3 or 4 false'
+endif
+
+if (x is 1) and (x is 2) and (x is 3) and (x is 4)
+  print 'x is 1 and 2 and 3 and 4 is true'
+else
+  print 'x is 1 and 2 and 3 and 4 is false'
+endif
+
+EXPECTED_OUTPUT:
+true or true or true or ... is true
+false or false or false or ... is false
+false and true and true and ... is false
+true and true ... and false is false
+x is 1 or 2 or 3 or 4 is true
+x is 1 and 2 and 3 and 4 is false
+-------------------------------------------------------------------------------
+TEST "IF-ELIF-ELIF-ELIF-...ELSE-ENDIF chain"
+
+function foo(x)
+  if x is 1
+    print 'x is 1'
+  elif x is 2
+    print 'x is 2'
+  elif x is 3
+    print 'x is 3'
+  elif x is 4
+    print 'x is 4'
+  elif x is 5
+    print 'x is 5'
+  else
+    print 'x is something else'
+  endif
+endfunction
+
+foo(1)
+foo(2)
+foo(3)
+foo(4)
+foo(5)
+foo(6)
+
+EXPECTED_OUTPUT:
+x is 1
+x is 2
+x is 3
+x is 4
+x is 5
+x is something else
+-------------------------------------------------------------------------------
+
+TEST "Bug: treat undefined as true"
+
+function foo() -> rv
+  x  = []
+  rv = x[0] # rv is undefined
+endfunction
+
+if foo() is true
+  print 'foo() is true'
+elif foo() is false
+  print 'foo() is false'
+else
+  print 'foo() is neither true nor false'
+endif
+
+if foo() isnt true
+  print 'foo() isnt true'
+endif
+
+if foo() isnt false
+  print 'foo() isnt false'
+endif
+
+EXPECTED_OUTPUT:
+foo() is neither true nor false
+foo() isnt true
+foo() isnt false
+-------------------------------------------------------------------------------
+
+TEST "Bug: signed integer GE"
+
+targetId = -1
+
+if targetId >= 0
+  print 'Label already emited'
+else
+  print 'Label not emited yet'
+endif
+
+EXPECTED_OUTPUT:
+Label not emited yet
+-------------------------------------------------------------------------------
+
+TEST "Bug: if (<string> isnt <string>) and (<string> isnt <string>)"
+rvType   = 'undefined'
+procName = 'start'
+
+if (rvType isnt 'undefined') and (procName isnt 'constructor')
+  print 'There is return value defined'
+else
+  print 'There is NO return value defined'
+endif
+
+EXPECTED_OUTPUT:
+There is NO return value defined
+-------------------------------------------------------------------------------
