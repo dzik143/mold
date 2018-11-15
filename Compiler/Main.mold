@@ -103,6 +103,7 @@ if mode is 'ast'
 
 else
   # Convert AST to form understood by translator.
+  # TODO: Remove this step.
   ast = ast.convert()
 
   # Translate program to MIR (stack based).
