@@ -31,8 +31,7 @@ class ASTTranslatorMIR extends ASTTranslator
   # ----------------------------------------------------------------------------
 
   method _callStr(x) -> rv
-    code = this.code
-    code.conv2str()
+    this.code.conv2str()
     rv = false
   endmethod
 
@@ -41,39 +40,33 @@ class ASTTranslatorMIR extends ASTTranslator
   endmethod
 
   method _callLen(x) -> rv
-    code = this.code
-    code.getLen()
+    this.code.getLen()
     rv = false
   endmethod
 
   method _callExit() -> rv
-    code = this.code
-    code.halt()
+    this.code.halt()
     rv = false
   endmethod
 
   method _callMoldWarning(msg) -> rv
-    code = this.code
-    code.callPrintError(msg)
+    this.code.callPrintError(msg)
     rv = false
   endmethod
 
   method _callMoldPrintToStdOut(msg) -> rv
-    code = this.code
-    code.callPrintToStdOut(msg)
+    this.code.callPrintToStdOut(msg)
     rv = false
   endmethod
 
   method _callDie(msg)
-    code = this.code
-    code.callPrintError(msg)
-    code.drop()
-    code.halt()
+    this.code.callPrintError(msg)
+    this.code.drop()
+    this.code.halt()
   endmethod
 
   method _callMoldCreateObject(classProto) -> rv
-    code = this.code
-    code.createObject(classProto)
+    this.code.createObject(classProto)
     rv = false
   endmethod
 
@@ -83,20 +76,17 @@ class ASTTranslatorMIR extends ASTTranslator
   endmethod
 
   method _callMoldParseFile(filePath) -> rv
-    code = this.code
-    code.loadMoldSource()
+    this.code.loadMoldSource()
     rv = false
   endmethod
 
   method _loadArgsVector() -> rv
-    code = this.code
-    code.loadArgv()
+    this.code.loadArgv()
     rv = false
   endmethod
 
   method _loadArgsCount() -> rv
-    code = this.code
-    code.loadArgc()
+    this.code.loadArgc()
     rv = false
   endmethod
 
@@ -105,100 +95,79 @@ class ASTTranslatorMIR extends ASTTranslator
   # ----------------------------------------------------------------------------
 
   method _neg(value) -> rv
-    code = this.code
-    code.neg()
+    this.code.neg()
     rv = false
   endmethod
 
   method _add(x, y) -> rv
-    code = this.code
-    code.add()
+    this.code.add()
     rv = false
   endmethod
 
   method _sub(x, y) -> rv
-    code = this.code
-    code.sub()
+    this.code.sub()
     rv = false
   endmethod
 
   method _mul(x, y) -> rv
-    code = this.code
-    code.mul()
+    this.code.mul()
     rv= false
   endmethod
 
   method _div(x, y) -> rv
-    code = this.code
-    code.div()
+    this.code.div()
     rv = false
   endmethod
 
   method _idiv(x, y) -> rv
-    code = this.code
-    code.idiv()
+    this.code.idiv()
     rv = false
   endmethod
 
   method _loadArray() -> rv
-    code = this.code
-    code.loadArray()
+    this.code.loadArray()
     rv = false
   endmethod
 
   method _loadMap() -> rv
-    code = this.code
-    code.loadMap()
+    this.code.loadMap()
     rv = false
   endmethod
 
   method _loadImm(value) -> rv
-    code = this.code
-    code.loadImm(value)
+    this.code.loadImm(value)
     rv = false
   endmethod
 
   method _compareEQ(x, y) -> rv
-    code = this.code
-    code.cmpEQ()
+    this.code.cmpEQ()
     rv = false
   endmethod
 
   method _compareNEQ(x, y) -> rv
-    code = this.code
-    code.cmpNEQ()
+    this.code.cmpNEQ()
     rv = false
   endmethod
 
   method _compareLT(x, y) -> rv
-    code = this.code
-    code.cmpLT()
+    this.code.cmpLT()
     rv = false
   endmethod
 
   method _compareLE(x, y) -> rv
-    code = this.code
-    code.cmpLE()
+    this.code.cmpLE()
     rv = false
   endmethod
 
   method _compareGT(x, y) -> rv
-    code = this.code
-    code.cmpGT()
+    this.code.cmpGT()
     rv = false
   endmethod
 
   method _compareGE(x, y) -> rv
-    code = this.code
-    code.cmpGE()
+    this.code.cmpGE()
     rv = false
   endmethod
-
-#  method _boolAnd(x, y) -> rv
-#  endmethod
-
-#  method _boolOr(x, y) -> rv
-#  endmethod
 
   method _loadVariable(name) -> rv
     global SYMBOL_KIND_VAR_LOCAL
@@ -206,28 +175,26 @@ class ASTTranslatorMIR extends ASTTranslator
     global SYMBOL_KIND_VAR_PARAM
     global SYMBOL_KIND_VAR_RETVAL
 
-    symbolTable = this.symbolTable
-    code        = this.code
-    info        = symbolTable.lookup(name)
-    kind        = info['kind']
-    id          = info['id']
-    rv          = false
+    info = this.symbolTable.lookup(name)
+    kind = info['kind']
+    id   = info['id']
+    rv   = false
 
     if kind is SYMBOL_KIND_VAR_LOCAL
       # Local variable
-      code.loadLocal(id)
+      this.code.loadLocal(id)
 
     elif kind is SYMBOL_KIND_VAR_GLOBAL
       # Global variable
-      code.loadGlobal(id)
+      this.code.loadGlobal(id)
 
     elif kind is SYMBOL_KIND_VAR_PARAM
       # One of call parameters.
-      code.loadParamN(id)
+      this.code.loadParamN(id)
 
     elif kind is SYMBOL_KIND_VAR_RETVAL
       # Return value of current function.
-      code.loadRetVal()
+      this.code.loadRetVal()
 
     else
       this._error("unexpected symbol kind '" + name + "' (" + str(kind) + ")")
@@ -240,27 +207,25 @@ class ASTTranslatorMIR extends ASTTranslator
     global SYMBOL_KIND_VAR_PARAM
     global SYMBOL_KIND_VAR_RETVAL
 
-    symbolTable = this.symbolTable
-    code        = this.code
-    info        = symbolTable.lookup(name)
-    kind        = info['kind']
-    id          = info['id']
+    info = this.symbolTable.lookup(name)
+    kind = info['kind']
+    id   = info['id']
 
     if kind is SYMBOL_KIND_VAR_LOCAL
       # Local variable
-      code.storeLocal(id)
+      this.code.storeLocal(id)
 
     elif kind is SYMBOL_KIND_VAR_GLOBAL
       # Global variable
-      code.storeGlobal(id)
+      this.code.storeGlobal(id)
 
     elif kind is SYMBOL_KIND_VAR_PARAM
       # One of call parameters.
-      code.storeParamN(id)
+      this.code.storeParamN(id)
 
     elif kind is SYMBOL_KIND_VAR_RETVAL
       # Return value of current function.
-      code.storeRetVal()
+      this.code.storeRetVal()
 
     else
       this._error("unexpected symbol kind '" + name + "' (" + str(kind) + ")")
@@ -268,86 +233,76 @@ class ASTTranslatorMIR extends ASTTranslator
   endmethod
 
   method _call(proto, params, paramsCnt) -> rv
-    code = this.code
-    code.call(proto)
+    this.code.call(proto)
     rv = false
   endmethod
 
   method _callPrint(params, paramsCnt)
-    code = this.code
-    code.callPrint(paramsCnt)
+    this.code.callPrint(paramsCnt)
     rv = false
   endmethod
 
   method _typeof(value) -> rv
-    code = this.code
-    code.getTypeOf()
+    this.code.getTypeOf()
     rv = false
   endmethod
 
   method _loadFromIndex(unusedBox, unusedIdx) -> rv
-    code = this.code
-    code.loadIndex()
+    this.code.loadIndex()
     rv = false
   endmethod
 
   method _storeAtIndex(unusedBox, unusedIdx, unusedValue)
-    code = this.code
-    code.storeIndex()
+    this.code.storeIndex()
   endmethod
 
   method _storeAtIndexAndDrop(unusedBox, unusedIdx, unusedValue)
-    code = this.code
-    code.storeIndex()
-    code.drop()
+    this.code.storeIndex()
+    this.code.drop()
   endmethod
 
   method _createObject(classProto) -> rv
-    code = this.code
-    code.createObject(classProto)
+    this.code.createObject(classProto)
     rv = false
   endmethod
 
   method _evaluateNodeLazyBoolAnd(leftAst, rightAst) -> rv
-    code       = this.code
-    endLabelId = code.createLabel()
+    endLabelId = this.code.createLabel()
     rv         = false
 
-    code.loadImm(false)           # [false]
-    this._evaluateNode(leftAst)   # [false x]
-    code.jmpIfFalse(endLabelId)   # [false]
+    this.code.loadImm(false)         # [false]
+    this._evaluateNode(leftAst)      # [false x]
+    this.code.jmpIfFalse(endLabelId) # [false]
 
     # Evaluate right node only if left is true.
-    this._evaluateNode(rightAst)  # [y]
-    code.moveBack()               # []
-    code.emitLabel(endLabelId)
+    this._evaluateNode(rightAst)     # [y]
+    this.code.moveBack()             # []
+    this.code.emitLabel(endLabelId)
   endmethod
 
   method _evaluateNodeLazyBoolOr(leftAst, rightAst) -> rv
-    code       = this.code
-    endLabelId = code.createLabel()
+    endLabelId = this.code.createLabel()
     rv         = false
 
-    code.loadImm(true)            # [true]
-    this._evaluateNode(leftAst)   # [true x]
-    code.jmpIfTrue(endLabelId)    # [true]
+    this.code.loadImm(true)         # [true]
+    this._evaluateNode(leftAst)     # [true x]
+    this.code.jmpIfTrue(endLabelId) # [true]
 
     # Evaluate right node only if left is false.
-    this._evaluateNode(rightAst)  # [y]
-    code.moveBack()               # []
-    code.emitLabel(endLabelId)
+    this._evaluateNode(rightAst)    # [y]
+    this.code.moveBack()            # []
+    this.code.emitLabel(endLabelId)
   endmethod
 
   method _invokeMethod(methodName, params, paramsCnt) -> rv
     # TODO: Remove paramsCnt
-    code = this.code
-    code.vcall(methodName, paramsCnt)
+    this.code.vcall(methodName, paramsCnt)
     rv = false
   endmethod
 
   method _executeNodeFor(iterName, valueStart, valueEnd, valueStep, bodyAst)
-    code        = this.code
     symbolTable = this.symbolTable
+    code        = this.code
     loopLabelId = code.createLabel()
     endLabelId  = code.createLabel()
 
@@ -415,13 +370,11 @@ class ASTTranslatorMIR extends ASTTranslator
   endmethod
 
   method _declareFunction(funcName, funcProto)
-    code                 = this.code
-    funcProto['labelId'] = code.createLabel()
+    funcProto['labelId'] = this.code.createLabel()
   endmethod
 
   method _declareClass(className, classProto)
-    code = this.code
-    code.createClass(classProto)
+    this.code.createClass(classProto)
   endmethod
 
   method _emitFunctionBody(funcName, funcProto)
@@ -499,8 +452,7 @@ class ASTTranslatorMIR extends ASTTranslator
   endmethod
 
   method _dropRetVal()
-    code = this.code
-    code.drop()
+    this.code.drop()
   endmethod
 
   # ----------------------------------------------------------------------------

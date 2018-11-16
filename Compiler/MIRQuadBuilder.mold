@@ -105,33 +105,29 @@ class MIRQuadBuilder extends PipeAbstract
   endmethod
 
   method popOneArgAndEmitOpcode(opcode)
-    stack = this.stack
-    rv    = this.createTempVar()
-    x     = stack.pop()
-    stack.push(rv)
+    rv = this.createTempVar()
+    x  = this.stack.pop()
+    this.stack.push(rv)
     this.emitOneArgOpcode(opcode, rv, x)
   endmethod
 
   method popTwoArgsAndEmitOpcode(opcode)
-    stack = this.stack
-    rv    = this.createTempVar()
-    y     = stack.pop()
-    x     = stack.pop()
-    stack.push(rv)
+    rv = this.createTempVar()
+    y  = this.stack.pop()
+    x  = this.stack.pop()
+    this.stack.push(rv)
     this.emitTwoArgsOpcode(opcode, rv, x, y)
   endmethod
 
   method popParametersBeforeCall(paramsCnt) -> params
     params = []
-    stack  = this.stack
 
     for idx in 0 .. paramsCnt
-      # TODO: Simplify it after bug fix.
-      item = stack.peekN(paramsCnt - idx)
+      item        = this.stack.peekN(paramsCnt - idx)
       params[idx] = item
     endfor
 
-    stack.eatN(paramsCnt)
+    this.stack.eatN(paramsCnt)
   endmethod
 
   method run(codeObj)

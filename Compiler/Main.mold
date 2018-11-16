@@ -86,12 +86,8 @@ endif
 # Load input file and build Abstract Syntax Tree (AST)
 #
 
-source = __mold_loadFile(path)
-
-# Parse source into AST tree.
 parser = new Parser()
-parser._parse(source)
-ast = parser.getAst()
+ast    = parser.parseFile(path)
 
 #
 # Dispatch working mode.

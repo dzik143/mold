@@ -223,8 +223,7 @@ class ASTTranslator
   endmethod
 
   method _declareExternalFunction(funcName, funcProto)
-    symbolTable = this.symbolTable
-    symbolTable.insertFunction(funcName, funcProto)
+    this.symbolTable.insertFunction(funcName, funcProto)
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -276,26 +275,13 @@ class ASTTranslator
           # Load only once.
           this.importedModules[moduleName] = true
 
-          # NEW IMPLEMENTATION
-          # TODO: Enable new parser.
-          # TODO: SiImplify it.
-          #print 'Importing module', moduleName, '...'
-
-          source = __mold_loadFile(moduleName)
-
           # Parse source into AST tree.
-          parser = new Parser()
-          parser._parse(source)
-          importedAst = parser.getAst()
+          parser      = new Parser()
+          importedAst = parser.parseFile(moduleName)
 
           # Convert AST to form understood by translator.
           # TODO: Remove this step.
           importedAst = importedAst.convert()
-
-
-          /* OLD IMPLEMENTATION
-          importedAst = moldParseFile(moduleName)
-          */
 
           # Resolve imports recursively.
           this._resolveImports(importedAst)
@@ -471,13 +457,11 @@ class ASTTranslator
   # ----------------------------------------------------------------------------
 
   method _getClassProto(className) -> rv
-    symbolTable = this.symbolTable
-    rv          = symbolTable.lookupClass(className)['proto']
+    rv = this.symbolTable.lookupClass(className)['proto']
   endmethod
 
   method _getMethodProto(className, methodName, paramsCnt) -> rv
-    symbolTable = this.symbolTable
-    rv          = symbolTable.lookupMethod(className, methodName, paramsCnt)
+    rv = this.symbolTable.lookupMethod(className, methodName, paramsCnt)
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -485,13 +469,11 @@ class ASTTranslator
   # ----------------------------------------------------------------------------
 
   method _isset(name) -> rv
-    symbolTable = this.symbolTable
-    rv          = symbolTable.isset(name)
+    rv = this.symbolTable.isset(name)
   endmethod
 
   method _importGlobal(name)
-    symbolTable = this.symbolTable
-    symbolTable.importGlobal(name)
+    this.symbolTable.importGlobal(name)
   endmethod
 
   method _declareVariableIfNotSet(name)
@@ -506,8 +488,7 @@ class ASTTranslator
   endmethod
 
   method _declareVariable(name)
-    symbolTable = this.symbolTable
-    symbolTable.insertLocal(name)
+    this.symbolTable.insertLocal(name)
   endmethod
 
   method _assign(name, value)
@@ -557,7 +538,7 @@ class ASTTranslator
 
     elif opcode is AST_DATA_MAP
       rvType = 'map'
-      rv = this._loadMap()
+      rv     = this._loadMap()
 
       for idx in 0 .. childrenCnt step 2
         key   = this._evaluateNode(children[idx])
@@ -603,8 +584,7 @@ class ASTTranslator
 
         else
           # Default way, ask symbol table.
-          symbolTable = this.symbolTable
-          symbolInfo  = symbolTable.lookup(value)
+          symbolInfo  = this.symbolTable.lookup(value)
           rvType      = symbolInfo['type']
           rvClassName = symbolInfo['className']
 
@@ -789,10 +769,9 @@ class ASTTranslator
 
     else
       # Generic foo(x,y,z...) call.
-      symbolTable = this.symbolTable
-      funcEntry   = symbolTable.lookupFunction(funcName, childrenCnt)
-      funcProto   = funcEntry['proto']
-      rv = this._call(funcProto, params, paramsCnt)
+      funcEntry = this.symbolTable.lookupFunction(funcName, childrenCnt)
+      funcProto = funcEntry['proto']
+      rv        = this._call(funcProto, params, paramsCnt)
     endif
   endmethod
 
@@ -889,8 +868,7 @@ class ASTTranslator
 
         # Save assigned type.
         # TODO: Handle type mismatch.
-        symbolTable             = this.symbolTable
-        symbolInfo              = symbolTable.lookup(lval)
+        symbolInfo              = this.symbolTable.lookup(lval)
         symbolInfo['type']      = this.lastReturnType
         symbolInfo['className'] = this.lastReturnClassName
 
@@ -944,12 +922,6 @@ class ASTTranslator
       this._executeNodeIf(cond, codeIfTrue, codeIfFalse)
 
     elif opcode is AST_OPCODE_FUNCTION
-      #
-      # NEW IMPLEMENTATION
-      #
-      # TODO: Enable when ready.
-      #
-
       value     = ast['value']
       funcProto = ast
 
@@ -960,14 +932,7 @@ class ASTTranslator
 
       funcName = value['name']
 
-      # OLD IMPLEMENTATION:
-      # funcName  = ast['name']
-      # funcProto = ast
-      # END OF OLD IMPLEMENTATION
-
-      # TODO: Handle x.y.z chain in parser.
-      symbolTable = this.symbolTable
-      symbolTable.insertFunction(funcName, funcProto)
+      this.symbolTable.insertFunction(funcName, funcProto)
 
       this.currentFunctionProto = funcProto
       this._declareFunction(funcName, funcProto)
@@ -1074,8 +1039,7 @@ class ASTTranslator
         'propertyClassNames': {}
       }
 
-      symbolTable = this.symbolTable
-      symbolTable.insertClass(className, classProto)
+      this.symbolTable.insertClass(className, classProto)
 
       this.currentClassProto = classProto
       this._declareClassInternal(className, classProto)

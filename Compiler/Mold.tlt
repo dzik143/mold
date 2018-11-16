@@ -24,10 +24,12 @@
   ****************************************************************************
   -->
 
+  <!-- FIXME -->
   <!-- Backslash must be double-quoted -->
-  <escape-sequence for="\" do="\\" />
+  <escape-sequence for="\" do= />
   <!-- Escape double quotation marks -->
-  <escape-sequence for="&#x22;" do="\&#x22;" />
+  <escape-sequence for="&#x22;" do= />
+  <!-- END OF FIXME -->
 
   <!--
   ****************************************************************************
@@ -570,25 +572,9 @@ class AST
     node = node.child
 
     while node isnt null
-      #prefix = ''
-      #for i in 0 .. deepIdx
-      #  prefix = prefix + '..'
-      #endfor
-
-      #if (node.token isnt null)
-      #  print prefix + node.emit, node.token
-      #else
-      #  print prefix + node.emit
-      #endif
-
-      #if node.child isnt null
-      #  this._convertInternal(node.child, deepIdx + 1)
-      #endif
-
       children[childrenCnt] = this._convertInternal(node, deepIdx + 1)
       childrenCnt           = childrenCnt + 1
-
-      node = node.next
+      node                  = node.next
     endwhile
 
     rv['children']    = children
@@ -685,18 +671,9 @@ class Parser
   endmethod
 
   method _getChar() -&gt; rv
-    # Skip single line comments.
-    # TODO: Handle it in mold.par file.
-    #if this.input[this.inputIdx] is '#'
-    #  while (ord(this.input[this.inputIdx]) isnt 10) and (ord(this.input[this.inputIdx]) isnt 13) and (this.inputIdx &lt; this.inputLen)
-    #    this.inputIdx = this.inputIdx + 1
-    #  endwhile
-    #endif
-
     # Get next character from input stream
     if this.inputIdx &lt; this.inputLen
-      # FIXME: Common char buffer!
-      rv            = '' + this.input[this.inputIdx]
+      rv            = this.input[this.inputIdx]
       this.inputIdx = this.inputIdx + 1
     else
       rv = this.eof
@@ -705,7 +682,7 @@ class Parser
     # debug('pop char [' + rv + '] from input')
   endmethod
 
-  method _get_input(offset) -&gt; rv
+  method _getInput(offset) -&gt; rv
     #debug('going to get input, bufSize=[' + str(this.bufSize) + '], offset=[' + str(offset) + ']')
     #print this.buf
 
@@ -735,7 +712,7 @@ class Parser
     #print this.buf
   endmethod
 
-  method _clear_input()
+  method _clearInput()
     global null
 
     debug('going to clear input: len=[' + str(this.len) + '], bufSize=[' + str(this.bufSize) + ']')
@@ -779,7 +756,7 @@ class Parser
     rv         = this.lexem
   endmethod
 
-  method _get_act() -&gt; rv
+  method _getAct() -&gt; rv
     global _act, _def_prod
     global UNICC_ERROR
 
@@ -822,11 +799,11 @@ class Parser
     debug('got action: rv=[' + str(rv) + '], act=[' + str(this.act) + '], idx=[' + str(this.idx) + ']')
 
     if rv is 0
-      this._handle_error()
+      this._handleError('syntax error')
     endif
   endmethod
 
-  method _get_go() -&gt; rv
+  method _getGo() -&gt; rv
     global _go
 
     rv    = 0
@@ -869,7 +846,7 @@ class Parser
       mach = @@prefix_dfa_select[this.stack[this.stackIdx].state]
     endif
 
-    next = ord(this._get_input(length))
+    next = ord(this._getInput(length))
 
     if next is this.eof
       this.sym = @@eof
@@ -908,7 +885,7 @@ class Parser
 
             if innerGoOn is true
               length    = length + 1
-              next      = ord(this._get_input(length))
+              next      = ord(this._getInput(length))
               innerGoOn = false
             endif
           endif
@@ -938,7 +915,7 @@ class Parser
     debug('lex done: sym=[' + symText + '], whitespace=[' + str(isWhite) + ']')
   endmethod
 
-  method _get_sym() -&gt; rv
+  method _getSym() -&gt; rv
     global _symbols
     global _dfa_select
     global SYMBOL_WHITESPACE_IDX
@@ -956,7 +933,7 @@ class Parser
       while goOn is true
         this._lex()
         if (this.sym &gt; -1) and (_symbols[this.sym][SYMBOL_WHITESPACE_IDX] is 1)
-          this._clear_input()
+          this._clearInput()
         else
           goOn = false
         endif
@@ -977,7 +954,7 @@ class Parser
         # raise.
         #
 
-      elif this._get_input(0) is this.eof
+      elif this._getInput(0) is this.eof
         this.sym = @@eof
       endif
     endif
@@ -997,24 +974,12 @@ class Parser
     debug('got symbol: rv=[' + str(rv) + '], sym=[' + symText + ']' + ', len=[' + str(this.len) + ']')
   endmethod
 
-  method _handle_error(_dbg)
-    lexem    = this._lexem()
-    lexemCnt = len(lexem)
-    token    = ''
-
-    for idx in 0 .. lexemCnt
-      if typeof(lexem[idx]) is 'string'
-        token = token + lexem[idx]
-      endif
-    endfor
-
-    print('line ' + str(this.line) + ', column ' + str(this.column) + ': syntax error on symbol ' + str(this.sym) + ", token '" + token + "'")
-
-    die(-1)
-    #die('_handle_error not implemented!')
+  method _handleError(msg)
+    print(this.filePath + ':' + str(this.line) + ':' + str(this.column) + ': error: ' + str(msg))
+    exit()
   endmethod
 
-  method _parse(text)
+  method _parseInternal(text) -> ast
     global null
     global UNICC_ERROR
     global UNICC_REDUCE
@@ -1041,7 +1006,6 @@ class Parser
 
     global AST_OPCODE_BLOCK, AST_OPCODE_PROGRAM
     global AST_OPCODE_DECLARE_OR_ASSIGN
-
 
     goOn       = true
     innerGoOn  = 1
@@ -1078,8 +1042,8 @@ class Parser
       debug('------------------------------')
       debug('MASTER ITER #' + str(masterIter))
 
-      this._get_sym()
-      this._get_act()
+      this._getSym()
+      this._getAct()
 
       #
       # Shift
@@ -1112,7 +1076,7 @@ class Parser
 @@scan_actions
 
         else
-          @@top-value = this._get_input(0)
+          @@top-value = this._getInput(0)
         endif
 
         #
@@ -1146,7 +1110,7 @@ class Parser
 
         # Perform the shift on input
         if (this.sym isnt @@eof) and (this.sym isnt @@goal-value)
-          this._clear_input()
+          this._clearInput()
           this.old_sym = -1
         endif
 
@@ -1208,19 +1172,17 @@ class Parser
 
               this.stack[this.stackIdx].node.next = node
             endif
-
+            
             node = this.stack[this.stackIdx].node
-
+  
             this.stack[this.stackIdx].node = null
 
           endif
-
-          #print('POP FROM STACK', this.stackIdx)
           
           this.stackIdx = this.stackIdx - 1
         endfor
 
-        /* pcb-&gt;tos -= _productions[ pcb-&gt;idx ].length */
+        # pcb-&gt;tos -= _productions[ pcb-&gt;idx ].length
 
         if node isnt null
           lnode = this.stack[this.stackIdx].node
@@ -1238,8 +1200,6 @@ class Parser
         endif
 
         if _productions[this.idx][PRODUCTION_EMIT_IDX] isnt ''
-          #print 'CREATING #2:', _productions[this.idx][PRODUCTION_EMIT_IDX]
-
           node       = new AST(_productions[this.idx][PRODUCTION_EMIT_IDX], this.ret)
           node.child = this.stack[this.stackIdx].node
           this.stack[this.stackIdx].node = node
@@ -1251,15 +1211,13 @@ class Parser
           this.stack[this.stackIdx].value = this.ret
           this.ast = this.stack[this.stackIdx].node
 
-          this._clear_input()
+          this._clearInput()
           innerGoOn = false
 
         else
-          this._get_go()
+          this._getGo()
 
           this.stackIdx = this.stackIdx + 1
-
-          #print('PUSH TO STACK', this.stackIdx)
           
           this.stack[this.stackIdx]        = new Token()
           this.stack[this.stackIdx].value  = this.ret
@@ -1291,12 +1249,24 @@ class Parser
         die('MAX ITERS reached!')
       endif
     endwhile
-
-    # Save return value
-    # TODO: Original code was:
-    # rv = @@goal-value
-
+    
+    ast = this.getAst()
   endmethod
+  
+  method parseFile(path) -> ast
+    # Load source code from file.
+    source        = __mold_loadFile(path)
+    this.filePath = path
+    
+    # Parse source into AST tree.    
+    ast = this._parseInternal(source)
+  endmethod
+                  
+  method parseText(text) -> ast
+    this.filePath = ''
+    ast           = this._parseInternal(text)
+  endmethod
+
 endclass
 
 </file>
