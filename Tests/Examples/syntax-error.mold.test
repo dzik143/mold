@@ -1,17 +1,17 @@
 TEST "Unterminated string #1"
 x = 'test
 EXPECTED_ERROR
-./temp/source.mold:1:5: error: unterminated string
+./temp/source.mold:2:1: error: unterminated string
 -------------------------------------------------------------------------------
 
 TEST "Unterminated string #2"
 x = "test
 EXPECTED_ERROR
-./temp/source.mold:1:5: error: unterminated string
+./temp/source.mold:2:1: error: unterminated string
 -------------------------------------------------------------------------------
 
 TEST "Unterminated string #3"
 x = "test'
 EXPECTED_ERROR
-./temp/source.mold:1:5: error: unterminated string
+./temp/source.mold:2:1: error: unterminated string
 -------------------------------------------------------------------------------
