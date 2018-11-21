@@ -17,12 +17,56 @@ SYMBOL_KIND_VAR_GLOBAL = 2
 SYMBOL_KIND_VAR_PARAM  = 3
 SYMBOL_KIND_VAR_RETVAL = 4
 SYMBOL_KIND_CONST      = 5
+SYMBOL_KIND_LABEL      = 6
 
-SYMBOL_KIND_FUNCTION   = 6
-SYMBOL_KIND_CLASS      = 7
-SYMBOL_KIND_METHOD     = 8
+SYMBOL_KIND_FUNCTION   = 7
+SYMBOL_KIND_CLASS      = 8
+SYMBOL_KIND_METHOD     = 9
 
-SYMBOL_TYPE_VARIANT = 1
+SYMBOL_KIND_AS_TEXT = [
+  '[error]',
+  '.loc',
+  'global',
+  '.param',
+  'rv',
+  'const',
+  'label',
+  'function',
+  'class',
+  'method'
+]
+
+SYMBOL_TYPE_VARIANT = 0
+SYMBOL_TYPE_INTEGER = 1
+SYMBOL_TYPE_FLOAT   = 2
+SYMBOL_TYPE_BOOLEAN = 3
+SYMBOL_TYPE_STRING  = 4
+SYMBOL_TYPE_ARRAY   = 5
+SYMBOL_TYPE_MAP     = 6
+SYMBOL_TYPE_OBJECT  = 7
+
+SYMBOL_TYPE_MACHINE_INT8    = 32 + 0
+SYMBOL_TYPE_MACHINE_INT16   = 32 + 1
+SYMBOL_TYPE_MACHINE_INT32   = 32 + 2
+SYMBOL_TYPE_MACHINE_INT64   = 32 + 3
+SYMBOL_TYPE_MACHINE_UINT8   = 32 + 4
+SYMBOL_TYPE_MACHINE_UINT16  = 32 + 5
+SYMBOL_TYPE_MACHINE_UINT32  = 32 + 6
+SYMBOL_TYPE_MACHINE_UINT64  = 32 + 7
+SYMBOL_TYPE_MACHINE_NONE1   = 32 + 8
+SYMBOL_TYPE_MACHINE_NONE2   = 32 + 9
+SYMBOL_TYPE_MACHINE_FLOAT32 = 32 + 10
+SYMBOL_TYPE_MACHINE_FLOAT64 = 32 + 11
+
+SYMBOL_TYPE_VARIANT_CONST   = 128 + SYMBOL_TYPE_VARIANT
+SYMBOL_TYPE_INTEGER_CONST   = 128 + SYMBOL_TYPE_INTEGER
+SYMBOL_TYPE_FLOAT_CONST     = 128 + SYMBOL_TYPE_FLOAT
+SYMBOL_TYPE_BOOLEAN_CONST   = 128 + SYMBOL_TYPE_BOOLEAN
+SYMBOL_TYPE_STRING_CONST    = 128 + SYMBOL_TYPE_STRING
+SYMBOL_TYPE_ARRAY_CONST     = 128 + SYMBOL_TYPE_ARRAY
+SYMBOL_TYPE_MAP_CONST       = 128 + SYMBOL_TYPE_MAP
+SYMBOL_TYPE_OBJECT_CONST    = 128 + SYMBOL_TYPE_OBJECT
+
 
 class SymbolTable
   method constructor()
@@ -31,7 +75,13 @@ class SymbolTable
     this.symbols   = [{}]
     this.localCnt  = 0
     this.globalCnt = 0
+    this.constCnt  = 0
     this.paramCnt  = 0
+    this.labelCnt  = 0
+    this.tempCnt   = 0
+
+    # TODO: Remove it when map iteration ready.
+    this.symbols = [{'_index': []}]
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -42,19 +92,38 @@ class SymbolTable
     rv = this.deepIdx
   endmethod
 
+  method exportSymbols() -> rv
+    rv = this.symbols[this.deepIdx]
+  endmethod
+
   method insert(name, entry)
     if typeof(this.symbols[this.deepIdx][name]) isnt 'undefined'
       die("error: redeclaration of '" + name + "'")
     else
       this.symbols[this.deepIdx][name] = entry
+      entry.writeHits = 0
+      entry.readHits  = 0
+
+      # TODO: Remove itwhen map iteration ready.
+      cnt = len(this.symbols[this.deepIdx]['_index'])
+      this.symbols[this.deepIdx]['_index'][cnt] = entry
     endif
   endmethod
 
   method insertGlobal(name, entry)
+    global SYMBOL_KIND_VAR_GLOBAL
+    global SYMBOL_KIND_CONST
+
     if typeof(this.symbols[0][name]) isnt 'undefined'
       die("error: redeclaration of global '" + name + "'")
     else
       this.symbols[0][name] = entry
+      entry.writeHits = 0
+      entry.readHits  = 0
+
+      # TODO: Remove itwhen map iteration ready.
+      cnt = len(this.symbols[0]['_index'])
+      this.symbols[0]['_index'][cnt] = entry
     endif
   endmethod
 
@@ -63,6 +132,22 @@ class SymbolTable
     if typeof(rv) is 'undefined'
       die("error: '" + name + "' was not declared in this scope")
     endif
+  endmethod
+
+  method lookupForRead(name) -> rv
+    rv          = this.lookup(name)
+    rv.readHits = rv.readHits + 1
+  endmethod
+
+  method lookupForWrite(name) -> rv
+    rv           = this.lookup(name)
+    rv.writeHits = rv.writeHits + 1
+  endmethod
+
+  method lookupForReadAndWrite(name) -> rv
+    rv           = this.lookup(name)
+    rv.readHits  = rv.readHits  + 1
+    rv.writeHits = rv.writeHits + 1
   endmethod
 
   method lookupGlobal(name) -> rv
@@ -84,9 +169,13 @@ class SymbolTable
     this.deepIdx = this.deepIdx + 1
     this.symbols[this.deepIdx] = {}
 
+    # TODO: Remove it when map iteration ready.
+    this.symbols[this.deepIdx] = {'_index': []}
+
     # TODO: Review it, we want more than 2 scopes... ?
     this.localCnt = 0
     this.paramCnt = 0
+    this.tempCnt  = 0
 
     if this.deepIdx > this.deepMax
       die('error: too deep (' + str(this.deepIdx) + ')')
@@ -253,8 +342,72 @@ class SymbolTable
     newEntry = {
       'name': name,
       'kind': SYMBOL_KIND_CONST,
-      'value': value
+      'value': value,
+      'type': typeof(value)
     }
-    this.insert(name, newEntry)
+
+    # TODO: Don't add to two scopes.
+    this.insertGlobal(name, newEntry)
+
+    if this.deepIdx > 0
+      this.insert(name, newEntry)
+    endif
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                               Label helpers
+  # ----------------------------------------------------------------------------
+
+  method createLabel() -> rv
+    global SYMBOL_KIND_LABEL
+
+    # TODO: Store labels in symbol table too.
+    rv = 'l' + str(this.labelCnt)
+    this.labelCnt = this.labelCnt + 1
+
+    newEntry = {
+      'name': rv,
+      'kind': SYMBOL_KIND_LABEL
+    }
+    this.insert(rv, newEntry)
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                               Constant helpers
+  # ----------------------------------------------------------------------------
+
+  method createConst(value) -> rv
+    rv = 'const' + str(this.constCnt)
+    this.constCnt = this.constCnt + 1
+    this.insertConst(rv, value)
+  endmethod
+
+  method setValue(name, value)
+    symbolInfo = this.lookup(name)
+    symbolInfo.value = value
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                        Temporary variable helpers
+  # ----------------------------------------------------------------------------
+
+  method createTempVar() -> rv
+    rv = 'tmp' + str(this.tempCnt)
+    this.tempCnt = this.tempCnt + 1
+    this.insertLocal(rv)
+  endmethod
+
+  method createTempVarForWrite() -> rv
+    rv = this.createTempVar()
+    this.lookupForWrite(rv)
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                               Types track
+  # ----------------------------------------------------------------------------
+
+  method setType(name, type)
+    symbolInfo = this.lookup(name)
+    symbolInfo.type = type
   endmethod
 endclass

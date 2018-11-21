@@ -19,7 +19,10 @@
 @WHITE   ' ' | "/*" .* "*/" | '#' .* '\r\n'+;
 @EOL     '\r\n'+;
 @IDENT   'A-Za-z_' 'A-Za-z0-9_'* ;
-@STRING  '"' .* '"' | '\'' .* '\'' ;
+
+@STRING              '"' !'"\r\n'* '"'    | '\'' !'\'\r\n'* '\'' ;
+@UNTERMINATED_STRING '"' !'"'*     '\r\n' | '\'' !'\''*     '\r\n' ;
+
 @FLOAT   '0-9'+ '.' '0-9'+;
 @TRUE    "true";
 @FALSE   "false";
@@ -85,10 +88,12 @@ function_end
   : "endfunction";
 
 function_body
-  : stmt_list;
+  : stmt_list
+  ;
 
-function_declaration :
-  function_begin @EOL function_body function_end;
+function_declaration
+  : function_begin @EOL function_body function_end
+  ;
 
 //
 // Comma separated lists.
@@ -397,9 +402,19 @@ string
                  @@ = @@ + @1[idx]
                endfor
             *]
+  | error_unterminated_string
   ;
 
 bool
   : @TRUE   [* @@ = true *]
   | @FALSE  [* @@ = false *]
   ;
+
+//
+// Common syntax errors.
+//
+
+error_unterminated_string
+  : @UNTERMINATED_STRING [* this._handleError('unterminated string') *]
+  ;
+  

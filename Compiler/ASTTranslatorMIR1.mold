@@ -1,0 +1,680 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'ASTTranslator.mold'
+import 'MIR.mold'
+import 'Stack.mold'
+
+class ASTTranslatorMIR1 extends ASTTranslator
+
+  # ----------------------------------------------------------------------------
+  #                                Init code
+  # ----------------------------------------------------------------------------
+
+  method constructor()
+    super()
+    # TODO: Remove codeObj.
+    this.code         = new MIRCode()
+    this.stack        = new Stack()
+    this.outputObject = false
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                              Internal helpers
+  # ----------------------------------------------------------------------------
+
+  method _emitOneItem(item)
+    this.outputObject.processOneItem(item)
+  endmethod
+
+  method emitZeroArgsOpcode(opcode)
+    newQuad = [opcode]
+    this._emitOneItem(newQuad)
+  endmethod
+
+  method emitTargetOnlyOpcode(opcode, rv)
+    newQuad = [opcode, rv]
+    this._emitOneItem(newQuad)
+  endmethod
+
+  method emitOneArgOpcode(opcode, rv, x)
+    newQuad = [opcode, rv, x]
+    this._emitOneItem(newQuad)
+  endmethod
+
+  method emitTwoArgsOpcode(opcode, rv, x, y)
+    newQuad = [opcode, rv, x, y]
+    this._emitOneItem(newQuad)
+  endmethod
+
+  method emitComment(comment)
+    this.emitTargetOnlyOpcode('comment', comment)
+  endmethod
+
+  method emitLabel(label)
+    this.emitTargetOnlyOpcode('label', label)
+  endmethod
+
+  method emitJmp(label)
+    this.emitTargetOnlyOpcode('jmp', label)
+  endmethod
+
+  method emitMoveVariantOpcode(dst, src)
+    this.emitOneArgOpcode('move_variant', dst, src)
+  endmethod
+
+  method popOneArgAndEmitOpcode(opcode) -> rv
+    rv = this.symbolTable.createTempVar()
+    x  = this.stack.pop()
+
+    this.stack.push(rv)
+    this.emitOneArgOpcode(opcode, rv, x)
+  endmethod
+
+  method popTwoArgsAndEmitOpcode(opcode) -> rv
+    global SYMBOL_KIND_CONST
+
+    rv = this.symbolTable.createTempVar()
+    y  = this.stack.pop()
+    x  = this.stack.pop()
+
+    this.stack.push(rv)
+    this.emitTwoArgsOpcode(opcode, rv, x, y)
+  endmethod
+
+  method popParametersBeforeCall(paramsCnt) -> params
+    params = []
+
+    for idx in 0 .. paramsCnt
+      item        = this.stack.peekN(paramsCnt - idx)
+      params[idx] = item
+    endfor
+
+    this.stack.eatN(paramsCnt)
+  endmethod
+
+  method emitProcBegin(procMeta)
+    rv = this.emitTargetOnlyOpcode('proc', procMeta)
+    rv = this.emitTargetOnlyOpcode('init_frame', procMeta)
+  endmethod
+
+  method emitProcEnd()
+    this.emitZeroArgsOpcode('endp')
+  endmethod
+
+  method emitRet()
+    this.emitZeroArgsOpcode('ret')
+  endmethod
+
+  method emitMoveBackVariant()
+    stack = this.stack
+    src   = stack.pop()
+    dst   = stack.pop()
+    this.emitMoveVariantOpcode(dst, src)
+    stack.push(dst)
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                         Implement built-in functions
+  # ----------------------------------------------------------------------------
+
+  method _callStr(x) -> rv
+    rv = this.popOneArgAndEmitOpcode('str_variant')
+  endmethod
+
+  method _callStrEscape(x) -> rv
+    this._error('_callStrEscape() is not implemented')
+  endmethod
+
+  method _callLen(x) -> rv
+    rv = this.popOneArgAndEmitOpcode('len_variant')
+  endmethod
+
+  method _callExit() -> rv
+    this.emitZeroArgsOpcode('halt')
+    this.stack.push('<error:unused_rv>')
+    rv = false
+  endmethod
+
+  method _callMoldWarning(msg) -> rv
+    this.emitTargetOnlyOpcode('print_err_variant', this.stack.pop())
+    this.stack.push('<print:unused_rv>')
+    rv = false
+  endmethod
+
+  method _callMoldPrintToStdOut(msg) -> rv
+    this.emitTargetOnlyOpcode('print_out_variant', this.stack.pop())
+    this.stack.push('<print:unused_rv>')
+    rv = false
+  endmethod
+
+  method _callDie(msg)
+    this._callMoldWarning(msg)
+    this._callExit()
+  endmethod
+
+  method _callMoldCreateObject(classProto) -> rv
+    this._error('__mold_createObject() is not implemented')
+    rv = false
+  endmethod
+
+  method _callMoldGetClassName(thiz) -> rv
+    this._error('_callMoldGetClassName() is not implemented')
+    rv = false
+  endmethod
+
+  method _callMoldParseFile(filePath) -> rv
+    this._error('_callMoldParseFile() is obsolete')
+  endmethod
+
+  method _loadArgsVector() -> rv
+    rv = 'argv'
+    this.stack.push(rv)
+  endmethod
+
+  method _loadArgsCount() -> rv
+    rv = 'argc'
+    this.stack.push(rv)
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                     Implement ASTTranslator interface
+  # ----------------------------------------------------------------------------
+
+  method _neg(value) -> rv
+    rv = this.popOneArgAndEmitOpcode('neg_variant')
+  endmethod
+
+  method _add(x, y) -> rv
+    rv = this.popTwoArgsAndEmitOpcode('add_variant')
+  endmethod
+
+  method _sub(x, y) -> rv
+    rv = this.popTwoArgsAndEmitOpcode('sub_variant')
+  endmethod
+
+  method _mul(x, y) -> rv
+    rv = this.popTwoArgsAndEmitOpcode('mul_variant')
+  endmethod
+
+  method _div(x, y) -> rv
+    rv = this.popTwoArgsAndEmitOpcode('div_variant')
+  endmethod
+
+  method _idiv(x, y) -> rv
+    rv = this.popTwoArgsAndEmitOpcode('idiv_variant')
+  endmethod
+
+  method _loadArray() -> rv
+    rv = this.symbolTable.createTempVar()
+    this.emitTargetOnlyOpcode('create_array_variant', rv)
+    this.stack.push(rv)
+  endmethod
+
+  method _loadMap() -> rv
+    rv = this.symbolTable.createTempVar()
+    this.emitTargetOnlyOpcode('create_map_variant', rv)
+    this.stack.push(rv)
+  endmethod
+
+  method _loadImm(value) -> rv
+    rv    = false
+    stack = this.stack
+    type  = typeof(value)
+
+    # New implementation.
+    if type is 'integer'
+      stack.push(value)
+      this.popOneArgAndEmitOpcode('conv_int64_to_variant')
+
+    elif type is 'float'
+      stack.push(value)
+      this.popOneArgAndEmitOpcode('conv_float64_to_variant')
+
+    elif type is 'boolean'
+      stack.push(value)
+      this.popOneArgAndEmitOpcode('conv_bool64_to_variant')
+
+    elif (type is 'string') or (type is 'array')
+      newConst = this.symbolTable.createConst(value)
+      stack.push(newConst)
+    else
+      die('error: unhandled imm type: ' + str(type))
+    endif
+  endmethod
+
+  method _compareEQ(x, y) -> rv
+    rv = this.popTwoArgsAndEmitOpcode('cmp_eq_variant')
+  endmethod
+
+  method _compareNEQ(x, y) -> rv
+    rv = this.popTwoArgsAndEmitOpcode('cmp_ne_variant')
+  endmethod
+
+  method _compareLT(x, y) -> rv
+    rv = this.popTwoArgsAndEmitOpcode('cmp_lt_variant')
+  endmethod
+
+  method _compareLE(x, y) -> rv
+    rv = this.popTwoArgsAndEmitOpcode('cmp_le_variant')
+  endmethod
+
+  method _compareGT(x, y) -> rv
+    rv = this.popTwoArgsAndEmitOpcode('cmp_gt_variant')
+  endmethod
+
+  method _compareGE(x, y) -> rv
+    rv = this.popTwoArgsAndEmitOpcode('cmp_ge_variant')
+  endmethod
+
+  method _loadVariable(name) -> rv
+    global SYMBOL_KIND_VAR_RETVAL
+    symInfo = this.symbolTable.lookupForRead(name)
+    if symInfo.kind is SYMBOL_KIND_VAR_RETVAL
+      name = '__rv'
+    endif
+
+    this.stack.push(name)
+    rv = name
+  endmethod
+
+  method _assign(name, unusedValue)
+    global SYMBOL_KIND_VAR_RETVAL
+    symInfo = this.symbolTable.lookupForWrite(name)
+    if symInfo.kind is SYMBOL_KIND_VAR_RETVAL
+      name = '__rv'
+    endif
+
+    this.emitMoveVariantOpcode(name, this.stack.pop())
+  endmethod
+
+  method _call(proto, unusedParams, paramsCnt) -> rv
+    stack     = this.stack
+    paramsCnt = proto['paramsCnt']
+    rv        = this.symbolTable.createTempVar()
+    params    = this.popParametersBeforeCall(paramsCnt)
+    name      = proto['fullName']
+
+    if typeof(name) is 'undefined'
+      name = proto['name']
+    endif
+
+    this.symbolTable.lookupForWrite(rv)
+
+    #this.emitTwoArgsOpcode('call', rv, name, params)
+
+    # TODO: Use emitTwoArgsOpcode() after fix.
+    this._emitOneItem(['call', rv, name, params])
+
+    if proto['isConstructor'] is true
+      # TODO: Handle it in better way.
+      # We need it to avoid eating new result (this pointer)
+      # when constructor called just after.
+      stack.push(params[0])
+    else
+      stack.push(rv)
+    endif
+  endmethod
+
+  method _callPrint(unusedParams, paramsCnt)
+    params = this.popParametersBeforeCall(paramsCnt)
+    this.emitTargetOnlyOpcode('print_array_of_variants_ln', params)
+    this.stack.push('<print:unused_rv>')
+    rv = false
+  endmethod
+
+  method _typeof(value) -> rv
+    rv = this.popOneArgAndEmitOpcode('typeof_variant')
+  endmethod
+
+  method _loadFromIndex(unusedBox, unusedIdx) -> rv
+    rv = this.popTwoArgsAndEmitOpcode('load_index_variant')
+  endmethod
+
+  method _storeAtIndex(unusedBox, unusedIdx, unusedValue)
+    stack = this.stack
+    val   = stack.pop()
+    idx   = stack.pop()
+    box   = stack.pop()
+    this.emitTwoArgsOpcode('store_index_variant', box, idx, val)
+    stack.push(box)
+  endmethod
+
+  method _storeAtIndexAndDrop(unusedBox, unusedIdx, unusedValue)
+    stack = this.stack
+    val   = stack.pop()
+    idx   = stack.pop()
+    box   = stack.pop()
+    this.emitTwoArgsOpcode('store_index_variant', box, idx, val)
+  endmethod
+
+  method _createObject(classProto) -> rv
+    if classProto is false
+      # Dynamic code, adjust class proto at run-time.
+      this._error('error: missing classProto in MIR_OPCODE_CREATE_OBJECT')
+
+    else
+      # Static code, we got class proto inside MIR opcode.
+      rv = this.symbolTable.createTempVar()
+      this.emitOneArgOpcode('create_object', rv, classProto.name)
+      this.stack.push(rv)
+    endif
+  endmethod
+
+  method _evaluateNodeLazyBoolAnd(leftAst, rightAst) -> rv
+    stack    = this.stack
+    endLabel = this.symbolTable.createLabel()
+    rv       = false
+
+    #   rv = left()
+    #   if not rv goto .done
+    #   rv = right()
+    # .done:
+
+    this._loadImm(false)                                                 # [false]
+    this._evaluateNode(leftAst)                                          # [false x]
+    this.emitOneArgOpcode('jmp_if_false_variant', endLabel, stack.pop()) # [false]
+
+    # Evaluate right node only if left is true.
+    this._evaluateNode(rightAst)     # [y]
+    this.emitMoveBackVariant()       # []
+    this.emitLabel(endLabel)
+
+  endmethod
+
+  method _evaluateNodeLazyBoolOr(leftAst, rightAst) -> rv
+    stack    = this.stack
+    endLabel = this.symbolTable.createLabel()
+    rv       = false
+
+    #   rv = left()
+    #   if rv goto .done
+    #   rv = right()
+    # .done:
+
+    this._loadImm(true)                                                 # [true]
+    this._evaluateNode(leftAst)                                         # [true x]
+    this.emitOneArgOpcode('jmp_if_true_variant', endLabel, stack.pop()) # [true]
+
+    # Evaluate right node only if left is false.
+    this._evaluateNode(rightAst)    # [y]
+    this.emitMoveBackVariant()      # []
+    this.emitLabel(endLabel)
+  endmethod
+
+  method _invokeMethod(methodName, unusedParams, paramsCnt) -> rv
+    # TODO: Remove paramsCnt
+    # TODO: Remove codeObj
+    rv       = this.symbolTable.createTempVar()
+    methodId = this.code.methodsMap[methodName]
+
+    if typeof(methodId) is 'undefined'
+      die("error: object has no method '" + methodName + "'")
+    endif
+
+    params = this.popParametersBeforeCall(paramsCnt)
+    #this.emitTwoArgsOpcode('vcall', rv, methodId, params)
+    # TODO: Use emitTwoArgsOpcode() if fixed.
+    this._emitOneItem(['vcall', rv, methodId, params])
+
+    this.stack.push(rv)
+  endmethod
+
+  method _executeNodeFor(iterName, valueStart, valueEnd, valueStep, bodyAst)
+    stack       = this.stack
+    symbolTable = this.symbolTable
+
+    if this._isset(iterName) is false
+      symbolTable.insertLocalVolatile(iterName)
+    endif
+
+    # Stack: [idxStep, idxEnd, idxStart]
+    idxStart = stack.pop()
+    idxEnd   = stack.pop()
+    idxStep  = stack.pop()
+
+    symbolTable.lookupForReadAndWrite(iterName)
+    this.emitMoveVariantOpcode(iterName, idxStart)
+
+    labelForBegin = symbolTable.createLabel()
+    labelForEnd   = symbolTable.createLabel()
+
+    # idx = valueStart
+    # begin:
+    #   if not (idx < valueEnd) goto end
+    #   ...
+    #   add idx, valueStep
+    #   jmp begin
+    # end:
+
+    this.emitLabel(labelForBegin)
+
+      # Is it the end?
+      # if not (idx < idxEnd) goto end
+      goOn = this.symbolTable.createTempVar()
+      this.emitTwoArgsOpcode('cmp_lt_variant', goOn, iterName, idxEnd)
+      this.emitOneArgOpcode('jmp_if_false_variant', labelForEnd, goOn)
+      #TODO: this.emitTwoArgsOpcode('jmp_if_ge', labelForEnd, iterName, idxEnd)
+
+      # Loop body.
+      this._executeNode(bodyAst)
+
+      # Update iterator value and jmp to loop begin.
+      # idx += step
+      # goto begin
+      this.emitTwoArgsOpcode('add_variant', iterName, iterName, idxStep)
+      this.emitTargetOnlyOpcode('jmp', labelForBegin)
+
+    this.emitLabel(labelForEnd)
+
+    # TODO: Handle it in more general way.
+    this.symbolTable.lookupForRead(iterName)
+    this.symbolTable.lookupForRead(idxStep)
+    this.symbolTable.lookupForRead(idxEnd)
+
+    this.symbolTable.setType(iterName, 'integer')
+    this.symbolTable.setType(idxStep, 'integer')
+    this.symbolTable.setType(idxEnd, 'integer')
+  endmethod
+
+  method _executeNodeWhile(condAst, bodyAst)
+    loopLabel = this.symbolTable.createLabel()
+    endLabel  = this.symbolTable.createLabel()
+
+    this.emitLabel(loopLabel)
+      # if (not cond) goto end
+      this._evaluateNode(condAst)
+      this.emitOneArgOpcode('jmp_if_false_variant', endLabel, this.stack.pop())
+
+      # Loop body
+      this._executeNode(bodyAst)
+      this.emitJmp(loopLabel)
+
+    this.emitLabel(endLabel)
+  endmethod
+
+  method _executeNodeIf(cond, codeIfTrue, codeIfFalse)
+    falseLabel = this.symbolTable.createLabel()
+    endLabel   = this.symbolTable.createLabel()
+
+    # if (not cond) goto falseLabel
+    #   codeIfTrue
+    #   goto endLabel
+    #
+    # falseLabel:
+    #   codeIfFalse
+    #
+    # endLabel:
+    this.emitOneArgOpcode('jmp_if_false_variant', falseLabel, this.stack.pop())
+
+    this._executeNode(codeIfTrue)
+
+    if typeof (codeIfFalse) isnt 'undefined'
+      this.emitJmp(endLabel)
+      this.emitLabel(falseLabel)
+      this._executeNode(codeIfFalse)
+    else
+      this.emitLabel(falseLabel)
+    endif
+
+    this.emitLabel(endLabel)
+  endmethod
+
+  method _declareFunction(funcName, funcProto)
+    # TODO: More elegant way.
+    if funcProto.name isnt funcProto.fullName
+      this.code.createMethod(funcProto.name)
+    endif
+  endmethod
+
+  method _declareClass(className, classProto)
+    this.code.createClass(classProto)
+  endmethod
+
+  method _emitFunctionBody(funcName, funcProto)
+    params      = funcProto['params']
+    paramsCnt   = funcProto['paramsCnt']
+    children    = funcProto['children']
+    childrenCnt = funcProto['childrenCnt']
+    codeAst     = children[0]
+    rvName      = funcProto['rv']
+
+    symbolTable = this.symbolTable
+
+    this.emitComment('-----------------------------------------------')
+    this.emitComment('function ' + funcName)
+    this.emitComment('-----------------------------------------------')
+
+    symbolTable.enterScope()
+
+      deepIdx = symbolTable.getDeep()
+      if deepIdx > 1
+        this._error('nested functions are not supported yet')
+      endif
+
+      # Insert call parameters to symbol table.
+      for idx in 0 .. paramsCnt
+        symbolTable.insertParam(params[idx], idx)
+      endfor
+
+      # TODO: Simplify it.
+      this.emitProcBegin({
+        'name': funcName,
+        'symbols': symbolTable.exportSymbols(),
+        'params': params,
+        'paramsCnt': paramsCnt,
+        'rv': rvName
+      })
+
+      # Translate function code.
+      # Declare variable to store return value.
+      if typeof(rvName) isnt 'undefined'
+        symbolTable.insertRetVal(rvName)
+      endif
+
+      # Translate code.
+      codeNodes    = codeAst['children']
+      codeNodesCnt = codeAst['childrenCnt']
+
+      for idx in 0 .. codeNodesCnt
+        this._executeNode(codeNodes[idx])
+      endfor
+
+      if typeof(rvName) isnt 'undefined'
+        this.emitZeroArgsOpcode('rv_guard')
+      endif
+
+      this.emitRet()
+      this.emitProcEnd()
+
+    symbolTable.leaveScope()
+  endmethod
+
+  method _dropRetVal()
+    this.stack.pop()
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                                Public API
+  # ----------------------------------------------------------------------------
+
+  method run(ast)
+    code = this.code
+
+    # TODO: More-friendly API here.
+    __mold_openExternalModuleProto = {
+      'name': '__mold_openExternalModule',
+      'paramsCnt': 1,
+      'labelId': code.createExternalLabel('__MOLD_OpenExternalModule')
+    }
+    this._declareExternalFunction('__mold_openExternalModule', __mold_openExternalModuleProto)
+    code.createExternalProc('__MOLD_OpenExternalModule', 'variant', 1, 'variant', '__MOLD_OpenExternalModule')
+
+    # TODO: More-friendly API here.
+    __mold_loadExternalFunctionProto = {
+      'name': '__mold_loadExternalFunction',
+      'paramsCnt': 5,
+      'labelId': code.createExternalLabel('__MOLD_LoadExternalFunction')
+    }
+    this._declareExternalFunction('__mold_loadExternalFunction', __mold_loadExternalFunctionProto)
+    code.createExternalProc('__MOLD_LoadExternalFunction', 'variant', 5, 'variant', '__MOLD_LoadExternalFunction')
+
+    # TODO: More-friendly API here.
+    __mold_peekProto = {
+      'name': '__mold_peek',
+      'paramsCnt': 2,
+      'labelId': code.createExternalLabel('__MOLD_Peek')
+    }
+    this._declareExternalFunction('__mold_peek', __mold_peekProto)
+    code.createExternalProc('__MOLD_Peek', 'variant', 2, 'variant', '__MOLD_Peek')
+
+    # TODO: More-friendly API here.
+    __mold_loadFileProto = {
+      'name': '__mold_loadFile',
+      'paramsCnt': 1,
+      'labelId': code.createExternalLabel('__MOLD_LoadFile')
+    }
+    this._declareExternalFunction('__mold_loadFile', __mold_loadFileProto)
+    code.createExternalProc('__MOLD_LoadFile', 'variant', 1, 'variant', '__MOLD_LoadFile')
+
+    # Resolve imports recursively.
+    this._resolveImports(ast)
+    this._declareGlobals(ast)
+
+    # Translate main code behind entry point.
+    this.emitComment('-----------------------------------------------')
+    this.emitComment('entry point')
+    this.emitComment('-----------------------------------------------')
+
+    this.emitProcBegin({
+      'name': 'start',
+      'symbols': this.symbolTable.exportSymbols(),
+      'localsCnt': 0,
+      'tempsCnt': 0,
+      'paramsCnt': 0
+    })
+
+    this._executeNode(ast)
+
+    this.emitRet()
+    this.emitProcEnd()
+
+    # TODO: Clean up this mess.
+    this.code.symbolTable = this.symbolTable
+  endmethod
+
+  method setOutputObject(obj)
+    this.outputObject = obj
+  endmethod
+endclass

@@ -32,9 +32,10 @@ class MIRQuadCollector extends PipeAbstract
     if typeof(item) is 'undefined'
       # Undefined (probably unused) operand.
       # Show nothing.
-      rv = ''
+      item = '-'
+    endif
 
-    elif typeof(item) is 'array'
+    if typeof(item) is 'array'
       # Operand is an array.
       # Render item-by-item.
       # TODO: Handle complex data in built-in str().
@@ -71,6 +72,29 @@ class MIRQuadCollector extends PipeAbstract
     rv = this.quads
   endmethod
 
+  method _printSymbolInfoRow(name, readHits, writeHits, type)
+    name      = this._pad(name, 10)
+    readHits  = this._pad(readHits, 4)
+    writeHits = this._pad(writeHits, 4)
+    type      = this._pad(type, 8)
+    print '    ;', name, readHits, writeHits, type
+  endmethod
+
+  method _dumpFrameInfo(frameInfo)
+    global SYMBOL_KIND_AS_TEXT
+
+    symbolsIndex = frameInfo['_index']
+    symbolsCnt   = len(symbolsIndex)
+
+    this._printSymbolInfoRow('var', 'R', 'W', 'type')
+    this._printSymbolInfoRow('----------', '----', '----', '--------')
+
+    for idx in 0 .. symbolsCnt
+      item = symbolsIndex[idx]
+      this._printSymbolInfoRow(item.name, item.readHits, item.writeHits, item.type)
+    endfor
+  endmethod
+
   method printQuads()
     code    = this.quads
     codeCnt = len(code)
@@ -81,6 +105,7 @@ class MIRQuadCollector extends PipeAbstract
 
       if opcode is 'proc'
         print 'proc', item[1]['name']
+        #this._dumpFrameInfo(item[1]['symbols'])
 
       elif opcode is 'init_frame'
         print '    init_frame'
@@ -99,10 +124,10 @@ class MIRQuadCollector extends PipeAbstract
         x   = item[2]
         y   = item[3]
 
-        paddedOpcode = this._pad(opcode, 24)
-        paddedDst    = this._pad(dst, 7)
-        paddedX      = this._pad(x, 7)
-        paddedY      = this._pad(y, 7)
+        paddedOpcode = this._pad(opcode, 28)
+        paddedDst    = this._pad(dst, 8)
+        paddedX      = this._pad(x, 8)
+        paddedY      = this._pad(y, 8)
 
         print '   ', paddedOpcode, paddedDst, paddedX, paddedY
       endif

@@ -15,7 +15,8 @@
 import 'AST.mold'
 import 'ParserMold.mold'
 import 'ASTTranslator.mold'
-import 'ASTTranslatorMIR.mold'
+import 'ASTTranslatorMIR0.mold'
+import 'ASTTranslatorMIR1.mold'
 import 'MIRQuadBuilder.mold'
 import 'MIRQuadCollector.mold'
 import 'MIRQuadOptimizer.mold'
@@ -65,8 +66,16 @@ for idx in 1 .. argc
     mode = 'mir1'
 
   elif argv[idx] is '--ast'
-    # Generate assembler
+    # Show AST tree
     mode = 'ast'
+
+  elif argv[idx] is '--astjson'
+    # Show AST tree as JSON.
+    mode = 'astjson'
+
+  elif argv[idx] is '--debug'
+    # Enable debug logs
+    UNICC_DEBUG = true
 
   elif argv[idx][0] is '-'
     # Unknown -x switch.
@@ -97,40 +106,48 @@ if mode is 'ast'
   # Print AST only.
   ast.print()
 
+elif mode is 'astjson'
+  # Print AST, but as importable JSON source.
+  ast = ast.convert()
+  print ast
+
 else
   # Convert AST to form understood by translator.
   # TODO: Remove this step.
   ast = ast.convert()
 
-  # Translate program to MIR (stack based).
-  astTranslator = new ASTTranslatorMIR()
-  astTranslator.run(ast)
-  code = astTranslator.code
+  if (mode is 'mir0') or (mode is 'interpreter')
+    # Translate program to MIR0 (stack based).
+    astTranslator = new ASTTranslatorMIR0()
+    astTranslator.run(ast)
+    code = astTranslator.code
 
-  if mode is 'mir0'
-    # Dump stack MIR only.
+    # Load MIR0 code into virtual machine.
     vm = new VMachineStack()
     vm.loadCode(code)
-    vm.dumpCode()
 
-  elif mode is 'interpreter'
-    # Run mir0 based interpeter.
-    vm = new VMachineStack()
-    vm.loadCode(code)
-    vm.run()
+    if mode is 'mir0'
+      # Dump stack MIR0 only.
+      vm.dumpCode()
+
+    elif mode is 'interpreter'
+      # Run virtual machine (stack based).
+      vm.run()
+    endif
 
   else
     # Prepare quads process toolchain.
-    # [Builder] -> [Optimizer] -> [Collector]
-    mirQuadBuilder   = new MIRQuadBuilder()
+    # [AST] -> [MIR1] -> [Optimizer] -> [Collector]
+    # Translate program to MIR1 (register based).
+    astTranslator    = new ASTTranslatorMIR1()
     mirQuadCollector = new MIRQuadCollector()
     mirQuadOptimizer = new MIRQuadOptimizer()
 
-    mirQuadBuilder.setOutputObject(mirQuadOptimizer)
-    mirQuadOptimizer.setOutputObject(mirQuadCollector)
+    #mirQuadBuilder.setOutputObject(mirQuadOptimizer)
+    astTranslator.setOutputObject(mirQuadCollector)
 
     # Run build quads process.
-    mirQuadBuilder.run(code)
+    astTranslator.run(ast)
 
     if mode is 'mir1'
       # Print MIR quads only
@@ -138,6 +155,7 @@ else
 
     elif mode is 'asm'
       # TODO: Better way to pass quads + meta.
+      code = astTranslator.code
       code.quads = mirQuadCollector.getQuads()
 
       # Generate x64 code.

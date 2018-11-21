@@ -975,8 +975,7 @@ class Parser
   endmethod
 
   method _handleError(msg)
-    print(this.filePath + ':' + str(this.line) + ':' + str(this.column) + ': error: ' + str(msg))
-    exit()
+    die(this.filePath + ':' + str(this.line) + ':' + str(this.column) + ': error: ' + str(msg))
   endmethod
 
   method _parseInternal(text) -> ast

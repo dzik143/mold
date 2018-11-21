@@ -15,7 +15,7 @@
 import 'ASTTranslator.mold'
 import 'MIR.mold'
 
-class ASTTranslatorMIR extends ASTTranslator
+class ASTTranslatorMIR0 extends ASTTranslator
 
   # ----------------------------------------------------------------------------
   #                                Init code
@@ -175,7 +175,7 @@ class ASTTranslatorMIR extends ASTTranslator
     global SYMBOL_KIND_VAR_PARAM
     global SYMBOL_KIND_VAR_RETVAL
 
-    info = this.symbolTable.lookup(name)
+    info = this.symbolTable.lookupForRead(name)
     kind = info['kind']
     id   = info['id']
     rv   = false
@@ -207,7 +207,7 @@ class ASTTranslatorMIR extends ASTTranslator
     global SYMBOL_KIND_VAR_PARAM
     global SYMBOL_KIND_VAR_RETVAL
 
-    info = this.symbolTable.lookup(name)
+    info = this.symbolTable.lookupForWrite(name)
     kind = info['kind']
     id   = info['id']
 
@@ -311,7 +311,7 @@ class ASTTranslatorMIR extends ASTTranslator
       symbolTable.insertLocalVolatile(iterName)
     endif
 
-    iterId = symbolTable.lookup(iterName)['id']
+    iterId = symbolTable.lookupForReadAndWrite(iterName)['id']
     code.storeLocal(iterId)
 
     # [step, endIdx]
@@ -419,7 +419,8 @@ class ASTTranslatorMIR extends ASTTranslator
         symbolTable.insertParam(params[idx], idx)
       endfor
 
-      code.initFrame(paramsCnt)
+      # TODO: Simplify it.
+      code.initFrame(symbolTable.exportSymbols())
 
       # Translate function code.
       # Declare variable to store return value.
@@ -434,12 +435,6 @@ class ASTTranslatorMIR extends ASTTranslator
       for idx in 0 .. codeNodesCnt
         this._executeNode(codeNodes[idx])
       endfor
-
-      # Special case - constructor returns back this.
-      # TODO: Review it.
-      #if funcProto['name'] is 'constructor'
-      #  code.loadParamN(0)
-      #  code.storeRetVal()
 
       if typeof(rvName) isnt 'undefined'
         code.retValGuard(rvName, funcName)
@@ -515,7 +510,9 @@ class ASTTranslatorMIR extends ASTTranslator
 
     code.emitLabel(entryPointId)
     code.beginProc('start', false, 0, noRv)
-    code.initFrame(0)
+
+    # TODO: Simplify it.
+    code.initFrame(this.symbolTable.exportSymbols())
 
     this._executeNode(ast)
     code.ret(0)

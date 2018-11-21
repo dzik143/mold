@@ -29,7 +29,7 @@ class CodeGeneratorX64
     print '  pop', x
   endmethod
 
-  method mov(dst,src)
+  method mov(dst, src)
     print '  mov ', dst, ',', src
   endmethod
 
@@ -203,6 +203,8 @@ class CodeGeneratorX64
   endmethod
 
   method run(codeObj)
+    global SYMBOL_KIND_VAR_LOCAL, SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_CONST
+    global SYMBOL_KIND_VAR_PARAM
 
     #
     # Common headers.
@@ -219,7 +221,7 @@ class CodeGeneratorX64
     print "section '.text' code readable executable"
     print "stack 1024*1024*4"
     print "include 'Variant.asm'"
-    print "rv EQU rdi"
+    print "__rv EQU rdi"
 
     #
     # Fetch code and code metas.
@@ -258,6 +260,13 @@ class CodeGeneratorX64
       elif opcode is 'label'
         print dst + ':'
 
+      elif opcode is 'move_integer_cinteger'
+        print '  mov [', dst, '+ Variant_value],', x
+
+      elif opcode is 'move_integer_integer'
+        print '  mov rax, [', x, '+ Variant_value],', x
+        print '  mov [', dst, '+ Variant_value], rax'
+
       elif opcode is 'move_variant'
         this.variantDestroy(dst)
         this.variantMove(dst, x)
@@ -273,6 +282,11 @@ class CodeGeneratorX64
       elif opcode is 'neg_variant'
         this.variantDestroy(dst)
         this.call2('__MOLD_VariantNeg', x, dst)
+
+      elif opcode is 'add_integer_cinteger'
+        print '  mov rax, [', x ,' + Variant_t.value]'
+        print '  add rax,', y
+        print '  mov [', dst, '+ Variant_t], rax'
 
       elif opcode is 'add_variant'
         this.call3AndDestroy('__MOLD_VariantAdd', x, y, dst)
@@ -306,6 +320,10 @@ class CodeGeneratorX64
 
       elif opcode is 'cmp_ge_variant'
         this.call3AndDestroy('__MOLD_VariantCompareLE', y, x, dst)
+
+      elif opcode is 'jmp_if_ge_integer_cinteger'
+        print '  cmp [', x, '+ Variant_t.value],', y
+        print '  jge', dst
 
       elif opcode is 'print_array_of_variants_ln'
         params    = dst
@@ -379,11 +397,11 @@ class CodeGeneratorX64
         print '  mov  rax, [rax + Object_t.vtable]'
         print '  call qword [rax + 8*' + str(methodId) + ']'
 
-        this.pop('rdi')
-
         if paramsCnt > 4
           print '  add rsp,', paramsCnt * 8 - 32
         endif
+
+        this.pop('rdi')
 
       elif opcode is 'create_object'
         this.variantDestroy(dst)
@@ -421,6 +439,10 @@ class CodeGeneratorX64
         print '  cmp  [', x, ' + Variant_t.value], 0'
         print '  jz  ', dst
 
+      elif opcode is 'jmp_if_variant_ge_int64'
+        print '  cmp  [', x, ' + Variant_t.value],', y
+        print '  jge ', dst
+
       elif opcode is 'halt'
         print '  mov  rcx, 0'
         print '  call __MOLD_Halt'
@@ -429,6 +451,8 @@ class CodeGeneratorX64
         print ''
         print '; clean frame'
         print '; -----------'
+/*
+        TODO
 
         localsCnt  = currentProcProto['localsCnt']
         tempsCnt   = currentProcProto['tempsCnt']
@@ -446,7 +470,7 @@ class CodeGeneratorX64
             this.variantDestroy('global' + str(globalIdx))
           endfor
         endif
-
+*/
         print '  add rsp, 32'
         print '  ret'
 
@@ -477,22 +501,33 @@ class CodeGeneratorX64
         frame     = dst
         localsCnt = frame['localsCnt']
         tempsCnt  = frame['tempsCnt']
+        symbols   = frame['symbols']
+        params    = frame['params']
         paramsCnt = frame['paramsCnt']
+        frameSize = 0
+
         regParams = ['rcx','rdx', 'r8', 'r9']
 
         print '; init frame'
         print '; ----------'
 
-        for idx in 0 .. localsCnt
-          print '  local .loc' + str(idx), 'Variant_t'
-        endfor
-
-        for idx in 0 .. tempsCnt
-          print '  local .tmp' + str(idx), 'Variant_t'
+        for symbolIdx in 0 .. len(symbols._index)
+          symbol = symbols._index[symbolIdx]
+          if symbol.kind is SYMBOL_KIND_VAR_LOCAL
+            print ' local', symbol.name, 'Variant_t'
+            frameSize = frameSize + 16
+          endif
         endfor
 
         for idx in 0 .. paramsCnt
-          print '  local .param' + str(idx) + ':Variant_t'
+          print '  local ', params[idx], ' Variant_t'
+        endfor
+
+        for symbolIdx in 0 .. len(symbols._index)
+          symbol = symbols._index[symbolIdx]
+          if symbol.kind is SYMBOL_KIND_VAR_LOCAL
+            print '  mov [' + symbol.name + ' + Variant_t.type], VARIANT_UNDEFINED'
+          endif
         endfor
 
         if paramsCnt <= 4
@@ -503,29 +538,26 @@ class CodeGeneratorX64
 
         for idx in 0 .. regParamsCnt
           print '  movdqu xmm' + str(idx), ', [' + regParams[idx] + ']'
-        endfor
-
-        for idx in 0 .. regParamsCnt
-          print '  movdqu [.param' + str(idx) + '], xmm' + str(idx)
+          print '  movdqu [', params[idx], '], xmm' + str(idx)
         endfor
 
         for idx in 4 .. paramsCnt
           print '  mov    rax', ', [rbp + 16 + 8*' + str(paramsCnt - idx - 1) + ']'
           print '  movdqu xmm0', ', [rax]'
-          print '  movdqu [.param' + str(idx) + '], xmm0'
+          print '  movdqu [', params[idx], '], xmm0'
         endfor
 
         if typeof(currentProcRv) isnt 'undefined'
           print '  mov [rdi + Variant_t.type], -1'
         endif
 
-        for idx in 0 .. localsCnt
-          print '  mov [.loc' + str(idx), ' + Variant_t.type], VARIANT_UNDEFINED'
-        endfor
+        #for idx in 0 .. localsCnt
+        #  print '  mov [.loc' + str(idx), ' + Variant_t.type], VARIANT_UNDEFINED'
+        #endfor
 
-        for idx in 0 .. tempsCnt
-          print '  mov [.tmp' + str(idx), ' + Variant_t.type], VARIANT_UNDEFINED'
-        endfor
+        #for idx in 0 .. tempsCnt
+        #  print '  mov [.tmp' + str(idx), ' + Variant_t.type], VARIANT_UNDEFINED'
+        #endfor
 
         print '  sub rsp, 32'
         print ''
@@ -574,27 +606,35 @@ class CodeGeneratorX64
     print "include 'CommonData.asm'"
     print ''
 
-    consts    = codeObj.consts
-    constsCnt = codeObj.constsCnt
-
-    print '; Constants'
-    print '; ---------'
-
-    for deepIdx in 0 .. 16
-      print '; iter', deepIdx
-      for idx in 0 .. constsCnt
-        value = consts[idx]
-        name  = 'const' + str(idx)
-        this.emitConstant(name, value, deepIdx, 0)
-      endfor
-    endfor
-
     print ''
     print '; Global vars'
     print '; -----------'
 
-    for idx in 0 .. codeObj.globalMax + 1
-      print 'global' + str(idx), 'Variant_t 0, 0, 0'
+    globals = codeObj.symbolTable.exportSymbols()
+
+    for globalIdx in 0 .. len(globals._index)
+      symbolInfo = globals._index[globalIdx]
+      if symbolInfo.kind is SYMBOL_KIND_VAR_GLOBAL
+        print symbolInfo.name, 'Variant_t 0, 0, 0'
+      endif
+    endfor
+
+    print ''
+    print '; Constants'
+    print '; ---------'
+
+    # TODO: Optimize it.
+    for deepIdx in 0 .. 16
+      print '; iter', deepIdx
+
+      for globalIdx in 0 .. len(globals._index)
+        symbolInfo = globals._index[globalIdx]
+        if symbolInfo.kind is SYMBOL_KIND_CONST
+          name  = symbolInfo.name
+          value = symbolInfo.value
+          this.emitConstant(name, value, deepIdx, 0)
+        endif
+      endfor
     endfor
 
     # Build vtables.

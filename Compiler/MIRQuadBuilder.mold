@@ -12,6 +12,12 @@
 #                                                                              #
 ################################################################################
 
+# ------------------------------------------------------------------------------
+# WARNING !
+# This class is obsolete and is not used in current toolchain.
+# It translates MIR0 (stack) to MIR1 (register).
+# ------------------------------------------------------------------------------
+
 import 'PipeAbstract.mold'
 import 'MIR.mold'
 import 'Stack.mold'
