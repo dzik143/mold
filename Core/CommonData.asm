@@ -34,6 +34,16 @@ StringTrueBufferBytes   StringHead_t 4
                         db 'true', 0
 
 StringFalse             Variant_t VARIANT_STRING, 0, StringFalseBufferHolder
-StringFalseBufferHolder Buffer_t  5, -1, 0, StringFalseBufferBytes
+StringFalseBufferHolder Buffer_t  6, -1, 0, StringFalseBufferBytes
 StringFalseBufferBytes  StringHead_t 5
                         db 'false', 0
+
+StringFloat             Variant_t VARIANT_STRING, 0, StringFloatBufferHolder
+StringFloatBufferHolder Buffer_t  6, -1, 0, StringFloatBufferBytes
+StringFloatBufferBytes  StringHead_t 5
+                        db 'float', 0
+
+StringInteger             Variant_t VARIANT_STRING, 0, StringIntegerBufferHolder
+StringIntegerBufferHolder Buffer_t  8, -1, 0, StringIntegerBufferBytes
+StringIntegerBufferBytes  StringHead_t 7
+                        db 'integer', 0

@@ -21,7 +21,8 @@ class MIRQuadCollector extends PipeAbstract
   # ----------------------------------------------------------------------------
 
   method constructor()
-    this.quads = []
+    this.quads        = []
+    this.currentFrame = {'symbols': {}}
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -86,13 +87,21 @@ class MIRQuadCollector extends PipeAbstract
     symbolsIndex = frameInfo['_index']
     symbolsCnt   = len(symbolsIndex)
 
-    this._printSymbolInfoRow('var', 'R', 'W', 'type')
+    this._printSymbolInfoRow('var', 'W', 'R', 'type')
     this._printSymbolInfoRow('----------', '----', '----', '--------')
 
     for idx in 0 .. symbolsCnt
       item = symbolsIndex[idx]
-      this._printSymbolInfoRow(item.name, item.readHits, item.writeHits, item.type)
+      this._printSymbolInfoRow(item.name, item.writeHits, item.readHits, item.type)
     endfor
+    print ''
+  endmethod
+
+  method _getType(x) -> rv
+    rv = this.currentFrame.symbols[x].type
+    if typeof(rv) is 'undefined'
+      rv = 'variant'
+    endif
   endmethod
 
   method printQuads()
@@ -103,9 +112,12 @@ class MIRQuadCollector extends PipeAbstract
       item    = code[idx]
       opcode  = item[0]
 
+      # print '[MIRQuadCollector]', item
+
       if opcode is 'proc'
         print 'proc', item[1]['name']
-        #this._dumpFrameInfo(item[1]['symbols'])
+        this._dumpFrameInfo(item[1]['symbols'])
+        this.currentFrame = item[1]
 
       elif opcode is 'init_frame'
         print '    init_frame'
@@ -119,10 +131,40 @@ class MIRQuadCollector extends PipeAbstract
       elif opcode is 'label'
         print item[1] + ':'
 
+      elif opcode is 'print_array_of_variants_ln'
+        print '   ', this._pad(opcode, 28), item[1]
+
+      elif opcode is 'call'
+        print '   ', this._pad(opcode, 28), this._pad(item[1], 8), this._pad(item[2], 8), item[3]
+
       else
         dst = item[1]
         x   = item[2]
         y   = item[3]
+
+        if opcode is 'move'
+          dstType = this._getType(dst)
+          srcType = this._getType(x)
+
+          if dstType is srcType
+            opcode = opcode + '_' + srcType
+          else
+            opcode = 'conv_' + srcType + '_to_' + dstType
+          endif
+        else
+
+          if typeof(x) is 'string'
+            xType  = this._getType(x)
+            opcode = opcode + '_' + xType
+          endif
+
+          if typeof(y) is 'string'
+            yType  = this._getType(y)
+            if xType isnt yType
+              opcode = opcode + '_' + yType
+            endif
+          endif
+        endif
 
         paddedOpcode = this._pad(opcode, 28)
         paddedDst    = this._pad(dst, 8)

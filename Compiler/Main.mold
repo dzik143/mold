@@ -17,9 +17,11 @@ import 'ParserMold.mold'
 import 'ASTTranslator.mold'
 import 'ASTTranslatorMIR0.mold'
 import 'ASTTranslatorMIR1.mold'
-import 'MIRQuadBuilder.mold'
+
 import 'MIRQuadCollector.mold'
+import 'MIRQuadTypeTracker.mold'
 import 'MIRQuadOptimizer.mold'
+
 import 'CodeGeneratorX64.mold'
 import 'VMachineStack.mold'
 
@@ -43,6 +45,7 @@ endfunction
 
 mode = 'interpreter'
 path = ''
+optimizationLevel = 0
 
 for idx in 1 .. argc
   if argv[idx] is '-c'
@@ -76,6 +79,18 @@ for idx in 1 .. argc
   elif argv[idx] is '--debug'
     # Enable debug logs
     UNICC_DEBUG = true
+
+  elif argv[idx] is '-O0'
+    optimizationLevel = 0
+
+  elif argv[idx] is '-O1'
+    optimizationLevel = 1
+
+  elif argv[idx] is '-O2'
+    optimizationLevel = 2
+
+  elif argv[idx] is '-O3'
+    optimizationLevel = 3
 
   elif argv[idx][0] is '-'
     # Unknown -x switch.
@@ -141,10 +156,25 @@ else
     # Translate program to MIR1 (register based).
     astTranslator    = new ASTTranslatorMIR1()
     mirQuadCollector = new MIRQuadCollector()
-    mirQuadOptimizer = new MIRQuadOptimizer()
 
-    #mirQuadBuilder.setOutputObject(mirQuadOptimizer)
-    astTranslator.setOutputObject(mirQuadCollector)
+    if optimizationLevel is 0
+      # No optimization - pass raw MIR1 to code generator.
+      astTranslator.connectTo(mirQuadCollector)
+
+    elif optimizationLevel is 1
+      # Optimization level 1:
+      # - Remove redundant load/store
+      # - Use machine types if possible.
+      mirQuadOptimizer   = new MIRQuadOptimizer()
+      mirQuadTypeTracker = new MIRQuadTypeTracker()
+
+      astTranslator.connectTo(mirQuadOptimizer)
+
+      mirQuadOptimizer.connectTo(mirQuadTypeTracker).connectTo(mirQuadCollector)
+
+    else
+      die('error: optimization level #' + str(optimizationLevel) + ' is not implemented yet')
+    endif
 
     # Run build quads process.
     astTranslator.run(ast)

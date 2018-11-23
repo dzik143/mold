@@ -233,8 +233,7 @@ class CodeGeneratorX64
     currentProcProto = false
     currentProcName  = false
     currentProcRv    = false
-
-    globalsCnt = codeObj.globalMax + 1
+    currentSymbols   = {}
 
     #
     # Translate code section.
@@ -242,13 +241,34 @@ class CodeGeneratorX64
 
     for quadIdx in 0 .. quadsCnt
       # Fetch instruction
-      item   = quads[quadIdx]
-      opcode = item[0]
-      dst    = item[1]
-      x      = item[2]
-      y      = item[3]
+      item    = quads[quadIdx]
+      itemCnt = len(item)
+      opcode  = item[0]
+      dst     = item[1]
+      x       = item[2]
+      y       = item[3]
 
-      #print opcode, dst, x, y
+      # TODO: Optimize it.
+      xType = 'variant'
+      if (itemCnt > 2) and (typeof(x) is 'string')
+        if (opcode isnt 'call') and (opcode isnt 'vcall') and (opcode isnt 'create_object')
+          xInfo = currentSymbols[x]
+          if typeof(xInfo) isnt 'undefined'
+            if typeof(xInfo.type) isnt 'undefined'
+              xType = xInfo.type
+            endif
+          endif
+
+          if opcode is 'conv'
+            dstType = currentSymbols[dst].type
+            opcode  = opcode + '_' + xType + '_to_' + dstType
+          else
+            opcode = opcode + '_' + xType
+          endif
+        endif
+      endif
+
+      #print '[x86]', opcode, dst, x, y
 
       # Dispatch opcode.
       if opcode is 'nop'
@@ -260,20 +280,27 @@ class CodeGeneratorX64
       elif opcode is 'label'
         print dst + ':'
 
-      elif opcode is 'move_integer_cinteger'
-        print '  mov [', dst, '+ Variant_value],', x
-
-      elif opcode is 'move_integer_integer'
-        print '  mov rax, [', x, '+ Variant_value],', x
-        print '  mov [', dst, '+ Variant_value], rax'
-
       elif opcode is 'move_variant'
         this.variantDestroy(dst)
         this.variantMove(dst, x)
 
+      #
+      # Typeof(x)
+      # TODO: Move typeof(imm) to core.
+      #
       elif opcode is 'typeof_variant'
         this.variantDestroy(dst)
         this.call2('__MOLD_VariantTypeOf', x, dst)
+
+      elif opcode is 'typeof_int64'
+        this.variantDestroy(dst)
+        print '  movdqu xmm0, [StringInteger]'
+        print '  movdqu [', dst, '], xmm0'
+
+      elif opcode is 'typeof_float64'
+        this.variantDestroy(dst)
+        print '  movdqu xmm0, [StringFloat]'
+        print '  movdqu [', dst, '], xmm0'
 
       elif opcode is 'len_variant'
         this.variantDestroy(dst)
@@ -283,10 +310,104 @@ class CodeGeneratorX64
         this.variantDestroy(dst)
         this.call2('__MOLD_VariantNeg', x, dst)
 
-      elif opcode is 'add_integer_cinteger'
-        print '  mov rax, [', x ,' + Variant_t.value]'
-        print '  add rax,', y
-        print '  mov [', dst, '+ Variant_t], rax'
+      #
+      # int64 arithmetic
+      #
+
+      elif opcode is 'neg_int64'
+        print '  mov rax, qword [', x, ']'
+        print '  neg rax'
+        print '  mov qword [', dst, '], rax'
+
+      elif opcode is 'add_int64'
+        print '  mov rax, qword [', x, ']'
+        print '  add rax, qword [', y, ']'
+        print '  mov qword [', dst, '], rax'
+
+      elif opcode is 'sub_int64'
+        print '  mov rax, qword [', x, ']'
+        print '  sub rax, qword [', y, ']'
+        print '  mov qword [', dst, '], rax'
+
+      elif opcode is 'mul_int64'
+        print '  mov rcx, qword [', x, ']'
+        print '  imul rcx, qword [', y, ']'
+        print '  mov qword [', dst, '], rcx'
+
+      elif opcode is 'div_int64'
+        print '  cvtsi2sd  xmm0, qword [', x, ']'   # ; xmm0 = double(x)
+        print '  cvtsi2sd  xmm1, qword [', y, ']'   # ; xmm1 = double(y)
+        print '  divsd     xmm0, xmm1'              # ; xmm0 = x / y
+        print '  movq      qword [', dst, '], xmm0' # ; dst  = x / y
+
+      elif opcode is 'cmp_eq_int64'
+        print '  mov qword [', dst, '], 0'
+        print '  mov rcx, qword [', x, ']'
+        print '  cmp rcx, qword [', y, ']'
+        print '  setz byte [', dst, ']'
+
+      elif opcode is 'cmp_ne_int64'
+        print '  mov qword [', dst, '], 0'
+        print '  mov rcx, qword [', x, ']'
+        print '  cmp rcx, qword [', y, ']'
+        print '  setnz byte [', dst, ']'
+
+      elif opcode is 'cmp_lt_int64'
+        print '  mov qword [', dst, '], 0'
+        print '  mov rcx, qword [', x, ']'
+        print '  cmp rcx, qword [', y, ']'
+        print '  setl byte [', dst, ']'
+
+      elif opcode is 'cmp_le_int64'
+        print '  mov qword [', dst, '], 0'
+        print '  mov rcx, qword [', x, ']'
+        print '  cmp rcx, qword [', y, ']'
+        print '  setle byte [', dst, ']'
+
+      elif opcode is 'cmp_gt_int64'
+        print '  mov qword [', dst, '], 0'
+        print '  mov rcx, qword [', x, ']'
+        print '  cmp rcx, qword [', y, ']'
+        print '  setge byte [', dst, ']'
+
+      elif opcode is 'cmp_ge_int64'
+        print '  mov qword [', dst, '], 0'
+        print '  mov rcx, qword [', x, ']'
+        print '  cmp rcx, qword [', y, ']'
+        print '  setge byte [', dst, ']'
+
+      #
+      # float64 arithmetic
+      #
+
+      elif opcode is 'neg_float64'
+        print '  mov rax, qword [', x, ']'
+        print '  xor rax, 0x8000000000000000'
+        print '  mov qword [', dst, '], rax'
+
+      elif opcode is 'add_float64'
+        print '  movq  xmm0, [', x, ']'
+        print '  addsd xmm0, qword [', y, ']'
+        print '  movq  qword [', dst, '], xmm0'
+
+      elif opcode is 'sub_float64'
+        print '  movq  xmm0, [', x, ']'
+        print '  subsd xmm0, qword [', y, ']'
+        print '  movq  qword [', dst, '], xmm0'
+
+      elif opcode is 'mul_float64'
+        print '  movq  xmm0, [', x, ']'
+        print '  mulsd xmm0, qword [', y, ']'
+        print '  movq  qword [', dst, '], xmm0'
+
+      elif opcode is 'div_float64'
+        print '  movq  xmm0, [', x, ']'
+        print '  divsd xmm0, qword [', y, ']'
+        print '  movq  qword [', dst, '], xmm0'
+
+      #
+      # Variant arithmetic.
+      #
 
       elif opcode is 'add_variant'
         this.call3AndDestroy('__MOLD_VariantAdd', x, y, dst)
@@ -321,9 +442,147 @@ class CodeGeneratorX64
       elif opcode is 'cmp_ge_variant'
         this.call3AndDestroy('__MOLD_VariantCompareLE', y, x, dst)
 
-      elif opcode is 'jmp_if_ge_integer_cinteger'
-        print '  cmp [', x, '+ Variant_t.value],', y
+      #
+      # jmp_if_xx_variant
+      #
+
+      elif opcode is 'jmp_if_eq_variant'
+        print '  lea rcx, [', x, ']'
+        print '  lea rdx, [', y, ']'
+        print '  lea r8, [rsp + 16]' # Temp var in own shadow space
+        print '  call __MOLD_VariantCompareEQ'
+        print '  cmp dword [rsp + 16 + Variant_t.value], 0'
+        print '  jnz', dst
+
+      elif opcode is 'jmp_if_ne_variant'
+        print '  lea rcx, [', x, ']'
+        print '  lea rdx, [', y, ']'
+        print '  lea r8, [rsp + 16]' # Temp var in own shadow space
+        print '  call __MOLD_VariantCompareNE'
+        print '  cmp dword [rsp + 16 + Variant_t.value], 0'
+        print '  jnz', dst
+
+      elif opcode is 'jmp_if_lt_variant'
+        print '  lea rcx, [', x, ']'
+        print '  lea rdx, [', y, ']'
+        print '  lea r8, [rsp + 16]' # Temp var in own shadow space
+        print '  call __MOLD_VariantCompareLT'
+        print '  cmp dword [rsp + 16 + Variant_t.value], 0'
+        print '  jnz', dst
+
+      elif opcode is 'jmp_if_le_variant'
+        print '  lea rcx, [', x, ']'
+        print '  lea rdx, [', y, ']'
+        print '  lea r8, [rsp + 16]' # Temp var in own shadow space
+        print '  call __MOLD_VariantCompareLE'
+        print '  cmp dword [rsp + 16 + Variant_t.value], 0'
+        print '  jnz', dst
+
+      elif opcode is 'jmp_if_gt_variant'
+        print '  lea rcx, [', y, ']'
+        print '  lea rdx, [', x, ']'
+        print '  lea r8, [rsp + 16]' # Temp var in own shadow space
+        print '  call __MOLD_VariantCompareLT'
+        print '  cmp dword [rsp + 16 + Variant_t.value], 0'
+        print '  jnz', dst
+
+      elif opcode is 'jmp_if_ge_variant'
+        print '  lea rcx, [', y, ']'
+        print '  lea rdx, [', x, ']'
+        print '  lea r8, [rsp + 16]' # Temp var in own shadow space
+        print '  call __MOLD_VariantCompareLE'
+        print '  cmp dword [rsp + 16 + Variant_t.value], 0'
+        print '  jnz', dst
+
+      #
+      # load imm values
+      #
+
+      elif opcode is 'load_int64'
+        print '  mov qword [', dst, '],', x
+
+      elif opcode is 'load_int32'
+        print '  mov qword [', dst, '],', x
+
+      elif opcode is 'load_bool32'
+        print '  mov qword [', dst, '],', x
+
+      elif opcode is 'load_float64'
+        print '  db 0x48, 0xb8' # mov rax, float64
+        print '  dq', x
+        print '  mov qword [', dst, '], rax'
+
+      #
+      # jmp_if_xx_int64
+      #
+
+      elif opcode is 'jmp_if_eq_int64'
+        print '  mov rax, qword [', x, ']'
+        print '  cmp rax, qword [', y, ']'
+        print '  je', dst
+
+      elif opcode is 'jmp_if_ne_int64'
+        print '  mov rax, qword [', x, ']'
+        print '  cmp rax, qword [', y, ']'
+        print '  jne', dst
+
+      elif opcode is 'jmp_if_lt_int64'
+        print '  mov rax, qword [', x, ']'
+        print '  cmp rax, qword [', y, ']'
+        print '  jl', dst
+
+      elif opcode is 'jmp_if_le_int64'
+        print '  mov rax, qword [', x, ']'
+        print '  cmp rax, qword [', y, ']'
+        print '  jle', dst
+
+      elif opcode is 'jmp_if_gt_int64'
+        print '  mov rax, qword [', x, ']'
+        print '  cmp rax, qword [', y, ']'
+        print '  jg', dst
+
+      elif opcode is 'jmp_if_ge_int64'
+        print '  mov rax, qword [', x, ']'
+        print '  cmp rax, qword [', y, ']'
         print '  jge', dst
+
+      #
+      # jmp_if_xx_float64
+      #
+
+      elif opcode is 'jmp_if_eq_float64'
+        print '  movq   xmm0, [', x, ']'
+        print '  comisd xmm0, [', y, ']'
+        print '  jz', dst
+
+      elif opcode is 'jmp_if_ne_float64'
+        print '  movq   xmm0, [', x, ']'
+        print '  comisd xmm0, [', y, ']'
+        print '  jnz', dst
+
+      elif opcode is 'jmp_if_lt_float64'
+        print '  movq   xmm0, [', x, ']'
+        print '  comisd xmm0, [', y, ']'
+        print '  jb', dst
+
+      elif opcode is 'jmp_if_le_float64'
+        print '  movq   xmm0, [', x, ']'
+        print '  comisd xmm0, [', y, ']'
+        print '  jbe', dst
+
+      elif opcode is 'jmp_if_gt_float64'
+        print '  movq   xmm0, [', x, ']'
+        print '  comisd xmm0, [', y, ']'
+        print '  ja', dst
+
+      elif opcode is 'jmp_if_ge_float64'
+        print '  movq   xmm0, [', x, ']'
+        print '  comisd xmm0, [', y, ']'
+        print '  jae', dst
+
+      #
+      # Print functions.
+      #
 
       elif opcode is 'print_array_of_variants_ln'
         params    = dst
@@ -346,10 +605,10 @@ class CodeGeneratorX64
           endif
         endif
 
-      elif opcode is 'print_err_variant'
+      elif opcode is 'print_err'
         this.call1('__MOLD_PrintVariantToStdError', dst)
 
-      elif opcode is 'print_out_variant'
+      elif opcode is 'print_out'
         this.call1('__MOLD_PrintVariant', dst)
 
       elif opcode is 'print_out_newline'
@@ -361,6 +620,27 @@ class CodeGeneratorX64
       elif opcode is 'str_variant'
         this.variantDestroy(dst)
         this.call2('__MOLD_VariantConvertToString', x, dst)
+
+      elif opcode is 'str_int64'
+        this.variantDestroy(dst)
+        print '  mov r9, [', x, ']'
+        print '  mov r10d, VARIANT_INTEGER'
+        print '  lea rdx, [', dst, ']'
+        print '  call __MOLD_VariantConvertPrimitiveToString'
+
+      elif opcode is 'str_int32'
+        this.variantDestroy(dst)
+        print '  mov r9d, [', x, ']'
+        print '  mov r10d, VARIANT_INTEGER'
+        print '  lea rdx, [', dst, ']'
+        print '  call __MOLD_VariantConvertPrimitiveToString'
+
+      elif opcode is 'str_float64'
+        this.variantDestroy(dst)
+        print '  mov r9, [', x, ']'
+        print '  mov r10d, VARIANT_DOUBLE'
+        print '  lea rdx, [', dst, ']'
+        print '  call __MOLD_VariantConvertPrimitiveToString'
 
       elif opcode is 'call'
         rv        = item[1]
@@ -412,11 +692,23 @@ class CodeGeneratorX64
       elif opcode is 'conv_int64_to_variant'
         this.variantDestroy(dst)
         print '  mov [', dst, '+ Variant_t.type], VARIANT_INTEGER'
-        print '  mov [', dst, '+ Variant_t.value],', x
+
+        if typeof(x) is 'integer'
+          print '  mov [', dst, '+ Variant_t.value],', x
+        else
+          print '  mov rax, qword [', x, ']'
+          print '  mov [', dst, '+ Variant_t.value], rax'
+        endif
 
       elif opcode is 'conv_float64_to_variant'
         this.variantDestroy(dst)
-        print '  mov rax,', x
+        if typeof(x) is 'float'
+          print '  db 0x48, 0xb8' # mov rax, float64
+          print '  dq', x
+        else
+          print '  mov rax, qword [', x, ']'
+        endif
+
         print '  mov [', dst, '+ Variant_t.type], VARIANT_DOUBLE'
         print '  mov [', dst, '+ Variant_t.value], rax'
 
@@ -492,6 +784,7 @@ class CodeGeneratorX64
         currentProcProto = proto
         currentProcName  = proto['name']
         currentProcRv    = proto['rv']
+        currentSymbols   = proto['symbols']
         print 'proc', currentProcName
 
       elif opcode is 'endp'
@@ -513,9 +806,20 @@ class CodeGeneratorX64
 
         for symbolIdx in 0 .. len(symbols._index)
           symbol = symbols._index[symbolIdx]
-          if symbol.kind is SYMBOL_KIND_VAR_LOCAL
-            print ' local', symbol.name, 'Variant_t'
-            frameSize = frameSize + 16
+          if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) and (symbol.readHits + symbol.writeHits > 0)
+            if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
+              print '  local', symbol.name, ' Variant_t'
+            elif symbol.type is 'int64'
+              print '  local', symbol.name, ' dq ?'
+            elif symbol.type is 'int32'
+              print '  local', symbol.name, ' dd ?'
+            elif symbol.type is 'float64'
+              print '  local', symbol.name, ' dq ?'
+            elif symbol.type is 'bool32'
+              print '  local', symbol.name, ' dq ?'
+            else
+              die('error: unhandled operand type while setting up frame: ' + str(symbol.type))
+            endif
           endif
         endfor
 
@@ -525,7 +829,7 @@ class CodeGeneratorX64
 
         for symbolIdx in 0 .. len(symbols._index)
           symbol = symbols._index[symbolIdx]
-          if symbol.kind is SYMBOL_KIND_VAR_LOCAL
+          if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')) and (symbol.readHits + symbol.writeHits > 0)
             print '  mov [' + symbol.name + ' + Variant_t.type], VARIANT_UNDEFINED'
           endif
         endfor
@@ -568,11 +872,11 @@ class CodeGeneratorX64
         print '  cmp  [rdi + Variant_t.type], -1'
         print '  jz   .errorUnsetRetVal'
 
-      elif opcode is 'create_array_variant'
+      elif opcode is 'create_array'
         this.variantDestroy(dst)
         this.call1('__MOLD_VariantArrayCreate', dst)
 
-      elif opcode is 'create_map_variant'
+      elif opcode is 'create_map'
         this.variantDestroy(dst)
         this.call1('__MOLD_VariantMapCreate', dst)
 
@@ -613,9 +917,21 @@ class CodeGeneratorX64
     globals = codeObj.symbolTable.exportSymbols()
 
     for globalIdx in 0 .. len(globals._index)
-      symbolInfo = globals._index[globalIdx]
-      if symbolInfo.kind is SYMBOL_KIND_VAR_GLOBAL
-        print symbolInfo.name, 'Variant_t 0, 0, 0'
+      symbol = globals._index[globalIdx]
+      if (symbol.kind is SYMBOL_KIND_VAR_GLOBAL) and (symbol.readHits + symbol.writeHits > 0)
+        if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
+          print symbol.name, ' Variant_t 0, 0, 0'
+        elif symbol.type is 'int64'
+          print symbol.name, ' dq 0'
+        elif symbol.type is 'int32'
+          print symbol.name, ' dd 0'
+        elif symbol.type is 'float64'
+          print symbol.name, ' dq 0'
+        elif symbol.type is 'bool64'
+          print symbol.name, ' dq 0'
+        else
+          die('error: unhandled global type: ' + str(symbol.type))
+        endif
       endif
     endfor
 

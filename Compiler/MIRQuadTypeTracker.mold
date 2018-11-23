@@ -22,13 +22,66 @@ class MIRQuadTypeTracker extends PipeAbstract
 
   method constructor()
     super()
-    this.bufferingEnabled = false
-    this.typesMap         = {}
+    this.currentFrame = {'symbols': {}}
+    this.tempCnt      = 0
+    this.forkedCode   = false
   endmethod
 
   # ----------------------------------------------------------------------------
   #                        Internal helpers (private)
   # ----------------------------------------------------------------------------
+
+  method _getType(x) -> rv
+    rv = this.currentFrame.symbols[x].type
+  endmethod
+
+  method _getTempVar() -> rv
+    global SYMBOL_KIND_VAR_LOCAL
+
+    # TODO: Optimize it.
+    rv = '.conv' + str(this.tempCnt)
+    this.tempCnt = this.tempCnt + 1
+    if typeof(this.currentFrame.symbols[rv]) is 'undefined'
+      newEntry = {
+        'name': rv,
+        'readHits': 1,
+        'writeHits': 1,
+        'kind': SYMBOL_KIND_VAR_LOCAL,
+        'type': 'variant'
+      }
+
+      this.currentFrame.symbols[rv] = newEntry
+      cnt = len(this.currentFrame.symbols._index)
+      this.currentFrame.symbols._index[cnt] = newEntry
+    endif
+  endmethod
+
+  method _convertToVariant(symInfo) -> dst
+    if (typeof(symInfo.type) is 'undefined') or (symInfo.type is 'variant')
+      # Already variant - nothing to do.
+      dst = symInfo.name
+    else
+      # Convert to variant.
+      src = symInfo.name
+      dst = this._getTempVar()
+      this._emitOneItem(['conv', dst, src])
+    endif
+  endmethod
+
+  method _releaseAllTemps()
+    this.tempCnt = 0
+  endmethod
+
+  method _convertParamsBeforeCall(params)
+    for idx in 0 .. len(params)
+      paramInfo = this.currentFrame.symbols[params[idx]]
+      if paramInfo.type isnt 'variant'
+        newVar      = this._convertToVariant(paramInfo)
+        params[idx] = newVar
+      endif
+    endfor
+    this._releaseAllTemps()
+  endmethod
 
   # ----------------------------------------------------------------------------
   #                                  Public API
@@ -37,6 +90,107 @@ class MIRQuadTypeTracker extends PipeAbstract
   method processOneItem(item)
     opcode = item[0]
     dst    = item[1]
+
+    #print '[ TypeTracker ]', item
+
+    if opcode is 'proc'
+      # Proc begin - save current frame.
+      this.currentFrame = item[1]
+      this._releaseAllTemps()
+
+    elif dst is '__rv'
+      # Do nothing.
+
+    elif opcode is 'conv_int32_to_variant'
+      item[0] = 'load_int32'
+      dst     = item[1]
+      dstInfo = this.currentFrame.symbols[dst]
+      dstInfo.type = 'int32'
+
+    elif opcode is 'conv_int64_to_variant'
+      item[0] = 'load_int64'
+      dst     = item[1]
+      dstInfo = this.currentFrame.symbols[dst]
+      dstInfo.type = 'int64'
+
+    elif opcode is 'conv_float64_to_variant'
+      item[0] = 'load_float64'
+      dst     = item[1]
+      dstInfo = this.currentFrame.symbols[dst]
+      dstInfo.type = 'float64'
+
+    elif opcode is 'conv_bool32_to_variant'
+      item[0] = 'load_bool32'
+      dst     = item[1]
+      dstInfo = this.currentFrame.symbols[dst]
+      dstInfo.type = 'bool32'
+
+    elif opcode is 'call'
+      # Convert args to match target function's proto.
+      this._convertParamsBeforeCall(item[3])
+
+    elif opcode is 'vcall'
+      # Convert args to match target function's proto.
+      this._convertParamsBeforeCall(item[3])
+
+    elif (opcode is 'load_index') or (opcode is 'store_index')
+      xInfo = this.currentFrame.symbols[item[2]]
+      yInfo = this.currentFrame.symbols[item[3]]
+
+      item[2] = this._convertToVariant(xInfo)
+      item[3] = this._convertToVariant(yInfo)
+
+      this._releaseAllTemps()
+
+    elif opcode is 'print_array_of_variants_ln'
+      # Convert args to match target function's proto.
+      this._convertParamsBeforeCall(item[1])
+
+    elif (opcode is 'neg')
+      dstInfo = this.currentFrame.symbols[item[1]]
+      xInfo   = this.currentFrame.symbols[item[2]]
+      dstInfo.type = xInfo.type
+
+    elif (opcode is 'add') or (opcode is 'sub') or (opcode is 'mul')
+      dstInfo = this.currentFrame.symbols[item[1]]
+      xInfo   = this.currentFrame.symbols[item[2]]
+      yInfo   = this.currentFrame.symbols[item[3]]
+
+      if xInfo.type is yInfo.type
+        dstInfo.type = xInfo.type
+      else
+        # TODO: Handle conversion without variant fallback.
+        item[2] = this._convertToVariant(xInfo)
+        item[3] = this._convertToVariant(yInfo)
+        dstInfo.type = 'variant'
+        this._releaseAllTemps()
+      endif
+
+    elif (opcode is 'cmp_eq')  or (opcode is 'cmp_ne') or (opcode is 'cmp_lt') or (opcode is 'cmp_le') or (opcode is 'cmp_gt') or (opcode is 'cmp_ge') or (opcode is 'jmp_if_eq')  or (opcode is 'jmp_if_ne') or (opcode is 'jmp_if_lt') or (opcode is 'jmp_if_le') or (opcode is 'jmp_if_gt') or (opcode is 'jmp_if_ge')
+      dstInfo = this.currentFrame.symbols[item[1]]
+      xInfo   = this.currentFrame.symbols[item[2]]
+      yInfo   = this.currentFrame.symbols[item[3]]
+
+      dstInfo.type = 'bool64'
+
+      if xInfo.type isnt yInfo.type
+        # TODO: Handle conversion without variant fallback.
+        item[2] = this._convertToVariant(xInfo)
+        item[3] = this._convertToVariant(yInfo)
+        dstInfo.type = 'variant'
+        this._releaseAllTemps()
+      endif
+
+    elif (opcode is 'div') or (opcode is 'idiv')
+      # TODO: Optimize it.
+      xInfo = this.currentFrame.symbols[item[2]]
+      yInfo = this.currentFrame.symbols[item[3]]
+
+      item[2] = this._convertToVariant(xInfo)
+      item[3] = this._convertToVariant(yInfo)
+
+      this._releaseAllTemps()
+    endif
 
     this._emitOneItem(item)
   endmethod

@@ -39,12 +39,23 @@ class PipeAbstract
     endif
   endmethod
 
+  method _replaceLastItem(item)
+    if this.bufferingEnabled is true
+      buffer          = this.buffer
+      cnt             = len(buffer)
+      buffer[cnt - 1] = item
+    else
+      die('error: _replaceLastItem() called without buffering')
+    endif
+  endmethod
+
   # ----------------------------------------------------------------------------
   #                                 Public API
   # ----------------------------------------------------------------------------
 
-  method setOutputObject(outputObject)
+  method connectTo(outputObject) -> rv
     this.outputObject = outputObject
+    rv = outputObject
   endmethod
 
   method processOneItem(item)

@@ -61,9 +61,9 @@ VARIANT_OBJECT_DEFAULT_BUFFER_SIZE EQU 32*1024 + 32
 MAX_STRING_LENGTH EQU 1024*1024
 
 struct Variant_t
-  type     dd ?
-  reserved dd ?
-  value    dq ?
+  type  dd ?
+  flags dd ?
+  value dq ?
 ends
 
 struct StringHead_t
@@ -456,36 +456,83 @@ endp
 ;  Convert Variant_t to string
 ; -----------------------------------------------
 
-proc __MOLD_VariantConvertToString value, rv
+__MOLD_VariantConvertToString:
     ; rcx = value
     ; rdx = rv
 
-    push                rdx
     DEBUG_CHECK_VARIANT rcx
 
     mov     r9, [rcx + Variant_t.value]            ; r9  = value.value
     mov     r10d, [rcx + Variant_t.type]           ; r10 = value.type
-    mov     [rdx + Variant_t.type], VARIANT_STRING ; rv.type  = VARIANT_STRING
 
     cmp     r10, VARIANT_STRING
-    jz      .string
+    jnz     .notString
+
+    ; -----------------------------------------------
+    ; String - Nothing to do, just pass string as is.
+    ; -----------------------------------------------
+
+.string:
+    mov     [rdx + Variant_t.type], VARIANT_STRING ; rv.type  = VARIANT_STRING
+    mov     [rdx + Variant_t.value], r9
+
+    DEBUG_CHECK_VARIANT rdx
+
+    mov     rcx, rdx
+    call    __MOLD_VariantAddRef
+    ret
+
+.notString:
 
     cmp     r10, VARIANT_BOOLEAN
-    jz      .boolean
+    jnz     .notBoolean
+
+    ; ---------------------------------
+    ; Boolean - true or false constants
+    ; ---------------------------------
+
+.boolean:
+
+    mov     [rdx + Variant_t.type], VARIANT_STRING ; rv.type  = VARIANT_STRING
+
+    lea     rax, [StringFalseBufferHolder] ; rcx = 'false'
+    lea     rcx, [StringTrueBufferHolder]  ; rdx = 'true'
+    test    r9, r9                         ; is value 0?
+
+    cmovnz  rax, rcx                       ; (value != 0) ? rax = 'true' : 'false'
+    mov     [rdx + Variant_t.value], rax   ; rv.value = rax
+
+    DEBUG_CHECK_VARIANT rdx
+
+    mov     rcx, rdx
+    call    __MOLD_VariantAddRef
+
+    ret
+
+
+.notBoolean:
 
     cmp     r10, VARIANT_TYPE_MAX
-    ja      .error
+    jbe     __MOLD_VariantConvertPrimitiveToString
 
     ; ------------------------------------
     ; Non string value, conversion needed.
     ; Allocate new String_t buffer
     ; ------------------------------------
 
+__MOLD_VariantConvertPrimitiveToString:
+    ; r9  = value
+    ; r10 = type
+    ; rdx = rv (Variant_t)
+
+    push    rdx
+
     push    rdx r9 r10
     mov     rcx, 32                                ; rcx = buffer size needed
     call    __MOLD_MemoryAlloc                     ; rax = new Buffer_t
     pop     r10 r9 rdx
 
+    mov     [rdx + Variant_t.type], VARIANT_STRING ; rv.type  = VARIANT_STRING
     mov     [rdx + Variant_t.value], rax           ; rv.value = new string buffer
     mov     rax, [rax + Buffer_t.bytesPtr]
     push    rax
@@ -520,41 +567,13 @@ proc __MOLD_VariantConvertToString value, rv
 .fmtMap       db '[map]', 0
 .fmtObject    db '[object]', 0
 
-.boolean:
-    lea     rax, [StringFalseBufferHolder] ; rcx = 'false'
-    lea     rcx, [StringTrueBufferHolder]  ; rdx = 'true'
-    test    r9, r9                         ; is value 0?
-
-    cmovnz  rax, rcx                       ; (value != 0) ? rax = 'true' : 'false'
-    mov     [rdx + Variant_t.value], rax   ; rv.value = rax
-
-    pop                 rdx
-    DEBUG_CHECK_VARIANT rdx
-
-    mov     rcx, rdx
-    call    __MOLD_VariantAddRef
-
-    ret
-
-.string:
-    ; Nothing to do, just pass string as is.
-    pop     rdx
-    mov     [rdx + Variant_t.value], r9
-
-    DEBUG_CHECK_VARIANT rdx
-
-    mov     rcx, rdx
-    call    __MOLD_VariantAddRef
-
-    ret
-
 .outOfMemoryError:
     cinvoke printf, 'error: out of memory'
 
 .error:
     cinvoke printf, '[__MOLD_VariantConvertToString: error]'
     cinvoke ExitProcess, -1
-endp
+
 
 ; -----------------------------------------------
 ;  Print Variant_t to stderr
@@ -713,7 +732,7 @@ proc __MOLD_VariantMul x, y, rv
   mov rcx, [rcx + Variant_t.value]  ; rcx = x.value
   mov rdx, [rdx + Variant_t.value]  ; rdx = y.value
 
-  imul rcx, rdx                     ; rcx = x.value + y.value
+  imul rcx, rdx                     ; rcx = x.value * y.value
 
   mov [r8 + Variant_t.type], r9d    ; rv.type  = VARIANT_INTEGER
   mov [r8 + Variant_t.value], rcx   ; rv.value = x.value + y.value

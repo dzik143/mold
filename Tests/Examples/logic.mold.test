@@ -20,7 +20,7 @@ false or true gives true
 false or false gives false
 --------------------------------------------------------------------------------
 
-TEST "Simple if"
+TEST "Simple if (integer)"
 x = 10
 
 if x is 0
@@ -87,6 +87,75 @@ EXPECTED_OUTPUT:
 10 >= 0: true
 10 <= 10: true
 10 >= 10: true
+-------------------------------------------------------------------------------
+
+TEST "Simple if (float)"
+x = 3.4
+
+if x is 1.2
+  print x, 'is 1.2: true'
+else
+  print x, 'is 1.2: false'
+endif
+
+if x isnt 1.2
+  print x, 'isnt 1.2: true'
+else
+  print x, 'isnt 1.2: false'
+endif
+
+if x is 3.4
+  print x, 'is 3.4: true'
+else
+  print x, 'is 3.4: false'
+endif
+
+if x < 1.2
+  print x, '< 1.2: true'
+else
+  print x, '< 1.2: false'
+endif
+
+if x > 1.2
+  print x, '> 1.2: true'
+else
+  print x, '> 1.2: false'
+endif
+
+if x <= 1.2
+  print x, '<= 1.2: true'
+else
+  print x, '<= 1.2: false'
+endif
+
+if x >= 1.2
+  print x, '>= 1.2: true'
+else
+  print x, '>= 1.2: false'
+endif
+
+if x <= 3.4
+  print x, '<= 3.4: true'
+else
+  print x, '<= 3.4: false'
+endif
+
+if x >= 3.4
+  print x, '>= 3.4: true'
+else
+  print x, '>= 3.4: false'
+endif
+
+EXPECTED_OUTPUT:
+3.400000 is 1.2: false
+3.400000 isnt 1.2: true
+3.400000 is 3.4: true
+3.400000 < 1.2: false
+3.400000 > 1.2: true
+3.400000 <= 1.2: false
+3.400000 >= 1.2: true
+3.400000 <= 3.4: true
+3.400000 >= 3.4: true
 -------------------------------------------------------------------------------
 
 TEST "If with multiple conditions"
