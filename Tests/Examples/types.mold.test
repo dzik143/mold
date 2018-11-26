@@ -128,8 +128,8 @@ print "typeof(-1234) :", typeof(-1234)
 print "typeof(3.14)  :", typeof(3.14)
 print "typeof(true)  :", typeof(true)
 print "typeof(false) :", typeof(false)
-#TODO: print "typeof([])    :", typeof([])
-#TODO: print "typeof({})    :", typeof({})
+print "typeof([])    :", typeof([])
+print "typeof({})    :", typeof({})
 
 EXPECTED_OUTPUT:
 typeof('text'): string
@@ -138,4 +138,6 @@ typeof(-1234) : integer
 typeof(3.14)  : float
 typeof(true)  : boolean
 typeof(false) : boolean
+typeof([])    : array
+typeof({})    : map
 -------------------------------------------------------------------------------
