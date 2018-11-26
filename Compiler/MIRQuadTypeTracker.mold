@@ -24,7 +24,6 @@ class MIRQuadTypeTracker extends PipeAbstract
     super()
     this.currentFrame = {'symbols': {}}
     this.tempCnt      = 0
-    this.forkedCode   = false
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -33,9 +32,12 @@ class MIRQuadTypeTracker extends PipeAbstract
 
   method _getType(x) -> rv
     rv = this.currentFrame.symbols[x].type
+    if typeof(rv) is 'undefined'
+      rv = 'variant'
+    endif
   endmethod
 
-  method _getTempVar() -> rv
+  method _getTempVar(type) -> rv
     global SYMBOL_KIND_VAR_LOCAL
 
     # TODO: Optimize it.
@@ -47,7 +49,7 @@ class MIRQuadTypeTracker extends PipeAbstract
         'readHits': 1,
         'writeHits': 1,
         'kind': SYMBOL_KIND_VAR_LOCAL,
-        'type': 'variant'
+        'type': type
       }
 
       this.currentFrame.symbols[rv] = newEntry
@@ -56,15 +58,16 @@ class MIRQuadTypeTracker extends PipeAbstract
     endif
   endmethod
 
-  method _convertToVariant(symInfo) -> dst
-    if (typeof(symInfo.type) is 'undefined') or (symInfo.type is 'variant')
-      # Already variant - nothing to do.
+  method _convert(symInfo, wantedType) -> dst
+    if (typeof(symInfo.type) is 'undefined') or (symInfo.type is wantedType)
+      # Nothing to do.
       dst = symInfo.name
     else
       # Convert to variant.
-      src = symInfo.name
-      dst = this._getTempVar()
-      this._emitOneItem(['conv', dst, src])
+      src    = symInfo.name
+      dst    = this._getTempVar(wantedType)
+      opcode = 'conv_' + symInfo.type + '_to_' + wantedType
+      this._emitOneItem([opcode, dst, src])
     endif
   endmethod
 
@@ -76,11 +79,10 @@ class MIRQuadTypeTracker extends PipeAbstract
     for idx in 0 .. len(params)
       paramInfo = this.currentFrame.symbols[params[idx]]
       if paramInfo.type isnt 'variant'
-        newVar      = this._convertToVariant(paramInfo)
+        newVar      = this._convert(paramInfo, 'variant')
         params[idx] = newVar
       endif
     endfor
-    this._releaseAllTemps()
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -88,42 +90,41 @@ class MIRQuadTypeTracker extends PipeAbstract
   # ----------------------------------------------------------------------------
 
   method processOneItem(item)
-    opcode = item[0]
-    dst    = item[1]
-
+    opcode  = item[0]
+    dst     = item[1]
+    dstType = '?'
+    
+    if typeof(dst) is 'string'
+      dstInfo = this.currentFrame.symbols[dst]
+    
+      if typeof(dstInfo) isnt 'undefined'
+        dstType = dstInfo.type
+      endif
+    endif
+    
     #print '[ TypeTracker ]', item
 
     if opcode is 'proc'
       # Proc begin - save current frame.
       this.currentFrame = item[1]
-      this._releaseAllTemps()
 
     elif dst is '__rv'
-      # Do nothing.
+      # Fallback to variant.
+      # TODO: Function returning non-variant types.
+      x = item[2]
+      y = item[3]
 
-    elif opcode is 'conv_int32_to_variant'
-      item[0] = 'load_int32'
-      dst     = item[1]
-      dstInfo = this.currentFrame.symbols[dst]
-      dstInfo.type = 'int32'
+      dstInfo.type = 'variant'
+      
+      if typeof(x) is 'string'
+        xInfo   = this.currentFrame.symbols[item[2]]
+        item[2] = this._convert(xInfo, 'variant')
+      endif
 
-    elif opcode is 'conv_int64_to_variant'
-      item[0] = 'load_int64'
-      dst     = item[1]
-      dstInfo = this.currentFrame.symbols[dst]
-      dstInfo.type = 'int64'
-
-    elif opcode is 'conv_float64_to_variant'
-      item[0] = 'load_float64'
-      dst     = item[1]
-      dstInfo = this.currentFrame.symbols[dst]
-      dstInfo.type = 'float64'
-
-    elif opcode is 'conv_bool32_to_variant'
-      item[0] = 'load_bool32'
-      dst     = item[1]
-      dstInfo = this.currentFrame.symbols[dst]
-      dstInfo.type = 'bool32'
+      if typeof(y) is 'string'
+        yInfo   = this.currentFrame.symbols[item[3]]
+        item[3] = this._convert(yInfo, 'variant')
+      endif
 
     elif opcode is 'call'
       # Convert args to match target function's proto.
@@ -137,48 +138,28 @@ class MIRQuadTypeTracker extends PipeAbstract
       xInfo = this.currentFrame.symbols[item[2]]
       yInfo = this.currentFrame.symbols[item[3]]
 
-      item[2] = this._convertToVariant(xInfo)
-      item[3] = this._convertToVariant(yInfo)
-
-      this._releaseAllTemps()
+      item[2] = this._convert(xInfo, 'variant')
+      item[3] = this._convert(yInfo, 'variant')
 
     elif opcode is 'print_array_of_variants_ln'
       # Convert args to match target function's proto.
       this._convertParamsBeforeCall(item[1])
 
     elif (opcode is 'neg')
-      dstInfo = this.currentFrame.symbols[item[1]]
-      xInfo   = this.currentFrame.symbols[item[2]]
+      xInfo = this.currentFrame.symbols[item[2]]
       dstInfo.type = xInfo.type
 
     elif (opcode is 'add') or (opcode is 'sub') or (opcode is 'mul')
-      dstInfo = this.currentFrame.symbols[item[1]]
       xInfo   = this.currentFrame.symbols[item[2]]
       yInfo   = this.currentFrame.symbols[item[3]]
 
-      if xInfo.type is yInfo.type
-        dstInfo.type = xInfo.type
+      if (xInfo.type isnt yInfo.type) or (xInfo.type is 'variant') or (yInfo.type is 'variant') or (typeof(xInfo.type) is 'undefined') or (typeof(yInfo.type) is 'undefined')
+        # TODO: Handle conversion without variant fallback.
+        item[2] = this._convert(xInfo, 'variant')
+        item[3] = this._convert(yInfo, 'variant')
+        dstInfo.type = 'variant'
       else
-        # TODO: Handle conversion without variant fallback.
-        item[2] = this._convertToVariant(xInfo)
-        item[3] = this._convertToVariant(yInfo)
-        dstInfo.type = 'variant'
-        this._releaseAllTemps()
-      endif
-
-    elif (opcode is 'cmp_eq')  or (opcode is 'cmp_ne') or (opcode is 'cmp_lt') or (opcode is 'cmp_le') or (opcode is 'cmp_gt') or (opcode is 'cmp_ge') or (opcode is 'jmp_if_eq')  or (opcode is 'jmp_if_ne') or (opcode is 'jmp_if_lt') or (opcode is 'jmp_if_le') or (opcode is 'jmp_if_gt') or (opcode is 'jmp_if_ge')
-      dstInfo = this.currentFrame.symbols[item[1]]
-      xInfo   = this.currentFrame.symbols[item[2]]
-      yInfo   = this.currentFrame.symbols[item[3]]
-
-      dstInfo.type = 'bool64'
-
-      if xInfo.type isnt yInfo.type
-        # TODO: Handle conversion without variant fallback.
-        item[2] = this._convertToVariant(xInfo)
-        item[3] = this._convertToVariant(yInfo)
-        dstInfo.type = 'variant'
-        this._releaseAllTemps()
+        dstInfo.type = xInfo.type
       endif
 
     elif (opcode is 'div') or (opcode is 'idiv')
@@ -186,13 +167,79 @@ class MIRQuadTypeTracker extends PipeAbstract
       xInfo = this.currentFrame.symbols[item[2]]
       yInfo = this.currentFrame.symbols[item[3]]
 
-      item[2] = this._convertToVariant(xInfo)
-      item[3] = this._convertToVariant(yInfo)
+      item[2] = this._convert(xInfo, 'variant')
+      item[3] = this._convert(yInfo, 'variant')
 
-      this._releaseAllTemps()
+    elif (opcode is 'cmp_eq')  or (opcode is 'cmp_ne') or (opcode is 'cmp_lt') or (opcode is 'cmp_le') or (opcode is 'cmp_gt') or (opcode is 'cmp_ge') or (opcode is 'jmp_if_eq')  or (opcode is 'jmp_if_ne') or (opcode is 'jmp_if_lt') or (opcode is 'jmp_if_le') or (opcode is 'jmp_if_gt') or (opcode is 'jmp_if_ge')
+      xInfo   = this.currentFrame.symbols[item[2]]
+      yInfo   = this.currentFrame.symbols[item[3]]
+      
+      dstInfo.type = 'bool32'
+
+      if (xInfo.type isnt yInfo.type) or (xInfo.type is 'variant') or (yInfo.type is 'variant') or (typeof(xInfo.type) is 'undefined') or (typeof(yInfo.type) is 'undefined')
+        # TODO: Handle conversion without variant fallback.
+        item[2] = this._convert(xInfo, 'variant')
+        item[3] = this._convert(yInfo, 'variant')
+        dstInfo.type = 'variant'
+      endif
+
+    elif dstType is 'variant'
+      # Type already adjusted to variant. Don't touch it anymore.
+
+    elif opcode is 'conv_int32_to_variant'
+      item[0] = 'load_int32'
+      dstInfo.type = 'int32'
+
+    elif opcode is 'conv_int64_to_variant'
+      item[0] = 'load_int64'
+      dstInfo.type = 'int64'
+
+    elif opcode is 'conv_float64_to_variant'
+      item[0] = 'load_float64'
+      dstInfo.type = 'float64'
+
+    elif opcode is 'conv_bool32_to_variant'
+      item[0] = 'load_bool32'
+      dstInfo.type = 'bool32'
+
+    elif opcode is 'move'
+      xType = this._getType(item[2])
+      
+      if (typeof(dstType) isnt 'undefined') and (dstType isnt xType)
+        item[0] = 'conv_' + xType + '_to_' + dstType
+      endif
+    
+    elif opcode is 'len'
+      xInfo = this.currentFrame.symbols[item[2]]
+      xType = xInfo.type
+      
+      if (xType is 'int64') or (xType is 'float64') or (xType is 'bool32')
+        dstInfo.type   = 'int64'
+        xInfo.readHits = xInfo.readHits - 1
+        item[0] = 'load_int64'
+        item[2] = 1
+      endif
     endif
 
     this._emitOneItem(item)
+               
+    # Do we need convert result to match target?
+    if (typeof(dstType) isnt 'undefined') and (typeof(dstInfo) isnt 'undefined') and (typeof(dstInfo.type) isnt 'undefined') and (dstType isnt dstInfo.type)
+      # tmp = foo(...)
+      # dst = conv(tmp)
+      #print '[ MIRQuadTypeTracker ] converting from', dstType, 'to', dstInfo.type, '(', dstInfo.name, ')'
+      
+      opcode       = 'conv_' + dstInfo.type + '_to_' + dstType
+      dst          = item[1]
+      tmp          = this._getTempVar(dstInfo.type)
+      item[1]      = tmp
+      dstInfo.type = dstType
+
+      this._emitOneItem([opcode, dst, tmp])
+    endif
+
+    this._releaseAllTemps()
+    
   endmethod
 
 endclass

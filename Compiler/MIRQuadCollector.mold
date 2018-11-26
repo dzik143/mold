@@ -112,7 +112,7 @@ class MIRQuadCollector extends PipeAbstract
       item    = code[idx]
       opcode  = item[0]
 
-      # print '[MIRQuadCollector]', item
+      #print '[ MIRQuadCollector ]', item
 
       if opcode is 'proc'
         print 'proc', item[1]['name']
@@ -142,17 +142,18 @@ class MIRQuadCollector extends PipeAbstract
         x   = item[2]
         y   = item[3]
 
-        if opcode is 'move'
-          dstType = this._getType(dst)
-          srcType = this._getType(x)
+        #if (opcode is 'move')# or (opcode is 'conv')
+        #  dstType = this._getType(dst)
+        #  srcType = this._getType(x)
 
-          if dstType is srcType
-            opcode = opcode + '_' + srcType
-          else
-            opcode = 'conv_' + srcType + '_to_' + dstType
-          endif
-        else
+        #  if dstType isnt srcType
+          #  opcode = opcode + '_' + srcType
+          #else
+          #  opcode = 'conv_' + srcType + '_to_' + dstType
+        #  endif
+        #else
 
+        if opcode[0] isnt 'c'
           if typeof(x) is 'string'
             xType  = this._getType(x)
             opcode = opcode + '_' + xType

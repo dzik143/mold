@@ -270,7 +270,7 @@ class MIRQuadBuilder extends PipeAbstract
 
             elif type is 'boolean'
               stack.push(item[1])
-              this.popOneArgAndEmitOpcode('conv_bool64_to_variant')
+              this.popOneArgAndEmitOpcode('conv_bool32_to_variant')
 
             elif (type is 'string') or (type is 'array')
               newConst = this.createConst(item[1])

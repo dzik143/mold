@@ -74,8 +74,9 @@ class CodeGeneratorX64
   endmethod
 
   method variantDestroy(x)
-    print '  lea  rcx, [', x, ']'
-    print '  call __MOLD_VariantDestroy'
+    #TODO
+    #print '  lea  rcx, [', x, ']'
+    #print '  call __MOLD_VariantDestroy'
   endmethod
 
   method variantMoveAndDestroy(dst, src)
@@ -247,8 +248,10 @@ class CodeGeneratorX64
       dst     = item[1]
       x       = item[2]
       y       = item[3]
-
+      
       # TODO: Optimize it.
+      originalOpcode = opcode
+
       xType = 'variant'
       if (itemCnt > 2) and (typeof(x) is 'string')
         if (opcode isnt 'call') and (opcode isnt 'vcall') and (opcode isnt 'create_object')
@@ -259,15 +262,15 @@ class CodeGeneratorX64
             endif
           endif
 
-          if opcode is 'conv'
-            dstType = currentSymbols[dst].type
-            opcode  = opcode + '_' + xType + '_to_' + dstType
-          else
-            opcode = opcode + '_' + xType
-          endif
+          #if opcode is 'conv'
+          #  dstType = currentSymbols[dst].type
+          #  opcode  = opcode + '_' + xType + '_to_' + dstType
+          #else
+          opcode = opcode + '_' + xType
+          #endif
         endif
       endif
-
+      
       #print '[x86]', opcode, dst, x, y
 
       # Dispatch opcode.
@@ -283,6 +286,14 @@ class CodeGeneratorX64
       elif opcode is 'move_variant'
         this.variantDestroy(dst)
         this.variantMove(dst, x)
+
+      elif (opcode is 'move_int32') or (opcode is 'move_bool32')
+        print '  mov eax, dword [', x, ']'
+        print '  mov dword [', dst, '], eax'
+
+      elif (opcode is 'move_int64') or (opcode is 'move_float64')
+        print '  mov rax, qword [', x, ']'
+        print '  mov qword [', dst, '], rax'
 
       #
       # Typeof(x)
@@ -300,6 +311,11 @@ class CodeGeneratorX64
       elif opcode is 'typeof_float64'
         this.variantDestroy(dst)
         print '  movdqu xmm0, [StringFloat]'
+        print '  movdqu [', dst, '], xmm0'
+
+      elif opcode is 'typeof_bool32'
+        this.variantDestroy(dst)
+        print '  movdqu xmm0, [StringBoolean]'
         print '  movdqu [', dst, '], xmm0'
 
       elif opcode is 'len_variant'
@@ -405,6 +421,48 @@ class CodeGeneratorX64
         print '  divsd xmm0, qword [', y, ']'
         print '  movq  qword [', dst, '], xmm0'
 
+      elif opcode is 'cmp_eq_float64'
+        print '  xor eax, eax'
+        print '  movq   xmm0, [', x, ']'
+        print '  comisd xmm0, [', y, ']'
+        print '  setz al'
+        print '  mov dword [', dst, '], eax'
+
+      elif opcode is 'cmp_ne_float64'
+        print '  xor eax, eax'
+        print '  movq   xmm0, [', x, ']'
+        print '  comisd xmm0, [', y, ']'
+        print '  setnz al'
+        print '  mov dword [', dst, '], eax'
+
+      elif opcode is 'cmp_lt_float64'
+        print '  xor eax, eax'
+        print '  movq   xmm0, [', x, ']'
+        print '  comisd xmm0, [', y, ']'
+        print '  setb al'
+        print '  mov dword [', dst, '], eax'
+
+      elif opcode is 'cmp_le_float64'
+        print '  xor eax, eax'
+        print '  movq   xmm0, [', x, ']'
+        print '  comisd xmm0, [', y, ']'
+        print '  setbe al'
+        print '  mov dword [', dst, '], eax'
+
+      elif opcode is 'cmp_gt_float64'
+        print '  xor eax, eax'
+        print '  movq   xmm0, [', x, ']'
+        print '  comisd xmm0, [', y, ']'
+        print '  seta al'
+        print '  mov dword [', dst, '], eax'
+
+      elif opcode is 'cmp_ge_float64'
+        print '  xor eax, eax'
+        print '  movq   xmm0, [', x, ']'
+        print '  comisd xmm0, [', y, ']'
+        print '  setae al'
+        print '  mov dword [', dst, '], eax'
+
       #
       # Variant arithmetic.
       #
@@ -502,10 +560,14 @@ class CodeGeneratorX64
         print '  mov qword [', dst, '],', x
 
       elif opcode is 'load_int32'
-        print '  mov qword [', dst, '],', x
+        print '  mov dword [', dst, '],', x
 
       elif opcode is 'load_bool32'
-        print '  mov qword [', dst, '],', x
+        if x is true
+          print '  mov dword [', dst, '],', 1
+        else
+          print '  mov dword [', dst, '],', 0
+        endif
 
       elif opcode is 'load_float64'
         print '  db 0x48, 0xb8' # mov rax, float64
@@ -545,6 +607,37 @@ class CodeGeneratorX64
         print '  mov rax, qword [', x, ']'
         print '  cmp rax, qword [', y, ']'
         print '  jge', dst
+
+      #
+      # jmp_if_true_bool32
+      # jmp_if_false_bool32
+      #
+      
+      elif opcode is 'jmp_if_true_bool32'
+        print '  cmp dword [', x, '], 0'
+        print '  jnz', dst
+
+      elif opcode is 'jmp_if_false_bool32'
+        print '  cmp dword [', x, '], 0'
+        print '  jz', dst
+
+      elif opcode is 'cmp_eq_bool32'
+        print '  xor   eax, eax'
+        print '  or    dword [', x, '], eax'
+        print '  setnz cl'
+        print '  or    dword [', y, '], eax'
+        print '  setz  al'
+        print '  xor   al, cl'
+        print '  mov   dword [', dst, '], eax'        
+
+      elif opcode is 'cmp_ne_bool32'
+        print '  xor  eax, eax'
+        print '  or   dword [', x, '], eax'
+        print '  setz cl'
+        print '  or   dword [', y, '], eax'
+        print '  setz al'
+        print '  xor  al, cl'
+        print '  mov  dword [', dst, '], eax'        
 
       #
       # jmp_if_xx_float64
@@ -642,6 +735,12 @@ class CodeGeneratorX64
         print '  lea rdx, [', dst, ']'
         print '  call __MOLD_VariantConvertPrimitiveToString'
 
+      elif opcode is 'str_bool32'
+        this.variantDestroy(dst)
+        print '  mov r9d, dword [', x, ']'
+        print '  lea rdx, [', dst, ']'
+        print '  call __MOLD_VariantConvertBool64ToString'
+
       elif opcode is 'call'
         rv        = item[1]
         name      = item[2]
@@ -689,7 +788,7 @@ class CodeGeneratorX64
         print '  lea  rdx, [vtable_' + x + ']'
         print '  call __MOLD_VariantObjectCreate'
 
-      elif opcode is 'conv_int64_to_variant'
+      elif originalOpcode is 'conv_int64_to_variant'
         this.variantDestroy(dst)
         print '  mov [', dst, '+ Variant_t.type], VARIANT_INTEGER'
 
@@ -700,7 +799,7 @@ class CodeGeneratorX64
           print '  mov [', dst, '+ Variant_t.value], rax'
         endif
 
-      elif opcode is 'conv_float64_to_variant'
+      elif originalOpcode is 'conv_float64_to_variant'
         this.variantDestroy(dst)
         if typeof(x) is 'float'
           print '  db 0x48, 0xb8' # mov rax, float64
@@ -712,16 +811,27 @@ class CodeGeneratorX64
         print '  mov [', dst, '+ Variant_t.type], VARIANT_DOUBLE'
         print '  mov [', dst, '+ Variant_t.value], rax'
 
-      elif opcode is 'conv_bool64_to_variant'
+      elif originalOpcode is 'conv_bool32_to_variant'
         this.variantDestroy(dst)
+        
         if x is true
-          val = 1
+          print '  mov eax, 1'
+        elif x is false
+          print '  mov eax, 0'
         else
-          val = 0
+          print '  mov eax, dword [', x, ']'
         endif
-
+        
         print '  mov [', dst, '+ Variant_t.type], VARIANT_BOOLEAN'
-        print '  mov [', dst, '+ Variant_t.value],', val
+        print '  mov [', dst, '+ Variant_t.value], rax'
+
+      elif originalOpcode is 'conv_variant_to_bool32'
+        print '  mov eax, dword [', x, '+ Variant_t.value]'
+        print '  mov dword [', dst, '], eax'
+
+      elif (originalOpcode is 'conv_variant_to_int64') or (originalOpcode is 'conv_variant_to_float64')
+        print '  mov rax, qword [', x, '+ Variant_t.value]'
+        print '  mov qword [', dst, '], rax'
 
       elif opcode is 'jmp_if_true_variant'
         print '  cmp  [', x, ' + Variant_t.value], 0'
@@ -927,8 +1037,8 @@ class CodeGeneratorX64
           print symbol.name, ' dd 0'
         elif symbol.type is 'float64'
           print symbol.name, ' dq 0'
-        elif symbol.type is 'bool64'
-          print symbol.name, ' dq 0'
+        elif symbol.type is 'bool32'
+          print symbol.name, ' dd 0'
         else
           die('error: unhandled global type: ' + str(symbol.type))
         endif

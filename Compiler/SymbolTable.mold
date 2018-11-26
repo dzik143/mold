@@ -323,14 +323,15 @@ class SymbolTable
     else
       # Find symbol in global scope.
       symbolInfo = this.lookupGlobal(name)
-
+      this.insert(name, symbolInfo)
+      
       # Add entry in current scope.
-      newEntry = {
-        'name': name,
-        'kind': SYMBOL_KIND_VAR_GLOBAL,
-        'id': symbolInfo['id']
-      }
-      this.insert(name, newEntry)
+      #newEntry = {
+      #  'name': name,
+      #  'kind': SYMBOL_KIND_VAR_GLOBAL,
+      #  'id': symbolInfo['id']
+      #}
+      #this.insert(name, newEntry)
     endif
   endmethod
 

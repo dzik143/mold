@@ -485,13 +485,16 @@ __MOLD_VariantConvertToString:
 .notString:
 
     cmp     r10, VARIANT_BOOLEAN
-    jnz     .notBoolean
+    jnz     __MOLD_VariantConvertToString_notBoolean
 
     ; ---------------------------------
     ; Boolean - true or false constants
     ; ---------------------------------
 
-.boolean:
+__MOLD_VariantConvertBool64ToString:
+
+    ; r9  = value
+    ; rdx = rv (Variant_t)
 
     mov     [rdx + Variant_t.type], VARIANT_STRING ; rv.type  = VARIANT_STRING
 
@@ -510,7 +513,7 @@ __MOLD_VariantConvertToString:
     ret
 
 
-.notBoolean:
+__MOLD_VariantConvertToString_notBoolean:
 
     cmp     r10, VARIANT_TYPE_MAX
     jbe     __MOLD_VariantConvertPrimitiveToString

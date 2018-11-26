@@ -1,0 +1,29 @@
+import 'AST.mold'
+import 'ASTTranslator.mold'
+import 'ASTTranslatorMIR1.mold'
+import 'MIRQuadCollector.mold'
+import 'MIRQuadTypeTracker.mold'
+import 'MIRQuadOptimizer.mold'
+import 'CodeGeneratorX64.mold'
+import '1.ast'
+
+mirQuadCollector   = new MIRQuadCollector()
+mirQuadTypeTracker = new MIRQuadTypeTracker()
+mirQuadOptimizer   = new MIRQuadOptimizer()
+
+astTranslator = new ASTTranslatorMIR1()
+
+astTranslator.connectTo(mirQuadOptimizer)
+
+mirQuadOptimizer.connectTo(mirQuadTypeTracker).connectTo(mirQuadCollector)
+
+astTranslator.run(ast)
+
+mirQuadCollector.printQuads()
+
+# Generate x64 code.
+code = astTranslator.code
+code.quads = mirQuadCollector.getQuads()
+
+codeGenerator = new CodeGeneratorX64()
+codeGenerator.run(code)

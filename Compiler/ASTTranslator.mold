@@ -40,6 +40,9 @@ class ASTTranslator
     this.currentFunctionProto = false
     this.lastReturnType       = 'unknown'
     this.lastReturnClassName  = 'unknown'
+    
+    # TODO: Use many deep levels in symbol table.
+    this.branchDeepIdx = 0
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -493,6 +496,11 @@ TODO: Temporary disabled.
 
   method _declareVariable(name)
     this.symbolTable.insertLocal(name)
+
+    # TODO: Use many deep levels in symbol table.
+    if this.branchDeepIdx > 0
+      this.symbolTable.setType(name, 'variant')
+    endif    
   endmethod
 
   method _assign(name, value)
@@ -909,7 +917,10 @@ TODO: Temporary disabled.
       valueStart = this._evaluateNode(children[1])
       bodyAst    = children[4]
 
+      # TODO: Use many deep levels in symbol table.
+      #this.branchDeepIdx = this.branchDeepIdx + 1
       this._executeNodeFor(iteratorName, valueStart, valueEnd, valueStep, bodyAst)
+      #this.branchDeepIdx = this.branchDeepIdx - 1
 
     elif opcode is AST_OPCODE_WHILE
       # while (cond)
@@ -917,13 +928,21 @@ TODO: Temporary disabled.
       # endwhile
       condAst = children[0]
       bodyAst = children[1]
+
+      # TODO: Use many deep levels in symbol table.
+      #this.branchDeepIdx = this.branchDeepIdx + 1
       this._executeNodeWhile(condAst, bodyAst)
+      #this.branchDeepIdx = this.branchDeepIdx - 1
 
     elif opcode is AST_OPCODE_IF
       cond        = this._evaluateNode(children[0])
       codeIfTrue  = children[1]
       codeIfFalse = children[2]
+
+      # TODO: Use many deep levels in symbol table.
+      this.branchDeepIdx = this.branchDeepIdx + 1
       this._executeNodeIf(cond, codeIfTrue, codeIfFalse)
+      this.branchDeepIdx = this.branchDeepIdx - 1
 
     elif opcode is AST_OPCODE_FUNCTION
       value     = ast['value']

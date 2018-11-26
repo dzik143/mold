@@ -46,4 +46,9 @@ StringFloatBufferBytes  StringHead_t 5
 StringInteger             Variant_t VARIANT_STRING, 0, StringIntegerBufferHolder
 StringIntegerBufferHolder Buffer_t  8, -1, 0, StringIntegerBufferBytes
 StringIntegerBufferBytes  StringHead_t 7
-                        db 'integer', 0
+                          db 'integer', 0
+
+StringBoolean             Variant_t VARIANT_STRING, 0, StringBooleanBufferHolder
+StringBooleanBufferHolder Buffer_t  8, -1, 0, StringBooleanBufferBytes
+StringBooleanBufferBytes  StringHead_t 7
+                          db 'boolean', 0

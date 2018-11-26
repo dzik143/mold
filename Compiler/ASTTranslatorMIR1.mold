@@ -256,7 +256,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     elif type is 'boolean'
       rv = this.symbolTable.createTempVarForWrite()
-      this.emitOneArgOpcode('conv_bool64_to_variant', rv, value)
+      this.emitOneArgOpcode('conv_bool32_to_variant', rv, value)
 
     elif (type is 'string') or (type is 'array')
       rv = this.symbolTable.createConst(value)

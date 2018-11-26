@@ -8,8 +8,8 @@ TEST "sqrt(2) by Newton method"
 #
 
 S     = 1/2.0
-x     = 1
-delta = 1000000
+x     = 1.0
+delta = 1000000.0
 iter  = 0
 
 function abs(x) -> rv
