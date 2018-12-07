@@ -1,23 +1,36 @@
+class Parser
+endclass
+
 import 'AST.mold'
 import 'ASTTranslator.mold'
 import 'ASTTranslatorMIR1.mold'
 import 'MIRQuadCollector.mold'
-import 'MIRQuadTypeTracker.mold'
+import 'MIRQuadTypeGuess.mold'
+import 'MIRQuadTypeConvert.mold'
 import 'MIRQuadOptimizer.mold'
 import 'CodeGeneratorX64.mold'
 import '1.ast'
 
 mirQuadCollector   = new MIRQuadCollector()
-mirQuadTypeTracker = new MIRQuadTypeTracker()
+mirQuadTypeGuess   = new MIRQuadTypeGuess()
+mirQuadTypeConvert = new MIRQuadTypeConvert()
 mirQuadOptimizer   = new MIRQuadOptimizer()
 
 astTranslator = new ASTTranslatorMIR1()
 
-astTranslator.connectTo(mirQuadOptimizer)
+#astTranslator.connectTo(mirQuadCollector)
+#astTranslator.connectTo(mirQuadOptimizer)
 
-mirQuadOptimizer.connectTo(mirQuadTypeTracker).connectTo(mirQuadCollector)
+t = astTranslator
+t = t.connectTo(mirQuadOptimizer)
+t = t.connectTo(mirQuadTypeGuess)
+t = t.connectTo(mirQuadTypeConvert)
+t = t.connectTo(mirQuadCollector)
 
 astTranslator.run(ast)
+
+# TODO: Auto flush on stream end.
+mirQuadTypeGuess.flush()
 
 mirQuadCollector.printQuads()
 

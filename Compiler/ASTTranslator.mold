@@ -40,7 +40,7 @@ class ASTTranslator
     this.currentFunctionProto = false
     this.lastReturnType       = 'unknown'
     this.lastReturnClassName  = 'unknown'
-    
+
     # TODO: Use many deep levels in symbol table.
     this.branchDeepIdx = 0
   endmethod
@@ -271,8 +271,6 @@ class ASTTranslator
       child = children[idx]
 
       if (child['opcode'] is AST_OPCODE_CALL) and (child['value'] is 'import')
-/*
-TODO: Temporary disabled.
 
         # TODO: Verify parameters.
         moduleName = child['children'][0]['value']
@@ -301,7 +299,7 @@ TODO: Temporary disabled.
             newChildrenCnt = newChildrenCnt + 1
           endfor
         endif
-*/
+
       else
         newChildren[newChildrenCnt] = child
         newChildrenCnt = newChildrenCnt + 1
@@ -500,7 +498,7 @@ TODO: Temporary disabled.
     # TODO: Use many deep levels in symbol table.
     if this.branchDeepIdx > 0
       this.symbolTable.setType(name, 'variant')
-    endif    
+    endif
   endmethod
 
   method _assign(name, value)

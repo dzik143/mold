@@ -93,15 +93,15 @@ class MIRQuadTypeTracker extends PipeAbstract
     opcode  = item[0]
     dst     = item[1]
     dstType = '?'
-    
+
     if typeof(dst) is 'string'
       dstInfo = this.currentFrame.symbols[dst]
-    
+
       if typeof(dstInfo) isnt 'undefined'
         dstType = dstInfo.type
       endif
     endif
-    
+
     #print '[ TypeTracker ]', item
 
     if opcode is 'proc'
@@ -115,7 +115,7 @@ class MIRQuadTypeTracker extends PipeAbstract
       y = item[3]
 
       dstInfo.type = 'variant'
-      
+
       if typeof(x) is 'string'
         xInfo   = this.currentFrame.symbols[item[2]]
         item[2] = this._convert(xInfo, 'variant')
@@ -173,7 +173,7 @@ class MIRQuadTypeTracker extends PipeAbstract
     elif (opcode is 'cmp_eq')  or (opcode is 'cmp_ne') or (opcode is 'cmp_lt') or (opcode is 'cmp_le') or (opcode is 'cmp_gt') or (opcode is 'cmp_ge') or (opcode is 'jmp_if_eq')  or (opcode is 'jmp_if_ne') or (opcode is 'jmp_if_lt') or (opcode is 'jmp_if_le') or (opcode is 'jmp_if_gt') or (opcode is 'jmp_if_ge')
       xInfo   = this.currentFrame.symbols[item[2]]
       yInfo   = this.currentFrame.symbols[item[3]]
-      
+
       dstInfo.type = 'bool32'
 
       if (xInfo.type isnt yInfo.type) or (xInfo.type is 'variant') or (yInfo.type is 'variant') or (typeof(xInfo.type) is 'undefined') or (typeof(yInfo.type) is 'undefined')
@@ -204,15 +204,15 @@ class MIRQuadTypeTracker extends PipeAbstract
 
     elif opcode is 'move'
       xType = this._getType(item[2])
-      
+
       if (typeof(dstType) isnt 'undefined') and (dstType isnt xType)
         item[0] = 'conv_' + xType + '_to_' + dstType
       endif
-    
+
     elif opcode is 'len'
       xInfo = this.currentFrame.symbols[item[2]]
       xType = xInfo.type
-      
+
       if (xType is 'int64') or (xType is 'float64') or (xType is 'bool32')
         dstInfo.type   = 'int64'
         xInfo.readHits = xInfo.readHits - 1
@@ -222,13 +222,13 @@ class MIRQuadTypeTracker extends PipeAbstract
     endif
 
     this._emitOneItem(item)
-               
+
     # Do we need convert result to match target?
     if (typeof(dstType) isnt 'undefined') and (typeof(dstInfo) isnt 'undefined') and (typeof(dstInfo.type) isnt 'undefined') and (dstType isnt dstInfo.type)
       # tmp = foo(...)
       # dst = conv(tmp)
       #print '[ MIRQuadTypeTracker ] converting from', dstType, 'to', dstInfo.type, '(', dstInfo.name, ')'
-      
+
       opcode       = 'conv_' + dstInfo.type + '_to_' + dstType
       dst          = item[1]
       tmp          = this._getTempVar(dstInfo.type)
@@ -239,7 +239,7 @@ class MIRQuadTypeTracker extends PipeAbstract
     endif
 
     this._releaseAllTemps()
-    
+
   endmethod
 
 endclass

@@ -77,6 +77,22 @@ class MIRQuadOptimizer extends PipeAbstract
       lastItem[1] = dst
       this._decreaseReadAndWriteHits(src)
 
+    elif opcode is 'conv_int32_to_variant'
+      item[0] = 'load_int32'
+      this._emitOneItem(item)
+
+    elif opcode is 'conv_int64_to_variant'
+      item[0] = 'load_int64'
+      this._emitOneItem(item)
+
+    elif opcode is 'conv_bool32_to_variant'
+      item[0] = 'load_bool32'
+      this._emitOneItem(item)
+
+    elif opcode is 'conv_float64_to_variant'
+      item[0] = 'load_float64'
+      this._emitOneItem(item)
+
     elif (opcode is 'jmp_if_false')
 
       newOpcode = this.cmpXxJmpIfFalseMap[this.lastOpcode]

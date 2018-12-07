@@ -248,7 +248,7 @@ class CodeGeneratorX64
       dst     = item[1]
       x       = item[2]
       y       = item[3]
-      
+
       # TODO: Optimize it.
       originalOpcode = opcode
 
@@ -270,7 +270,7 @@ class CodeGeneratorX64
           #endif
         endif
       endif
-      
+
       #print '[x86]', opcode, dst, x, y
 
       # Dispatch opcode.
@@ -303,7 +303,7 @@ class CodeGeneratorX64
         this.variantDestroy(dst)
         this.call2('__MOLD_VariantTypeOf', x, dst)
 
-      elif opcode is 'typeof_int64'
+      elif (opcode is 'typeof_int64') or (opcode is 'typeof_int32')
         this.variantDestroy(dst)
         print '  movdqu xmm0, [StringInteger]'
         print '  movdqu [', dst, '], xmm0'
@@ -356,6 +356,13 @@ class CodeGeneratorX64
         print '  divsd     xmm0, xmm1'              # ; xmm0 = x / y
         print '  movq      qword [', dst, '], xmm0' # ; dst  = x / y
 
+      elif opcode is 'idiv_int64'
+        print '  mov  rax, qword [', x, ']' # ; rax     = x
+        print '  mov  rcx, qword [', y, ']' # ; rcx     = y
+        print '  cqo'                       # ; rdx:rax = x
+        print '  idiv rcx'                  # ; rax     = x / y
+        print '  mov  qword [', dst,'], rax'
+
       elif opcode is 'cmp_eq_int64'
         print '  mov qword [', dst, '], 0'
         print '  mov rcx, qword [', x, ']'
@@ -393,6 +400,79 @@ class CodeGeneratorX64
         print '  setge byte [', dst, ']'
 
       #
+      # int32 arithmetic
+      #
+
+      elif opcode is 'neg_int32'
+        print '  mov eax, dword [', x, ']'
+        print '  neg eax'
+        print '  mov dword [', dst, '], eax'
+
+      elif opcode is 'add_int32'
+        print '  mov eax, dword [', x, ']'
+        print '  add eax, dword [', y, ']'
+        print '  mov dword [', dst, '], eax'
+
+      elif opcode is 'sub_int32'
+        print '  mov eax, dword [', x, ']'
+        print '  sub eax, dword [', y, ']'
+        print '  mov dword [', dst, '], eax'
+
+      elif opcode is 'mul_int32'
+        print '  mov ecx, dword [', x, ']'
+        print '  imul ecx, dword [', y, ']'
+        print '  mov dword [', dst, '], ecx'
+
+      elif opcode is 'div_int32'
+        print '  cvtsi2sd  xmm0, dword [', x, ']'   # ; xmm0 = double(x)
+        print '  cvtsi2sd  xmm1, dword [', y, ']'   # ; xmm1 = double(y)
+        print '  divsd     xmm0, xmm1'              # ; xmm0 = x / y
+        print '  movq      dword [', dst, '], xmm0' # ; dst  = x / y
+
+      elif opcode is 'idiv_int32'
+        print '  mov  eax, dword [', x, ']' # ; eax     = x
+        print '  mov  ecx, dword [', y, ']' # ; ecx     = y
+        print '  cdq'                       # ; edx:eax = x
+        print '  idiv ecx'                  # ; eax     = x / y
+        print '  mov  dword [', dst,'], eax'
+
+      elif opcode is 'cmp_eq_int32'
+        print '  mov dword [', dst, '], 0'
+        print '  mov ecx, dword [', x, ']'
+        print '  cmp ecx, dword [', y, ']'
+        print '  setz byte [', dst, ']'
+
+      elif opcode is 'cmp_ne_int32'
+        print '  mov dword [', dst, '], 0'
+        print '  mov ecx, dword [', x, ']'
+        print '  cmp rcx, dword [', y, ']'
+        print '  setnz byte [', dst, ']'
+
+      elif opcode is 'cmp_lt_int32'
+        print '  mov dword [', dst, '], 0'
+        print '  mov ecx, dword [', x, ']'
+        print '  cmp rcx, dword [', y, ']'
+        print '  setl byte [', dst, ']'
+
+      elif opcode is 'cmp_le_int32'
+        print '  mov dword [', dst, '], 0'
+        print '  mov ecx, dword [', x, ']'
+        print '  cmp ecx, dword [', y, ']'
+        print '  setle byte [', dst, ']'
+
+      elif opcode is 'cmp_gt_int32'
+        print '  mov dword [', dst, '], 0'
+        print '  mov ecx, dword [', x, ']'
+        print '  cmp ecx, dword [', y, ']'
+        print '  setge byte [', dst, ']'
+
+      elif opcode is 'cmp_ge_int32'
+        print '  mov dword [', dst, '], 0'
+        print '  mov ecx, dword [', x, ']'
+        print '  cmp ecx, dword [', y, ']'
+        print '  setge byte [', dst, ']'
+
+      #
       # float64 arithmetic
       #
 
@@ -420,6 +500,13 @@ class CodeGeneratorX64
         print '  movq  xmm0, [', x, ']'
         print '  divsd xmm0, qword [', y, ']'
         print '  movq  qword [', dst, '], xmm0'
+
+      elif opcode is 'idiv_float64'
+        print '  movq      xmm0, qword [', x, ']'  # xmm0 = x
+        print '  movq      xmm1, qword [', y, ']'  # xmm1 = y
+        print '  divsd     xmm0, xmm1'             # xmm0 = x / y
+        print '  cvttsd2si rax, xmm0'              # rax  = int(x / y)
+        print '  mov       qword [', dst, '], rax' # dst  = int(x / y)
 
       elif opcode is 'cmp_eq_float64'
         print '  xor eax, eax'
@@ -556,20 +643,20 @@ class CodeGeneratorX64
       # load imm values
       #
 
-      elif opcode is 'load_int64'
+      elif originalOpcode is 'load_int64'
         print '  mov qword [', dst, '],', x
 
-      elif opcode is 'load_int32'
+      elif originalOpcode is 'load_int32'
         print '  mov dword [', dst, '],', x
 
-      elif opcode is 'load_bool32'
+      elif originalOpcode is 'load_bool32'
         if x is true
           print '  mov dword [', dst, '],', 1
         else
           print '  mov dword [', dst, '],', 0
         endif
 
-      elif opcode is 'load_float64'
+      elif originalOpcode is 'load_float64'
         print '  db 0x48, 0xb8' # mov rax, float64
         print '  dq', x
         print '  mov qword [', dst, '], rax'
@@ -609,10 +696,44 @@ class CodeGeneratorX64
         print '  jge', dst
 
       #
+      # jmp_if_xx_int32
+      #
+
+      elif opcode is 'jmp_if_eq_int32'
+        print '  mov eax, dword [', x, ']'
+        print '  cmp eax, dword [', y, ']'
+        print '  je', dst
+
+      elif opcode is 'jmp_if_ne_int32'
+        print '  mov eax, dword [', x, ']'
+        print '  cmp eax, dword [', y, ']'
+        print '  jne', dst
+
+      elif opcode is 'jmp_if_lt_int32'
+        print '  mov eax, dword [', x, ']'
+        print '  cmp eax, dword [', y, ']'
+        print '  jl', dst
+
+      elif opcode is 'jmp_if_le_int32'
+        print '  mov eax, dword [', x, ']'
+        print '  cmp eax, dword [', y, ']'
+        print '  jle', dst
+
+      elif opcode is 'jmp_if_gt_int32'
+        print '  mov eax, dword [', x, ']'
+        print '  cmp eax, dword [', y, ']'
+        print '  jg', dst
+
+      elif opcode is 'jmp_if_ge_int32'
+        print '  mov eax, dword [', x, ']'
+        print '  cmp eax, dword [', y, ']'
+        print '  jge', dst
+
+      #
       # jmp_if_true_bool32
       # jmp_if_false_bool32
       #
-      
+
       elif opcode is 'jmp_if_true_bool32'
         print '  cmp dword [', x, '], 0'
         print '  jnz', dst
@@ -628,7 +749,7 @@ class CodeGeneratorX64
         print '  or    dword [', y, '], eax'
         print '  setz  al'
         print '  xor   al, cl'
-        print '  mov   dword [', dst, '], eax'        
+        print '  mov   dword [', dst, '], eax'
 
       elif opcode is 'cmp_ne_bool32'
         print '  xor  eax, eax'
@@ -637,7 +758,7 @@ class CodeGeneratorX64
         print '  or   dword [', y, '], eax'
         print '  setz al'
         print '  xor  al, cl'
-        print '  mov  dword [', dst, '], eax'        
+        print '  mov  dword [', dst, '], eax'
 
       #
       # jmp_if_xx_float64
@@ -788,6 +909,25 @@ class CodeGeneratorX64
         print '  lea  rdx, [vtable_' + x + ']'
         print '  call __MOLD_VariantObjectCreate'
 
+      elif originalOpcode is 'conv_int32_to_float64'
+        print '  cvtsi2sd xmm0, dword [', x, ']'
+        print '  movq [', dst, '], xmm0'
+
+      elif originalOpcode is 'conv_int64_to_float64'
+        print '  cvtsi2sd xmm0, qword [', x, ']'
+        print '  movq [', dst, '], xmm0'
+
+      elif originalOpcode is 'conv_int32_to_variant'
+        this.variantDestroy(dst)
+        print '  mov [', dst, '+ Variant_t.type], VARIANT_INTEGER'
+
+        if typeof(x) is 'integer'
+          print '  mov [', dst, '+ Variant_t.value],', x
+        else
+          print '  mov eax, dword [', x, ']'
+          print '  mov [', dst, '+ Variant_t.value], rax'
+        endif
+
       elif originalOpcode is 'conv_int64_to_variant'
         this.variantDestroy(dst)
         print '  mov [', dst, '+ Variant_t.type], VARIANT_INTEGER'
@@ -811,9 +951,25 @@ class CodeGeneratorX64
         print '  mov [', dst, '+ Variant_t.type], VARIANT_DOUBLE'
         print '  mov [', dst, '+ Variant_t.value], rax'
 
+      elif originalOpcode is 'conv_float64_to_int32'
+        if typeof(x) is 'float'
+          die('error: convert imm float64 to int32 not supported')
+        else
+          print '  cvttsd2si eax, [', x, ']'
+          print '  mov dword [', dst, '], eax'
+        endif
+
+      elif originalOpcode is 'conv_float64_to_int64'
+        if typeof(x) is 'float'
+          die('error: convert imm float64 to int64 not supported')
+        else
+          print '  cvttsd2si rax, [', x, ']'
+          print '  mov qword [', dst, '], rax'
+        endif
+
       elif originalOpcode is 'conv_bool32_to_variant'
         this.variantDestroy(dst)
-        
+
         if x is true
           print '  mov eax, 1'
         elif x is false
@@ -821,7 +977,7 @@ class CodeGeneratorX64
         else
           print '  mov eax, dword [', x, ']'
         endif
-        
+
         print '  mov [', dst, '+ Variant_t.type], VARIANT_BOOLEAN'
         print '  mov [', dst, '+ Variant_t.value], rax'
 
@@ -982,23 +1138,23 @@ class CodeGeneratorX64
         print '  cmp  [rdi + Variant_t.type], -1'
         print '  jz   .errorUnsetRetVal'
 
-      elif opcode is 'create_array'
+      elif originalOpcode is 'create_array'
         this.variantDestroy(dst)
         this.call1('__MOLD_VariantArrayCreate', dst)
 
-      elif opcode is 'create_map'
+      elif originalOpcode is 'create_map'
         this.variantDestroy(dst)
         this.call1('__MOLD_VariantMapCreate', dst)
 
-      elif opcode is 'store_index_variant'
+      elif originalOpcode is 'store_index'
         # dst[x] := y
         this.call3('__MOLD_VariantStoreAtIndex', dst, x, y)
 
-      elif opcode is 'load_index_variant'
+      elif originalOpcode is 'load_index'
         # dst := x[y]
         this.call3AndDestroy('__MOLD_VariantLoadFromIndex', x, y, dst)
 
-      elif opcode is 'jmp'
+      elif originalOpcode is 'jmp'
        print '  jmp', dst
 
       else

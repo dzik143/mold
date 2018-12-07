@@ -1,0 +1,309 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'PipeAbstract.mold'
+
+class MIRQuadTypeConvert extends PipeAbstract
+
+  # ----------------------------------------------------------------------------
+  #                         Init functions (constructor)
+  # ----------------------------------------------------------------------------
+
+  method constructor()
+    super()
+    this.currentFrame = {'symbols': {}}
+    this.tempCnt      = 0
+
+    this.tempTypePrefix = {
+      'variant': '__cv',
+      'int8'   : '__ci8_',
+      'int16'  : '__ci16_',
+      'int32'  : '__ci32_',
+      'int64'  : '__ci64_',
+      'float32': '__cf32_',
+      'float64': '__cf64_',
+      'bool32' : '__cb32_'
+    }
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                        Internal helpers (private)
+  # ----------------------------------------------------------------------------
+
+  method _getEffectiveType(x) -> rv
+    rv = this.currentFrame.symbols[x].type
+    if typeof(rv) is 'undefined'
+      rv = 'variant'
+    endif
+  endmethod
+
+  method _getTempVar(type) -> rv
+    global SYMBOL_KIND_VAR_LOCAL
+
+    # TODO: Optimize it.
+    rv = this.tempTypePrefix[type] + str(this.tempCnt)
+    this.tempCnt = this.tempCnt + 1
+    if typeof(this.currentFrame.symbols[rv]) is 'undefined'
+      newEntry = {
+        'name': rv,
+        'readHits': 1,
+        'writeHits': 1,
+        'kind': SYMBOL_KIND_VAR_LOCAL,
+        'type': type
+      }
+
+      this.currentFrame.symbols[rv] = newEntry
+      cnt = len(this.currentFrame.symbols._index)
+      this.currentFrame.symbols._index[cnt] = newEntry
+    endif
+  endmethod
+
+  method _convertOneVarTo(src, wantedType) -> dst
+    srcInfo = this.currentFrame.symbols[src]
+    srcType = srcInfo.type
+
+    if typeof(srcType) is 'undefined'
+      srcType = 'variant'
+    endif
+
+    if srcType is wantedType
+      # Nothing to do.
+      dst = src
+
+    else
+      #print 'Converting [', src, '] to [', wantedType, ']...'
+      # Type mismatch. Convert to desired type.
+      dst = this._getTempVar(wantedType)
+
+      # Emit convert opcode.
+      opcode = 'conv_' + srcType + '_to_' + wantedType
+
+      this._emitOneItem([opcode, dst, src])
+    endif
+  endmethod
+
+  method _matchDestinationType(item, srcType)
+    dst     = item[1]
+    dstInfo = this.currentFrame.symbols[dst]
+    dstType = dstInfo.type
+
+    if typeof(dstType) is 'undefined'
+      dstType = 'variant'
+    endif
+
+    if srcType is dstType
+      # Nothing to do.
+      convItem = item
+
+    else
+      # Type mismatch.
+      # Execute instruction with source type first.
+      tmpDst = this._getTempVar(srcType)
+      opcode = item[0]
+      x      = item[2]
+      y      = item[3]
+      this._emitOneItem([opcode, tmpDst, x, y])
+
+      # Change current instruction to convert opcode.
+      item[0] = 'conv_' + srcType + '_to_' + dstType
+      item[1] = dst
+      item[2] = tmpDst
+    endif
+  endmethod
+
+  method _matchSourceTypes(item)
+    x     = item[2]
+    y     = item[3]
+    xInfo = this.currentFrame.symbols[x]
+    yInfo = this.currentFrame.symbols[y]
+    xType = xInfo.type
+    yType = yInfo.type
+
+    matchType = -1
+
+    if (typeof(xType) is 'undefined')
+      xType = 'variant'
+    endif
+
+    if (typeof(yType) is 'undefined')
+      yType = 'variant'
+    endif
+
+    #print 'matching source types', item, xType, yType
+
+    # TODO: Optimize it.
+    typePrior = ['variant', 'float64', 'int64', 'int32', 'bool32']
+    idx       = 0
+    goOn      = true
+
+    while (matchType is -1) and (idx < len(typePrior))
+      if xType is typePrior[idx]
+        matchType = xType
+      elif yType is typePrior[idx]
+        matchType = yType
+      else
+        idx = idx + 1
+      endif
+    endwhile
+
+    # Convert operands to desired type if needed.
+    if matchType isnt -1
+      item[2] = this._convertOneVarTo(x, matchType)
+      item[3] = this._convertOneVarTo(y, matchType)
+    endif
+  endmethod
+
+  method _releaseAllTemps()
+    this.tempCnt = 0
+  endmethod
+
+  method _convertArrayOfVarsToOneType(arrayOfVars, wantedType)
+    for idx in 0 .. len(arrayOfVars)
+      arrayOfVars[idx] = this._convertOneVarTo(arrayOfVars[idx], wantedType)
+    endfor
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                                  Public API
+  # ----------------------------------------------------------------------------
+
+  method processOneItem(item)
+    # Fetch instruction and decode operands.
+    opcode = item[0]
+    dst    = item[1]
+    x      = item[2]
+    y      = item[3]
+
+    skipOpcode = false
+    dstType    = -1
+
+    #print '[ MIRQuadTypeConvert ]', item
+
+    # Dispatch opcode.
+    if opcode is 'proc'
+      # Proc begin - save current frame.
+      this.currentFrame = item[1]
+
+    elif (opcode is 'call') or (opcode is 'vcall')
+      # Convert all parameters to variant.
+      this._convertArrayOfVarsToOneType(y, 'variant')
+
+    elif opcode is 'print_array_of_variants_ln'
+      # Convert all parameters to variant.
+      this._convertArrayOfVarsToOneType(dst, 'variant')
+
+    elif opcode is 'load_int32'
+      this._matchDestinationType(item, 'int32')
+
+    elif opcode is 'load_int64'
+      this._matchDestinationType(item, 'int64')
+
+    elif opcode is 'load_float'
+      this._matchDestinationType(item, 'float64')
+
+    elif opcode is 'load_bool32'
+      this._matchDestinationType(item, 'bool32')
+
+    elif (opcode is 'load_index') or (opcode is 'store_index')
+      item[2] = this._convertOneVarTo(x, 'variant')
+      item[3] = this._convertOneVarTo(y, 'variant')
+
+    elif opcode is 'len'
+      # TODO: Move to another processor.
+      xInfo = this.currentFrame.symbols[x]
+      xType = xInfo.type
+
+      if (xType is 'int32') or (xType is 'int64') or (xType is 'float64') or (xType is 'bool32')
+        xInfo.readHits = xInfo.readHits - 1
+        item[0] = 'load_int32'
+        item[2] = 1
+        this._matchDestinationType(item, 'int32')
+      endif
+
+    elif opcode is 'move'
+      # Replace move with conv_xx_to_yy if source and destination types mismatch.
+      dstType = this._getEffectiveType(dst)
+      xType   = this._getEffectiveType(x)
+
+      if dstType isnt xType
+        item[0] = 'conv_' + xType + '_to_' + dstType
+      endif
+
+    elif (opcode is 'cmp_eq') or (opcode is 'cmp_ne') or (opcode is 'jmp_if_eq') or (opcode is 'jmp_if_ne')
+      xType = this.currentFrame.symbols[x].type
+      yType = this.currentFrame.symbols[y].type
+
+      if (typeof(xType) is 'undefined') or (xType is 'variant') or (typeof(yType) is 'undefined') or (yType is 'variant')
+        # ?       is   variant
+        # ?       isnt variant
+        # variant is   ?
+        # variant isnt ?
+        this._matchSourceTypes(item)
+        this._matchDestinationType(item, 'variant')
+
+      elif ((xType is 'int32') or (xType is 'int64')) and (yType is 'float64')
+        # int32 is float64
+        # int64 is float64
+        this._matchSourceTypes(item)
+
+      elif ((yType is 'int32') or (yType is 'int64')) and (xType is 'float64')
+        # float64 is int32
+        # float64 is int64
+        this._matchSourceTypes(item)
+
+      elif xType isnt yType
+        # Non comparable operand - always false.
+        if opcode is 'cmp_eq'
+          item[0] = 'load_bool32'
+          item[2] = false
+          this._matchDestinationType(item, 'bool32')
+
+        elif opcode is 'cmp_ne'
+          item[0] = 'load_bool32'
+          item[2] = true
+          this._matchDestinationType(item, 'bool32')
+
+        elif opcode is 'jmp_if_eq'
+          # Do nothing - never happen.
+          skipOpcode = true
+
+        elif opcode is 'jmp_if_ne'
+          # Always passed - change to unconditional jump.
+          item[0] = 'jmp'
+
+        endif
+      endif
+
+    elif len(item) is 4
+      # Match source operands e.g.:
+      # {float64, int32} => {float64, float64}
+      this._matchSourceTypes(item)
+
+      if (opcode is 'add') or (opcode is 'sub') or (opcode is 'mul') or (opcode is 'div') or (opcode is 'neg')
+        this._matchDestinationType(item, this._getEffectiveType(item[2]))
+
+      elif opcode is 'idiv'
+        this._matchDestinationType(item, 'int64')
+      endif
+    endif
+
+    # Pass control to next block in processing chain.
+    this._releaseAllTemps()
+
+    if skipOpcode is false
+      this._emitOneItem(item)
+    endif
+
+  endmethod
+endclass

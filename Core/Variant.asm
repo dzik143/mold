@@ -55,8 +55,8 @@ VARIANT_OBJECT    EQU 9
 VARIANT_TYPE_MAX  EQU 9
 
 VARIANT_ARRAY_DEFAULT_BUFFER_SIZE  EQU 16*16   + 16
-VARIANT_MAP_DEFAULT_BUFFER_SIZE    EQU 32*1024 + 32
-VARIANT_OBJECT_DEFAULT_BUFFER_SIZE EQU 32*1024 + 32
+VARIANT_MAP_DEFAULT_BUFFER_SIZE    EQU 32*4096 + 32
+VARIANT_OBJECT_DEFAULT_BUFFER_SIZE EQU 32*4096 + 32
 
 MAX_STRING_LENGTH EQU 1024*1024
 
@@ -349,7 +349,7 @@ proc __MOLD_PrintVariant uses r12, v
 
 .error:
     cinvoke printf, '__MOLD_VariantPrint: error: invalid type %d', rax
-    cinvoke ExitProcess, -1
+    int 3
 endp
 
 proc __MOLD_PrintVariantLn
@@ -781,7 +781,7 @@ proc __MOLD_VariantMul x, y, rv
 
 .error:
    cinvoke printf, 'error: invalid type'
-   cinvoke ExitProcess, -1
+   int 3
 
 .case_if:
 .case_fi:
@@ -1414,7 +1414,7 @@ proc __MOLD_VariantDivAsInteger x, y, rv
 
 .error:
    cinvoke printf, 'error: invalid type'
-   cinvoke ExitProcess, -1
+   int 3
 
 .case_if:
 .case_fi:
@@ -1503,7 +1503,7 @@ proc __MOLD_VariantDiv x, y, rv
 
 .error:
    cinvoke printf, 'error: invalid type'
-   cinvoke ExitProcess, -1
+   int 3
 
 .case_if:
 .case_fi:
@@ -2038,7 +2038,7 @@ proc __MOLD_VariantMapCreate rv
     mov     [rcx + Variant_t.value], rax
 
     mov     rax, [rax + Buffer_t.bytesPtr]
-    mov     [rax + Map_t.bucketsCnt], 1024
+    mov     [rax + Map_t.bucketsCnt], 4096
 
     DEBUG_CHECK_VARIANT rcx
 
@@ -2057,7 +2057,7 @@ proc __MOLD_VariantObjectCreate rv
     mov     [rcx + Variant_t.value], rax
 
     mov     rax, [rax + Buffer_t.bytesPtr]
-    mov     [rax + Object_t.bucketsCnt], 1024
+    mov     [rax + Object_t.bucketsCnt], 4096
     mov     [rax + Object_t.vtable], rdx
 
     DEBUG_CHECK_VARIANT rcx

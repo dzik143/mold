@@ -1,0 +1,206 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'PipeAbstract.mold'
+
+class MIRQuadTypeGuess extends PipeAbstract
+
+  # ----------------------------------------------------------------------------
+  #                         Init functions (constructor)
+  # ----------------------------------------------------------------------------
+
+  method constructor()
+    super()
+    this.currentFrame     = {'symbols': {}}
+    this.bufferingEnabled = true
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                        Internal helpers (private)
+  # ----------------------------------------------------------------------------
+
+  method _guessSecondOperandFromFirstOne(item)
+    x     = item[2]
+    y     = item[3]
+    xInfo = this.currentFrame.symbols[x]
+    yInfo = this.currentFrame.symbols[y]
+
+    if (xInfo.type is 'float64')
+      # {float64 o ?} => {float64 o float64}
+      yInfo.type = 'float64'
+
+    elif (yInfo.type is 'float64')
+      # {? o float64} => {float64 o float64}
+      xInfo.type = 'float64'
+    endif
+  endmethod
+
+  method _hasVariantOrUnknownOperands(item) -> rv
+    rv    = false
+    x     = item[2]
+    y     = item[3]
+    xType = this.currentFrame.symbols[x].type
+    yType = this.currentFrame.symbols[y].type
+
+    if (typeof(xType) is 'undefined') or (typeof(yType) is 'undefined') or (xType is 'variant') or (yType is 'variant')
+      rv = true
+    endif
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                                  Public API
+  # ----------------------------------------------------------------------------
+
+  method processOneItem(item)
+    global SYMBOL_KIND_VAR_GLOBAL
+
+    # Fetch instruction and decode operands.
+    opcode = item[0]
+    dst    = item[1]
+    x      = item[2]
+    y      = item[3]
+
+    # Get operands info.
+    # TODO: Use null if ready?
+    dstType = -1
+
+    # Dispatch opcode.
+    if opcode is 'proc'
+      # Proc begin - save current frame.
+      this.currentFrame = item[1]
+
+    elif dst is '__rv'
+      # TODO: Support for functions returning non-variant types.
+      dstType = 'variant'
+
+    elif (opcode is 'move') or (opcode is 'neg')
+      # Move and neg don't affect moved data.
+      # Result has the same type as source operand.
+      srcType = this.currentFrame.symbols[x].type
+      dstType = srcType
+
+    elif opcode is 'div'
+      # Div always gives float result.
+      dstType = 'float64'
+
+      # TODO: Review it:
+      this.currentFrame.symbols[x].type = 'float64'
+      this.currentFrame.symbols[y].type = 'float64'
+
+    elif opcode is 'idiv'
+      # Integer div (idiv) always gives integer result.
+      if (this.currentFrame.symbols[x].type is 'int32') and (this.currentFrame.symbols[y].type is 'int32')
+        dstType = 'int32'
+      else
+        dstType = 'int64'
+      endif
+
+    elif opcode is 'load_bool32'
+      # Immediate 32-bit integer.
+      dstType = 'bool32'
+
+    elif opcode is 'load_int32'
+      # Immediate 32-bit integer.
+      dstType = 'int32'
+
+    elif opcode is 'load_int64'
+      # Immediate 64-bit integer.
+      dstType = 'int64'
+
+    elif opcode is 'load_float64'
+      # Immediate 64-bit float (double precision).
+      dstType = 'float64'
+
+    elif (opcode is 'cmp_eq')  or (opcode is 'cmp_ne')
+      # cmp_xx always gives bool32 result.
+      if this._hasVariantOrUnknownOperands(item)
+        dstType = 'variant'
+      else
+        dstType = 'bool32'
+      endif
+
+
+    elif (opcode is 'cmp_lt') or (opcode is 'cmp_le') or (opcode is 'cmp_gt') or (opcode is 'cmp_ge')
+      # cmp_xx always gives bool32 result.
+      this._guessSecondOperandFromFirstOne(item)
+      if this._hasVariantOrUnknownOperands(item)
+        dstType = 'variant'
+      else
+        dstType = 'bool32'
+      endif
+
+    elif (opcode is 'jmp_if_lt') or (opcode is 'jmp_if_le') or (opcode is 'jmp_if_gt') or (opcode is 'jmp_if_ge')
+      # jmp_if_xx - if we know type of one operand, then we can guess
+      this._guessSecondOperandFromFirstOne(item)
+
+    elif opcode is 'add'
+      # x + y
+      xType = this.currentFrame.symbols[x].type
+      yType = this.currentFrame.symbols[y].type
+      this._guessSecondOperandFromFirstOne(item)
+
+      # TODO: Handle strings.
+      if (xType is 'float64') or (yType is 'float64')
+        # At least one operand is float - result is also float.
+        dstType = 'float64'
+
+      elif (xType is 'int64') and (yType is 'int64')
+        # At least one operand is int64 - result is also int64.
+        dstType = 'int64'
+
+      elif (xType is 'int32') and (yType is 'int32')
+        # At least one operand is int32 - result is also int32.
+        dstType = 'int32'
+      endif
+
+    elif (opcode is 'sub') or (opcode is 'mul')
+      # x + y
+      # x - y
+      # x * y
+      xType = this.currentFrame.symbols[x].type
+      yType = this.currentFrame.symbols[y].type
+      this._guessSecondOperandFromFirstOne(item)
+
+      if (xType is 'float64') or (yType is 'float64')
+        # At least one operand is float - result is also float.
+        dstType = 'float64'
+
+      elif (xType is 'int64') and (yType is 'int64')
+        # At least one operand is int64 - result is also int64.
+        dstType = 'int64'
+
+      elif (xType is 'int32') and (yType is 'int32')
+        # At least one operand is int32 - result is also int32.
+        dstType = 'int32'
+      endif
+    endif
+
+    # Update destination type if needed.
+    if dstType isnt -1
+      dstInfo = this.currentFrame.symbols[dst]
+      dstInfo.type = dstType
+    endif
+
+    # Pass control to next block in processing chain.
+    this._emitOneItem(item)
+
+    # TODO: Don't buffer whole code.
+    # Give whole proc at once to avoid false type recognition in one of
+    # further chains.
+    #if opcode is 'endp'
+    #  this.flush()
+    #endif
+
+  endmethod
+endclass

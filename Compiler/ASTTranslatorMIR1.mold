@@ -28,6 +28,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.code         = new MIRCode()
     this.stack        = new Stack()
     this.outputObject = false
+
+    # TODO: Remove this mess.
+    this.arrayOfCalledMethods = []
+    this.mapOfCalledMethods   = {}
+    this.methodEmitted        = {}
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -245,10 +250,16 @@ class ASTTranslatorMIR1 extends ASTTranslator
   method _loadImm(value) -> rv
     type = typeof(value)
 
-    # New implementation.
     if type is 'integer'
       rv = this.symbolTable.createTempVarForWrite()
-      this.emitOneArgOpcode('conv_int64_to_variant', rv, value)
+
+      if (value >= -2147483648) and (value <= 2147483647)
+        # 32-bit integer
+        this.emitOneArgOpcode('conv_int32_to_variant', rv, value)
+      else
+        # 64-bit integer
+        this.emitOneArgOpcode('conv_int64_to_variant', rv, value)
+      endif
 
     elif type is 'float'
       rv = this.symbolTable.createTempVarForWrite()
@@ -429,8 +440,17 @@ class ASTTranslatorMIR1 extends ASTTranslator
     methodId = this.code.methodsMap[methodName]
 
     if typeof(methodId) is 'undefined'
-      die("error: object has no method '" + methodName + "'")
+      # TODO: Clean up this mess.
+      #die("error: object has no method '" + methodName + "'")
+      # Forward declaration.
+      methodId = this.code.createMethod(methodName)
     endif
+
+    if typeof(this.mapOfCalledMethods[methodName]) is 'undefined'
+      this.arrayOfCalledMethods[len(this.arrayOfCalledMethods)] = methodName
+    endif
+
+    this.mapOfCalledMethods[methodName] = true
 
     params = this.popParametersBeforeCall(paramsCnt)
     #this.emitTwoArgsOpcode('vcall', rv, methodId, params)
@@ -556,6 +576,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
     childrenCnt = funcProto['childrenCnt']
     codeAst     = children[0]
     rvName      = funcProto['rv']
+
+    this.methodEmitted[funcProto.name] = true
 
     symbolTable = this.symbolTable
 
@@ -683,6 +705,13 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     # TODO: Clean up this mess.
     this.code.symbolTable = this.symbolTable
+
+    for idx in 0 .. len(this.arrayOfCalledMethods)
+      methodName = this.arrayOfCalledMethods[idx]
+      if this.methodEmitted[methodName] isnt true
+        die("error: object has no method '" + methodName + "'")
+      endif
+    endfor
   endmethod
 
   method connectTo(obj) -> rv
