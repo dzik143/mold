@@ -54,9 +54,13 @@ VARIANT_MAP       EQU 8
 VARIANT_OBJECT    EQU 9
 VARIANT_TYPE_MAX  EQU 9
 
-VARIANT_ARRAY_DEFAULT_BUFFER_SIZE  EQU 16*16   + 16
-VARIANT_MAP_DEFAULT_BUFFER_SIZE    EQU 32*4096 + 32
-VARIANT_OBJECT_DEFAULT_BUFFER_SIZE EQU 32*4096 + 32
+VARIANT_MAP_DEFAULT_BUCKETS_CNT    EQU 16
+VARIANT_OBJECT_DEFAULT_BUCKETS_CNT EQU 16
+VARIANT_ARRAY_DEFAULT_ITEMS_CNT    EQU 16
+
+VARIANT_ARRAY_DEFAULT_BUFFER_SIZE  EQU 16 * VARIANT_ARRAY_DEFAULT_ITEMS_CNT + 16
+VARIANT_MAP_DEFAULT_BUFFER_SIZE    EQU 36 * VARIANT_MAP_DEFAULT_BUCKETS_CNT + 32
+VARIANT_OBJECT_DEFAULT_BUFFER_SIZE EQU 36 * VARIANT_OBJECT_DEFAULT_BUCKETS_CNT + 32
 
 MAX_STRING_LENGTH EQU 1024*1024
 
@@ -303,34 +307,43 @@ proc __MOLD_PrintVariant uses r12, v
 
     push    rbx
     push    rsi
+    push    rdi
     push    r12
 
     mov     rdx, [rdx + Buffer_t.bytesPtr]
-    mov     rbx, [rdx + Map_t.bucketsCnt]
-    lea     rsi, [rdx + Map_t.buckets]
+    mov     rbx, [rdx + Map_t.bucketsUsedCnt]
 
     or      rbx, rbx
     jz      .mapEmpty
 
-    lea     r12, [.fmtEmpty]
+    mov     rax, [rdx + Map_t.bucketsCnt]         ; rax = map.bucketsCnt
+    lea     rdi, [rdx + Map_t.buckets]            ; rdi = map.buckets
+    shl     rax, 5                                ; rax = map.bucketsCnt * 32
+    lea     r12, [.fmtEmpty]                      ;
+    lea     rsi, [rdi + rax]                      ; rsi = map.index
 
 .mapNextItem:
-    cmp     [rsi + Variant_t.type], VARIANT_UNDEFINED
-    je      .mapNextItemEmpty
-
     cinvoke printf, r12
     lea     r12, [.fmtSeparator]
 
-    mov     rcx, rsi
+    ; Print key
+    mov     eax, [rsi]                            ; rcx = bucketIdx
+    mov     rcx, rdi                              ; rcx = buckets
+    add     rcx, rax                              ; rcx = buckets[bucketIdx]
+
+    push    rcx
     call     __MOLD_PrintVariantWithQuotas
 
+    ; Print separator
     cinvoke printf, .fmtAfterKey
 
-    lea     rcx, [rsi + 16]
+    ; Print value
+    pop     rcx
+    add     rcx, 16
     call     __MOLD_PrintVariantWithQuotas
 
 .mapNextItemEmpty:
-    add     rsi, 32
+    add     rsi, 4
     dec     rbx
     jne     .mapNextItem
 
@@ -339,6 +352,7 @@ proc __MOLD_PrintVariant uses r12, v
     cinvoke putchar
 
     pop     r12
+    pop     rdi
     pop     rsi
     pop     rbx
     ret
@@ -1536,6 +1550,7 @@ proc __MOLD_VariantStoreAtIndex box, index, value
     ; TODO: Avoid temp stack values.
     local .keyPtr   dq ?
     local .valuePtr dq ?
+    local .box      dq ?
 
     DEBUG_CHECK_VARIANT rcx
     DEBUG_CHECK_VARIANT rdx
@@ -1634,9 +1649,11 @@ proc __MOLD_VariantStoreAtIndex box, index, value
     cmp    [rdx + Variant_t.type], VARIANT_STRING
     jnz    .errorKeyNotString
 
+    mov    [.box], rcx
     mov    [.keyPtr], rdx
     mov    [.valuePtr], r8
 
+.mapRetrySearch:
     mov    r10, [rcx + Variant_t.value]         ; r10  = map buffer (Buffer_t)
     mov    r10, [r10 + Buffer_t.bytesPtr]       ; r10  = map buffer (Map_t)
     mov    rdx, [rdx + Variant_t.value]         ; rcx  = key        (Buffer_t)
@@ -1659,7 +1676,7 @@ proc __MOLD_VariantStoreAtIndex box, index, value
     jz     .mapAllocateNewBucket
 
     ; TODO: Clean up this mess.
-    push   rax rcx rdx r8 r9 r10 r11
+    push   rax rcx rdx r8 r9 r10 r11 r12
     mov    rcx, r11                             ; rcx  = key (String_t)
     mov    rdx, [r10 + Map_t.buckets + rax + Variant_t.value]
     mov    rdx, [rdx + Buffer_t.bytesPtr]
@@ -1669,17 +1686,42 @@ proc __MOLD_VariantStoreAtIndex box, index, value
 
     cinvoke strcmp
     test   rax, rax
-    pop    r11 r10 r9 r8 rdx rcx rax
+    pop    r12 r11 r10 r9 r8 rdx rcx rax
 
     jz     .mapSetBucket
 
     add    rax, 32
     dec    rcx
     jnz    .mapSearchForFreeBucket
-    jmp    .errorOutOfSpace
+
+    ; --------------------------------------------------------------------------
+    ; Out of space - resize map and try again
+    ; --------------------------------------------------------------------------
+
+    mov     rcx, [.box]
+    call    __MOLD_VariantMapResizeTwice
+
+    mov    rcx, [.box]
+    mov    rdx, [.keyPtr]
+    mov    r8,  [.valuePtr]
+
+    jmp    .mapRetrySearch
+    ;jmp    .errorOutOfSpace
+
+    ; --------------------------------------------------------------------------
+    ; Update index to keep keys order during realloc
+    ; --------------------------------------------------------------------------
 
 .mapAllocateNewBucket:
-    inc    [r10 + Map_t.bucketsUsedCnt]
+
+    mov    rcx, [r10 + Map_t.bucketsCnt]     ; rcx = bucketsCnt
+    mov    rdx, [r10 + Map_t.bucketsUsedCnt] ; rdx = bucketsUsedCnt
+    shl    rcx, 5                            ; rcx = bucketsCnt * 32 = offset(index)
+    lea    rdx, [rcx + rdx * 4]              ; rdx = offset(index + bucketsUsedCnt)
+
+    mov    [r10 + Map_t.buckets + rdx], eax  ; index[bucketsUsedCnt] = bucketIdx
+
+    inc    [r10 + Map_t.bucketsUsedCnt]      ; bucketsUsedCnt++
 
 .mapSetBucket:
 
@@ -1696,6 +1738,7 @@ proc __MOLD_VariantStoreAtIndex box, index, value
     ; --------------------------------------------------------------------------
     ; Store new value
     ; --------------------------------------------------------------------------
+
     mov     rdx, [.keyPtr]
     mov     r8, [.valuePtr]
 
@@ -2038,10 +2081,122 @@ proc __MOLD_VariantMapCreate rv
     mov     [rcx + Variant_t.value], rax
 
     mov     rax, [rax + Buffer_t.bytesPtr]
-    mov     [rax + Map_t.bucketsCnt], 4096
+    mov     [rax + Map_t.bucketsCnt], VARIANT_MAP_DEFAULT_BUCKETS_CNT
 
     DEBUG_CHECK_VARIANT rcx
 
+    ret
+endp
+
+proc __MOLD_VariantMapResizeTwice
+    ; --------------------------------------------------------------------------
+    ; Set up stack frame
+    ; --------------------------------------------------------------------------
+
+    ; rcx = box (Variant_t)
+
+    local .newBox Variant_t ?
+
+    push    rsi
+    push    rdi
+    push    r12
+    push    r13
+
+    sub     rsp, 32
+
+    mov     r12, rcx                           ; r12 = old box
+
+    ; --------------------------------------------------------------------------
+    ; Allocate new buffer (resized)
+    ; --------------------------------------------------------------------------
+
+    mov     rcx, [r12 + Variant_t.value]       ; rax = old box (Buffer_t)
+    mov     rcx, [rcx + Buffer_t.capacity]     ; rcx = old capacity
+    shl     rcx, 1                             ; rcx = old capacity * 2
+    call    __MOLD_MemoryAlloc                 ; rax = new box (Buffer_t)
+
+    ; --------------------------------------------------------------------------
+    ; Set up new Map_t
+    ; --------------------------------------------------------------------------
+
+    mov     [.newBox + Variant_t.type], VARIANT_MAP
+    mov     [.newBox + Variant_t.value], rax   ; new box (Buffer_t)
+
+    mov     rcx, [r12 + Variant_t.value]       ; rcx = old box (Buffer_t)
+    mov     rax, [rax + Buffer_t.bytesPtr]     ; rax = new box (Map_t)
+    mov     rcx, [rcx + Buffer_t.bytesPtr]     ; rcx = old box (Map_t)
+
+    mov     r13, [rcx + Map_t.bucketsUsedCnt]  ; rdx = old bucketsUsedCnt
+    mov     rdx, [rcx + Map_t.bucketsCnt]      ; r13 = old bucketsCnt
+    mov     r8,  [rcx + Object_t.vtable]       ; r8  = old vtable (object only)
+    lea     r9,  [rdx * 2]                     ; r9  = old bucketsCnt * 2
+
+    mov     [rax + Map_t.bucketsCnt], r9       ; newBox.bucketsCnt    = old bucketsCnt * 2
+    mov     [rax + Object_t.vtable], r8        ; newBox.vtable        = old vtable
+
+    ; --------------------------------------------------------------------------
+    ; Copy all entries one-by-one from old map to new one.
+    ; --------------------------------------------------------------------------
+
+    shl     r9, 4                              ; r9  = oldMap.bucketsCnt * 32
+    lea     rdi, [rcx + Map_t.buckets]         ; rdi = oldMap.buckets
+    lea     rsi, [rdi + r9]                    ; rsi = oldMap.index
+
+.cloneNextBucket:
+
+    ; ------------------------
+    ; Insert bucket to new map
+    ; ------------------------
+
+    mov     eax, [rsi]                         ; eax = #n
+    mov     rdx, rdi                           ; rdx = key #0
+    lea     rcx, [.newBox]                     ; rcx = newBox
+    add     rdx, rax                           ; rdx = key #n
+    lea     r8, [rdx + 16]                     ; r8  = value #n
+
+    call    __MOLD_VariantStoreAtIndex         ; newBox[key] = value
+
+.emptyBucket:
+
+    add     rsi, 4
+    dec     r13
+    jnz     .cloneNextBucket
+
+.cloneBucketsDone:
+
+    ; --------------------------------------------------------------------------
+    ; Swap buffer contents
+    ; --------------------------------------------------------------------------
+
+    mov     rcx, [.newBox + Variant_t.value]   ; rcx = newBox (Buffer_t)
+    mov     rdx, [r12     + Variant_t.value]   ; rdx = oldBox (Buffer_t)
+
+    mov     rax, [rcx + Buffer_t.capacity]     ; rax             = newBox.capacity
+    mov     [rdx + Buffer_t.capacity], rax     ; oldBox.capacity = newBox.capacity
+
+    mov     rax, [rcx + Buffer_t.bytesPtr]     ; rax = newBox.bytesPtr
+    mov     r8,  [rdx + Buffer_t.bytesPtr]     ; r8  = oldBox.bytesPtr
+
+    mov     [rdx + Buffer_t.bytesPtr], rax     ; newBox.bytesPtr = oldBox.bytesPtr
+    mov     [rcx + Buffer_t.bytesPtr], r8      ; oldBox.bytesPtr = newBox.bytesPtr
+
+    ; --------------------------------------------------------------------------
+    ; Free old buffer
+    ; --------------------------------------------------------------------------
+
+    lea     rcx, [.newBox]
+    call    __MOLD_VariantDestroy
+
+    ; --------------------------------------------------------------------------
+    ; Clean up stack frame
+    ; --------------------------------------------------------------------------
+
+    add     rsp, 32
+
+    pop     r13
+    pop     r12
+    pop     rdi
+    pop     rsi
     ret
 endp
 
@@ -2057,7 +2212,7 @@ proc __MOLD_VariantObjectCreate rv
     mov     [rcx + Variant_t.value], rax
 
     mov     rax, [rax + Buffer_t.bytesPtr]
-    mov     [rax + Object_t.bucketsCnt], 4096
+    mov     [rax + Object_t.bucketsCnt], VARIANT_OBJECT_DEFAULT_BUCKETS_CNT
     mov     [rax + Object_t.vtable], rdx
 
     DEBUG_CHECK_VARIANT rcx
@@ -2089,9 +2244,12 @@ proc __MOLD_VariantDestroy
     mov    [rcx + Variant_t.value], 0
     ret
 
+    ; ##########################################################################
+    ;                              Destroy array
+    ; ##########################################################################
+
 .freeArray:
 
-    ; TODO: Clean up this mess.
     mov    rax, [rcx + Variant_t.value]
     mov    [rcx + Variant_t.value], 0
     mov    rcx, rax
@@ -2100,67 +2258,112 @@ proc __MOLD_VariantDestroy
     cmp    [rcx + Buffer_t.refCnt], 1
     ja     .freeArrayItemsDone
 
+    push   rbx
+    push   rsi
+
     mov    rcx, [rcx + Buffer_t.bytesPtr]
-    mov    rdx, [rcx + Array_t.itemsCnt]
-    lea    r8,  [rcx + Array_t.items]
+    mov    rbx, [rcx + Array_t.itemsCnt]
+
+    or     rbx, rbx
+    jz     .emptyArray
+
+    lea    rsi, [rcx + Array_t.items]
 
 .freeArrayItem:
-    test   rdx, rdx
-    jz     .freeArrayItemsDone
-
-    push   rcx rdx r8
-    mov    rcx, r8
+    mov    rcx, rsi
     call   __MOLD_VariantDestroy
-    pop    r8 rdx rcx
 
-    dec    rdx
-    add    r8, 16
-    jmp    .freeArrayItem
+    add    rsi, 16
+    dec    rbx
+    jnz    .freeArrayItem
+
+.emptyArray:
+    pop    rsi
+    pop    rbx
 
 .freeArrayItemsDone:
     pop    rcx
     call   __MOLD_MemoryRelease
     ret
 
+    ; ##########################################################################
+    ;                            Destroy map or object
+    ; ##########################################################################
+
 .freeMap:
 .freeObject:
-    ; TODO: Clean up this mess.
-    push   rcx
+
+    push   r12
+    mov    r12, rcx                         ; r12 = dst
 
     mov    rcx, [rcx + Variant_t.value]     ; rcx = Buffer_t
 
     cmp    [rcx + Buffer_t.refCnt], 1
-    ja     .freeMapBucketsDone
+    ja     .destroyMapBucketsDone
 
-    mov    rcx, [rcx + Buffer_t.bytesPtr]   ; rcx = Map_t
-    mov    rdx, [rcx + Map_t.bucketsCnt]
-    lea    rcx, [rcx + Map_t.buckets]
-    shl    rdx, 1
+    ; --------------------------------------------------------------------------
+    ; Destroy keys and values stored in buckets
+    ; --------------------------------------------------------------------------
 
-.freeMapBucket:
-    push   rdx
-    push   rcx
-    call   __MOLD_VariantDestroy
-    pop    rcx
-    add    rcx, 16
+    push    rbx
+    push    rsi
+    push    rdi
 
-    pop    rdx
-    dec    rdx
-    jnz    .freeMapBucket
+    mov     rcx, [rcx + Buffer_t.bytesPtr]     ; rcx = map (Map_t)
+    mov     rbx, [rcx + Map_t.bucketsUsedCnt]  ; rdx = map.bucketsUsedCnt
 
-.freeMapBucketsDone:
-    pop    rcx
+    or      rbx, rbx
+    jz      .emptyMap
 
-    push   rcx
-    mov    rcx, [rcx + Variant_t.value]
-    call   __MOLD_MemoryRelease
-    pop    rcx
+    mov     rax, [rcx + Map_t.bucketsCnt]      ; rax = map.bucketsCnt
+    lea     rdi, [rcx + Map_t.buckets]         ; rdi = bucket #0
+    shl     rax, 5                             ; rax = map.bucketsCnt * 32
+    lea     rsi, [rdi + rax]                   ; rsi = map.index
 
-    mov    [rcx + Variant_t.value], 0
+
+.destroyNextMapBucket:
+
+    ; ------------------------
+    ; Destroy bucket #n
+    ; ------------------------
+
+    mov     ecx, [rsi]                         ; eax = #n
+    lea     rcx, [rdi + rcx]                   ; rcx = key #n
+    call    __MOLD_VariantDestroy              ; map.index[n].key.destroy()
+
+    mov     ecx, [rsi]                         ; eax = #n
+    lea     rcx, [rdi + rcx + 16]              ; rcx = value #n
+    call    __MOLD_VariantDestroy              ; map.index[n].value.destroy()
+
+    add     rsi, 4
+    dec     rbx
+    jnz     .destroyNextMapBucket
+
+.emptyMap:
+
+    pop     rdi
+    pop     rsi
+    pop     rbx
+
+.destroyMapBucketsDone:
+
+    ; --------------------------------------------------------------------------
+    ; Destroy box holder iself (VARIANT_MAP or VARIANT_OBJECT)
+    ; --------------------------------------------------------------------------
+
+    mov      rcx, [r12 + Variant_t.value]
+    call     __MOLD_MemoryRelease
+
+    mov      [r12 + Variant_t.value], 0
+
+    pop      r12
     ret
 
+    ; ##########################################################################
+    ;                              Destroy string
+    ; ##########################################################################
+
 .freeString:
-    ; TODO: Clean up this mess.
     push   rcx
     mov    rcx, [rcx + Variant_t.value]
     call   __MOLD_MemoryRelease

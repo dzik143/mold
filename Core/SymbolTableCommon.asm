@@ -51,6 +51,7 @@ dq __MOLD_VariantLoadFromIndex   , name__MOLD_VariantLoadFromIndex
 dq __MOLD_StringHashDJB2         , name__MOLD_StringHashDJB2
 dq __MOLD_VariantArrayCreate     , name__MOLD_VariantArrayCreate
 dq __MOLD_VariantMapCreate       , name__MOLD_VariantMapCreate
+dq __MOLD_VariantMapResizeTwice  , name__MOLD_VariantMapResizeTwice
 dq __MOLD_VariantObjectCreate    , name__MOLD_VariantObjectCreate
 dq __MOLD_VariantDestroy         , name__MOLD_VariantDestroy
 dq __MOLD_VariantLength          , name__MOLD_VariantLength

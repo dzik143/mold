@@ -51,6 +51,7 @@ name__MOLD_VariantLoadFromIndex    db '__MOLD_VariantLoadFromIndex', 0
 name__MOLD_StringHashDJB2          db '__MOLD_StringHashDJB2', 0
 name__MOLD_VariantArrayCreate      db '__MOLD_VariantArrayCreate', 0
 name__MOLD_VariantMapCreate        db '__MOLD_VariantMapCreate', 0
+name__MOLD_VariantMapResizeTwice   db '__MOLD_VariantMapResizeTwice', 0
 name__MOLD_VariantObjectCreate     db '__MOLD_VariantObjectCreate', 0
 name__MOLD_VariantDestroy          db '__MOLD_VariantDestroy', 0
 name__MOLD_VariantLength           db '__MOLD_VariantLength', 0
