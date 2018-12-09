@@ -75,8 +75,8 @@ class CodeGeneratorX64
 
   method variantDestroy(x)
     #TODO
-    #print '  lea  rcx, [', x, ']'
-    #print '  call __MOLD_VariantDestroy'
+    print '  lea  rcx, [', x, ']'
+    print '  call __MOLD_VariantDestroy'
   endmethod
 
   method variantMoveAndDestroy(dst, src)
@@ -742,6 +742,24 @@ class CodeGeneratorX64
         print '  cmp dword [', x, '], 0'
         print '  jz', dst
 
+      elif opcode is 'jmp_if_eq_bool32'
+        print '  xor   eax, eax'
+        print '  or    dword [', x, '], eax'
+        print '  setnz cl'
+        print '  or    dword [', y, '], eax'
+        print '  setz  al'
+        print '  xor   al, cl'
+        print '  jnz', dst
+
+      elif opcode is 'jmp_if_ne_bool32'
+        print '  xor  eax, eax'
+        print '  or   dword [', x, '], eax'
+        print '  setz cl'
+        print '  or   dword [', y, '], eax'
+        print '  setz al'
+        print '  xor  al, cl'
+        print '  jnz', dst
+
       elif opcode is 'cmp_eq_bool32'
         print '  xor   eax, eax'
         print '  or    dword [', x, '], eax'
@@ -1029,6 +1047,24 @@ class CodeGeneratorX64
           endfor
         endif
 */
+        symbols = currentSymbols
+
+        for symbolIdx in 0 .. len(symbols._index)
+          symbol = symbols._index[symbolIdx]
+          if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')) and (symbol.readHits + symbol.writeHits > 0)
+            this.variantDestroy(symbol.name)
+          endif
+        endfor
+
+        if (currentProcName is 'start')
+          for symbolIdx in 0 .. len(symbols._index)
+            symbol = symbols._index[symbolIdx]
+            if (symbol.kind is SYMBOL_KIND_VAR_GLOBAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')) and (symbol.readHits + symbol.writeHits > 0)
+              this.variantDestroy(symbol.name)
+            endif
+          endfor
+        endif
+
         print '  add rsp, 32'
         print '  ret'
 
@@ -1065,6 +1101,8 @@ class CodeGeneratorX64
         paramsCnt = frame['paramsCnt']
         frameSize = 0
 
+        currentFrame = frame
+
         regParams = ['rcx','rdx', 'r8', 'r9']
 
         print '; init frame'
@@ -1099,6 +1137,15 @@ class CodeGeneratorX64
             print '  mov [' + symbol.name + ' + Variant_t.type], VARIANT_UNDEFINED'
           endif
         endfor
+
+        if (currentProcName is 'start')
+          for symbolIdx in 0 .. len(symbols._index)
+            symbol = symbols._index[symbolIdx]
+            if (symbol.kind is SYMBOL_KIND_VAR_GLOBAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')) and (symbol.readHits + symbol.writeHits > 0)
+              print '  mov [' + symbol.name + ' + Variant_t.type], VARIANT_UNDEFINED'
+            endif
+          endfor
+        endif
 
         if paramsCnt <= 4
           regParamsCnt = paramsCnt
