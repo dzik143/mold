@@ -347,6 +347,43 @@ Base::foo()
 Base::bar()
 -------------------------------------------------------------------------------
 
+TEST "Forward vcall from different class"
+
+class Base
+  method constructor(app)
+    this.app = app
+  endmethod
+             
+  method foo(x)
+    print 'Base::foo(', x, ')'
+    this.app.bar(x + 1)
+  endmethod
+endclass
+
+class App
+  method constructor()
+    this.obj = new Base(this)
+  endmethod
+
+  method bar(x)
+    print 'App::bar(', x, ')'
+  endmethod
+  
+  method foo(x)
+    print 'App::foo(', x, ')'
+    this.obj.foo(x + 1)
+  endmethod
+endclass
+
+app = new App()
+app.foo(1)
+
+EXPECTED_OUTPUT:
+App::foo( 1 )
+Base::foo( 2 )
+App::bar( 3 )
+--------------------------------------------------------------------------------
+
 TEST "Bug: Not dropped method retval"
 
 class Base
@@ -515,4 +552,61 @@ EXPECTED_OUTPUT:
 foo: rv before this.bar() is 1234
 foo: rv after this.bar() is 1234
 global: obj.foo() is 1234
+--------------------------------------------------------------------------------
+
+TEST "Bug: destroyed vtable after resize"
+
+class Base
+  method foo()
+    print 'Base::foo()'
+  endmethod
+endclass
+
+x = new Base()
+N = 1024*16
+
+# Insert values.
+idx = N
+while idx >= 0
+  x[str(idx)] = idx
+  idx         = idx - 1
+endwhile
+
+# Verify values.
+# TODO: Use idx.
+acc = 0
+for jdx in 0 .. N
+  acc = acc + x[str(jdx)]
+endfor
+print acc
+
+x.foo()
+EXPECTED_OUTPUT:
+134209536
+Base::foo()
+--------------------------------------------------------------------------------
+
+TEST "Bug: resize inside constructor"
+
+class Base
+  method constructor()
+    for idx in 0 .. 1024*16
+      this[str(idx)] = idx
+    endfor
+  endmethod
+  
+  method foo()
+    acc = 0
+    for idx in 0 .. 1024*16
+      acc = acc + this[str(idx)]
+    endfor
+    print acc    
+  endmethod
+endclass
+
+obj = new Base()
+obj.foo()
+
+EXPECTED_OUTPUT:
+134209536
 --------------------------------------------------------------------------------

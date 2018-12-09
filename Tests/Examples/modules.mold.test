@@ -1,0 +1,35 @@
+TEST "Simple import"
+import './Data/TestA.mold'
+
+EXPECTED_OUTPUT:
+Hello from A!
+-------------------------------------------------------------------------------
+
+TEST "Imports serie"
+import './Data/TestA.mold'
+import './Data/TestB.mold'
+import './Data/TestC.mold'
+
+EXPECTED_OUTPUT:
+Hello from A!
+Hello from B!
+Hello from C!
+-------------------------------------------------------------------------------
+
+TEST "Import the same module twice"
+import './Data/TestA.mold'
+import './Data/TestA.mold'
+import './Data/TestA.mold'
+
+EXPECTED_OUTPUT:
+Hello from A!
+-------------------------------------------------------------------------------
+
+TEST "Recursive import"
+import './Data/TestR0.mold'
+
+EXPECTED_OUTPUT:
+Hello from R0!
+Hello from R1!
+Hello from R2!
+-------------------------------------------------------------------------------
