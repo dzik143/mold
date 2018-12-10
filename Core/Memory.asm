@@ -118,7 +118,7 @@ end if
 ;.fmt db 'Init refCnt to 1', 13, 10, 0
 .outOfMemory:
   cinvoke printf, 'PANIC! Out of memory'
-  cinvoke ExitProcess, -1
+  int 3
 endp
 
 proc __MOLD_MemoryAddRef buf
@@ -147,7 +147,7 @@ proc __MOLD_MemoryAddRef buf
   jna    .refCntOk
 
   cinvoke printf, "PANIC! Unexpected refCnt [%d] while increasing ptr %p", rax, rcx
-  cinvoke ExitProcess, -1
+  int 3
 .refCntOk:
   end if
 
@@ -169,12 +169,10 @@ proc __MOLD_MemoryRelease buf
   ; -----
 
   if ASSERT_ENABLED
-  push    rcx rdx r8 r9 r10 r11
   test    rcx, rcx
   jnz     .ptrOk
   cinvoke printf, 'PANIC! Attemp to free NULL pointer'
-  cinvoke ExitProcess, -1
-  pop     r11 r10 r9 r8 rdx rcx
+  int     3
 .ptrOk:
   end if
 
@@ -190,11 +188,16 @@ proc __MOLD_MemoryRelease buf
   ; DEBUG
   ; -----
   if ASSERT_ENABLED
+  or      rax, rax
+  jz      .refCntZero
+
   cmp     rax, MAX_REF_CNT
   jna    .refCntOk
 
+.refCntZero:
   cinvoke printf, "PANIC! Unexpected refCnt [%d] while release ptr %p", rax, rcx
-  cinvoke ExitProcess, -1
+  int 3
+
 .refCntOk:
   end if
 

@@ -82,8 +82,6 @@ class MIRQuadCollector extends PipeAbstract
   endmethod
 
   method _dumpFrameInfo(frameInfo)
-    global SYMBOL_KIND_AS_TEXT
-
     symbolsIndex = frameInfo['_index']
     symbolsCnt   = len(symbolsIndex)
 

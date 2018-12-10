@@ -93,10 +93,12 @@ class ASTInterpreter extends ASTTranslator
   endmethod
 
   method _loadArgsVector() -> rv
+    global argv
     rv = argv
   endmethod
 
   method _loadArgsCount() -> rv
+    global argc
     rv = argc
   endmethod
 
@@ -286,7 +288,7 @@ class ASTInterpreter extends ASTTranslator
       else
         rv = this._loadVariable(rvName)
         if (rv is '__mold_undefined_rv__')
-          __mold_warning("WARNING! Unset return variable 'rv' in '" + name + "' function.")
+          die("error: unset return variable 'rv' in '" + name + "' function")
           rv = this._loadUndefined()
         endif
       endif

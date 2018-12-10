@@ -413,7 +413,7 @@ class SymbolTable
   method createTempVar() -> rv
     rv = 'tmp' + str(this.tempCnt)
     this.tempCnt = this.tempCnt + 1
-    this.insertLocal(rv)
+    this.insertLocalVolatile(rv)
   endmethod
 
   method createTempVarForWrite() -> rv

@@ -17,6 +17,10 @@ import 'Stack.mold'
 
 class CodeGeneratorX64
 
+  method constructor()
+    this.symbols = {}
+  endmethod
+  
   method lea(dst, src)
     print '  lea ', dst, ', [', src, ']'
   endmethod
@@ -75,8 +79,15 @@ class CodeGeneratorX64
 
   method variantDestroy(x)
     #TODO
-    print '  lea  rcx, [', x, ']'
-    print '  call __MOLD_VariantDestroy'
+    global SYMBOL_KIND_VAR_LOCAL
+    global SYMBOL_KIND_VAR_GLOBAL
+    
+    xInfo = this.symbols[x]
+    
+    if (typeof(xInfo) is 'undefined') or (xInfo.kind is SYMBOL_KIND_VAR_LOCAL) or (xInfo.kind is SYMBOL_KIND_VAR_GLOBAL)
+      print '  lea  rcx, [', x, ']'
+      print '  call __MOLD_VariantDestroy'
+    endif
   endmethod
 
   method variantMoveAndDestroy(dst, src)
@@ -231,11 +242,16 @@ class CodeGeneratorX64
     quads    = codeObj.quads
     quadsCnt = len(quads)
 
-    currentProcProto = false
-    currentProcName  = false
-    currentProcRv    = false
-    currentSymbols   = {}
+    currentProcProto    = false
+    currentProcName     = false
+    currentProcRv       = false
+    currentSymbols      = {}
+    currentFrameSize    = 0
+    currentFrameOffsets = {}
 
+    # TODO: Remove it.
+    arrayOfProcedures = []
+    
     #
     # Translate code section.
     #
@@ -364,37 +380,37 @@ class CodeGeneratorX64
         print '  mov  qword [', dst,'], rax'
 
       elif opcode is 'cmp_eq_int64'
-        print '  mov qword [', dst, '], 0'
+        print '  mov dword [', dst, '], 0'
         print '  mov rcx, qword [', x, ']'
         print '  cmp rcx, qword [', y, ']'
         print '  setz byte [', dst, ']'
 
       elif opcode is 'cmp_ne_int64'
-        print '  mov qword [', dst, '], 0'
+        print '  mov dword [', dst, '], 0'
         print '  mov rcx, qword [', x, ']'
         print '  cmp rcx, qword [', y, ']'
         print '  setnz byte [', dst, ']'
 
       elif opcode is 'cmp_lt_int64'
-        print '  mov qword [', dst, '], 0'
+        print '  mov dword [', dst, '], 0'
         print '  mov rcx, qword [', x, ']'
         print '  cmp rcx, qword [', y, ']'
         print '  setl byte [', dst, ']'
 
       elif opcode is 'cmp_le_int64'
-        print '  mov qword [', dst, '], 0'
+        print '  mov dword [', dst, '], 0'
         print '  mov rcx, qword [', x, ']'
         print '  cmp rcx, qword [', y, ']'
         print '  setle byte [', dst, ']'
 
       elif opcode is 'cmp_gt_int64'
-        print '  mov qword [', dst, '], 0'
+        print '  mov dword [', dst, '], 0'
         print '  mov rcx, qword [', x, ']'
         print '  cmp rcx, qword [', y, ']'
         print '  setge byte [', dst, ']'
 
       elif opcode is 'cmp_ge_int64'
-        print '  mov qword [', dst, '], 0'
+        print '  mov dword [', dst, '], 0'
         print '  mov rcx, qword [', x, ']'
         print '  cmp rcx, qword [', y, ']'
         print '  setge byte [', dst, ']'
@@ -827,7 +843,8 @@ class CodeGeneratorX64
           for idx in 0 .. paramsCnt
             newParams[idx + 1] = params[idx]
           endfor
-
+          paramsCnt = paramsCnt + 1
+          
           this.pushParametersBeforeCall(newParams)
 
           this.call('__MOLD_PrintArrayOfVariantsLn')
@@ -1025,8 +1042,8 @@ class CodeGeneratorX64
 
       elif opcode is 'ret'
         print ''
-        print '; clean frame'
-        print '; -----------'
+        print '  ; clean frame'
+        print '  ; -----------'
 /*
         TODO
 
@@ -1047,6 +1064,7 @@ class CodeGeneratorX64
           endfor
         endif
 */
+        # TODO: Clean up this mess.
         symbols = currentSymbols
 
         for symbolIdx in 0 .. len(symbols._index)
@@ -1065,7 +1083,9 @@ class CodeGeneratorX64
           endfor
         endif
 
-        print '  add rsp, 32'
+        print ''           
+        print '  add  rsp,', currentFrameSize
+        print '  pop  rbp'
         print '  ret'
 
         if (typeof(currentProcRv) isnt 'undefined') and (currentProcName isnt 'constructor')
@@ -1074,11 +1094,10 @@ class CodeGeneratorX64
           print '; ------------------'
           print '.errorUnsetRetVal:'
           print '  invoke GetStdHandle, -12'
-          print '  invoke WriteFile, rax, .unsetRetValMsg, 56, NumberOfBytesWritten, 0'
+          print '  invoke WriteFile, rax, .unsetRetValMsg, 53, NumberOfBytesWritten, 0'
           print '  mov    [rdi + Variant_t.type], VARIANT_UNDEFINED'
-          print '  add    rsp, 32'
-          print '  ret'
-          print '  .unsetRetValMsg db "WARNING! Unset return variable ' + "'" + currentProcRv + "' in '" + currentProcName + "' function." + '", 13, 10'
+          print '  call   [ExitProcess]'
+          print '  .unsetRetValMsg db "error: unset return variable ' + "'" + currentProcRv + "' in '" + currentProcName + "' function" + '", 13, 10'
         endif
 
       elif opcode is 'proc'
@@ -1087,58 +1106,99 @@ class CodeGeneratorX64
         currentProcName  = proto['name']
         currentProcRv    = proto['rv']
         currentSymbols   = proto['symbols']
-        print 'proc', currentProcName
+        print currentProcName + ':'
+        
+        arrayOfProcedures[len(arrayOfProcedures)] = currentProcName
 
       elif opcode is 'endp'
-        print 'endp'
-
-      elif opcode is 'init_frame'
-        frame     = dst
-        localsCnt = frame['localsCnt']
-        tempsCnt  = frame['tempsCnt']
-        symbols   = frame['symbols']
-        params    = frame['params']
-        paramsCnt = frame['paramsCnt']
-        frameSize = 0
-
-        currentFrame = frame
-
-        regParams = ['rcx','rdx', 'r8', 'r9']
-
-        print '; init frame'
-        print '; ----------'
-
+        print ''
+        # TODO: Clean up this mess.
         for symbolIdx in 0 .. len(symbols._index)
           symbol = symbols._index[symbolIdx]
-          if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) and (symbol.readHits + symbol.writeHits > 0)
-            if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
-              print '  local', symbol.name, ' Variant_t'
-            elif symbol.type is 'int64'
-              print '  local', symbol.name, ' dq ?'
-            elif symbol.type is 'int32'
-              print '  local', symbol.name, ' dd ?'
-            elif symbol.type is 'float64'
-              print '  local', symbol.name, ' dq ?'
-            elif symbol.type is 'bool32'
-              print '  local', symbol.name, ' dq ?'
-            else
-              die('error: unhandled operand type while setting up frame: ' + str(symbol.type))
-            endif
+          if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or (symbol.kind is SYMBOL_KIND_VAR_PARAM)) and (symbol.readHits + symbol.writeHits > 0)
+            print '  restore', symbol.name
           endif
         endfor
 
-        for idx in 0 .. paramsCnt
-          print '  local ', params[idx], ' Variant_t'
-        endfor
+      elif opcode is 'init_frame'
+        currentFrame = dst
+        symbols      = currentFrame['symbols']
+        params       = currentFrame['params']
+        paramsCnt    = currentFrame['paramsCnt']
 
+        # Clean up this mess.
+        this.symbols = symbols
+
+        regParams = ['rcx','rdx', 'r8', 'r9']
+
+        print '  ; init frame'
+        print '  ; ----------'
+
+        # Calculate frame size.
+        currentFrameSize = 0
+        
         for symbolIdx in 0 .. len(symbols._index)
           symbol = symbols._index[symbolIdx]
-          if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')) and (symbol.readHits + symbol.writeHits > 0)
-            print '  mov [' + symbol.name + ' + Variant_t.type], VARIANT_UNDEFINED'
+
+          if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or (symbol.kind is SYMBOL_KIND_VAR_PARAM)) and (symbol.readHits + symbol.writeHits > 0)
+            if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
+              varSize = 16
+            elif (symbol.type is 'int64') or (symbol.type is 'float64')
+              varSize = 8
+            elif (symbol.type is 'int32') or (symbol.type is 'bool32')
+              varSize = 4
+            else
+              die('error: unhandled operand type while setting up frame: ' + str(symbol.type))
+            endif
+
+            currentFrameSize = currentFrameSize + varSize
+
+            print ' ', symbol.name, 'EQU rbp -', 8 + currentFrameSize, ';', varSize, 'bytes'
+
+          endif
+        endfor
+        
+        # Add 32-byte shadow space.
+        currentFrameSize = currentFrameSize + 32
+
+        print ''
+        print '  push rbp'
+        print '  mov  rbp, rsp'
+        print '  sub  rsp,', currentFrameSize
+        print ''
+        
+        paramIdx = 0
+        
+        for symbolIdx in 0 .. len(symbols._index)
+          symbol        = symbols._index[symbolIdx]
+          symbolUsedCnt = symbol.readHits + symbol.writeHits
+
+          if symbol.kind is SYMBOL_KIND_VAR_LOCAL
+            if (symbolUsedCnt > 0) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined'))
+              # Local Variant_t variable - init to undefined.
+              print '  mov [' + symbol.name + ' + Variant_t.type], VARIANT_UNDEFINED'
+            endif
+
+          elif symbol.kind is SYMBOL_KIND_VAR_PARAM
+              # Call parameter - copy to local var.
+            if symbolUsedCnt > 0
+              if paramIdx < 4
+                print '  movdqu xmm0', ', [', regParams[paramIdx], ']'
+              else
+                print '  mov    rax, [rbp + 16 + 8 *', paramsCnt - paramIdx - 1, ']'
+                print '  movdqu xmm0', ', [rax]'
+              endif
+              print '  movdqu [', symbol.name, '], xmm0'
+            else
+              print '  ; skipped unused param [', symbol.name, ']'
+            endif
+            
+            paramIdx = paramIdx  + 1
           endif
         endfor
 
         if (currentProcName is 'start')
+          print ''
           for symbolIdx in 0 .. len(symbols._index)
             symbol = symbols._index[symbolIdx]
             if (symbol.kind is SYMBOL_KIND_VAR_GLOBAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')) and (symbol.readHits + symbol.writeHits > 0)
@@ -1146,40 +1206,15 @@ class CodeGeneratorX64
             endif
           endfor
         endif
-
-        if paramsCnt <= 4
-          regParamsCnt = paramsCnt
-        else
-          regParamsCnt = 4
-        endif
-
-        for idx in 0 .. regParamsCnt
-          print '  movdqu xmm' + str(idx), ', [' + regParams[idx] + ']'
-          print '  movdqu [', params[idx], '], xmm' + str(idx)
-        endfor
-
-        for idx in 4 .. paramsCnt
-          print '  mov    rax', ', [rbp + 16 + 8*' + str(paramsCnt - idx - 1) + ']'
-          print '  movdqu xmm0', ', [rax]'
-          print '  movdqu [', params[idx], '], xmm0'
-        endfor
-
+        
         if typeof(currentProcRv) isnt 'undefined'
+          print ''
           print '  mov [rdi + Variant_t.type], -1'
         endif
-
-        #for idx in 0 .. localsCnt
-        #  print '  mov [.loc' + str(idx), ' + Variant_t.type], VARIANT_UNDEFINED'
-        #endfor
-
-        #for idx in 0 .. tempsCnt
-        #  print '  mov [.tmp' + str(idx), ' + Variant_t.type], VARIANT_UNDEFINED'
-        #endfor
-
-        print '  sub rsp, 32'
+        
         print ''
-        print '; code'
-        print '; ----'
+        print '  ; code'
+        print '  ; ----'
 
       elif opcode is 'rv_guard'
         print '  cmp  [rdi + Variant_t.type], -1'
@@ -1209,6 +1244,7 @@ class CodeGeneratorX64
       endif
     endfor
 
+    print ''
     print 'endOfCodeSection:'
 
     #
@@ -1331,11 +1367,16 @@ class CodeGeneratorX64
     print 'dq 0, 0'
     print "include 'SymbolTableCommon.asm'"
 
-    for procIdx in 0 .. proceduresCnt
-      # Fetch procedure meta.
-      procName  = procedures[procIdx]['name']
+    for procIdx in 0 .. len(arrayOfProcedures)
+      procName = arrayOfProcedures[procIdx]
       print 'dq ', procName, ',', 'name_' + procName
     endfor
+    
+    #for procIdx in 0 .. proceduresCnt
+    #  # Fetch procedure meta.
+    #  procName  = procedures[procIdx]['name']
+    #  print 'dq ', procName, ',', 'name_' + procName
+    #endfor
 
     print 'dq endOfCodeSection, name_endOfCodeSection'
     print 'SymbolTableEnd:'
@@ -1344,11 +1385,17 @@ class CodeGeneratorX64
 
     print 'SymbolTableNames:'
     print "include 'SymbolTableCommonNames.asm'"
-    for procIdx in 0 .. proceduresCnt
-      # Fetch procedure meta.
-      procName  = procedures[procIdx]['name']
+    
+    for procIdx in 0 .. len(arrayOfProcedures)
+      procName = arrayOfProcedures[procIdx]
       print 'name_' + procName, 'db', "'" + procName + "', 0"
     endfor
+    
+    #for procIdx in 0 .. proceduresCnt
+    #  # Fetch procedure meta.
+    #  procName  = procedures[procIdx]['name']
+    #  print 'name_' + procName, 'db', "'" + procName + "', 0"
+    #endfor
     print "name_endOfCodeSection db 'out of code section', 0"
 
   endmethod

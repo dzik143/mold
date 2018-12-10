@@ -1624,7 +1624,6 @@ proc __MOLD_VariantStoreAtIndex box, index, value
     ; Destroy old value if any
     ; --------------------------------------------------------------------------
 
-    ; REVIEW IT!
     push    r8 r10
     mov     rcx, r10
     call    __MOLD_VariantDestroy                ; array[idx].destroy()
@@ -1729,7 +1728,6 @@ proc __MOLD_VariantStoreAtIndex box, index, value
     ; Destroy old value if any
     ; --------------------------------------------------------------------------
 
-    ; TODO: REVIEW IT!.
     push    rax r10
     lea     rcx, [r10 + Map_t.buckets + rax + 16]  ;
     call    __MOLD_VariantDestroy                  ; map[key].destroy()
@@ -1801,7 +1799,7 @@ proc __MOLD_VariantLoadFromIndex box, index, rv
     je     .map
 
     cmp    rax, VARIANT_OBJECT
-    je     .map
+    je     .object
 
     cmp    rax, VARIANT_STRING
     je     .string
@@ -1865,10 +1863,11 @@ proc __MOLD_VariantLoadFromIndex box, index, rv
     ret
 
     ; ==========================================================================
-    ;                                    Hash map
+    ;                           Hash map or object
     ; --------------------------------------------------------------------------
 
 .map:
+.object:
 
     cmp    [rdx + Variant_t.type], VARIANT_STRING
     jnz    .errorKeyNotString
@@ -2287,7 +2286,7 @@ proc __MOLD_VariantDestroy
     ret
 
     ; ##########################################################################
-    ;                            Destroy map or object
+    ;                           Destroy map or object
     ; ##########################################################################
 
 .freeMap:
@@ -2320,7 +2319,6 @@ proc __MOLD_VariantDestroy
     shl     rax, 5                             ; rax = map.bucketsCnt * 32
     lea     rsi, [rdi + rax]                   ; rsi = map.index
 
-
 .destroyNextMapBucket:
 
     ; ------------------------
@@ -2348,7 +2346,7 @@ proc __MOLD_VariantDestroy
 .destroyMapBucketsDone:
 
     ; --------------------------------------------------------------------------
-    ; Destroy box holder iself (VARIANT_MAP or VARIANT_OBJECT)
+    ; Destroy box holder itself (VARIANT_MAP or VARIANT_OBJECT)
     ; --------------------------------------------------------------------------
 
     mov      rcx, [r12 + Variant_t.value]
