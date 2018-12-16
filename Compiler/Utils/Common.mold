@@ -1,0 +1,44 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+function UTILS_PadString(item, desiredLen) -> rv
+  if typeof(item) is 'undefined'
+    # Undefined (probably unused) operand.
+    # Show nothing.
+    item = '-'
+  endif
+
+  if typeof(item) is 'array'
+    # Operand is an array.
+    # Render item-by-item.
+    # TODO: Handle complex data in built-in str().
+    rv  = '['
+    sep = ''
+
+    for idx in 0 .. len(item)
+      rv  = rv + sep + str(item[idx])
+      sep = ', '
+    endfor
+    rv = rv + ']'
+
+  else
+    # Default way.
+    rv      = str(item)
+    padCnt  = desiredLen - len(rv)
+
+    for idx in 0 .. padCnt
+      rv = rv + ' '
+    endfor
+  endif
+endfunction

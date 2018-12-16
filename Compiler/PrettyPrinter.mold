@@ -1,0 +1,32 @@
+object = 0
+import '1.ast'
+import 'AppMold.mold'
+import 'AST/ASTAnalyzer.mold'
+import 'AST/ASTPrinterText.mold'
+import 'AST/ASTPrinterHtml.mold'
+
+app                        = new AppMold()
+astAnalyzer                = app.getAstAnalyzer()
+astConstantFolder          = app.getAstConstantFolder()
+astEvaluator               = app.getAstEvaluator()
+astOptimizerCSE            = app.getAstOptimizerCSE()
+astOptimizerDeadCodeRemove = app.getAstOptimizerDeadCodeRemove()
+astPrinterText             = new ASTPrinterText()
+astPrinterHtml             = new ASTPrinterHtml()
+
+print '<pre>'
+
+astConstantFolder.processNode(ast)
+astAnalyzer.processNode(ast)
+astEvaluator.processNode(ast)
+astConstantFolder.processNode(ast)
+
+astOptimizerCSE.processNode(ast)
+astOptimizerDeadCodeRemove.processNode(ast)
+
+astPrinterText.printNode(ast)
+
+print '</pre>'
+
+
+astPrinterHtml.printNode(ast)

@@ -1,0 +1,88 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'AST/AST.mold'
+import 'AST/ASTUtils.mold'
+
+class ASTOptimizerDeadCodeRemove
+  method constructor(app)
+    this.app = app
+  endmethod
+  
+  method _debug(msg)
+    print '[ ASTOptimizerDeadCodeRemove ]', msg
+  endmethod  
+
+  method _removeNode(node)
+    global AST_OPCODE_NOP
+    this._debug('Remove node #' + str(node.id))
+    node.opcode      = AST_OPCODE_NOP
+    node.children    = []
+    node.childrenCnt = 0
+  endmethod
+  
+  method _processNode(symbolTable, node) -> rv
+    global AST_OPCODE_PROGRAM
+    global AST_OPCODE_BLOCK
+    global AST_OPCODE_VARIABLE
+    global AST_OPCODE_IF
+    global AST_OPCODE_DECLARE_OR_ASSIGN
+    global AST_OPCODE_CALL
+    global AST_OPCODE_FOR_VALUES_RANGE
+    global AST_OPCODE_WHILE
+    global AST_OPCODE_NEG
+    global AST_OPCODE_NOP
+    global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ
+    global AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
+    global AST_OPCODE_COMPARE_GT, AST_OPCODE_COMPARE_GE
+    global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV, AST_OPCODE_IDIV
+    global AST_DATA_BOOL, AST_DATA_INTEGER, AST_DATA_DOUBLE, AST_DATA_STRING
+    global AST_DATA_ARRAY, AST_DATA_MAP, AST_DATA_UNDEFINED
+    global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
+    global AST_OPCODE_REFERENCE
+    global SYMBOL_KIND_CONST
+    
+    opcode      = node.opcode
+    value       = node.value
+    childrenCnt = node.childrenCnt
+    children    = node.children
+    x           = children[0]
+    rv          = node
+
+    if opcode is AST_OPCODE_BLOCK
+      symbolTable = node.symbolTable
+      
+    elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
+      if (x.opcode is AST_OPCODE_VARIABLE) and (typeof(x.storedValue) isnt 'undefined') and (typeof(x.storedValue) isnt 'array') and AST_IsImm(x.storedValue)
+        this._removeNode(node)
+        symbolTable.decreaseWriteHits(x.value)
+      endif
+    endif    
+
+    for idx in 0 .. childrenCnt
+      newNode = this._processNode(symbolTable, children[idx])
+      if newNode isnt children[idx]
+        children[idx] = newNode
+      endif
+    endfor
+    
+    if opcode is AST_OPCODE_BLOCK
+      symbolTable.vacuum()
+    endif
+  endmethod
+  
+  method processNode(node)
+    this._processNode(node.symbolTable, node)
+  endmethod                         
+endclass

@@ -1,0 +1,158 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'AST/AST.mold'
+import 'AST/ASTUtils.mold'
+
+class ASTOptimizerCSE
+  method constructor(app)
+    this.app              = app
+    this.mapOfExpressions = {}
+    this.nextId           = 0
+  endmethod
+  
+  method _getNextId() -> rv
+    rv = this.nextId
+    this.nextId = rv + 1
+  endmethod
+  
+  method _createNodeVariable() -> rv
+    global AST_OPCODE_VARIABLE
+    
+    rv = {
+      # TODO: Ask AST for id?
+      'id': -1,
+      'opcode': AST_OPCODE_VARIABLE,
+      'value': '__cse' + str(this._getNextId()),
+      'children': [],
+      'childrenCnt': 0
+    }
+  endmethod
+  
+  method _debug(msg)
+    print '[ ASTOptimizerCSE ]', msg
+  endmethod  
+
+  method _processNode(node) -> rv
+    global AST_OPCODE_PROGRAM
+    global AST_OPCODE_BLOCK
+    global AST_OPCODE_VARIABLE
+    global AST_OPCODE_IF
+    global AST_OPCODE_DECLARE_OR_ASSIGN
+    global AST_OPCODE_CALL
+    global AST_OPCODE_FOR_VALUES_RANGE
+    global AST_OPCODE_WHILE
+    global AST_OPCODE_NEG
+    global AST_OPCODE_NOP
+    global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ
+    global AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
+    global AST_OPCODE_COMPARE_GT, AST_OPCODE_COMPARE_GE
+    global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV, AST_OPCODE_IDIV
+    global AST_DATA_BOOL, AST_DATA_INTEGER, AST_DATA_DOUBLE, AST_DATA_STRING
+    global AST_DATA_ARRAY, AST_DATA_MAP, AST_DATA_UNDEFINED
+    global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
+    global AST_OPCODE_REFERENCE
+    global SYMBOL_KIND_CONST
+    
+    # TODO: Use null if ready?
+    opcode      = node.opcode
+    value       = node.value
+    childrenCnt = node.childrenCnt
+    children    = node.children
+    rv          = node
+
+    for idx in 0 .. childrenCnt
+      # TODO: Remove this hack.
+      children[idx].parent = node
+    endfor
+
+    if (node.childrenCnt > 0) and (typeof(node.hash) isnt 'undefined')
+      matchedNode = this.mapOfExpressions[node.hash]
+
+      if matchedNode is node
+        # Do nothing - it's the same node.
+
+      elif typeof(matchedNode) is 'undefined'
+        # Expression seen first time, save it in map and wait for
+        # more expressions from different nodes.
+        this.mapOfExpressions[node.hash] = node
+
+      else
+        # Two nodes with common subexpression found.
+        # Move common subexpression to new temp var.
+        this._debug('Common subexpression at nodes (#' + str(node.id) + ', #' + str(matchedNode.id) + ')')
+
+        # TODO: Optimize it.
+        matchedNode.opcode      = AST_OPCODE_VARIABLE
+        matchedNode.value       = '__cse' + str(this._getNextId())
+        matchedNode.children    = []
+        matchedNode.childrenCnt = 0
+
+        instrNode = matchedNode
+
+        while instrNode.parent.opcode isnt AST_OPCODE_BLOCK
+          instrNode = instrNode.parent
+        endwhile
+
+        blockNode            = instrNode.parent
+        blockNodeNewChildren = []
+
+        for idx in 0 .. blockNode.childrenCnt
+          if blockNode.children[idx] is instrNode
+            # Push __csexx = ... before first usage.
+            blockNodeNewChildren[len(blockNodeNewChildren)] = {
+              'id': -1,
+              'opcode': AST_OPCODE_DECLARE_OR_ASSIGN,
+              'children': [matchedNode, node],
+              'childrenCnt': 2
+            }
+          endif
+
+          blockNodeNewChildren[len(blockNodeNewChildren)] = blockNode.children[idx]
+        endfor
+
+        blockNode.children    = blockNodeNewChildren
+        blockNode.childrenCnt = len(blockNodeNewChildren)
+        
+        rv = matchedNode
+        
+        #node.opcode      = AST_OPCODE_VARIABLE
+        #node.value       = matchedNode.value
+        #node.children    = []
+        #node.childrenCnt = 0
+
+      endif
+    endif
+
+    if opcode is AST_OPCODE_DECLARE_OR_ASSIGN
+      lval = children[0]
+      rval = children[1]
+
+      AST_Hash(lval)
+      AST_Hash(rval)
+    endif    
+
+    for idx in 0 .. childrenCnt
+      newNode = this._processNode(children[idx])
+      if newNode isnt children[idx]
+        children[idx] = newNode
+      endif
+    endfor
+
+  endmethod
+  
+  method processNode(node)
+    this._processNode(node)
+  endmethod                         
+endclass

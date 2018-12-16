@@ -12,7 +12,7 @@
 #                                                                              #
 ################################################################################
 
-import 'PipeAbstract.mold'
+import 'Utils/PipeAbstract.mold'
 
 class MIRQuadTypeConvert extends PipeAbstract
 

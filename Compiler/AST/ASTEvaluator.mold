@@ -1,0 +1,208 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'AST/AST.mold'
+import 'AST/ASTUtils.mold'
+
+class ASTEvaluator
+  method constructor(app)
+    this.app    = app
+    this.values = {}
+  endmethod
+
+  method _debug(msg)
+    print '[ ASTEvaluator ]', msg
+  endmethod  
+  
+  method _assignValue(values, lval, rval)
+    name     = lval.value
+    oldValue = values[name]
+
+    if AST_IsImmOrVar(rval)
+      newValue = rval
+    else
+      newValue = lval
+    endif
+    
+    values[name]     = newValue
+    lval.storedValue = newValue
+    
+    # TODO: Remove it when map iteration will be ready.
+    if typeof(oldValue) is 'undefined'
+      values._index[len(values._index)] = name
+    endif
+  endmethod
+  
+  method _getValue(values, name) -> rv
+    rv = values[name]
+    while (typeof(rv) is 'undefined') and (typeof(values.parent) isnt 'undefined')
+      values = values.parent
+      rv     = values[name]
+    endwhile
+  endmethod
+  
+  method _mergeValues(x, y) -> rv
+    rv = []
+
+    if typeof(x) isnt 'array'
+      x = [x]
+    endif
+    
+    if typeof(y) isnt 'array'
+      y = [y]
+    endif
+
+    for i in 0 .. len(x)
+      rv[len(rv)] = x[i]
+    endfor
+    
+    for i in 0 .. len(y)
+      rv[len(rv)] = y[i]
+    endfor    
+  endmethod
+  
+  method _processConditionalNode(values, node)
+    newValues = {'_index': [], 'parent': values}
+    
+    this._processNode(newValues, node)
+    
+    for idx in 0 .. len(newValues._index)
+      varId    = newValues._index[idx]
+      oldValue = this._getValue(values, varId)
+      newValue = newValues[varId]
+
+      if typeof(oldValue) is 'undefined'
+        values._index[len(values._index)] = varId
+      endif
+      
+      values[varId] = this._mergeValues(oldValue, newValue)
+    endfor
+  endmethod
+  
+  method _processTwoAlternativeNodes(values, node1, node2)
+    newValues1 = {'_index': [], 'parent': values}
+    newValues2 = {'_index': [], 'parent': values}
+
+    this._processNode(newValues1, node1)
+    this._processNode(newValues2, node2)
+    
+    for idx in 0 .. len(newValues1._index)
+      varId    = newValues1._index[idx]
+      oldValue = values[varId]
+      value1   = newValues1[varId]
+      value2   = newValues2[varId]
+
+      if typeof(oldValue) is 'undefined'
+        values._index[len(values._index)] = varId
+      endif
+      
+      values[varId] = this._mergeValues(value1, value2)     
+    endfor
+
+    for idx in 0 .. len(newValues2._index)
+      varId    = newValues2._index[idx]
+      oldValue = values[varId]
+      value1   = newValues1[varId]
+      value2   = newValues2[varId]
+
+      if typeof(oldValue) is 'undefined'
+        values._index[len(values._index)] = varId
+      endif
+
+      values[varId] = this._mergeValues(value1, value2)
+    endfor
+  endmethod
+
+  method _processNode(values, node)
+    global AST_OPCODE_PROGRAM
+    global AST_OPCODE_BLOCK
+    global AST_OPCODE_VARIABLE
+    global AST_OPCODE_IF
+    global AST_OPCODE_DECLARE_OR_ASSIGN
+    global AST_OPCODE_CALL
+    global AST_OPCODE_FOR_VALUES_RANGE
+    global AST_OPCODE_WHILE
+    global AST_OPCODE_NEG
+    global AST_OPCODE_NOP
+    global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ
+    global AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
+    global AST_OPCODE_COMPARE_GT, AST_OPCODE_COMPARE_GE
+    global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV, AST_OPCODE_IDIV
+    global AST_DATA_BOOL, AST_DATA_INTEGER, AST_DATA_DOUBLE, AST_DATA_STRING
+    global AST_DATA_ARRAY, AST_DATA_MAP, AST_DATA_UNDEFINED
+    global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
+    global AST_OPCODE_REFERENCE
+    global SYMBOL_KIND_CONST
+    
+    # TODO: Use null if ready?
+    opcode      = node.opcode
+    value       = node.value
+    newValue    = node.value    
+    childrenCnt = node.childrenCnt
+    children    = node.children
+    
+    if opcode is AST_OPCODE_VARIABLE
+      node.storedValue = this._getValue(values, node.value)
+    
+    elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
+      lval = children[0]
+      rval = children[1]
+
+      this._processNode(values, rval)
+            
+      if lval.opcode is AST_OPCODE_VARIABLE
+        this._assignValue(values, lval, rval)
+      endif
+      
+    elif opcode is AST_OPCODE_IF
+      this._processNode(values, children[0])
+      
+      if childrenCnt is 2
+        this._processConditionalNode(values, children[1])
+      else
+        this._processTwoAlternativeNodes(values, children[1], children[2])
+      endif
+
+    elif opcode is AST_OPCODE_FOR_VALUES_RANGE
+      iter           = children[0]
+      iterBeginValue = children[1]
+      body           = children[4]
+      
+      this._assignValue(values, iter, iter)
+      iter.storedValue = [iterBeginValue, iter]
+      
+      this._processConditionalNode(values, body)
+      this._processConditionalNode(values, body)
+      
+      
+    elif opcode is AST_OPCODE_WHILE
+      cond = children[0]
+      body = children[1]
+      
+      this._processNode(values, cond)
+      this._processConditionalNode(values, body)
+      this._processConditionalNode(values, body)
+      
+    else
+      for idx in 0 .. childrenCnt
+        this._processNode(values, children[idx])
+      endfor
+    endif
+  endmethod
+  
+  method processNode(node)
+    values = {'_index': []}
+    this._processNode(values, node)
+  endmethod                         
+endclass

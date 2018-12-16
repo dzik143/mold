@@ -1,0 +1,388 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'AST/AST.mold'
+import 'AST/ASTUtils.mold'
+import 'Utils/SymbolTable.mold'
+
+class ASTPrinterText
+
+  method _printNode_twoArgsOp(node, op)
+    global AST_OPCODE_MUL
+    global AST_OPCODE_DIV
+    
+    children  = node.children
+    x = children[0]
+    y = children[1]
+
+    useParentForX = false
+    useParentForY = false
+    
+    # Check is parenthesis 
+    if (node.opcode is AST_OPCODE_MUL) or (node.opcode is AST_OPCODE_DIV)
+      useParentForX = AST_IsImmOrVar(x) isnt true
+      useParentForY = AST_IsImmOrVar(y) isnt true
+    endif
+    
+    if useParentForX is true
+      # Complex node - put into parenthes.
+      __mold_printToStdOutput('(')
+      this._printNode('', x)
+      __mold_printToStdOutput(')')
+
+    else
+      # Simple node.
+      this._printNode('', x)
+    endif
+    
+    __mold_printToStdOutput(' ' + op + ' ')
+
+    if useParentForY is true
+      # Complex node - put into parenthes.
+      __mold_printToStdOutput('(')
+      this._printNode('', y)
+      __mold_printToStdOutput(')')
+    else
+      # Simple node.
+      this._printNode('', y)
+    endif
+    
+  endmethod
+
+  method _printNode_codeBlock(prefix, node)
+    global AST_OPCODE_NOP
+    global AST_OPCODE_PROGRAM
+    
+    children    = node.children
+    childrenCnt = node.childrenCnt
+
+    prefix = prefix + '  '
+    
+    for idx in 0 .. childrenCnt
+      if children[idx].opcode isnt AST_OPCODE_NOP
+        this._printNode(prefix, children[idx])
+        print ''
+      endif
+    endfor
+  endmethod
+  
+  method _printNode_paramsList(node, beginIdx, parenthesis)
+    children    = node.children
+    childrenCnt = node.childrenCnt
+    
+    sep = ''
+    
+    if parenthesis is true
+      __mold_printToStdOutput('(')
+    endif
+    
+    for idx in beginIdx .. childrenCnt
+      __mold_printToStdOutput(sep)
+      this._printNode('', children[idx])
+      sep = ', '
+    endfor
+
+    if parenthesis is true
+      __mold_printToStdOutput(')')
+    endif
+  endmethod
+
+  method _printNode(prefix, node)
+    global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
+    global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+    global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
+    global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
+    global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
+    global AST_OPCODE_REFERENCE, AST_OPCODE_CALL
+    global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV
+    global AST_OPCODE_IDIV
+    global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
+    global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
+    global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+    global AST_OPCODE_BLOCK, AST_OPCODE_FUNCTION, AST_OPCODE_CLASS
+    global AST_OPCODE_CLASS_METHOD
+    global AST_OPCODE_IF
+    global AST_OPCODE_ELIF
+    global AST_OPCODE_WHILE
+    global AST_OPCODE_FOR
+    global AST_OPCODE_FOR_VALUES_RANGE
+
+    global AST_OPCODE_ASSIGN
+    global AST_OPCODE_DECLARE
+    global AST_OPCODE_DECLARE_OR_ASSIGN
+    global AST_OPCODE_FUNCTION
+    global AST_OPCODE_CLASS
+    global AST_OPCODE_NOP
+    global AST_OPCODE_VARIABLE
+
+    global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
+    global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+    global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
+    global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
+    global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
+    global AST_OPCODE_REFERENCE, AST_OPCODE_CALL
+    global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV
+    global AST_OPCODE_IDIV
+    global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
+    global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
+    global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+
+    global SYMBOL_KIND_CONST  
+    
+    opcode      = node.opcode
+    value       = node.value
+    childrenCnt = node.childrenCnt
+    children    = node.children
+    lval        = children[0]
+    rval        = children[1]
+    x           = lval
+    y           = rval
+
+    if opcode is AST_DATA_STRING
+      __mold_printToStdOutput("'")
+      __mold_printToStdOutput(value)
+      __mold_printToStdOutput("'")
+
+    elif opcode is AST_DATA_ARRAY
+      if typeof(node.value) is 'array'
+        # Array has initializer list - just render it.
+        print node.value
+
+      else
+        # Array is build up dynamically from child nodes - go on.
+        __mold_printToStdOutput('[')
+        sep = ''
+        for idx in 0 .. childrenCnt
+          __mold_printToStdOutput(sep)
+          this._printNode(prefix, children[idx])
+          sep = ', '
+        endfor
+        __mold_printToStdOutput(']')
+      endif
+
+    elif opcode is AST_DATA_MAP
+      print '[MAP]'
+
+    elif opcode < AST_OPCODE_PROGRAM
+      __mold_printToStdOutput(value)
+
+    elif opcode is AST_OPCODE_PROGRAM
+      for idx in 0 .. childrenCnt
+        this._printNode(prefix, children[idx])
+      endfor
+
+    elif opcode is AST_OPCODE_BLOCK
+      symbolTable  = node.symbolTable
+      #this._printSymbolTable(symbolTable)      
+
+      # Declare complex constants.
+      symbols      = symbolTable.exportSymbols()
+      symbolsIndex = symbols._index
+      symbolsCnt   = len(symbolsIndex)       
+      
+      for idx in 0 .. symbolsCnt
+        symbolInfo = symbolsIndex[idx]
+        if symbolInfo.kind is SYMBOL_KIND_CONST
+          value = symbolInfo.value
+          if (typeof(value) is 'array') or (typeof(value) is 'map')
+            print prefix, ' const', symbolInfo.name, '=', value
+          #else
+          #  print prefix, ' ', symbolInfo.name, '=', value
+          endif
+        endif
+      endfor
+      
+      # Emit block body.
+      this._printNode_codeBlock(prefix, node)
+
+    elif opcode is AST_OPCODE_FUNCTION
+      this._printNode_codeBlock(prefix, node)
+
+    elif opcode is AST_OPCODE_CLASS
+      __mold_printToStdOutput('class ')
+      __mold_printToStdOutput(value.name)
+      print ''
+      this._printNode_codeBlock(prefix, node)
+      __mold_printToStdOutput('endclass')
+    
+    elif opcode is AST_OPCODE_CLASS_METHOD
+      __mold_printToStdOutput('method ')
+      __mold_printToStdOutput(value.name)
+      __mold_printToStdOutput('(')
+      
+      sep = ''
+      
+      for idx in 0 .. value.paramsCnt
+        __mold_printToStdOutput(sep)
+        __mold_printToStdOutput(value.params[idx])
+        sep = ', '
+      endfor
+      
+      __mold_printToStdOutput(')')
+ 
+      if typeof(node.rvName) isnt 'undefined'
+        print ' ->', node.rvName
+      else
+        print ''
+      endif
+
+      this._printNode_codeBlock(prefix, node)
+      
+      print 'endmethod'
+      print ''      
+    
+    elif opcode is AST_OPCODE_INVOKE_METHOD
+      this._printNode('', children[0])
+      __mold_printToStdOutput('.')
+      __mold_printToStdOutput(value)
+      this._printNode_paramsList(node, 1, true)
+
+    elif opcode is AST_OPCODE_CALL_NEW
+      __mold_printToStdOutput('new ')
+      __mold_printToStdOutput(value)
+      this._printNode_paramsList(node, 1, true)
+
+    elif opcode is AST_OPCODE_IF
+      __mold_printToStdOutput(prefix + 'if ')
+      this._printNode('', children[0])
+      print ''
+      this._printNode(prefix, children[1])
+      
+      if typeof(children[2]) isnt 'undefined'
+        __mold_printToStdOutput(prefix)
+        print 'else'
+        this._printNode(prefix, children[2])
+      endif
+      
+      __mold_printToStdOutput(prefix)
+      __mold_printToStdOutput('endif')
+
+    elif opcode is AST_OPCODE_CALL
+      __mold_printToStdOutput(prefix)
+      __mold_printToStdOutput(value)
+      
+      if value is 'print'
+        __mold_printToStdOutput(' ')
+        this._printNode_paramsList(node, 0, false)
+      else
+        this._printNode_paramsList(node, 0, true)
+      endif
+    
+    elif opcode is AST_OPCODE_WHILE
+      __mold_printToStdOutput(prefix)
+      __mold_printToStdOutput('while ')
+      this._printNode('', children[0])
+      print ''
+
+      this._printNode_codeBlock(prefix, children[1])
+      __mold_printToStdOutput(prefix)
+      __mold_printToStdOutput('endwhile')
+    
+    elif opcode is AST_OPCODE_FOR_VALUES_RANGE
+      __mold_printToStdOutput(prefix)
+      __mold_printToStdOutput('for ')
+      this._printNode('', children[0])
+      
+      __mold_printToStdOutput(' in ')
+      this._printNode('', children[1])
+      
+      __mold_printToStdOutput(' .. ')
+      this._printNode('', children[2])
+
+      if children[3].value isnt 1
+        __mold_printToStdOutput(' by ')
+        this._printNode('', children[3])
+      endif
+      print ''
+      
+      this._printNode_codeBlock(prefix, children[4])
+      __mold_printToStdOutput(prefix)
+      __mold_printToStdOutput('endfor')
+    
+    elif opcode is AST_OPCODE_VARIABLE
+      __mold_printToStdOutput(value)
+
+    elif opcode is AST_OPCODE_REFERENCE
+      this._printNode('', lval)
+      __mold_printToStdOutput('[')
+      this._printNode('', rval)
+      __mold_printToStdOutput(']')
+
+    elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
+      __mold_printToStdOutput(prefix)
+      this._printNode('', lval)
+      __mold_printToStdOutput(' = ')
+      this._printNode('', rval)
+
+    elif opcode is AST_OPCODE_NEG
+      __mold_printToStdOutput('- ')
+      if (x.opcode is AST_OPCODE_ADD) or (x.opcode is AST_OPCODE_SUB)
+        __mold_printToStdOutput('(')
+        this._printNode('', x)
+        __mold_printToStdOutput(')')
+      else
+        this._printNode('', x)
+      endif
+
+    elif opcode is AST_OPCODE_ADD
+      this._printNode_twoArgsOp(node, '+')
+
+    elif opcode is AST_OPCODE_SUB
+      this._printNode_twoArgsOp(node, '-')
+
+    elif opcode is AST_OPCODE_MUL
+      this._printNode_twoArgsOp(node, '*')
+
+    elif opcode is AST_OPCODE_DIV
+      this._printNode_twoArgsOp(node, '/')
+
+    elif opcode is AST_OPCODE_IDIV
+      this._printNode_twoArgsOp(node, '//')
+
+    elif opcode is AST_OPCODE_COMPARE_EQ
+      this._printNode_twoArgsOp(node, 'is')
+
+    elif opcode is AST_OPCODE_COMPARE_NEQ
+      this._printNode_twoArgsOp(node, 'isnt')
+
+    elif opcode is AST_OPCODE_COMPARE_GT
+      this._printNode_twoArgsOp(node, '>')
+
+    elif opcode is AST_OPCODE_COMPARE_GE
+      this._printNode_twoArgsOp(node, '>=')
+
+    elif opcode is AST_OPCODE_COMPARE_LT
+      this._printNode_twoArgsOp(node, '<')
+
+    elif opcode is AST_OPCODE_COMPARE_LE
+      this._printNode_twoArgsOp(node, '<=')
+
+    elif opcode is AST_OPCODE_BOOL_AND
+      this._printNode_twoArgsOp(node, 'and')
+
+    elif opcode is AST_OPCODE_BOOL_OR
+      this._printNode_twoArgsOp(node, 'or')
+    
+    elif opcode is AST_OPCODE_NOP
+    
+    else
+      die('error: unhandled opcode: ' + str(opcode))
+    endif
+  endmethod
+
+  method printNode(node)
+    prefix = ''
+    this._printNode(prefix, node)
+  endmethod
+endclass

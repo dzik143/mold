@@ -1,0 +1,344 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'AST/AST.mold'
+
+function AST_GetOpcodeAsText(opcode) -> rv  
+  global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
+  global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+  global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
+  global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
+  global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
+  global AST_OPCODE_REFERENCE, AST_OPCODE_CALL
+  global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV
+  global AST_OPCODE_IDIV
+  global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
+  global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
+  global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+  global AST_OPCODE_BLOCK, AST_OPCODE_FUNCTION, AST_OPCODE_CLASS
+  global AST_OPCODE_CLASS_METHOD
+  global AST_OPCODE_IF
+  global AST_OPCODE_ELIF
+  global AST_OPCODE_WHILE
+  global AST_OPCODE_FOR
+  global AST_OPCODE_FOR_VALUES_RANGE
+
+  global AST_OPCODE_ASSIGN
+  global AST_OPCODE_DECLARE
+  global AST_OPCODE_DECLARE_OR_ASSIGN
+  global AST_OPCODE_FUNCTION
+  global AST_OPCODE_CLASS
+  global AST_OPCODE_NOP
+  global AST_OPCODE_VARIABLE
+
+  global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
+  global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+  global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
+  global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
+  global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
+  global AST_OPCODE_REFERENCE, AST_OPCODE_CALL
+  global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV
+  global AST_OPCODE_IDIV
+  global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
+  global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
+  global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+
+  if opcode is AST_OPCODE_PROGRAM
+    rv = 'PROGRAM'
+
+  elif opcode is AST_OPCODE_BLOCK
+    rv = 'BLOCK'
+
+  elif opcode is AST_OPCODE_IF
+    rv = 'IF'
+
+  elif opcode is AST_OPCODE_FOR
+    rv = 'FOR'
+
+  elif opcode is AST_OPCODE_FOR_VALUES_RANGE
+    rv = 'FOR'
+
+  elif opcode is AST_OPCODE_WHILE
+    rv = 'WHILE'
+
+  elif opcode is AST_OPCODE_CALL
+    rv = 'CALL'
+    
+  elif opcode is AST_OPCODE_REFERENCE
+    rv = 'REFERENCE'
+
+  elif opcode is AST_DATA_INTEGER
+    rv = 'INTEGER'
+
+  elif opcode is AST_DATA_STRING
+    rv = 'STRING'
+
+  elif opcode is AST_DATA_FLOAT
+    rv = 'FLOAT'
+
+  elif opcode is AST_DATA_DOUBLE
+    rv = 'DOUBLE'
+
+  elif opcode is AST_DATA_BOOL
+    rv = 'BOOL'
+
+  elif opcode is AST_DATA_ARRAY
+    rv = 'ARRAY'
+
+  elif opcode is AST_DATA_MAP
+    rv = 'MAP'
+
+  elif opcode is AST_DATA_UNDEFINED
+    rv = 'UNDEFINED'
+  
+  elif opcode is AST_OPCODE_BOOL_AND
+    rv = 'BOOL_AND'
+
+  elif opcode is AST_OPCODE_BOOL_OR
+    rv = 'BOOL_OR'
+
+  elif opcode is AST_OPCODE_NEG
+    rv = 'NEG'
+
+  elif opcode is AST_OPCODE_ADD
+    rv = 'ADD'
+
+  elif opcode is AST_OPCODE_SUB
+    rv = 'SUB'
+
+  elif opcode is AST_OPCODE_MUL
+    rv = 'MUL'
+
+  elif opcode is AST_OPCODE_DIV
+    rv = 'DIV'
+
+  elif opcode is AST_OPCODE_IDIV
+    rv = 'IDIV'      
+
+  elif opcode is AST_OPCODE_COMPARE_EQ
+    rv = 'CMP_EQ'
+
+  elif opcode is AST_OPCODE_COMPARE_NEQ
+    rv = 'CMP_NE'
+
+  elif opcode is AST_OPCODE_COMPARE_LT
+    rv = 'CMP_LT'
+
+  elif opcode is AST_OPCODE_COMPARE_LE
+    rv = 'CMP_LE'
+
+  elif opcode is AST_OPCODE_COMPARE_GT
+    rv = 'CMP_GT'
+
+  elif opcode is AST_OPCODE_COMPARE_GE
+    rv = 'CMP_GE'
+  
+  elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
+    rv = 'DECLARE_OR_ASSIGN'
+  
+  elif opcode is AST_OPCODE_VARIABLE
+    rv = 'VARIABLE'
+
+  elif opcode is AST_OPCODE_NOP
+    rv = 'NOP'
+
+  else
+    rv = '[UNKNOWN: ' + str(opcode) + ']'
+  endif
+endfunction
+
+function AST_GetOpcodeAsShortText(opcode) -> rv
+  global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
+  global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+  global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
+  global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
+  global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
+  global AST_OPCODE_REFERENCE, AST_OPCODE_CALL
+  global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV
+  global AST_OPCODE_IDIV
+  global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
+  global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
+  global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+  global AST_OPCODE_BLOCK, AST_OPCODE_FUNCTION, AST_OPCODE_CLASS
+  global AST_OPCODE_CLASS_METHOD
+  global AST_OPCODE_IF
+  global AST_OPCODE_ELIF
+  global AST_OPCODE_WHILE
+  global AST_OPCODE_FOR
+  global AST_OPCODE_FOR_VALUES_RANGE
+
+  global AST_OPCODE_ASSIGN
+  global AST_OPCODE_DECLARE
+  global AST_OPCODE_DECLARE_OR_ASSIGN
+  global AST_OPCODE_FUNCTION
+  global AST_OPCODE_CLASS
+  global AST_OPCODE_NOP
+  global AST_OPCODE_VARIABLE
+
+  global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
+  global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+  global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
+  global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
+  global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
+  global AST_OPCODE_REFERENCE, AST_OPCODE_CALL
+  global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV
+  global AST_OPCODE_IDIV
+  global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
+  global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
+  global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+
+  if opcode is AST_OPCODE_REFERENCE
+    rv = '[]'
+            
+  elif opcode is AST_DATA_INTEGER
+    rv = 'i'
+
+  elif opcode is AST_DATA_STRING
+    rv = 's'
+
+  elif opcode is AST_DATA_FLOAT
+    rv = 'f'
+
+  elif opcode is AST_DATA_DOUBLE
+    rv = 'f'
+
+  elif opcode is AST_DATA_BOOL
+    rv = 'b'
+
+  elif opcode is AST_DATA_ARRAY
+    rv = 'a'
+
+  elif opcode is AST_DATA_MAP
+    rv = 'm'
+  
+  elif opcode is AST_OPCODE_BOOL_AND
+    rv = '&'
+
+  elif opcode is AST_OPCODE_BOOL_OR
+    rv = '|'
+
+  elif opcode is AST_OPCODE_NEG
+    rv = '-'
+
+  elif opcode is AST_OPCODE_ADD
+    rv = '+'
+
+  elif opcode is AST_OPCODE_SUB
+    rv = '-'
+
+  elif opcode is AST_OPCODE_MUL
+    rv = '*'
+
+  elif opcode is AST_OPCODE_DIV
+    rv = '/'
+
+  elif opcode is AST_OPCODE_IDIV
+    rv =  '//'      
+
+  elif opcode is AST_OPCODE_COMPARE_EQ
+    rv = 'eq'
+
+  elif opcode is AST_OPCODE_COMPARE_NEQ
+    rv = 'ne'
+
+  elif opcode is AST_OPCODE_COMPARE_LT
+    rv = 'lt'
+
+  elif opcode is AST_OPCODE_COMPARE_LE
+    rv = 'le'
+
+  elif opcode is AST_OPCODE_COMPARE_GT
+    rv = 'gt'
+
+  elif opcode is AST_OPCODE_COMPARE_GE
+    rv = 'ge'
+  
+  elif opcode is AST_OPCODE_VARIABLE
+    rv = 'v'
+
+  else
+    die('error: unhandled opcode: ' + str(opcode))
+  endif
+endfunction
+
+function AST_IsVar(x) -> rv
+  global AST_OPCODE_VARIABLE
+  rv = x.opcode is AST_OPCODE_VARIABLE
+endfunction           
+
+function AST_IsImm(x) -> rv
+  global AST_OPCODE_PROGRAM
+  global AST_DATA_ARRAY
+  global AST_DATA_MAP
+
+  if x.opcode is AST_DATA_ARRAY
+    rv = typeof(x.value) is 'array'
+    
+  elif x.opcode is AST_DATA_MAP
+    rv = typeof(x.value) is 'map'
+
+  elif (x.opcode < AST_OPCODE_PROGRAM) 
+    rv = true
+    
+  else
+    rv = false
+  endif
+endfunction           
+
+function AST_IsImmOrVar(x) -> rv
+  if AST_IsImm(x) or AST_IsVar(x)
+    rv = true
+  else
+    rv = false
+  endif
+endfunction           
+
+
+function AST_Hash(node) -> rv
+  opcode      = node.opcode
+  children    = node.children
+  childrenCnt = node.childrenCnt
+
+  if false #typeof(node.hash) isnt 'undefined'
+    # Node already hashed - just use it.
+    rv = node.hash
+
+  else
+    # First ask for hash at this node - calculate it from stratch
+    # and save for further calls.
+  
+    if AST_IsVar(node)
+      if typeof(node.storedValue) is 'array'
+        rv = ''
+        for idx in 0 .. len(node.storedValue)
+          rv = rv + '@' + str(node.storedValue[idx].id)
+        endfor
+      else
+        rv = '@' + str(node.storedValue.id)
+      endif
+    
+ 
+    elif AST_IsImm(node)                       
+      rv = AST_GetOpcodeAsShortText(opcode) + str(node.value)
+     
+    elif typeof(children) is 'array'
+      rv = AST_GetOpcodeAsShortText(opcode) + ',' + str(childrenCnt)
+      for idx in 0 .. childrenCnt
+        rv  = rv + ',' + AST_Hash(children[idx])
+      endfor
+    endif
+    
+    node.hash = rv
+  endif
+endfunction

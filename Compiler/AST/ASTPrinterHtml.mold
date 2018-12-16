@@ -1,0 +1,134 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'AST/AST.mold'
+import 'AST/ASTUtils.mold'
+import 'Utils/SymbolTable.mold'
+import 'Utils/Common.mold'
+
+class ASTPrinterHtml
+
+  method _printSymbolTable(symbolTable)
+    global AST_OPCODE_PROGRAM
+    global SYMBOL_KIND_CONST
+    global SYMBOL_KIND_AS_TEXT
+    
+    symbols      = symbolTable.exportSymbols()
+    symbolsIndex = symbols._index
+    symbolsCnt   = len(symbolsIndex)
+
+    print '<table border="1">'
+    print '<tr><th>var</th><th>write</th><th>read</th><th>init value</th><th>kind</th><th>loop level</th></tr>'
+       
+    for idx in 0 .. symbolsCnt
+      symbolInfo = symbolsIndex[idx]
+      value      = '-'
+
+      if typeof(symbolInfo.value) isnt 'undefined'
+        value = symbolInfo.value
+        if typeof(value) is 'string'
+          value = '"' + value + '"'
+        endif
+      endif      
+      
+      print '<tr>'
+      print '<td>', symbolInfo.name, '</td>'
+      print '<td>', symbolInfo.writeHits, '</td>'
+      print '<td>', symbolInfo.readHits, '</td>'
+      print '<td>', value, '</td>'
+      print '<td>', SYMBOL_KIND_AS_TEXT[symbolInfo.kind], '</td>'
+      print '<td>', symbolInfo.loopLevel, '</td>'
+      print '</tr>'
+    endfor
+    print '</table>'    
+  endmethod
+
+  method _printNode(node)
+    global AST_OPCODE_PROGRAM
+    global AST_OPCODE_BLOCK
+    global AST_OPCODE_CALL
+    global AST_OPCODE_VARIABLE
+    global AST_OPCODE_INVOKE_METHOD
+    
+    opcode      = node.opcode
+    childrenCnt = node.childrenCnt
+    children    = node.children
+
+    print '<table style="border: solid 1px">'
+    print '<tr><td>#' + str(node.id), '<b>', AST_GetOpcodeAsText(opcode), '</b></td></tr>'
+
+    if typeof(node.hash) isnt 'undefined'
+      print '<tr><td><small><i>', node.hash, '</i></small></td></tr>'
+    endif
+
+    if (opcode is AST_OPCODE_BLOCK) or (opcode is AST_OPCODE_PROGRAM)
+      if typeof(node.symbolTable) isnt 'undefined'
+        print '<tr><td>'
+        this._printSymbolTable(node.symbolTable)
+        print '</td></tr>'
+      endif
+      
+      for idx in 0 .. childrenCnt
+        print '<tr><td>'
+        this._printNode(children[idx])
+        print '</td></tr>'
+      endfor    
+
+    else
+      if (opcode < AST_OPCODE_PROGRAM) or (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_INVOKE_METHOD) or (opcode is AST_OPCODE_VARIABLE)
+        value = node.value
+        if typeof(value) is 'string'
+          value = "'" + value + "'"
+        endif
+        print '<tr><td>', value, '</td></tr>'
+      endif
+      
+      print '<tr>'
+      for idx in 0 .. childrenCnt
+        print '<td>'
+        this._printNode(children[idx])
+        print '</td>'
+      endfor
+      print '</tr>'    
+    endif
+
+    if opcode is AST_OPCODE_VARIABLE
+                                           
+      print '<tr><td><hr>'
+      
+      if typeof(node.storedValue) is 'array'
+
+        for idx in 0 .. len(node.storedValue)
+          print '@' + str(node.storedValue[idx].id), '<br>'
+        endfor
+
+      elif typeof(node.storedValue) is 'undefined'
+        print 'undefined'
+        
+      else
+        print '@' + str(node.storedValue.id)
+      endif
+      
+      print '</td></tr>'
+    endif                      
+    
+    print '</table>'
+  endmethod
+
+  method printNode(node)
+    print '<html><body>'
+    this._printNode(node)
+    print '</body></html>'
+  endmethod
+endclass

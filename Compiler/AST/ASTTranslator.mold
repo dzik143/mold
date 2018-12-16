@@ -12,9 +12,8 @@
 #                                                                              #
 ################################################################################
 
-import 'AST.mold'
-import 'SymbolTable.mold'
-import 'ASTAnalyzer.mold'
+import 'AST/AST.mold'
+import 'Utils/SymbolTable.mold'
 
 class ASTTranslator
 
@@ -26,7 +25,6 @@ class ASTTranslator
     # TODO: Clean up this mess.
     this.nextId          = 1
     this.importedModules = {}
-    this.astAnalyzer     = new ASTAnalyzer(this)
 
     # TODO: Remove redundant array if map iteration will work.
     this.vtable        = {}

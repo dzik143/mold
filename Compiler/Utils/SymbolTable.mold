@@ -1,0 +1,385 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+SYMBOL_KIND_VAR_LOCAL  = 1
+SYMBOL_KIND_VAR_GLOBAL = 2
+SYMBOL_KIND_VAR_PARAM  = 3
+SYMBOL_KIND_VAR_RETVAL = 4
+SYMBOL_KIND_CONST      = 5
+SYMBOL_KIND_LABEL      = 6
+
+SYMBOL_KIND_FUNCTION   = 7
+SYMBOL_KIND_CLASS      = 8
+SYMBOL_KIND_METHOD     = 9
+
+SYMBOL_KIND_AS_TEXT = [
+  '[error]',
+  'local',
+  'global',
+  'param',
+  'rv',
+  'const',
+  'label',
+  'function',
+  'class',
+  'method'
+]
+
+SymbolTable_TempsCnt = 0
+
+class SymbolTable
+  method constructor(app)
+    this.app       =app
+    this.deepIdx   = 0
+    this.deepMax   = 128
+    this.loopLevel = 0
+    
+    # TODO: Use null.
+    this.parent = false
+
+    # TODO: Remove it when map iteration ready.
+    this.symbols = {'_index': []}
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                               Generic calls
+  # ----------------------------------------------------------------------------
+
+  method getDeep() -> rv
+    rv = this.deepIdx
+  endmethod
+
+  method exportSymbols() -> rv
+    rv = this.symbols
+  endmethod
+
+  method insert(name, entry)
+    if typeof(this.symbols[name]) isnt 'undefined'
+      die("error: redeclaration of '" + name + "'")
+    else
+      # TODO: Remove it when map iteration ready.
+      cnt = len(this.symbols['_index'])
+      this.symbols['_index'][cnt] = entry
+
+      this.symbols[name] = entry
+      entry.writeHits = 0
+      entry.readHits  = 0
+      entry.loopLevel = this.loopLevel
+    endif
+  endmethod
+  
+  method remove(name)
+    # TODO: Optimize it.
+    x = []
+    entry = this.lookup(name)
+    this.symbols[name] = x[0]
+
+    symbolsIndex = this.symbols._index
+    
+    newIndex = []
+    for idx in 0 .. len(symbolsIndex)
+      if symbolsIndex[idx].name isnt entry.name
+        newIndex[len(newIndex)] = symbolsIndex[idx]
+      endif
+    endfor
+    this.symbols._index = newIndex
+  endmethod
+
+  method importExternal(name)
+    die('SymbolTable::importExternal() not implemented')
+  endmethod
+
+  method insertGlobal(name, entry)
+    die('SymbolTable::insertGlobal() not implemented')
+  endmethod
+
+  method _lookupInternal(name) -> rv
+    rv  = this.symbols[name]
+    tab = this
+    
+    while (typeof(rv) is 'undefined') and (tab.deepIdx > 0)
+      tab = tab.parent
+      rv  = tab._lookupInternal(name)      
+    endwhile
+  endmethod
+  
+  method lookup(name) -> rv
+    rv = this._lookupInternal(name)
+    if typeof(rv) is 'undefined'
+      die("error: '" + name + "' was not declared in this scope")
+    endif
+    
+    # TODO: Use max(x, y) if ready.
+    if this.loopLevel > rv.loopLevel
+      rv.loopLevel = this.loopLevel
+    endif
+  endmethod
+
+  method lookupForRead(name) -> rv
+    rv          = this.lookup(name)
+    rv.readHits = rv.readHits + 1
+  endmethod
+
+  method lookupForWrite(name) -> rv
+    rv           = this.lookup(name)
+    rv.writeHits = rv.writeHits + 1
+  endmethod
+
+  method lookupForReadAndWrite(name) -> rv
+    rv           = this.lookup(name)
+    rv.readHits  = rv.readHits  + 1
+    rv.writeHits = rv.writeHits + 1
+  endmethod
+
+  method lookupForWriteOrInsert(name) -> rv
+    if this.isset(name) is false
+      this.insertLocal(name)
+    endif
+    rv = this.lookupForWrite(name)
+  endmethod
+  
+  method lookupGlobal(name) -> rv
+    die('SymbolTable::lookupGlobal() not implemented')
+  endmethod
+
+  method decreaseReadHits(name)
+    entry = this.lookup(name)
+    entry.readHits = entry.readHits - 1
+  endmethod
+
+  method decreaseWriteHits(name)
+    entry = this.lookup(name)
+    entry.writeHits = entry.writeHits - 1
+  endmethod
+  
+  method isset(name) -> rv
+    rv = typeof(this._lookupInternal(name)) isnt 'undefined'
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                   Scopes (0=global, 1,2,3...=local)
+  # ----------------------------------------------------------------------------
+
+  method enterScope() -> rv
+    if this.deepIdx >= this.deepMax
+      die('error: too deep (' + str(this.deepIdx) + ')')
+    endif
+
+    rv = new SymbolTable(this.app)
+    rv.parent  = this
+    rv.deepIdx = this.deepIdx + 1
+  endmethod
+  
+  method enterScopeForLoop() -> rv
+    rv           = this.enterScope()
+    rv.loopLevel = this.loopLevel + 1
+  endmethod
+
+  method leaveScope() -> rv
+    if this.deepIdx < 1
+      die('error: unmatched scope leave')
+    endif
+    this.vacuum()
+    rv = this.parent
+  endmethod
+  
+  # ----------------------------------------------------------------------------
+  #                              Function helpers
+  # ----------------------------------------------------------------------------
+
+  method insertFunction(name, proto)
+    global SYMBOL_KIND_FUNCTION
+    newEntry = {
+      'name': name,
+      'kind': SYMBOL_KIND_FUNCTION,
+      'proto': proto
+    }
+    this.insertGlobal(name, newEntry)
+  endmethod
+
+  method lookupFunction(name, paramsCnt) -> rv
+    global SYMBOL_KIND_FUNCTION
+    rv = this.lookupGlobal(name)
+    if rv['kind'] isnt SYMBOL_KIND_FUNCTION
+      die("error: '" + name + "' is not a function")
+    elif rv['proto']['paramsCnt'] isnt paramsCnt
+      die("error: function '" + name + "' requires exactly " + str(rv['proto']['paramsCnt']) + ' parameters, but ' + str(paramsCnt) + ' were passed')
+    endif
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                               Class helpers
+  # ----------------------------------------------------------------------------
+
+  method insertClass(name, proto)
+    global SYMBOL_KIND_CLASS
+    newEntry = {
+      'name': name,
+      'kind': SYMBOL_KIND_CLASS,
+      'proto': proto
+    }
+    this.insert(name, newEntry)
+  endmethod
+
+  method lookupClass(name) -> rv
+    global SYMBOL_KIND_CLASS
+    rv = this.lookupGlobal(name)
+    if rv['kind'] isnt SYMBOL_KIND_CLASS
+      die("error: '" + name + "' is not a class")
+    endif
+  endmethod
+
+  method lookupMethod(className, methodName, paramsCnt) -> rv
+    rv = this.lookupClass(className)['proto']['vtable'][methodName]
+
+    if typeof(rv) is 'undefined'
+      die("error: class '" + className + "' has no method '" + methodName + "'")
+
+    elif rv['paramsCnt'] isnt paramsCnt
+      die("error: method '" + methodName + "' requires exactly " + str(rv['paramsCnt']) + ' parameters, but ' + str(paramsCnt) + ' were passed')
+    endif
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                               Variable helper
+  # ----------------------------------------------------------------------------
+
+  method insertLocal(name)
+    global SYMBOL_KIND_VAR_LOCAL
+
+    if this.deepIdx < 1
+      die('error: attemp to declare local within global table')
+    endif
+    
+    newEntry = {
+      'name': name,
+      'kind': SYMBOL_KIND_VAR_LOCAL
+    }
+    this.insert(name, newEntry)
+  endmethod
+
+  method importGlobal(name)
+    global SYMBOL_KIND_VAR_GLOBAL
+
+    if this.deepIdx is 0
+      die('error: global directive used in global space')
+
+    elif this.isset(name) is true
+      # Symbol already declared in current scope.
+      # Check is it global.
+      symbolInfo = this.lookup(name)
+
+      if symbolInfo.kind is SYMBOL_KIND_VAR_GLOBAL
+        # It's already imported global. Do nothing.
+      else
+        # It's already declared as another kind.
+        die("error: conflicting declaration 'global " + name + "'")
+      endif
+
+    else
+      # Find symbol in global scope.
+      symbolInfo = this.lookupGlobal(name)
+      this.insert(name, symbolInfo)
+    endif
+  endmethod
+
+  method insertParam(name, id)
+    global SYMBOL_KIND_VAR_PARAM
+    newEntry = {
+      'name': name,
+      'kind': SYMBOL_KIND_VAR_PARAM,
+      'id': id
+    }
+    this.insert(name, newEntry)
+  endmethod
+
+  method insertRetVal(name)
+    global SYMBOL_KIND_VAR_RETVAL
+    newEntry = {
+      'name': '__rv',
+      'kind': SYMBOL_KIND_VAR_RETVAL,
+      'alias': name
+    }
+    this.insert('__rv', newEntry)
+    this.symbols[this.deepIdx][name] = newEntry
+  endmethod
+
+  method insertConst(name, value)
+    global SYMBOL_KIND_CONST
+    newEntry = {
+      'name': name,
+      'kind': SYMBOL_KIND_CONST,
+      'value': value
+    }
+
+    this.insert(name, newEntry)
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                               Constant helpers
+  # ----------------------------------------------------------------------------
+
+  method assignValue(name, value)
+    symbolInfo = this.lookup(name)
+    symbolInfo.value = value
+  endmethod
+
+  method assignNode(name, node)
+    symbolInfo = this.lookup(name)
+    symbolInfo.node = node
+  endmethod
+  
+  method vacuum()
+    global SYMBOL_KIND_CONST
+    
+    symbolsIndex = this.symbols._index
+    
+    # TODO: Use remove() if ready.
+    #this.symbols = {'_index': []}
+    
+    for idx in 0 .. len(symbolsIndex)
+      symbolInfo = symbolsIndex[idx]
+      if (symbolInfo.writeHits is 1) and typeof(symbolInfo.value) isnt 'undefined'
+        # Variable written once by imm. Convert to constant.
+        symbolInfo.kind = SYMBOL_KIND_CONST
+      endif
+
+      #if symbolInfo.writeHits > 0
+      #  this.insert(symbolInfo.name, symbolInfo)      
+      #endif
+    endfor
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                        Temporary variable helpers
+  # ----------------------------------------------------------------------------
+
+  method createTempVar() -> rv
+    global SymbolTable_TempsCnt
+    rv = 'tmp' + str(SymbolTable_TempsCnt)
+    SymbolTable_TempsCnt = SymbolTable_TempsCnt + 1
+    this.insertLocalVolatile(rv)
+  endmethod
+
+  method createTempVarForWrite() -> rv
+    rv = this.createTempVar()
+    this.lookupForWrite(rv)
+  endmethod
+
+  method createTempVarForReadAndWrite() -> rv
+    rv = this.createTempVar()
+    this.lookupForRead(rv)
+    this.lookupForWrite(rv)
+  endmethod
+endclass

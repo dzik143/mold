@@ -18,9 +18,9 @@
 # It translates MIR0 (stack) to MIR1 (register).
 # ------------------------------------------------------------------------------
 
-import 'PipeAbstract.mold'
-import 'MIR.mold'
-import 'Stack.mold'
+import 'Utils/PipeAbstract.mold'
+import 'Utils/Stack.mold'
+import 'MIR/MIR.mold'
 
 class MIRQuadBuilder extends PipeAbstract
   method constructor()

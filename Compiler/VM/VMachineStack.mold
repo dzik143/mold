@@ -12,8 +12,8 @@
 #                                                                              #
 ################################################################################
 
-import 'MIR.mold'
-import 'Stack.mold'
+import 'MIR/MIR.mold'
+import 'Utils/Stack.mold'
 
 class VMachineStackObject
   method constructor(classProto)

@@ -12,7 +12,7 @@
 #                                                                              #
 ################################################################################
 
-import 'ASTTranslator.mold'
+import 'AST/ASTTranslator.mold'
 
 class ASTTranslatorC extends ASTTranslator
 

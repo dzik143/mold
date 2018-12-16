@@ -12,19 +12,19 @@
 #                                                                              #
 ################################################################################
 
-import 'AST.mold'
-import 'ParserMold.mold'
-import 'ASTTranslator.mold'
-import 'ASTTranslatorMIR0.mold'
-import 'ASTTranslatorMIR1.mold'
+import 'AST/AST.mold'
+import 'Parser/ParserMold.mold'
+import 'AST/ASTTranslator.mold'
+import 'AST/ASTTranslatorMIR0.mold'
+import 'AST/ASTTranslatorMIR1.mold'
 
-import 'MIRQuadCollector.mold'
-import 'MIRQuadTypeGuess.mold'
-import 'MIRQuadTypeConvert.mold'
-import 'MIRQuadOptimizer.mold'
-
+import 'MIR/MIRQuadCollector.mold'
+import 'MIR/MIRQuadTypeGuess.mold'
+import 'MIR/MIRQuadTypeConvert.mold'
+import 'MIR/MIRQuadOptimizer.mold'
+           
 import 'CodeGeneratorX64.mold'
-import 'VMachineStack.mold'
+import 'VM/VMachineStack.mold'
 
 # ------------------------------------------------------------------------------
 #                              Helper functions

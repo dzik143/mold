@@ -12,8 +12,7 @@
 #                                                                              #
 ################################################################################
 
-import 'ASTTranslator.mold'
-import 'ASTAnalyzer.mold'
+import 'AST/ASTTranslator.mold'
 
 class ASTInterpreter extends ASTTranslator
 

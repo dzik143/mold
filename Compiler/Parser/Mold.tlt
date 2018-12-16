@@ -341,9 +341,12 @@ const @@prefix_productions = [
 # Abstract Syntax Tree
 #
 
+NodeId = 0
+
 class AST
   method constructor(emit, token)
     global null
+    global NodeId
 
     this.parent = null
     this.child  = null
@@ -352,6 +355,9 @@ class AST
 
     this.emit  = emit
     this.token = token
+    this.id    = NodeId
+    
+    NodeId = NodeId + 1
   endmethod
 
   method _printInternal(node, deepIdx)
@@ -568,13 +574,17 @@ class AST
 
     rv['opcode'] = opcode
     rv['value']  = value
+    rv['id']     = node.id
 
     node = node.child
 
     while node isnt null
-      children[childrenCnt] = this._convertInternal(node, deepIdx + 1)
+      newChild              = this._convertInternal(node, deepIdx + 1)
+      children[childrenCnt] = newChild
       childrenCnt           = childrenCnt + 1
       node                  = node.next
+  
+      newChild.parent = node
     endwhile
 
     rv['children']    = children

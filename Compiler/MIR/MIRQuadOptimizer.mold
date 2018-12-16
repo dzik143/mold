@@ -1,0 +1,125 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'Utils/PipeAbstract.mold'
+
+class MIRQuadOptimizer extends PipeAbstract
+
+  # ----------------------------------------------------------------------------
+  #                         Init functions (constructor)
+  # ----------------------------------------------------------------------------
+
+  method constructor()
+    super()
+    this.bufferingEnabled = true
+    this.lastOpcode       = 'nop'
+    this.lastDst          = '[error]'
+    this.currentFrame     = {}
+
+    this.cmpXxJmpIfFalseMap = {
+      'cmp_eq': 'jmp_if_ne',
+      'cmp_ne': 'jmp_if_eq',
+      'cmp_lt': 'jmp_if_ge',
+      'cmp_le': 'jmp_if_gt',
+      'cmp_gt': 'jmp_if_le',
+      'cmp_ge': 'jmp_if_lt'
+    }
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                        Internal helpers (private)
+  # ----------------------------------------------------------------------------
+
+  method _decreaseReadAndWriteHits(src)
+    srcInfo = this.currentFrame.symbols[src]
+    srcInfo.writeHits = srcInfo.writeHits - 1
+    srcInfo.readHits  = srcInfo.readHits - 1
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                                  Public API
+  # ----------------------------------------------------------------------------
+
+  method processOneItem(item)
+    opcode = item[0]
+    dst    = item[1]
+    src    = item[2]
+
+    #print '[ MIRQuadOptimizer ]', item
+
+    if this.lastOpcode is 'store_index'
+      this._emitOneItem(item)
+
+    elif this.lastOpcode is 'call'
+      # Temporary fix for x = foo(x).
+      this._emitOneItem(item)
+
+    elif this.lastOpcode is 'vcall'
+      # Temporary fix for x = x.foo().
+      this._emitOneItem(item)
+
+    elif (opcode is 'move') and (this.lastOpcode isnt 'move') and (this.lastDst is src)
+      # tmp := x + y
+      # z   := tmp
+      buffer      = this.buffer
+      lastItem    = buffer[len(buffer) - 1]
+      lastItem[1] = dst
+      this._decreaseReadAndWriteHits(src)
+
+    elif opcode is 'conv_int32_to_variant'
+      item[0] = 'load_int32'
+      this._emitOneItem(item)
+
+    elif opcode is 'conv_int64_to_variant'
+      item[0] = 'load_int64'
+      this._emitOneItem(item)
+
+    elif opcode is 'conv_bool32_to_variant'
+      item[0] = 'load_bool32'
+      this._emitOneItem(item)
+
+    elif opcode is 'conv_float64_to_variant'
+      item[0] = 'load_float64'
+      this._emitOneItem(item)
+
+    elif (opcode is 'jmp_if_false')
+
+      newOpcode = this.cmpXxJmpIfFalseMap[this.lastOpcode]
+
+      if typeof(newOpcode) isnt 'undefined'
+        # cmp_xx       tmp, x, y
+        # jmp_if_false label
+        this._decreaseReadAndWriteHits(src)
+        this._replaceLastItem([newOpcode, dst, this.lastSrc1, this.lastSrc2])
+      else
+        # Not a cmp/jmp pattern. Do nothing.
+        this._emitOneItem(item)
+      endif
+
+    else
+      this._emitOneItem(item)
+    endif
+
+    if opcode is 'proc'
+      this.currentFrame = item[1]
+    elif opcode is 'endp'
+      this.flush()
+    endif
+
+    this.lastOpcode = opcode
+    this.lastDst    = dst
+    this.lastSrc1   = item[2]
+    this.lastSrc2   = item[3]
+  endmethod
+endclass
