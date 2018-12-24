@@ -1,0 +1,260 @@
+TEST "Empty IF branches"
+a = 1
+b = 2
+
+# There are possible combinations:
+# {c, true, false} x {nop, x} x {nop, y, -}
+
+# cond  | body | else
+# ------ ------ -----
+# c     | nop  | nop
+# c     | nop  | y
+# c     | nop  | -
+
+if a is b
+else
+endif
+
+if a is b
+else
+  print 'yyy1'
+endif
+
+if a is b
+endif
+
+# c     | x    | nop
+# c     | x    | y
+# c     | x    | -
+
+if a is b
+  print 'xxx2'
+else
+endif
+
+if a is b
+  print 'xxx3'
+else
+  print 'yyy4'
+endif
+
+if a is b
+  print 'xxx5'
+endif
+
+EXPECTED_OUTPUT:
+a = 1
+b = 2
+
+if a isnt b
+  print 'yyy1'
+endif
+
+if a is b
+  print 'xxx2'
+endif
+
+if a is b
+  print 'xxx3'
+else
+  print 'yyy4'
+endif
+
+if a is b
+  print 'xxx5'
+endif
+
+--------------------------------------------------------------------------------
+
+TEST "Constant IF (true) condition"
+
+# true  | nop  | nop
+# true  | nop  | y
+# true  | nop  | -
+
+if true
+else
+endif
+
+if true
+else
+  print 'yyy6'
+endif
+
+if true
+endif
+
+# true  | x    | nop
+# true  | x    | y
+# true  | x    | -
+
+if true
+  print 'xxx7'
+else
+endif
+
+if true
+  print 'xxx8'
+else
+  print 'yyy9'
+endif
+
+if true
+  print 'xxx10'
+endif
+
+EXPECTED_OUTPUT:
+  print 'xxx7'
+  print 'xxx8'
+  print 'xxx10'
+
+--------------------------------------------------------------------------------
+
+TEST "Constant IF (false) condition"
+
+# false | nop  | nop
+# false | nop  | y
+# false | nop  | -
+
+if false
+else
+endif
+
+if false
+else
+  print 'yyy11'
+endif
+
+if false
+endif
+
+# false | x    | nop
+# false | x    | y
+# false | x    | -
+
+if false
+  print 'xxx12'
+else
+endif
+
+if false
+  print 'xxx13'
+else
+  print 'yyy14'
+endif
+
+if false
+  print 'xxx15'
+endif
+
+EXPECTED_OUTPUT:
+  print 'yyy11'
+  print 'yyy14'
+
+--------------------------------------------------------------------------------
+
+TEST "Empty while loop"
+
+x = 0
+
+# Non-empty while
+while x < 1234
+  print 'xxx'
+endwhile
+
+# Empty while
+while x < 1234
+endwhile
+
+EXPECTED_OUTPUT:
+x = 0
+while x < 1234
+  print 'xxx'
+endwhile
+
+--------------------------------------------------------------------------------
+
+TEST "While with false condition"
+
+x = 0
+
+# Non-empty while
+while x < 1234
+  print 'xxx'
+endwhile
+
+while true
+  print 'yyy'
+endwhile
+
+while false
+  print 'zzz'
+endwhile
+
+EXPECTED_OUTPUT:
+x = 0
+while x < 1234
+  print 'xxx'
+endwhile
+
+while true
+  print 'yyy'
+endwhile
+
+--------------------------------------------------------------------------------
+
+TEST "Empty for loop"
+
+# Non-empty for
+for idx in 0 .. 1234
+  print idx
+endfor
+
+# Empty for
+for idx in 0 .. 1234
+endfor
+
+EXPECTED_OUTPUT:
+for idx in 0 .. 1234
+  print idx
+endfor
+
+--------------------------------------------------------------------------------
+
+TEST "Unused var"
+
+unused1 = 1
+unused2 = [2, 3, 4]
+unused3 = {'a': 5, 'b': 6, 'c': 7}
+unused4 = 'text'
+
+used1 = 100
+used2 = 200
+used3 = 300
+print (used1 + used2) * used3
+
+EXPECTED_OUTPUT:
+used1 = 100
+used2 = 200
+used3 = 300
+print (used1 + used2) * used3
+
+--------------------------------------------------------------------------------
+
+TEST "Unused function"
+
+function unusedFoo(x, y, z)
+  print 'unusedFoo(', x, y, z, ')'
+endfunction
+
+function usedBar(x, y, z)
+  print 'usedBar(', x, y, z, ')'
+endfunction
+
+usedBar(1, 2, 3)
+
+EXPECTED_OUTPUT:
+function usedBar(x, y, z)
+  print 'usedBar(', x, y, z, ')'
+endfunction
+usedBar(1, 2, 3)

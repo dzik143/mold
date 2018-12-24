@@ -143,9 +143,8 @@ print foo(0)
 
 EXPECTED_OUTPUT:
 output
-undefined
 EXPECTED_ERROR
-WARNING! Unset return variable 'rv' in 'foo' function.
+error: unset return variable 'rv' in 'foo' function
 --------------------------------------------------------------------------------
 
 TEST "Immediately array in parameters list"

@@ -12,12 +12,12 @@
 #                                                                              #
 ################################################################################
 
-Mocha = require('mocha')
-mocha = new Mocha({ui: 'tdd', reporter: 'spec', bail: 'yes'})
+common = require('./common.coffee')
 
-# Register general suites.
-mocha.addFile('general.coffee')
-mocha.addFile('astOptimization.coffee')
-
-# Run registered test.
-mocha.run()
+common.createInputOutputFilesPairSuite({
+  title: 'AST optimization',
+  examplesPath: './examples/astOptimization',
+  binaryPath: 'moldAstOptimizer',
+  ignoreEmptyLines: true,
+  ignoreWhiteSpaces: true,
+  extraParameters: '${testGroupId}'})

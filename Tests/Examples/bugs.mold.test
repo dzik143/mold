@@ -183,3 +183,16 @@ EXPECTED_OUTPUT:
 x = [1234]
 y = {'a': 5678}
 -------------------------------------------------------------------------------
+TEST "Bug: Destroy function params"
+
+function foo(node)
+  node = node.next
+endfunction
+
+node = {'abcd': 1234}
+foo(node)
+print node
+
+EXPECTED_OUTPUT:
+{'abcd': 1234}
+-------------------------------------------------------------------------------
