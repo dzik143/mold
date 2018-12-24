@@ -40,16 +40,23 @@ SymbolTable_TempsCnt = 0
 
 class SymbolTable
   method constructor(app)
-    this.app       =app
+    this._debug('Created new object')
+    this.app       = app
     this.deepIdx   = 0
     this.deepMax   = 128
     this.loopLevel = 0
-    
+
     # TODO: Use null.
     this.parent = false
 
     # TODO: Remove it when map iteration ready.
     this.symbols = {'_index': []}
+  endmethod
+
+  method _debug(msg)
+    if false
+      print '[ SymbolTable ]', msg
+    endif
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -78,7 +85,7 @@ class SymbolTable
       entry.loopLevel = this.loopLevel
     endif
   endmethod
-  
+
   method remove(name)
     # TODO: Optimize it.
     x = []
@@ -86,7 +93,7 @@ class SymbolTable
     this.symbols[name] = x[0]
 
     symbolsIndex = this.symbols._index
-    
+
     newIndex = []
     for idx in 0 .. len(symbolsIndex)
       if symbolsIndex[idx].name isnt entry.name
@@ -101,25 +108,25 @@ class SymbolTable
   endmethod
 
   method insertGlobal(name, entry)
-    die('SymbolTable::insertGlobal() not implemented')
+    this.app.getSymbolTable().insert(name, entry)
   endmethod
 
   method _lookupInternal(name) -> rv
     rv  = this.symbols[name]
     tab = this
-    
+
     while (typeof(rv) is 'undefined') and (tab.deepIdx > 0)
       tab = tab.parent
-      rv  = tab._lookupInternal(name)      
+      rv  = tab._lookupInternal(name)
     endwhile
   endmethod
-  
+
   method lookup(name) -> rv
     rv = this._lookupInternal(name)
     if typeof(rv) is 'undefined'
       die("error: '" + name + "' was not declared in this scope")
     endif
-    
+
     # TODO: Use max(x, y) if ready.
     if this.loopLevel > rv.loopLevel
       rv.loopLevel = this.loopLevel
@@ -127,6 +134,12 @@ class SymbolTable
   endmethod
 
   method lookupForRead(name) -> rv
+    rv          = this.lookup(name)
+    rv.readHits = rv.readHits + 1
+  endmethod
+
+  method lookupForCall(name) -> rv
+    # TODO: Special call counter?
     rv          = this.lookup(name)
     rv.readHits = rv.readHits + 1
   endmethod
@@ -148,7 +161,7 @@ class SymbolTable
     endif
     rv = this.lookupForWrite(name)
   endmethod
-  
+
   method lookupGlobal(name) -> rv
     die('SymbolTable::lookupGlobal() not implemented')
   endmethod
@@ -162,7 +175,7 @@ class SymbolTable
     entry = this.lookup(name)
     entry.writeHits = entry.writeHits - 1
   endmethod
-  
+
   method isset(name) -> rv
     rv = typeof(this._lookupInternal(name)) isnt 'undefined'
   endmethod
@@ -172,6 +185,8 @@ class SymbolTable
   # ----------------------------------------------------------------------------
 
   method enterScope() -> rv
+    this._debug('Enter scope')
+
     if this.deepIdx >= this.deepMax
       die('error: too deep (' + str(this.deepIdx) + ')')
     endif
@@ -180,20 +195,22 @@ class SymbolTable
     rv.parent  = this
     rv.deepIdx = this.deepIdx + 1
   endmethod
-  
+
   method enterScopeForLoop() -> rv
     rv           = this.enterScope()
     rv.loopLevel = this.loopLevel + 1
   endmethod
 
   method leaveScope() -> rv
+    this._debug('Leave scope')
+
     if this.deepIdx < 1
       die('error: unmatched scope leave')
     endif
     this.vacuum()
     rv = this.parent
   endmethod
-  
+
   # ----------------------------------------------------------------------------
   #                              Function helpers
   # ----------------------------------------------------------------------------
@@ -261,7 +278,7 @@ class SymbolTable
     if this.deepIdx < 1
       die('error: attemp to declare local within global table')
     endif
-    
+
     newEntry = {
       'name': name,
       'kind': SYMBOL_KIND_VAR_LOCAL
@@ -294,12 +311,11 @@ class SymbolTable
     endif
   endmethod
 
-  method insertParam(name, id)
+  method insertParam(name)
     global SYMBOL_KIND_VAR_PARAM
     newEntry = {
       'name': name,
-      'kind': SYMBOL_KIND_VAR_PARAM,
-      'id': id
+      'kind': SYMBOL_KIND_VAR_PARAM
     }
     this.insert(name, newEntry)
   endmethod
@@ -312,7 +328,7 @@ class SymbolTable
       'alias': name
     }
     this.insert('__rv', newEntry)
-    this.symbols[this.deepIdx][name] = newEntry
+    this.symbols[name] = newEntry
   endmethod
 
   method insertConst(name, value)
@@ -339,15 +355,15 @@ class SymbolTable
     symbolInfo = this.lookup(name)
     symbolInfo.node = node
   endmethod
-  
+
   method vacuum()
     global SYMBOL_KIND_CONST
-    
+
     symbolsIndex = this.symbols._index
-    
+
     # TODO: Use remove() if ready.
     #this.symbols = {'_index': []}
-    
+
     for idx in 0 .. len(symbolsIndex)
       symbolInfo = symbolsIndex[idx]
       if (symbolInfo.writeHits is 1) and typeof(symbolInfo.value) isnt 'undefined'
@@ -356,7 +372,7 @@ class SymbolTable
       endif
 
       #if symbolInfo.writeHits > 0
-      #  this.insert(symbolInfo.name, symbolInfo)      
+      #  this.insert(symbolInfo.name, symbolInfo)
       #endif
     endfor
   endmethod
@@ -366,10 +382,12 @@ class SymbolTable
   # ----------------------------------------------------------------------------
 
   method createTempVar() -> rv
-    global SymbolTable_TempsCnt
-    rv = 'tmp' + str(SymbolTable_TempsCnt)
-    SymbolTable_TempsCnt = SymbolTable_TempsCnt + 1
-    this.insertLocalVolatile(rv)
+    die('SymbolTable::createTempVar() is not implemented')
+    # TODO:
+    #global SymbolTable_TempsCnt
+    #rv = 'tmp' + str(SymbolTable_TempsCnt)
+    #SymbolTable_TempsCnt = SymbolTable_TempsCnt + 1
+    #this.insertLocalVolatile(rv)
   endmethod
 
   method createTempVarForWrite() -> rv

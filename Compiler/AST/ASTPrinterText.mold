@@ -21,20 +21,23 @@ class ASTPrinterText
   method _printNode_twoArgsOp(node, op)
     global AST_OPCODE_MUL
     global AST_OPCODE_DIV
-    
+    global AST_OPCODE_IDIV
+    global AST_OPCODE_BOOL_AND
+    global AST_OPCODE_BOOL_OR
+
     children  = node.children
     x = children[0]
     y = children[1]
 
     useParentForX = false
     useParentForY = false
-    
-    # Check is parenthesis 
-    if (node.opcode is AST_OPCODE_MUL) or (node.opcode is AST_OPCODE_DIV)
+
+    # Check is parenthesis
+    if (node.opcode is AST_OPCODE_MUL) or (node.opcode is AST_OPCODE_DIV) or (node.opcode is AST_OPCODE_IDIV) or (node.opcode is AST_OPCODE_BOOL_AND) or (node.opcode is AST_OPCODE_BOOL_OR)
       useParentForX = AST_IsImmOrVar(x) isnt true
       useParentForY = AST_IsImmOrVar(y) isnt true
     endif
-    
+
     if useParentForX is true
       # Complex node - put into parenthes.
       __mold_printToStdOutput('(')
@@ -45,7 +48,7 @@ class ASTPrinterText
       # Simple node.
       this._printNode('', x)
     endif
-    
+
     __mold_printToStdOutput(' ' + op + ' ')
 
     if useParentForY is true
@@ -57,36 +60,43 @@ class ASTPrinterText
       # Simple node.
       this._printNode('', y)
     endif
-    
+
   endmethod
 
   method _printNode_codeBlock(prefix, node)
     global AST_OPCODE_NOP
     global AST_OPCODE_PROGRAM
-    
+    global AST_OPCODE_BLOCK
+    global AST_OPCODE_IF
+    global AST_OPCODE_FOR
+    global AST_OPCODE_WHILE
+
     children    = node.children
     childrenCnt = node.childrenCnt
 
     prefix = prefix + '  '
-    
+
     for idx in 0 .. childrenCnt
       if children[idx].opcode isnt AST_OPCODE_NOP
         this._printNode(prefix, children[idx])
-        print ''
+
+        if (children[idx].opcode isnt AST_OPCODE_BLOCK) and (children[idx].opcode isnt AST_OPCODE_IF)
+          print ''
+        endif
       endif
     endfor
   endmethod
-  
+
   method _printNode_paramsList(node, beginIdx, parenthesis)
     children    = node.children
     childrenCnt = node.childrenCnt
-    
+
     sep = ''
-    
+
     if parenthesis is true
       __mold_printToStdOutput('(')
     endif
-    
+
     for idx in beginIdx .. childrenCnt
       __mold_printToStdOutput(sep)
       this._printNode('', children[idx])
@@ -138,8 +148,8 @@ class ASTPrinterText
     global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
     global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
 
-    global SYMBOL_KIND_CONST  
-    
+    global SYMBOL_KIND_CONST
+
     opcode      = node.opcode
     value       = node.value
     childrenCnt = node.childrenCnt
@@ -172,7 +182,15 @@ class ASTPrinterText
       endif
 
     elif opcode is AST_DATA_MAP
-      print '[MAP]'
+      if typeof(node.value) is 'map'
+        # Map has initializer list - just render it.
+        print node.value
+      elif node.childrenCnt is 0
+        # Empty map.
+        print '{}'
+      else
+        die('error: non-imm maps are not supported yet')
+      endif
 
     elif opcode < AST_OPCODE_PROGRAM
       __mold_printToStdOutput(value)
@@ -184,66 +202,74 @@ class ASTPrinterText
 
     elif opcode is AST_OPCODE_BLOCK
       symbolTable  = node.symbolTable
-      #this._printSymbolTable(symbolTable)      
+      #this._printSymbolTable(symbolTable)
 
-      # Declare complex constants.
-      symbols      = symbolTable.exportSymbols()
-      symbolsIndex = symbols._index
-      symbolsCnt   = len(symbolsIndex)       
-      
-      for idx in 0 .. symbolsCnt
-        symbolInfo = symbolsIndex[idx]
-        if symbolInfo.kind is SYMBOL_KIND_CONST
-          value = symbolInfo.value
-          if (typeof(value) is 'array') or (typeof(value) is 'map')
-            print prefix, ' const', symbolInfo.name, '=', value
-          #else
-          #  print prefix, ' ', symbolInfo.name, '=', value
+      if typeof(symbolTable) isnt 'undefined'
+        # Declare complex constants if needed.
+        symbols      = symbolTable.exportSymbols()
+        symbolsIndex = symbols._index
+        symbolsCnt   = len(symbolsIndex)
+
+        for idx in 0 .. symbolsCnt
+          symbolInfo = symbolsIndex[idx]
+          if (symbolInfo.kind is SYMBOL_KIND_CONST) and (symbolInfo.readHits > 0)
+            value = symbolInfo.value
+            if (typeof(value) is 'array') or (typeof(value) is 'map')
+              print prefix, ' const', symbolInfo.name, '=', value
+            #else
+            #  print prefix, ' ', symbolInfo.name, '=', value
+            endif
           endif
-        endif
-      endfor
-      
-      # Emit block body.
-      this._printNode_codeBlock(prefix, node)
+        endfor
+      endif
 
-    elif opcode is AST_OPCODE_FUNCTION
+      # Emit block body.
       this._printNode_codeBlock(prefix, node)
 
     elif opcode is AST_OPCODE_CLASS
       __mold_printToStdOutput('class ')
-      __mold_printToStdOutput(value.name)
+      __mold_printToStdOutput(node.name)
       print ''
       this._printNode_codeBlock(prefix, node)
       __mold_printToStdOutput('endclass')
-    
-    elif opcode is AST_OPCODE_CLASS_METHOD
-      __mold_printToStdOutput('method ')
-      __mold_printToStdOutput(value.name)
+
+    elif (opcode is AST_OPCODE_CLASS_METHOD) or (opcode is AST_OPCODE_FUNCTION)
+      if opcode is AST_OPCODE_CLASS_METHOD
+        __mold_printToStdOutput(prefix + 'method ')
+      else
+        __mold_printToStdOutput(prefix + 'function ')
+      endif
+
+      __mold_printToStdOutput(node.name)
       __mold_printToStdOutput('(')
-      
+
       sep = ''
-      
-      for idx in 0 .. value.paramsCnt
+
+      for idx in 0 .. node.paramsCnt
         __mold_printToStdOutput(sep)
-        __mold_printToStdOutput(value.params[idx])
+        __mold_printToStdOutput(node.params[idx])
         sep = ', '
       endfor
-      
+
       __mold_printToStdOutput(')')
- 
-      if typeof(node.rvName) isnt 'undefined'
-        print ' ->', node.rvName
+
+      if typeof(node.rv) isnt 'undefined'
+        print ' ->', node.rv
       else
         print ''
       endif
 
       this._printNode_codeBlock(prefix, node)
-      
-      print 'endmethod'
-      print ''      
-    
+
+      if opcode is AST_OPCODE_CLASS_METHOD
+        print prefix + 'endmethod'
+      else
+        print prefix + 'endfunction'
+      endif
+
     elif opcode is AST_OPCODE_INVOKE_METHOD
-      this._printNode('', children[0])
+      # TODO: Is it left or right node?
+      this._printNode(prefix, children[0])
       __mold_printToStdOutput('.')
       __mold_printToStdOutput(value)
       this._printNode_paramsList(node, 1, true)
@@ -257,28 +283,36 @@ class ASTPrinterText
       __mold_printToStdOutput(prefix + 'if ')
       this._printNode('', children[0])
       print ''
-      this._printNode(prefix, children[1])
-      
-      if typeof(children[2]) isnt 'undefined'
+
+      if children[1].opcode is AST_OPCODE_IF
+        this._printNode(prefix + '  ', children[1])
+      else
+        this._printNode(prefix, children[1])
+      endif
+
+      if childrenCnt is 3
         __mold_printToStdOutput(prefix)
         print 'else'
-        this._printNode(prefix, children[2])
+        if children[2].opcode is AST_OPCODE_IF
+          this._printNode(prefix + '  ', children[2])
+        else
+          this._printNode(prefix, children[2])
+        endif
       endif
-      
-      __mold_printToStdOutput(prefix)
-      __mold_printToStdOutput('endif')
+
+      print prefix + 'endif'
 
     elif opcode is AST_OPCODE_CALL
       __mold_printToStdOutput(prefix)
       __mold_printToStdOutput(value)
-      
+
       if value is 'print'
         __mold_printToStdOutput(' ')
         this._printNode_paramsList(node, 0, false)
       else
         this._printNode_paramsList(node, 0, true)
       endif
-    
+
     elif opcode is AST_OPCODE_WHILE
       __mold_printToStdOutput(prefix)
       __mold_printToStdOutput('while ')
@@ -288,15 +322,15 @@ class ASTPrinterText
       this._printNode_codeBlock(prefix, children[1])
       __mold_printToStdOutput(prefix)
       __mold_printToStdOutput('endwhile')
-    
+
     elif opcode is AST_OPCODE_FOR_VALUES_RANGE
       __mold_printToStdOutput(prefix)
       __mold_printToStdOutput('for ')
       this._printNode('', children[0])
-      
+
       __mold_printToStdOutput(' in ')
       this._printNode('', children[1])
-      
+
       __mold_printToStdOutput(' .. ')
       this._printNode('', children[2])
 
@@ -305,11 +339,11 @@ class ASTPrinterText
         this._printNode('', children[3])
       endif
       print ''
-      
+
       this._printNode_codeBlock(prefix, children[4])
       __mold_printToStdOutput(prefix)
       __mold_printToStdOutput('endfor')
-    
+
     elif opcode is AST_OPCODE_VARIABLE
       __mold_printToStdOutput(value)
 
@@ -373,9 +407,9 @@ class ASTPrinterText
 
     elif opcode is AST_OPCODE_BOOL_OR
       this._printNode_twoArgsOp(node, 'or')
-    
+
     elif opcode is AST_OPCODE_NOP
-    
+
     else
       die('error: unhandled opcode: ' + str(opcode))
     endif

@@ -18,10 +18,13 @@ class ASTConstantFolder
   method constructor(app)
     this.app = app
   endmethod
-  
+
   method _debug(msg)
-    print '[ ASTConstantFolder ]', msg
-  endmethod  
+    global DEBUG_AST_OPTIMIZER
+    if DEBUG_AST_OPTIMIZER is true
+      print '[ ASTConstantFolder ]', msg
+    endif
+  endmethod
 
   method _setToImm(dst, value)
     global AST_DATA_BOOL, AST_DATA_INTEGER, AST_DATA_DOUBLE, AST_DATA_STRING
@@ -55,22 +58,22 @@ class ASTConstantFolder
     else
       die('error: unhandled result in constant folding: ' + type)
     endif
-    
+
     dst.childrenCnt = 0
     dst.children    = []
     dst.opcode      = newOpcode
     dst.value       = value
   endmethod
-  
+
   method _processNodeArray(node)
     newValue    = []
     isImm       = true
     idx         = 0
     children    = node.children
     childrenCnt = node.childrenCnt
-    
+
     while (isImm is true) and (idx < childrenCnt)
-      this._processNodeArray(children[idx])
+      this.processNode(children[idx])
       newValue[idx] = children[idx].value
       isImm = AST_IsImm(children[idx])
       idx   = idx + 1
@@ -80,7 +83,35 @@ class ASTConstantFolder
       this._setToImm(node, newValue)
     endif
   endmethod
-  
+
+  method _processNodeMap(node)
+    newValue    = {}
+    isImm       = true
+    idx         = 0
+    children    = node.children
+    childrenCnt = node.childrenCnt
+
+    while (isImm is true) and (idx < childrenCnt)
+      nodeKey   = children[idx]
+      nodeValue = children[idx + 1]
+
+      this.processNode(nodeKey)
+      this.processNode(nodeValue)
+
+      if AST_IsImm(nodeKey) and AST_IsImm(nodeValue)
+        newValue[nodeKey.value] = nodeValue.value
+      else
+        isImm = false
+      endif
+      idx = idx + 2
+    endwhile
+
+    if isImm is true
+      this._setToImm(node, newValue)
+    endif
+
+  endmethod
+
   method processNode(node) -> isNodeChanged
     global AST_OPCODE_PROGRAM
     global AST_OPCODE_BLOCK
@@ -100,23 +131,28 @@ class ASTConstantFolder
     global AST_OPCODE_REFERENCE
     global SYMBOL_KIND_CONST
 
-    isNodeChanged = false    
-    
+    isNodeChanged = false
+
     # TODO: Use null if ready?
     opcode      = node.opcode
     value       = node.value
-    #newValue    = node.value    
+    #newValue    = node.value
     childrenCnt = node.childrenCnt
     children    = node.children
     x           = children[0]
     y           = children[1]
     areArgsImm  = true
-    
+
     if opcode is AST_DATA_ARRAY
       if typeof(value) isnt 'array'
         this._processNodeArray(node)
       endif
-   
+
+    elif opcode is AST_DATA_MAP
+      if typeof(value) isnt 'map'
+        this._processNodeMap(node)
+      endif
+
     else
       # Process all child nodes first.
       startIdx = 0
@@ -211,6 +247,9 @@ class ASTConstantFolder
 
           elif value is 'len'
             newValue = len(x.value)
+
+          elif value is 'str'
+            newValue = str(x.value)
 
           else
             # Unhandled call - do nothing.
@@ -307,5 +346,5 @@ class ASTConstantFolder
       isAnyChangedDone = true
     endwhile
   endmethod
-  
+
 endclass

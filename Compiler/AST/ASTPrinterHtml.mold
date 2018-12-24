@@ -23,14 +23,14 @@ class ASTPrinterHtml
     global AST_OPCODE_PROGRAM
     global SYMBOL_KIND_CONST
     global SYMBOL_KIND_AS_TEXT
-    
+
     symbols      = symbolTable.exportSymbols()
     symbolsIndex = symbols._index
     symbolsCnt   = len(symbolsIndex)
 
     print '<table border="1">'
     print '<tr><th>var</th><th>write</th><th>read</th><th>init value</th><th>kind</th><th>loop level</th></tr>'
-       
+
     for idx in 0 .. symbolsCnt
       symbolInfo = symbolsIndex[idx]
       value      = '-'
@@ -40,8 +40,8 @@ class ASTPrinterHtml
         if typeof(value) is 'string'
           value = '"' + value + '"'
         endif
-      endif      
-      
+      endif
+
       print '<tr>'
       print '<td>', symbolInfo.name, '</td>'
       print '<td>', symbolInfo.writeHits, '</td>'
@@ -51,7 +51,7 @@ class ASTPrinterHtml
       print '<td>', symbolInfo.loopLevel, '</td>'
       print '</tr>'
     endfor
-    print '</table>'    
+    print '</table>'
   endmethod
 
   method _printNode(node)
@@ -60,7 +60,10 @@ class ASTPrinterHtml
     global AST_OPCODE_CALL
     global AST_OPCODE_VARIABLE
     global AST_OPCODE_INVOKE_METHOD
-    
+    global AST_OPCODE_FUNCTION
+    global AST_OPCODE_CLASS
+    global AST_OPCODE_CLASS_METHOD
+
     opcode      = node.opcode
     childrenCnt = node.childrenCnt
     children    = node.children
@@ -72,18 +75,29 @@ class ASTPrinterHtml
       print '<tr><td><small><i>', node.hash, '</i></small></td></tr>'
     endif
 
+    if (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
+      print '<tr><td>', node.name, '</td></tr>'
+    endif
+
     if (opcode is AST_OPCODE_BLOCK) or (opcode is AST_OPCODE_PROGRAM)
       if typeof(node.symbolTable) isnt 'undefined'
         print '<tr><td>'
         this._printSymbolTable(node.symbolTable)
         print '</td></tr>'
       endif
-      
+
       for idx in 0 .. childrenCnt
         print '<tr><td>'
         this._printNode(children[idx])
         print '</td></tr>'
-      endfor    
+      endfor
+
+    elif opcode is AST_OPCODE_CLASS
+      for idx in 0 .. childrenCnt
+        print '<tr><td>'
+        this._printNode(children[idx])
+        print '</td></tr>'
+      endfor
 
     else
       if (opcode < AST_OPCODE_PROGRAM) or (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_INVOKE_METHOD) or (opcode is AST_OPCODE_VARIABLE)
@@ -93,20 +107,20 @@ class ASTPrinterHtml
         endif
         print '<tr><td>', value, '</td></tr>'
       endif
-      
+
       print '<tr>'
       for idx in 0 .. childrenCnt
         print '<td>'
         this._printNode(children[idx])
         print '</td>'
       endfor
-      print '</tr>'    
+      print '</tr>'
     endif
 
     if opcode is AST_OPCODE_VARIABLE
-                                           
+
       print '<tr><td><hr>'
-      
+
       if typeof(node.storedValue) is 'array'
 
         for idx in 0 .. len(node.storedValue)
@@ -114,15 +128,15 @@ class ASTPrinterHtml
         endfor
 
       elif typeof(node.storedValue) is 'undefined'
-        print 'undefined'
-        
+        print '?'
+
       else
         print '@' + str(node.storedValue.id)
       endif
-      
+
       print '</td></tr>'
-    endif                      
-    
+    endif
+
     print '</table>'
   endmethod
 

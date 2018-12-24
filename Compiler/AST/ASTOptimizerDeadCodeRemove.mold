@@ -19,10 +19,13 @@ class ASTOptimizerDeadCodeRemove
   method constructor(app)
     this.app = app
   endmethod
-  
+
   method _debug(msg)
-    print '[ ASTOptimizerDeadCodeRemove ]', msg
-  endmethod  
+    global DEBUG_AST_OPTIMIZER
+    if DEBUG_AST_OPTIMIZER is true
+      print '[ ASTOptimizerDeadCodeRemove ]', msg
+    endif
+  endmethod
 
   method _removeNode(node)
     global AST_OPCODE_NOP
@@ -31,7 +34,14 @@ class ASTOptimizerDeadCodeRemove
     node.children    = []
     node.childrenCnt = 0
   endmethod
-  
+
+  method _moveNode(dst, src)
+    this._debug('Replacing node #' + str(dst.id) + ' by #' + str(src.id))
+    dst.opcode      = src.opcode
+    dst.children    = src.children
+    dst.childrenCnt = src.childrenCnt
+  endmethod
+
   method _processNode(symbolTable, node) -> rv
     global AST_OPCODE_PROGRAM
     global AST_OPCODE_BLOCK
@@ -51,38 +61,146 @@ class ASTOptimizerDeadCodeRemove
     global AST_DATA_ARRAY, AST_DATA_MAP, AST_DATA_UNDEFINED
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
     global AST_OPCODE_REFERENCE
+    global AST_OPCODE_FUNCTION
     global SYMBOL_KIND_CONST
-    
+
+    # TODO: Use should/assert/etc when ready.
+    if typeof(symbolTable) is 'undefined'
+      die('error: unset symbol table at ASTOptimizerDeadCodeRemove::_processNode()')
+    endif
+
+    if typeof(node) is 'undefined'
+      die('error: unset node table at ASTOptimizerDeadCodeRemove::_processNode()')
+    endif
+
     opcode      = node.opcode
     value       = node.value
     childrenCnt = node.childrenCnt
     children    = node.children
     x           = children[0]
     rv          = node
+    removeNode  = false
 
-    if opcode is AST_OPCODE_BLOCK
+    if (opcode is AST_OPCODE_FOR_VALUES_RANGE) and AST_IsEmpty(children[4])
+      # empty for
+      removeNode = true
+
+    elif opcode is AST_OPCODE_WHILE
+      if AST_IsEmpty(children[1])
+        # empty while
+        removeNode = true
+
+      elif AST_IsImmWithValue(children[0], false)
+        # while false - never executed
+        removeNode = true
+      endif
+
+    elif opcode is AST_OPCODE_IF
+      nodeCond = children[0]
+      nodeBody = children[1]
+      nodeElse = children[2]
+
+      #
+      # Remove empty branches.
+      #
+
+      if childrenCnt is 3
+        if AST_IsEmpty(nodeElse)
+          # if cond {...} else {} - empty else branch.
+          this._debug('Remove empty else node #' + str(nodeElse.id))
+          childrenCnt      = 2
+          node.childrenCnt = 2
+
+          if AST_IsEmpty(nodeBody)
+            # if cond {} else {} - both branches empty.
+            this._debug('Remove empty if body node #' + str(nodeBody.id))
+            removeNode = true
+          endif
+
+        elif AST_IsEmpty(nodeBody)
+          # if cond {} else {...} - empty body, but else exists.
+          # Invert condition.
+          this._debug('Invert condition at if node #' + str(node.id))
+
+          AST_InvertBoolean(nodeCond)
+          node.childrenCnt = 2
+          node.children[1] = nodeElse
+          nodeBody    = nodeElse
+          childrenCnt = 2
+        endif
+
+      elif AST_IsEmpty(nodeBody)
+        # if cond {}
+        removeNode = true
+      endif
+
+      #
+      # Check for imm condition.
+      #
+
+      if removeNode is true
+        # Nothing to do - node is already marked to remove.
+
+      elif AST_IsImmWithValue(nodeCond, true)
+        # if true {...}            - always true
+        # if true {...} else {...} - always true
+        rv = nodeBody
+
+      elif AST_IsImmWithValue(nodeCond, false)
+        if childrenCnt is 3
+          # if false {...} else {...} - always else branch.
+          rv = nodeElse
+        else
+          # if false {...} - always false, nothing to do.
+          removeNode = true
+        endif
+
+      elif (children is 3) and AST_IsEmpty(nodeBody)
+        # if cond {} else {...} - empty body, invert condition.
+        removeNode = true
+      endif
+
+    elif opcode is AST_OPCODE_BLOCK
       symbolTable = node.symbolTable
-      
-    elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
-      if (x.opcode is AST_OPCODE_VARIABLE) and (typeof(x.storedValue) isnt 'undefined') and (typeof(x.storedValue) isnt 'array') and AST_IsImm(x.storedValue)
-        this._removeNode(node)
-        symbolTable.decreaseWriteHits(x.value)
-      endif
-    endif    
 
-    for idx in 0 .. childrenCnt
-      newNode = this._processNode(symbolTable, children[idx])
-      if newNode isnt children[idx]
-        children[idx] = newNode
+    elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
+      if x.opcode is AST_OPCODE_VARIABLE
+        # x = ...
+        symbolInfo = symbolTable.lookup(x.value)
+        if symbolInfo.readHits is 0
+          # Assign to unused variable.
+          removeNode = true
+          #symbolTable.decreaseWriteHits(x.value)
+        endif
       endif
-    endfor
-    
-    if opcode is AST_OPCODE_BLOCK
-      symbolTable.vacuum()
+
+    elif opcode is AST_OPCODE_FUNCTION
+      symbolInfo = symbolTable.lookup(node.name)
+      if symbolInfo.readHits is 0
+        # Unused function.
+        removeNode = true
+      endif
+    endif
+
+    if removeNode is true
+      this._removeNode(node)
+
+    else
+      for idx in 0 .. node.childrenCnt
+        newNode = this._processNode(symbolTable, children[idx])
+        if newNode isnt children[idx]
+          this._debug('Replacing node #' + str(children[idx].id) + ' by node #' + str(newNode.id))
+          children[idx] = newNode
+        endif
+      endfor
+
+      #if node.opcode is AST_OPCODE_BLOCK
+      #  symbolTable.vacuum()
+      #endif
     endif
   endmethod
-  
+
   method processNode(node)
     this._processNode(node.symbolTable, node)
-  endmethod                         
+  endmethod
 endclass

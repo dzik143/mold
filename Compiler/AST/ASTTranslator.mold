@@ -13,7 +13,7 @@
 ################################################################################
 
 import 'AST/AST.mold'
-import 'Utils/SymbolTable.mold'
+import 'Utils/SymbolTable.mold.old'
 
 class ASTTranslator
 

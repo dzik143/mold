@@ -51,7 +51,7 @@ class VMachineStack
     global MIR_OPCODE_LOAD_MOLD_SOURCE, MIR_OPCODE_MOVE_BACK, MIR_OPCODE_PRINT_ERROR
 
     global argc, argv
-    
+
 
     # TODO: Optimize it.
     dataStack = [[]]

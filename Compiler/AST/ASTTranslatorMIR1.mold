@@ -307,14 +307,14 @@ class ASTTranslatorMIR1 extends ASTTranslator
     global SYMBOL_KIND_VAR_RETVAL
     global SYMBOL_KIND_VAR_LOCAL
     global SYMBOL_KIND_VAR_PARAM
-    
+
     symInfo = this.symbolTable.lookup(name)
     if symInfo.kind is SYMBOL_KIND_VAR_RETVAL
       name = '__rv'
     #elif (symInfo.kind is SYMBOL_KIND_VAR_LOCAL) or (symInfo.kind is SYMBOL_KIND_VAR_PARAM)
     #  name = '.' + name
     endif
-    
+
     this.push(name)
     rv = name
   endmethod

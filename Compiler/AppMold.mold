@@ -13,49 +13,57 @@
 ################################################################################
 
 import 'Utils/SymbolTable.mold'
-import 'AST/ASTAnalyzer.mold'
+import 'AST/ASTSymbolsCollector.mold'
 import 'AST/ASTOptimizer.mold'
 import 'AST/ASTEvaluator.mold'
 import 'AST/ASTConstantFolder.mold'
 import 'AST/ASTOptimizerCSE.mold'
 import 'AST/ASTOptimizerDeadCodeRemove.mold'
-                          
+
 class AppMold
+  method _debug(msg)
+    if false
+      print '[ AppMold ]', msg
+    endif
+  endmethod
+
   method constructor()
+    this._debug('Created new object')
+
     this.astConstantFolder          = new ASTConstantFolder(this)
     this.symbolTable                = new SymbolTable(this)
-    this.astAnalyzer                = new ASTAnalyzer(this)
+    this.astSymbolsCollector        = new ASTSymbolsCollector(this)
     this.astOptimizer               = new ASTOptimizer(this)
     this.astEvaluator               = new ASTEvaluator(this)
     this.astOptimizerCSE            = new ASTOptimizerCSE(this)
     this.astOptimizerDeadCodeRemove = new ASTOptimizerDeadCodeRemove(this)
   endmethod
-  
+
   method getSymbolTable() -> rv
     rv = this.symbolTable
   endmethod
 
-  method getAstAnalyzer() -> rv
-    rv = this.astAnalyzer
+  method getAstSymbolsCollector() -> rv
+    rv = this.astSymbolsCollector
   endmethod
 
   method getAstOptimizer() -> rv
     rv = this.astOptimizer
-  endmethod  
+  endmethod
 
   method getAstConstantFolder() -> rv
     rv = this.astConstantFolder
-  endmethod  
+  endmethod
 
   method getAstEvaluator() -> rv
     rv = this.astEvaluator
-  endmethod  
+  endmethod
 
   method getAstOptimizerCSE() -> rv
     rv = this.astOptimizerCSE
-  endmethod  
+  endmethod
 
   method getAstOptimizerDeadCodeRemove() -> rv
     rv = this.astOptimizerDeadCodeRemove
-  endmethod  
+  endmethod
 endclass

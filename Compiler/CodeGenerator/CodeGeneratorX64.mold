@@ -12,15 +12,15 @@
 #                                                                              #
 ################################################################################
 
-import 'MIR.mold'
-import 'Stack.mold'
+import 'MIR/MIR.mold'
+import 'Utils/Stack.mold'
 
 class CodeGeneratorX64
 
   method constructor()
     this.symbols = {}
   endmethod
-  
+
   method lea(dst, src)
     print '  lea ', dst, ', [', src, ']'
   endmethod
@@ -81,9 +81,9 @@ class CodeGeneratorX64
     #TODO
     global SYMBOL_KIND_VAR_LOCAL
     global SYMBOL_KIND_VAR_GLOBAL
-    
+
     xInfo = this.symbols[x]
-    
+
     if (typeof(xInfo) is 'undefined') or (xInfo.kind is SYMBOL_KIND_VAR_LOCAL) or (xInfo.kind is SYMBOL_KIND_VAR_GLOBAL)
       print '  lea  rcx, [', x, ']'
       print '  call __MOLD_VariantDestroy'
@@ -251,7 +251,7 @@ class CodeGeneratorX64
 
     # TODO: Remove it.
     arrayOfProcedures = []
-    
+
     #
     # Translate code section.
     #
@@ -844,7 +844,7 @@ class CodeGeneratorX64
             newParams[idx + 1] = params[idx]
           endfor
           paramsCnt = paramsCnt + 1
-          
+
           this.pushParametersBeforeCall(newParams)
 
           this.call('__MOLD_PrintArrayOfVariantsLn')
@@ -902,18 +902,41 @@ class CodeGeneratorX64
         name      = item[2]
         params    = item[3]
         paramsCnt = len(params)
+        /*
+        if name is 'bitwiseAnd'
+          # TODO: Clean up this hack.
+          this.variantDestroy(rv)
+          print '  mov rax, [', params[0], '+ Variant_t.value]'
+          print '  and rax, [', params[1], '+ Variant_t.value]'
+          print '  mov [', rv, '+ Variant_t.type], VARIANT_INTEGER'
+          print '  mov [', rv, '+ Variant_t.value], rax'
 
-        this.variantDestroy(rv)
-        this.push('rdi')
-        this.pushParametersBeforeCall(params)
-        this.lea('rdi', rv)
-        this.mov('[rdi + Variant_t.type]', 'VARIANT_UNDEFINED')
-        this.call(name)
-        this.pop('rdi')
+        elif name is 'ord'
+          # TODO: Clean up this hack.
+          this.variantDestroy(rv)
+          print '  mov eax, 0'
+          print '  mov al, byte ptr [', params[0], '+ Variant_t.value]'
+          print '  cmp dword ptr [', params[0], '+ Variant_t.type], VARIANT_STRING'
+          print '  cmovz rcx, byte ptr [', params[0], '+ Buffer_t.bytesPtr]'
+          print '  cmovz al, [rcx]'
+          print '  mov [', rv, '+ Variant_t.type], VARIANT_INTEGER'
+          print '  mov [', rv, '+ Variant_t.value], rax'
 
-        if paramsCnt > 4
-          print '  add rsp,', paramsCnt * 8 - 32
-        endif
+        else
+        */
+          # Generic call.
+          this.variantDestroy(rv)
+          this.push('rdi')
+          this.pushParametersBeforeCall(params)
+          this.lea('rdi', rv)
+          this.mov('[rdi + Variant_t.type]', 'VARIANT_UNDEFINED')
+          this.call(name)
+          this.pop('rdi')
+
+          if paramsCnt > 4
+            print '  add rsp,', paramsCnt * 8 - 32
+          endif
+        #endif
 
       elif opcode is 'vcall'
         rv        = item[1]
@@ -1083,7 +1106,7 @@ class CodeGeneratorX64
           endfor
         endif
 
-        print ''           
+        print ''
         print '  add  rsp,', currentFrameSize
         print '  pop  rbp'
         print '  ret'
@@ -1107,7 +1130,7 @@ class CodeGeneratorX64
         currentProcRv    = proto['rv']
         currentSymbols   = proto['symbols']
         print currentProcName + ':'
-        
+
         arrayOfProcedures[len(arrayOfProcedures)] = currentProcName
 
       elif opcode is 'endp'
@@ -1136,7 +1159,7 @@ class CodeGeneratorX64
 
         # Calculate frame size.
         currentFrameSize = 0
-        
+
         for symbolIdx in 0 .. len(symbols._index)
           symbol = symbols._index[symbolIdx]
 
@@ -1157,7 +1180,7 @@ class CodeGeneratorX64
 
           endif
         endfor
-        
+
         # Add 32-byte shadow space.
         currentFrameSize = currentFrameSize + 32
 
@@ -1166,9 +1189,9 @@ class CodeGeneratorX64
         print '  mov  rbp, rsp'
         print '  sub  rsp,', currentFrameSize
         print ''
-        
+
         paramIdx = 0
-        
+
         for symbolIdx in 0 .. len(symbols._index)
           symbol        = symbols._index[symbolIdx]
           symbolUsedCnt = symbol.readHits + symbol.writeHits
@@ -1192,7 +1215,7 @@ class CodeGeneratorX64
             else
               print '  ; skipped unused param [', symbol.name, ']'
             endif
-            
+
             paramIdx = paramIdx  + 1
           endif
         endfor
@@ -1206,12 +1229,12 @@ class CodeGeneratorX64
             endif
           endfor
         endif
-        
+
         if typeof(currentProcRv) isnt 'undefined'
           print ''
           print '  mov [rdi + Variant_t.type], -1'
         endif
-        
+
         print ''
         print '  ; code'
         print '  ; ----'
@@ -1371,7 +1394,7 @@ class CodeGeneratorX64
       procName = arrayOfProcedures[procIdx]
       print 'dq ', procName, ',', 'name_' + procName
     endfor
-    
+
     #for procIdx in 0 .. proceduresCnt
     #  # Fetch procedure meta.
     #  procName  = procedures[procIdx]['name']
@@ -1385,12 +1408,12 @@ class CodeGeneratorX64
 
     print 'SymbolTableNames:'
     print "include 'SymbolTableCommonNames.asm'"
-    
+
     for procIdx in 0 .. len(arrayOfProcedures)
       procName = arrayOfProcedures[procIdx]
       print 'name_' + procName, 'db', "'" + procName + "', 0"
     endfor
-    
+
     #for procIdx in 0 .. proceduresCnt
     #  # Fetch procedure meta.
     #  procName  = procedures[procIdx]['name']

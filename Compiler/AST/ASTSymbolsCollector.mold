@@ -15,14 +15,14 @@
 import 'AST/AST.mold'
 import 'AST/ASTUtils.mold'
 
-class ASTAnalyzer
+class ASTSymbolsCollector
 
   method constructor(app)
     this.app               = app
     this.astEvaluator      = app.getAstEvaluator()
     this.astConstantFolder = app.getAstConstantFolder()
   endmethod
-  
+
   # ----------------------------------------------------------------------------
   #                          Internal API (private)
   # ----------------------------------------------------------------------------
@@ -34,7 +34,7 @@ class ASTAnalyzer
   method _collectSymbolsFromRightNode(symbolTable, node)
     this._collectSymbols(symbolTable, node, false)
   endmethod
-  
+
   method _collectSymbols(symbolTable, node, isLeftNode)
     global AST_OPCODE_PROGRAM
     global AST_OPCODE_BLOCK
@@ -46,33 +46,77 @@ class ASTAnalyzer
     global AST_OPCODE_FOR_VALUES_RANGE
     global AST_OPCODE_INVOKE_METHOD
     global AST_OPCODE_REFERENCE
+    global AST_OPCODE_FUNCTION
+    global AST_OPCODE_CLASS_METHOD
 
     #this.astConstantFolder.processNodeUntilNotChanged(node)
-    
+
     opcode      = node.opcode
     children    = node.children
     childrenCnt = node.childrenCnt
-    
+
     if opcode is AST_OPCODE_PROGRAM
       symbolTable      = this.app.getSymbolTable()
       node.symbolTable = symbolTable
 
       for idx in 0 .. childrenCnt
         this._collectSymbolsFromLeftNode(node.symbolTable, children[idx])
-      endfor      
-    
+      endfor
+
+    elif (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
+      nodeBody  = children[0]
+      funcProto = node
+      value     = node.value
+
+      funcProto['name']      = value['name']
+      funcProto['params']    = value['parameters']
+      funcProto['paramsCnt'] = len(value['parameters'])
+      funcProto['rv']        = value['rv']
+
+      funcName = value['name']
+
+      symbolTable.insertFunction(funcName, funcProto)
+
+      if typeof(nodeBody.symbolTable) is 'undefined'
+        # Init new symbol table if not existing yet.
+        nodeBody.symbolTable = symbolTable.enterScope()
+
+        # TODO: Why we need to add this param by hand?
+        if opcode is AST_OPCODE_CLASS_METHOD
+          nodeBody.symbolTable.insertParam('this')
+        endif
+
+        for idx in 0 .. funcProto.paramsCnt
+          paramName = funcProto.params[idx]
+          #paramNode = AST_CreateNodeVariable(paramName)
+          # TODO: Clean up this mess.
+          #funcProto.children[funcProto.childrenCnt] = paramNode
+          #funcProto.childrenCnt = funcProto.childrenCnt + 1
+
+          nodeBody.symbolTable.insertParam(paramName)
+          #nodeBody.symbolTable.assignNode(paramName, paramNode)
+        endfor
+
+        if typeof(funcProto.rv) isnt 'undefined'
+          nodeBody.symbolTable.insertRetVal(funcProto.rv)
+          #nodeBody.symbolTable.assignNode(funcProto.rv, AST_CreateNodeVariable(funcProto.rv))
+        endif
+      endif
+
+      this._collectSymbolsFromLeftNode(nodeBody.symbolTable, nodeBody)
+
     elif opcode is AST_OPCODE_BLOCK
       if typeof(node.symbolTable) is 'undefined'
         # Init new symbol table if not existing yet.
         node.symbolTable = symbolTable.enterScope()
       endif
-      
+
       for idx in 0 .. childrenCnt
         this._collectSymbolsFromLeftNode(node.symbolTable, children[idx])
       endfor
       node.symbolTable.leaveScope()
 
-    
+
     elif opcode is AST_OPCODE_VARIABLE
       if isLeftNode is true
         # x = ...
@@ -89,7 +133,7 @@ class ASTAnalyzer
        # Rule:
        # - x always save L/R context,
        # - i has always R context (lookup for read).
-      
+
        this._collectSymbols(symbolTable, children[0], isLeftNode)
        this._collectSymbolsFromRightNode(symbolTable, children[1])
 
@@ -97,22 +141,22 @@ class ASTAnalyzer
       # lval = rval
       lval = children[0]
       rval = children[1]
-      
+
       if lval.opcode is AST_OPCODE_VARIABLE
         # Simple lval (single variable) - insert into symbol table.
         symbolInfo = symbolTable.lookupForWriteOrInsert(lval.value)
         readHits   = symbolInfo.readHits
-      
+
         # Save value node for constant propagation.
         symbolTable.assignNode(lval.value, lval)
-        
+
         if AST_IsImm(rval)
           symbolTable.assignValue(lval.value, rval.value)
         endif
-        
+
         # Scan rval.
         this._collectSymbolsFromRightNode(symbolTable, rval)
-        
+
         # Restore read stats for lval variable to avoid false x = x + 1 usage.
         # It's not useful read.
         symbolInfo.readHits = readHits
@@ -122,12 +166,12 @@ class ASTAnalyzer
         this._collectSymbolsFromLeftNode(symbolTable, lval)
         this._collectSymbolsFromRightNode(symbolTable, rval)
       endif
-      
+
     elif opcode is AST_OPCODE_IF
       # if cond then x else y
       # cond is rval,
       # x,y are lval.
-      
+
       # Scan condition (rval)
       this._collectSymbolsFromRightNode(symbolTable, children[0])
 
@@ -137,17 +181,17 @@ class ASTAnalyzer
       if childrenCnt is 3
         # Optional else block (lval).
         this._collectSymbolsFromLeftNode(symbolTable, children[2])
-        
+
         # Merge symbols defined in both nodes. We know it's always set.
         # if cond
         #   x = 1
         # else
         #   x = 2
         # endif
-        
+
         symbolTable1 = children[1].symbolTable
         symbolTable2 = children[2].symbolTable
-        
+
         symbols1 = symbolTable1.exportSymbols()
         symbols2 = symbolTable2.exportSymbols()
 
@@ -157,7 +201,7 @@ class ASTAnalyzer
         for idx in 0 .. len(symbolsIndex1)
           symbolInfo1 = symbolsIndex1[idx]
           symbolInfo2 = symbols2[symbolInfo1.name]
-          
+
           if typeof(symbolInfo2) isnt 'undefined'
             # Symbol defined in both nodes - move into parent node.
             # TODO: Use max(x, y) if ready.
@@ -172,19 +216,19 @@ class ASTAnalyzer
             else
               writeHits = symbolInfo2.writeHits
             endif
-                                           
+
             symbolTable.insert(symbolInfo1.name, symbolInfo1)
 
             symbolInfo1.readHits  = readHits
             symbolInfo1.writeHits = writeHits
-            
+
             # And remove from child true/false node.
             symbolTable1.remove(symbolInfo1.name)
             symbolTable2.remove(symbolInfo1.name)
           endif
         endfor
       endif
-      
+
     elif opcode is AST_OPCODE_FOR_VALUES_RANGE
       # for idx in idxStart .. idxEnd by step
       iterNode     = children[0]
@@ -192,77 +236,80 @@ class ASTAnalyzer
       idxEndNode   = children[2]
       idxStepNode  = children[3]
       bodyNode     = children[4]
-      
+
       bodyNode.symbolTable = symbolTable.enterScopeForLoop()
       bodyNode.symbolTable.insertLocal(iterNode.value)
-      
+
       #this._collectSymbolsFromLeftNode(symbolTable, iterNode)
       this._collectSymbolsFromRightNode(symbolTable, idxStartNode)
       this._collectSymbolsFromRightNode(symbolTable, idxEndNode)
       this._collectSymbolsFromRightNode(symbolTable, idxStepNode)
       this._collectSymbolsFromLeftNode(symbolTable, bodyNode)
 
-    elif opcode is AST_OPCODE_WHILE           
+    elif opcode is AST_OPCODE_WHILE
       # while (cond) body
       condNode = children[0]
       bodyNode = children[1]
-      
+
       bodyNode.symbolTable = symbolTable.enterScopeForLoop()
-      
+
       this._collectSymbolsFromRightNode(symbolTable, condNode)
       this._collectSymbolsFromLeftNode(symbolTable, bodyNode)
-    
+
     else
-      if (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_INVOKE_METHOD)
+      if opcode is AST_OPCODE_CALL
+        funcName = node.value
+        if (funcName is 'typeof') or (funcName is 'print') or (funcName is 'super') or (funcName is 'len') or (funcName is 'str') or (funcName is 'strescape') or (funcName is 'exit') or (funcName is 'die') or (funcName is '__mold_createObject') or (funcName is '__mold_getClassName') or (funcName is '__mold_warning') or (funcName is '__mold_printToStdOutput') or (funcName is '__mold_parseFile') or (funcName is 'moldParseFile')
+          # One of built-in function - declaration is not needed.
+          if symbolTable.isset(funcName) is false
+            # TODO: Fill up proto?
+            symbolTable.insertFunction(funcName, {})
+          endif
+        endif
+        # Mark that function was called.
+        symbolTable.lookupForCall(node.value)
+        isLeftNode = false
+
+      elif opcode is AST_OPCODE_INVOKE_METHOD
         isLeftNode = false
       endif
-      
+
       for idx in 0 .. childrenCnt
         this._collectSymbols(symbolTable, children[idx], isLeftNode)
       endfor
-    endif   
+    endif
   endmethod
-  
+
   method _buildSymbolTable(node) -> rv
     # Create new empty symbol table and save it for furher use.
     rv = this.app.getSymbolTable().enterScope()
     node.symbolTable = rv
-    
+
     # Fill up table with symbols used within node.
     children    = node.children
     childrenCnt = node.childrenCnt
-    
+
     for idx in 0 .. childrenCnt
       this._collectSymbolsFromLeftNode(rv, children[idx])
     endfor
-    
+
     # TODO: Review it.
     rv.vacuum()
   endmethod
-  
+
   # ----------------------------------------------------------------------------
   #                                Public API
   # ----------------------------------------------------------------------------
 
-  method getNodeSymbols(node) -> rv
+  method buildSymbolTable(node)
+    global AST_OPCODE_PROGRAM
     global AST_OPCODE_BLOCK
-    
+
     # Only code blocks should store symbol table.
-    if node.opcode isnt AST_OPCODE_BLOCK
-      die('error: only block nodes can own symbol table')
+    if (node.opcode isnt AST_OPCODE_BLOCK) and (node.opcode isnt AST_OPCODE_PROGRAM)
+      die('error: only block or program nodes can own symbol table')
     endif
-    
-    # Is symbol table already built for this node?
-    rv = node.symbolTable
-    
-    if typeof(rv) is 'undefined'
-      # There is no symbol table for this node yet - build it now and save
-      # inside node data for further use.
-      rv = this._buildSymbolTable(node)
-    endif
-  endmethod
-  
-  method processNode(node)
-    this._buildSymbolTable(node)
+
+    this._collectSymbolsFromLeftNode(node.symbolTable, node)
   endmethod
 endclass

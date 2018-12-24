@@ -1,12 +1,28 @@
-object = 0
-import '1.ast'
+DEBUG_AST_OPTIMIZER = true
+
 import 'AppMold.mold'
-import 'AST/ASTAnalyzer.mold'
+import 'AST/ASTSymbolsCollector.mold'
 import 'AST/ASTPrinterText.mold'
 import 'AST/ASTPrinterHtml.mold'
 
+x = []
+undefined = [0]
+object = 0
+import '1.ast'
+#import 'Parser/ParserMold.mold'
+
+#parser = new Parser()
+#ast    = parser.parseFile(argv[1])
+
+# Convert AST to form understood by translator.
+# TODO: Remove this step.
+#ast = ast.convert()
+
+
+print '<pre>'
+
 app                        = new AppMold()
-astAnalyzer                = app.getAstAnalyzer()
+astSymbolsCollector        = app.getAstSymbolsCollector()
 astConstantFolder          = app.getAstConstantFolder()
 astEvaluator               = app.getAstEvaluator()
 astOptimizerCSE            = app.getAstOptimizerCSE()
@@ -14,15 +30,14 @@ astOptimizerDeadCodeRemove = app.getAstOptimizerDeadCodeRemove()
 astPrinterText             = new ASTPrinterText()
 astPrinterHtml             = new ASTPrinterHtml()
 
-print '<pre>'
-
-astConstantFolder.processNode(ast)
-astAnalyzer.processNode(ast)
+astSymbolsCollector.buildSymbolTable(ast)
 astEvaluator.processNode(ast)
 astConstantFolder.processNode(ast)
 
+#astEvaluator.processNode(ast)
+#astConstantFolder.processNode(ast)
 astOptimizerCSE.processNode(ast)
-astOptimizerDeadCodeRemove.processNode(ast)
+#astOptimizerDeadCodeRemove.processNode(ast)
 
 astPrinterText.printNode(ast)
 

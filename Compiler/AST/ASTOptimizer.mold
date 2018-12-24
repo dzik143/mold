@@ -16,19 +16,18 @@ import 'AST/AST.mold'
 
 class ASTOptimizer
   method constructor(app)
-    this.app         = app
-    this.astAnalyzer = app.getAstAnalyzer()
+    this.app = app
   endmethod
 
   method _debug(msg)
     print '[ ASTOptimizer ]', msg
-  endmethod  
-  
+  endmethod
+
   method _setToNop(dst)
     global AST_OPCODE_NOP
-    
+
     this._debug('Set to node #' + str(dst.id) + ' to NOP')
-    
+
     dst.opcode      = AST_OPCODE_NOP
     dst.childrenCnt = 0
     dst.children    = []
@@ -66,13 +65,13 @@ class ASTOptimizer
     else
       die('error: unhandled result in constant folding: ' + type)
     endif
-    
+
     dst.childrenCnt = 0
     dst.children    = []
     dst.opcode      = newOpcode
     dst.value       = value
   endmethod
-  
+
   method _copyNode(dst, src)
     this._debug('Replacing node #' + str(dst.id) + ' with #' + str(src.id))
     dst.opcode      = src.opcode
@@ -80,7 +79,7 @@ class ASTOptimizer
     dst.childrenCnt = src.childrenCnt
     dst.children    = src.children
   endmethod
-                    
+
   method _processNodeUntilNotChanged(ctx, node) -> isAnyChangedDone
     isAnyChangedDone = false
     while this._processNode(ctx, node) is true
@@ -88,7 +87,7 @@ class ASTOptimizer
       isAnyChangedDone = true
     endwhile
   endmethod
-  
+
   method _processNode(ctx, node) -> isNodeChanged
     global AST_OPCODE_PROGRAM
     global AST_OPCODE_BLOCK
@@ -107,7 +106,7 @@ class ASTOptimizer
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
     global AST_OPCODE_REFERENCE
     global SYMBOL_KIND_CONST
-    
+
     isNodeChanged = false
 
     opcode      = node.opcode
@@ -128,12 +127,12 @@ class ASTOptimizer
 
         if symbolInfo.kind is SYMBOL_KIND_CONST
           # Convert var to const.
-          
+
           if node.opcode is AST_OPCODE_DECLARE_OR_ASSIGN
             # Remove unneded assign opcode - it's constant from now.
             this._setToNop(node)
           endif
-          
+
           if (typeof(symbolInfo.value) isnt 'array') and (typeof(symbolInfo.value) isnt 'map')
             # Primitive constant.
 #            isNodeChanged = true
@@ -143,22 +142,22 @@ class ASTOptimizer
             children[idx] = symbolInfo.node
           endif
         endif
-            
+
           # Variable was written only once - use rvalue directly.
           #children[idx] = symbolInfo.value
-          
+
 
         #  if (node.opcode is AST_OPCODE_DECLARE_OR_ASSIGN)
         #    this._setToNop(node)
             #symbolInfo.readHits  = 0
             #symbolInfo.writeHits = 0
-        #  endif          
+        #  endif
         #endif
 
       endif
     endfor
 
-    # Dispatch opcode.    
+    # Dispatch opcode.
     if (opcode is AST_OPCODE_BLOCK) and (x.opcode is AST_OPCODE_BLOCK) and (childrenCnt is 1)
       # Unneded block wrapper.
       isNodeChanged = true
@@ -169,13 +168,13 @@ class ASTOptimizer
       for idx in 0 .. childrenCnt
         this._processNodeUntilNotChanged(ctx, children[idx])
       endfor
-    
+
       if value is 'typeof'
-        if this.astAnalyzer.isImmNode(x)
+        if AST_IsImm(x)
           # typeof(imm) gives string
           this._setToImm(node, typeof(x.value))
           isNodeChanged = true
-        
+
         elif x.opcode is AST_OPCODE_VARIABLE
           xInfo = ctx.lookup(x.value)
           if xInfo.kind is SYMBOL_KIND_CONST
@@ -195,23 +194,23 @@ class ASTOptimizer
             lastWasImm = false
             newParams[len(newParams)] = children[idx]
 
-          else                        
+          else
             # Join string imms.
             if lastWasImm is true
               newParams[len(newParams) - 1].value = newParams[len(newParams) - 1].value + ' ' + str(children[idx].value)
-            
+
             elif children[idx].opcode is AST_DATA_STRING
               newParams[len(newParams)] = children[idx]
-            
+
             else
               this._setToImm(children[idx], str(children[idx].value))
               newParams[len(newParams)] = children[idx]
             endif
-            
+
             lastWasImm = true
           endif
         endfor
-        
+
         node.children    = newParams
         node.childrenCnt = len(newParams)
       endif
@@ -227,7 +226,7 @@ class ASTOptimizer
         # -imm: calculate at compile at time.
         this._setToImm(node, -x.value)
         isNodeChanged = true
-        
+
       else
         # Complex argument - go on deeper.
         isNodeChanged = this._processNodeUntilNotChanged(ctx, x)
@@ -236,16 +235,16 @@ class ASTOptimizer
     elif opcode is AST_OPCODE_REFERENCE
       this._processNodeUntilNotChanged(ctx, x)
       this._processNodeUntilNotChanged(ctx, y)
-      
+
       xInfo = ctx.lookup(x.value)
-      
+
       if xInfo.kind is SYMBOL_KIND_CONST
         # imm[y]
         this._setToImm(node, xInfo.value[y.value])
       endif
-    
-    elif (childrenCnt is 2) and this.astAnalyzer.isImmNode(x) and this.astAnalyzer.isImmNode(y)
-      
+
+    elif (childrenCnt is 2) and AST_IsImm(x) and AST_IsImm(y)
+
       # Constant folding: x op y
       isNodeChanged = true
 
@@ -311,17 +310,17 @@ class ASTOptimizer
         else
           newValue = false
         endif
-        
+
       elif opcode is AST_OPCODE_REFERENCE
         # x[y]
         newValue = x.value[y.value]
-      
+
       else
         die('error: unhandled opcode in x op y optimization: ' + str(opcode))
       endif
 
       this._setToImm(node, newValue)
-      
+
     elif opcode is AST_OPCODE_IF
       condNode        = children[0]
       codeIfTrueNode  = children[1]
@@ -343,9 +342,6 @@ class ASTOptimizer
 
     else
 
-      if opcode is AST_OPCODE_BLOCK
-        ctx = this.astAnalyzer.getNodeSymbols(node)
-      endif
 
       for idx in 0 .. childrenCnt
         if this._processNodeUntilNotChanged(ctx, children[idx]) is true
@@ -354,7 +350,7 @@ class ASTOptimizer
       endfor
     endif
   endmethod
-  
+
   method process(node)
     this._processNode(false, node)
   endmethod

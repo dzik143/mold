@@ -1,0 +1,63 @@
+DEBUG_AST_OPTIMIZER = false
+
+import 'AppMold.mold'
+import 'Parser/ParserMold.mold'
+import 'AST/ASTSymbolsCollector.mold'
+import 'AST/ASTPrinterText.mold'
+import 'AST/ASTPrinterHtml.mold'
+
+function Usage()
+  global argv
+  print 'Usage is:'
+  print ' ', argv[0], '<optimizationId> <file.mold>'
+  print 'List of optimizations:'
+  print '- constantFolding'
+  print '- deadCodeRemove'
+  print '- cse'
+  exit()
+endfunction
+
+if argc < 3
+  Usage()
+endif
+
+# astOptimizer <optimizationId> <file.mold>
+optimizationId = argv[1]
+path           = argv[2]
+
+parser = new Parser()
+ast    = parser.parseFile(path)
+
+# Convert AST to form understood by translator.
+# TODO: Remove this step.
+ast = ast.convert()
+
+app                 = new AppMold()
+astSymbolsCollector = app.getAstSymbolsCollector()
+astPrinterText      = new ASTPrinterText()
+astPrinterHtml      = new ASTPrinterHtml()
+astEvaluator        = app.getAstEvaluator()
+
+poolOfOptimizationProviders = {
+  'constantFolding': app.getAstConstantFolder(),
+  'deadCodeRemove': app.getAstOptimizerDeadCodeRemove(),
+  'cse': app.getAstOptimizerCSE()
+}
+
+# Build symbol table.
+astSymbolsCollector.buildSymbolTable(ast)
+astEvaluator.processNode(ast)
+
+# Get AST optimization provider from pool.
+astOptimizationProvider = poolOfOptimizationProviders[optimizationId]
+
+if typeof(astOptimizationProvider) is 'undefined'
+  print 'error: enknown optimization id'
+  Usage()
+endif
+
+# Process source by selected optimizer.
+astOptimizationProvider.processNode(ast)
+
+# Print processed code.
+astPrinterText.printNode(ast)
