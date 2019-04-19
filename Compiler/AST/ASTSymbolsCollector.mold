@@ -406,27 +406,6 @@ class ASTSymbolsCollector
     endif
   endmethod
 
-/*
-  TODO: Remove it?
-  method _buildSymbolTable(node) -> rv
-    # Create new empty symbol table and save it for furher use.
-    rv = this.app.getSymbolTable().enterScope()
-    node.symbolTable = rv
-
-    # Fill up table with symbols used within node.
-    children    = node.children
-    childrenCnt = node.childrenCnt
-
-    for idx in 0 .. childrenCnt
-      print 'CHILDREN', idx, '/', childrenCnt
-      this._collectSymbolsFromLeftNode(rv, children[idx])
-    endfor
-
-    # TODO: Review it.
-    rv.vacuum()
-  endmethod
-*/
-
   # ----------------------------------------------------------------------------
   #                                Public API
   # ----------------------------------------------------------------------------
