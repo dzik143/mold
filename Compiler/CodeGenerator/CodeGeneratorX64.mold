@@ -1235,9 +1235,15 @@ class CodeGeneratorX64
           print ''
           for symbolIdx in 0 .. len(symbols._index)
             symbol = symbols._index[symbolIdx]
-            if (symbol.kind is SYMBOL_KIND_VAR_GLOBAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')) and (symbol.readHits + symbol.writeHits > 0)
+
+            # TODO: Better way to exclude external vars.
+            if (symbol.name is 'argv') or (symbol.name is 'argc')
+              # Do nothing.
+
+            elif (symbol.kind is SYMBOL_KIND_VAR_GLOBAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')) and (symbol.readHits + symbol.writeHits > 0)
               print '  mov [' + symbol.name + ' + Variant_t.type], VARIANT_UNDEFINED'
             endif
+
           endfor
         endif
 

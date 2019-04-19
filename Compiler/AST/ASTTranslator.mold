@@ -400,6 +400,7 @@ class ASTTranslator
     endfor
   endmethod
 
+/*
   method _declareGlobals(ast)
     global AST_OPCODE_DECLARE
     global AST_OPCODE_DECLARE_OR_ASSIGN
@@ -438,7 +439,9 @@ class ASTTranslator
       endif
     endfor
   endmethod
+*/
 
+/*
   method _declareAllUsedVariables(ast)
     global AST_OPCODE_DECLARE
     global AST_OPCODE_DECLARE_OR_ASSIGN
@@ -478,6 +481,7 @@ class ASTTranslator
       endfor
     endif
   endmethod
+*/
 
   method _declareClassInternal(className, classProto)
     /*
@@ -670,10 +674,18 @@ class ASTTranslator
         rvType = 'array'
         rv     = this._loadArgsVector()
 
+        if this.symbolTable.procLevel > 0
+          this.symbolTable.importGlobal('argv')
+        endif
+
       elif value is 'argc'
         # Built-in access to command line parametrs.
         rvType = 'integer'
         rv     = this._loadArgsCount()
+
+        if this.symbolTable.procLevel > 0
+          this.symbolTable.importGlobal('argc')
+        endif
 
       else
         # Treat as ordinary variable.

@@ -685,8 +685,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
     # Insert argv[] and argc to globals.
     # TODO: Review it.
     this.symbolTable = ast.symbolTable
-    this.symbolTable.importExternalVariable('argv')
-    this.symbolTable.importExternalVariable('argc')
 
     this._emitGlobals()
 
