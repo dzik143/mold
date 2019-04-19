@@ -36,7 +36,13 @@ SYMBOL_KIND_AS_TEXT = [
   'method'
 ]
 
-SymbolTable_TempsCnt = 0
+SymbolTable_NextId = 0
+
+function SymbolTable_GetNextId() -> rv
+  global SymbolTable_NextId
+  rv = SymbolTable_NextId
+  SymbolTable_NextId = rv + 1
+endfunction
 
 class SymbolTable
   method constructor(app)
@@ -45,9 +51,11 @@ class SymbolTable
     this.deepIdx   = 0
     this.deepMax   = 128
     this.loopLevel = 0
+    this.procLevel = 0
 
     # TODO: Use null.
     this.parent = false
+    this.global = this
 
     # TODO: Remove it when map iteration ready.
     this.symbols = {'_index': []}
@@ -103,8 +111,12 @@ class SymbolTable
     this.symbols._index = newIndex
   endmethod
 
-  method importExternal(name)
-    die('SymbolTable::importExternal() not implemented')
+  method importExternalVariable(name)
+    global SYMBOL_KIND_VAR_GLOBAL
+    this.insert(name, {
+      'name': name,
+      'kind': SYMBOL_KIND_VAR_GLOBAL
+    })
   endmethod
 
   method insertGlobal(name, entry)
@@ -112,6 +124,8 @@ class SymbolTable
   endmethod
 
   method _lookupInternal(name) -> rv
+    global SYMBOL_KIND_VAR_LOCAL
+
     rv  = this.symbols[name]
     tab = this
 
@@ -119,10 +133,20 @@ class SymbolTable
       tab = tab.parent
       rv  = tab._lookupInternal(name)
     endwhile
+
+    # Handle unimported global.
+    # TODO: Clean up this mess.
+    if (typeof(rv) isnt 'undefined')
+      if (tab.procLevel is 0) and (this.procLevel > 0) and (rv.kind is SYMBOL_KIND_VAR_LOCAL)
+        x  = []
+        rv = x[0]
+      endif
+    endif
   endmethod
 
   method lookup(name) -> rv
     rv = this._lookupInternal(name)
+
     if typeof(rv) is 'undefined'
       die("error: '" + name + "' was not declared in this scope")
     endif
@@ -163,7 +187,7 @@ class SymbolTable
   endmethod
 
   method lookupGlobal(name) -> rv
-    die('SymbolTable::lookupGlobal() not implemented')
+    rv = this.global.lookup(name)
   endmethod
 
   method decreaseReadHits(name)
@@ -194,11 +218,17 @@ class SymbolTable
     rv = new SymbolTable(this.app)
     rv.parent  = this
     rv.deepIdx = this.deepIdx + 1
+    rv.global  = this.global
   endmethod
 
   method enterScopeForLoop() -> rv
     rv           = this.enterScope()
     rv.loopLevel = this.loopLevel + 1
+  endmethod
+
+  method enterScopeForProcedure() -> rv
+    rv           = this.enterScope()
+    rv.procLevel = this.procLevel + 1
   endmethod
 
   method leaveScope() -> rv
@@ -222,14 +252,17 @@ class SymbolTable
       'kind': SYMBOL_KIND_FUNCTION,
       'proto': proto
     }
+
     this.insertGlobal(name, newEntry)
   endmethod
 
   method lookupFunction(name, paramsCnt) -> rv
     global SYMBOL_KIND_FUNCTION
     rv = this.lookupGlobal(name)
+
     if rv['kind'] isnt SYMBOL_KIND_FUNCTION
       die("error: '" + name + "' is not a function")
+
     elif rv['proto']['paramsCnt'] isnt paramsCnt
       die("error: function '" + name + "' requires exactly " + str(rv['proto']['paramsCnt']) + ' parameters, but ' + str(paramsCnt) + ' were passed')
     endif
@@ -246,7 +279,7 @@ class SymbolTable
       'kind': SYMBOL_KIND_CLASS,
       'proto': proto
     }
-    this.insert(name, newEntry)
+    this.insertGlobal(name, newEntry)
   endmethod
 
   method lookupClass(name) -> rv
@@ -289,7 +322,7 @@ class SymbolTable
   method importGlobal(name)
     global SYMBOL_KIND_VAR_GLOBAL
 
-    if this.deepIdx is 0
+    if this.deepIdx <= 1
       die('error: global directive used in global space')
 
     elif this.isset(name) is true
@@ -305,8 +338,23 @@ class SymbolTable
       endif
 
     else
+      # TODO: Clean up this mess.
+      mainScope = this
+      while mainScope.deepIdx > 1
+        mainScope = mainScope.parent
+      endwhile
+
       # Find symbol in global scope.
-      symbolInfo = this.lookupGlobal(name)
+      symbolInfo = mainScope.lookup(name)
+
+      if symbolInfo.kind isnt SYMBOL_KIND_VAR_GLOBAL
+        # Symbol found in main() function for first time.
+        # Change to global and move to global symbol table.
+        symbolInfo.kind = SYMBOL_KIND_VAR_GLOBAL
+        this.global.insert(name, symbolInfo)
+      endif
+
+      # Import global var into current scope.
       this.insert(name, symbolInfo)
     endif
   endmethod
@@ -339,12 +387,19 @@ class SymbolTable
       'value': value
     }
 
+    # TODO: Review it
     this.insert(name, newEntry)
+    this.global.insert(name, newEntry)
   endmethod
 
   # ----------------------------------------------------------------------------
   #                               Constant helpers
   # ----------------------------------------------------------------------------
+
+  method createConstFromValue(value) -> rv
+    rv = '__const' + str(SymbolTable_GetNextId())
+    this.insertConst(rv, value)
+  endmethod
 
   method assignValue(name, value)
     symbolInfo = this.lookup(name)
@@ -357,6 +412,9 @@ class SymbolTable
   endmethod
 
   method vacuum()
+/*
+    TODO: Review it.
+
     global SYMBOL_KIND_CONST
 
     symbolsIndex = this.symbols._index
@@ -375,6 +433,22 @@ class SymbolTable
       #  this.insert(symbolInfo.name, symbolInfo)
       #endif
     endfor
+*/
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                               Label helpers
+  # ----------------------------------------------------------------------------
+
+  method createLabel() -> rv
+    global SYMBOL_KIND_LABEL
+
+    # TODO: Store labels in symbol table too.
+    rv = 'l' + str(SymbolTable_GetNextId())
+    this.insert(rv, {
+      'name': rv,
+      'kind': SYMBOL_KIND_LABEL
+    })
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -382,12 +456,8 @@ class SymbolTable
   # ----------------------------------------------------------------------------
 
   method createTempVar() -> rv
-    die('SymbolTable::createTempVar() is not implemented')
-    # TODO:
-    #global SymbolTable_TempsCnt
-    #rv = 'tmp' + str(SymbolTable_TempsCnt)
-    #SymbolTable_TempsCnt = SymbolTable_TempsCnt + 1
-    #this.insertLocalVolatile(rv)
+    rv = 'tmp' + str(SymbolTable_GetNextId())
+    this.insertLocal(rv)
   endmethod
 
   method createTempVarForWrite() -> rv

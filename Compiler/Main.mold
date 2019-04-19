@@ -12,18 +12,29 @@
 #                                                                              #
 ################################################################################
 
+DEBUG_AST_OPTIMIZER = false
+
 import 'AST/AST.mold'
 import 'Parser/ParserMold.mold'
-import 'AST/ASTTranslator.mold'
-import 'AST/ASTTranslatorMIR0.mold'
-import 'AST/ASTTranslatorMIR1.mold'
 
+import 'AppMold.mold'
+import 'AST/ASTSymbolsCollector.mold'
+import 'AST/ASTPrinterText.mold'
+import 'AST/ASTPrinterHtml.mold'
+import 'AST/ASTTranslatorMIR1.mold'
 import 'MIR/MIRQuadCollector.mold'
-import 'MIR/MIRQuadTypeGuess.mold'
-import 'MIR/MIRQuadTypeConvert.mold'
-import 'MIR/MIRQuadOptimizer.mold'
-           
-import 'CodeGeneratorX64.mold'
+import 'CodeGenerator/CodeGeneratorX64.mold'
+
+#import 'AST/ASTTranslator.mold'
+#import 'AST/ASTTranslatorMIR0.mold'
+#import 'AST/ASTTranslatorMIR1.mold'
+
+#import 'MIR/MIRQuadCollector.mold'
+#import 'MIR/MIRQuadTypeGuess.mold'
+#import 'MIR/MIRQuadTypeConvert.mold'
+#import 'MIR/MIRQuadOptimizer.mold'
+
+#import 'CodeGenerator/CodeGeneratorX64.mold'
 import 'VM/VMachineStack.mold'
 
 # ------------------------------------------------------------------------------
@@ -111,6 +122,7 @@ endif
 # Load input file and build Abstract Syntax Tree (AST)
 #
 
+app    = new AppMold()
 parser = new Parser()
 ast    = parser.parseFile(path)
 
@@ -123,45 +135,55 @@ if mode is 'ast'
   ast.print()
 
 elif mode is 'astjson'
-  # Print AST, but as importable JSON source.
+  # Print AST, but in importable JSON format.
   ast = ast.convert()
   print ast
 
 else
-  # Convert AST to form understood by translator.
+  # Convert AST to understood by translator format.
   # TODO: Remove this step.
   ast = ast.convert()
 
+  # Resolve imports if any.
+  astModuleResolver = app.getAstModuleResolver()
+  astModuleResolver.resolveImports(ast)
+
+  # Build symbol table.
+  astSymbolsCollector = app.getAstSymbolsCollector()
+  astSymbolsCollector.buildSymbolTable(ast)
+
   if (mode is 'mir0') or (mode is 'interpreter')
+    die('error: mir0 based modes are temporary disabled')
     # Translate program to MIR0 (stack based).
-    astTranslator = new ASTTranslatorMIR0()
-    astTranslator.run(ast)
-    code = astTranslator.code
+    #astTranslator = new ASTTranslatorMIR0()
+    #astTranslator.run(ast)
+    #code = astTranslator.code
 
     # Load MIR0 code into virtual machine.
-    vm = new VMachineStack()
-    vm.loadCode(code)
-
-    if mode is 'mir0'
-      # Dump stack MIR0 only.
-      vm.dumpCode()
-
-    elif mode is 'interpreter'
-      # Run virtual machine (stack based).
-      vm.run()
-    endif
+    #vm = new VMachineStack()
+    #vm.loadCode(code)
+    #
+    #if mode is 'mir0'
+    #  # Dump stack MIR0 only.
+    #  vm.dumpCode()
+    #
+    #elif mode is 'interpreter'
+    #  # Run virtual machine (stack based).
+    #  vm.run()
+    #endif
 
   else
     # Prepare quads process toolchain.
     # [AST] -> [MIR1] -> [Optimizer] -> [Collector]
     # Translate program to MIR1 (register based).
-    astTranslator    = new ASTTranslatorMIR1()
+    astTranslator    = new ASTTranslatorMIR1(app)
     mirQuadCollector = new MIRQuadCollector()
 
     if optimizationLevel is 0
       # No optimization - pass raw MIR1 to code generator.
       astTranslator.connectTo(mirQuadCollector)
 
+    /*
     elif optimizationLevel is 1
       # Optimization level 1:
       # - Remove redundant load/store
@@ -173,7 +195,7 @@ else
       astTranslator.connectTo(mirQuadOptimizer)
 
       mirQuadOptimizer.connectTo(mirQuadTypeGuess).connectTo(mirQuadTypeConvert).connectTo(mirQuadCollector)
-
+    */
     else
       die('error: optimization level #' + str(optimizationLevel) + ' is not implemented yet')
     endif
@@ -181,10 +203,11 @@ else
     # Run build quads process.
     astTranslator.run(ast)
 
-    if optimizationLevel >= 1
-      # TODO: Auto flush on stream end.
-      mirQuadTypeGuess.flush()
-    endif
+    # TODO
+    #if optimizationLevel >= 1
+    #  # TODO: Auto flush on stream end.
+    #  mirQuadTypeGuess.flush()
+    #endif
 
     if mode is 'mir1'
       # Print MIR quads only
@@ -192,8 +215,9 @@ else
 
     elif mode is 'asm'
       # TODO: Better way to pass quads + meta.
-      code = astTranslator.code
-      code.quads = mirQuadCollector.getQuads()
+      code             = astTranslator.code
+      code.quads       = mirQuadCollector.getQuads()
+      code.symbolTable = app.getSymbolTable()
 
       # Generate x64 code.
       codeGenerator = new CodeGeneratorX64()

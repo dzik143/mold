@@ -13,7 +13,6 @@
 ################################################################################
 
 import 'AST/AST.mold'
-import 'Utils/SymbolTable.mold.old'
 
 class ASTTranslator
 
@@ -21,7 +20,9 @@ class ASTTranslator
   #                                Init code
   # ----------------------------------------------------------------------------
 
-  method constructor()
+  method constructor(app)
+    this.app = app
+
     # TODO: Clean up this mess.
     this.nextId          = 1
     this.importedModules = {}
@@ -30,8 +31,6 @@ class ASTTranslator
     this.vtable        = {}
     this.vtableKeys    = []
     this.vtableKeysCnt = 0
-
-    this.symbolTable = new SymbolTable()
 
     # TODO: Use null?
     this.currentClassProto    = false
@@ -223,6 +222,12 @@ class ASTTranslator
   method _emitFunctionBody(funcName, funcProto)
   endmethod
 
+  method _onScopeEnter(blockNode)
+  endmethod
+
+  method _onScopeLeave(blockNode)
+  endmethod
+
   method _declareExternalFunction(funcName, funcProto)
     this.symbolTable.insertFunction(funcName, funcProto)
   endmethod
@@ -230,6 +235,42 @@ class ASTTranslator
   # ----------------------------------------------------------------------------
   #                         Internal helpers (private)
   # ----------------------------------------------------------------------------
+
+  method _enterScope(ast)
+    this.symbolTable = ast.symbolTable
+    this._onScopeEnter(ast)
+  endmethod
+
+  method _leaveScope()
+    this._onScopeLeave()
+    childTable = this.symbolTable
+    this.symbolTable = this.symbolTable.parent
+
+    # TODO: Remove it. We temporary merge child symbols to keep all proc vars
+    # in one flat frame.
+    symbolsCurrent      = this.symbolTable.symbols
+    symbolsCurrentIndex = symbolsCurrent['_index']
+    symbolsCurrentCnt   = len(symbolsCurrentIndex)
+
+    symbolsChild      = childTable.symbols
+    symbolsChildIndex = childTable.symbols['_index']
+    symbolsChildCnt   = len(symbolsChildIndex)
+
+    for idx in 0 .. symbolsChildCnt
+      item = symbolsChildIndex[idx]
+      id   = item.name
+
+      if typeof(symbolsCurrent[id]) is 'undefined'
+        symbolsCurrent[id]                     = item
+        symbolsCurrentIndex[symbolsCurrentCnt] = item
+        symbolsCurrentCnt                      = symbolsCurrentCnt + 1
+
+      else
+        # TODO: Accumulate hits?
+
+      endif
+    endfor
+  endmethod
 
   method _getNextId() -> rv
     rv          = this.nextId
@@ -255,166 +296,51 @@ class ASTTranslator
     this._declareAndAssign(rv, value)
   endmethod
 
-  method _resolveImports(ast)
-    global AST_OPCODE_CALL
+  method _emitFunction(ast)
+    global AST_OPCODE_CLASS_METHOD
 
-    program     = ast['children'][0]
-    children    = program['children']
-    childrenCnt = program['childrenCnt']
+    funcProto = ast
+    funcName  = ast['fullName']
+    children  = ast['children']
 
-    newChildrenCnt = 0
-    newChildren    = []
+    if typeof(children) isnt 'undefined'
+      oldSymbolTable   = this.symbolTable
+      this.symbolTable = ast.children[0].symbolTable
 
-    for idx in 0 .. childrenCnt
-      child = children[idx]
-
-      if (child['opcode'] is AST_OPCODE_CALL) and (child['value'] is 'import')
-
-        # TODO: Verify parameters.
-        moduleName = child['children'][0]['value']
-
-        if typeof(this.importedModules[moduleName]) is 'undefined'
-          # Load only once.
-          this.importedModules[moduleName] = true
-
-          # Parse source into AST tree.
-          parser      = new Parser()
-          importedAst = parser.parseFile(moduleName)
-
-          # Convert AST to form understood by translator.
-          # TODO: Remove this step.
-          importedAst = importedAst.convert()
-
-          # Resolve imports recursively.
-          this._resolveImports(importedAst)
-
-          importedProgram     = importedAst['children'][0]
-          importedChildren    = importedProgram['children']
-          importedChildrenCnt = importedProgram['childrenCnt']
-
-          for jdx in 0 .. importedChildrenCnt
-            newChildren[newChildrenCnt] = importedChildren[jdx]
-            newChildrenCnt = newChildrenCnt + 1
-          endfor
-        endif
-
-      else
-        newChildren[newChildrenCnt] = child
-        newChildrenCnt = newChildrenCnt + 1
-      endif
-    endfor
-
-    program['childrenCnt'] = newChildrenCnt
-    program['children']    = newChildren
-  endmethod
-
-  method _declareGlobals(ast)
-    global AST_OPCODE_DECLARE
-    global AST_OPCODE_DECLARE_OR_ASSIGN
-    global AST_OPCODE_FUNCTION
-    global AST_OPCODE_CLASS
-    global AST_OPCODE_NOP
-    global AST_OPCODE_VARIABLE
-
-    # Emit variable declarations and mark declared functions.
-    program     = ast['children'][0]
-    children    = program['children']
-    childrenCnt = program['childrenCnt']
-
-    for idx in 0 .. childrenCnt
-      child  = children[idx]
-      opcode = child['opcode']
-
-      if (opcode is AST_OPCODE_DECLARE) or (opcode is AST_OPCODE_DECLARE_OR_ASSIGN)
-        # Variable declaration - move to top.
-        lval = child['children'][0]
-
-        if lval['opcode'] is AST_OPCODE_VARIABLE
-          # Direct variable usage, declare it at the top of emited code.
-          this._declareVariableIfNotSet(lval['value'])
-        endif
-
-      elif opcode is AST_OPCODE_FUNCTION
-        # Emit forward function declaration.
-        this._executeNode(child)
-        child['opcode'] = AST_OPCODE_NOP
-
-      elif opcode is AST_OPCODE_CLASS
-        # Create new slot for class vtable.
-        this._executeNode(child)
-        child['opcode'] = AST_OPCODE_NOP
-      endif
-    endfor
-  endmethod
-
-  method _declareAllUsedVariables(ast)
-    global AST_OPCODE_DECLARE
-    global AST_OPCODE_DECLARE_OR_ASSIGN
-    global AST_OPCODE_VARIABLE
-    global AST_OPCODE_CALL
-    global AST_OPCODE_CLASS
-    global AST_OPCODE_FUNCTION
-    global AST_OPCODE_NOP
-
-    opcode      = ast['opcode']
-    children    = ast['children']
-    childrenCnt = ast['childrenCnt']
-
-    if (opcode is AST_OPCODE_DECLARE) or (opcode is AST_OPCODE_DECLARE_OR_ASSIGN)
-      # Variable used as lvalue.
-      # Declare it if seen for first time.
-      lval = children[0]
-
-      if lval['opcode'] is AST_OPCODE_VARIABLE
-        # Direct variable usage, declare it at the top of emited code.
-        this._declareVariableIfNotSet(lval['value'])
+      if typeof(funcProto.className) isnt 'undefined'
+        this.currentClassProto    = oldSymbolTable.lookupClass(funcProto.className)['proto']
       endif
 
-    elif (opcode is AST_OPCODE_CALL) and (ast['value'] is 'global')
-      this._executeNode(ast)
+      this.currentFunctionProto = funcProto
 
-    elif (opcode is AST_OPCODE_CLASS) or (opcode is AST_OPCODE_FUNCTION)
-      # Class/method/function declaration. Do nothing.
+      this._declareFunction(funcName, funcProto)
+      this._emitFunctionBody(funcName, funcProto)
 
-    elif (opcode is AST_OPCODE_NOP)
-      # No operation. Do nothing.
+      this.currentFunctionProto = false
+      this.currentClassProto    = false
 
-    else
-      # Not assign node, go on.
-      for idx in 0 .. childrenCnt
-        this._declareAllUsedVariables(children[idx])
-      endfor
+      this.symbolTable = oldSymbolTable
     endif
   endmethod
 
-  method _declareClassInternal(className, classProto)
-    methods               = classProto['vtable']
-    methodsAsFlatArray    = classProto['methodsAsFlatArray']
-    methodsAsFlatArrayCnt = classProto['methodsAsFlatArrayCnt']
+  method _emitGlobals()
+    global SYMBOL_KIND_FUNCTION
+    global SYMBOL_KIND_CLASS
+    global SYMBOL_KIND_METHOD
 
-    for idx in 0 .. methodsAsFlatArrayCnt
-      methodName      = methodsAsFlatArray[idx]
-      methodProto     = methods[methodName]
-      methodParamsCnt = methodProto['paramsCnt']
-      methodFullName  = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
+    symbols = this.symbolTable.exportSymbols()
+    symbolsIndex = symbols._index
+    symbolsCnt   = len(symbolsIndex)
 
-      # TODO: Optimize it.
-      if this.vtable[methodFullName] is methodFullName
-        this._declareFunction(methodFullName, methodProto)
-      endif
-    endfor
+    for idx in 0 .. symbolsCnt
+      symbolInfo = symbolsIndex[idx]
+      symbolKind = symbolInfo.kind
 
-    for idx in 0 .. methodsAsFlatArrayCnt
-      methodName      = methodsAsFlatArray[idx]
-      methodProto     = methods[methodName]
-      methodParamsCnt = methodProto['paramsCnt']
-      methodFullName  = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
+      if symbolKind is SYMBOL_KIND_FUNCTION
+        this._emitFunction(symbolInfo.proto)
 
-      # TODO: Optimize it.
-      if this.vtable[methodFullName] is methodFullName
-        this.currentFunctionProto = methodProto
-        this._emitFunctionBody(methodFullName, methodProto)
-        this.currentFunctionProto = false
+      elif symbolKind is SYMBOL_KIND_CLASS
+        this._declareClass(symbolInfo.name, symbolInfo.proto)
       endif
     endfor
   endmethod
@@ -438,8 +364,8 @@ class ASTTranslator
     elif typeof(methodProto['baseMethod']) is 'undefined'
       this._error('class ' + classProto['baseName'] + ' has no constructor declared')
 
-    elif methodProto['paramsCnt'] isnt (paramsCnt + 1)
-      this._error('base constructor requires exactly ' + str(methodProto['paramsCnt']) + ' parameters, but ' + str(paramsCnt + 1) + ' were passed')
+    elif methodProto['paramsCnt'] isnt paramsCnt
+      this._error('base constructor requires exactly ' + str(methodProto['paramsCnt']) + ' parameters, but ' + str(paramsCnt) + ' were passed')
 
     else
       # Base constructor exists, inject this reference to call list.
@@ -464,7 +390,8 @@ class ASTTranslator
   endmethod
 
   method _getMethodProto(className, methodName, paramsCnt) -> rv
-    rv = this.symbolTable.lookupMethod(className, methodName, paramsCnt)
+    die('ASTTranslator::_getMethodProto() not implemented')
+    #rv = this.symbolTable.lookupMethod(className, methodName, paramsCnt)
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -486,17 +413,19 @@ class ASTTranslator
   endmethod
 
   method _declareAndAssign(name, value)
-    this._declareVariable(name)
+    #this._declareVariable(name)
     this._assign(name, value)
   endmethod
 
   method _declareVariable(name)
-    this.symbolTable.insertLocal(name)
+    die('ASTTranslator::_declareVariable() not implemented')
+
+    # this.symbolTable.insertLocal(name)
 
     # TODO: Use many deep levels in symbol table.
-    if this.branchDeepIdx > 0
-      this.symbolTable.setType(name, 'variant')
-    endif
+    #if this.branchDeepIdx > 0
+    #  this.symbolTable.setType(name, 'variant')
+    #endif
   endmethod
 
   method _assign(name, value)
@@ -573,10 +502,18 @@ class ASTTranslator
         rvType = 'array'
         rv     = this._loadArgsVector()
 
+        if this.symbolTable.procLevel > 0
+          this.symbolTable.importGlobal('argv')
+        endif
+
       elif value is 'argc'
         # Built-in access to command line parametrs.
         rvType = 'integer'
         rv     = this._loadArgsCount()
+
+        if this.symbolTable.procLevel > 0
+          this.symbolTable.importGlobal('argc')
+        endif
 
       else
         # Treat as ordinary variable.
@@ -591,18 +528,19 @@ class ASTTranslator
           endif
 
         else
+          # TODO
           # Default way, ask symbol table.
-          symbolInfo  = this.symbolTable.lookup(value)
-          rvType      = symbolInfo['type']
-          rvClassName = symbolInfo['className']
+          #symbolInfo  = this.symbolTable.lookup(value)
+          #rvType      = symbolInfo['type']
+          #rvClassName = symbolInfo['className']
 
-          if typeof(rvType) is 'undefined'
-            rvType = 'unknown'
-          endif
+          #if typeof(rvType) is 'undefined'
+          #  rvType = 'unknown'
+          #endif
 
-          if typeof(rvClassName) is 'undefined'
-            rvClassName = 'unknown'
-          endif
+          #if typeof(rvClassName) is 'undefined'
+          #  rvClassName = 'unknown'
+          #endif
         endif
       endif
 
@@ -626,7 +564,7 @@ class ASTTranslator
 
       if typeof(methodProto) isnt 'undefined'
         params      = [rv]
-        paramsCnt   = methodProto['paramsCnt']
+        paramsCnt   = methodProto['paramsCnt'] + 1
         this._verifyNumberOfParameters('constructor', paramsCnt, childrenCnt)
 
         for idx in 1 .. childrenCnt
@@ -651,7 +589,7 @@ class ASTTranslator
         # x[idx]
         rv = this._loadFromIndex(left, right)
 
-        if (children[0]['value'] is 'this') and (children[1]['opcode'] is AST_DATA_STRING)
+        if (this.currentClassProto isnt false) and (children[0]['value'] is 'this') and (children[1]['opcode'] is AST_DATA_STRING)
           fieldName   = children[1]['value']
           rvClassName = this.currentClassProto['propertyClassNames'][fieldName]
         endif
@@ -850,13 +788,37 @@ class ASTTranslator
     children    = ast['children']
     childrenCnt = ast['childrenCnt']
 
-    #print opcode, value
-
     # Dispatch opcode.
-    if (opcode is AST_OPCODE_PROGRAM) or (opcode is AST_OPCODE_BLOCK)
+    if opcode is AST_OPCODE_PROGRAM
+      funcProto = {
+        'name': 'start',
+        'params': [],
+        'paramsCnt': 0,
+        'children': ast.children,
+        'childrenCnt': ast.childrenCnt
+      }
+      this.symbolTable = ast.symbolTable
+      this.currentFunctionProto = funcProto
+      this._emitFunctionBody('start', funcProto)
+      this.currentFunctionProto = false
+
+    elif opcode is AST_OPCODE_BLOCK
+      # OLD IMPLEMENTATION
+      #oldSymbolTable   = this.symbolTable
+      #this.symbolTable = ast.symbolTable
+      #this._onBlockEnter(ast)
+
+      this._enterScope(ast)
+
       for idx in 0 .. childrenCnt
         this._executeNode(children[idx])
       endfor
+
+      this._leaveScope()
+
+      # OLD IMPLEMENTATION
+      #this.symbolTable = oldSymbolTable
+      #this._onBlockLeave(ast)
 
     elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
       # x = y
@@ -868,11 +830,11 @@ class ASTTranslator
         rval = this._evaluateNode(children[1])
 
         # Assign new value.
-        if this._isset(lval) is false
-          this._declareAndAssign(lval, rval)
-        else
+        #if this._isset(lval) is false
+        #  this._declareAndAssign(lval, rval)
+        #else
           this._assign(lval, rval)
-        endif
+        #endif
 
         # Save assigned type.
         # TODO: Handle type mismatch.
@@ -889,10 +851,11 @@ class ASTTranslator
         index = this._evaluateNode(indexNode)
         rval  = this._evaluateNode(children[1])
 
-        if (boxNode['value'] is 'this') and (indexNode['opcode'] is AST_DATA_STRING)
-          fieldName = indexNode['value']
-          this.currentClassProto['propertyClassNames'][fieldName] = this.lastReturnClassName
-        endif
+        # TODO
+        #if (boxNode['value'] is 'this') and (indexNode['opcode'] is AST_DATA_STRING)
+        #  fieldName = indexNode['value']
+        #  this.currentClassProto['propertyClassNames'][fieldName] = this.lastReturnClassName
+        #endif
 
         this._storeAtIndexAndDrop(box, index, rval)
 
@@ -913,10 +876,11 @@ class ASTTranslator
       valueStart = this._evaluateNode(children[1])
       bodyAst    = children[4]
 
-      # TODO: Use many deep levels in symbol table.
-      #this.branchDeepIdx = this.branchDeepIdx + 1
+      # TODO: Clean up this mess?
+      oldSymbolTable   = this.symbolTable
+      this.symbolTable = bodyAst.symbolTable
       this._executeNodeFor(iteratorName, valueStart, valueEnd, valueStep, bodyAst)
-      #this.branchDeepIdx = this.branchDeepIdx - 1
+      this.symbolTable = oldSymbolTable
 
     elif opcode is AST_OPCODE_WHILE
       # while (cond)
@@ -925,38 +889,20 @@ class ASTTranslator
       condAst = children[0]
       bodyAst = children[1]
 
-      # TODO: Use many deep levels in symbol table.
-      #this.branchDeepIdx = this.branchDeepIdx + 1
+      # TODO: Clean up this mess?
+      oldSymbolTable   = this.symbolTable
+      this.symbolTable = bodyAst.symbolTable
       this._executeNodeWhile(condAst, bodyAst)
-      #this.branchDeepIdx = this.branchDeepIdx - 1
+      this.symbolTable = oldSymbolTable
 
     elif opcode is AST_OPCODE_IF
       cond        = this._evaluateNode(children[0])
       codeIfTrue  = children[1]
       codeIfFalse = children[2]
-
-      # TODO: Use many deep levels in symbol table.
-      this.branchDeepIdx = this.branchDeepIdx + 1
       this._executeNodeIf(cond, codeIfTrue, codeIfFalse)
-      this.branchDeepIdx = this.branchDeepIdx - 1
 
     elif opcode is AST_OPCODE_FUNCTION
-      value     = ast['value']
-      funcProto = ast
-
-      funcProto['name']      = value['name']
-      funcProto['params']    = value['parameters']
-      funcProto['paramsCnt'] = len(value['parameters'])
-      funcProto['rv']        = value['rv']
-
-      funcName = value['name']
-
-      this.symbolTable.insertFunction(funcName, funcProto)
-
-      this.currentFunctionProto = funcProto
-      this._declareFunction(funcName, funcProto)
-      this._emitFunctionBody(funcName, funcProto)
-      this.currentFunctionProto = false
+      # Do nothing.
 
     elif opcode is AST_OPCODE_CALL
       if value is 'global'
@@ -980,90 +926,7 @@ class ASTTranslator
       this._error('switch not implemented')
 
     elif opcode is AST_OPCODE_CLASS
-      # Collect members.
-      # TODO: Avoid redundant methodsAsArray when map iteration will work.
-      className             = ast['name']
-      baseName              = ast['baseName']
-      vtable                = {}
-      baseMethods           = {}
-      methodsAsFlatArray    = []
-      methodsAsFlatArrayCnt = 0
-
-      # Import base class if any.
-      if typeof(baseName) isnt 'undefined'
-        # Derived class, build class by applying derived over base one.
-        baseProto = this._getClassProto(baseName)
-
-        # TODO: Rewrite it when map merge will be ready.
-        baseMethodsAsFlatArray    = baseProto['methodsAsFlatArray']
-        baseMethodsAsFlatArrayCnt = baseProto['methodsAsFlatArrayCnt']
-        baseMethods               = baseProto['vtable']
-
-        # Merge base class first.
-        for idx in 0 .. baseMethodsAsFlatArrayCnt
-          methodName      = baseMethodsAsFlatArray[idx]
-          methodProto     = baseMethods[methodName]
-          methodParamsCnt = methodProto['paramsCnt']
-          methodFullName  = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
-
-          this.vtable[methodFullName]         = baseMethods[methodName]['fullName']
-          this.vtableKeys[this.vtableKeysCnt] = methodFullName
-          this.vtableKeysCnt                  = this.vtableKeysCnt + 1
-
-          vtable[methodName] = methodProto
-          methodsAsFlatArray[methodsAsFlatArrayCnt] = methodName
-          methodsAsFlatArrayCnt = methodsAsFlatArrayCnt + 1
-        endfor
-      endif
-
-      # Apply current declared class.
-      for idx in 0 .. childrenCnt
-        child  = children[idx]
-        opcode = child['opcode']
-
-        if opcode is AST_OPCODE_CLASS_METHOD
-          methodName      = child['name']
-          methodParamsCnt = child['paramsCnt']
-          methodFullName  = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
-
-          child['fullName']  = methodFullName
-
-          this.vtable[methodFullName] = methodFullName
-
-          if typeof(vtable[methodName]) is 'undefined'
-            # Method seen first time.
-            methodsAsFlatArray[methodsAsFlatArrayCnt] = methodName
-            methodsAsFlatArrayCnt = methodsAsFlatArrayCnt + 1
-          endif
-
-          if typeof(baseMethods[methodName]) isnt 'undefined'
-            # Save proto of base method if any.
-            child['baseMethod'] = baseMethods[methodName]
-          else
-            this.vtableKeys[this.vtableKeysCnt] = methodFullName
-            this.vtableKeysCnt                  = this.vtableKeysCnt + 1
-          endif
-
-          vtable[methodName] = child
-        endif
-      endfor
-
-      # Declare new class.
-      classProto = {
-        'name': className,
-        'baseName': ast['baseName'],
-        'vtable': vtable,
-        'methodsAsFlatArray': methodsAsFlatArray,
-        'methodsAsFlatArrayCnt': methodsAsFlatArrayCnt,
-        'propertyClassNames': {}
-      }
-
-      this.symbolTable.insertClass(className, classProto)
-
-      this.currentClassProto = classProto
-      this._declareClassInternal(className, classProto)
-      this._declareClass(className, classProto)
-      this.currentClassProto = false
+      # Do nothing.
 
     elif opcode is AST_OPCODE_INVOKE_METHOD
       this._evaluateNodeInvokeMethod(ast)
@@ -1083,8 +946,8 @@ class ASTTranslator
   # ----------------------------------------------------------------------------
 
   method run(ast)
-    this._resolveImports(ast)
-    this._declareGlobals(ast)
+    #this._resolveImports(ast)
+    #this._declareGlobals(ast)
     this._executeNode(ast)
   endmethod
 endclass

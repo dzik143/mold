@@ -73,32 +73,40 @@ class MIRQuadCollector extends PipeAbstract
     rv = this.quads
   endmethod
 
-  method _printSymbolInfoRow(name, readHits, writeHits, type)
+  method _printSymbolInfoRow(name, readHits, writeHits, type, kind)
     name      = this._pad(name, 10)
     readHits  = this._pad(readHits, 4)
     writeHits = this._pad(writeHits, 4)
-    type      = this._pad(type, 8)
-    print '    ;', name, readHits, writeHits, type
+    type      = this._pad(type, 9)
+    kind      = this._pad(kind, 8)
+    print '    ;', name, readHits, writeHits, type, kind
   endmethod
 
   method _dumpFrameInfo(frameInfo)
+    global SYMBOL_KIND_AS_TEXT
+
     symbolsIndex = frameInfo['_index']
     symbolsCnt   = len(symbolsIndex)
 
-    this._printSymbolInfoRow('var', 'W', 'R', 'type')
-    this._printSymbolInfoRow('----------', '----', '----', '--------')
+    this._printSymbolInfoRow('var', 'W', 'R', 'data type', 'kind')
+    this._printSymbolInfoRow('----------', '----', '----', '---------', '--------')
 
     for idx in 0 .. symbolsCnt
       item = symbolsIndex[idx]
-      this._printSymbolInfoRow(item.name, item.writeHits, item.readHits, item.type)
+      this._printSymbolInfoRow(item.name, item.writeHits, item.readHits, item.type, SYMBOL_KIND_AS_TEXT[item.kind])
     endfor
     print ''
   endmethod
 
   method _getType(x) -> rv
-    rv = this.currentFrame.symbols[x].type
-    if typeof(rv) is 'undefined'
-      rv = 'variant'
+    xInfo = this.currentFrame.symbols[x]
+    if typeof(xInfo) is 'undefined'
+      die('error: symbol not found: ' + str(x))
+    else
+      rv = this.currentFrame.symbols[x].type
+      if typeof(rv) is 'undefined'
+        rv = 'variant'
+      endif
     endif
   endmethod
 
@@ -110,7 +118,7 @@ class MIRQuadCollector extends PipeAbstract
       item    = code[idx]
       opcode  = item[0]
 
-      #print '[ MIRQuadCollector ]', item
+      # print '[ MIRQuadCollector ]', item
 
       if opcode is 'proc'
         print 'proc', item[1]['name']

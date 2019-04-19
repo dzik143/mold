@@ -13,6 +13,7 @@
 ################################################################################
 
 import 'Utils/SymbolTable.mold'
+import 'AST/ASTModuleResolver.mold'
 import 'AST/ASTSymbolsCollector.mold'
 import 'AST/ASTOptimizer.mold'
 import 'AST/ASTEvaluator.mold'
@@ -37,6 +38,7 @@ class AppMold
     this.astEvaluator               = new ASTEvaluator(this)
     this.astOptimizerCSE            = new ASTOptimizerCSE(this)
     this.astOptimizerDeadCodeRemove = new ASTOptimizerDeadCodeRemove(this)
+    this.astModuleResolver          = new ASTModuleResolver(this)
   endmethod
 
   method getSymbolTable() -> rv
@@ -65,5 +67,9 @@ class AppMold
 
   method getAstOptimizerDeadCodeRemove() -> rv
     rv = this.astOptimizerDeadCodeRemove
+  endmethod
+
+  method getAstModuleResolver() -> rv
+    rv = this.astModuleResolver
   endmethod
 endclass

@@ -21,6 +21,11 @@ class ASTSymbolsCollector
     this.app               = app
     this.astEvaluator      = app.getAstEvaluator()
     this.astConstantFolder = app.getAstConstantFolder()
+
+    # TODO: Remove redundant array if map iteration will work.
+    this.vtable        = {}
+    this.vtableKeys    = []
+    this.vtableKeysCnt = 0
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -47,7 +52,9 @@ class ASTSymbolsCollector
     global AST_OPCODE_INVOKE_METHOD
     global AST_OPCODE_REFERENCE
     global AST_OPCODE_FUNCTION
+    global AST_OPCODE_CLASS
     global AST_OPCODE_CLASS_METHOD
+    global AST_OPCODE_NOP
 
     #this.astConstantFolder.processNodeUntilNotChanged(node)
 
@@ -55,7 +62,11 @@ class ASTSymbolsCollector
     children    = node.children
     childrenCnt = node.childrenCnt
 
-    if opcode is AST_OPCODE_PROGRAM
+    # TODO: Clean up this mess.
+    if (opcode is AST_OPCODE_VARIABLE) and (node.value is '__this_placeholder__')
+      # Do nothing.
+
+    elif opcode is AST_OPCODE_PROGRAM
       symbolTable      = this.app.getSymbolTable()
       node.symbolTable = symbolTable
 
@@ -63,23 +74,117 @@ class ASTSymbolsCollector
         this._collectSymbolsFromLeftNode(node.symbolTable, children[idx])
       endfor
 
+    elif opcode is AST_OPCODE_CLASS
+      # Collect members.
+      # TODO: Avoid redundant methodsAsArray when map iteration will work.
+      className             = node['name']
+      baseName              = node['baseName']
+      vtable                = {}
+      baseMethods           = {}
+      methodsAsFlatArray    = []
+      methodsAsFlatArrayCnt = 0
+
+      # Import base class if any.
+      if typeof(baseName) isnt 'undefined'
+        # Derived class, build class by applying derived over base one.
+        baseProto = symbolTable.lookupClass(baseName)['proto']
+
+        # TODO: Rewrite it when map merge will be ready.
+        baseMethodsAsFlatArray    = baseProto['methodsAsFlatArray']
+        baseMethodsAsFlatArrayCnt = baseProto['methodsAsFlatArrayCnt']
+        baseMethods               = baseProto['vtable']
+
+        # Merge base class first.
+        for idx in 0 .. baseMethodsAsFlatArrayCnt
+          methodName      = baseMethodsAsFlatArray[idx]
+          methodProto     = baseMethods[methodName]
+          methodParamsCnt = methodProto['paramsCnt']
+          methodFullName  = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
+
+          this.vtable[methodFullName]         = baseMethods[methodName]['fullName']
+          this.vtableKeys[this.vtableKeysCnt] = methodFullName
+          this.vtableKeysCnt                  = this.vtableKeysCnt + 1
+
+          vtable[methodName] = methodProto
+          methodsAsFlatArray[methodsAsFlatArrayCnt] = methodName
+          methodsAsFlatArrayCnt = methodsAsFlatArrayCnt + 1
+        endfor
+      endif
+
+      # Apply current declared class.
+      for idx in 0 .. childrenCnt
+        child  = children[idx]
+        opcode = child['opcode']
+
+        if opcode is AST_OPCODE_CLASS_METHOD
+          methodName      = child['name']
+          methodParamsCnt = child['paramsCnt']
+          methodFullName  = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
+
+          child['fullName']  = methodFullName
+
+          this.vtable[methodFullName] = methodFullName
+
+          if typeof(vtable[methodName]) is 'undefined'
+            # Method seen first time.
+            methodsAsFlatArray[methodsAsFlatArrayCnt] = methodName
+            methodsAsFlatArrayCnt = methodsAsFlatArrayCnt + 1
+          endif
+
+          child['className'] = className
+
+          if typeof(baseMethods[methodName]) isnt 'undefined'
+            # Save proto of base method if any.
+            child['baseMethod'] = baseMethods[methodName]
+          else
+            this.vtableKeys[this.vtableKeysCnt] = methodFullName
+            this.vtableKeysCnt                  = this.vtableKeysCnt + 1
+          endif
+
+          vtable[methodName] = child
+
+          this._collectSymbolsFromLeftNode(symbolTable, child)
+        endif
+      endfor
+
+      # Declare new class.
+      classProto = {
+        'name': className,
+        'baseName': node['baseName'],
+        'vtable': vtable,
+        'methodsAsFlatArray': methodsAsFlatArray,
+        'methodsAsFlatArrayCnt': methodsAsFlatArrayCnt,
+        'propertyClassNames': {}
+      }
+
+      node['proto'] = classProto
+
+      symbolTable.insertClass(className, classProto)
+
     elif (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
       nodeBody  = children[0]
       funcProto = node
       value     = node.value
+      params    = value['parameters']
 
+      funcProto['params']    = params
+      funcProto['paramsCnt'] = len(params)
       funcProto['name']      = value['name']
-      funcProto['params']    = value['parameters']
-      funcProto['paramsCnt'] = len(value['parameters'])
       funcProto['rv']        = value['rv']
 
-      funcName = value['name']
+      if typeof(node['fullName']) isnt 'undefined'
+        funcName = node['fullName']
+      else
+        funcName = value['name']
+      endif
+
+      funcProto['fullName'] = funcName
 
       symbolTable.insertFunction(funcName, funcProto)
 
       if typeof(nodeBody.symbolTable) is 'undefined'
         # Init new symbol table if not existing yet.
-        nodeBody.symbolTable = symbolTable.enterScope()
+        nodeBody.symbolTable = symbolTable.enterScopeForProcedure()
 
         # TODO: Why we need to add this param by hand?
         if opcode is AST_OPCODE_CLASS_METHOD
@@ -109,13 +214,18 @@ class ASTSymbolsCollector
       if typeof(node.symbolTable) is 'undefined'
         # Init new symbol table if not existing yet.
         node.symbolTable = symbolTable.enterScope()
+
+        # TODO: Review it.
+        if node.symbolTable.deepIdx is 1
+          node.symbolTable.importExternalVariable('argv')
+          node.symbolTable.importExternalVariable('argc')
+        endif
       endif
 
       for idx in 0 .. childrenCnt
         this._collectSymbolsFromLeftNode(node.symbolTable, children[idx])
       endfor
       node.symbolTable.leaveScope()
-
 
     elif opcode is AST_OPCODE_VARIABLE
       if isLeftNode is true
@@ -229,6 +339,11 @@ class ASTSymbolsCollector
         endfor
       endif
 
+      # TODO: Better way to merge symbols from IF branches recursively.
+      if typeof(node.symbolTable) is 'undefined'
+        node.symbolTable = symbolTable
+      endif
+
     elif opcode is AST_OPCODE_FOR_VALUES_RANGE
       # for idx in idxStart .. idxEnd by step
       iterNode     = children[0]
@@ -237,8 +352,10 @@ class ASTSymbolsCollector
       idxStepNode  = children[3]
       bodyNode     = children[4]
 
+      # TODO: Optimize it.
       bodyNode.symbolTable = symbolTable.enterScopeForLoop()
       bodyNode.symbolTable.insertLocal(iterNode.value)
+      bodyNode.symbolTable.lookupForReadAndWrite(iterNode.value)
 
       #this._collectSymbolsFromLeftNode(symbolTable, iterNode)
       this._collectSymbolsFromRightNode(symbolTable, idxStartNode)
@@ -259,16 +376,25 @@ class ASTSymbolsCollector
     else
       if opcode is AST_OPCODE_CALL
         funcName = node.value
-        if (funcName is 'typeof') or (funcName is 'print') or (funcName is 'super') or (funcName is 'len') or (funcName is 'str') or (funcName is 'strescape') or (funcName is 'exit') or (funcName is 'die') or (funcName is '__mold_createObject') or (funcName is '__mold_getClassName') or (funcName is '__mold_warning') or (funcName is '__mold_printToStdOutput') or (funcName is '__mold_parseFile') or (funcName is 'moldParseFile')
+        if (funcName is 'typeof') or (funcName is 'print') or (funcName is 'super') or (funcName is 'len') or (funcName is 'str') or (funcName is 'strescape') or (funcName is 'exit') or (funcName is 'die') or (funcName is '__mold_createObject') or (funcName is '__mold_getClassName') or (funcName is '__mold_warning') or (funcName is '__mold_printToStdOutput') or (funcName is '__mold_parseFile') or (funcName is 'moldParseFile') or (funcName is 'global')
           # One of built-in function - declaration is not needed.
           if symbolTable.isset(funcName) is false
             # TODO: Fill up proto?
             symbolTable.insertFunction(funcName, {})
           endif
         endif
+
         # Mark that function was called.
         symbolTable.lookupForCall(node.value)
         isLeftNode = false
+
+        # Import global symbol.
+        if funcName is 'global'
+          node.opcode = AST_OPCODE_NOP
+          for idx in 0 .. childrenCnt
+            symbolTable.importGlobal(children[idx].value)
+          endfor
+        endif
 
       elif opcode is AST_OPCODE_INVOKE_METHOD
         isLeftNode = false
@@ -278,23 +404,6 @@ class ASTSymbolsCollector
         this._collectSymbols(symbolTable, children[idx], isLeftNode)
       endfor
     endif
-  endmethod
-
-  method _buildSymbolTable(node) -> rv
-    # Create new empty symbol table and save it for furher use.
-    rv = this.app.getSymbolTable().enterScope()
-    node.symbolTable = rv
-
-    # Fill up table with symbols used within node.
-    children    = node.children
-    childrenCnt = node.childrenCnt
-
-    for idx in 0 .. childrenCnt
-      this._collectSymbolsFromLeftNode(rv, children[idx])
-    endfor
-
-    # TODO: Review it.
-    rv.vacuum()
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -311,5 +420,6 @@ class ASTSymbolsCollector
     endif
 
     this._collectSymbolsFromLeftNode(node.symbolTable, node)
+
   endmethod
 endclass

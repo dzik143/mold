@@ -2613,7 +2613,8 @@ __MOLD_Halt:
 
 proc __MOLD_NullMethodCalled
   cinvoke printf, 'error: pure virtual called'
-  cinvoke ExitProcess, -1
+  int 3
+  ;cinvoke ExitProcess, -1
 endp
 
 ;###############################################################################
