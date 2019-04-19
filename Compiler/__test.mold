@@ -1,42 +1,84 @@
-class Parser
-endclass
+x = []
+undefined = [0]
+object = 0
 
-import 'AST.mold'
-import 'ASTTranslator.mold'
-import 'ASTTranslatorMIR1.mold'
-import 'MIRQuadCollector.mold'
-import 'MIRQuadTypeGuess.mold'
-import 'MIRQuadTypeConvert.mold'
-import 'MIRQuadOptimizer.mold'
-import 'CodeGeneratorX64.mold'
+#import 'AST/AST.mold'
+#import 'Parser/ParserMold.mold'
+
+#class Parser
+#endclass
+
+DEBUG_AST_OPTIMIZER = false
+UNICC_DEBUG         = true
+
+import 'AppMold.mold'
+import 'AST/ASTSymbolsCollector.mold'
+import 'AST/ASTPrinterText.mold'
+import 'AST/ASTPrinterHtml.mold'
+import 'AST/ASTTranslatorMIR1.mold'
+import 'MIR/MIRQuadCollector.mold'
+import 'CodeGenerator/CodeGeneratorX64.mold'
+
 import '1.ast'
+#import 'Parser/ParserMold.mold'
 
-mirQuadCollector   = new MIRQuadCollector()
-mirQuadTypeGuess   = new MIRQuadTypeGuess()
-mirQuadTypeConvert = new MIRQuadTypeConvert()
-mirQuadOptimizer   = new MIRQuadOptimizer()
+#parser = new Parser()
+#ast    = parser.parseFile(argv[1])
 
-astTranslator = new ASTTranslatorMIR1()
+# Convert AST to form understood by translator.
+# TODO: Remove this step.
+#ast = ast.convert()
 
-#astTranslator.connectTo(mirQuadCollector)
-#astTranslator.connectTo(mirQuadOptimizer)
 
-t = astTranslator
-t = t.connectTo(mirQuadOptimizer)
-t = t.connectTo(mirQuadTypeGuess)
-t = t.connectTo(mirQuadTypeConvert)
-t = t.connectTo(mirQuadCollector)
+#print '<pre>'
+
+app                        = new AppMold()
+astSymbolsCollector        = app.getAstSymbolsCollector()
+astConstantFolder          = app.getAstConstantFolder()
+astEvaluator               = app.getAstEvaluator()
+astOptimizerCSE            = app.getAstOptimizerCSE()
+astOptimizerDeadCodeRemove = app.getAstOptimizerDeadCodeRemove()
+astModuleResolver          = app.getAstModuleResolver()
+astPrinterText             = new ASTPrinterText()
+astPrinterHtml             = new ASTPrinterHtml()
+
+print 'Collecting symbols...'
+
+if typeof(astModuleResolver) isnt 'undefined'
+  astModuleResolver.resolveImports(ast)
+endif
+
+astSymbolsCollector.buildSymbolTable(ast)
+
+#astEvaluator.processNode(ast)
+#astConstantFolder.processNode(ast)
+
+#astEvaluator.processNode(ast)
+#astConstantFolder.processNode(ast)
+#astOptimizerCSE.processNode(ast)
+#astOptimizerDeadCodeRemove.processNode(ast)
+
+#astPrinterText.printNode(ast)
+
+#print '</pre>'
+
+
+#astPrinterHtml.printNode(ast)
+
+print 'Going to translate AST...'
+
+astTranslator = new ASTTranslatorMIR1(app)
+mirCollector  = new MIRQuadCollector()
+astTranslator.connectTo(mirCollector)
 
 astTranslator.run(ast)
+mirCollector.printQuads()
 
-# TODO: Auto flush on stream end.
-mirQuadTypeGuess.flush()
-
-mirQuadCollector.printQuads()
+# TODO: Better way to pass quads + meta + symbolTable.
+code = astTranslator.code
+code.quads = mirCollector.getQuads()
+code.symbolTable = app.getSymbolTable()
 
 # Generate x64 code.
-code = astTranslator.code
-code.quads = mirQuadCollector.getQuads()
-
 codeGenerator = new CodeGeneratorX64()
 codeGenerator.run(code)

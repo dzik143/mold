@@ -22,9 +22,10 @@ class ASTTranslatorMIR1 extends ASTTranslator
   #                                Init code
   # ----------------------------------------------------------------------------
 
-  method constructor()
-    super()
+  method constructor(app)
+    super(app)
     # TODO: Remove codeObj.
+    this.app          = app
     this.code         = new MIRCode()
     this.stack        = new Stack()
     this.outputObject = false
@@ -211,6 +212,12 @@ class ASTTranslatorMIR1 extends ASTTranslator
   #                     Implement ASTTranslator interface
   # ----------------------------------------------------------------------------
 
+  method _onScopeEnter(ast)
+  endmethod
+
+  method _onScopeLeave()
+  endmethod
+
   method _neg(value) -> rv
     rv = this.popOneArgAndEmitOpcode('neg')
   endmethod
@@ -270,7 +277,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
       this.emitOneArgOpcode('conv_bool32_to_variant', rv, value)
 
     elif (type is 'string') or (type is 'array')
-      rv = this.symbolTable.createConst(value)
+      # TODO: Review it.
+      rv = this.symbolTable.createConstFromValue(value)
 
     else
       die('error: unhandled imm type: ' + str(type))
@@ -330,7 +338,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _call(proto, unusedParams, paramsCnt) -> rv
-    paramsCnt = proto['paramsCnt']
+#    paramsCnt = proto['paramsCnt']
     rv        = this.symbolTable.createTempVarForWrite()
     params    = this.popParametersBeforeCall(paramsCnt)
     name      = proto['fullName']
@@ -465,31 +473,31 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.push(rv)
   endmethod
 
-  method _executeNodeFor(iterName, valueStart, valueEnd, valueStep, bodyAst)
-    symbolTable = this.symbolTable
+  method _executeNodeFor(iterName, idxStart, idxEnd, idxStep, bodyAst)
+    #symbolTable = this.symbolTable
 
-    if this._isset(iterName) is false
-      symbolTable.insertLocalVolatile(iterName)
-    endif
+    #if this._isset(iterName) is false
+    #  symbolTable.insertLocalVolatile(iterName)
+    #endif
 
     # TODO: Optimize it.
-    symbolTable.lookupForReadAndWrite(iterName)
-    symbolTable.lookupForReadAndWrite(iterName)
+    #symbolTable.lookupForReadAndWrite(iterName)
 
     # Stack: [idxStep, idxEnd, idxStart]
-    idxStart = this.popForRead()
-    idxEnd   = this.popForRead()
-    idxStep  = this.popForRead()
+    #idxStart = this.popForRead()
+    #idxEnd   = this.popForRead()
+    #idxStep  = this.popForRead()
 
     # TODO: Handle it in more general way.
     #this.symbolTable.setType(iterName, 'integer')
     #this.symbolTable.setType(idxStep, 'integer')
     #this.symbolTable.setType(idxEnd, 'integer')
 
-    this.emitMoveVariantOpcode(iterName, idxStart)
+    labelForBegin = this.symbolTable.createLabel()
+    labelForEnd   = this.symbolTable.createLabel()
 
-    labelForBegin = symbolTable.createLabel()
-    labelForEnd   = symbolTable.createLabel()
+    # Init iterator with start value (inside loop scope).
+    this.emitMoveVariantOpcode(iterName, idxStart)
 
     # idx = valueStart
     # begin:
@@ -501,21 +509,38 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     this.emitLabel(labelForBegin)
 
+      # Enter loop scope.
+      this._enterScope(bodyAst)
+
+      #oldSymbolTable   = this.symbolTable
+      #this.symbolTable = bodyAst.symbolTable
+
       # Is it the end?
       # if not (idx < idxEnd) goto end
+      # OLD IMPLEMENTATION:
       goOn = this.symbolTable.createTempVarForReadAndWrite()
       this.emitTwoArgsOpcode('cmp_lt', goOn, iterName, idxEnd)
       this.emitOneArgOpcode('jmp_if_false', labelForEnd, goOn)
-      #TODO: this.emitTwoArgsOpcode('jmp_if_ge', labelForEnd, iterName, idxEnd)
+      #this.emitTwoArgsOpcode('jmp_if_ge', labelForEnd, iterName, idxEnd)
 
       # Loop body.
-      this._executeNode(bodyAst)
+      # OLD CODE: this._executeNode(bodyAst)
+      childrenCnt = bodyAst.childrenCnt
+      children    = bodyAst.children
+
+      for idx in 0 .. childrenCnt
+        this._executeNode(children[idx])
+      endfor
 
       # Update iterator value and jmp to loop begin.
       # idx += step
       # goto begin
       this.emitTwoArgsOpcode('add', iterName, iterName, idxStep)
       this.emitTargetOnlyOpcode('jmp', labelForBegin)
+
+      # Leave loop scope.
+      #this.symbolTable = oldSymbolTable
+      this._leaveScope()
 
     this.emitLabel(labelForEnd)
   endmethod
@@ -575,6 +600,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _emitFunctionBody(funcName, funcProto)
+    # print '-> _emitFunctionBody', funcName
+
     params      = funcProto['params']
     paramsCnt   = funcProto['paramsCnt']
     children    = funcProto['children']
@@ -590,22 +617,27 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.emitComment('function ' + funcName)
     this.emitComment('-----------------------------------------------')
 
-    symbolTable.enterScope()
+    # TODO: Simplify it.
+    oldSymbolTable   = this.symbolTable
+    this.symbolTable = codeAst.symbolTable
 
-      deepIdx = symbolTable.getDeep()
-      if deepIdx > 1
-        this._error('nested functions are not supported yet')
-      endif
+    #symbolTable.enterScope()
+
+    #  deepIdx = symbolTable.getDeep()
+    #  if deepIdx > 1
+    #    this._error('nested functions are not supported yet')
+    #  endif
 
       # Insert call parameters to symbol table.
-      for idx in 0 .. paramsCnt
-        symbolTable.insertParam(params[idx], idx)
-      endfor
+    #  for idx in 0 .. paramsCnt
+    #    symbolTable.insertParam(params[idx], idx)
+    #  endfor
 
       # TODO: Simplify it.
       this.emitProcBegin({
         'name': funcName,
-        'symbols': symbolTable.exportSymbols(),
+        'symbols': this.symbolTable.exportSymbols(),
+        'symbolTable': this.symbolTable,
         'params': params,
         'paramsCnt': paramsCnt,
         'rv': rvName
@@ -613,9 +645,9 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
       # Translate function code.
       # Declare variable to store return value.
-      if typeof(rvName) isnt 'undefined'
-        symbolTable.insertRetVal(rvName)
-      endif
+      #if typeof(rvName) isnt 'undefined'
+      #  symbolTable.insertRetVal(rvName)
+      #endif
 
       # Translate code.
       codeNodes    = codeAst['children']
@@ -632,7 +664,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
       this.emitRet()
       this.emitProcEnd()
 
-    symbolTable.leaveScope()
+      this.symbolTable = oldSymbolTable
+
+    #symbolTable.leaveScope()
+
+    #print '<- _emitFunctionBody', funcName
   endmethod
 
   method _dropRetVal()
@@ -647,8 +683,12 @@ class ASTTranslatorMIR1 extends ASTTranslator
     code = this.code
 
     # Insert argv[] and argc to globals.
-    this.symbolTable.importExternalGlobal('argv')
-    this.symbolTable.importExternalGlobal('argc')
+    # TODO: Review it.
+    this.symbolTable = ast.symbolTable
+    this.symbolTable.importExternalVariable('argv')
+    this.symbolTable.importExternalVariable('argc')
+
+    this._emitGlobals()
 
     # TODO: More-friendly API here.
     __mold_openExternalModuleProto = {
@@ -687,26 +727,27 @@ class ASTTranslatorMIR1 extends ASTTranslator
     code.createExternalProc('__MOLD_LoadFile', 'variant', 1, 'variant', '__MOLD_LoadFile')
 
     # Resolve imports recursively.
-    this._resolveImports(ast)
-    this._declareGlobals(ast)
+    #this._resolveImports(ast)
+    #this._declareGlobals(ast)
+    #print 'SYMBOLS', this.symbolTable.exportSymbols()
 
     # Translate main code behind entry point.
     this.emitComment('-----------------------------------------------')
     this.emitComment('entry point')
     this.emitComment('-----------------------------------------------')
 
-    this.emitProcBegin({
-      'name': 'start',
-      'symbols': this.symbolTable.exportSymbols(),
-      'localsCnt': 0,
-      'tempsCnt': 0,
-      'paramsCnt': 0
-    })
+#    this.emitProcBegin({
+#      'name': 'start',
+#      'symbols': this.symbolTable.exportSymbols(),
+#      'localsCnt': 0,
+#      'tempsCnt': 0,
+#      'paramsCnt': 0
+#    })
 
     this._executeNode(ast)
 
-    this.emitRet()
-    this.emitProcEnd()
+#    this.emitRet()
+#    this.emitProcEnd()
 
     # TODO: Clean up this mess.
     this.code.symbolTable = this.symbolTable

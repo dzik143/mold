@@ -1,0 +1,76 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2019 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'AST/AST.mold'
+import 'Parser/ParserMold.mold'
+
+class ASTModuleResolver
+  method constructor(app)
+    this.app             = app
+    this.importedModules = {}
+  endmethod
+
+  method resolveImports(ast)
+    global AST_OPCODE_CALL
+
+    program     = ast['children'][0]
+    children    = program['children']
+    childrenCnt = program['childrenCnt']
+
+    newChildrenCnt = 0
+    newChildren    = []
+
+    for idx in 0 .. childrenCnt
+      child = children[idx]
+
+      if (child['opcode'] is AST_OPCODE_CALL) and (child['value'] is 'import')
+
+        # TODO: Verify parameters.
+        moduleName = child['children'][0]['value']
+
+        if typeof(this.importedModules[moduleName]) is 'undefined'
+          # Load only once.
+          this.importedModules[moduleName] = true
+
+          # Parse source into AST tree.
+          parser      = new Parser()
+          importedAst = parser.parseFile(moduleName)
+
+          # Convert AST to form understood by translator.
+          # TODO: Remove this step.
+          importedAst = importedAst.convert()
+
+          # Resolve imports recursively.
+          this.resolveImports(importedAst)
+
+          importedProgram     = importedAst['children'][0]
+          importedChildren    = importedProgram['children']
+          importedChildrenCnt = importedProgram['childrenCnt']
+
+          for jdx in 0 .. importedChildrenCnt
+            newChildren[newChildrenCnt] = importedChildren[jdx]
+            newChildrenCnt = newChildrenCnt + 1
+          endfor
+        endif
+
+      else
+        newChildren[newChildrenCnt] = child
+        newChildrenCnt = newChildrenCnt + 1
+      endif
+    endfor
+
+    program['childrenCnt'] = newChildrenCnt
+    program['children']    = newChildren
+  endmethod
+endclass

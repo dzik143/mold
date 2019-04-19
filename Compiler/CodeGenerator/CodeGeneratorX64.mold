@@ -1149,6 +1149,9 @@ class CodeGeneratorX64
         params       = currentFrame['params']
         paramsCnt    = currentFrame['paramsCnt']
 
+        print '; PARAMS', params
+        print '; PARAMS CNT', paramsCnt
+
         # Clean up this mess.
         this.symbols = symbols
 
@@ -1159,11 +1162,12 @@ class CodeGeneratorX64
 
         # Calculate frame size.
         currentFrameSize = 0
+        paramsPassedCnt  = 0
 
         for symbolIdx in 0 .. len(symbols._index)
           symbol = symbols._index[symbolIdx]
 
-          if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or (symbol.kind is SYMBOL_KIND_VAR_PARAM)) and (symbol.readHits + symbol.writeHits > 0)
+          if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) or (symbol.kind is SYMBOL_KIND_VAR_PARAM)#) and (symbol.readHits + symbol.writeHits > 0)
             if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
               varSize = 16
             elif (symbol.type is 'int64') or (symbol.type is 'float64')
@@ -1178,6 +1182,12 @@ class CodeGeneratorX64
 
             print ' ', symbol.name, 'EQU rbp -', 8 + currentFrameSize, ';', varSize, 'bytes'
 
+          endif
+
+          # TODO: Dirty fix to handle real number of stack parameters if this
+          # used.
+          if symbol.kind is SYMBOL_KIND_VAR_PARAM
+            paramsPassedCnt = paramsPassedCnt + 1
           endif
         endfor
 
@@ -1203,18 +1213,19 @@ class CodeGeneratorX64
             endif
 
           elif symbol.kind is SYMBOL_KIND_VAR_PARAM
-              # Call parameter - copy to local var.
-            if symbolUsedCnt > 0
+            # Call parameter - copy to local var.
+            # TODO: Skip unused vars.
+            #if symbolUsedCnt > 0
               if paramIdx < 4
                 print '  movdqu xmm0', ', [', regParams[paramIdx], ']'
               else
-                print '  mov    rax, [rbp + 16 + 8 *', paramsCnt - paramIdx - 1, ']'
+                print '  mov    rax, [rbp + 16 + 8 *', paramsPassedCnt - paramIdx - 1, ']'
                 print '  movdqu xmm0', ', [rax]'
               endif
               print '  movdqu [', symbol.name, '], xmm0'
-            else
-              print '  ; skipped unused param [', symbol.name, ']'
-            endif
+            #else
+            #  print '  ; skipped unused param [', symbol.name, ']'
+            #endif
 
             paramIdx = paramIdx  + 1
           endif

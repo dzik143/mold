@@ -31,12 +31,10 @@ astPrinterText             = new ASTPrinterText()
 astPrinterHtml             = new ASTPrinterHtml()
 
 astSymbolsCollector.buildSymbolTable(ast)
-astEvaluator.processNode(ast)
-astConstantFolder.processNode(ast)
-
 #astEvaluator.processNode(ast)
 #astConstantFolder.processNode(ast)
-astOptimizerCSE.processNode(ast)
+
+#astOptimizerCSE.processNode(ast)
 #astOptimizerDeadCodeRemove.processNode(ast)
 
 astPrinterText.printNode(ast)
