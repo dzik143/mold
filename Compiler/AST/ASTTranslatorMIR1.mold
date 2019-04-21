@@ -26,7 +26,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
     super(app)
     # TODO: Remove codeObj.
     this.app          = app
-    this.code         = new MIRCode()
+    # TODO: Clean up this mess.
+    this.code         = app.getMir1Code()
     this.stack        = new Stack()
     this.outputObject = false
 
@@ -687,7 +688,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.symbolTable = ast.symbolTable
 
     this._emitGlobals()
-
+/*
     # TODO: More-friendly API here.
     __mold_openExternalModuleProto = {
       'name': '__mold_openExternalModule',
@@ -723,6 +724,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     }
     this._declareExternalFunction('__mold_loadFile', __mold_loadFileProto)
     code.createExternalProc('__MOLD_LoadFile', 'variant', 1, 'variant', '__MOLD_LoadFile')
+*/
 
     # Resolve imports recursively.
     #this._resolveImports(ast)

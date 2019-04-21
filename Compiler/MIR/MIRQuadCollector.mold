@@ -160,6 +160,8 @@ class MIRQuadCollector extends PipeAbstract
         #else
 
         if opcode[0] isnt 'c'
+          xType = -1
+
           if typeof(x) is 'string'
             xType  = this._getType(x)
             opcode = opcode + '_' + xType

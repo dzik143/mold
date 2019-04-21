@@ -63,6 +63,8 @@ class ASTOptimizer
       newOpcode = AST_DATA_UNDEFINED
 
     else
+      # TODO: Remove unneded assign.
+      newOpcode = -1
       die('error: unhandled result in constant folding: ' + type)
     endif
 
@@ -316,6 +318,8 @@ class ASTOptimizer
         newValue = x.value[y.value]
 
       else
+        # Remove unneded assign.
+        newValue = -1
         die('error: unhandled opcode in x op y optimization: ' + str(opcode))
       endif
 

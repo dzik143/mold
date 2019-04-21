@@ -327,14 +327,17 @@ class ASTSymbolsCollector
               writeHits = symbolInfo2.writeHits
             endif
 
-            symbolTable.insert(symbolInfo1.name, symbolInfo1)
-
             symbolInfo1.readHits  = readHits
             symbolInfo1.writeHits = writeHits
 
-            # And remove from child true/false node.
+            # Remove from child true/false node.
             symbolTable1.remove(symbolInfo1.name)
             symbolTable2.remove(symbolInfo1.name)
+
+            if symbolTable.isset(symbolInfo1.name) is false
+              symbolTable.insert(symbolInfo1.name, symbolInfo1)
+            endif
+
           endif
         endfor
       endif
@@ -377,6 +380,7 @@ class ASTSymbolsCollector
       if opcode is AST_OPCODE_CALL
         funcName = node.value
         if (funcName is 'typeof') or (funcName is 'print') or (funcName is 'super') or (funcName is 'len') or (funcName is 'str') or (funcName is 'strescape') or (funcName is 'exit') or (funcName is 'die') or (funcName is '__mold_createObject') or (funcName is '__mold_getClassName') or (funcName is '__mold_warning') or (funcName is '__mold_printToStdOutput') or (funcName is '__mold_parseFile') or (funcName is 'moldParseFile') or (funcName is 'global')
+        # or (funcName is '__mold_openExternalModule') or (funcName is '__mold_loadExternalFunction') or (funcName is '__mold_peek') or (funcName is '__mold_loadFile')
           # One of built-in function - declaration is not needed.
           if symbolTable.isset(funcName) is false
             # TODO: Fill up proto?

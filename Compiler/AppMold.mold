@@ -21,6 +21,9 @@ import 'AST/ASTConstantFolder.mold'
 import 'AST/ASTOptimizerCSE.mold'
 import 'AST/ASTOptimizerDeadCodeRemove.mold'
 
+# TODO: Clean up this mess.
+import 'MIR/MIR.mold'
+
 class AppMold
   method _debug(msg)
     if false
@@ -39,6 +42,49 @@ class AppMold
     this.astOptimizerCSE            = new ASTOptimizerCSE(this)
     this.astOptimizerDeadCodeRemove = new ASTOptimizerDeadCodeRemove(this)
     this.astModuleResolver          = new ASTModuleResolver(this)
+
+    # TODO: Clean up this mess.
+    this.code = new MIRCode()
+
+    # TODO: More-friendly API here.
+    __mold_openExternalModuleProto = {
+      'name': '__mold_openExternalModule',
+      'paramsCnt': 1,
+      'labelId': this.code.createExternalLabel('__MOLD_OpenExternalModule')
+    }
+    this.symbolTable.insertFunction('__mold_openExternalModule', __mold_openExternalModuleProto)
+    this.code.createExternalProc('__MOLD_OpenExternalModule', 'variant', 1, 'variant', '__MOLD_OpenExternalModule')
+
+    # TODO: More-friendly API here.
+    __mold_loadExternalFunctionProto = {
+      'name': '__mold_loadExternalFunction',
+      'paramsCnt': 5,
+      'labelId': this.code.createExternalLabel('__MOLD_LoadExternalFunction')
+    }
+    this.symbolTable.insertFunction('__mold_loadExternalFunction', __mold_loadExternalFunctionProto)
+    this.code.createExternalProc('__MOLD_LoadExternalFunction', 'variant', 5, 'variant', '__MOLD_LoadExternalFunction')
+
+    # TODO: More-friendly API here.
+    __mold_peekProto = {
+      'name': '__mold_peek',
+      'paramsCnt': 2,
+      'labelId': this.code.createExternalLabel('__MOLD_Peek')
+    }
+    this.symbolTable.insertFunction('__mold_peek', __mold_peekProto)
+    this.code.createExternalProc('__MOLD_Peek', 'variant', 2, 'variant', '__MOLD_Peek')
+
+    # TODO: More-friendly API here.
+    __mold_loadFileProto = {
+      'name': '__mold_loadFile',
+      'paramsCnt': 1,
+      'labelId': this.code.createExternalLabel('__MOLD_LoadFile')
+    }
+    this.symbolTable.insertFunction('__mold_loadFile', __mold_loadFileProto)
+    this.code.createExternalProc('__MOLD_LoadFile', 'variant', 1, 'variant', '__MOLD_LoadFile')
+  endmethod
+
+  method getMir1Code() -> rv
+    rv = this.code
   endmethod
 
   method getSymbolTable() -> rv

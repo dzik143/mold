@@ -8,9 +8,9 @@
 # This file is part of Mold project.                                           #
 # Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
 #                                                                              #
-# The Mold code and any derived work however based on this software are        # 
+# The Mold code and any derived work however based on this software are        #
 # copyright of Sylwester Wysocki. Redistribution and use of the present        #
-# software is allowed according to terms specified in the file LICENSE         # 
+# software is allowed according to terms specified in the file LICENSE         #
 # which comes in the source distribution.                                      #
 #                                                                              #
 # All rights reserved.                                                         #
@@ -177,9 +177,9 @@
 # This file is part of Mold project.                                           #
 # Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
 #                                                                              #
-# The Mold code and any derived work however based on this software are        # 
+# The Mold code and any derived work however based on this software are        #
 # copyright of Sylwester Wysocki. Redistribution and use of the present        #
-# software is allowed according to terms specified in the file LICENSE         # 
+# software is allowed according to terms specified in the file LICENSE         #
 # which comes in the source distribution.                                      #
 #                                                                              #
 # All rights reserved.                                                         #
@@ -356,7 +356,7 @@ class AST
     this.emit  = emit
     this.token = token
     this.id    = NodeId
-    
+
     NodeId = NodeId + 1
   endmethod
 
@@ -500,19 +500,19 @@ class AST
 
     elif emit is 'cmpeq'
       opcode = AST_OPCODE_COMPARE_EQ
-     
+
     elif emit is 'cmpne'
       opcode = AST_OPCODE_COMPARE_NEQ
-      
+
     elif emit is 'cmpgt'
       opcode = AST_OPCODE_COMPARE_GT
 
     elif emit is 'cmpge'
       opcode = AST_OPCODE_COMPARE_GE
-    
+
     elif emit is 'cmplt'
       opcode = AST_OPCODE_COMPARE_LT
-    
+
     elif emit is 'cmple'
       opcode = AST_OPCODE_COMPARE_LE
 
@@ -524,7 +524,7 @@ class AST
 
     elif emit is 'not'
       opcode = AST_OPCODE_BOOL_NOT
-      
+
     elif emit is 'function'
       opcode = AST_OPCODE_FUNCTION
       rv['name']      = value['name']
@@ -549,26 +549,28 @@ class AST
       newParams = ['this']
       params    = value['parameters']
       paramsCnt = len(params)
-      
+
       for idx in 0 .. paramsCnt
         newParams[idx + 1] = params[idx]
       endfor
-      
+
       rv['name']      = value['name']
       rv['params']    = newParams
       rv['paramsCnt'] = len(newParams)
       rv['rv']        = value['rv']
-      
+
     elif emit is 'vcall'
       opcode = AST_OPCODE_INVOKE_METHOD
-      
+
     elif emit is 'new'
       opcode = AST_OPCODE_CALL_NEW
-      
+
     elif emit is 'delete'
       opcode = AST_OPCODE_CALL_DELETE
-    
+
     else
+      # TODO: Remove opcode assign.
+      opcode = -1
       die('Unrecognized opcode ' + emit)
     endif
 
@@ -583,7 +585,7 @@ class AST
       children[childrenCnt] = newChild
       childrenCnt           = childrenCnt + 1
       node                  = node.next
-  
+
       newChild.parent = node
     endwhile
 
@@ -1064,9 +1066,9 @@ class Parser
         this.buf[this.len] = 0
 
         this.stackIdx = this.stackIdx + 1
-        
+
         #print 'PUSH TO STACK (shift)', this.stackIdx
-        
+
         this.stack[this.stackIdx] = new Token()
 
         #
@@ -1181,13 +1183,13 @@ class Parser
 
               this.stack[this.stackIdx].node.next = node
             endif
-            
+
             node = this.stack[this.stackIdx].node
-  
+
             this.stack[this.stackIdx].node = null
 
           endif
-          
+
           this.stackIdx = this.stackIdx - 1
         endfor
 
@@ -1227,7 +1229,7 @@ class Parser
           this._getGo()
 
           this.stackIdx = this.stackIdx + 1
-          
+
           this.stack[this.stackIdx]        = new Token()
           this.stack[this.stackIdx].value  = this.ret
           this.stack[this.stackIdx].symbol = _symbols[this.lhs]
@@ -1258,19 +1260,19 @@ class Parser
         die('MAX ITERS reached!')
       endif
     endwhile
-    
+
     ast = this.getAst()
   endmethod
-  
+
   method parseFile(path) -> ast
     # Load source code from file.
     source        = __mold_loadFile(path)
     this.filePath = path
-    
-    # Parse source into AST tree.    
+
+    # Parse source into AST tree.
     ast = this._parseInternal(source)
   endmethod
-                  
+
   method parseText(text) -> ast
     this.filePath = ''
     ast           = this._parseInternal(text)

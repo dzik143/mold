@@ -567,6 +567,8 @@ class VMachineStack
         txt = 'load.argv'
 
       else
+        # TODO: Remove unneded assign.
+        txt = '[error]'
         die("unknown opcode '" + str(opcode) + "'")
       endif
 

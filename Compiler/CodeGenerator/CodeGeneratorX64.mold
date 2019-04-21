@@ -249,6 +249,8 @@ class CodeGeneratorX64
     currentFrameSize    = 0
     currentFrameOffsets = {}
 
+    symbols = {}
+
     # TODO: Remove it.
     arrayOfProcedures = []
 
@@ -1175,6 +1177,8 @@ class CodeGeneratorX64
             elif (symbol.type is 'int32') or (symbol.type is 'bool32')
               varSize = 4
             else
+              # TODO: Remove unneded assign.
+              varSize = -1
               die('error: unhandled operand type while setting up frame: ' + str(symbol.type))
             endif
 
