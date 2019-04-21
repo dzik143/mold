@@ -154,6 +154,61 @@ endfunction
 
 foo()
 
-EXPECTED_ERROR
+EXPECTED_ERROR:
 error: conflicting declaration 'global x'
+--------------------------------------------------------------------------------
+
+TEST "Merge if branches #1 (if-else)"
+
+if true
+  x = 1
+else
+  x = 2
+endif
+
+print x
+
+EXPECTED_OUTPUT:
+1
+--------------------------------------------------------------------------------
+
+TEST "Merge if branches #2 (if-elif-else)"
+
+cc = 2
+
+if cc is 1
+  x = 11
+
+elif cc is 2
+  x = 22
+
+else
+  x = 33
+endif
+
+print x
+
+EXPECTED_OUTPUT:
+22
+--------------------------------------------------------------------------------
+
+TEST "Merge if branches #3 (possible uset variable)"
+
+cc = 2
+
+if cc is 1
+  x = 11
+
+elif cc is 2
+  x = 22
+
+else
+  # Do nothing - x is not set.
+endif
+
+# Error - x may be not set here.
+print x
+
+EXPECTED_ERROR:
+error: 'x' was not declared in this scope
 --------------------------------------------------------------------------------
