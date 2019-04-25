@@ -212,3 +212,27 @@ print x
 EXPECTED_ERROR:
 error: 'x' was not declared in this scope
 --------------------------------------------------------------------------------
+
+TEST "Access to global array"
+
+const values = [10,11,12]
+function foo(idx)
+  global values
+  print 'foo(', idx, ') =', values[idx]
+endfunction
+
+foo(0)
+foo(1)
+foo(2)
+foo(3)
+foo(100000)
+foo(-100000)
+
+EXPECTED_OUTPUT:
+foo( 0 ) = 10
+foo( 1 ) = 11
+foo( 2 ) = 12
+foo( 3 ) = undefined
+foo( 100000 ) = undefined
+foo( -100000 ) = undefined
+--------------------------------------------------------------------------------

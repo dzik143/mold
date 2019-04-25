@@ -38,17 +38,38 @@ print 'abc + def = abcdef'
 
 --------------------------------------------------------------------------------
 
-TEST "Const arithmetic"
+TEST "Constant propagation"
 
 x = 1
 y = 2
-z = x + y
+
+add_xy  = x + y
+sub_xy  = x - y
+mul_xy  = x * y
+div_xy  = x / y
+idiv_xy = x // y
+
+add_yx  = y + x
+sub_yx  = y - x
+mul_yx  = y * x
+div_yx  = y / x
+idiv_yx = y // x
 
 EXPECTED_OUTPUT:
 x = 1
 y = 2
-z = 3
 
+add_xy = 3
+sub_xy = -1 
+mul_xy = 2
+div_xy = 0.500000
+idiv_xy = 0
+
+add_yx = 3
+sub_yx = 1 
+mul_yx = 2
+div_yx = 2.000000
+idiv_yx = 2
 --------------------------------------------------------------------------------
 
 TEST "len(imm)"
@@ -60,8 +81,8 @@ print 'len(false)         =', len(false)
 print 'len("text")        =', len('text')
 print 'len([])            =', len([])           
 print 'len([1,2,3,4])     =', len([1, 2, 3, 4])
-print 'len({})            =', len({})
-print 'len({"a":1,"b":2}) =', len({'a': 1, 'b': 2})
+#TODO: print 'len({})            =', len({})
+#TODO: print 'len({"a":1,"b":2}) =', len({'a': 1, 'b': 2})
 
 EXPECTED_OUTPUT:
 print 'len(1)             = 1'
@@ -69,11 +90,8 @@ print 'len(3.14)          = 1'
 print 'len(true)          = 1'
 print 'len(false)         = 1'
 print 'len("text")        = 4'
-print 'len([])            = 0'
-print 'len([1,2,3,4])     = 4'
-print 'len({})            = 0'
-print 'len({"a":1,"b":2}) = 2'
-
+print 'len([])            =', len([])
+print 'len([1,2,3,4])     =', len([1, 2, 3, 4])
 --------------------------------------------------------------------------------
 
 TEST "str(imm)"
@@ -83,10 +101,10 @@ print 'str(3.14)          =', str(3.14)
 print 'str(true)          =', str(true)
 print 'str(false)         =', str(false)
 print 'str("text")        =', str('text')
-print 'str([])            =', str([])           
-print 'str([1,2,3,4])     =', str([1, 2, 3, 4])
-print 'str({})            =', str({})
-print 'str({"a":1,"b":2}) =', str({'a': 1, 'b': 2})
+# TODO: print 'str([])            =', str([])           
+# TODO: print 'str([1,2,3,4])     =', str([1, 2, 3, 4])
+# TODO: print 'str({})            =', str({})
+# TODO: print 'str({"a":1,"b":2}) =', str({'a': 1, 'b': 2})
 
 EXPECTED_OUTPUT:
 print 'str(1)             = 1'
@@ -94,11 +112,6 @@ print 'str(3.14)          = 3.140000'
 print 'str(true)          = true'
 print 'str(false)         = false'
 print 'str("text")        = text'
-print 'str([])            = [array]'
-print 'str([1,2,3,4])     = [array]'
-print 'str({})            = [map]'
-print 'str({"a":1,"b":2}) = [map]'
-
 --------------------------------------------------------------------------------
 
 TEST "typeof(imm)"
@@ -108,10 +121,10 @@ print 'typeof(3.14)          =', typeof(3.14)
 print 'typeof(true)          =', typeof(true)
 print 'typeof(false)         =', typeof(false)
 print 'typeof("text")        =', typeof('text')
-print 'typeof([])            =', typeof([])
-print 'typeof([1,2,3,4])     =', typeof([1, 2, 3, 4])
-print 'typeof({})            =', typeof({})
-print 'typeof({"a":1,"b":2}) =', typeof({'a': 1, 'b': 2})
+# TODO: print 'typeof([])            =', typeof([])
+# TODO: print 'typeof([1,2,3,4])     =', typeof([1, 2, 3, 4])
+# TODO: print 'typeof({})            =', typeof({})
+# TODO: print 'typeof({"a":1,"b":2}) =', typeof({'a': 1, 'b': 2})
 
 EXPECTED_OUTPUT:
 print 'typeof(1)             = integer'
@@ -119,7 +132,611 @@ print 'typeof(3.14)          = float'
 print 'typeof(true)          = boolean'
 print 'typeof(false)         = boolean'
 print 'typeof("text")        = string'
-print 'typeof([])            = array'
-print 'typeof([1,2,3,4])     = array'
-print 'typeof({})            = map'
-print 'typeof({"a":1,"b":2}) = map'
+--------------------------------------------------------------------------------
+
+TEST "Bug: treat while loop variable as constant #1"
+
+goOn = true
+while goOn is true
+  goOn = false
+endwhile
+
+EXPECTED_OUTPUT:
+goOn = true
+while goOn is true
+  goOn = false
+endwhile
+--------------------------------------------------------------------------------
+
+TEST "Conditional write (single IF)"
+
+# Single if
+x = 0
+if true
+  x = x + 1
+endif
+print x
+
+EXPECTED_OUTPUT:
+x = 0
+if true
+  x = 1
+endif
+print x
+--------------------------------------------------------------------------------
+
+TEST "Conditional write (nested IF-IF-IF-IF... blocks)"
+
+# Single if
+x = 0
+if true
+  if true
+    if true
+      if true
+        if true
+          if true
+            if true
+              if true
+                x = x + 1
+              endif
+            endif
+          endif
+        endif
+      endif
+    endif
+  endif
+endif
+print x
+
+EXPECTED_OUTPUT:
+x = 0
+if true
+  if true
+    if true
+      if true
+        if true
+          if true
+            if true
+              if true
+                x = 1
+              endif
+            endif
+          endif
+        endif
+      endif
+    endif
+  endif
+endif
+print x
+--------------------------------------------------------------------------------
+
+TEST "Conditional write (single WHILE)"
+
+# Single while
+x = 0
+while true
+  x = x + 1
+endwhile
+
+EXPECTED_OUTPUT:
+x = 0
+while true
+  x = x + 1
+endwhile
+--------------------------------------------------------------------------------
+
+TEST "Conditional write (nested WHILE-WHILE-WHILE-... blocks)"
+
+# TODO: Enable more loops.
+x = 0
+while true
+  while true
+    while true
+#      while true
+#        while true
+#          while true
+#            while true
+#              while true
+                x = x + 1
+#              endwhile
+#            endwhile
+#          endwhile
+#        endwhile
+#      endwhile
+    endwhile
+  endwhile
+endwhile
+print x
+
+EXPECTED_OUTPUT:
+x = 0
+while true
+  while true
+    while true
+      x = x + 1
+    endwhile
+  endwhile
+endwhile
+print x
+--------------------------------------------------------------------------------
+
+TEST "Conditional write (mixed 2 nested IF/WHILE blocks)"
+
+#  Possible combinations (2 nested blocks, only mixed):
+#  IF    WHILE
+#  WHILE WHILE
+
+# IF-WHILE
+x = 0
+if true
+  while true
+    x = x + 1
+  endwhile
+endif
+print x
+
+# WHILE-IF
+x = 0
+while true
+  while true
+    x = x + 1
+  endwhile
+endwhile
+print x
+
+EXPECTED_OUTPUT:
+x = 0
+if true
+  while true
+    x = x + 1
+  endwhile
+endif
+print x
+
+x = 0
+while true
+  while true
+    x = x + 1
+  endwhile
+endwhile
+print x
+--------------------------------------------------------------------------------
+
+TEST "Conditional write (mixed 3 nested IF/WHILE blocks)"
+
+#
+#  Possible combinations (3 nested blocks):
+#  IF    IF    IF     (skipped, tested in another test)
+#  IF    IF    WHILE
+#  IF    WHILE IF
+#  IF    WHILE WHILE
+#
+#  WHILE IF    IF
+#  WHILE IF    WHILE
+#  WHILE WHILE IF
+#  WHILE WHILE WHILE  (skipped, tested in another test)
+
+#
+# IF-...-...
+#
+
+# IF-IF-WHILE
+x = 0
+if true
+  if true
+    while true
+      x = x + 1
+    endwhile
+  endif
+endif
+print x
+
+# IF-WHILE-IF
+x = 0
+if true
+  while true
+    if true
+      x = x + 1
+    endif
+  endwhile
+endif
+print x
+
+# IF-WHILE-WHILE
+x = 0
+if true
+  while true
+    while true
+      x = x + 1
+    endwhile
+  endwhile
+endif
+print x
+
+#
+# WHILE-...-...
+#
+
+# WHILE-IF-IF
+x = 0
+while true
+  if true
+    if true
+      x = x + 1
+    endif
+  endif
+endwhile
+print x
+
+# WHILE-IF-WHILE
+x = 0
+while true
+  if true
+    while true
+      x = x + 1
+    endwhile
+  endif
+endwhile
+print x
+
+# WHILE-WHILE-IF
+x = 0
+while true
+  while true
+    if true
+      x = x + 1
+    endif
+  endwhile
+endwhile
+print x
+
+EXPECTED_OUTPUT:
+x = 0
+if true
+  if true
+    while true
+      x = x + 1
+    endwhile
+  endif
+endif
+print x
+
+x = 0
+if true
+  while true
+    if true
+      x = x + 1
+    endif
+  endwhile
+endif
+print x
+
+x = 0
+if true
+  while true
+    while true
+      x = x + 1
+    endwhile
+  endwhile
+endif
+print x
+
+x = 0
+while true
+  if true
+    if true
+      x = x + 1
+    endif
+  endif
+endwhile
+print x
+
+x = 0
+while true
+  if true
+    while true
+      x = x + 1
+    endwhile
+  endif
+endwhile
+print x
+
+x = 0
+while true
+  while true
+    if true
+      x = x + 1
+    endif
+  endwhile
+endwhile
+print x
+--------------------------------------------------------------------------------
+
+TEST "Bug: conditional write inside while loop (while)"
+
+x = 0
+while x < 10
+  if true
+    x = x + 1
+  endif
+endwhile
+print x
+
+EXPECTED_OUTPUT:
+x = 0
+while x < 10
+  if true
+    x = x + 1
+  endif
+endwhile
+print x
+--------------------------------------------------------------------------------
+
+TEST "Bug: looped write inside if branch (while)"
+
+x   = 1234
+idx = 0
+
+if true
+  while idx < 10
+    x   = 1
+    idx = idx + 1
+  endwhile
+endif
+
+print x
+
+EXPECTED_OUTPUT:
+x = 1234
+idx = 0
+
+if true
+  while idx < 10
+    x = 1
+    idx = idx + 1
+  endwhile
+endif
+
+print x
+--------------------------------------------------------------------------------
+
+TEST "Bug: conditional write inside for loop #1"
+
+x = 0
+for idx in 0 .. 10
+  if true
+    x = x + 1
+  endif
+endfor
+print x
+
+EXPECTED_OUTPUT:
+x = 0
+for idx in 0 .. 10
+  if true
+    x = x + 1
+  endif
+endfor
+print x
+--------------------------------------------------------------------------------
+
+TEST "Bug: Conditional write inside for loop #2"
+
+function foo(data)
+  x = 0
+  for idx in 0 .. 1000
+    if data[idx] is 1
+      x = 2
+    elif data[idx] is 3
+      print x
+    endif
+  endfor  
+endfunction
+
+EXPECTED_OUTPUT:
+function foo(data)
+  x = 0
+  for idx in 0 .. 1000
+    if data[idx] is 1
+      x = 2
+    else
+      if data[idx] is 3
+        print x
+      endif
+    endif
+  endfor  
+endfunction
+--------------------------------------------------------------------------------
+
+TEST "Bug: looped write inside if branch (for)"
+
+x   = 1234
+idx = 0
+
+if true
+  for idx in 0 .. 10
+    x = 1
+  endfor
+endif
+
+print x
+
+EXPECTED_OUTPUT:
+x = 1234
+idx = 0
+
+if true
+  for idx in 0 .. 10
+    x = 1
+  endfor
+endif
+
+print x
+--------------------------------------------------------------------------------
+
+TEST "Constant / variables order (add/mul) (TODO)"
+
+function foo(x)
+  a = x + 1 # x + imm: Keep original.
+  b = 2 + x # imm + x: TODO: We want imm on right, but *EXCEPT* imm string.
+  c = 3 * x # imm * x: Keep original.
+  d = x * 4 # x * imm: We want imm on left.
+endfunction
+                 
+EXPECTED_OUTPUT:
+function foo(x)
+  a = x + 1
+  b = 2 + x
+  c = 3 * x
+  d = x * 4
+endfunction
+--------------------------------------------------------------------------------
+
+TEST "Propagate global constant"
+
+MAGIC = 1234
+
+function foo(x)
+  global MAGIC
+  print 'foo():', MAGIC
+endfunction
+
+class Base
+  method bar()
+    global MAGIC
+    print 'Base::bar():', MAGIC
+  endmethod
+endclass
+
+EXPECTED_OUTPUT:
+MAGIC = 1234
+
+function foo(x)
+  global(MAGIC)
+  print 'foo(): 1234'
+endfunction
+
+class Base
+  method bar()
+    global(MAGIC)
+    print 'Base::bar(): 1234'
+  endmethod
+endclass
+--------------------------------------------------------------------------------
+
+TEST "Fake global constant (global value modified at runtime)"
+
+MAGIC = 1234
+
+function foo(x)
+  global MAGIC
+  print 'foo():', MAGIC
+endfunction
+
+class Base
+  method bar()
+    global MAGIC
+    print 'Base::bar():', MAGIC
+  endmethod
+endclass
+
+# Modify global value. It's not constant anymore.
+MAGIC = 4321
+
+EXPECTED_OUTPUT:
+MAGIC = 1234
+
+function foo(x)
+  global(MAGIC)
+  print 'foo():', MAGIC
+endfunction
+
+class Base
+  method bar()
+    global(MAGIC)
+    print 'Base::bar():', MAGIC
+  endmethod
+endclass
+
+MAGIC = 4321
+--------------------------------------------------------------------------------
+
+TEST "Bug: broken order while concatenating strings"
+
+function foo(x)
+  print x + '...'
+endfunction
+
+EXPECTED_OUTPUT:
+function foo(x)
+  print x + '...'
+endfunction
+--------------------------------------------------------------------------------
+
+TEST "Bug: treat while condition as constant"
+
+x = 0
+while x is 0 
+  if true
+    x = 1
+  endif
+endwhile
+print x
+
+EXPECTED_OUTPUT:
+x = 0
+while x is 0 
+  if true
+    x = 1
+  endif
+endwhile
+print x
+--------------------------------------------------------------------------------
+
+TEST "Bug: nested conditional (should keeps original) (IF)"
+
+x = 0
+# Nested conditional (IF)
+if true
+  if true
+    x = 1
+  endif
+endif
+print x
+
+EXPECTED_OUTPUT:
+x = 0
+if true
+  if true
+    x = 1
+  endif
+endif
+print x
+--------------------------------------------------------------------------------
+
+TEST "Bug: nested conditional (should keeps original) (IF-ELSE)"
+
+# Nested conditional (IF-ELSE)
+if true
+  if true
+    x = 1
+  else
+    x = 2
+  endif
+else
+  x = 3
+endif
+print x
+
+EXPECTED_OUTPUT:
+if true
+  if true
+    x = 1
+  else
+    x = 2
+  endif
+else
+  x = 3
+endif
+print x
+--------------------------------------------------------------------------------

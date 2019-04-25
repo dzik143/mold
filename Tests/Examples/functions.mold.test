@@ -5,6 +5,15 @@ EXPECTED_ERROR:
 error: 'foo' was not declared in this scope
 -------------------------------------------------------------------------------
 
+TEST "Unused procedure"
+function foo()
+endfunction
+print 'OK!'
+
+EXPECTED_OUTPUT:
+OK!
+-------------------------------------------------------------------------------
+
 TEST "Simple procedure (no parameters, no return value)"
 function foo()
   print "foo() called"

@@ -46,7 +46,7 @@ TEST "Bug: Not verified parameters push before die() call"
 for idx in 0 .. 10
   print idx
 
-  if false
+  if idx is 99999
     die('error: unresolved call at address', idx)
   endif
 endfor
@@ -195,4 +195,56 @@ print node
 
 EXPECTED_OUTPUT:
 {'abcd': 1234}
+-------------------------------------------------------------------------------
+TEST "Bug: CSE fail #1 (insert __cse var in wrong scope)"
+
+box = {}
+buf = []
+
+box['len'] = 8
+bufCnt     = box['len']
+
+for idx in 0 .. bufCnt
+  buf[idx] = box['len']
+endfor
+
+print buf
+
+EXPECTED_OUTPUT:
+[8, 8, 8, 8, 8, 8, 8, 8]
+-------------------------------------------------------------------------------
+TEST "Bug: AST cycle after dead code elimination"
+
+class Parser
+  method parse()
+    _stack = []
+    _idx_  = 0
+
+    this.stackIdx = 1
+    
+    if false
+    
+    elif _idx_ is 0
+      this.ret = _stack[this.stackIdx - 1]
+
+    elif _idx_ is 1
+      this.ret = _stack[this.stackIdx - 1]
+
+    elif _idx_ is 2
+
+    elif _idx_ is 3
+      this.ret = _stack[this.stackIdx - 1]
+
+    elif _idx_ is 4
+    endif
+
+    print 'OK!'
+  endmethod
+endclass
+
+parser = new Parser()
+parser.parse()
+
+EXPECTED_OUTPUT:
+OK!
 -------------------------------------------------------------------------------

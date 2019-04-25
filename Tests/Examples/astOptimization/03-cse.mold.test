@@ -9,7 +9,7 @@ a = x * y + z
 b = x * g * y
 c = x * y / z
 
-# Change x, (x o y) also changed from now.
+# Change x, so x*y also changed from now.
 x = x + 1
 a = x * y + z
 b = x * g * y
@@ -101,10 +101,23 @@ x = __cse1[0]
 y = __cse1[1]
 z = __cse1[2]
 rv = x + y + z
-
 --------------------------------------------------------------------------------
 
 TEST "Common map index box.x (read #1)"
+
+box = {}
+print box.x
+print box.x
+
+EXPECTED_OUTPUT:  
+box = {}
+__cse0 = box['x']
+
+print __cse0
+print __cse0
+--------------------------------------------------------------------------------
+
+TEST "Common map index box.x (read #2)"
 
 box = {}
 x  = box.x * 2
@@ -134,7 +147,7 @@ z = __cse1 * 4
 rv = x + y + z
 --------------------------------------------------------------------------------
 
-TEST "Common map index box.x (read #2)"
+TEST "Common map index box.x (read #3)"
 
 box = {}
 
@@ -166,3 +179,41 @@ x = __cse1[0]
 y = __cse1[1]
 z = __cse1[2]
 rv = x + y + z
+--------------------------------------------------------------------------------
+
+TEST "Common map index box.x (read #4)"
+
+box   = {}
+box.x = 'value'
+
+print box.x
+print len(box.x)
+
+EXPECTED_OUTPUT:
+box = {}
+box['x'] = 'value'
+
+__cse0 = box['x']
+print __cse0
+print len(__cse0)
+--------------------------------------------------------------------------------
+
+TEST "Common map index box.x (read #5)"
+
+dst = {}
+src = {}
+
+src.x = 'value'
+
+dst['val'] = src['x']
+dst['len'] = len(src['x'])
+
+EXPECTED_OUTPUT:
+dst = {}
+src = {}
+src['x'] = 'value'
+
+__cse0 = src['x']
+dst['val'] = __cse0
+dst['len'] = len(__cse0)
+--------------------------------------------------------------------------------
