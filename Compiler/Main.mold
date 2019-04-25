@@ -19,6 +19,7 @@ import 'Parser/ParserMold.mold'
 
 import 'AppMold.mold'
 import 'AST/ASTSymbolsCollector.mold'
+
 import 'AST/ASTPrinterText.mold'
 import 'AST/ASTPrinterHtml.mold'
 import 'AST/ASTTranslatorMIR1.mold'
@@ -65,7 +66,7 @@ for idx in 1 .. argc
     # mold -c <file.mold>
     mode = 'compiler'
     print 'Error: compiler mode not implemented yet.'
-    print 'Try --asm option and assemble result by own instead.'
+    print 'Try --asm option and assemble result on by own instead.'
     exit()
 
   elif argv[idx] is '--asm'
@@ -88,9 +89,17 @@ for idx in 1 .. argc
     # Show AST tree as JSON.
     mode = 'astjson'
 
-  elif argv[idx] is '--debug'
+  elif argv[idx] is '--prettyPrinter'
+    # Show parsed mold code
+    mode = 'prettyPrinter'
+
+  elif argv[idx] is '--debug-parser'
     # Enable debug logs
     UNICC_DEBUG = true
+
+  elif argv[idx] is '--debug'
+    DEBUG_AST_OPTIMIZER = true
+    DEBUG_MOLD          = true
 
   elif argv[idx] is '-O0'
     optimizationLevel = 0
@@ -123,7 +132,11 @@ endif
 #
 
 app    = new AppMold()
+
+app._debug('Creating parser object...')
 parser = new Parser()
+
+app._debug('Parsing source...')
 ast    = parser.parseFile(path)
 
 #
@@ -142,13 +155,16 @@ elif mode is 'astjson'
 else
   # Convert AST to understood by translator format.
   # TODO: Remove this step.
+  app._debug('Converting AST...')
   ast = ast.convert()
 
   # Resolve imports if any.
+  app._debug('Resolving imports...')
   astModuleResolver = app.getAstModuleResolver()
   astModuleResolver.resolveImports(ast)
 
   # Build symbol table.
+  app._debug('Building symbol table...')
   astSymbolsCollector = app.getAstSymbolsCollector()
   astSymbolsCollector.buildSymbolTable(ast)
 
@@ -179,52 +195,69 @@ else
     astTranslator    = new ASTTranslatorMIR1(app)
     mirQuadCollector = new MIRQuadCollector()
 
+    app._debug('Optimizing AST...')
+
     if optimizationLevel is 0
       # No optimization - pass raw MIR1 to code generator.
       astTranslator.connectTo(mirQuadCollector)
 
-    /*
     elif optimizationLevel is 1
-      # Optimization level 1:
-      # - Remove redundant load/store
-      # - Use machine types if possible.
-      mirQuadOptimizer   = new MIRQuadOptimizer()
-      mirQuadTypeGuess   = new MIRQuadTypeGuess()
-      mirQuadTypeConvert = new MIRQuadTypeConvert()
+      # Optimization level #1 (basic AST optimizations):
+      # - constant folding,
+      # - dead code elimination,
+      # - common subexpression elimination (CSE).
 
-      astTranslator.connectTo(mirQuadOptimizer)
+      # Common preprocess before go-on with any AST optimization.
+      app.getAstEvaluator().processNode(ast)
 
-      mirQuadOptimizer.connectTo(mirQuadTypeGuess).connectTo(mirQuadTypeConvert).connectTo(mirQuadCollector)
-    */
+      # TODO: More generic way to apply selected optimizations.
+      app.getAstConstantFolder().processNode(ast)
+      #app.getAstOptimizerDeadCodeRemove().processNode(ast)
+      #app.getAstOptimizerCSE().processNode(ast)
+
+      # Pass translated AST to MIR1.
+      astTranslator.connectTo(mirQuadCollector)
+
     else
       die('error: optimization level #' + str(optimizationLevel) + ' is not implemented yet')
     endif
 
-    # Run build quads process.
-    astTranslator.run(ast)
 
-    # TODO
-    #if optimizationLevel >= 1
-    #  # TODO: Auto flush on stream end.
-    #  mirQuadTypeGuess.flush()
-    #endif
-
-    if mode is 'mir1'
-      # Print MIR quads only
-      mirQuadCollector.printQuads()
-
-    elif mode is 'asm'
-      # TODO: Better way to pass quads + meta.
-      code             = astTranslator.code
-      code.quads       = mirQuadCollector.getQuads()
-      code.symbolTable = app.getSymbolTable()
-
-      # Generate x64 code.
-      codeGenerator = new CodeGeneratorX64()
-      codeGenerator.run(code)
+    if mode is 'prettyPrinter'
+      # Show formatted mold code.
+      astPrinterText = new ASTPrinterText()
+      astPrinterText.printNode(ast)
 
     else
-      BadUsageError()
+      # Go on with further code processing.
+      # Run build quads process.
+      app._debug('Translating AST...')
+      astTranslator.run(ast)
+
+      # TODO
+      #if optimizationLevel >= 1
+      #  # TODO: Auto flush on stream end.
+      #  mirQuadTypeGuess.flush()
+      #endif
+
+      if mode is 'mir1'
+        # Print MIR quads only
+        mirQuadCollector.printQuads()
+
+      elif mode is 'asm'
+        # TODO: Better way to pass quads + meta.
+        code             = astTranslator.code
+        code.quads       = mirQuadCollector.getQuads()
+        code.symbolTable = app.getSymbolTable()
+
+        # Generate x64 code.
+        app._debug('Generating x64 code...')
+        codeGenerator = new CodeGeneratorX64()
+        codeGenerator.run(code)
+
+      else
+        BadUsageError()
+      endif
     endif
   endif
 endif

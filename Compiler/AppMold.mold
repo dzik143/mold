@@ -24,9 +24,12 @@ import 'AST/ASTOptimizerDeadCodeRemove.mold'
 # TODO: Clean up this mess.
 import 'MIR/MIR.mold'
 
+DEBUG_MOLD = false
+
 class AppMold
   method _debug(msg)
-    if false
+    global DEBUG_MOLD
+    if DEBUG_MOLD is true
       print '[ AppMold ]', msg
     endif
   endmethod
@@ -34,8 +37,8 @@ class AppMold
   method constructor()
     this._debug('Created new object')
 
-    this.astConstantFolder          = new ASTConstantFolder(this)
     this.symbolTable                = new SymbolTable(this)
+    this.astConstantFolder          = new ASTConstantFolder(this)
     this.astSymbolsCollector        = new ASTSymbolsCollector(this)
     this.astOptimizer               = new ASTOptimizer(this)
     this.astEvaluator               = new ASTEvaluator(this)
@@ -45,6 +48,8 @@ class AppMold
 
     # TODO: Clean up this mess.
     this.code = new MIRCode()
+
+    this._debug('Setting up built-in functions...')
 
     # TODO: More-friendly API here.
     __mold_openExternalModuleProto = {
@@ -81,6 +86,8 @@ class AppMold
     }
     this.symbolTable.insertFunction('__mold_loadFile', __mold_loadFileProto)
     this.code.createExternalProc('__MOLD_LoadFile', 'variant', 1, 'variant', '__MOLD_LoadFile')
+
+    this._debug('Ready to work')
   endmethod
 
   method getMir1Code() -> rv

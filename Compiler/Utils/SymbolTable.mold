@@ -103,11 +103,13 @@ class SymbolTable
     symbolsIndex = this.symbols._index
 
     newIndex = []
+
     for idx in 0 .. len(symbolsIndex)
       if symbolsIndex[idx].name isnt entry.name
         newIndex[len(newIndex)] = symbolsIndex[idx]
       endif
     endfor
+
     this.symbols._index = newIndex
   endmethod
 
@@ -347,15 +349,31 @@ class SymbolTable
       # Find symbol in global scope.
       symbolInfo = mainScope.lookup(name)
 
+      # Keep access stats after import.
+      writeHits = symbolInfo.writeHits
+      readHits  = symbolInfo.readHits
+      loopLevel = this.loopLevel
+
       if symbolInfo.kind isnt SYMBOL_KIND_VAR_GLOBAL
         # Symbol found in main() function for first time.
         # Change to global and move to global symbol table.
         symbolInfo.kind = SYMBOL_KIND_VAR_GLOBAL
+
+        # Move into global scope.
         this.global.insert(name, symbolInfo)
       endif
 
       # Import global var into current scope.
       this.insert(name, symbolInfo)
+
+      # Keep access stats after import.
+      symbolInfo.writeHits = writeHits
+      symbolInfo.readHits  = readHits
+
+      # TODO: Use max.
+      if loopLevel > symbolInfo.loopLevel
+        symbolInfo.loopLevel = loopLevel
+      endif
     endif
   endmethod
 

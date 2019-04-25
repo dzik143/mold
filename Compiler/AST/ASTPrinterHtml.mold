@@ -75,6 +75,10 @@ class ASTPrinterHtml
       print '<tr><td><small><i>', node.hash, '</i></small></td></tr>'
     endif
 
+    if node.hasSideEffects is true
+      print '<tr><td><small>has side effects</small></td></tr>'
+    endif
+
     if (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
       print '<tr><td>', node.name, '</td></tr>'
     endif

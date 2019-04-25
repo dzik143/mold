@@ -70,17 +70,22 @@ class ASTPrinterText
     global AST_OPCODE_IF
     global AST_OPCODE_FOR
     global AST_OPCODE_WHILE
+    global AST_OPCODE_FUNCTION
+    global AST_OPCODE_CLASS
+    global AST_OPCODE_CLASS_METHOD
 
     children    = node.children
     childrenCnt = node.childrenCnt
 
-    prefix = prefix + '  '
+    if (node.opcode isnt AST_OPCODE_CLASS) and (node.opcode isnt AST_OPCODE_FUNCTION) and (node.opcode isnt AST_OPCODE_CLASS_METHOD)
+      prefix = prefix + '  '
+    endif
 
     for idx in 0 .. childrenCnt
       if children[idx].opcode isnt AST_OPCODE_NOP
         this._printNode(prefix, children[idx])
 
-        if (children[idx].opcode isnt AST_OPCODE_BLOCK) and (children[idx].opcode isnt AST_OPCODE_IF)
+        if (children[idx].opcode isnt AST_OPCODE_BLOCK) and (children[idx].opcode isnt AST_OPCODE_IF) and (node.opcode isnt AST_OPCODE_CLASS)
           print ''
         endif
       endif
@@ -189,7 +194,9 @@ class ASTPrinterText
         # Empty map.
         print '{}'
       else
-        die('error: non-imm maps are not supported yet')
+        # TODO: Handle non-imm maps.
+        print '[map]'
+        # die('error: non-imm maps are not supported yet')
       endif
 
     elif opcode < AST_OPCODE_PROGRAM

@@ -55,6 +55,7 @@ class ASTSymbolsCollector
     global AST_OPCODE_CLASS
     global AST_OPCODE_CLASS_METHOD
     global AST_OPCODE_NOP
+    global SYMBOL_KIND_VAR_GLOBAL
 
     #this.astConstantFolder.processNodeUntilNotChanged(node)
 
@@ -257,12 +258,23 @@ class ASTSymbolsCollector
         symbolInfo = symbolTable.lookupForWriteOrInsert(lval.value)
         readHits   = symbolInfo.readHits
 
-        # Save value node for constant propagation.
-        symbolTable.assignNode(lval.value, lval)
+        #if symbolInfo.kind is SYMBOL_KIND_VAR_GLOBAL
+        #  # We ignore local access to global variables here to avoid false "init value".
+        #  # TODO: Use null?
+        #  x = []
+        #  symbolTable.assignNode(lval.value, x[0])
+        #  symbolTable.assignValue(lval.value, x[0])
+        #
+        #else
 
-        if AST_IsImm(rval)
-          symbolTable.assignValue(lval.value, rval.value)
-        endif
+          # Save value node for constant propagation.
+          symbolTable.assignNode(lval.value, lval)
+
+          if AST_IsImm(rval)
+            symbolTable.assignValue(lval.value, rval.value)
+          endif
+
+        #endif
 
         # Scan rval.
         this._collectSymbolsFromRightNode(symbolTable, rval)
@@ -394,7 +406,8 @@ class ASTSymbolsCollector
 
         # Import global symbol.
         if funcName is 'global'
-          node.opcode = AST_OPCODE_NOP
+          # TODO: Review it.
+          # node.opcode = AST_OPCODE_NOP
           for idx in 0 .. childrenCnt
             symbolTable.importGlobal(children[idx].value)
           endfor

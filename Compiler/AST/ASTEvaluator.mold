@@ -58,25 +58,33 @@ class ASTEvaluator
   method _mergeValues(x, y) -> rv
     rv = []
 
-    if typeof(x) isnt 'array'
-      x = [x]
+    # TODO: Optimize it.
+    # Merge in first array if any.
+    if typeof(x) isnt 'undefined'
+      if typeof(x) is 'array'
+        for i in 0 .. len(x)
+          rv[len(rv)] = x[i]
+        endfor
+      else
+        rv[len(rv)] = x
+      endif
     endif
 
-    if typeof(y) isnt 'array'
-      y = [y]
+    # Merge in second array if any.
+    if typeof(y) isnt 'undefined'
+      if typeof(y) is 'array'
+        for i in 0 .. len(y)
+          rv[len(rv)] = y[i]
+        endfor
+      else
+        rv[len(rv)] = y
+      endif
     endif
-
-    for i in 0 .. len(x)
-      rv[len(rv)] = x[i]
-    endfor
-
-    for i in 0 .. len(y)
-      rv[len(rv)] = y[i]
-    endfor
   endmethod
 
   method _processConditionalNode(values, node)
-    newValues = {'_index': [], 'parent': values}
+    newValues     = {'_index': [], 'parent': values}
+    alreadyMerged = {}
 
     this._processNode(newValues, node)
 
@@ -85,7 +93,7 @@ class ASTEvaluator
       oldValue = this._getValue(values, varId)
       newValue = newValues[varId]
 
-      if typeof(oldValue) is 'undefined'
+      if typeof(values[varId]) is 'undefined'
         values._index[len(values._index)] = varId
       endif
 
@@ -102,11 +110,11 @@ class ASTEvaluator
 
     for idx in 0 .. len(newValues1._index)
       varId    = newValues1._index[idx]
-      oldValue = values[varId]
+      oldValue = this._getValue(values, varId)
       value1   = newValues1[varId]
       value2   = newValues2[varId]
 
-      if typeof(oldValue) is 'undefined'
+      if typeof(values[varId]) is 'undefined'
         values._index[len(values._index)] = varId
       endif
 
@@ -115,11 +123,11 @@ class ASTEvaluator
 
     for idx in 0 .. len(newValues2._index)
       varId    = newValues2._index[idx]
-      oldValue = values[varId]
+      oldValue = this._getValue(values, varId)
       value1   = newValues1[varId]
       value2   = newValues2[varId]
 
-      if typeof(oldValue) is 'undefined'
+      if typeof(values[varId]) is 'undefined'
         values._index[len(values._index)] = varId
       endif
 
@@ -127,8 +135,25 @@ class ASTEvaluator
     endfor
   endmethod
 
+  method _getArrayOfValueNodes(node) -> rv
+    storedValue = node.storedValue
+    rv = []
+
+    if typeof(storedValue) is 'undefined'
+
+    elif typeof(storedValue) is 'array'
+      for idx in 0 .. len(storedValue)
+        rv[len(rv)] = storedValue[idx].id
+      endfor
+    else
+      rv = [storedValue.id]
+    endif
+  endmethod
+
   method _processNode(values, node)
     global AST_OPCODE_PROGRAM
+    global AST_OPCODE_FUNCTION
+    global AST_OPCODE_CLASS_METHOD
     global AST_OPCODE_BLOCK
     global AST_OPCODE_VARIABLE
     global AST_OPCODE_IF
@@ -146,7 +171,6 @@ class ASTEvaluator
     global AST_DATA_ARRAY, AST_DATA_MAP, AST_DATA_UNDEFINED
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
     global AST_OPCODE_REFERENCE
-    global SYMBOL_KIND_CONST
 
     # TODO: Use null if ready?
     opcode      = node.opcode
@@ -155,8 +179,19 @@ class ASTEvaluator
     childrenCnt = node.childrenCnt
     children    = node.children
 
+/*
+    if typeof(values['x']) is 'undefined'
+      print 'X BEFORE NODE #' + str(node.id), value, 'undefined'
+    elif typeof(values['x']) is 'array'
+      print 'X BEFORE NODE #' + str(node.id), value, values['x'][0].id, values['x'][1].id
+    else
+      print 'X BEFORE NODE #' + str(node.id), value, values['x'].id
+    endif
+*/
+
     if opcode is AST_OPCODE_VARIABLE
       node.storedValue = this._getValue(values, node.value)
+      # print "GET VALUE at node #" + str(node.id), node.value, this._getArrayOfValueNodes(node)
 
     elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
       lval = children[0]
@@ -169,6 +204,14 @@ class ASTEvaluator
 
       elif lval.opcode is AST_OPCODE_REFERENCE
         # TODO: Review it.
+        boxOpcode = lval.children[0].opcode
+
+        if (boxOpcode isnt AST_OPCODE_VARIABLE) and (boxOpcode isnt AST_OPCODE_REFERENCE)
+          # Error - lval should stores variable name.
+          # box[i] = ...
+          die('error: array or map expected')
+        endif
+
         this._assignValue(values, lval, lval)
         this._processNode(values, lval)
       endif
@@ -190,23 +233,48 @@ class ASTEvaluator
       this._assignValue(values, iter, iter)
       iter.storedValue = [iterBeginValue, iter]
 
-      this._processConditionalNode(values, body)
+      # First loop rotate.
       this._processConditionalNode(values, body)
 
+      # N-th loop rotate.
+      this._processConditionalNode(values, body)
 
     elif opcode is AST_OPCODE_WHILE
       cond = children[0]
       body = children[1]
 
+      # First loop rotate.
       this._processNode(values, cond)
       this._processConditionalNode(values, body)
+
+      # N-th loop rotate.
+      this._processConditionalNode(values, cond)
       this._processConditionalNode(values, body)
 
     else
+      if (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
+        values = {'_index': []}
+      endif
+
       for idx in 0 .. childrenCnt
         this._processNode(values, children[idx])
       endfor
     endif
+/*
+    if typeof(values['x']) is 'undefined'
+      print 'X AFTER NODE #' + str(node.id), value, 'undefined'
+
+    elif typeof(values['x']) is 'array'
+      if len(values['x']) is 2
+        print 'X AFTER NODE #' + str(node.id), value, values['x'][0].id, values['x'][1].id
+      else
+        print 'X AFTER NODE #' + str(node.id), value, values['x'][0].id
+      endif
+
+    else
+      print 'X AFTER NODE #' + str(node.id), value, values['x'].id
+    endif
+*/
   endmethod
 
   method processNode(node)

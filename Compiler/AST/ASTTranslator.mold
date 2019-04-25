@@ -304,11 +304,13 @@ class ASTTranslator
     children  = ast['children']
 
     if typeof(children) isnt 'undefined'
+      this.app._debug('Emitting function ' + funcName + '...')
+
       oldSymbolTable   = this.symbolTable
       this.symbolTable = ast.children[0].symbolTable
 
       if typeof(funcProto.className) isnt 'undefined'
-        this.currentClassProto    = oldSymbolTable.lookupClass(funcProto.className)['proto']
+        this.currentClassProto = oldSymbolTable.lookupClass(funcProto.className)['proto']
       endif
 
       this.currentFunctionProto = funcProto
@@ -343,6 +345,8 @@ class ASTTranslator
         this._declareClass(symbolInfo.name, symbolInfo.proto)
       endif
     endfor
+
+    this.app._debug('Globals emmited')
   endmethod
 
   method _callSuper(params, paramsCnt)
@@ -456,6 +460,24 @@ class ASTTranslator
     value       = ast['value']
     children    = ast['children']
     childrenCnt = ast['childrenCnt']
+
+    #
+    # DEBUG ONLY
+    #
+
+    if (ast.isTranslated is true) and (AST_IsImmOrVar(ast) is false)
+      die('error: node #' + str(ast.id) + ' is already translated (eval)')
+    endif
+
+    if childrenCnt isnt len(ast.children)
+      die('error: incosisent childrenCnt vs len(children) at node #' + str(ast.id))
+    endif
+
+    ast.isTranslated = true
+
+    #
+    # END OF DEBUG ONLY
+    #
 
     if opcode is AST_DATA_ARRAY
       rvType = 'array'
@@ -787,6 +809,26 @@ class ASTTranslator
     value       = ast['value']
     children    = ast['children']
     childrenCnt = ast['childrenCnt']
+
+    #
+    # DEBUG ONLY
+    #
+
+    # print ast.id, opcode, value
+
+    if ast.isTranslated is true
+      die('error: node #' + str(ast.id) + ' is already translated')
+    endif
+
+    if childrenCnt isnt len(ast.children)
+      die('error: incosisent childrenCnt vs len(children) at node #' + str(ast.id))
+    endif
+
+    ast.isTranslated = true
+
+    #
+    # END OF DEBUG ONLY
+    #
 
     # Dispatch opcode.
     if opcode is AST_OPCODE_PROGRAM

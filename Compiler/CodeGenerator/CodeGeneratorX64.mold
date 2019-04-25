@@ -12,6 +12,7 @@
 #                                                                              #
 ################################################################################
 
+import 'Utils/SymbolTable.mold'
 import 'MIR/MIR.mold'
 import 'Utils/Stack.mold'
 

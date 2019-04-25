@@ -252,10 +252,10 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
     rv = 'm'
 
   elif opcode is AST_OPCODE_BOOL_AND
-    rv = '&'
+    rv = 'and'
 
   elif opcode is AST_OPCODE_BOOL_OR
-    rv = '|'
+    rv = 'or'
 
   elif opcode is AST_OPCODE_NEG
     rv = '-'
@@ -295,6 +295,16 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
 
   elif opcode is AST_OPCODE_VARIABLE
     rv = 'v'
+
+  # TODO: Review it.
+  elif opcode is AST_OPCODE_CALL
+    rv = 'call'
+
+  elif opcode is AST_OPCODE_CALL_NEW
+    rv = 'new'
+
+  elif opcode is AST_OPCODE_INVOKE_METHOD
+    rv = 'vcall'
 
   else
     die('error: unhandled opcode: ' + str(opcode))
@@ -408,6 +418,9 @@ endfunction
 function AST_Hash(node) -> rv
   #global AST_DATA_ARRAY
   #global AST_DATA_MAP
+  global AST_OPCODE_CALL
+  global AST_OPCODE_CALL_NEW
+  global AST_OPCODE_INVOKE_METHOD
 
   opcode      = node.opcode
   children    = node.children
@@ -454,6 +467,13 @@ function AST_Hash(node) -> rv
     elif AST_IsPrimitiveImm(node)
       rv = AST_GetOpcodeAsShortText(opcode) + str(node.value)
 
+    elif (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_CALL_NEW) or (opcode is AST_OPCODE_INVOKE_METHOD)
+      # TODO: Review it.
+      rv = AST_GetOpcodeAsShortText(opcode) + ':' + node.value + ',' + str(childrenCnt)
+      for idx in 0 .. childrenCnt
+        rv  = rv + ',' + AST_Hash(children[idx])
+      endfor
+
     else
       rv = AST_GetOpcodeAsShortText(opcode) + ',' + str(childrenCnt)
       for idx in 0 .. childrenCnt
@@ -462,5 +482,38 @@ function AST_Hash(node) -> rv
     endif
 
     node.hash = rv
+  endif
+endfunction
+
+function AST_HasSideEffects(node) -> rv
+  global AST_OPCODE_CALL
+  global AST_OPCODE_CALL_NEW
+  global AST_OPCODE_INVOKE_METHOD
+
+  opcode = node.opcode
+
+  if opcode is AST_OPCODE_CALL
+    # TODO: Check function protos.
+    if (node.value is 'str') or (node.value is 'len')
+      # Built-in function without side effect.
+      rv = false
+    else
+      rv = true
+    endif
+
+  elif (opcode is AST_OPCODE_CALL_NEW) or (opcode is AST_OPCODE_INVOKE_METHOD)
+    # TODO: Check function protos.
+    rv = true
+
+  else
+    rv          = false
+    childIdx    = 0
+    children    = node.children
+    childrenCnt = node.childrenCnt
+
+    while (childIdx < childrenCnt) and (rv is false)
+      rv       = AST_HasSideEffects(children[childIdx])
+      childIdx = childIdx + 1
+    endwhile
   endif
 endfunction

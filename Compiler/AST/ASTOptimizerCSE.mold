@@ -17,9 +17,8 @@ import 'AST/ASTUtils.mold'
 
 class ASTOptimizerCSE
   method constructor(app)
-    this.app              = app
-    this.mapOfExpressions = {}
-    this.nextId           = 0
+    this.app    = app
+    this.nextId = 0
   endmethod
 
   method _getNextId() -> rv
@@ -32,7 +31,7 @@ class ASTOptimizerCSE
 
     rv = {
       # TODO: Ask AST for id?
-      'id': -1,
+      'id': AST_GetNextId(),
       'opcode': AST_OPCODE_VARIABLE,
       'value': '__cse' + str(this._getNextId()),
       'children': [],
@@ -47,7 +46,7 @@ class ASTOptimizerCSE
     endif
   endmethod
 
-  method _processNode(node) -> rv
+  method _processNode(node, mapOfExpressions, symbolTable) -> rv
     global AST_OPCODE_PROGRAM
     global AST_OPCODE_BLOCK
     global AST_OPCODE_VARIABLE
@@ -67,6 +66,15 @@ class ASTOptimizerCSE
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
     global AST_OPCODE_REFERENCE
     global SYMBOL_KIND_CONST
+    global AST_OPCODE_FUNCTION
+    global AST_OPCODE_CLASS
+    global AST_OPCODE_CLASS_METHOD
+    global AST_OPCODE_INVOKE_METHOD
+
+    # Switch symbolTable if needed.
+    if typeof(node.symbolTable) isnt 'undefined'
+      symbolTable = node.symbolTable
+    endif
 
     # TODO: Use null if ready?
     opcode      = node.opcode
@@ -97,77 +105,118 @@ class ASTOptimizerCSE
       endif
 
       AST_Hash(rval)
-    endif
 
-    if (node.childrenCnt > 0) and (typeof(node.hash) isnt 'undefined')
-      matchedNode = this.mapOfExpressions[node.hash]
+      newRval = this._processNode(rval, mapOfExpressions, symbolTable)
+      if newRval isnt rval
+        children[1] = newRval
+      endif
 
-      if matchedNode is node
-        # Do nothing - it's the same node.
+    elif opcode is AST_OPCODE_IF
+      # IF branch or function/method.
+      # Start new expression table from scratch.
+      for idx in 0 .. childrenCnt
+        mapOfExpressions = {}
+        this._processNode(children[idx], mapOfExpressions, symbolTable)
+      endfor
 
-      elif typeof(matchedNode) is 'undefined'
-        # Expression seen first time, save it in map and wait for
-        # more expressions from different nodes.
-        this.mapOfExpressions[node.hash] = node
+    elif (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
+      # IF branch or function/method.
+      # Start new expression table from scratch.
+      mapOfExpressions = {}
+      for idx in 0 .. childrenCnt
+        this._processNode(children[idx], mapOfExpressions, symbolTable)
+      endfor
 
-      else
-        # Two nodes with common subexpression found.
-        # Move common subexpression to new temp var.
-        this._debug('Common subexpression at nodes (#' + str(node.id) + ', #' + str(matchedNode.id) + ')')
-
-        # TODO: Optimize it.
-        if matchedNode.opcode isnt AST_OPCODE_VARIABLE
-          matchedNode.opcode      = AST_OPCODE_VARIABLE
-          matchedNode.value       = '__cse' + str(this._getNextId())
-          matchedNode.children    = []
-          matchedNode.childrenCnt = 0
-
-          instrNode = matchedNode
-
-          while instrNode.parent.opcode isnt AST_OPCODE_BLOCK
-            instrNode = instrNode.parent
-          endwhile
-
-          blockNode            = instrNode.parent
-          blockNodeNewChildren = []
-
-          for idx in 0 .. blockNode.childrenCnt
-            if blockNode.children[idx] is instrNode
-              # Push __csexx = ... before first usage.
-              blockNodeNewChildren[len(blockNodeNewChildren)] = {
-                'id': -1,
-                'opcode': AST_OPCODE_DECLARE_OR_ASSIGN,
-                'children': [matchedNode, node],
-                'childrenCnt': 2
-              }
-            endif
-
-            blockNodeNewChildren[len(blockNodeNewChildren)] = blockNode.children[idx]
-          endfor
-
-          blockNode.children    = blockNodeNewChildren
-          blockNode.childrenCnt = len(blockNodeNewChildren)
+    elif (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_INVOKE_METHOD)
+      for idx in 0 .. childrenCnt
+        AST_Hash(children[idx])
+        newNode = this._processNode(children[idx], mapOfExpressions, symbolTable)
+        if newNode isnt children[idx]
+          children[idx] = newNode
         endif
+      endfor
 
-        rv = matchedNode
+    else
 
-        #node.opcode      = AST_OPCODE_VARIABLE
-        #node.value       = matchedNode.value
-        #node.children    = []
-        #node.childrenCnt = 0
+      if (node.childrenCnt > 0) and (typeof(node.hash) isnt 'undefined')
+        matchedNode = mapOfExpressions[node.hash]
 
+        if matchedNode is node
+          # Do nothing - it's the same node.
+
+        elif typeof(matchedNode) is 'undefined'
+          # Expression seen first time, save it in map and wait for
+          # more expressions from different nodes.
+          node.symbolTable = symbolTable
+          mapOfExpressions[node.hash] = node
+          this._debug('Expression found at node #' + str(node.id) + ', (' + node.hash + ')')
+
+        else
+          # Two nodes with common subexpression found.
+          # Move common subexpression to new temp var.
+          this._debug('Common subexpression at nodes (#' + str(node.id) + ', #' + str(matchedNode.id) + ') (' + node.hash + ')')
+
+          # TODO: Optimize it.
+          if matchedNode.opcode isnt AST_OPCODE_VARIABLE
+            matchedNode.opcode      = AST_OPCODE_VARIABLE
+            matchedNode.value       = '__cse' + str(this._getNextId())
+            matchedNode.children    = []
+            matchedNode.childrenCnt = 0
+
+            matchedNode.symbolTable.lookupForWriteOrInsert(matchedNode.value)
+            matchedNode.symbolTable.lookupForRead(matchedNode.value)
+
+            instrNode = matchedNode
+
+            while instrNode.parent.opcode isnt AST_OPCODE_BLOCK
+              instrNode = instrNode.parent
+            endwhile
+
+            blockNode            = instrNode.parent
+            blockNodeNewChildren = []
+
+            for idx in 0 .. blockNode.childrenCnt
+              if blockNode.children[idx] is instrNode
+                # Push __csexx = ... before first usage.
+                blockNodeNewChildren[len(blockNodeNewChildren)] = {
+                  'id': AST_GetNextId(),
+                  'opcode': AST_OPCODE_DECLARE_OR_ASSIGN,
+                  'children': [matchedNode, node],
+                  'childrenCnt': 2
+                }
+              endif
+
+              blockNodeNewChildren[len(blockNodeNewChildren)] = blockNode.children[idx]
+            endfor
+
+            blockNode.children    = blockNodeNewChildren
+            blockNode.childrenCnt = len(blockNodeNewChildren)
+          endif
+
+          rv = matchedNode
+
+          matchedNode.symbolTable.lookupForRead(matchedNode.value)
+
+          #node.opcode      = AST_OPCODE_VARIABLE
+          #node.value       = matchedNode.value
+          #node.children    = []
+          #node.childrenCnt = 0
+
+        endif
       endif
+
+      for idx in 0 .. childrenCnt
+        newNode = this._processNode(children[idx], mapOfExpressions, symbolTable)
+        if newNode isnt children[idx]
+          children[idx] = newNode
+        endif
+      endfor
     endif
-
-    for idx in 0 .. childrenCnt
-      newNode = this._processNode(children[idx])
-      if newNode isnt children[idx]
-        children[idx] = newNode
-      endif
-    endfor
   endmethod
 
   method processNode(node)
-    this._processNode(node)
+    mapOfExpressions = {}
+    symbolTable      = node.symbolTable
+    this._processNode(node, mapOfExpressions, symbolTable)
   endmethod
 endclass
