@@ -106,8 +106,8 @@ class AppMold
     rv = this.astOptimizer
   endmethod
 
-  method getAstOptmizerConstantFolding() -> rv
-    rv = this.astOptmizerConstantFolding
+  method getAstOptimizerConstantFolding() -> rv
+    rv = this.astOptimizerConstantFolding
   endmethod
 
   method getAstEvaluator() -> rv
