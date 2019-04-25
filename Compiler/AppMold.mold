@@ -17,7 +17,7 @@ import 'AST/ASTModuleResolver.mold'
 import 'AST/ASTSymbolsCollector.mold'
 import 'AST/ASTOptimizer.mold'
 import 'AST/ASTEvaluator.mold'
-import 'AST/ASTConstantFolder.mold'
+import 'AST/ASTOptimizerConstantFolding.mold'
 import 'AST/ASTOptimizerCSE.mold'
 import 'AST/ASTOptimizerDeadCodeRemove.mold'
 
@@ -37,14 +37,14 @@ class AppMold
   method constructor()
     this._debug('Created new object')
 
-    this.symbolTable                = new SymbolTable(this)
-    this.astConstantFolder          = new ASTConstantFolder(this)
-    this.astSymbolsCollector        = new ASTSymbolsCollector(this)
-    this.astOptimizer               = new ASTOptimizer(this)
-    this.astEvaluator               = new ASTEvaluator(this)
-    this.astOptimizerCSE            = new ASTOptimizerCSE(this)
-    this.astOptimizerDeadCodeRemove = new ASTOptimizerDeadCodeRemove(this)
-    this.astModuleResolver          = new ASTModuleResolver(this)
+    this.symbolTable                 = new SymbolTable(this)
+    this.astOptimizerConstantFolding = new ASTOptimizerConstantFolding(this)
+    this.astSymbolsCollector         = new ASTSymbolsCollector(this)
+    this.astOptimizer                = new ASTOptimizer(this)
+    this.astEvaluator                = new ASTEvaluator(this)
+    this.astOptimizerCSE             = new ASTOptimizerCSE(this)
+    this.astOptimizerDeadCodeRemove  = new ASTOptimizerDeadCodeRemove(this)
+    this.astModuleResolver           = new ASTModuleResolver(this)
 
     # TODO: Clean up this mess.
     this.code = new MIRCode()
@@ -106,8 +106,8 @@ class AppMold
     rv = this.astOptimizer
   endmethod
 
-  method getAstConstantFolder() -> rv
-    rv = this.astConstantFolder
+  method getAstOptmizerConstantFolding() -> rv
+    rv = this.astOptmizerConstantFolding
   endmethod
 
   method getAstEvaluator() -> rv

@@ -18,9 +18,7 @@ import 'AST/ASTUtils.mold'
 class ASTSymbolsCollector
 
   method constructor(app)
-    this.app               = app
-    this.astEvaluator      = app.getAstEvaluator()
-    this.astConstantFolder = app.getAstConstantFolder()
+    this.app = app
 
     # TODO: Remove redundant array if map iteration will work.
     this.vtable        = {}
@@ -56,8 +54,6 @@ class ASTSymbolsCollector
     global AST_OPCODE_CLASS_METHOD
     global AST_OPCODE_NOP
     global SYMBOL_KIND_VAR_GLOBAL
-
-    #this.astConstantFolder.processNodeUntilNotChanged(node)
 
     opcode      = node.opcode
     children    = node.children

@@ -14,7 +14,7 @@
 
 import 'AST/AST.mold'
 
-class ASTConstantFolder
+class ASTOptimizerConstantFolding
   method constructor(app)
     this.app = app
     this.globals = app.getSymbolTable()
@@ -23,7 +23,7 @@ class ASTConstantFolder
   method _debug(msg)
     global DEBUG_AST_OPTIMIZER
     if DEBUG_AST_OPTIMIZER is true
-      print '[ ASTConstantFolder ]', msg
+      print '[ ASTConstantFolding ]', msg
     endif
   endmethod
 

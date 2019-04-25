@@ -39,7 +39,7 @@ astPrinterHtml      = new ASTPrinterHtml()
 astEvaluator        = app.getAstEvaluator()
 
 poolOfOptimizationProviders = {
-  'constantFolding': app.getAstConstantFolder(),
+  'constantFolding': app.getAstOptimizerConstantFolding(),
   'deadCodeRemove': app.getAstOptimizerDeadCodeRemove(),
   'cse': app.getAstOptimizerCSE()
 }

@@ -32,15 +32,15 @@ import '1.ast'
 
 #print '<pre>'
 
-app                        = new AppMold()
-astSymbolsCollector        = app.getAstSymbolsCollector()
-astConstantFolder          = app.getAstConstantFolder()
-astEvaluator               = app.getAstEvaluator()
-astOptimizerCSE            = app.getAstOptimizerCSE()
-astOptimizerDeadCodeRemove = app.getAstOptimizerDeadCodeRemove()
-astModuleResolver          = app.getAstModuleResolver()
-astPrinterText             = new ASTPrinterText()
-astPrinterHtml             = new ASTPrinterHtml()
+app                         = new AppMold()
+astSymbolsCollector         = app.getAstSymbolsCollector()
+astOptimizerConstantFolding = app.getAstOptimizerConstantFolding()
+astEvaluator                = app.getAstEvaluator()
+astOptimizerCSE             = app.getAstOptimizerCSE()
+astOptimizerDeadCodeRemove  = app.getAstOptimizerDeadCodeRemove()
+astModuleResolver           = app.getAstModuleResolver()
+astPrinterText              = new ASTPrinterText()
+astPrinterHtml              = new ASTPrinterHtml()
 
 if typeof(astModuleResolver) isnt 'undefined'
   print 'Resolving imports...'
@@ -54,7 +54,7 @@ print 'Evaluate AST...'
 astEvaluator.processNode(ast)
 
 print 'Constant folding...'
-astConstantFolder.processNode(ast)
+astOptimizerConstantFolding.processNode(ast)
 
 print 'Dead code elimination...'
 astOptimizerDeadCodeRemove.processNode(ast)

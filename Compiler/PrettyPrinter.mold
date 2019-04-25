@@ -21,19 +21,19 @@ import '1.ast'
 
 print '<pre>'
 
-app                        = new AppMold()
-astSymbolsCollector        = app.getAstSymbolsCollector()
-astConstantFolder          = app.getAstConstantFolder()
-astEvaluator               = app.getAstEvaluator()
-astOptimizerCSE            = app.getAstOptimizerCSE()
-astOptimizerDeadCodeRemove = app.getAstOptimizerDeadCodeRemove()
-astPrinterText             = new ASTPrinterText()
-astPrinterHtml             = new ASTPrinterHtml()
+app                         = new AppMold()
+astSymbolsCollector         = app.getAstSymbolsCollector()
+astOptimizerConstantFolding = app.getAstOptimizerConstantFolding()
+astEvaluator                = app.getAstEvaluator()
+astOptimizerCSE             = app.getAstOptimizerCSE()
+astOptimizerDeadCodeRemove  = app.getAstOptimizerDeadCodeRemove()
+astPrinterText              = new ASTPrinterText()
+astPrinterHtml              = new ASTPrinterHtml()
 
 astSymbolsCollector.buildSymbolTable(ast)
 astEvaluator.processNode(ast)
 
-#astConstantFolder.processNode(ast)
+#astOptimizerConstantFolding.processNode(ast)
 #astOptimizerDeadCodeRemove.processNode(ast)
 #astOptimizerCSE.processNode(ast)
 

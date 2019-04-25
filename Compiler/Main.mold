@@ -211,7 +211,7 @@ else
       app.getAstEvaluator().processNode(ast)
 
       # TODO: More generic way to apply selected optimizations.
-      app.getAstConstantFolder().processNode(ast)
+      app.getAstOptimizerConstantFolding().processNode(ast)
       #app.getAstOptimizerDeadCodeRemove().processNode(ast)
       #app.getAstOptimizerCSE().processNode(ast)
 
