@@ -212,7 +212,7 @@ else
 
       # TODO: More generic way to apply selected optimizations.
       app.getAstOptimizerConstantFolding().processNode(ast)
-      #app.getAstOptimizerDeadCodeRemove().processNode(ast)
+      app.getAstOptimizerDeadCodeRemove().processNode(ast)
       #app.getAstOptimizerCSE().processNode(ast)
 
       # Pass translated AST to MIR1.

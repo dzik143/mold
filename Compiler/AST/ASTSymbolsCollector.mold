@@ -239,10 +239,16 @@ class ASTSymbolsCollector
        # 2. ...  = x[i] : x is right, i is right
        # Rule:
        # - x always save L/R context,
-       # - i has always R context (lookup for read).
+       # - index (i) has always R context (lookup for read).
 
        this._collectSymbols(symbolTable, children[0], isLeftNode)
        this._collectSymbolsFromRightNode(symbolTable, children[1])
+
+       # TODO: Review it.
+       if children[0].opcode is AST_OPCODE_VARIABLE
+         # x[i] = ... is read for x too.
+         symbolTable.lookupForRead(children[0].value)
+       endif
 
     elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
       # lval = rval

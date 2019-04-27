@@ -258,3 +258,30 @@ function usedBar(x, y, z)
   print 'usedBar(', x, y, z, ')'
 endfunction
 usedBar(1, 2, 3)
+--------------------------------------------------------------------------------
+
+TEST "Bug: Fake unused variable on left side reference: x[idx] = ..."
+
+class Base
+  method createClass(proto) -> id
+    id = this['classListCnt']
+    className = proto['name']
+    classMap = this['classMap']
+    classList = this['classList']
+    classMap[className] = id
+    classList[id] = proto
+  endmethod
+endclass
+
+EXPECTED_OUTPUT:
+class Base
+  method createClass(proto) -> id
+    id = this['classListCnt']
+    className = proto['name']
+    classMap = this['classMap']
+    classList = this['classList']
+    classMap[className] = id
+    classList[id] = proto
+  endmethod
+endclass
+--------------------------------------------------------------------------------
