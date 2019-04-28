@@ -33,9 +33,9 @@ astPrinterHtml              = new ASTPrinterHtml()
 astSymbolsCollector.buildSymbolTable(ast)
 astEvaluator.processNode(ast)
 
-#astOptimizerConstantFolding.processNode(ast)
-#astOptimizerDeadCodeRemove.processNode(ast)
-#astOptimizerCSE.processNode(ast)
+astOptimizerConstantFolding.processNode(ast)
+astOptimizerDeadCodeRemove.processNode(ast)
+astOptimizerCSE.processNode(ast)
 
 astPrinterText.printNode(ast)
 

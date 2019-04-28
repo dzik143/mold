@@ -208,12 +208,18 @@ else
       # - common subexpression elimination (CSE).
 
       # Common preprocess before go-on with any AST optimization.
+      app._debug('Evaluating AST nodes...')
       app.getAstEvaluator().processNode(ast)
 
       # TODO: More generic way to apply selected optimizations.
+      app._debug('Constant folding...')
       app.getAstOptimizerConstantFolding().processNode(ast)
+
+      app._debug('Dead code elimination...')
       app.getAstOptimizerDeadCodeRemove().processNode(ast)
-      #app.getAstOptimizerCSE().processNode(ast)
+
+      app._debug('Common subexpression elimination (CSE)...')
+      app.getAstOptimizerCSE().processNode(ast)
 
       # Pass translated AST to MIR1.
       astTranslator.connectTo(mirQuadCollector)

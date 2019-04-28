@@ -79,6 +79,7 @@ class ASTOptimizerCSE
     # TODO: Use null if ready?
     opcode      = node.opcode
     value       = node.value
+    goOn        = true
     childrenCnt = node.childrenCnt
     children    = node.children
     rv          = node
@@ -119,6 +120,19 @@ class ASTOptimizerCSE
         this._processNode(children[idx], mapOfExpressions, symbolTable)
       endfor
 
+    elif opcode is AST_OPCODE_WHILE
+      # TODO: Review it.
+      # This is fix for:
+      #  rv = values[name]
+      #  while typeof(values['parent']) isnt 'undefined'
+      #  values = values['parent']
+      #  rv = values[name]
+      # endwhile
+      for idx in 0 .. childrenCnt
+        mapOfExpressions = {}
+        this._processNode(children[idx], mapOfExpressions, symbolTable)
+      endfor
+
     elif (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
       # IF branch or function/method.
       # Start new expression table from scratch.
@@ -137,6 +151,11 @@ class ASTOptimizerCSE
       endfor
 
     else
+
+      # TODO: Review it.
+      if opcode is AST_OPCODE_FOR_VALUES_RANGE
+        mapOfExpressions = {}
+      endif
 
       if (node.childrenCnt > 0) and (typeof(node.hash) isnt 'undefined')
         matchedNode = mapOfExpressions[node.hash]
@@ -202,15 +221,19 @@ class ASTOptimizerCSE
           #node.children    = []
           #node.childrenCnt = 0
 
+          # Don't go on into deeper nodes.
+          goOn = false
         endif
       endif
 
-      for idx in 0 .. childrenCnt
-        newNode = this._processNode(children[idx], mapOfExpressions, symbolTable)
-        if newNode isnt children[idx]
-          children[idx] = newNode
-        endif
-      endfor
+      if goOn is true
+        for idx in 0 .. childrenCnt
+          newNode = this._processNode(children[idx], mapOfExpressions, symbolTable)
+          if newNode isnt children[idx]
+            children[idx] = newNode
+          endif
+        endfor
+      endif
     endif
   endmethod
 

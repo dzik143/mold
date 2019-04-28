@@ -217,3 +217,65 @@ __cse0 = src['x']
 dst['val'] = __cse0
 dst['len'] = len(__cse0)
 --------------------------------------------------------------------------------
+
+TEST "Bug: Cross loop / out-of-loop usage"
+
+function foo(x)
+  for idx in 0 .. 10
+    print x.y
+  endfor
+  print x.y
+endfunction
+foo()
+
+EXPECTED_OUTPUT:
+function foo(x)
+  for idx in 0 .. 10
+    print x['y']
+  endfor
+  print x['y']
+endfunction
+foo()
+--------------------------------------------------------------------------------
+
+TEST "Bug: Treat constant initialized map as imm"
+
+function foo(x)
+  # TODO: Handle maps in --prettyPrinter.
+  newValues1 = {'_index': [], 'parent': x}
+  newValues2 = {'_index': [], 'parent': x}
+
+  foo(newValues1)
+  foo(newValues2)
+endfunction
+
+EXPECTED_OUTPUT:
+
+function foo(x)
+  newValues1 = [map]
+  newValues2 = [map]
+
+  foo(newValues1)
+  foo(newValues2)
+endfunction
+--------------------------------------------------------------------------------
+
+TEST "Bug: Not updated while condition at n-th rotate"
+
+function foo(values, name) -> rv
+  rv = values[name]
+  while typeof(values['parent']) isnt 'undefined'
+    values = values['parent']
+    rv = values[name]
+  endwhile  
+endfunction
+
+EXPECTED_OUTPUT:
+function foo(values, name) -> rv
+  rv = values[name]
+  while typeof(values['parent']) isnt 'undefined'
+    values = values['parent']
+    rv = values[name]
+  endwhile  
+endfunction
+--------------------------------------------------------------------------------

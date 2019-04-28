@@ -416,8 +416,8 @@ function AST_IsImmOrVar(x) -> rv
 endfunction
 
 function AST_Hash(node) -> rv
-  #global AST_DATA_ARRAY
-  #global AST_DATA_MAP
+  global AST_DATA_ARRAY
+  global AST_DATA_MAP
   global AST_OPCODE_CALL
   global AST_OPCODE_CALL_NEW
   global AST_OPCODE_INVOKE_METHOD
@@ -433,8 +433,10 @@ function AST_Hash(node) -> rv
   else
     # First ask for hash at this node - calculate it from stratch
     # and save for further calls.
+    if (opcode is AST_DATA_MAP) or (opcode is AST_DATA_ARRAY)
+      rv = '@' + str(node.id)
 
-    if AST_IsVar(node)
+    elif AST_IsVar(node)
       if typeof(node.storedValue) is 'undefined'
         # TODO: Review it.
         rv = '@' + node.value
