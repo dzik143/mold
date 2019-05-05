@@ -50,7 +50,7 @@ class VMachineStack
     global MIR_OPCODE_GETLEN, MIR_OPCODE_LOAD_ARGC, MIR_OPCODE_LOAD_ARGV
     global MIR_OPCODE_LOAD_MOLD_SOURCE, MIR_OPCODE_MOVE_BACK, MIR_OPCODE_PRINT_ERROR
 
-    global argc, argv
+    # TODO: Review it: global argc, argv
 
 
     # TODO: Optimize it.

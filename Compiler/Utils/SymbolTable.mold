@@ -429,6 +429,16 @@ class SymbolTable
     symbolInfo.node = node
   endmethod
 
+  method assignType(name, type)
+    symbolInfo = this.lookup(name)
+    symbolInfo.astType = type
+  endmethod
+
+  method assignMirType(name, type)
+    symbolInfo = this.lookup(name)
+    symbolInfo.type = type
+  endmethod
+
   method vacuum()
 /*
     TODO: Review it.

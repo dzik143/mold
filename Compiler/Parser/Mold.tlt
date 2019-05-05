@@ -1019,7 +1019,7 @@ class Parser
     global AST_OPCODE_DECLARE_OR_ASSIGN
 
     goOn       = true
-    innerGoOn  = 1
+    innerGoOn  = true
     masterIter = 1
 
     #

@@ -46,6 +46,12 @@ class ASTTranslator
   #                             Error handlers
   # ----------------------------------------------------------------------------
 
+  method _debug(msg)
+    if false
+      print '[ ASTTranslator ]', msg
+    endif
+  endmethod
+
   method _error(msg)
     die('error: ' + msg)
   endmethod
@@ -116,6 +122,11 @@ class ASTTranslator
 
   method _loadImm(value) -> rv
     this._error('_loadImm() not implemented')
+  endmethod
+
+  method _loadImmAsVariant(value) -> rv
+    # TODO: Review is it really needed?
+    this._error('_loadImmAsVariant() not implemented')
   endmethod
 
   method _loadVariable(name) -> rv
@@ -208,6 +219,10 @@ class ASTTranslator
 
   method _createObject(classProto) -> rv
     this._error('_createObject() not implemented')
+  endmethod
+
+  method _convert(srcNode, srcType, dstType) -> rv
+    this._error('_convert() is not implemented')
   endmethod
 
   method _dropRetVal()
@@ -330,6 +345,8 @@ class ASTTranslator
     global SYMBOL_KIND_CLASS
     global SYMBOL_KIND_METHOD
 
+    this._debug('Going to emit globals')
+
     symbols = this.symbolTable.exportSymbols()
     symbolsIndex = symbols._index
     symbolsCnt   = len(symbolsIndex)
@@ -346,7 +363,7 @@ class ASTTranslator
       endif
     endfor
 
-    this.app._debug('Globals emmited')
+    this._debug('Globals emmited')
   endmethod
 
   method _callSuper(params, paramsCnt)
@@ -452,6 +469,7 @@ class ASTTranslator
     global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
     global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
     global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+    global AST_OPCODE_TYPE_CAST
 
     rvType      = 'unknown'
     rvClassName = 'unknown'
@@ -460,6 +478,8 @@ class ASTTranslator
     value       = ast['value']
     children    = ast['children']
     childrenCnt = ast['childrenCnt']
+
+    this._debug('_evaluateNode: ' + str(opcode) + ', ' + str(value))
 
     #
     # DEBUG ONLY
@@ -487,11 +507,12 @@ class ASTTranslator
 
       else
         rv = this._loadArray()
-
+        # TODO: Handle non-variant indexes and values.
         for idx in 0 .. childrenCnt
-          key   = this._loadImm(idx)
+          key   = this._loadImmAsVariant(idx)
           value = this._evaluateNode(children[idx])
-          this._storeAtIndex(rv, key, value)
+          valueAsVariant = this._convert(value, AST_GetDataType(children[idx]), -1)
+          this._storeAtIndex(rv, key, valueAsVariant)
         endfor
       endif
 
@@ -500,9 +521,11 @@ class ASTTranslator
       rv     = this._loadMap()
 
       for idx in 0 .. childrenCnt step 2
+        # TODO: Handle non-variant values.
         key   = this._evaluateNode(children[idx])
         value = this._evaluateNode(children[idx + 1])
-        this._storeAtIndex(rv, key, value)
+        valueAsVariant = this._convert(value, AST_GetDataType(children[idx + 1]), -1)
+        this._storeAtIndex(rv, key, valueAsVariant)
       endfor
 
     elif (opcode < AST_OPCODE_PROGRAM)
@@ -566,6 +589,16 @@ class ASTTranslator
         endif
       endif
 
+    elif opcode is AST_OPCODE_TYPE_CAST
+      srcNode = children[0]
+      srcType = AST_GetDataType(srcNode)
+      dstType = ast.astDataType
+      rv      = this._evaluateNode(srcNode)
+
+      if srcType isnt dstType
+        rv = this._convert(rv, srcType, dstType)
+      endif
+
     elif opcode is AST_OPCODE_NEG
       rv = this._neg(this._evaluateNode(children[0]))
 
@@ -609,7 +642,10 @@ class ASTTranslator
 
       if opcode is AST_OPCODE_REFERENCE
         # x[idx]
-        rv = this._loadFromIndex(left, right)
+        # TODO: Handle non-variant index.
+        indexAsVariant = this._convert(right, AST_GetDataType(children[1]), -1)
+
+        rv = this._loadFromIndex(left, indexAsVariant)
 
         if (this.currentClassProto isnt false) and (children[0]['value'] is 'this') and (children[1]['opcode'] is AST_DATA_STRING)
           fieldName   = children[1]['value']
@@ -658,6 +694,13 @@ class ASTTranslator
 
     else
       die('error: unexpected rvalue node ' + str(opcode) + ' ' + str(value))
+    endif
+
+    # TODO: Return symbolInfo instead of symbol name?
+    if typeof(rv) is 'string'
+      astDataType = AST_GetDataType(ast)
+      mirDataType = AST_ConvertDataTypeToMIR(astDataType)
+      this.symbolTable.assignMirType(rv, mirDataType)
     endif
 
     this.lastReturnType      = rvType
@@ -803,12 +846,15 @@ class ASTTranslator
     global AST_OPCODE_VARIABLE, AST_OPCODE_REFERENCE, AST_OPCODE_SWITCH_CASE_OTHERWISE
     global AST_OPCODE_CLASS, AST_OPCODE_CLASS_METHOD, AST_OPCODE_INVOKE_METHOD
     global AST_OPCODE_NOP, AST_DATA_STRING
+    global SYMBOL_KIND_VAR_RETVAL
 
     # Fetch opcode.
     opcode      = ast['opcode']
     value       = ast['value']
     children    = ast['children']
     childrenCnt = ast['childrenCnt']
+
+    this._debug('_executeNode: ' + str(opcode) + ', ' + str(value))
 
     #
     # DEBUG ONLY
@@ -846,7 +892,7 @@ class ASTTranslator
 
     elif opcode is AST_OPCODE_BLOCK
       # OLD IMPLEMENTATION
-      #oldSymbolTable   = this.symbolTable
+      oldSymbolTable   = this.symbolTable
       #this.symbolTable = ast.symbolTable
       #this._onBlockEnter(ast)
 
@@ -858,6 +904,8 @@ class ASTTranslator
 
       this._leaveScope()
 
+      this.symbolTable = oldSymbolTable
+
       # OLD IMPLEMENTATION
       #this.symbolTable = oldSymbolTable
       #this._onBlockLeave(ast)
@@ -868,6 +916,21 @@ class ASTTranslator
 
       if lval['opcode'] is AST_OPCODE_VARIABLE
         # x = y
+        # TODO: Review it?
+        symbolInfo       = this.symbolTable.lookup(lval.value)
+        astDataTypeLeft  = symbolInfo.astType
+        astDataTypeRight = AST_GetDataType(children[1])
+        mirDataTypeLeft  = AST_ConvertDataTypeToMIR(astDataTypeLeft)
+        this.symbolTable.assignMirType(lval.value, mirDataTypeLeft)
+
+        if symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
+          astDataTypeLeft = -1
+        endif
+
+        if astDataTypeLeft isnt astDataTypeRight
+          children[1] = AST_TypeCast(children[1], astDataTypeLeft)
+        endif
+
         lval = lval['value']
         rval = this._evaluateNode(children[1])
 
@@ -888,10 +951,16 @@ class ASTTranslator
         # x[i] = y
         boxNode   = lval['children'][0]
         indexNode = lval['children'][1]
+        valueNode = children[1]
 
-        box   = this._evaluateNode(boxNode)
-        index = this._evaluateNode(indexNode)
-        rval  = this._evaluateNode(children[1])
+        # TODO: Handle non-variant index and value.
+        box = this._evaluateNode(boxNode)
+
+        index          = this._evaluateNode(indexNode)
+        indexAsVariant = this._convert(index, AST_GetDataType(indexNode), -1)
+
+        rval           = this._evaluateNode(valueNode)
+        rvalAsVariant  = this._convert(rval, AST_GetDataType(valueNode), -1)
 
         # TODO
         #if (boxNode['value'] is 'this') and (indexNode['opcode'] is AST_DATA_STRING)
@@ -899,7 +968,7 @@ class ASTTranslator
         #  this.currentClassProto['propertyClassNames'][fieldName] = this.lastReturnClassName
         #endif
 
-        this._storeAtIndexAndDrop(box, index, rval)
+        this._storeAtIndexAndDrop(box, indexAsVariant, rvalAsVariant)
 
       else
         die('error: unexpected rvalue node ' + str(lval['opcode']) + ' ' + str(lval['value']))
@@ -921,6 +990,12 @@ class ASTTranslator
       # TODO: Clean up this mess?
       oldSymbolTable   = this.symbolTable
       this.symbolTable = bodyAst.symbolTable
+
+      # Is it really needed?
+      astDataType = AST_GetDataType(children[1])
+      mirDataType = AST_ConvertDataTypeToMIR(astDataType)
+      this.symbolTable.assignMirType(iteratorName, mirDataType)
+
       this._executeNodeFor(iteratorName, valueStart, valueEnd, valueStep, bodyAst)
       this.symbolTable = oldSymbolTable
 

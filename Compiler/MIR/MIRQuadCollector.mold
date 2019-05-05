@@ -98,17 +98,17 @@ class MIRQuadCollector extends PipeAbstract
     print ''
   endmethod
 
-  method _getType(x) -> rv
-    xInfo = this.currentFrame.symbols[x]
-    if typeof(xInfo) is 'undefined'
-      die('error: symbol not found: ' + str(x))
-    else
-      rv = this.currentFrame.symbols[x].type
-      if typeof(rv) is 'undefined'
-        rv = 'variant'
-      endif
-    endif
-  endmethod
+#  method _getType(x) -> rv
+#    xInfo = this.currentFrame.symbols[x]
+#    if typeof(xInfo) is 'undefined'
+#      die('error: symbol not found: ' + str(x))
+#    else
+#      rv = this.currentFrame.symbols[x].type
+#      if typeof(rv) is 'undefined'
+#        rv = 'variant'
+#      endif
+#    endif
+#  endmethod
 
   method printQuads()
     code    = this.quads
@@ -159,6 +159,7 @@ class MIRQuadCollector extends PipeAbstract
         #  endif
         #else
 
+/*
         if opcode[0] isnt 'c'
           xType = -1
 
@@ -174,7 +175,7 @@ class MIRQuadCollector extends PipeAbstract
             endif
           endif
         endif
-
+*/
         paddedOpcode = this._pad(opcode, 28)
         paddedDst    = this._pad(dst, 8)
         paddedX      = this._pad(x, 8)

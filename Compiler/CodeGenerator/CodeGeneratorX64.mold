@@ -273,7 +273,7 @@ class CodeGeneratorX64
 
       xType = 'variant'
       if (itemCnt > 2) and (typeof(x) is 'string')
-        if (opcode isnt 'call') and (opcode isnt 'vcall') and (opcode isnt 'create_object')
+        if (opcode isnt 'call') and (opcode isnt 'vcall') and (opcode isnt 'create_object') and ((opcode[0] isnt 'c') or (opcode[1] is 'm'))
           xInfo = currentSymbols[x]
           if typeof(xInfo) isnt 'undefined'
             if typeof(xInfo.type) isnt 'undefined'
@@ -410,7 +410,7 @@ class CodeGeneratorX64
         print '  mov dword [', dst, '], 0'
         print '  mov rcx, qword [', x, ']'
         print '  cmp rcx, qword [', y, ']'
-        print '  setge byte [', dst, ']'
+        print '  setg byte [', dst, ']'
 
       elif opcode is 'cmp_ge_int64'
         print '  mov dword [', dst, '], 0'
@@ -446,7 +446,7 @@ class CodeGeneratorX64
         print '  cvtsi2sd  xmm0, dword [', x, ']'   # ; xmm0 = double(x)
         print '  cvtsi2sd  xmm1, dword [', y, ']'   # ; xmm1 = double(y)
         print '  divsd     xmm0, xmm1'              # ; xmm0 = x / y
-        print '  movq      dword [', dst, '], xmm0' # ; dst  = x / y
+        print '  movq      qword [', dst, '], xmm0' # ; dst  = x / y
 
       elif opcode is 'idiv_int32'
         print '  mov  eax, dword [', x, ']' # ; eax     = x
@@ -464,13 +464,13 @@ class CodeGeneratorX64
       elif opcode is 'cmp_ne_int32'
         print '  mov dword [', dst, '], 0'
         print '  mov ecx, dword [', x, ']'
-        print '  cmp rcx, dword [', y, ']'
+        print '  cmp ecx, dword [', y, ']'
         print '  setnz byte [', dst, ']'
 
       elif opcode is 'cmp_lt_int32'
         print '  mov dword [', dst, '], 0'
         print '  mov ecx, dword [', x, ']'
-        print '  cmp rcx, dword [', y, ']'
+        print '  cmp ecx, dword [', y, ']'
         print '  setl byte [', dst, ']'
 
       elif opcode is 'cmp_le_int32'
@@ -483,7 +483,7 @@ class CodeGeneratorX64
         print '  mov dword [', dst, '], 0'
         print '  mov ecx, dword [', x, ']'
         print '  cmp ecx, dword [', y, ']'
-        print '  setge byte [', dst, ']'
+        print '  setg byte [', dst, ']'
 
       elif opcode is 'cmp_ge_int32'
         print '  mov dword [', dst, '], 0'
@@ -985,7 +985,7 @@ class CodeGeneratorX64
         if typeof(x) is 'integer'
           print '  mov [', dst, '+ Variant_t.value],', x
         else
-          print '  mov eax, dword [', x, ']'
+          print '  movsxd rax, dword [', x, ']'
           print '  mov [', dst, '+ Variant_t.value], rax'
         endif
 
@@ -1046,7 +1046,7 @@ class CodeGeneratorX64
         print '  mov eax, dword [', x, '+ Variant_t.value]'
         print '  mov dword [', dst, '], eax'
 
-      elif (originalOpcode is 'conv_variant_to_int64') or (originalOpcode is 'conv_variant_to_float64')
+      elif (originalOpcode is 'conv_variant_to_int32') or (originalOpcode is 'conv_variant_to_int64') or (originalOpcode is 'conv_variant_to_float64')
         print '  mov rax, qword [', x, '+ Variant_t.value]'
         print '  mov qword [', dst, '], rax'
 
@@ -1166,9 +1166,10 @@ class CodeGeneratorX64
         # Calculate frame size.
         currentFrameSize = 0
         paramsPassedCnt  = 0
+        symbolsCnt       = len(symbols._index)
 
-        for symbolIdx in 0 .. len(symbols._index)
-          symbol = symbols._index[symbolIdx]
+        for symbolIdx in 0 .. symbolsCnt
+          symbol = symbols._index[symbolsCnt - symbolIdx - 1]
 
           if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) or (symbol.kind is SYMBOL_KIND_VAR_PARAM)#) and (symbol.readHits + symbol.writeHits > 0)
             if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
@@ -1189,8 +1190,8 @@ class CodeGeneratorX64
 
           endif
 
-          # TODO: Dirty fix to handle real number of stack parameters if this
-          # used.
+          # TODO: Dirty fix to handle real number of stack parameters if 'this'
+          # pointer is used.
           if symbol.kind is SYMBOL_KIND_VAR_PARAM
             paramsPassedCnt = paramsPassedCnt + 1
           endif

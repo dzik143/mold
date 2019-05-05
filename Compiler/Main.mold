@@ -168,66 +168,66 @@ else
   astSymbolsCollector = app.getAstSymbolsCollector()
   astSymbolsCollector.buildSymbolTable(ast)
 
+  # Optimize AST if needed.
+  app._debug('Optimizing AST...')
+
+  if optimizationLevel is 0
+    # No optimization - do nothing.
+    # TODO: Why we need call evaluate here?
+    # (Newton method test failed without it)
+    app._debug('Evaluating AST nodes...')
+    app.getAstEvaluator().processNode(ast)
+
+  elif optimizationLevel is 1
+    # Optimization level #1 (basic AST optimizations):
+    # - constant folding,
+    # - dead code elimination,
+    # - common subexpression elimination (CSE).
+
+    # Common preprocess before go-on with any AST optimization.
+    app._debug('Evaluating AST nodes...')
+    app.getAstEvaluator().processNode(ast)
+
+    # TODO: More generic way to apply selected optimizations.
+    app._debug('Constant folding...')
+    app.getAstOptimizerConstantFolding().processNode(ast)
+
+    app._debug('Dead code elimination...')
+    app.getAstOptimizerDeadCodeRemove().processNode(ast)
+
+    app._debug('Common subexpression elimination (CSE)...')
+    app.getAstOptimizerCSE().processNode(ast)
+  else
+    die('error: optimization level #' + str(optimizationLevel) + ' is not implemented yet')
+  endif
+
   if (mode is 'mir0') or (mode is 'interpreter')
     die('error: mir0 based modes are temporary disabled')
+
     # Translate program to MIR0 (stack based).
-    #astTranslator = new ASTTranslatorMIR0()
-    #astTranslator.run(ast)
-    #code = astTranslator.code
+#    astTranslator = new ASTTranslatorMIR0()
+#    astTranslator.run(ast)
+#    code = astTranslator.code
 
     # Load MIR0 code into virtual machine.
-    #vm = new VMachineStack()
-    #vm.loadCode(code)
-    #
-    #if mode is 'mir0'
-    #  # Dump stack MIR0 only.
-    #  vm.dumpCode()
-    #
-    #elif mode is 'interpreter'
-    #  # Run virtual machine (stack based).
-    #  vm.run()
-    #endif
+#    vm = new VMachineStack()
+#    vm.loadCode(code)
+#
+#    if mode is 'mir0'
+#      # Dump stack MIR0 only.
+#      vm.dumpCode()
+#
+#    elif mode is 'interpreter'
+#      # Run virtual machine (stack based).
+#      vm.run()
+#    endif
 
   else
     # Prepare quads process toolchain.
-    # [AST] -> [MIR1] -> [Optimizer] -> [Collector]
+    # [AST] -> [MIR1] -> [Collector]
     # Translate program to MIR1 (register based).
     astTranslator    = new ASTTranslatorMIR1(app)
     mirQuadCollector = new MIRQuadCollector()
-
-    app._debug('Optimizing AST...')
-
-    if optimizationLevel is 0
-      # No optimization - pass raw MIR1 to code generator.
-      astTranslator.connectTo(mirQuadCollector)
-
-    elif optimizationLevel is 1
-      # Optimization level #1 (basic AST optimizations):
-      # - constant folding,
-      # - dead code elimination,
-      # - common subexpression elimination (CSE).
-
-      # Common preprocess before go-on with any AST optimization.
-      app._debug('Evaluating AST nodes...')
-      app.getAstEvaluator().processNode(ast)
-
-      # TODO: More generic way to apply selected optimizations.
-      app._debug('Constant folding...')
-      app.getAstOptimizerConstantFolding().processNode(ast)
-
-      app._debug('Dead code elimination...')
-      app.getAstOptimizerDeadCodeRemove().processNode(ast)
-
-      app._debug('Common subexpression elimination (CSE)...')
-      app.getAstOptimizerCSE().processNode(ast)
-
-      # Pass translated AST to MIR1.
-      astTranslator.connectTo(mirQuadCollector)
-
-    else
-      die('error: optimization level #' + str(optimizationLevel) + ' is not implemented yet')
-    endif
-
 
     if mode is 'prettyPrinter'
       # Show formatted mold code.
@@ -236,6 +236,9 @@ else
 
     else
       # Go on with further code processing.
+      # Pass translated AST to MIR1.
+      astTranslator.connectTo(mirQuadCollector)
+
       # Run build quads process.
       app._debug('Translating AST...')
       astTranslator.run(ast)

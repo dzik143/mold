@@ -27,6 +27,7 @@ astOptimizerConstantFolding = app.getAstOptimizerConstantFolding()
 astEvaluator                = app.getAstEvaluator()
 astOptimizerCSE             = app.getAstOptimizerCSE()
 astOptimizerDeadCodeRemove  = app.getAstOptimizerDeadCodeRemove()
+astOptimizerVCall           = app.getAstOptimizerVCall()
 astPrinterText              = new ASTPrinterText()
 astPrinterHtml              = new ASTPrinterHtml()
 
@@ -36,6 +37,7 @@ astEvaluator.processNode(ast)
 astOptimizerConstantFolding.processNode(ast)
 astOptimizerDeadCodeRemove.processNode(ast)
 astOptimizerCSE.processNode(ast)
+#astOptimizerVCall.processNode(ast)
 
 astPrinterText.printNode(ast)
 

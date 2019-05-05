@@ -152,6 +152,7 @@ class ASTPrinterText
     global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
     global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
     global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+    global AST_OPCODE_TYPE_CAST
 
     global SYMBOL_KIND_CONST
 
@@ -308,6 +309,15 @@ class ASTPrinterText
       endif
 
       print prefix + 'endif'
+
+    elif opcode is AST_OPCODE_TYPE_CAST
+      srcType  = AST_GetDataType(children[0])
+      dstType  = node.astDataType
+      funcName = 'conv_' + AST_ConvertDataTypeToMIR(srcType) + '_to_' + AST_ConvertDataTypeToMIR(dstType)
+
+      __mold_printToStdOutput(prefix)
+      __mold_printToStdOutput(funcName)
+      this._printNode_paramsList(node, 0, true)
 
     elif opcode is AST_OPCODE_CALL
       __mold_printToStdOutput(prefix)

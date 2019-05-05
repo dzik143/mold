@@ -263,6 +263,43 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
       if (value >= -2147483648) and (value <= 2147483647)
         # 32-bit integer
+        # TODO: Review it: this.emitOneArgOpcode('conv_int32_to_variant', rv, value)
+        this.emitOneArgOpcode('load_int32', rv, value)
+      else
+        # 64-bit integer
+        # TODO: Review it: this.emitOneArgOpcode('conv_int64_to_variant', rv, value)
+        this.emitOneArgOpcode('load_int64', rv, value)
+      endif
+
+    elif type is 'float'
+      rv = this.symbolTable.createTempVarForWrite()
+      # TODO: Review it: this.emitOneArgOpcode('conv_float64_to_variant', rv, value)
+      this.emitOneArgOpcode('load_float64', rv, value)
+
+    elif type is 'boolean'
+      rv = this.symbolTable.createTempVarForWrite()
+      # TODO: Review it: this.emitOneArgOpcode('conv_bool32_to_variant', rv, value)
+      this.emitOneArgOpcode('load_bool32', rv, value)
+
+    elif (type is 'string') or (type is 'array')
+      # TODO: Review it.
+      rv = this.symbolTable.createConstFromValue(value)
+
+    else
+      die('error: unhandled imm type: ' + str(type))
+    endif
+
+    this.push(rv)
+  endmethod
+
+  method _loadImmAsVariant(value) -> rv
+    type = typeof(value)
+
+    if type is 'integer'
+      rv = this.symbolTable.createTempVarForWrite()
+
+      if (value >= -2147483648) and (value <= 2147483647)
+        # 32-bit integer
         this.emitOneArgOpcode('conv_int32_to_variant', rv, value)
       else
         # 64-bit integer
@@ -286,6 +323,18 @@ class ASTTranslatorMIR1 extends ASTTranslator
     endif
 
     this.push(rv)
+  endmethod
+
+  method _convert(x, srcType, dstType) -> rv
+    srcTypeMIR = AST_ConvertDataTypeToMIR(srcType)
+    dstTypeMIR = AST_ConvertDataTypeToMIR(dstType)
+
+    if srcTypeMIR is dstTypeMIR
+      rv = x
+    else
+      opcode = 'conv_' + srcTypeMIR + '_to_' + dstTypeMIR
+      rv = this.popOneArgAndEmitOpcode(opcode)
+    endif
   endmethod
 
   method _compareEQ(x, y) -> rv
@@ -417,9 +466,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
     #   rv = right()
     # .done:
 
-    this._loadImm(false)                                               # [false]
+    tmp = this._loadImm(false)                                         # [false]
     this._evaluateNode(leftAst)                                        # [false x]
     this.emitOneArgOpcode('jmp_if_false', endLabel, this.popForRead()) # [false]
+
+    this.symbolTable.assignMirType(tmp, 'bool32')
 
     # Evaluate right node only if left is true.
     this._evaluateNode(rightAst)     # [y]
@@ -437,9 +488,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
     #   rv = right()
     # .done:
 
-    this._loadImm(true)                                               # [true]
+    tmp = this._loadImm(true)                                         # [true]
     this._evaluateNode(leftAst)                                       # [true x]
     this.emitOneArgOpcode('jmp_if_true', endLabel, this.popForRead()) # [true]
+
+    this.symbolTable.assignMirType(tmp, 'bool32')
 
     # Evaluate right node only if left is false.
     this._evaluateNode(rightAst)    # [y]
@@ -519,10 +572,10 @@ class ASTTranslatorMIR1 extends ASTTranslator
       # Is it the end?
       # if not (idx < idxEnd) goto end
       # OLD IMPLEMENTATION:
-      goOn = this.symbolTable.createTempVarForReadAndWrite()
-      this.emitTwoArgsOpcode('cmp_lt', goOn, iterName, idxEnd)
-      this.emitOneArgOpcode('jmp_if_false', labelForEnd, goOn)
-      #this.emitTwoArgsOpcode('jmp_if_ge', labelForEnd, iterName, idxEnd)
+      #goOn = this.symbolTable.createTempVarForReadAndWrite()
+      #this.emitTwoArgsOpcode('cmp_lt', goOn, iterName, idxEnd)
+      #this.emitOneArgOpcode('jmp_if_false', labelForEnd, goOn)
+      this.emitTwoArgsOpcode('jmp_if_ge', labelForEnd, iterName, idxEnd)
 
       # Loop body.
       # OLD CODE: this._executeNode(bodyAst)

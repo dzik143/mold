@@ -138,6 +138,7 @@ class ASTOptimizerConstantFolding
     global AST_DATA_ARRAY, AST_DATA_MAP, AST_DATA_UNDEFINED
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
     global AST_OPCODE_REFERENCE
+    global AST_OPCODE_TYPE_CAST
     global SYMBOL_KIND_CONST
 
     isNodeChanged = false
@@ -280,13 +281,13 @@ class ASTOptimizerConstantFolding
 
           # Dispatch opcode.
           if opcode is AST_OPCODE_CALL
-            if (value is 'typeof') and (AST_IsImm(x))
+            if value is 'typeof'
               newValue = typeof(x.value)
 
-            elif (value is 'len') and (AST_IsImm(x))
+            elif value is 'len'
               newValue = len(x.value)
 
-            elif (value is 'str') and (AST_IsImm(x))
+            elif value is 'str'
               newValue = str(x.value)
 
             else
@@ -365,6 +366,26 @@ class ASTOptimizerConstantFolding
               # x[y]
               newValue = x.value[y.value]
             endif
+
+          elif opcode is AST_OPCODE_TYPE_CAST
+            srcDataType = x.opcode
+            dstDataType = node.astDataType
+
+            if dstDataType is AST_DATA_DOUBLE
+              newValue = 1.0 * x.value
+
+            elif (dstDataType is -1) and (srcDataType is AST_DATA_STRING)
+              newValue = x.value
+            endif
+          endif
+
+        elif (opcode is AST_OPCODE_CALL) and (value is 'typeof') and (x.opcode is AST_OPCODE_TYPE_CAST)
+          dstType = AST_GetDataType(x)
+          srcType = AST_GetDataType(x.children[0])
+
+          if (dstType is -1) and (srcType isnt -1)
+            # typed -> variant
+            newValue = AST_ConvertDataTypeToText(srcType)
           endif
         endif
 
@@ -385,5 +406,4 @@ class ASTOptimizerConstantFolding
       isAnyChangedDone = true
     endwhile
   endmethod
-
 endclass

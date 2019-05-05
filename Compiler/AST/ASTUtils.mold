@@ -14,6 +14,34 @@
 
 import 'AST/AST.mold'
 
+const AST_DataTypeNames = [
+  '-',         # 0
+  'integer',   # 1
+  'float',     # 2
+  'float',     # 3 double
+  'string',    # 4
+  'boolean',   # 5
+  'ptr',       # 6
+  'null',      # 7
+  'undefined', # 8
+  'array',     # 9
+  'map'        # 10
+]
+
+const AST_DataTypeForMIR = [
+  '[error]',   # 0
+  'int32',     # integer
+  'float32',   # float
+  'float64',   # double
+  'variant',   # string
+  'bool32',    # boolean
+  '[error]',   # ptr
+  '[error]',   # null
+  '[error]',   # undefined
+  'variant',   # array (TODO)
+  'variant'    # map (TODO)
+]
+
 # TODO: Synchronize id along whole code.
 AST_NextId = 1000
 
@@ -53,6 +81,7 @@ function AST_GetOpcodeAsText(opcode) -> rv
   global AST_OPCODE_WHILE
   global AST_OPCODE_FOR
   global AST_OPCODE_FOR_VALUES_RANGE
+  global AST_OPCODE_TYPE_CAST
 
   global AST_OPCODE_ASSIGN
   global AST_OPCODE_DECLARE
@@ -181,6 +210,9 @@ function AST_GetOpcodeAsText(opcode) -> rv
 
   elif opcode is AST_OPCODE_NOP
     rv = 'NOP'
+
+  elif opcode is AST_OPCODE_TYPE_CAST
+    rv = 'TYPE_CAST'
 
   else
     rv = '[UNKNOWN: ' + str(opcode) + ']'
@@ -421,6 +453,7 @@ function AST_Hash(node) -> rv
   global AST_OPCODE_CALL
   global AST_OPCODE_CALL_NEW
   global AST_OPCODE_INVOKE_METHOD
+  global AST_OPCODE_TYPE_CAST
 
   opcode      = node.opcode
   children    = node.children
@@ -476,6 +509,9 @@ function AST_Hash(node) -> rv
         rv  = rv + ',' + AST_Hash(children[idx])
       endfor
 
+    elif opcode is AST_OPCODE_TYPE_CAST
+      rv = 'cast,' + str(node.astDataType) + ',' + AST_Hash(children[0])
+
     else
       rv = AST_GetOpcodeAsShortText(opcode) + ',' + str(childrenCnt)
       for idx in 0 .. childrenCnt
@@ -517,5 +553,144 @@ function AST_HasSideEffects(node) -> rv
       rv       = AST_HasSideEffects(children[childIdx])
       childIdx = childIdx + 1
     endwhile
+  endif
+endfunction
+
+function AST_IsDataNode(node) -> rv
+  global AST_OPCODE_PROGRAM
+  if node.opcode < AST_OPCODE_PROGRAM
+    rv = true
+  else
+    rv = false
+  endif
+endfunction
+
+function AST_ConvertDataTypeToText(dataType) -> rv
+  global AST_DataTypeNames
+
+  if (typeof(dataType) isnt 'undefined') and (dataType > 0)
+    rv = AST_DataTypeNames[dataType]
+  else
+    rv = 'variant'
+  endif
+endfunction
+
+function AST_ConvertDataTypeToMIR(dataType) -> rv
+  # TODO: Clean up this mess?
+  global AST_DataTypeForMIR
+
+  if (typeof(dataType) isnt 'undefined') and (dataType > 0)
+    rv = AST_DataTypeForMIR[dataType]
+  else
+    rv = 'variant'
+  endif
+endfunction
+
+function AST_GetDataType(node) -> rv
+  global AST_OPCODE_VARIABLE
+  global AST_OPCODE_NEG
+  global AST_OPCODE_ADD
+  global AST_OPCODE_SUB
+  global AST_OPCODE_MUL
+  global AST_OPCODE_DIV
+  global AST_OPCODE_IDIV
+  global AST_OPCODE_COMPARE_EQ, AST_OPCODE_BOOL_OR, AST_OPCODE_BOOL_NOT
+
+  global AST_DATA_UNDEFINED
+  global AST_DATA_INTEGER
+  global AST_DATA_DOUBLE
+  global AST_DATA_STRING
+  global AST_DATA_BOOL
+
+  opcode      = node.opcode
+  children    = node.children
+  childrenCnt = node.childrenCnt
+
+  # TODO: Better mark of variant type.
+  rv = node.astDataType
+
+  if opcode is AST_OPCODE_VARIABLE
+    symbolInfo = node.symbolInfo
+    if typeof(symbolInfo) isnt 'undefined'
+      rv = symbolInfo.astType
+    endif
+  endif
+
+  # TODO: Cache result in node?
+  if typeof(rv) is 'undefined'
+    if AST_IsDataNode(node) is true
+      rv = opcode
+
+    elif childrenCnt is 2
+      x = AST_GetDataType(children[0])
+      y = AST_GetDataType(children[1])
+
+      # TODO: Validate types.
+      if (opcode is AST_OPCODE_ADD) or (opcode is AST_OPCODE_MUL) or (opcode is AST_OPCODE_SUB)
+        if (x is AST_DATA_DOUBLE) or (y is AST_DATA_DOUBLE)
+          rv = AST_DATA_DOUBLE
+        else
+          rv = x
+        endif
+
+      elif opcode is AST_OPCODE_DIV
+        if (x is -1) or (y is -1)
+          rv = -1
+        else
+          rv = AST_DATA_DOUBLE
+        endif
+
+      elif opcode is AST_OPCODE_IDIV
+        if (x is -1) or (y is -1)
+          rv = -1
+        else
+          rv = AST_DATA_INTEGER
+        endif
+
+      elif (opcode >= AST_OPCODE_COMPARE_EQ) and (opcode <= AST_OPCODE_BOOL_OR)
+        # TODO: Why need variant result for variant operands?
+        if (x is -1) or (y is -1) or (x is AST_DATA_STRING) or (y is AST_DATA_STRING) or (x > AST_DATA_UNDEFINED) or (y > AST_DATA_UNDEFINED)
+          rv = -1
+        else
+          rv = AST_DATA_BOOL
+        endif
+      endif
+
+    elif childrenCnt is 1
+      x = AST_GetDataType(children[0])
+
+      if opcode is AST_OPCODE_NEG
+        rv = x
+
+      elif opcode is AST_OPCODE_BOOL_NOT
+        rv = AST_DATA_BOOL
+      endif
+    endif
+
+    if typeof(rv) is 'undefined'
+      # TODO: Better handle of variant type?
+      rv = -1
+    endif
+  endif
+endfunction
+
+function AST_TypeCast(node, dstDataType) -> rv
+  global AST_OPCODE_TYPE_CAST
+
+  srcDataType = AST_GetDataType(node)
+
+  if srcDataType is dstDataType
+    # Nothing to do.
+    rv = node
+
+  else
+    # Types mismatch - wrap into type cast node.
+    rv = {
+      'id': AST_GetNextId(),
+      'opcode': AST_OPCODE_TYPE_CAST,
+      'astDataType': dstDataType,
+      'childrenCnt': 1,
+      'children': [node]
+     }
   endif
 endfunction

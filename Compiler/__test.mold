@@ -15,9 +15,11 @@ import 'AppMold.mold'
 import 'AST/ASTSymbolsCollector.mold'
 import 'AST/ASTPrinterText.mold'
 import 'AST/ASTPrinterHtml.mold'
+import 'AST/ASTTranslatorMIR0.mold'
 import 'AST/ASTTranslatorMIR1.mold'
 import 'MIR/MIRQuadCollector.mold'
 import 'CodeGenerator/CodeGeneratorX64.mold'
+import 'VM/VMachineStack.mold'
 
 import '1.ast'
 #import 'Parser/ParserMold.mold'
@@ -50,17 +52,17 @@ endif
 print 'Building symbol table...'
 astSymbolsCollector.buildSymbolTable(ast)
 
-print 'Evaluate AST...'
+#print 'Evaluate AST...'
 astEvaluator.processNode(ast)
 
-print 'Constant folding...'
+#print 'Constant folding...'
 astOptimizerConstantFolding.processNode(ast)
 
-print 'Dead code elimination...'
+#print 'Dead code elimination...'
 astOptimizerDeadCodeRemove.processNode(ast)
 
 #print 'CSE...'
-#astOptimizerCSE.processNode(ast)
+astOptimizerCSE.processNode(ast)
 
 #astPrinterText.printNode(ast)
 
@@ -69,10 +71,20 @@ astOptimizerDeadCodeRemove.processNode(ast)
 
 #astPrinterHtml.printNode(ast)
 
-print 'Going to translate AST...'
+print 'Going to translate AST (init)...'
+astTranslator     = new ASTTranslatorMIR1(app)
+astTranslatorMIR0 = new ASTTranslatorMIR0(app)
+vm                = new VMachineStack()
 
-astTranslator = new ASTTranslatorMIR1(app)
-mirCollector  = new MIRQuadCollector()
+# TODO: MIR0 (stack based)
+#print 'Going to translate AST to MIR0...'
+#astTranslatorMIR0.run(ast)
+#vm.loadCode(astTranslator.code)
+#vm.dumpCode()
+
+# MIR1 (register based)
+print 'Going to translate AST to MIR1...'
+mirCollector = new MIRQuadCollector()
 astTranslator.connectTo(mirCollector)
 
 astTranslator.run(ast)
