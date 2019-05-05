@@ -1,0 +1,166 @@
+TEST "Common arithmetic (x o y)"
+x = 1
+y = 2
+z = 3
+g = 10
+
+# TODO: Handle x*y in b
+a = x * y + z
+b = x * g * y
+c = x * y / z
+
+# Change x, (x o y) also changed from now.
+x = x + 1
+a = x * y + z
+b = x * g * y
+c = x * y / z
+
+EXPECTED_OUTPUT:
+x = 1
+y = 2
+z = 3
+g = 10
+
+__cse0 = x * y
+a = __cse0 + z
+b = (x * g) * y
+c = __cse0 / z
+
+x = x + 1
+__cse1 = x * y
+a = __cse1 + z
+b = (x * g) * y
+c = __cse1 / z
+
+--------------------------------------------------------------------------------
+
+TEST "Common array index x[i] (write)"
+
+x = {}
+
+x.box    = []
+x.box[0] = 0
+x.box[1] = 1
+x.box[2] = 2
+x.box[3] = 3
+
+x.box    = []
+x.box[0] = 10
+x.box[1] = 11
+x.box[2] = 12
+x.box[3] = 13
+
+EXPECTED_OUTPUT:  
+x = {}
+
+x['box'] = []
+__cse0 = x['box']
+
+__cse0[0] = 0
+__cse0[1] = 1
+__cse0[2] = 2
+__cse0[3] = 3
+
+x['box'] = []
+__cse1 = x['box']
+
+__cse1[0] = 10
+__cse1[1] = 11
+__cse1[2] = 12
+__cse1[3] = 13
+
+--------------------------------------------------------------------------------
+
+TEST "Common array index x[i] (read)"
+
+box = {}
+x  = box.x[0]
+y  = box.x[1]
+z  = box.x[2]
+rv = x + y + z
+
+box = {}
+x  = box.x[0]
+y  = box.x[1]
+z  = box.x[2]
+rv = x + y + z
+
+EXPECTED_OUTPUT: 
+box = {}
+__cse0 = box['x']
+x = __cse0[0]
+y = __cse0[1]
+z = __cse0[2]
+rv = x + y + z
+
+box = {}
+__cse1 = box['x']
+x = __cse1[0]
+y = __cse1[1]
+z = __cse1[2]
+rv = x + y + z
+
+--------------------------------------------------------------------------------
+
+TEST "Common map index box.x (read #1)"
+
+box = {}
+x  = box.x * 2
+y  = box.x * 3
+z  = box.x * 4
+rv = x + y + z
+
+box = {}
+x  = box.x * 2
+y  = box.x * 3
+z  = box.x * 4
+rv = x + y + z
+
+EXPECTED_OUTPUT:  
+box = {}
+__cse0 = box['x']
+x = 2 * __cse0
+y = 3 * __cse0
+z = 4 * __cse0
+rv = x + y + z
+
+box = {}
+__cse1 = box['x']
+x = 2 * __cse1
+y = 3 * __cse1
+z = 4 * __cse1
+rv = x + y + z
+--------------------------------------------------------------------------------
+
+TEST "Common map index box.x (read #2)"
+
+box = {}
+
+box.x = []
+x  = box.x[0]
+y  = box.x[1]
+z  = box.x[2]
+rv = x + y + z
+
+box.x = []
+x  = box.x[0]
+y  = box.x[1]
+z  = box.x[2]
+rv = x + y + z
+
+EXPECTED_OUTPUT:  
+box = {}
+
+box['x'] = []
+__cse0 = box['x']
+x = __cse0[0]
+y = __cse0[1]
+z = __cse0[2]
+rv = x + y + z
+
+box['x'] = []
+__cse1 = box['x']
+x = __cse1[0]
+y = __cse1[1]
+z = __cse1[2]
+rv = x + y + z

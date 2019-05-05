@@ -598,3 +598,102 @@ text isnt {'x': 1, 'y': 2, 'z': 3} = true
 {'x': 1, 'y': 2, 'z': 3} isnt {} = true
 {'x': 1, 'y': 2, 'z': 3} isnt {'x': 1, 'y': 2, 'z': 3} = false
 -------------------------------------------------------------------------------
+TEST "Compare array items"
+
+const A = [-4, 1, 8]
+
+print 'A[0] o 2'
+print '========'
+print A[0], '<'    , 2, 'gives', A[0] < 2
+print A[0], '>'    , 2, 'gives', A[0] > 2
+print A[0], '<='   , 2, 'gives', A[0] <= 2
+print A[0], '>='   , 2, 'gives', A[0] >= 2
+print A[0], 'is'   , 2, 'gives', A[0] is 2
+print A[0], 'isnt' , 2, 'gives', A[0] isnt 2
+
+print ''
+print 'A[0] o -4'
+print '=========='
+print A[0], '<'    , -4, 'gives', A[0] < -4
+print A[0], '>'    , -4, 'gives', A[0] > -4
+print A[0], '<='   , -4, 'gives', A[0] <= -4
+print A[0], '>='   , -4, 'gives', A[0] >= -4
+print A[0], 'is'   , -4, 'gives', A[0] is -4
+print A[0], 'isnt' , -4, 'gives', A[0] isnt -4
+
+print ''
+print '2 o A[0]'
+print '========'
+print 2, '<'    , A[0], 'gives', 2 < A[0]
+print 2, '>'    , A[0], 'gives', 2 > A[0]
+print 2, '<='   , A[0], 'gives', 2 <= A[0]
+print 2, '>='   , A[0], 'gives', 2 >= A[0]
+print 2, 'is'   , A[0], 'gives', 2 is A[0]
+print 2, 'isnt' , A[0], 'gives', 2 isnt A[0]
+
+print ''
+print '-4 o A[0]'
+print '========='
+print -4, '<'    , A[0], 'gives', -4 < A[0]
+print -4, '>'    , A[0], 'gives', -4 > A[0]
+print -4, '<='   , A[0], 'gives', -4 <= A[0]
+print -4, '>='   , A[0], 'gives', -4 >= A[0]
+print -4, 'is'   , A[0], 'gives', -4 is A[0]
+print -4, 'isnt' , A[0], 'gives', -4 isnt A[0]
+
+print ''
+print 'A[0] o A[2]'
+print '==========='
+print A[0], '<'    , A[2], 'gives', A[0] < A[2]
+print A[0], '>'    , A[2], 'gives', A[0] > A[2]
+print A[0], '<='   , A[2], 'gives', A[0] <= A[2]
+print A[0], '>='   , A[2], 'gives', A[0] >= A[2]
+print A[0], 'is'   , A[2], 'gives', A[0] is A[2]
+print A[0], 'isnt' , A[2], 'gives', A[0] isnt A[2]
+
+EXPECTED_OUTPUT:
+A[0] o 2
+========
+-4 < 2 gives true
+-4 > 2 gives false
+-4 <= 2 gives true
+-4 >= 2 gives false
+-4 is 2 gives false
+-4 isnt 2 gives true
+
+A[0] o -4
+==========
+-4 < -4 gives false
+-4 > -4 gives false
+-4 <= -4 gives true
+-4 >= -4 gives true
+-4 is -4 gives true
+-4 isnt -4 gives false
+
+2 o A[0]
+========
+2 < -4 gives false
+2 > -4 gives true
+2 <= -4 gives false
+2 >= -4 gives true
+2 is -4 gives false
+2 isnt -4 gives true
+
+-4 o A[0]
+=========
+-4 < -4 gives false
+-4 > -4 gives false
+-4 <= -4 gives true
+-4 >= -4 gives true
+-4 is -4 gives true
+-4 isnt -4 gives false
+
+A[0] o A[2]
+===========
+-4 < 8 gives true
+-4 > 8 gives false
+-4 <= 8 gives true
+-4 >= 8 gives false
+-4 is 8 gives false
+-4 isnt 8 gives true
+-------------------------------------------------------------------------------

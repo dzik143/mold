@@ -1247,3 +1247,25 @@ EXPECTED_OUTPUT:
 1022
 1023
 -------------------------------------------------------------------------------
+
+TEST "Use array element in arithmetic #1 (integer)"
+
+x = [1,2,3]
+acc = 1000
+acc = acc + x[0]
+print typeof(acc), acc
+
+EXPECTED_OUTPUT:
+integer 1001
+-------------------------------------------------------------------------------
+
+TEST "Use array element in arithmetic #2 (float)"
+
+x = [1.2, 3.4, 5.6]
+acc = 1000
+acc = acc + x[0]
+print typeof(acc), acc
+
+EXPECTED_OUTPUT:
+float 1001.200000
+-------------------------------------------------------------------------------
