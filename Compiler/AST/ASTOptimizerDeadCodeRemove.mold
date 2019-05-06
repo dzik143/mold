@@ -45,6 +45,32 @@ class ASTOptimizerDeadCodeRemove
     dst.childrenCnt = src.childrenCnt
   endmethod
 
+  method _processChildNodes(symbolTable, node)
+    global AST_OPCODE_NOP
+
+    childrenCnt = node.childrenCnt
+    children    = node.children
+
+    newChildren    = []
+    newChildrenCnt = 0
+
+    for idx in 0 .. childrenCnt
+      newNode = this._processNode(symbolTable, children[idx])
+      if newNode isnt children[idx]
+        # Child was just replaced by another one.
+        this._moveNode(children[idx], newNode)
+      endif
+
+      if newNode.opcode isnt AST_OPCODE_NOP
+        newChildren[newChildrenCnt] = newNode
+        newChildrenCnt = newChildrenCnt + 1
+      endif
+    endfor
+
+    node.children    = newChildren
+    node.childrenCnt = newChildrenCnt
+  endmethod
+
   method _processNode(symbolTable, node) -> rv
     global AST_OPCODE_PROGRAM
     global AST_OPCODE_BLOCK
@@ -65,6 +91,7 @@ class ASTOptimizerDeadCodeRemove
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
     global AST_OPCODE_REFERENCE
     global AST_OPCODE_FUNCTION
+    global AST_OPCODE_TYPE_CAST
     global SYMBOL_KIND_CONST, SYMBOL_KIND_VAR_RETVAL
 
     # TODO: Use should/assert/etc when ready.
@@ -73,16 +100,29 @@ class ASTOptimizerDeadCodeRemove
     endif
 
     if typeof(node) is 'undefined'
-      die('error: unset node table at ASTOptimizerDeadCodeRemove::_processNode()')
+      die('error: unset node at ASTOptimizerDeadCodeRemove::_processNode()')
     endif
 
     opcode      = node.opcode
     value       = node.value
+    rv          = node
+    removeNode  = false
+
+    # Enter scope if needed.
+    if opcode is AST_OPCODE_BLOCK
+      symbolTable = node.symbolTable
+    endif
+
+    # Process child nodes recursively.
+    this._processChildNodes(symbolTable, node)
+
     childrenCnt = node.childrenCnt
     children    = node.children
     x           = children[0]
-    rv          = node
-    removeNode  = false
+
+    #
+    # Process current one node.
+    #
 
     if (opcode is AST_OPCODE_FOR_VALUES_RANGE) and AST_IsEmpty(children[4])
       # empty for
@@ -99,6 +139,9 @@ class ASTOptimizerDeadCodeRemove
       endif
 
     elif opcode is AST_OPCODE_IF
+      childrenCnt = node.childrenCnt
+      children    = node.children
+
       nodeCond = children[0]
       nodeBody = children[1]
       nodeElse = children[2]
@@ -136,6 +179,7 @@ class ASTOptimizerDeadCodeRemove
 
       elif AST_IsEmpty(nodeBody)
         # if cond {}
+        this._debug('Empty if at node #' + str(node.id))
         removeNode = true
       endif
 
@@ -171,9 +215,6 @@ class ASTOptimizerDeadCodeRemove
 
       #this._debug('leaving IF at node #' + str(node.id))
 
-    elif opcode is AST_OPCODE_BLOCK
-      symbolTable = node.symbolTable
-
     elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
       if x.opcode is AST_OPCODE_VARIABLE
         # x = ...
@@ -201,38 +242,20 @@ class ASTOptimizerDeadCodeRemove
         removeNode = true
         symbolTable.global.remove(node.name)
       endif
+
+    elif (opcode is AST_OPCODE_TYPE_CAST) and (x.opcode is AST_OPCODE_TYPE_CAST)
+      # Nested type cast: convert(convert(...))
+      this._debug('Reduced nested type cast at node #' + str(node.id))
+      node.children[0] = x.children[0]
     endif
 
     if removeNode is true
       this._removeNode(node)
 
-    else
-      # TODO: Optimize it.
-      children    = node.children
-      childrenCnt = node.childrenCnt
-
-      newChildren    = []
-      newChildrenCnt = 0
-
-      for idx in 0 .. childrenCnt
-        newNode = this._processNode(symbolTable, children[idx])
-        if newNode isnt children[idx]
-          # Child was just replaced by another one.
-          this._moveNode(children[idx], newNode)
-        endif
-
-        if newNode.opcode isnt AST_OPCODE_NOP
-          newChildren[newChildrenCnt] = newNode
-          newChildrenCnt = newChildrenCnt + 1
-        endif
-      endfor
-
-      node.children    = newChildren
-      node.childrenCnt = newChildrenCnt
-
-      #if node.opcode is AST_OPCODE_BLOCK
-      #  symbolTable.vacuum()
-      #endif
+    elif node.childrenCnt isnt len(node.children)
+      # TODO: Review it?
+      # Process child nodes recursively.
+      this._processChildNodes(symbolTable, node)
     endif
   endmethod
 

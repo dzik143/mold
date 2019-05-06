@@ -43,12 +43,15 @@ const AST_DataTypeForMIR = [
 ]
 
 # TODO: Synchronize id along whole code.
-AST_NextId = 1000
+#AST_NextId = 1000
 
 function AST_GetNextId() -> rv
-  global AST_NextId
-  rv = AST_NextId
-  AST_NextId = AST_NextId + 1
+  global NodeId
+  rv = NodeId
+  NodeId = NodeId + 1
+  #global AST_NextId
+  #rv = AST_NextId
+  #AST_NextId = AST_NextId + 1
 endfunction
 
 function AST_CreateNodeVariable(name) -> rv
@@ -348,6 +351,7 @@ function AST_InvertBoolean(node)
   global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
   global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
   global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
+  global AST_OPCODE_TYPE_CAST
 
   opcode = node.opcode
 
@@ -387,6 +391,9 @@ function AST_InvertBoolean(node)
     AST_InvertBoolean(node.children[0])
     AST_InvertBoolean(node.children[1])
     node.opcode = AST_OPCODE_BOOL_AND
+
+  elif opcode is AST_OPCODE_TYPE_CAST
+    AST_InvertBoolean(node.children[0])
 
   else
     die('error: unhandled opcode in AST_InvertBoolean: ' + str(opcode))
@@ -681,6 +688,10 @@ function AST_TypeCast(node, dstDataType) -> rv
 
   if srcDataType is dstDataType
     # Nothing to do.
+    rv = node
+
+  elif node.opcode is AST_OPCODE_TYPE_CAST
+    node.astDataType = dstDataType
     rv = node
 
   else

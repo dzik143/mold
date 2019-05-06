@@ -342,4 +342,18 @@ endif
 EXPECTED_OUTPUT:
 There is NO return value defined
 -------------------------------------------------------------------------------
-                                        
+
+TEST "Bug: Broken IF node after dead code elimination"
+
+function foo(x)
+  if x is 1
+  elif x is 2
+  endif
+endfunction
+
+foo(4)
+print 'OK!'
+
+EXPECTED_OUTPUT:
+OK!
+-------------------------------------------------------------------------------                                        
