@@ -1152,9 +1152,6 @@ class CodeGeneratorX64
         params       = currentFrame['params']
         paramsCnt    = currentFrame['paramsCnt']
 
-        print '; PARAMS', params
-        print '; PARAMS CNT', paramsCnt
-
         # Clean up this mess.
         this.symbols = symbols
 
@@ -1197,8 +1194,8 @@ class CodeGeneratorX64
           endif
         endfor
 
-        # Add 32-byte shadow space.
-        currentFrameSize = currentFrameSize + 32
+        # Align to 16-bytes and add 32-byte shadow space.
+        currentFrameSize = (currentFrameSize // 16 + 1) * 16 + 32
 
         print ''
         print '  push rbp'

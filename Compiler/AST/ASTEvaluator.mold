@@ -179,6 +179,7 @@ class ASTEvaluator
     global AST_OPCODE_REFERENCE
     global AST_OPCODE_CALL, AST_OPCODE_INVOKE_METHOD
     global SYMBOL_KIND_VAR_GLOBAL
+    global AST_OPCODE_TYPE_CAST
 
     # TODO: Use null if ready?
     opcode      = node.opcode
@@ -283,84 +284,86 @@ class ASTEvaluator
     # Adjust types.
     # TODO: Move to another plugin?
     #
-
-    # Always cast compare result to machine type.
-    # TODO: Optimize it.
-    for idx in 0 .. childrenCnt
-      childNode   = children[idx]
-      childOpcode = childNode.opcode
-
-      if (childOpcode >= AST_OPCODE_COMPARE_EQ) and (childOpcode <= AST_OPCODE_BOOL_NOT)
-        children[idx] = AST_TypeCast(childNode, AST_DATA_BOOL)
-      endif
-    endfor
-
-    if (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_INVOKE_METHOD) or (opcode is AST_OPCODE_CALL_NEW)
-      if node.value isnt 'global'
-        for idx in 0 .. childrenCnt
-          # Adjust argument type.
-          # TODO: Handle non-variant params.
-          children[idx] = AST_TypeCast(children[idx], -1)
-        endfor
-      endif
-
-      # TODO: Handle non-variant function return type.
-      # Check return type.
-      #symbolInfo      = symbolTable.lookupForCall(node.value)
-      #funcProto       = symbolInfo.proto
-      #funcRvName      = funcProto.rv
-      #
-      #if typeof(funcProto.children) isnt 'undefined'
-      #  funcSymbolTable = children[0]
-      #endif
 /*
-    elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
-      x = children[0]
+    if opcode isnt AST_OPCODE_TYPE_CAST
+      # Always cast compare result to machine type.
+      # TODO: Optimize it.
+      for idx in 0 .. childrenCnt
+        childNode   = children[idx]
+        childOpcode = childNode.opcode
 
-      if x.opcode is AST_OPCODE_VARIABLE
+        if (childOpcode >= AST_OPCODE_COMPARE_EQ) and (childOpcode <= AST_OPCODE_BOOL_NOT)
+          children[idx] = AST_TypeCast(childNode, AST_DATA_BOOL)
+        endif
+      endfor
+
+      if (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_INVOKE_METHOD) or (opcode is AST_OPCODE_CALL_NEW)
+        if node.value isnt 'global'
+          for idx in 0 .. childrenCnt
+            # Adjust argument type.
+            # TODO: Handle non-variant params.
+            children[idx] = AST_TypeCast(children[idx], -1)
+          endfor
+        endif
+
+        # TODO: Handle non-variant function return type.
+        # Check return type.
+        #symbolInfo      = symbolTable.lookupForCall(node.value)
+        #funcProto       = symbolInfo.proto
+        #funcRvName      = funcProto.rv
+        #
+        #if typeof(funcProto.children) isnt 'undefined'
+        #  funcSymbolTable = children[0]
+        #endif
+
+    #  elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
+    #    x = children[0]
+    #
+    #    if x.opcode is AST_OPCODE_VARIABLE
+    #      y = children[1]
+    #      xType = AST_GetDataType(x)
+    #      yType = AST_GetDataType(y)
+    #
+    #      print 'ASSIGN', x.value, xType, yType
+    #
+    #      if xType isnt yType
+    #        children[1] = AST_TypeCast(children[1], xType)
+    #      endif
+    #    endif
+    #
+      elif (opcode is AST_OPCODE_ADD) or (opcode is AST_OPCODE_MUL) or (opcode is AST_OPCODE_SUB) or (opcode is AST_OPCODE_DIV) or (opcode is AST_OPCODE_IDIV) or ((opcode >= AST_OPCODE_COMPARE_EQ) and (opcode <= AST_OPCODE_COMPARE_LE))
+        x = children[0]
         y = children[1]
         xType = AST_GetDataType(x)
         yType = AST_GetDataType(y)
 
-        print 'ASSIGN', x.value, xType, yType
-
         if xType isnt yType
-          children[1] = AST_TypeCast(children[1], xType)
-        endif
-      endif
-*/
-    elif (opcode is AST_OPCODE_ADD) or (opcode is AST_OPCODE_MUL) or (opcode is AST_OPCODE_SUB) or (opcode is AST_OPCODE_DIV) or (opcode is AST_OPCODE_IDIV) or ((opcode >= AST_OPCODE_COMPARE_EQ) and (opcode <= AST_OPCODE_COMPARE_LE))
-      x = children[0]
-      y = children[1]
-      xType = AST_GetDataType(x)
-      yType = AST_GetDataType(y)
+          # Type mismatch in binary arithmetic or compare: x o y
+          if (xType is AST_DATA_DOUBLE) and (yType is AST_DATA_INTEGER)
+            dstType = AST_DATA_DOUBLE
 
-      if xType isnt yType
-        # Type mismatch in binary arithmetic or compare: x o y
-        if (xType is AST_DATA_DOUBLE) and (yType is AST_DATA_INTEGER)
-          dstType = AST_DATA_DOUBLE
+          elif (xType is AST_DATA_INTEGER) and (yType is AST_DATA_DOUBLE)
+            dstType = AST_DATA_DOUBLE
+          else
+            dstType = -1
+          endif
 
-        elif (xType is AST_DATA_INTEGER) and (yType is AST_DATA_DOUBLE)
-          dstType = AST_DATA_DOUBLE
-        else
-          dstType = -1
+          children[0] = AST_TypeCast(x, dstType)
+          children[1] = AST_TypeCast(y, dstType)
         endif
 
-        children[0] = AST_TypeCast(x, dstType)
-        children[1] = AST_TypeCast(y, dstType)
+      elif opcode is AST_OPCODE_REFERENCE
+        # TODO: Handle native machine indexes.
+        children[1] = AST_TypeCast(children[1], -1)
+
+      elif opcode is AST_OPCODE_FOR_VALUES_RANGE
+        # TODO: Handle non-integer counter?
+        children[1] = AST_TypeCast(children[1], AST_DATA_INTEGER) # idxBegin
+        children[2] = AST_TypeCast(children[2], AST_DATA_INTEGER) # idxEnd
+        children[3] = AST_TypeCast(children[3], AST_DATA_INTEGER) # idxStep
       endif
-
-    elif opcode is AST_OPCODE_REFERENCE
-      # TODO: Handle native machine indexes.
-      children[1] = AST_TypeCast(children[1], -1)
-
-    elif opcode is AST_OPCODE_FOR_VALUES_RANGE
-      # TODO: Handle non-integer counter?
-      children[1] = AST_TypeCast(children[1], AST_DATA_INTEGER) # idxBegin
-      children[2] = AST_TypeCast(children[2], AST_DATA_INTEGER) # idxEnd
-      children[3] = AST_TypeCast(children[3], AST_DATA_INTEGER) # idxStep
     endif
-
+*/
 
 
 #    if typeof(node.storedValue) isnt 'undefined'

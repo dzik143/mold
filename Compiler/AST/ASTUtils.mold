@@ -608,100 +608,119 @@ function AST_GetDataType(node) -> rv
   global AST_DATA_DOUBLE
   global AST_DATA_STRING
   global AST_DATA_BOOL
+  global AST_OPCODE_TYPE_CAST
 
-  opcode      = node.opcode
-  children    = node.children
-  childrenCnt = node.childrenCnt
+  rv = node._cachedAstDataType
 
-  # TODO: Better mark of variant type.
-  rv = node.astDataType
-
-  if opcode is AST_OPCODE_VARIABLE
-    symbolInfo = node.symbolInfo
-    if typeof(symbolInfo) isnt 'undefined'
-      rv = symbolInfo.astType
-    endif
-  endif
-
-  # TODO: Cache result in node?
   if typeof(rv) is 'undefined'
-    if AST_IsDataNode(node) is true
-      rv = opcode
+    opcode = node.opcode
+    rv     = -1
 
-    elif childrenCnt is 2
-      x = AST_GetDataType(children[0])
-      y = AST_GetDataType(children[1])
+    if opcode is AST_OPCODE_VARIABLE
+      symbolInfo = node.symbolInfo
+      if typeof(symbolInfo) isnt 'undefined'
+        rv = symbolInfo.astType
+      endif
 
-      # TODO: Validate types.
-      if (opcode is AST_OPCODE_ADD) or (opcode is AST_OPCODE_MUL) or (opcode is AST_OPCODE_SUB)
-        if (x is AST_DATA_DOUBLE) or (y is AST_DATA_DOUBLE)
-          rv = AST_DATA_DOUBLE
-        else
+    elif opcode is AST_OPCODE_TYPE_CAST
+      rv = node.astDataType
+
+    else
+      children    = node.children
+      childrenCnt = node.childrenCnt
+
+      if AST_IsDataNode(node) is true
+        rv = opcode
+
+      elif childrenCnt is 2
+        x = AST_GetDataType(children[0])
+        y = AST_GetDataType(children[1])
+
+        # TODO: Validate types.
+        if (opcode is AST_OPCODE_ADD) or (opcode is AST_OPCODE_MUL) or (opcode is AST_OPCODE_SUB)
+          if (x is AST_DATA_DOUBLE) or (y is AST_DATA_DOUBLE)
+            rv = AST_DATA_DOUBLE
+          else
+            rv = x
+          endif
+
+        elif opcode is AST_OPCODE_DIV
+          if (x is -1) or (y is -1)
+            rv = -1
+          else
+            rv = AST_DATA_DOUBLE
+          endif
+
+        elif opcode is AST_OPCODE_IDIV
+          if (x is -1) or (y is -1)
+            rv = -1
+          else
+            rv = AST_DATA_INTEGER
+          endif
+
+        elif (opcode >= AST_OPCODE_COMPARE_EQ) and (opcode <= AST_OPCODE_BOOL_OR)
+          # TODO: Why need variant result for variant operands?
+          if (x is -1) or (y is -1) or (x is AST_DATA_STRING) or (y is AST_DATA_STRING) or (x > AST_DATA_UNDEFINED) or (y > AST_DATA_UNDEFINED)
+            rv = -1
+          else
+            rv = AST_DATA_BOOL
+          endif
+        endif
+
+      elif childrenCnt is 1
+        x = AST_GetDataType(children[0])
+
+        if opcode is AST_OPCODE_NEG
           rv = x
-        endif
 
-      elif opcode is AST_OPCODE_DIV
-        if (x is -1) or (y is -1)
-          rv = -1
-        else
-          rv = AST_DATA_DOUBLE
-        endif
-
-      elif opcode is AST_OPCODE_IDIV
-        if (x is -1) or (y is -1)
-          rv = -1
-        else
-          rv = AST_DATA_INTEGER
-        endif
-
-      elif (opcode >= AST_OPCODE_COMPARE_EQ) and (opcode <= AST_OPCODE_BOOL_OR)
-        # TODO: Why need variant result for variant operands?
-        if (x is -1) or (y is -1) or (x is AST_DATA_STRING) or (y is AST_DATA_STRING) or (x > AST_DATA_UNDEFINED) or (y > AST_DATA_UNDEFINED)
-          rv = -1
-        else
+        elif opcode is AST_OPCODE_BOOL_NOT
           rv = AST_DATA_BOOL
         endif
       endif
 
-    elif childrenCnt is 1
-      x = AST_GetDataType(children[0])
-
-      if opcode is AST_OPCODE_NEG
-        rv = x
-
-      elif opcode is AST_OPCODE_BOOL_NOT
-        rv = AST_DATA_BOOL
-      endif
+      # Cache result for further use.
+      node._cachedAstDataType = rv
     endif
 
-    if typeof(rv) is 'undefined'
-      # TODO: Better handle of variant type?
-      rv = -1
+    if typeof(rv) isnt 'integer'
+      die('error: unset AST data type at AST_GetDataType() at node #' + str(node.id))
     endif
   endif
 endfunction
 
 function AST_TypeCast(node, dstDataType) -> rv
   global AST_OPCODE_TYPE_CAST
+  global AST_DATA_STRING
 
-  srcDataType = AST_GetDataType(node)
+  rv = node
 
-  if srcDataType is dstDataType
-    # Nothing to do.
-    rv = node
-
-  elif node.opcode is AST_OPCODE_TYPE_CAST
+  if node.opcode is AST_OPCODE_TYPE_CAST
+    # Avoid nested convert(convert(...))
     node.astDataType = dstDataType
-    rv = node
 
   else
-    # Types mismatch - wrap into type cast node.
-    rv = {
-      'id': AST_GetNextId(),
-      'opcode': AST_OPCODE_TYPE_CAST,
-      'astDataType': dstDataType,
-      'childrenCnt': 1,
-      'children': [node]
-     }
+    srcDataType = AST_GetDataType(node)
+
+    if srcDataType is dstDataType
+      # Nothing to do.
+
+    elif (srcDataType is AST_DATA_STRING) and (dstDataType is -1)
+      # String -> Variant : do nothing.
+
+    elif (dstDataType is AST_DATA_STRING) and (srcDataType is -1)
+      # Variant -> String : do nothing.
+
+    else
+      # Types mismatch - wrap into type cast node.
+      #print '[ ASTUtils ] Type cast node #' + str(node.id), ' from', srcDataType, 'to', dstDataType
+
+      rv = {
+        'id': AST_GetNextId(),
+        'opcode': AST_OPCODE_TYPE_CAST,
+        'astDataType': dstDataType,
+        'childrenCnt': 1,
+        'children': [node]
+       }
+    endif
   endif
 endfunction

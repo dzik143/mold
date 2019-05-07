@@ -30,6 +30,7 @@ class ASTOptimizerConstantFolding
   method _setToImm(dst, value)
     global AST_DATA_BOOL, AST_DATA_INTEGER, AST_DATA_DOUBLE, AST_DATA_STRING
     global AST_DATA_ARRAY, AST_DATA_MAP, AST_DATA_UNDEFINED
+    global AST_OPCODE_VARIABLE
 
     type = typeof(value)
 
@@ -39,6 +40,12 @@ class ASTOptimizerConstantFolding
 
     else
       this._debug('Set node #' + str(dst.id) + ' to imm "' + str(value) + '" (' + type + ')')
+
+      if dst.opcode is AST_OPCODE_VARIABLE
+        if typeof(dst.symbolInfo) isnt 'undefined'
+          dst.symbolInfo.readHits = dst.symbolInfo.readHits - 1
+        endif
+      endif
 
       if type is 'boolean'
         newOpcode = AST_DATA_BOOL
@@ -70,6 +77,7 @@ class ASTOptimizerConstantFolding
       dst.childrenCnt = 0
       dst.children    = []
       dst.opcode      = newOpcode
+      #dst.astDataType = newOpcode
       dst.value       = value
     endif
   endmethod
@@ -180,7 +188,7 @@ class ASTOptimizerConstantFolding
         for idx in startIdx .. childrenCnt
           this.processNodeUntilNotChanged(children[idx])
 
-          if children[idx].opcode >= AST_OPCODE_PROGRAM
+          if AST_IsImm(children[idx]) is false
             # There is at least one non-imm arg.
             # We can't calculate immediate value.
             areArgsImm = false
@@ -367,26 +375,26 @@ class ASTOptimizerConstantFolding
               newValue = x.value[y.value]
             endif
 
-          elif opcode is AST_OPCODE_TYPE_CAST
-            srcDataType = x.opcode
-            dstDataType = node.astDataType
-
-            if dstDataType is AST_DATA_DOUBLE
-              newValue = 1.0 * x.value
-
-            elif (dstDataType is -1) and (srcDataType is AST_DATA_STRING)
-              newValue = x.value
-            endif
+          #elif opcode is AST_OPCODE_TYPE_CAST
+          #  srcDataType = x.opcode
+          #  dstDataType = node.astDataType
+          #
+          #  if dstDataType is AST_DATA_DOUBLE
+          #    newValue = 1.0 * x.value
+          #
+          #  elif (dstDataType is -1) and (srcDataType is AST_DATA_STRING)
+          #    newValue = x.value
+          #  endif
           endif
 
-        elif (opcode is AST_OPCODE_CALL) and (value is 'typeof') and (x.opcode is AST_OPCODE_TYPE_CAST)
-          dstType = AST_GetDataType(x)
-          srcType = AST_GetDataType(x.children[0])
-
-          if (dstType is -1) and (srcType isnt -1)
-            # typed -> variant
-            newValue = AST_ConvertDataTypeToText(srcType)
-          endif
+        #elif (opcode is AST_OPCODE_CALL) and (value is 'typeof') and (x.opcode is AST_OPCODE_TYPE_CAST)
+        #  dstType = AST_GetDataType(x)
+        #  srcType = AST_GetDataType(x.children[0])
+        #
+        #  if (dstType is -1) and (srcType isnt -1)
+        #    # typed -> variant
+        #    newValue = AST_ConvertDataTypeToText(srcType)
+        #  endif
         endif
 
         if newValue isnt value

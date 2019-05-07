@@ -1,5 +1,7 @@
 DEBUG_AST_OPTIMIZER = true
 
+NodeId = 1000
+
 import 'AppMold.mold'
 import 'AST/ASTSymbolsCollector.mold'
 import 'AST/ASTPrinterText.mold'
@@ -31,13 +33,25 @@ astOptimizerVCall           = app.getAstOptimizerVCall()
 astPrinterText              = new ASTPrinterText()
 astPrinterHtml              = new ASTPrinterHtml()
 
+print 'Building symbol table...'
 astSymbolsCollector.buildSymbolTable(ast)
+
+print 'Evaluating node...'
 astEvaluator.processNode(ast)
 
+print 'Constant folding...'
 astOptimizerConstantFolding.processNode(ast)
-astOptimizerDeadCodeRemove.processNode(ast)
-astOptimizerCSE.processNode(ast)
+
+#print 'Dead code elimination...'
+#astOptimizerDeadCodeRemove.processNode(ast)
+
+#print 'Common subexpression elimination...'
+#astOptimizerCSE.processNode(ast)
+
 #astOptimizerVCall.processNode(ast)
+
+#print 'Type cast...'
+#app.getAstTypeCast().processNode(ast)
 
 astPrinterText.printNode(ast)
 

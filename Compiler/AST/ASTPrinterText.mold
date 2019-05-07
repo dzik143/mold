@@ -16,6 +16,8 @@ import 'AST/AST.mold'
 import 'AST/ASTUtils.mold'
 import 'Utils/SymbolTable.mold'
 
+SHOW_TYPE_CAST_NODES_ENABLED = false
+
 class ASTPrinterText
 
   method _printNode_twoArgsOp(node, op)
@@ -153,6 +155,7 @@ class ASTPrinterText
     global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
     global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
     global AST_OPCODE_TYPE_CAST
+    global SHOW_TYPE_CAST_NODES_ENABLED
 
     global SYMBOL_KIND_CONST
 
@@ -311,13 +314,17 @@ class ASTPrinterText
       print prefix + 'endif'
 
     elif opcode is AST_OPCODE_TYPE_CAST
-      srcType  = AST_GetDataType(children[0])
-      dstType  = node.astDataType
-      funcName = 'conv_' + AST_ConvertDataTypeToMIR(srcType) + '_to_' + AST_ConvertDataTypeToMIR(dstType)
+      if SHOW_TYPE_CAST_NODES_ENABLED is true
+        srcType  = AST_GetDataType(children[0])
+        dstType  = AST_GetDataType(node)
+        funcName = 'conv_' + AST_ConvertDataTypeToMIR(srcType) + '_to_' + AST_ConvertDataTypeToMIR(dstType)
 
-      __mold_printToStdOutput(prefix)
-      __mold_printToStdOutput(funcName)
-      this._printNode_paramsList(node, 0, true)
+        __mold_printToStdOutput(prefix)
+        __mold_printToStdOutput(funcName)
+        this._printNode_paramsList(node, 0, true)
+      else
+        this._printNode(prefix, children[0])
+      endif
 
     elif opcode is AST_OPCODE_CALL
       __mold_printToStdOutput(prefix)

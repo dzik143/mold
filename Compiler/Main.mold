@@ -239,6 +239,9 @@ else
       # Pass translated AST to MIR1.
       astTranslator.connectTo(mirQuadCollector)
 
+      app._debug('Type cast...')
+      app.getAstTypeCast().processNode(ast)
+
       # Run build quads process.
       app._debug('Translating AST...')
       astTranslator.run(ast)

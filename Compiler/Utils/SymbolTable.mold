@@ -91,6 +91,11 @@ class SymbolTable
       entry.writeHits = 0
       entry.readHits  = 0
       entry.loopLevel = this.loopLevel
+
+      # Default data type to variant if not set.
+      if typeof(entry.astType) is 'undefined'
+        entry.astType = -1
+      endif
     endif
   endmethod
 

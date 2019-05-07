@@ -35,8 +35,6 @@ class ASTTranslator
     # TODO: Use null?
     this.currentClassProto    = false
     this.currentFunctionProto = false
-    this.lastReturnType       = 'unknown'
-    this.lastReturnClassName  = 'unknown'
 
     # TODO: Use many deep levels in symbol table.
     this.branchDeepIdx = 0
@@ -471,9 +469,6 @@ class ASTTranslator
     global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
     global AST_OPCODE_TYPE_CAST
 
-    rvType      = 'unknown'
-    rvClassName = 'unknown'
-
     opcode      = ast['opcode']
     value       = ast['value']
     children    = ast['children']
@@ -500,8 +495,6 @@ class ASTTranslator
     #
 
     if opcode is AST_DATA_ARRAY
-      rvType = 'array'
-
       if typeof(value) is 'array'
         rv = this._loadImm(value)
 
@@ -517,8 +510,7 @@ class ASTTranslator
       endif
 
     elif opcode is AST_DATA_MAP
-      rvType = 'map'
-      rv     = this._loadMap()
+      rv = this._loadMap()
 
       for idx in 0 .. childrenCnt step 2
         # TODO: Handle non-variant values.
@@ -530,8 +522,7 @@ class ASTTranslator
 
     elif (opcode < AST_OPCODE_PROGRAM)
       # Imm data node, just return value.
-      rvType = 'imm'
-      rv     = this._loadImm(value)
+      rv = this._loadImm(value)
 
     elif opcode is AST_OPCODE_CALL
       # foo(x,y,z...).
@@ -544,8 +535,7 @@ class ASTTranslator
     elif opcode is AST_OPCODE_VARIABLE
       if value is 'argv'
         # Built-in access to command line parametrs.
-        rvType = 'array'
-        rv     = this._loadArgsVector()
+        rv = this._loadArgsVector()
 
         if this.symbolTable.procLevel > 0
           this.symbolTable.importGlobal('argv')
@@ -553,8 +543,7 @@ class ASTTranslator
 
       elif value is 'argc'
         # Built-in access to command line parametrs.
-        rvType = 'integer'
-        rv     = this._loadArgsCount()
+        rv = this._loadArgsCount()
 
         if this.symbolTable.procLevel > 0
           this.symbolTable.importGlobal('argc')
@@ -563,37 +552,14 @@ class ASTTranslator
       else
         # Treat as ordinary variable.
         rv = this._loadVariable(value)
-
-        # Try to determine variable type.
-        if value is 'this'
-          # This parameter, we known we're inside class declaration.
-          rvType = 'object'
-          if this.currentClassProto isnt false
-            rvClassName = this.currentClassProto['name']
-          endif
-
-        else
-          # TODO
-          # Default way, ask symbol table.
-          #symbolInfo  = this.symbolTable.lookup(value)
-          #rvType      = symbolInfo['type']
-          #rvClassName = symbolInfo['className']
-
-          #if typeof(rvType) is 'undefined'
-          #  rvType = 'unknown'
-          #endif
-
-          #if typeof(rvClassName) is 'undefined'
-          #  rvClassName = 'unknown'
-          #endif
-        endif
       endif
 
     elif opcode is AST_OPCODE_TYPE_CAST
       srcNode = children[0]
       srcType = AST_GetDataType(srcNode)
-      dstType = ast.astDataType
-      rv      = this._evaluateNode(srcNode)
+      dstType = AST_GetDataType(ast)
+
+      rv = this._evaluateNode(srcNode)
 
       if srcType isnt dstType
         rv = this._convert(rv, srcType, dstType)
@@ -632,9 +598,6 @@ class ASTTranslator
         this._call(methodProto, params, paramsCnt)
       endif
 
-      rvType      = 'object'
-      rvClassName = value
-
     elif childrenCnt is 2
       # x OP y
       left  = this._evaluateNode(children[0])
@@ -643,37 +606,25 @@ class ASTTranslator
       if opcode is AST_OPCODE_REFERENCE
         # x[idx]
         # TODO: Handle non-variant index.
-        indexAsVariant = this._convert(right, AST_GetDataType(children[1]), -1)
-
-        rv = this._loadFromIndex(left, indexAsVariant)
-
-        if (this.currentClassProto isnt false) and (children[0]['value'] is 'this') and (children[1]['opcode'] is AST_DATA_STRING)
-          fieldName   = children[1]['value']
-          rvClassName = this.currentClassProto['propertyClassNames'][fieldName]
-        endif
+        #indexAsVariant = this._convert(right, children[1]), -1)
+        rv = this._loadFromIndex(left, right) #indexAsVariant)
 
       elif opcode is AST_OPCODE_COMPARE_EQ
-        rvType = 'boolean'
-        rv     = this._compareEQ(left, right)
+        rv = this._compareEQ(left, right)
 
       elif opcode is AST_OPCODE_COMPARE_NEQ
-        rvType = 'boolean'
-        rv     = this._compareNEQ(left, right)
+        rv = this._compareNEQ(left, right)
 
       elif opcode is AST_OPCODE_COMPARE_GT
-        rvType = 'boolean'
-        rv     = this._compareGT(left, right)
+        rv = this._compareGT(left, right)
 
       elif opcode is AST_OPCODE_COMPARE_GE
-        rvType = 'boolean'
-        rv     = this._compareGE(left, right)
+        rv = this._compareGE(left, right)
 
       elif opcode is AST_OPCODE_COMPARE_LT
-        rvType = 'boolean'
-        rv     = this._compareLT(left, right)
+        rv = this._compareLT(left, right)
 
       elif opcode is AST_OPCODE_COMPARE_LE
-        rvType = 'boolean'
         rv = this._compareLE(left, right)
 
       elif opcode is AST_OPCODE_ADD
@@ -702,9 +653,6 @@ class ASTTranslator
       mirDataType = AST_ConvertDataTypeToMIR(astDataType)
       this.symbolTable.assignMirType(rv, mirDataType)
     endif
-
-    this.lastReturnType      = rvType
-    this.lastReturnClassName = rvClassName
   endmethod
 
   method _evaluateNodeCall(ast) -> rv
@@ -793,8 +741,7 @@ class ASTTranslator
 
     # Evaluate this and try to resolve static className
     # (compilation time) if possible.
-    thiz      = this._evaluateNode(children[0])
-    className = this.lastReturnClassName
+    thiz = this._evaluateNode(children[0])
 
     # Evaluate parameters.
     params    = []
@@ -807,16 +754,7 @@ class ASTTranslator
 
     # Call method.
     # TODO: Change to static call if possible.
-    #if className is 'unknown'
-      # Class name is unknown. Pure virtual (runtime) call needed.
-      rv = this._invokeMethod(methodName, params, paramsCnt)
-
-    #else
-    #  # TODO: Class name is known at compilation time. Just call
-    #  # target address.
-    #  methodProto = this._getMethodProto(className, methodName, paramsCnt)
-    #  rv          = this._call(methodProto, params, paramsCnt)
-    #endif
+    rv = this._invokeMethod(methodName, params, paramsCnt)
   endmethod
 
   method _evaluateNodeLazyBoolAnd(leftAst, rightAst) -> rv
@@ -917,35 +855,25 @@ class ASTTranslator
       if lval['opcode'] is AST_OPCODE_VARIABLE
         # x = y
         # TODO: Review it?
-        symbolInfo       = this.symbolTable.lookup(lval.value)
-        astDataTypeLeft  = symbolInfo.astType
-        astDataTypeRight = AST_GetDataType(children[1])
-        mirDataTypeLeft  = AST_ConvertDataTypeToMIR(astDataTypeLeft)
-        this.symbolTable.assignMirType(lval.value, mirDataTypeLeft)
+        #symbolInfo       = this.symbolTable.lookup(lval.value)
+        #astDataTypeLeft  = symbolInfo.astType
+        #astDataTypeRight = AST_GetDataType(children[1])
+        #mirDataTypeLeft  = AST_ConvertDataTypeToMIR(astDataTypeLeft)
+        #this.symbolTable.assignMirType(lval.value, mirDataTypeLeft)
 
-        if symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
-          astDataTypeLeft = -1
-        endif
+        # TODO: Move to type-cast plugin?
+        #if symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
+        #  astDataTypeLeft = -1
+        #endif
 
-        if astDataTypeLeft isnt astDataTypeRight
-          children[1] = AST_TypeCast(children[1], astDataTypeLeft)
-        endif
+        # TODO: Review it?
+        #if astDataTypeLeft isnt astDataTypeRight
+        #  children[1] = AST_TypeCast(children[1], astDataTypeLeft)
+        #endif
 
         lval = lval['value']
         rval = this._evaluateNode(children[1])
-
-        # Assign new value.
-        #if this._isset(lval) is false
-        #  this._declareAndAssign(lval, rval)
-        #else
-          this._assign(lval, rval)
-        #endif
-
-        # Save assigned type.
-        # TODO: Handle type mismatch.
-        #symbolInfo              = this.symbolTable.lookup(lval)
-        #symbolInfo['type']      = this.lastReturnType
-        #symbolInfo['className'] = this.lastReturnClassName
+        this._assign(lval, rval)
 
       elif lval['opcode'] is AST_OPCODE_REFERENCE
         # x[i] = y
@@ -957,18 +885,13 @@ class ASTTranslator
         box = this._evaluateNode(boxNode)
 
         index          = this._evaluateNode(indexNode)
-        indexAsVariant = this._convert(index, AST_GetDataType(indexNode), -1)
+        #indexAsVariant = this._convert(index, AST_GetDataType(indexNode), -1)
 
         rval           = this._evaluateNode(valueNode)
-        rvalAsVariant  = this._convert(rval, AST_GetDataType(valueNode), -1)
+        #rvalAsVariant  = this._convert(rval, AST_GetDataType(valueNode), -1)
 
-        # TODO
-        #if (boxNode['value'] is 'this') and (indexNode['opcode'] is AST_DATA_STRING)
-        #  fieldName = indexNode['value']
-        #  this.currentClassProto['propertyClassNames'][fieldName] = this.lastReturnClassName
-        #endif
-
-        this._storeAtIndexAndDrop(box, indexAsVariant, rvalAsVariant)
+        this._storeAtIndexAndDrop(box, index, rval)
+        #this._storeAtIndexAndDrop(box, indexAsVariant, rvalAsVariant)
 
       else
         die('error: unexpected rvalue node ' + str(lval['opcode']) + ' ' + str(lval['value']))

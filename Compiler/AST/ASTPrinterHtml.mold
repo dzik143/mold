@@ -64,6 +64,7 @@ class ASTPrinterHtml
     global AST_OPCODE_FUNCTION
     global AST_OPCODE_CLASS
     global AST_OPCODE_CLASS_METHOD
+    global AST_OPCODE_TYPE_CAST
 
     opcode      = node.opcode
     childrenCnt = node.childrenCnt
@@ -112,6 +113,9 @@ class ASTPrinterHtml
         endif
 
         print '<tr><td>', value, '</td></tr>'
+
+      elif opcode is AST_OPCODE_TYPE_CAST
+        print '<tr><td><i>(' + AST_ConvertDataTypeToText(node.astDataType) + ')</i></td></tr>'
       endif
 
       print '<tr>'
