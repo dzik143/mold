@@ -605,9 +605,7 @@ class ASTTranslator
 
       if opcode is AST_OPCODE_REFERENCE
         # x[idx]
-        # TODO: Handle non-variant index.
-        #indexAsVariant = this._convert(right, children[1]), -1)
-        rv = this._loadFromIndex(left, right) #indexAsVariant)
+        rv = this._loadFromIndex(left, right)
 
       elif opcode is AST_OPCODE_COMPARE_EQ
         rv = this._compareEQ(left, right)
@@ -829,10 +827,7 @@ class ASTTranslator
       this.currentFunctionProto = false
 
     elif opcode is AST_OPCODE_BLOCK
-      # OLD IMPLEMENTATION
       oldSymbolTable   = this.symbolTable
-      #this.symbolTable = ast.symbolTable
-      #this._onBlockEnter(ast)
 
       this._enterScope(ast)
 
@@ -844,33 +839,12 @@ class ASTTranslator
 
       this.symbolTable = oldSymbolTable
 
-      # OLD IMPLEMENTATION
-      #this.symbolTable = oldSymbolTable
-      #this._onBlockLeave(ast)
-
     elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
       # x = y
       lval = children[0]
 
       if lval['opcode'] is AST_OPCODE_VARIABLE
         # x = y
-        # TODO: Review it?
-        #symbolInfo       = this.symbolTable.lookup(lval.value)
-        #astDataTypeLeft  = symbolInfo.astType
-        #astDataTypeRight = AST_GetDataType(children[1])
-        #mirDataTypeLeft  = AST_ConvertDataTypeToMIR(astDataTypeLeft)
-        #this.symbolTable.assignMirType(lval.value, mirDataTypeLeft)
-
-        # TODO: Move to type-cast plugin?
-        #if symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
-        #  astDataTypeLeft = -1
-        #endif
-
-        # TODO: Review it?
-        #if astDataTypeLeft isnt astDataTypeRight
-        #  children[1] = AST_TypeCast(children[1], astDataTypeLeft)
-        #endif
-
         lval = lval['value']
         rval = this._evaluateNode(children[1])
         this._assign(lval, rval)
@@ -882,16 +856,11 @@ class ASTTranslator
         valueNode = children[1]
 
         # TODO: Handle non-variant index and value.
-        box = this._evaluateNode(boxNode)
-
-        index          = this._evaluateNode(indexNode)
-        #indexAsVariant = this._convert(index, AST_GetDataType(indexNode), -1)
-
-        rval           = this._evaluateNode(valueNode)
-        #rvalAsVariant  = this._convert(rval, AST_GetDataType(valueNode), -1)
+        box   = this._evaluateNode(boxNode)
+        index = this._evaluateNode(indexNode)
+        rval  = this._evaluateNode(valueNode)
 
         this._storeAtIndexAndDrop(box, index, rval)
-        #this._storeAtIndexAndDrop(box, indexAsVariant, rvalAsVariant)
 
       else
         die('error: unexpected rvalue node ' + str(lval['opcode']) + ' ' + str(lval['value']))

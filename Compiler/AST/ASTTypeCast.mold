@@ -133,15 +133,6 @@ class ASTTypeCast
           endfor
         endif
 
-      #elif opcode is AST_OPCODE_REFERENCE
-      #  # TODO: Handle non-variant indexes.
-      #  children[1] = AST_TypeCast(children[1], -1)
-
-      #elif opcode is AST_OPCODE_FOR_VALUES_RANGE
-      #  # for idx in idxStart .. idxEnd by step
-      #  iterNode = children[0]
-      #  iterNode.symbolInfo.astType = AST_DATA_INTEGER
-
       else
         # Always cast compare result to machine type.
         # TODO: Optimize it.
@@ -153,32 +144,6 @@ class ASTTypeCast
             children[idx] = AST_TypeCast(childNode, AST_DATA_BOOL)
           endif
         endfor
-
-          # TODO: Handle non-variant function return type.
-          # Check return type.
-          #symbolInfo      = symbolTable.lookupForCall(node.value)
-          #funcProto       = symbolInfo.proto
-          #funcRvName      = funcProto.rv
-          #
-          #if typeof(funcProto.children) isnt 'undefined'
-          #  funcSymbolTable = children[0]
-          #endif
-      /*
-        elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
-          x = children[0]
-
-          if x.opcode is AST_OPCODE_VARIABLE
-            y = children[1]
-            xType = AST_GetDataType(x)
-            yType = AST_GetDataType(y)
-
-            print 'ASSIGN', x.value, xType, yType
-
-            if xType isnt yType
-              children[1] = AST_TypeCast(children[1], xType)
-            endif
-          endif
-      */
       endif
     endif
   endmethod

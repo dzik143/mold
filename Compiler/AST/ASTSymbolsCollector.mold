@@ -68,17 +68,6 @@ class ASTSymbolsCollector
     childrenCnt = node.childrenCnt
 
     # TODO: Clean up this mess.
-    #if isLeftNode is false
-    #  for idx in 0 .. childrenCnt
-    #    childrenNode = children[idx]
-    #    if childrenNode.opcode is AST_OPCODE_VARIABLE
-    #      symbolInfo = symbolTable.lookup(lval.value)
-    #      readHits   = symbolInfo.readHits
-    #
-    #  endfor
-    #endif
-
-    # TODO: Clean up this mess.
     if (opcode is AST_OPCODE_VARIABLE) and (node.value is '__this_placeholder__')
       # Do nothing.
 
@@ -318,11 +307,6 @@ class ASTSymbolsCollector
         # Scan rval.
         this._collectSymbolsFromRightNode(symbolTable, rval)
 
-        # Track data types.
-        #astDataTypeAfter = AST_GetDataType(rval)
-        #lval.astDataType = astDataTypeAfter
-        #symbolTable.assignType(lval.value, astDataTypeAfter)
-
         # Restore read stats for lval variable to avoid false x = x + 1 usage.
         # It's not useful read.
         symbolInfo.readHits = readHits
@@ -416,9 +400,6 @@ class ASTSymbolsCollector
       bodyNode.symbolTable.insertLocal(iterNode.value)
       iterNode.symbolInfo = bodyNode.symbolTable.lookupForReadAndWrite(iterNode.value)
       bodyNode.symbolTable.assignType(iterNode.value, AST_DATA_INTEGER)
-
-      # Is it really needed?
-      #iterNode.astDataType = AST_DATA_INTEGER
 
       #this._collectSymbolsFromLeftNode(symbolTable, iterNode)
       this._collectSymbolsFromRightNode(symbolTable, idxStartNode)

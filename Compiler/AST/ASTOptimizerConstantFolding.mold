@@ -77,7 +77,6 @@ class ASTOptimizerConstantFolding
       dst.childrenCnt = 0
       dst.children    = []
       dst.opcode      = newOpcode
-      #dst.astDataType = newOpcode
       dst.value       = value
     endif
   endmethod
@@ -196,25 +195,6 @@ class ASTOptimizerConstantFolding
         endfor
 
         if (opcode is AST_OPCODE_MUL) or (opcode is AST_OPCODE_ADD)
-          # TODO: We want imms on left: imm * x.
-          #if opcode is AST_OPCODE_MUL and AST_IsImm(y) and (areArgsImm is false)
-          #  children[0] = y
-          #  children[1] = x
-          #  x = children[0]
-          #  y = children[1]
-          #  isNodeChanged = true
-          #endif
-
-          # TODO: Bad order in: x + '...'
-          ## We want imms on left: x + imm.
-          #elif opcode is AST_OPCODE_MUL and AST_IsImm(x) and (areArgsImm is false)
-          #  children[0] = y
-          #  children[1] = x
-          #  x = children[0]
-          #  y = children[1]
-          #  isNodeChanged = true
-          #endif
-
           if (y.opcode is opcode)
             # imm * (imm * a) * gives (imm * imm) * a
             # imm * (imm + a) + gives (imm + imm) + a
@@ -374,27 +354,7 @@ class ASTOptimizerConstantFolding
               # x[y]
               newValue = x.value[y.value]
             endif
-
-          #elif opcode is AST_OPCODE_TYPE_CAST
-          #  srcDataType = x.opcode
-          #  dstDataType = node.astDataType
-          #
-          #  if dstDataType is AST_DATA_DOUBLE
-          #    newValue = 1.0 * x.value
-          #
-          #  elif (dstDataType is -1) and (srcDataType is AST_DATA_STRING)
-          #    newValue = x.value
-          #  endif
           endif
-
-        #elif (opcode is AST_OPCODE_CALL) and (value is 'typeof') and (x.opcode is AST_OPCODE_TYPE_CAST)
-        #  dstType = AST_GetDataType(x)
-        #  srcType = AST_GetDataType(x.children[0])
-        #
-        #  if (dstType is -1) and (srcType isnt -1)
-        #    # typed -> variant
-        #    newValue = AST_ConvertDataTypeToText(srcType)
-        #  endif
         endif
 
         if newValue isnt value

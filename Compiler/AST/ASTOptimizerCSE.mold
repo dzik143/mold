@@ -216,11 +216,6 @@ class ASTOptimizerCSE
 
           matchedNode.symbolTable.lookupForRead(matchedNode.value)
 
-          #node.opcode      = AST_OPCODE_VARIABLE
-          #node.value       = matchedNode.value
-          #node.children    = []
-          #node.childrenCnt = 0
-
           # Don't go on into deeper nodes.
           goOn = false
         endif
