@@ -437,6 +437,7 @@ class SymbolTable
   method assignType(name, type)
     symbolInfo = this.lookup(name)
     symbolInfo.astType = type
+    this._debug('Assign AST type [' + str(type) + '] to variable [' + str(name) + ']')
   endmethod
 
   method assignMirType(name, type)

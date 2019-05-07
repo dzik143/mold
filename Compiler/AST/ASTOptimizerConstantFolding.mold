@@ -355,6 +355,15 @@ class ASTOptimizerConstantFolding
               newValue = x.value[y.value]
             endif
           endif
+
+        elif (opcode is AST_OPCODE_CALL) and (value is 'typeof')
+          # typeof(...) - non imm variant.
+          # Maybe we already know type?
+          astType = AST_GetDataType(x)
+          if astType isnt -1
+            newValue = AST_ConvertDataTypeToText(astType)
+          endif
+
         endif
 
         if newValue isnt value

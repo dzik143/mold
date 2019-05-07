@@ -227,9 +227,12 @@ class ASTOptimizerDeadCodeRemove
             # Extra side effects on rval. We can't remove whole statement.
             # x = y -> y
             node.hasSideEffects = true
+            # TODO
+            # rv = rval
 
           else
             removeNode = true
+            # TODO
             #symbolTable.decreaseWriteHits(x.value)
           endif
         endif

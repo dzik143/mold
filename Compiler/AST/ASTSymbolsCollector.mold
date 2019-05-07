@@ -242,8 +242,7 @@ class ASTSymbolsCollector
       endif
 
       # Track data type.
-      #node.astDataType = symbolInfo.astType
-      node.symbolInfo  = symbolInfo
+      node.symbolInfo = symbolInfo
 
     elif opcode is AST_OPCODE_REFERENCE
        # Thera are two cases:
@@ -274,11 +273,13 @@ class ASTSymbolsCollector
 
         lval.symbolInfo = symbolInfo
 
-        #if symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
+        # Scan rval.
+        this._collectSymbolsFromRightNode(symbolTable, rval)
+
+        if symbolInfo.kind isnt SYMBOL_KIND_VAR_RETVAL
           # TODO: Handle non-variant function return type.
-          #rval        = AST_TypeCast(rval, -1)
-          #children[1] = rval
-        #endif
+          symbolTable.assignType(lval.value, AST_GetDataType(rval))
+        endif
 
         # Track data types.
         # TODO: Review it?
@@ -304,8 +305,6 @@ class ASTSymbolsCollector
 
         #endif
 
-        # Scan rval.
-        this._collectSymbolsFromRightNode(symbolTable, rval)
 
         # Restore read stats for lval variable to avoid false x = x + 1 usage.
         # It's not useful read.

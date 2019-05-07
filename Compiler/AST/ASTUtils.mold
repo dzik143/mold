@@ -609,6 +609,8 @@ function AST_GetDataType(node) -> rv
   global AST_DATA_STRING
   global AST_DATA_BOOL
   global AST_OPCODE_TYPE_CAST
+  global AST_OPCODE_CALL
+  global AST_OPCODE_REFERENCE
 
   rv = node._cachedAstDataType
 
@@ -625,6 +627,12 @@ function AST_GetDataType(node) -> rv
     elif opcode is AST_OPCODE_TYPE_CAST
       rv = node.astDataType
 
+    elif opcode is AST_OPCODE_REFERENCE
+      # TODO: Handle non-variant array items.
+
+    elif opcode is AST_OPCODE_CALL
+      # TODO: Handle non-variant return values.
+
     else
       children    = node.children
       childrenCnt = node.childrenCnt
@@ -640,6 +648,8 @@ function AST_GetDataType(node) -> rv
         if (opcode is AST_OPCODE_ADD) or (opcode is AST_OPCODE_MUL) or (opcode is AST_OPCODE_SUB)
           if (x is AST_DATA_DOUBLE) or (y is AST_DATA_DOUBLE)
             rv = AST_DATA_DOUBLE
+          elif (x is -1) or (y is -1)
+            rv = -1
           else
             rv = x
           endif
@@ -681,6 +691,8 @@ function AST_GetDataType(node) -> rv
       # Cache result for further use.
       node._cachedAstDataType = rv
     endif
+
+    #print 'Detected ast type [', rv, '] at node #' + str(node.id)
 
     if typeof(rv) isnt 'integer'
       die('error: unset AST data type at AST_GetDataType() at node #' + str(node.id))

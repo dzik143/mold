@@ -76,9 +76,10 @@ class ASTTypeCast
           astDataTypeLeft  = AST_GetDataType(x)
           astDataTypeRight = AST_GetDataType(y)
 
-          # TODO: Move to type-cast plugin?
           #if symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
-          #  astDataTypeLeft = -1
+          #  x.symbolInfo.astType = -1
+          #else
+          #  x.symbolInfo.astType = astDataTypeRight
           #endif
 
           if astDataTypeLeft isnt astDataTypeRight
