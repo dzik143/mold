@@ -1250,7 +1250,7 @@ class Parser
 
       debug('END CONDITION: reduce=[' + str(bitwiseAnd(this.act, UNICC_REDUCE)) + '], idx=[' + str(this.idx) +'], goalIdx=[' + str(@@goal-production) + ']')
 
-      if bitwiseAnd(this.act, UNICC_REDUCE) and (this.idx is @@goal-production)
+      if (bitwiseAnd(this.act, UNICC_REDUCE) isnt 0) and (this.idx is @@goal-production)
         goOn = false
       endif
 
