@@ -31,19 +31,10 @@ class ASTEvaluator
   method _assignValue(values, lval, rval)
     name     = lval.value
     oldValue = values[name]
-
-    if AST_IsImmOrVar(rval)
-      newValue = rval
-    else
-      newValue = lval
-    endif
+    newValue = rval
 
     values[name]     = newValue
     lval.storedValue = newValue
-
-    # TODO: Handle types merge/conflict.
-    # TODO: Moved to symbol collector?
-    #lval.astDataType = AST_GetDataType(rval)
 
     # TODO: Remove it when map iteration will be ready.
     if typeof(oldValue) is 'undefined'
