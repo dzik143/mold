@@ -216,9 +216,8 @@ class ASTOptimizerConstantFolding
             endif
           endif
 
-          if (newValue is value) and this.globals.isset(value) is true
+          if (typeof(newValue) is 'undefined') and (this.globals.isset(value) is true)
             symbolInfo = this.globals.lookup(value)
-
             # TODO: Handle imm arrays/maps/objects.
             if symbolInfo.writeHits is 1
 

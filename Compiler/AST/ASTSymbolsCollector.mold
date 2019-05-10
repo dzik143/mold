@@ -461,6 +461,8 @@ class ASTSymbolsCollector
       this._collectSymbolsFromLeftNode(symbolTable, bodyNode)
 
     else
+      goOnIntoChildren = true
+
       if opcode is AST_OPCODE_CALL
         funcName = node.value
         if (funcName is 'typeof') or (funcName is 'print') or (funcName is 'super') or (funcName is 'len') or (funcName is 'str') or (funcName is 'strescape') or (funcName is 'exit') or (funcName is 'die') or (funcName is '__mold_createObject') or (funcName is '__mold_getClassName') or (funcName is '__mold_warning') or (funcName is '__mold_printToStdOutput') or (funcName is '__mold_parseFile') or (funcName is 'moldParseFile') or (funcName is 'global')
@@ -478,20 +480,21 @@ class ASTSymbolsCollector
 
         # Import global symbol.
         if funcName is 'global'
-          # TODO: Review it.
-          # node.opcode = AST_OPCODE_NOP
           for idx in 0 .. childrenCnt
             symbolTable.importGlobal(children[idx].value)
           endfor
+          goOnIntoChildren = false
         endif
 
       elif opcode is AST_OPCODE_INVOKE_METHOD
         isLeftNode = false
       endif
 
-      for idx in 0 .. childrenCnt
-        this._collectSymbols(symbolTable, children[idx], isLeftNode)
-      endfor
+      if goOnIntoChildren is true
+        for idx in 0 .. childrenCnt
+          this._collectSymbols(symbolTable, children[idx], isLeftNode)
+        endfor
+      endif
     endif
   endmethod
 
