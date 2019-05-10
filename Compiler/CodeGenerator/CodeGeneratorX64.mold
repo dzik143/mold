@@ -1,7 +1,7 @@
 ################################################################################
 #                                                                              #
 # This file is part of Mold project.                                           #
-# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+# Copyright (c) 2015, 2019 Sylwester Wysocki (sw143@wp.pl).                    #
 #                                                                              #
 # The Mold code and any derived work however based on this software are        #
 # copyright of Sylwester Wysocki. Redistribution and use of the present        #
@@ -232,7 +232,7 @@ class CodeGeneratorX64
     print '; ------------------------------------------------------------------------------'
 
     print "section '.text' code readable executable"
-    print "stack 1024*1024*4"
+    print "stack 1024*1024*4, 1024*1024*4"
     print "include 'Variant.asm'"
     print "__rv EQU rdi"
 
@@ -1095,7 +1095,7 @@ class CodeGeneratorX64
 
         for symbolIdx in 0 .. len(symbols._index)
           symbol = symbols._index[symbolIdx]
-          if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')) and (symbol.readHits + symbol.writeHits > 0)
+          if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined'))
             this.variantDestroy(symbol.name)
           endif
         endfor
@@ -1103,7 +1103,7 @@ class CodeGeneratorX64
         if (currentProcName is 'start')
           for symbolIdx in 0 .. len(symbols._index)
             symbol = symbols._index[symbolIdx]
-            if (symbol.kind is SYMBOL_KIND_VAR_GLOBAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')) and (symbol.readHits + symbol.writeHits > 0)
+            if (symbol.kind is SYMBOL_KIND_VAR_GLOBAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined'))
               this.variantDestroy(symbol.name)
             endif
           endfor
@@ -1141,7 +1141,7 @@ class CodeGeneratorX64
         # TODO: Clean up this mess.
         for symbolIdx in 0 .. len(symbols._index)
           symbol = symbols._index[symbolIdx]
-          if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or (symbol.kind is SYMBOL_KIND_VAR_PARAM)) and (symbol.readHits + symbol.writeHits > 0)
+          if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or (symbol.kind is SYMBOL_KIND_VAR_PARAM))
             print '  restore', symbol.name
           endif
         endfor
@@ -1168,7 +1168,7 @@ class CodeGeneratorX64
         for symbolIdx in 0 .. symbolsCnt
           symbol = symbols._index[symbolsCnt - symbolIdx - 1]
 
-          if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) or (symbol.kind is SYMBOL_KIND_VAR_PARAM)#) and (symbol.readHits + symbol.writeHits > 0)
+          if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) or (symbol.kind is SYMBOL_KIND_VAR_PARAM)
             if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
               varSize = 16
             elif (symbol.type is 'int64') or (symbol.type is 'float64')
@@ -1184,7 +1184,6 @@ class CodeGeneratorX64
             currentFrameSize = currentFrameSize + varSize
 
             print ' ', symbol.name, 'EQU rbp -', 8 + currentFrameSize, ';', varSize, 'bytes'
-
           endif
 
           # TODO: Dirty fix to handle real number of stack parameters if 'this'
@@ -1195,7 +1194,12 @@ class CodeGeneratorX64
         endfor
 
         # Align to 16-bytes and add 32-byte shadow space.
-        currentFrameSize = (currentFrameSize // 16 + 1) * 16 + 32
+        # TODO: Optimize it.
+        if currentFrameSize > 0
+          currentFrameSize = ((currentFrameSize + 32) // 16 + 1) * 16
+        else
+          currentFrameSize = 32
+        endif
 
         print ''
         print '  push rbp'
@@ -1206,29 +1210,29 @@ class CodeGeneratorX64
         paramIdx = 0
 
         for symbolIdx in 0 .. len(symbols._index)
-          symbol        = symbols._index[symbolIdx]
-          symbolUsedCnt = symbol.readHits + symbol.writeHits
+          symbol = symbols._index[symbolIdx]
 
           if symbol.kind is SYMBOL_KIND_VAR_LOCAL
-            if (symbolUsedCnt > 0) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined'))
+            if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
               # Local Variant_t variable - init to undefined.
               print '  mov [' + symbol.name + ' + Variant_t.type], VARIANT_UNDEFINED'
             endif
 
           elif symbol.kind is SYMBOL_KIND_VAR_PARAM
             # Call parameter - copy to local var.
-            # TODO: Skip unused vars.
-            #if symbolUsedCnt > 0
+            if (symbol.readHits > 0) or (symbol.writeHits > 0)
               if paramIdx < 4
                 print '  movdqu xmm0', ', [', regParams[paramIdx], ']'
               else
                 print '  mov    rax, [rbp + 16 + 8 *', paramsPassedCnt - paramIdx - 1, ']'
                 print '  movdqu xmm0', ', [rax]'
               endif
+
               print '  movdqu [', symbol.name, '], xmm0'
-            #else
-            #  print '  ; skipped unused param [', symbol.name, ']'
-            #endif
+
+            else
+              print '  ; skipped unused param [', symbol.name, ']'
+            endif
 
             paramIdx = paramIdx  + 1
           endif
@@ -1243,7 +1247,7 @@ class CodeGeneratorX64
             if (symbol.name is 'argv') or (symbol.name is 'argc')
               # Do nothing.
 
-            elif (symbol.kind is SYMBOL_KIND_VAR_GLOBAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')) and (symbol.readHits + symbol.writeHits > 0)
+            elif (symbol.kind is SYMBOL_KIND_VAR_GLOBAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined'))
               print '  mov [' + symbol.name + ' + Variant_t.type], VARIANT_UNDEFINED'
             endif
 
@@ -1310,7 +1314,7 @@ class CodeGeneratorX64
 
     for globalIdx in 0 .. len(globals._index)
       symbol = globals._index[globalIdx]
-      if (symbol.kind is SYMBOL_KIND_VAR_GLOBAL) and (symbol.readHits + symbol.writeHits > 0)
+      if symbol.kind is SYMBOL_KIND_VAR_GLOBAL
         if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
           print symbol.name, ' Variant_t 0, 0, 0'
         elif symbol.type is 'int64'

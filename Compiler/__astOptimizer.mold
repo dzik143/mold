@@ -1,3 +1,4 @@
+NodeId = 1000
 DEBUG_AST_OPTIMIZER = false
 
 import 'AppMold.mold'

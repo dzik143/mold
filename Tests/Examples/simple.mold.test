@@ -26,3 +26,12 @@ print "Hello", "happy mold", "on", "my", "bread!"
 EXPECTED_OUTPUT:
 Hello happy mold on my bread!
 ------------------------------------------------------------------------------
+
+TEST "Useless assign (unused var)"
+
+x = 1234
+print 'OK!'
+
+EXPECTED_OUTPUT:
+OK!
+------------------------------------------------------------------------------

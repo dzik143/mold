@@ -175,7 +175,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
     global SYMBOL_KIND_VAR_PARAM
     global SYMBOL_KIND_VAR_RETVAL
 
-    info = this.symbolTable.lookupForRead(name)
+    info = this.symbolTable.lookup(name)
     kind = info['kind']
     id   = info['id']
     rv   = false
@@ -207,7 +207,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
     global SYMBOL_KIND_VAR_PARAM
     global SYMBOL_KIND_VAR_RETVAL
 
-    info = this.symbolTable.lookupForWrite(name)
+    info = this.symbolTable.lookup(name)
     kind = info['kind']
     id   = info['id']
 
@@ -311,7 +311,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
       symbolTable.insertLocalVolatile(iterName)
     endif
 
-    iterId = symbolTable.lookupForReadAndWrite(iterName)['id']
+    iterId = symbolTable.lookup(iterName)['id']
     code.storeLocal(iterId)
 
     # [step, endIdx]

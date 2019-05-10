@@ -150,10 +150,9 @@ class ASTOptimizerConstantFolding
 
     isNodeChanged = false
 
-    # TODO: Use null if ready?
     opcode      = node.opcode
     value       = node.value
-    newValue    = node.value
+    newValue    = node._undefined_ # TODO: Clean up this mess.
     childrenCnt = node.childrenCnt
     children    = node.children
     x           = children[0]
@@ -208,9 +207,11 @@ class ASTOptimizerConstantFolding
           # Convert variable to constant if possible.
           # TODO: Clean up this mess.
           if (typeof(node.storedValue) isnt 'undefined') and (typeof(node.storedValue) isnt 'array') and AST_IsImm(node.storedValue)
-            if (typeof(node.storedValue.value) isnt 'array') and (typeof(node.storedValue.value) isnt 'map')
-              if this.globals.isset(value) is false
-                newValue = node.storedValue.value
+            if typeof(node.storedValue) isnt 'array'
+              if (typeof(node.storedValue.value) isnt 'array') and (typeof(node.storedValue.value) isnt 'map')
+                if this.globals.isset(value) is false
+                  newValue = node.storedValue.value
+                endif
               endif
             endif
           endif
@@ -219,7 +220,8 @@ class ASTOptimizerConstantFolding
             symbolInfo = this.globals.lookup(value)
 
             # TODO: Handle imm arrays/maps/objects.
-            if (symbolInfo.writeHits is 1)
+            if symbolInfo.writeHits is 1
+
               if (typeof(symbolInfo.value) is 'integer') or (typeof(symbolInfo.value) is 'float') or (typeof(symbolInfo.value) is 'boolean')
                 newValue = symbolInfo.value
               endif
@@ -363,10 +365,11 @@ class ASTOptimizerConstantFolding
           if astType isnt -1
             newValue = AST_ConvertDataTypeToText(astType)
           endif
-
         endif
 
-        if newValue isnt value
+        # TODO: Clean up this mess.
+        #if newValue isnt value
+        if typeof(newValue) isnt 'undefined'
           this._setToImm(node, newValue)
           isNodeChanged = true
         else

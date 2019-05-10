@@ -620,7 +620,7 @@ function AST_GetDataType(node) -> rv
 
     if opcode is AST_OPCODE_VARIABLE
       symbolInfo = node.symbolInfo
-      if typeof(symbolInfo) isnt 'undefined'
+      if (typeof(symbolInfo) isnt 'undefined') and (typeof(symbolInfo.astType) isnt 'undefined')
         rv = symbolInfo.astType
       endif
 
@@ -689,7 +689,8 @@ function AST_GetDataType(node) -> rv
       endif
 
       # Cache result for further use.
-      node._cachedAstDataType = rv
+      # TODO: Review it.
+      # node._cachedAstDataType = rv
     endif
 
     #print 'Detected ast type [', rv, '] at node #' + str(node.id)
@@ -703,6 +704,8 @@ endfunction
 function AST_TypeCast(node, dstDataType) -> rv
   global AST_OPCODE_TYPE_CAST
   global AST_DATA_STRING
+
+  #print 'AST_TypeCast', typeof(node), dstDataType
 
   rv = node
 

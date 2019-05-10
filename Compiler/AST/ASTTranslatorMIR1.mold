@@ -83,12 +83,14 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
   method popForRead() -> rv
     rv = this.stack.pop()
-    this.symbolTable.lookupForRead(rv)
+    # TODO: Is it really needed at translation stage?
+    # this.symbolTable.lookupForRead(rv)
   endmethod
 
   method popForWrite() -> rv
     rv = this.stack.pop()
-    this.symbolTable.lookupForWrite(rv)
+    # TODO: Is it really needed at translation stage?
+    # this.symbolTable.lookupForWrite(rv)
   endmethod
 
   method push(x)
@@ -96,7 +98,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method popOneArgAndEmitOpcode(opcode) -> rv
-    rv = this.symbolTable.createTempVarForWrite()
+    rv = this.symbolTable.createTempVarForReadAndWrite()
     x  = this.popForRead()
 
     this.push(rv)
@@ -106,7 +108,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   method popTwoArgsAndEmitOpcode(opcode) -> rv
     global SYMBOL_KIND_CONST
 
-    rv = this.symbolTable.createTempVarForWrite()
+    rv = this.symbolTable.createTempVarForReadAndWrite()
     y  = this.popForRead()
     x  = this.popForRead()
 
@@ -120,7 +122,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     for idx in 0 .. paramsCnt
       item        = this.stack.peekN(paramsCnt - idx)
       params[idx] = item
-      this.symbolTable.lookupForRead(item)
+      this.symbolTable.lookup(item)
     endfor
 
     this.stack.eatN(paramsCnt)
@@ -244,13 +246,13 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _loadArray() -> rv
-    rv = this.symbolTable.createTempVarForWrite()
+    rv = this.symbolTable.createTempVarForReadAndWrite()
     this.emitTargetOnlyOpcode('create_array', rv)
     this.push(rv)
   endmethod
 
   method _loadMap() -> rv
-    rv = this.symbolTable.createTempVarForWrite()
+    rv = this.symbolTable.createTempVarForReadAndWrite()
     this.emitTargetOnlyOpcode('create_map', rv)
     this.push(rv)
   endmethod
@@ -259,7 +261,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     type = typeof(value)
 
     if type is 'integer'
-      rv = this.symbolTable.createTempVarForWrite()
+      rv = this.symbolTable.createTempVarForReadAndWrite()
 
       if (value >= -2147483648) and (value <= 2147483647)
         # 32-bit integer
@@ -272,12 +274,12 @@ class ASTTranslatorMIR1 extends ASTTranslator
       endif
 
     elif type is 'float'
-      rv = this.symbolTable.createTempVarForWrite()
+      rv = this.symbolTable.createTempVarForReadAndWrite()
       # TODO: Review it: this.emitOneArgOpcode('conv_float64_to_variant', rv, value)
       this.emitOneArgOpcode('load_float64', rv, value)
 
     elif type is 'boolean'
-      rv = this.symbolTable.createTempVarForWrite()
+      rv = this.symbolTable.createTempVarForReadAndWrite()
       # TODO: Review it: this.emitOneArgOpcode('conv_bool32_to_variant', rv, value)
       this.emitOneArgOpcode('load_bool32', rv, value)
 
@@ -296,7 +298,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     type = typeof(value)
 
     if type is 'integer'
-      rv = this.symbolTable.createTempVarForWrite()
+      rv = this.symbolTable.createTempVarForReadAndWrite()
 
       if (value >= -2147483648) and (value <= 2147483647)
         # 32-bit integer
@@ -307,11 +309,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
       endif
 
     elif type is 'float'
-      rv = this.symbolTable.createTempVarForWrite()
+      rv = this.symbolTable.createTempVarForReadAndWrite()
       this.emitOneArgOpcode('conv_float64_to_variant', rv, value)
 
     elif type is 'boolean'
-      rv = this.symbolTable.createTempVarForWrite()
+      rv = this.symbolTable.createTempVarForReadAndWrite()
       this.emitOneArgOpcode('conv_bool32_to_variant', rv, value)
 
     elif (type is 'string') or (type is 'array')
@@ -378,24 +380,25 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
   method _assign(name, unusedValue)
     global SYMBOL_KIND_VAR_RETVAL
-    symInfo = this.symbolTable.lookupForWrite(name)
-    if symInfo.kind is SYMBOL_KIND_VAR_RETVAL
+    symbolInfo = this.symbolTable.lookup(name)
+    if symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
       name = '__rv'
+    else
+      # TODO: Is it really needed?
+      symbolInfo.type = AST_ConvertDataTypeToMIR(symbolInfo.astType)
     endif
 
     this.emitMoveVariantOpcode(name, this.popForRead())
   endmethod
 
   method _call(proto, unusedParams, paramsCnt) -> rv
-    rv      = this.symbolTable.createTempVarForWrite()
+    rv      = this.symbolTable.createTempVarForReadAndWrite()
     params  = this.popParametersBeforeCall(paramsCnt)
     name    = proto['fullName']
 
     if typeof(name) is 'undefined'
       name = proto['name']
     endif
-
-    this.symbolTable.lookupForWrite(rv)
 
     # TODO: Use emitTwoArgsOpcode() after fix.
     this._emitOneItem(['call', rv, name, params])
@@ -447,7 +450,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     else
       # Static code, we got class proto inside MIR opcode.
-      rv = this.symbolTable.createTempVarForWrite()
+      rv = this.symbolTable.createTempVarForReadAndWrite()
       this.emitOneArgOpcode('create_object', rv, classProto.name)
       this.push(rv)
     endif
@@ -499,7 +502,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   method _invokeMethod(methodName, unusedParams, paramsCnt) -> rv
     # TODO: Remove paramsCnt
     # TODO: Remove codeObj
-    rv       = this.symbolTable.createTempVarForWrite()
+    rv       = this.symbolTable.createTempVarForReadAndWrite()
     methodId = this.code.methodsMap[methodName]
 
     if typeof(methodId) is 'undefined'

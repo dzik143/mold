@@ -12,6 +12,8 @@
 #                                                                              #
 ################################################################################
 
+import 'AST/ASTUtils.mold'
+
 SYMBOL_KIND_VAR_LOCAL  = 1
 SYMBOL_KIND_VAR_GLOBAL = 2
 SYMBOL_KIND_VAR_PARAM  = 3
@@ -93,9 +95,10 @@ class SymbolTable
       entry.loopLevel = this.loopLevel
 
       # Default data type to variant if not set.
-      if typeof(entry.astType) is 'undefined'
-        entry.astType = -1
-      endif
+      # TODO: Review it?
+      #if typeof(entry.astType) is 'undefined'
+      #  entry.astType = -1
+      #endif
     endif
   endmethod
 
@@ -132,6 +135,7 @@ class SymbolTable
 
   method _lookupInternal(name) -> rv
     global SYMBOL_KIND_VAR_LOCAL
+    global SYMBOL_KIND_VAR_GLOBAL
 
     rv  = this.symbols[name]
     tab = this
@@ -144,9 +148,11 @@ class SymbolTable
     # Handle unimported global.
     # TODO: Clean up this mess.
     if (typeof(rv) isnt 'undefined')
-      if (tab.procLevel is 0) and (this.procLevel > 0) and (rv.kind is SYMBOL_KIND_VAR_LOCAL)
-        x  = []
-        rv = x[0]
+      if (tab.procLevel is 0) and (this.procLevel > 0)
+        if (rv.kind is SYMBOL_KIND_VAR_LOCAL) or (rv.kind is SYMBOL_KIND_VAR_GLOBAL)
+          x  = []
+          rv = x[0]
+        endif
       endif
     endif
   endmethod
@@ -396,10 +402,12 @@ class SymbolTable
     newEntry = {
       'name': '__rv',
       'kind': SYMBOL_KIND_VAR_RETVAL,
-      'alias': name
+      'alias': name,
+      'astType': -1
     }
     this.insert('__rv', newEntry)
     this.symbols[name] = newEntry
+    this.lookupForRead('__rv')
   endmethod
 
   method insertConst(name, value)
@@ -434,10 +442,44 @@ class SymbolTable
     symbolInfo.node = node
   endmethod
 
-  method assignType(name, type)
+  method assignType(name, newType)
+    global AST_DATA_INTEGER
+    global AST_DATA_DOUBLE
+
     symbolInfo = this.lookup(name)
-    symbolInfo.astType = type
-    this._debug('Assign AST type [' + str(type) + '] to variable [' + str(name) + ']')
+    oldType    = symbolInfo.astType
+
+    if newType isnt oldType
+      goOn = false
+
+      if typeof(oldType) is 'undefined'
+        # First type assign. Go on.
+        goOn = true
+
+      elif oldType is -1
+        # Type is already variant. Don't touch it.
+
+      elif (oldType is AST_DATA_INTEGER) and (newType is AST_DATA_DOUBLE)
+        # integer -> double
+        # Go on.
+        goOn = true
+
+      elif newType is -1
+        # Variant overwrite all types. Go on.
+        goOn = true
+
+      else
+        # Error - type mismatch.
+        die('error: attemp to assign ' + AST_ConvertDataTypeToText(newType) + ' to ' + AST_ConvertDataTypeToText(oldType))
+      endif
+
+      if goOn is true
+        symbolInfo.astType = newType
+        this._debug('Assign AST type [' + AST_ConvertDataTypeToText(newType) + '] to variable [' + str(name) + ']')
+      else
+        this._debug('Ignored ineffective AST type change from [' + AST_ConvertDataTypeToText(oldType) + '] to [' + AST_ConvertDataTypeToText(newType) + '] for variable [' + str(name) + ']')
+      endif
+    endif
   endmethod
 
   method assignMirType(name, type)
@@ -468,6 +510,33 @@ class SymbolTable
       #endif
     endfor
 */
+  endmethod
+
+  method removeUnusedSymbols()
+    global SYMBOL_KIND_VAR_PARAM
+    global SYMBOL_KIND_VAR_RETVAL
+
+    index      = this.symbols._index
+    indexCnt   = len(index)
+    newIndex   = []
+    newSymbols = {'_index': newIndex}
+
+    # TODO: Use remove() if ready.
+    #this.symbols = {'_index': []}
+
+    for idx in 0 .. indexCnt
+      symbolInfo = index[idx]
+      if (symbolInfo.writeHits > 0) or (symbolInfo.kind is SYMBOL_KIND_VAR_PARAM) or (symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL) or (symbolInfo.name is '__rv')
+        # Variable is used at least once time. Keep it in table.
+        newIndex[len(newIndex)]     = symbolInfo
+        newSymbols[symbolInfo.name] = symbolInfo
+      else
+        # Variable was neither written nor read. Remove it from table.
+        this._debug('Removed unused symbol [' + symbolInfo.name + ']')
+      endif
+    endfor
+
+    this.symbols = newSymbols
   endmethod
 
   # ----------------------------------------------------------------------------

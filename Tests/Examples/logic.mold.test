@@ -357,3 +357,56 @@ print 'OK!'
 EXPECTED_OUTPUT:
 OK!
 -------------------------------------------------------------------------------                                        
+TEST "Merge variable type from if branches"
+
+function foo(x)
+  if x <= 4
+    limitedX = x
+  else
+    limitedX = 4
+  endif
+
+  print 'foo(', x, ') =', limitedX
+endfunction
+
+foo(0)
+foo(1)
+foo(2)
+foo(3)
+foo(4)
+foo(5)
+foo(6)
+foo(7)
+foo(8)
+
+EXPECTED_OUTPUT:
+foo( 0 ) = 0
+foo( 1 ) = 1
+foo( 2 ) = 2
+foo( 3 ) = 3
+foo( 4 ) = 4
+foo( 5 ) = 4
+foo( 6 ) = 4
+foo( 7 ) = 4
+foo( 8 ) = 4
+-------------------------------------------------------------------------------                                        
+
+TEST "Bug: Incorectly mask variant by machine bool32"
+
+function foo(x)
+  if x is true
+    print 'foo(): true'
+  else
+    print 'foo(): false'
+  endif
+  
+  x = true
+endfunction
+
+foo(true)
+foo(false)
+
+EXPECTED_OUTPUT:
+foo(): true
+foo(): false
+-------------------------------------------------------------------------------                                        

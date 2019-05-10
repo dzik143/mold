@@ -154,7 +154,7 @@ class ASTOptimizerVCall
       if x.opcode is AST_OPCODE_VARIABLE
         # x = ...
         symbolInfo = symbolTable.lookup(x.value)
-        if (symbolInfo.readHits is 0) and (symbolInfo.kind isnt SYMBOL_KIND_VAR_RETVAL)
+        if symbolInfo.readHits is 0
           # Assign to unused variable.
           rval = children[1]
 

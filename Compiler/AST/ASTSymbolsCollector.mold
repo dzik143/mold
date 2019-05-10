@@ -38,6 +38,25 @@ class ASTSymbolsCollector
     this._collectSymbols(symbolTable, node, false)
   endmethod
 
+  method _updateVariableSymbolInfo(node, variableName, newSymbolInfo)
+    global AST_OPCODE_VARIABLE
+
+    # TODO: Clean up this mess.
+    if node.opcode is AST_OPCODE_VARIABLE
+      if node.value is variableName
+        node.symbolInfo = newSymbolInfo
+      endif
+
+    else
+      childrenCnt = node.childrenCnt
+      children    = node.children
+
+      for idx in 0 .. childrenCnt
+        this._updateVariableSymbolInfo(children[idx], variableName, newSymbolInfo)
+      endfor
+    endif
+  endmethod
+
   method _collectSymbols(symbolTable, node, isLeftNode)
     global AST_OPCODE_PROGRAM
     global AST_OPCODE_BLOCK
@@ -194,6 +213,8 @@ class ASTSymbolsCollector
         # TODO: Why we need to add this param by hand?
         if opcode is AST_OPCODE_CLASS_METHOD
           nodeBody.symbolTable.insertParam('this')
+          # TODO: Handle non-variant parameters.
+          nodeBody.symbolTable.assignType('this', -1)
         endif
 
         for idx in 0 .. funcProto.paramsCnt
@@ -205,6 +226,9 @@ class ASTSymbolsCollector
 
           nodeBody.symbolTable.insertParam(paramName)
           #nodeBody.symbolTable.assignNode(paramName, paramNode)
+
+          # TODO: Handle non-variant parameters.
+          nodeBody.symbolTable.assignType(paramName, -1)
         endfor
 
         if typeof(funcProto.rv) isnt 'undefined'
@@ -305,7 +329,6 @@ class ASTSymbolsCollector
 
         #endif
 
-
         # Restore read stats for lval variable to avoid false x = x + 1 usage.
         # It's not useful read.
         symbolInfo.readHits = readHits
@@ -377,6 +400,27 @@ class ASTSymbolsCollector
               symbolTable.insert(symbolInfo1.name, symbolInfo1)
             endif
 
+            # Merge AST data type.
+            astType1 = symbolTable1.astType
+            astType2 = symbolTable2.astType
+
+            if astType1 isnt astType2
+              # Type mismatch.
+              astType = -1
+
+              if (astType1 is AST_DATA_DOUBLE) and (astType2 is AST_DATA_INTEGER)
+                astType = AST_DATA_DOUBLE
+
+              elif (astType1 is AST_DATA_INTEGER) and (astType2 is AST_DATA_DOUBLE)
+                astType = AST_DATA_DOUBLE
+              endif
+
+              symbolInfo1.astType = astType
+            endif
+
+            # TODO: Optimize it.
+            this._updateVariableSymbolInfo(children[1], symbolInfo1.name, symbolInfo1)
+            this._updateVariableSymbolInfo(children[2], symbolInfo1.name, symbolInfo1)
           endif
         endfor
       endif
@@ -465,6 +509,5 @@ class ASTSymbolsCollector
     endif
 
     this._collectSymbolsFromLeftNode(node.symbolTable, node)
-
   endmethod
 endclass

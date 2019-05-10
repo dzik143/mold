@@ -236,3 +236,37 @@ foo( 3 ) = undefined
 foo( 100000 ) = undefined
 foo( -100000 ) = undefined
 --------------------------------------------------------------------------------
+
+TEST "Share one global along many functions"
+
+NodeId = 1000
+
+function GetNextId1() -> rv
+  global NodeId
+  rv = NodeId
+  NodeId = NodeId + 1
+endfunction
+
+function GetNextId2() -> rv
+  global NodeId
+  rv = NodeId
+  NodeId = NodeId + 2
+endfunction
+
+function GetNextId3() -> rv
+  global NodeId
+  rv = NodeId
+  NodeId = NodeId + 3
+endfunction
+
+print GetNextId1()
+print GetNextId2()
+print GetNextId3()
+print NodeId
+
+EXPECTED_OUTPUT:
+1000
+1001
+1003
+1006
+--------------------------------------------------------------------------------

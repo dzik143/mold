@@ -39,17 +39,17 @@ astPrinterHtml              = new ASTPrinterHtml()
 print 'Building symbol table...'
 astSymbolsCollector.buildSymbolTable(ast)
 
-#print 'Evaluating node...'
-#astEvaluator.processNode(ast)
+print 'Evaluating node...'
+astEvaluator.processNode(ast)
 
-#print 'Constant folding...'
-#astOptimizerConstantFolding.processNode(ast)
+print 'Constant folding...'
+astOptimizerConstantFolding.processNode(ast)
 
-#print 'Dead code elimination...'
-#astOptimizerDeadCodeRemove.processNode(ast)
+print 'Dead code elimination...'
+astOptimizerDeadCodeRemove.processNode(ast)
 
-#print 'Common subexpression elimination...'
-#astOptimizerCSE.processNode(ast)
+print 'Common subexpression elimination...'
+astOptimizerCSE.processNode(ast)
 
 #astOptimizerVCall.processNode(ast)
 

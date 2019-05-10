@@ -78,3 +78,126 @@ true and true
 getTrue() called
 getTrue() called
 --------------------------------------------------------------------------------
+
+TEST "Lazy foo() and/or inline expression"
+
+function foo(x) -> rv
+  rv = x
+endfunction
+
+#
+# foo() and inline expression
+#
+
+print 'foo() and inline expression'
+print '==========================='
+
+if foo(true) and (1 is 1)
+  print 'foo(true) and (1 is 1)'
+endif
+
+if foo(true) and (1 is 2)
+  print 'foo(true) and (1 is 2)'
+endif
+
+if foo(false) and (1 is 1)
+  print 'foo(false) and (1 is 1)'
+endif
+
+if foo(false) and (1 is 2)
+  print 'foo(false) and (1 is 2)'
+endif
+
+#
+# foo() or inline expression
+#
+
+print ''
+print 'foo() or inline expression'
+print '=========================='
+
+if foo(true) or (1 is 1)
+  print 'foo(true) or (1 is 1)'
+endif
+
+if foo(true) or (1 is 2)
+  print 'foo(true) or (1 is 2)'
+endif
+
+if foo(false) or (1 is 1)
+  print 'foo(false) or (1 is 1)'
+endif
+
+if foo(false) or (1 is 2)
+  print 'foo(false) or (1 is 2)'
+endif
+
+#
+# inline expression and foo()
+#
+
+print ''
+print 'inline expression and foo()'
+print '==========================='
+
+if (1 is 1) and foo(true)
+  print '(1 is 1) and foo(true)'
+endif
+
+if (1 is 2) and foo(true)
+  print '(1 is 2) and foo(true)'
+endif
+
+if (1 is 1) and foo(false)
+  print '(1 is 1) and foo(false)'
+endif
+
+if (1 is 2) and foo(false)
+  print '(1 is 2) and foo(false)'
+endif
+
+#
+# inline expression or foo()
+#
+
+print ''
+print 'inline expression or foo()'
+print '=========================='
+
+if (1 is 1) or foo(true)
+  print '(1 is 1) or foo(true)'
+endif
+
+if (1 is 2) or foo(true)
+  print '(1 is 2) or foo(true)'
+endif
+
+if (1 is 1) or foo(false)
+  print '(1 is 1) or foo(false)'
+endif
+
+if (1 is 2) or foo(false)
+  print '(1 is 2) or foo(false)'
+endif
+
+EXPECTED_OUTPUT:
+foo() and inline expression
+===========================
+foo(true) and (1 is 1)
+
+foo() or inline expression
+==========================
+foo(true) or (1 is 1)
+foo(true) or (1 is 2)
+foo(false) or (1 is 1)
+
+inline expression and foo()
+===========================
+(1 is 1) and foo(true)
+
+inline expression or foo()
+==========================
+(1 is 1) or foo(true)
+(1 is 2) or foo(true)
+(1 is 1) or foo(false)
+-------------------------------------------------------------------------------                                        

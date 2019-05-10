@@ -92,3 +92,20 @@ EXPECTED_OUTPUT:
 Before for
 After for
 -------------------------------------------------------------------------------
+
+TEST "Process array inside while loop"
+
+x   = [1,2,3,4,5,6,7,8,9,10]
+acc = 0
+idx = 0
+
+while idx < 10
+  acc = 5 * acc + x[idx]
+  idx = idx + 1
+endwhile
+
+print acc
+
+EXPECTED_OUTPUT:
+3051755
+-------------------------------------------------------------------------------

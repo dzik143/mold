@@ -248,3 +248,11 @@ parser.parse()
 EXPECTED_OUTPUT:
 OK!
 -------------------------------------------------------------------------------
+
+TEST "Bug: Treat unused variable as variant (and crash during destroy)
+x = 1234
+print 'OK!'
+
+EXPECTED_OUTPUT:
+OK!
+-------------------------------------------------------------------------------

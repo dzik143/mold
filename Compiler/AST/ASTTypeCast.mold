@@ -46,6 +46,7 @@ class ASTTypeCast
     global AST_OPCODE_COMPARE_EQ
     global AST_OPCODE_COMPARE_LE
     global AST_OPCODE_BOOL_NOT
+    global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
     global AST_OPCODE_CALL_NEW
     global AST_DATA_BOOL
     global SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_VAR_RETVAL
@@ -99,7 +100,7 @@ class ASTTypeCast
         yType = AST_GetDataType(y)
 
         if xType isnt yType
-          this._debug('Type mismatch at node #' + str(node.id) + ' (' + str(xType) + ' vs ' + str(yType) + ')')
+          this._debug('Type mismatch at arithmetic expression node #' + str(node.id) + ' (' + str(xType) + ' vs ' + str(yType) + ')')
 
           # Type mismatch in binary arithmetic or compare: x o y
           if (xType is AST_DATA_DOUBLE) and (yType is AST_DATA_INTEGER)
@@ -114,6 +115,30 @@ class ASTTypeCast
           children[0] = AST_TypeCast(x, dstType)
           children[1] = AST_TypeCast(y, dstType)
         endif
+
+      elif (opcode is AST_OPCODE_BOOL_AND) or (opcode is AST_OPCODE_BOOL_OR)
+        # TODO: Review it.
+        children[0] = AST_TypeCast(children[0], AST_DATA_BOOL)
+        children[1] = AST_TypeCast(children[1], AST_DATA_BOOL)
+
+/*
+        xType = AST_GetDataType(x)
+        yType = AST_GetDataType(y)
+
+        if xType isnt yType
+          this._debug('Type mismatch at boolean expression node #' + str(node.id) + ' (' + str(xType) + ' vs ' + str(yType) + ')')
+
+          # Type mismatch in boolean expression.
+          if xType is -1
+            # variant and/or bool32
+            children[1] = AST_TypeCast(y, -1)
+
+          elif yType is -1
+            # bool32 and/or variant
+            children[0] = AST_TypeCast(x, -1)
+          endif
+        endif
+*/
 
       elif opcode is AST_OPCODE_REFERENCE
         # TODO: Handle native machine indexes.
