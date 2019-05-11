@@ -1335,6 +1335,16 @@ class CodeGeneratorX64
       endif
     endfor
 
+    #
+    # Dump constant data to another section to catch access
+    # violation on write attemp.
+    #
+
+    print '; ------------------------------------------------------------------------------'
+    print ';                           Constant data section'
+    print '; ------------------------------------------------------------------------------'
+    print "section '.cdata' data readable"
+
     print ''
     print '; Constants'
     print '; ---------'
@@ -1387,6 +1397,10 @@ class CodeGeneratorX64
 
       print ''
     endfor
+
+    print '; ------------------------------------------------------------------------------'
+    print ';                                Imports section'
+    print '; ------------------------------------------------------------------------------'
 
     #
     # Generate imports section.
