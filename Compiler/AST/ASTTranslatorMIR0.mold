@@ -21,7 +21,6 @@ import 'MIR/MIR.mold'
 # It translates AST to MIR0 (stack based).
 # ------------------------------------------------------------------------------
 
-/*
 class ASTTranslatorMIR0 extends ASTTranslator
 
   # ----------------------------------------------------------------------------
@@ -513,4 +512,3 @@ class ASTTranslatorMIR0 extends ASTTranslator
     code.endProc()
   endmethod
 endclass
-*/

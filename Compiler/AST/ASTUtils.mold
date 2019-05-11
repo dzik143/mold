@@ -21,7 +21,7 @@ const AST_DataTypeNames = [
   'float',     # 3 double
   'string',    # 4
   'boolean',   # 5
-  'ptr',       # 6
+  'object',    # 6
   'null',      # 7
   'undefined', # 8
   'array',     # 9
@@ -35,7 +35,7 @@ const AST_DataTypeForMIR = [
   'float64',   # double
   'variant',   # string
   'bool32',    # boolean
-  '[error]',   # ptr
+  'variant',   # object
   '[error]',   # null
   '[error]',   # undefined
   'variant',   # array (TODO)
@@ -67,7 +67,7 @@ endfunction
 
 function AST_GetOpcodeAsText(opcode) -> rv
   global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
-  global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+  global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_NULL, AST_DATA_UNDEFINED
   global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
   global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
   global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
@@ -95,7 +95,7 @@ function AST_GetOpcodeAsText(opcode) -> rv
   global AST_OPCODE_VARIABLE
 
   global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
-  global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+  global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_NULL, AST_DATA_UNDEFINED
   global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
   global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
   global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
@@ -217,6 +217,12 @@ function AST_GetOpcodeAsText(opcode) -> rv
   elif opcode is AST_OPCODE_TYPE_CAST
     rv = 'TYPE_CAST'
 
+  elif opcode is AST_OPCODE_CALL_NEW
+    rv = 'CALL_NEW'
+
+  elif opcode is AST_OPCODE_INVOKE_METHOD
+    rv = 'VCALL'
+
   else
     rv = '[UNKNOWN: ' + str(opcode) + ']'
   endif
@@ -224,7 +230,7 @@ endfunction
 
 function AST_GetOpcodeAsShortText(opcode) -> rv
   global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
-  global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+  global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_NULL, AST_DATA_UNDEFINED
   global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
   global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
   global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
@@ -251,7 +257,7 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   global AST_OPCODE_VARIABLE
 
   global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
-  global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+  global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_NULL, AST_DATA_UNDEFINED
   global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
   global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
   global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
@@ -610,8 +616,10 @@ function AST_GetDataType(node) -> rv
   global AST_DATA_DOUBLE
   global AST_DATA_STRING
   global AST_DATA_BOOL
+  global AST_DATA_OBJECT
   global AST_OPCODE_TYPE_CAST
   global AST_OPCODE_CALL
+  global AST_OPCODE_CALL_NEW
   global AST_OPCODE_REFERENCE
 
   rv = node._cachedAstDataType
@@ -634,6 +642,9 @@ function AST_GetDataType(node) -> rv
 
     elif opcode is AST_OPCODE_CALL
       # TODO: Handle non-variant return values.
+
+    elif opcode is AST_OPCODE_CALL_NEW
+      rv = AST_DATA_OBJECT
 
     else
       children    = node.children
@@ -706,6 +717,7 @@ endfunction
 function AST_TypeCast(node, dstDataType) -> rv
   global AST_OPCODE_TYPE_CAST
   global AST_DATA_STRING
+  global AST_DATA_OBJECT
 
   #print 'AST_TypeCast', typeof(node), dstDataType
 
@@ -726,6 +738,9 @@ function AST_TypeCast(node, dstDataType) -> rv
 
     elif (dstDataType is AST_DATA_STRING) and (srcDataType is -1)
       # Variant -> String : do nothing.
+
+    elif (srcDataType is AST_DATA_OBJECT) and (dstDataType is -1)
+      # Object -> Variant : do nothing.
 
     else
       # Types mismatch - wrap into type cast node.

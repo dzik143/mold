@@ -78,6 +78,7 @@ class ASTSymbolsCollector
     global AST_OPCODE_BOOL_NOT
     global AST_OPCODE_CALL_NEW
     global AST_DATA_BOOL
+    global AST_DATA_OBJECT
     global SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_VAR_RETVAL
     global AST_OPCODE_ADD, AST_OPCODE_MUL, AST_OPCODE_SUB, AST_OPCODE_DIV, AST_OPCODE_IDIV
     global AST_DATA_DOUBLE, AST_DATA_INTEGER
@@ -107,6 +108,7 @@ class ASTSymbolsCollector
       baseMethods           = {}
       methodsAsFlatArray    = []
       methodsAsFlatArrayCnt = 0
+      classProto            = {}
 
       # Import base class if any.
       if typeof(baseName) isnt 'undefined'
@@ -155,7 +157,8 @@ class ASTSymbolsCollector
             methodsAsFlatArrayCnt = methodsAsFlatArrayCnt + 1
           endif
 
-          child['className'] = className
+          child['className']  = className
+          child['classProto'] = classProto
 
           if typeof(baseMethods[methodName]) isnt 'undefined'
             # Save proto of base method if any.
@@ -172,14 +175,12 @@ class ASTSymbolsCollector
       endfor
 
       # Declare new class.
-      classProto = {
-        'name': className,
-        'baseName': node['baseName'],
-        'vtable': vtable,
-        'methodsAsFlatArray': methodsAsFlatArray,
-        'methodsAsFlatArrayCnt': methodsAsFlatArrayCnt,
-        'propertyClassNames': {}
-      }
+      classProto.name                  = className
+      classProto.baseName              = node['baseName']
+      classProto.vtable                = vtable
+      classProto.methodsAsFlatArray    = methodsAsFlatArray
+      classProto.methodsAsFlatArrayCnt = methodsAsFlatArrayCnt
+      classProto.propertyClassNames    = {}
 
       node['proto'] = classProto
 
@@ -212,9 +213,10 @@ class ASTSymbolsCollector
 
         # TODO: Why we need to add this param by hand?
         if opcode is AST_OPCODE_CLASS_METHOD
-          nodeBody.symbolTable.insertParam('this')
-          # TODO: Handle non-variant parameters.
-          nodeBody.symbolTable.assignType('this', -1)
+          # Optimize it.
+          symbolInfo = nodeBody.symbolTable.insertParam('this')
+          symbolInfo.classProto = funcProto.classProto
+          nodeBody.symbolTable.assignType('this', AST_DATA_OBJECT)
         endif
 
         for idx in 0 .. funcProto.paramsCnt
@@ -344,14 +346,19 @@ class ASTSymbolsCollector
         #
         #else
 
-          # Save value node for constant propagation.
-          symbolTable.assignNode(lval.value, lval)
+        # Save value node for constant propagation.
+        symbolTable.assignNode(lval.value, lval)
 
-          if AST_IsImm(rval)
-            symbolTable.assignValue(lval.value, rval.value)
-          endif
+        if AST_IsImm(rval)
+          symbolTable.assignValue(lval.value, rval.value)
+        endif
 
-        #endif
+        # Handle well-known types.
+        if rval.opcode is AST_OPCODE_CALL_NEW
+          # lval = new Xxx(...)
+          symbolTable.assignType(lval.value, AST_DATA_OBJECT)
+          symbolInfo.classProto = symbolTable.lookupClass(rval.value).proto
+        endif
 
         # Restore read stats for lval variable to avoid false x = x + 1 usage.
         # It's not useful read.

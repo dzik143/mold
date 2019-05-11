@@ -20,6 +20,7 @@ import 'AST/ASTEvaluator.mold'
 import 'AST/ASTOptimizerConstantFolding.mold'
 import 'AST/ASTOptimizerCSE.mold'
 import 'AST/ASTOptimizerDeadCodeRemove.mold'
+import 'AST/ASTOptimizerVCall.mold'
 import 'AST/ASTTypeCast.mold'
 
 # TODO: Clean up this mess.
@@ -45,6 +46,7 @@ class AppMold
     this.astEvaluator                = new ASTEvaluator(this)
     this.astOptimizerCSE             = new ASTOptimizerCSE(this)
     this.astOptimizerDeadCodeRemove  = new ASTOptimizerDeadCodeRemove(this)
+    this.astOptimizerVCall           = new ASTOptimizerVCall(this)
     this.astTypeCast                 = new ASTTypeCast(this)
     this.astModuleResolver           = new ASTModuleResolver(this)
 
