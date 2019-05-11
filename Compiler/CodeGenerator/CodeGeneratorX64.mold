@@ -1114,6 +1114,8 @@ class CodeGeneratorX64
         print '  pop  rbp'
         print '  ret'
 
+        # TODO: Is it still needed?
+        /*
         if (typeof(currentProcRv) isnt 'undefined') and (currentProcName isnt 'constructor')
           print ''
           print '; return value guard'
@@ -1125,6 +1127,7 @@ class CodeGeneratorX64
           print '  call   [ExitProcess]'
           print '  .unsetRetValMsg db "error: unset return variable ' + "'" + currentProcRv + "' in '" + currentProcName + "' function" + '", 13, 10'
         endif
+        */
 
       elif opcode is 'proc'
         proto            = item[1]
@@ -1263,9 +1266,10 @@ class CodeGeneratorX64
         print '  ; code'
         print '  ; ----'
 
-      elif opcode is 'rv_guard'
-        print '  cmp  [rdi + Variant_t.type], -1'
-        print '  jz   .errorUnsetRetVal'
+      #elif opcode is 'rv_guard'
+      #  # TODO: Is it still needed?
+      #  print '  cmp  [rdi + Variant_t.type], -1'
+      #  print '  jz   .errorUnsetRetVal'
 
       elif originalOpcode is 'create_array'
         this.variantDestroy(dst)

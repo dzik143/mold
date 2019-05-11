@@ -59,14 +59,17 @@ class ASTTranslator
   # ----------------------------------------------------------------------------
 
   method _callLen(x) -> rv
+    rv = false
     this._error('_callLen not implemented')
   endmethod
 
   method _callStr(x) -> rv
+    rv = false
     this._error('_callStr not implemented')
   endmethod
 
   method _callStrEscape(x) -> rv
+    rv = false
     this._error('_callStrEscape not implemented')
   endmethod
 
@@ -87,22 +90,27 @@ class ASTTranslator
   endmethod
 
   method _callMoldCreateObject(classProto) -> rv
+    rv = false
     this._error('_callMoldCreateObject not implemented')
   endmethod
 
   method _callMoldGetClassName(thiz) -> rv
+    rv = false
     this._error('_callMoldGetClassName not implemented')
   endmethod
 
   method _callMoldParseFile(filePath) -> rv
+    rv = false
     this._error('_callMoldParseFile not implemented')
   endmethod
 
   method _loadArgsVector() -> rv
+    rv = false
     this._error('_loadArgsVector not implemented')
   endmethod
 
   method _loadArgsCount() -> rv
+    rv = false
     this._error('_callLoadArgsCount not implemented')
   endmethod
 
@@ -111,31 +119,38 @@ class ASTTranslator
   # ----------------------------------------------------------------------------
 
   method _loadArray() -> rv
+    rv = false
     this._error('_loadArray() not implemented')
   endmethod
 
   method _loadMap() -> rv
+    rv = false
     this._error('_loadMap() not implemented')
   endmethod
 
   method _loadImm(value) -> rv
+    rv = false
     this._error('_loadImm() not implemented')
   endmethod
 
   method _loadImmAsVariant(value) -> rv
     # TODO: Review is it really needed?
+    rv = false
     this._error('_loadImmAsVariant() not implemented')
   endmethod
 
   method _loadVariable(name) -> rv
+    rv = false
     this._error('_loadVariable() not implemented')
   endmethod
 
   method _call(funcProto, params, paramsCnt) -> rv
+    rv = false
     this._error('_call() not implemented')
   endmethod
 
   method _invokeMethod(methodName, params, paramsCnt) -> rv
+    rv = false
     this._error('_invokeMethod() not implemented')
   endmethod
 
@@ -144,66 +159,82 @@ class ASTTranslator
   endmethod
 
   method _typeof(value) -> rv
+    rv = false
     this._error('_typeof() not implemented')
   endmethod
 
   method _neg(value) -> rv
+    rv = false
     this._error('_neg() not implemented')
   endmethod
 
   method _add(x, y) -> rv
+    rv = false
     this._error('_add() not implemented')
   endmethod
 
   method _sub(x, y) -> rv
+    rv = false
     this._error('_sub() not implemented')
   endmethod
 
   method _mul(x, y) -> rv
+    rv = false
     this._error('_mul() not implemented')
   endmethod
 
   method _div(x, y) -> rv
+    rv = false
     this._error('_div() not implemented')
   endmethod
 
   method _idiv(x, y) -> rv
+    rv = false
     this._error('_idiv() not implemented')
   endmethod
 
   method _compareEQ(x, y) -> rv
+    rv = false
     this._error('_compareEQ() not implemented')
   endmethod
 
   method _compareNEQ(x, y) -> rv
+    rv = false
     this._error('_compareNEQ() not implemented')
   endmethod
 
   method _compareLT(x, y) -> rv
+    rv = false
     this._error('_compareLT() not implemented')
   endmethod
 
   method _compareLE(x, y) -> rv
+    rv = false
     this._error('_compareLE() not implemented')
   endmethod
 
   method _compareGT(x, y) -> rv
+    rv = false
     this._error('_compareGT() not implemented')
   endmethod
 
   method _compareGE(x, y) -> rv
+    rv = false
     this._error('_compareGE() not implemented')
   endmethod
 
   method _boolAnd(x, y) -> rv
+    rv = false
     this._error('_boolAnd() not implemented')
   endmethod
 
   method _boolOr(x, y) -> rv
+    rv = false
     this._error('_boolOr() not implemented')
   endmethod
 
   method _loadFromIndex(box, idx) -> rv
+    rv = false
     this._error('_loadFromIndex() not implemented')
   endmethod
 
@@ -216,10 +247,12 @@ class ASTTranslator
   endmethod
 
   method _createObject(classProto) -> rv
+    rv = false
     this._error('_createObject() not implemented')
   endmethod
 
   method _convert(srcNode, srcType, dstType) -> rv
+    rv = false
     this._error('_convert() is not implemented')
   endmethod
 
@@ -409,8 +442,8 @@ class ASTTranslator
   endmethod
 
   method _getMethodProto(className, methodName, paramsCnt) -> rv
+    rv = false
     die('ASTTranslator::_getMethodProto() not implemented')
-    #rv = this.symbolTable.lookupMethod(className, methodName, paramsCnt)
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -639,9 +672,14 @@ class ASTTranslator
 
       elif opcode is AST_OPCODE_IDIV
         rv = this._idiv(left, right)
+
+      else
+        rv = -1
       endif
 
     else
+      # TODO: Handle terminal nodes.
+      rv = -1
       die('error: unexpected rvalue node ' + str(opcode) + ' ' + str(value))
     endif
 
@@ -756,10 +794,12 @@ class ASTTranslator
   endmethod
 
   method _evaluateNodeLazyBoolAnd(leftAst, rightAst) -> rv
+    rv = false
     this._error('_evaluateNodeBoolAnd() not implemented')
   endmethod
 
   method _evaluateNodeLazyBoolOr(leftAst, rightAst) -> rv
+    rv = false
     this._error('_evaluateNodeBoolOr() not implemented')
   endmethod
 

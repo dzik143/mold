@@ -71,6 +71,8 @@ class Stack
     if this.size > 0
       rv = this.data[this.size - 1]
     else
+      # TODO: Handle terminal nodes.
+      rv = false
       die('error: peek from empty stack')
     endif
   endmethod
@@ -79,6 +81,8 @@ class Stack
     if this.size >= idx
       rv = this.data[this.size - idx]
     else
+      # TODO: Handle terminal nodes.
+      rv = false
       die('error: peek ' + str(idx) + ' item, but only ' + str(this.size) + ' availble')
     endif
   endmethod

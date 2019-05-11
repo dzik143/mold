@@ -585,7 +585,7 @@ class MIRCode
 
   method getClassProtoById(classId) -> proto
     classList = this.classList
-    rv        = classList[classId]
+    proto     = classList[classId]
   endmethod
 
   method retValGuard(rvName, funcName)

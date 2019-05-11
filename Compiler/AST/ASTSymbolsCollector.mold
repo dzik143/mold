@@ -231,13 +231,37 @@ class ASTSymbolsCollector
           nodeBody.symbolTable.assignType(paramName, -1)
         endfor
 
-        if typeof(funcProto.rv) isnt 'undefined'
-          nodeBody.symbolTable.insertRetVal(funcProto.rv)
-          #nodeBody.symbolTable.assignNode(funcProto.rv, AST_CreateNodeVariable(funcProto.rv))
-        endif
+        # TODO: Review it.
+        #if typeof(funcProto.rv) isnt 'undefined'
+        #  nodeBody.symbolTable.insertRetVal(funcProto.rv)
+        #  #nodeBody.symbolTable.assignNode(funcProto.rv, AST_CreateNodeVariable(funcProto.rv))
+        #endif
       endif
 
       this._collectSymbolsFromLeftNode(nodeBody.symbolTable, nodeBody)
+
+      # Verify is return value set after function end if needed.
+      if typeof(funcProto.rv) isnt 'undefined'
+        if nodeBody.symbolTable.isset(funcProto.rv) is true
+          # Return value is set inside all branches. Go on.
+          # Change variable kind to RETVAL and force variant type.
+          # TODO: Handle non-variant return values.
+          symbolInfo         = nodeBody.symbolTable.lookup(funcProto.rv)
+          symbolInfo.kind    = SYMBOL_KIND_VAR_RETVAL
+          symbolInfo.astType = -1
+
+          # TODO: Clean up this mess.
+          symbolInfo.name     = '__rv'
+          symbolInfo.alias    = funcProto.rv
+          symbolInfo.readHits = symbolInfo.readHits + 1
+          nodeBody.symbolTable.symbols['__rv'] = symbolInfo
+
+        else
+          # Error - there is at least one branch, where return value is
+          # not set.
+          die("error: unset return variable '" + funcProto.rv + "' in '" + funcName + "' function")
+        endif
+      endif
 
     elif opcode is AST_OPCODE_BLOCK
       if typeof(node.symbolTable) is 'undefined'
@@ -300,10 +324,10 @@ class ASTSymbolsCollector
         # Scan rval.
         this._collectSymbolsFromRightNode(symbolTable, rval)
 
-        if symbolInfo.kind isnt SYMBOL_KIND_VAR_RETVAL
-          # TODO: Handle non-variant function return type.
-          symbolTable.assignType(lval.value, AST_GetDataType(rval))
-        endif
+        #if symbolInfo.kind isnt SYMBOL_KIND_VAR_RETVAL
+        #  # TODO: Handle non-variant function return type.
+        #  symbolTable.assignType(lval.value, AST_GetDataType(rval))
+        #endif
 
         # Track data types.
         # TODO: Review it?
@@ -376,21 +400,9 @@ class ASTSymbolsCollector
 
           if typeof(symbolInfo2) isnt 'undefined'
             # Symbol defined in both nodes - move into parent node.
-            # TODO: Use max(x, y) if ready.
-            if symbolInfo1.readHits > symbolInfo2.readHits
-              readHits = symbolInfo1.readHits
-            else
-              readHits = symbolInfo2.readHits
-            endif
-
-            if symbolInfo1.writeHits > symbolInfo2.writeHits
-              writeHits = symbolInfo1.writeHits
-            else
-              writeHits = symbolInfo2.writeHits
-            endif
-
-            symbolInfo1.readHits  = readHits
-            symbolInfo1.writeHits = writeHits
+            # TODO: Use max(x, y) or x+y?
+            readHits  = symbolInfo1.readHits  + symbolInfo2.readHits
+            writeHits = symbolInfo1.writeHits + symbolInfo2.writeHits
 
             # Remove from child true/false node.
             symbolTable1.remove(symbolInfo1.name)
@@ -399,6 +411,9 @@ class ASTSymbolsCollector
             if symbolTable.isset(symbolInfo1.name) is false
               symbolTable.insert(symbolInfo1.name, symbolInfo1)
             endif
+
+            symbolInfo1.readHits  = readHits
+            symbolInfo1.writeHits = writeHits
 
             # Merge AST data type.
             astType1 = symbolTable1.astType

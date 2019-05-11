@@ -342,6 +342,8 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
     rv = 'vcall'
 
   else
+    # TODO: Handle terminal nodes.
+    rv = 'error'
     die('error: unhandled opcode: ' + str(opcode))
   endif
 endfunction

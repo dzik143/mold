@@ -157,6 +157,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _callStrEscape(x) -> rv
+    rv = false
     this._error('_callStrEscape() is not implemented')
   endmethod
 
@@ -198,6 +199,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _callMoldParseFile(filePath) -> rv
+    rv = false
     this._error('_callMoldParseFile() is obsolete')
   endmethod
 
@@ -288,6 +290,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
       rv = this.symbolTable.createConstFromValue(value)
 
     else
+      # TODO: Handle terminal nodes.
+      rv = false
       die('error: unhandled imm type: ' + str(type))
     endif
 
@@ -321,6 +325,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
       rv = this.symbolTable.createConstFromValue(value)
 
     else
+      # TODO: Handle terminal nodes.
+      rv = false
       die('error: unhandled imm type: ' + str(type))
     endif
 
@@ -445,6 +451,9 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
   method _createObject(classProto) -> rv
     if classProto is false
+      # TODO: Handle terminal nodes.
+      rv = false
+
       # Dynamic code, adjust class proto at run-time.
       this._error('error: missing classProto in MIR_OPCODE_CREATE_OBJECT')
 
@@ -666,9 +675,10 @@ class ASTTranslatorMIR1 extends ASTTranslator
       this._executeNode(codeNodes[idx])
     endfor
 
-    if typeof(rvName) isnt 'undefined'
-      this.emitZeroArgsOpcode('rv_guard')
-    endif
+    # TODO: Handle undefined variants ?
+    #if typeof(rvName) isnt 'undefined'
+    #  this.emitZeroArgsOpcode('rv_guard')
+    #endif
 
     this.emitRet()
     this.emitProcEnd()
