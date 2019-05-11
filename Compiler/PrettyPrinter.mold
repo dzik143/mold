@@ -42,19 +42,21 @@ astSymbolsCollector.buildSymbolTable(ast)
 print 'Evaluating node...'
 astEvaluator.processNode(ast)
 
-print 'Constant folding...'
-astOptimizerConstantFolding.processNode(ast)
+#print 'Constant folding...'
+#astOptimizerConstantFolding.processNode(ast)
 
-print 'Dead code elimination...'
-astOptimizerDeadCodeRemove.processNode(ast)
+#print 'Dead code elimination...'
+#astOptimizerDeadCodeRemove.processNode(ast)
 
-print 'Common subexpression elimination...'
-astOptimizerCSE.processNode(ast)
+#print 'Common subexpression elimination...'
+#astOptimizerCSE.processNode(ast)
 
-#astOptimizerVCall.processNode(ast)
+print 'VCall optimization...'
+astOptimizerVCall.processNode(ast)
 
 print 'Type cast...'
 app.getAstTypeCast().processNode(ast)
+
 
 astPrinterText.printNode(ast)
 

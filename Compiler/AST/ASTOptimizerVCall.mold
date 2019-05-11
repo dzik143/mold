@@ -20,199 +20,51 @@ class ASTOptimizerVCall
     this.app = app
   endmethod
 
+  method _debug(msg)
+    global DEBUG_AST_OPTIMIZER
+    if DEBUG_AST_OPTIMIZER is true
+      print '[ ASTOptimizerVCall ]', msg
+    endif
+  endmethod
 
-  method _processNode(symbolTable, node) -> rv
-    global AST_OPCODE_PROGRAM
+  method _processNode(node)
+    global AST_OPCODE_INVOKE_METHOD
     global AST_OPCODE_BLOCK
-    global AST_OPCODE_VARIABLE
-    global AST_OPCODE_IF
-    global AST_OPCODE_DECLARE_OR_ASSIGN
     global AST_OPCODE_CALL
-    global AST_OPCODE_FOR_VALUES_RANGE
-    global AST_OPCODE_WHILE
-    global AST_OPCODE_NEG
-    global AST_OPCODE_NOP
-    global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ
-    global AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
-    global AST_OPCODE_COMPARE_GT, AST_OPCODE_COMPARE_GE
-    global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV, AST_OPCODE_IDIV
-    global AST_DATA_BOOL, AST_DATA_INTEGER, AST_DATA_DOUBLE, AST_DATA_STRING
-    global AST_DATA_ARRAY, AST_DATA_MAP, AST_DATA_UNDEFINED
-    global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
-    global AST_OPCODE_REFERENCE
-    global AST_OPCODE_FUNCTION
-    global SYMBOL_KIND_CONST, SYMBOL_KIND_VAR_RETVAL
-
-    # TODO: Use should/assert/etc when ready.
-    if typeof(symbolTable) is 'undefined'
-      die('error: unset symbol table at ASTOptimizerDeadCodeRemove::_processNode()')
-    endif
-
-    if typeof(node) is 'undefined'
-      die('error: unset node table at ASTOptimizerDeadCodeRemove::_processNode()')
-    endif
 
     opcode      = node.opcode
-    value       = node.value
-    childrenCnt = node.childrenCnt
     children    = node.children
-    x           = children[0]
-    rv          = node
-    removeNode  = false
+    childrenCnt = node.childrenCnt
 
-    if (opcode is AST_OPCODE_FOR_VALUES_RANGE) and AST_IsEmpty(children[4])
-      # empty for
-      removeNode = true
+    if opcode is AST_OPCODE_INVOKE_METHOD
+      # obj.foo(...)
+      thiz           = children[0]
+      symbolInfoThiz = thiz.symbolInfo
 
-    elif opcode is AST_OPCODE_WHILE
-      if AST_IsEmpty(children[1])
-        # empty while
-        removeNode = true
+      if typeof(symbolInfoThiz) isnt 'undefined'
+        classProto = thiz.symbolInfo.classProto
 
-      elif AST_IsImmWithValue(children[0], false)
-        # while false - never executed
-        removeNode = true
-      endif
-
-    elif opcode is AST_OPCODE_IF
-      nodeCond = children[0]
-      nodeBody = children[1]
-      nodeElse = children[2]
-
-      #this._debug('entering IF at node #' + str(node.id))
-
-      #
-      # Remove empty branches.
-      #
-
-      if childrenCnt is 3
-        if AST_IsEmpty(nodeElse)
-          # if cond {...} else {} - empty else branch.
-          this._debug('Remove empty else node #' + str(nodeElse.id))
-          childrenCnt      = 2
-          node.childrenCnt = 2
-
-          if AST_IsEmpty(nodeBody)
-            # if cond {} else {} - both branches empty.
-            this._debug('Remove empty if body node #' + str(nodeBody.id))
-            removeNode = true
-          endif
-
-        elif AST_IsEmpty(nodeBody)
-          # if cond {} else {...} - empty body, but else exists.
-          # Invert condition.
-          this._debug('Invert condition at if node #' + str(node.id))
-
-          AST_InvertBoolean(nodeCond)
-          node.childrenCnt = 2
-          node.children[1] = nodeElse
-          nodeBody    = nodeElse
-          childrenCnt = 2
-        endif
-
-      elif AST_IsEmpty(nodeBody)
-        # if cond {}
-        removeNode = true
-      endif
-
-      #
-      # Check for imm condition.
-      #
-
-      if removeNode is true
-        # Nothing to do - node is already marked to remove.
-
-      elif AST_IsImmWithValue(nodeCond, true)
-        # if true {...}            - always true
-        # if true {...} else {...} - always true
-        this._debug('if true {...} at node #' + str(node.id))
-        rv = nodeBody
-
-      elif AST_IsImmWithValue(nodeCond, false)
-        this._debug('if false {...} at node #' + str(node.id))
-
-        if childrenCnt is 3
-          # if false {...} else {...} - always else branch.
-          rv = nodeElse
-        else
-          # if false {...} - always false, nothing to do.
-          removeNode = true
-        endif
-
-      # TODO: Review it.
-      #elif (children is 3) and AST_IsEmpty(nodeBody)
-      #  # if cond {} else {...} - empty body, invert condition.
-      #  removeNode = true
-      endif
-
-      #this._debug('leaving IF at node #' + str(node.id))
-
-    elif opcode is AST_OPCODE_BLOCK
-      symbolTable = node.symbolTable
-
-    elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
-      if x.opcode is AST_OPCODE_VARIABLE
-        # x = ...
-        symbolInfo = symbolTable.lookup(x.value)
-        if symbolInfo.readHits is 0
-          # Assign to unused variable.
-          rval = children[1]
-
-          if AST_HasSideEffects(rval) is true
-            # Extra side effects on rval. We can't remove whole statement.
-            # x = y -> y
-            node.hasSideEffects = true
-
-          else
-            removeNode = true
-            #symbolTable.decreaseWriteHits(x.value)
+        if (typeof(classProto) isnt 'undefined') and (typeof(classProto.vtable) isnt 'undefined')
+          # We already know class proto.
+          # Convert vcall to ordinary call.
+          methodProto = classProto.vtable[node.value]
+          if typeof(methodProto) isnt 'undefined'
+            node.value  = methodProto.fullName
+            node.opcode = AST_OPCODE_CALL
+            this._debug('Changed vcall [' + node.value + '] to ordinary call at node #' + str(node.id))
           endif
         endif
       endif
-
-    elif opcode is AST_OPCODE_FUNCTION
-      symbolInfo = symbolTable.lookup(node.name)
-      if symbolInfo.readHits is 0
-        # Unused function.
-        removeNode = true
-        symbolTable.global.remove(node.name)
-      endif
-    endif
-
-    if removeNode is true
-      this._removeNode(node)
 
     else
-      # TODO: Optimize it.
-      children    = node.children
-      childrenCnt = node.childrenCnt
-
-      newChildren    = []
-      newChildrenCnt = 0
-
+      # Process child nodes recursively.
       for idx in 0 .. childrenCnt
-        newNode = this._processNode(symbolTable, children[idx])
-        if newNode isnt children[idx]
-          # Child was just replaced by another one.
-          this._moveNode(children[idx], newNode)
-        endif
-
-        if newNode.opcode isnt AST_OPCODE_NOP
-          newChildren[newChildrenCnt] = newNode
-          newChildrenCnt = newChildrenCnt + 1
-        endif
+        this._processNode(children[idx])
       endfor
-
-      node.children    = newChildren
-      node.childrenCnt = newChildrenCnt
-
-      #if node.opcode is AST_OPCODE_BLOCK
-      #  symbolTable.vacuum()
-      #endif
     endif
   endmethod
 
   method processNode(node)
-    this._processNode(node.symbolTable, node)
+    this._processNode(node)
   endmethod
 endclass
