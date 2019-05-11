@@ -35,6 +35,15 @@ class MIRQuadOptimizer extends PipeAbstract
       'cmp_gt': 'jmp_if_le',
       'cmp_ge': 'jmp_if_lt'
     }
+
+    this.cmpXxJmpIfTrueMap = {
+      'cmp_eq': 'jmp_if_eq',
+      'cmp_ne': 'jmp_if_ne',
+      'cmp_lt': 'jmp_if_lt',
+      'cmp_le': 'jmp_if_le',
+      'cmp_gt': 'jmp_if_gt',
+      'cmp_ge': 'jmp_if_ge'
+    }
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -56,7 +65,7 @@ class MIRQuadOptimizer extends PipeAbstract
     dst    = item[1]
     src    = item[2]
 
-    #print '[ MIRQuadOptimizer ]', item
+    #print '[ MIRQuadOptimizer ]', item[0]
 
     if this.lastOpcode is 'store_index'
       this._emitOneItem(item)
@@ -75,23 +84,7 @@ class MIRQuadOptimizer extends PipeAbstract
       buffer      = this.buffer
       lastItem    = buffer[len(buffer) - 1]
       lastItem[1] = dst
-      this._decreaseReadAndWriteHits(src)
-
-    elif opcode is 'conv_int32_to_variant'
-      item[0] = 'load_int32'
-      this._emitOneItem(item)
-
-    elif opcode is 'conv_int64_to_variant'
-      item[0] = 'load_int64'
-      this._emitOneItem(item)
-
-    elif opcode is 'conv_bool32_to_variant'
-      item[0] = 'load_bool32'
-      this._emitOneItem(item)
-
-    elif opcode is 'conv_float64_to_variant'
-      item[0] = 'load_float64'
-      this._emitOneItem(item)
+      #this._decreaseReadAndWriteHits(src)
 
     elif (opcode is 'jmp_if_false')
 
@@ -100,7 +93,21 @@ class MIRQuadOptimizer extends PipeAbstract
       if typeof(newOpcode) isnt 'undefined'
         # cmp_xx       tmp, x, y
         # jmp_if_false label
-        this._decreaseReadAndWriteHits(src)
+        #this._decreaseReadAndWriteHits(src)
+        this._replaceLastItem([newOpcode, dst, this.lastSrc1, this.lastSrc2])
+      else
+        # Not a cmp/jmp pattern. Do nothing.
+        this._emitOneItem(item)
+      endif
+
+    elif (opcode is 'jmp_if_true')
+
+      newOpcode = this.cmpXxJmpIfTrueMap[this.lastOpcode]
+
+      if typeof(newOpcode) isnt 'undefined'
+        # cmp_xx      tmp, x, y
+        # jmp_if_true label
+        #this._decreaseReadAndWriteHits(src)
         this._replaceLastItem([newOpcode, dst, this.lastSrc1, this.lastSrc2])
       else
         # Not a cmp/jmp pattern. Do nothing.

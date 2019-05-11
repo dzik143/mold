@@ -20,6 +20,7 @@ import 'AST/ASTPrinterHtml.mold'
 import 'AST/ASTTranslatorMIR0.mold'
 import 'AST/ASTTranslatorMIR1.mold'
 import 'MIR/MIRQuadCollector.mold'
+import 'MIR/MIRQuadOptimizer.mold'
 import 'CodeGenerator/CodeGeneratorX64.mold'
 import 'VM/VMachineStack.mold'
 
@@ -90,7 +91,8 @@ vm                = new VMachineStack()
 # MIR1 (register based)
 print 'Going to translate AST to MIR1...'
 mirCollector = new MIRQuadCollector()
-astTranslator.connectTo(mirCollector)
+mirOptimizer = new MIRQuadOptimizer()
+astTranslator.connectTo(mirOptimizer).connectTo(mirCollector)
 
 astTranslator.run(ast)
 mirCollector.printQuads()
