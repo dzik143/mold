@@ -269,9 +269,9 @@ class ASTOptimizerDeadCodeRemove
     endif
 
     # Clean up symbol table if needed.
-    #if opcode is AST_OPCODE_BLOCK
-    #  symbolTable.removeUnusedSymbols()
-    #endif
+    if opcode is AST_OPCODE_BLOCK
+      symbolTable.removeUnusedSymbols()
+    endif
   endmethod
 
   method processNode(node)

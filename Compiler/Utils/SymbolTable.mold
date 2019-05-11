@@ -534,12 +534,18 @@ class SymbolTable
 
     for idx in 0 .. indexCnt
       symbolInfo = index[idx]
-      if (symbolInfo.writeHits > 0) or (symbolInfo.kind is SYMBOL_KIND_VAR_PARAM) or (symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL) or (symbolInfo.name is '__rv')
+      if (symbolInfo.writeHits > 0) or (symbolInfo.readHits > 0) or (symbolInfo.kind is SYMBOL_KIND_VAR_PARAM) or (symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL)
         # Variable is used at least once time. Keep it in table.
         newIndex[len(newIndex)]     = symbolInfo
         newSymbols[symbolInfo.name] = symbolInfo
+
+        # TODO: Clean up this mess.
+        # Always keep return val.
+        if symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
+          newSymbols[symbolInfo.alias] = symbolInfo
+        endif
       else
-        # Variable was neither written nor read. Remove it from table.
+        # Variable was never accesed for read. Remove it from table.
         this._debug('Removed unused symbol [' + symbolInfo.name + ']')
       endif
     endfor

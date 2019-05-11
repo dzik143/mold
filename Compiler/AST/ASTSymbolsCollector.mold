@@ -354,11 +354,14 @@ class ASTSymbolsCollector
         endif
 
         # Handle well-known types.
-        if rval.opcode is AST_OPCODE_CALL_NEW
-          # lval = new Xxx(...)
-          symbolTable.assignType(lval.value, AST_DATA_OBJECT)
-          symbolInfo.classProto = symbolTable.lookupClass(rval.value).proto
-        endif
+        #if rval.opcode is AST_OPCODE_CALL_NEW
+        #  # lval = new Xxx(...)
+        #  symbolTable.assignType(lval.value, AST_DATA_OBJECT)
+        #  symbolInfo.classProto = symbolTable.lookupClass(rval.value).proto
+        #endif
+
+        # TODO: Review it.
+        symbolTable.assignType(lval.value, AST_GetDataType(rval))
 
         # Restore read stats for lval variable to avoid false x = x + 1 usage.
         # It's not useful read.
