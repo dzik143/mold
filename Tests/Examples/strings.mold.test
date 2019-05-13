@@ -257,3 +257,27 @@ EXPECTED_OUTPUT:
 x      = XxxxxxxxxxxxxxxxxxxxxxxxxxxX>>> o <<<YyyyyyyyyyyyyyyyyyyyyyyyyyyY
 len(x) = 65
 -------------------------------------------------------------------------------
+
+TEST "Overlapped source and destination string: x = x + y
+
+function final(x)
+  print x + ':final'
+endfunction
+
+function bar(x)
+  x = x + ':bar'
+  final(x)
+endfunction
+
+function foo(x)
+  x = x + ':foo'
+  bar(x)
+  bar(x)
+endfunction
+
+foo('init')
+
+EXPECTED_OUTPUT:
+init:foo:bar:final
+init:foo:bar:final
+-------------------------------------------------------------------------------
