@@ -2034,10 +2034,13 @@ proc __MOLD_StringHashDJB2
     lea     rcx, [rcx + String_t.text]
     mov     rax, 5381
 
+    ; Is it empty string?
+    or      r8, r8
+    jz      .done
+
+    ; Process string byte-by-byte
 .goOn:
     movzx   rdx, byte [rcx]  ; rdx = c
-;    test    rdx, rdx
-;    jz      .done
     add     rdx, rax         ; rdx = hash + c
 
     shl     rax, 5           ; rax = hash * 32
