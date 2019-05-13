@@ -398,9 +398,16 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _call(proto, unusedParams, paramsCnt) -> rv
-    rv      = this.symbolTable.createTempVarForReadAndWrite()
-    params  = this.popParametersBeforeCall(paramsCnt)
-    name    = proto['fullName']
+    if typeof(proto.rv) is 'undefined'
+      # TODO: Clean up this mess.
+      x = []
+      rv = x[0]
+    else
+      rv = this.symbolTable.createTempVarForReadAndWrite()
+    endif
+
+    params = this.popParametersBeforeCall(paramsCnt)
+    name   = proto['fullName']
 
     if typeof(name) is 'undefined'
       name = proto['name']
@@ -414,6 +421,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
       # We need it to avoid eating new result (this pointer)
       # when constructor called just after.
       this.push(params[0])
+
     else
       this.push(rv)
     endif

@@ -57,6 +57,7 @@ class AppMold
 
     # TODO: More-friendly API here.
     __mold_openExternalModuleProto = {
+      'rv': 'rv',
       'name': '__mold_openExternalModule',
       'paramsCnt': 1,
       'labelId': this.code.createExternalLabel('__MOLD_OpenExternalModule')
@@ -66,6 +67,7 @@ class AppMold
 
     # TODO: More-friendly API here.
     __mold_loadExternalFunctionProto = {
+      'rv': 'rv',
       'name': '__mold_loadExternalFunction',
       'paramsCnt': 5,
       'labelId': this.code.createExternalLabel('__MOLD_LoadExternalFunction')
@@ -75,6 +77,7 @@ class AppMold
 
     # TODO: More-friendly API here.
     __mold_peekProto = {
+      'rv': 'rv',
       'name': '__mold_peek',
       'paramsCnt': 2,
       'labelId': this.code.createExternalLabel('__MOLD_Peek')
@@ -84,6 +87,7 @@ class AppMold
 
     # TODO: More-friendly API here.
     __mold_loadFileProto = {
+      'rv': 'rv',
       'name': '__mold_loadFile',
       'paramsCnt': 1,
       'labelId': this.code.createExternalLabel('__MOLD_LoadFile')

@@ -928,13 +928,22 @@ class CodeGeneratorX64
         else
         */
           # Generic call.
-          this.variantDestroy(rv)
-          this.push('rdi')
-          this.pushParametersBeforeCall(params)
-          this.lea('rdi', rv)
-          this.mov('[rdi + Variant_t.type]', 'VARIANT_UNDEFINED')
-          this.call(name)
-          this.pop('rdi')
+          if typeof(rv) isnt 'undefined'
+            # Function has return value.
+            # TODO: Clean up this mess.
+            this.variantDestroy(rv)
+            this.push('rdi')
+            this.pushParametersBeforeCall(params)
+            this.lea('rdi', rv)
+            this.mov('[rdi + Variant_t.type]', 'VARIANT_UNDEFINED')
+            this.call(name)
+            this.pop('rdi')
+
+          else
+            # No return value.
+            this.pushParametersBeforeCall(params)
+            this.call(name)
+          endif
 
           if paramsCnt > 4
             print '  add rsp,', paramsCnt * 8 - 32
@@ -1400,16 +1409,12 @@ class CodeGeneratorX64
       print ''
     endfor
 
-    print '; ------------------------------------------------------------------------------'
-    print ';                                Imports section'
-    print '; ------------------------------------------------------------------------------'
-
     #
     # Generate imports section.
     #
 
     print '; ------------------------------------------------------------------------------'
-    print ';                                Imports section'
+    print ';                               Imports section'
     print '; ------------------------------------------------------------------------------'
 
     print "section '.idata' import data readable writeable"
