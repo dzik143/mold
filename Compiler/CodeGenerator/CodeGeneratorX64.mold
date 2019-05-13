@@ -1349,6 +1349,8 @@ class CodeGeneratorX64
     print '; Constants'
     print '; ---------'
 
+    print 'db ?'
+
     # TODO: Optimize it.
     for deepIdx in 0 .. 16
       print '; iter', deepIdx

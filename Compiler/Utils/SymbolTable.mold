@@ -12,8 +12,6 @@
 #                                                                              #
 ################################################################################
 
-import 'AST/ASTUtils.mold'
-
 SYMBOL_KIND_VAR_LOCAL  = 1
 SYMBOL_KIND_VAR_GLOBAL = 2
 SYMBOL_KIND_VAR_PARAM  = 3
@@ -24,6 +22,8 @@ SYMBOL_KIND_LABEL      = 6
 SYMBOL_KIND_FUNCTION   = 7
 SYMBOL_KIND_CLASS      = 8
 SYMBOL_KIND_METHOD     = 9
+
+import 'AST/ASTUtils.mold'
 
 SYMBOL_KIND_AS_TEXT = [
   '[error]',
@@ -342,6 +342,7 @@ class SymbolTable
 
   method importGlobal(name)
     global SYMBOL_KIND_VAR_GLOBAL
+    global SYMBOL_KIND_CONST
 
     if this.deepIdx <= 1
       die('error: global directive used in global space')
@@ -353,6 +354,9 @@ class SymbolTable
 
       if symbolInfo.kind is SYMBOL_KIND_VAR_GLOBAL
         # It's already imported global. Do nothing.
+
+      elif symbolInfo.kind is SYMBOL_KIND_CONST
+        # It's a global constant. Do nothing.
       else
         # It's already declared as another kind.
         die("error: conflicting declaration 'global " + name + "'")

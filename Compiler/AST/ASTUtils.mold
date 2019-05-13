@@ -621,6 +621,7 @@ function AST_GetDataType(node) -> rv
   global AST_OPCODE_CALL
   global AST_OPCODE_CALL_NEW
   global AST_OPCODE_REFERENCE
+  global SYMBOL_KIND_CONST
 
   rv = node._cachedAstDataType
 
@@ -639,6 +640,11 @@ function AST_GetDataType(node) -> rv
 
     elif opcode is AST_OPCODE_REFERENCE
       # TODO: Handle non-variant array items.
+      # TODO: This is prof-of-concept only.
+      #box = node.children[0]
+      #if box.symbolInfo.kind is SYMBOL_KIND_CONST
+      #  rv = AST_DATA_INTEGER
+      #endif
 
     elif opcode is AST_OPCODE_CALL
       # TODO: Handle non-variant return values.

@@ -263,6 +263,16 @@ class ASTOptimizerConstantFolding
 
           node.children    = newParams
           node.childrenCnt = len(newParams)
+
+        # TODO: Review it.
+        elif (opcode is AST_OPCODE_REFERENCE) and (x.opcode is AST_OPCODE_VARIABLE) and (x.symbolInfo.kind is SYMBOL_KIND_CONST) and AST_IsImm(y)
+          # box[i]
+          # Access to constant array with imm index.
+          # We can resolve it at compilation time.
+          newValue = x.symbolInfo.value[y.value]
+          if (typeof(newValue) isnt 'array') and (typeof(newValue) isnt 'map')
+            x.symbolInfo.readHits = x.symbolInfo.readHits - 1
+          endif
         endif
 
         # Calculate imm result if all child nodes are imm.
