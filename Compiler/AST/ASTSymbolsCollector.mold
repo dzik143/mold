@@ -80,6 +80,7 @@ class ASTSymbolsCollector
     global AST_DATA_BOOL
     global AST_DATA_OBJECT
     global AST_DATA_ARRAY
+    global AST_DATA_STRING
     global SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_VAR_RETVAL, SYMBOL_KIND_CONST
     global AST_OPCODE_ADD, AST_OPCODE_MUL, AST_OPCODE_SUB, AST_OPCODE_DIV, AST_OPCODE_IDIV
     global AST_DATA_DOUBLE, AST_DATA_INTEGER
@@ -99,6 +100,17 @@ class ASTSymbolsCollector
       for idx in 0 .. childrenCnt
         this._collectSymbolsFromLeftNode(node.symbolTable, children[idx])
       endfor
+
+    elif opcode is AST_DATA_STRING
+      if isLeftNode is true
+        die('error: string type cannot be modified')
+      endif
+
+      symbolInfo = symbolTable.insertLiteral(node.value)
+
+      node.opcode     = AST_OPCODE_VARIABLE
+      node.value      = symbolInfo.name
+      node.symbolInfo = symbolInfo
 
     elif opcode is AST_OPCODE_CLASS
       # Collect members.

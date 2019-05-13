@@ -196,7 +196,7 @@ TEST "Bug: crash on <string>[0] = 1"
 'text'[0] = 1
 
 EXPECTED_ERROR:
-error: array or map expected
+error: string type cannot be modified
 -------------------------------------------------------------------------------
 
 TEST "Bug: crash on <integer>[0] = 1"
