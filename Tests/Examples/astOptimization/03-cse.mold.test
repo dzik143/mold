@@ -1,3 +1,148 @@
+TEST "Simple: duplicated (x+y) expression one-by-one"
+
+function foo(x, y)
+  # Both nodes are in the same block.
+  print '1-st usage:', (x+y)
+  print '2-nd usage:', (x+y)
+endfunction
+foo(1, 2)
+
+EXPECTED_OUTPUT:
+function foo(x, y)
+  __cse0 = x + y
+  print '1-st usage:', __cse0
+  print '2-nd usage:', __cse0
+endfunction
+foo(1, 2)
+--------------------------------------------------------------------------------
+
+TEST "If: different blocks, the same deep"
+
+function foo(x, y)
+  # Nodes are in different block at the same deep.
+  #      ...
+  #     /   \
+  # (x+y)   (x+y)
+  #  ...     ...
+
+  if x is 1
+    print 'x is 1:', (x+y)
+  else
+    print 'x isnt 1:', (x+y)
+  endif
+endfunction
+
+foo(1, 2)
+
+EXPECTED_OUTPUT:
+function foo(x, y)
+  __cse0 = x + y
+  if x is 1
+    print 'x is 1:', __cse0
+  else
+    print 'x isnt 1:', __cse0
+  endif
+endfunction
+
+foo(1, 2)
+--------------------------------------------------------------------------------
+
+TEST "If: different blocks, the first one is deeper"
+
+function foo(x, y)
+  # Nodes are in different block, the first one is deeper.
+  #      ...
+  #     /   \
+  #  ...    (x+y)
+  # (x+y)    ...
+  #  ...     ...
+
+  if x is 1
+    if y is 2
+      print '(x,y) is (1,2):', (x+y)
+    endif
+  else
+    print 'x isnt 1:', (x+y)
+  endif
+endfunction
+
+foo(1, 2)
+
+EXPECTED_OUTPUT:
+function foo(x, y)
+  __cse0 = x + y
+  if x is 1
+    if y is 2
+      print '(x,y) is (1,2):', __cse0
+    endif
+  else
+    print 'x isnt 1:', __cse0
+  endif
+endfunction
+
+foo(1, 2)
+--------------------------------------------------------------------------------
+
+TEST "If: different blocks, the second one is deeper"
+
+function foo(x, y)
+  # Nodes are in different block, the second one is deeper.
+  #      ...
+  #     /   \
+  # (x+y)    ...
+  #  ...    (x+y)
+  #  ...     ...
+
+  if x is 1
+    print 'x is 1:', (x+y)
+  else
+    if y isnt 2
+      print '(x,y) isnt (1,2):', (x+y)
+    endif
+  endif
+endfunction
+
+foo(1, 2)
+
+EXPECTED_OUTPUT:
+function foo(x, y)
+  __cse0 = x + y
+  if x is 1
+    print 'x is 1:', __cse0
+  else
+    if y isnt 2
+      print '(x,y) isnt (1,2):', __cse0
+    endif
+  endif
+endfunction
+
+foo(1, 2)
+--------------------------------------------------------------------------------
+
+TEST "Reuse already assigned variable"
+
+function foo(x, y)
+  # Expression (x+y) is already assigned to some variable in original code.
+  # We don't need to create extra __csexx one.
+  z = x + y
+  if z is 3
+    print x + y
+  endif
+endfunction
+
+foo(1, 2)
+
+EXPECTED_OUTPUT:
+function foo(x, y)
+  z = x + y
+  if z is 3
+    print z
+  endif
+endfunction
+
+foo(1, 2)
+--------------------------------------------------------------------------------
+
 TEST "Common arithmetic (x o y)"
 x = 1
 y = 2
@@ -70,7 +215,7 @@ __cse1[2] = 12
 __cse1[3] = 13
 
 */
-EXPECTED_OUTPUT:  
+EXPECTED_OUTPUT:
 --------------------------------------------------------------------------------
 
 TEST "Common array index x[i] (read)"
@@ -87,7 +232,7 @@ y  = box.x[1]
 z  = box.x[2]
 rv = x + y + z
 
-EXPECTED_OUTPUT: 
+EXPECTED_OUTPUT:
 box = {}
 __cse0 = box['x']
 x = __cse0[0]
@@ -109,7 +254,7 @@ box = {}
 print box.x
 print box.x
 
-EXPECTED_OUTPUT:  
+EXPECTED_OUTPUT:
 box = {}
 __cse0 = box['x']
 
@@ -131,7 +276,7 @@ y  = box.x * 3
 z  = box.x * 4
 rv = x + y + z
 
-EXPECTED_OUTPUT:  
+EXPECTED_OUTPUT:
 box = {}
 __cse0 = box['x']
 x = __cse0 * 2
@@ -163,7 +308,7 @@ y  = box.x[1]
 z  = box.x[2]
 rv = x + y + z
 
-EXPECTED_OUTPUT:  
+EXPECTED_OUTPUT:
 box = {}
 
 box['x'] = []
@@ -267,7 +412,7 @@ function foo(values, name) -> rv
   while typeof(values['parent']) isnt 'undefined'
     values = values['parent']
     rv = values[name]
-  endwhile  
+  endwhile
 endfunction
 
 EXPECTED_OUTPUT:
@@ -276,6 +421,6 @@ function foo(values, name) -> rv
   while typeof(values['parent']) isnt 'undefined'
     values = values['parent']
     rv = values[name]
-  endwhile  
+  endwhile
 endfunction
 --------------------------------------------------------------------------------
