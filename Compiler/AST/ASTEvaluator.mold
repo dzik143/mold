@@ -199,6 +199,43 @@ class ASTEvaluator
 
       this._processNode(values, rval)
 
+      if rval.opcode is AST_OPCODE_INVOKE_METHOD
+        # x = obj.foo()
+        symbolInfo = rval.children[0].symbolInfo
+
+        if typeof(symbolInfo) isnt 'undefined'
+          classProto = symbolInfo.classProto
+
+          if typeof(classProto) isnt 'undefined'
+            methodProto = classProto.vtable[rval.value]
+
+            if typeof(methodProto) isnt 'undefined'
+              if typeof(methodProto.rv) is 'undefined'
+                die('error: method "' + classProto.name + '.' + methodProto.name + '" has no return value')
+              endif
+            endif
+          endif
+        endif
+
+      elif rval.opcode is AST_OPCODE_INVOKE_METHOD
+        # x = obj.foo()
+        symbolInfo = rval.children[0].symbolInfo
+
+        if typeof(symbolInfo) isnt 'undefined'
+          classProto = symbolInfo.classProto
+
+          if typeof(classProto) isnt 'undefined'
+            methodProto = classProto.vtable[rval.value]
+
+            if typeof(methodProto) isnt 'undefined'
+              if typeof(methodProto.rv) is 'undefined'
+                die('error: method "' + classProto.name + '.' + methodProto.name + '" has no return value')
+              endif
+            endif
+          endif
+        endif
+      endif
+
       if lval.opcode is AST_OPCODE_VARIABLE
         this._assignValue(values, lval, rval)
 

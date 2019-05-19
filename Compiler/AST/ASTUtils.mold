@@ -255,6 +255,7 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   global AST_OPCODE_CLASS
   global AST_OPCODE_NOP
   global AST_OPCODE_VARIABLE
+  global AST_OPCODE_BLOCK
 
   global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
   global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_NULL, AST_DATA_UNDEFINED
@@ -267,6 +268,8 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
   global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
   global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+  global AST_OPCODE_FOR_VALUES_RANGE, AST_OPCODE_WHILE
+
 
   if opcode is AST_OPCODE_REFERENCE
     rv = '&'
@@ -346,6 +349,21 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
 
   elif opcode is AST_OPCODE_INVOKE_METHOD
     rv = 'vcall'
+
+  elif opcode is AST_OPCODE_BLOCK
+    rv = 'block'
+
+  elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
+    rv = '='
+
+  elif opcode is AST_OPCODE_FOR_VALUES_RANGE
+    rv = 'for'
+
+  elif opcode is AST_OPCODE_WHILE
+    rv = 'while'
+
+  elif opcode is AST_OPCODE_IF
+    rv = 'if'
 
   else
     # TODO: Handle terminal nodes.
@@ -761,4 +779,16 @@ function AST_TypeCast(node, dstDataType) -> rv
        }
     endif
   endif
+endfunction
+
+function AST_GetTopNodeInBlock(node) -> rv
+  global AST_OPCODE_BLOCK
+  rv = node
+  while rv.parent.opcode isnt AST_OPCODE_BLOCK
+    rv = rv.parent
+  endwhile
+endfunction
+
+function AST_GetParentBlock(node) -> rv
+  rv = AST_GetTopNodeInBlock(node).parent
 endfunction

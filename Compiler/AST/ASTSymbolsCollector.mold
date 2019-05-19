@@ -378,11 +378,19 @@ class ASTSymbolsCollector
 
 
         # Handle well-known types.
-        #if rval.opcode is AST_OPCODE_CALL_NEW
-        #  # lval = new Xxx(...)
-        #  symbolTable.assignType(lval.value, AST_DATA_OBJECT)
-        #  symbolInfo.classProto = symbolTable.lookupClass(rval.value).proto
-        #endif
+        if rval.opcode is AST_OPCODE_CALL_NEW
+          # lval = new Xxx(...)
+          if symbolTable.isset(rval.value) is true
+            symbolInfo.classProto = symbolTable.lookupClass(rval.value).proto
+          endif
+
+        #elif rval.opcode is AST_OPCODE_CALL
+          # TODO
+          #funcProto = symbolTable.lookupFunction(rval.value, rval.childrenCnt).proto
+          #if typeof(funcProto.rv) is 'undefined'
+          #  die('error: function "' + funcProto.name + '" has no return value')
+          #endif
+        endif
 
         # TODO: Review it.
         symbolTable.assignType(lval.value, AST_GetDataType(rval))

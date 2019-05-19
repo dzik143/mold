@@ -356,7 +356,7 @@ print 'OK!'
 
 EXPECTED_OUTPUT:
 OK!
--------------------------------------------------------------------------------                                        
+-------------------------------------------------------------------------------
 TEST "Merge variable type from if branches"
 
 function foo(x)
@@ -389,7 +389,7 @@ foo( 5 ) = 4
 foo( 6 ) = 4
 foo( 7 ) = 4
 foo( 8 ) = 4
--------------------------------------------------------------------------------                                        
+-------------------------------------------------------------------------------
 
 TEST "Bug: Incorectly mask variant by machine bool32"
 
@@ -399,7 +399,7 @@ function foo(x)
   else
     print 'foo(): false'
   endif
-  
+
   x = true
 endfunction
 
@@ -409,4 +409,37 @@ foo(false)
 EXPECTED_OUTPUT:
 foo(): true
 foo(): false
--------------------------------------------------------------------------------                                        
+-------------------------------------------------------------------------------
+
+TEST "Switch like if chain #1"
+
+function foo(x)
+  if x is 1
+    print x, 'is 1'
+  elif x is 2
+    print x, 'is 2'
+
+  elif (x > 2) and (x < 10)
+    print x, 'in (2, 10)'
+  else
+    print 'default'
+  endif
+endfunction
+
+foo(0)
+foo(1)
+foo(2)
+foo(3)
+foo(9)
+foo(10)
+foo(123)
+
+EXPECTED_OUTPUT:
+default
+1 is 1
+2 is 2
+3 in (2, 10)
+9 in (2, 10)
+default
+default
+-------------------------------------------------------------------------------

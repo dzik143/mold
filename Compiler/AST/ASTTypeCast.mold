@@ -42,6 +42,7 @@ class ASTTypeCast
     global AST_OPCODE_CLASS
     global AST_OPCODE_CLASS_METHOD
     global AST_OPCODE_NOP
+    global AST_OPCODE_SWITCH
     global AST_OPCODE_TYPE_CAST
     global AST_OPCODE_COMPARE_EQ
     global AST_OPCODE_COMPARE_LE
@@ -149,6 +150,11 @@ class ASTTypeCast
         children[1] = AST_TypeCast(children[1], AST_DATA_INTEGER) # idxBegin
         children[2] = AST_TypeCast(children[2], AST_DATA_INTEGER) # idxEnd
         children[3] = AST_TypeCast(children[3], AST_DATA_INTEGER) # idxStep
+
+      elif opcode is AST_OPCODE_SWITCH
+        # TODO: Handle non-integer switch?
+        # switch expr
+        children[0] = AST_TypeCast(children[0], AST_DATA_INTEGER)
 
       elif (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_INVOKE_METHOD) or (opcode is AST_OPCODE_CALL_NEW)
         if node.value isnt 'global'

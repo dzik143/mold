@@ -13,6 +13,7 @@ NodeId = 1000
 DEBUG_AST_OPTIMIZER = true
 UNICC_DEBUG         = true
 
+import 'Utils/SymbolTable.mold'
 import 'AppMold.mold'
 import 'AST/ASTSymbolsCollector.mold'
 import 'AST/ASTPrinterText.mold'
@@ -63,14 +64,18 @@ astEvaluator.processNode(ast)
 print 'Constant folding...'
 astOptimizerConstantFolding.processNode(ast)
 
+print 'If optimization...'
+app.getAstOptimizerIf().processNode(ast)
+
 print 'Dead code elimination...'
 astOptimizerDeadCodeRemove.processNode(ast)
 
 print 'CSE...'
 astOptimizerCSE.processNode(ast)
 
-print 'VCall optimization...'
-astOptimizerVCall.processNode(ast)
+
+#print 'VCall optimization...'
+#astOptimizerVCall.processNode(ast)
 
 print 'Type cast...'
 app.getAstTypeCast().processNode(ast)
@@ -97,6 +102,7 @@ vm                = new VMachineStack()
 print 'Going to translate AST to MIR1...'
 mirCollector = new MIRQuadCollector()
 mirOptimizer = new MIRQuadOptimizer()
+#astTranslator.connectTo(mirCollector)
 astTranslator.connectTo(mirOptimizer).connectTo(mirCollector)
 
 astTranslator.run(ast)

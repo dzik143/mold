@@ -22,6 +22,7 @@ SYMBOL_KIND_LABEL      = 6
 SYMBOL_KIND_FUNCTION   = 7
 SYMBOL_KIND_CLASS      = 8
 SYMBOL_KIND_METHOD     = 9
+SYMBOL_KIND_JMP_TABLE  = 10
 
 import 'AST/ASTUtils.mold'
 
@@ -316,6 +317,8 @@ class SymbolTable
   endmethod
 
   method lookupMethod(className, methodName, paramsCnt) -> rv
+    print 'lookupMethod', className, methodName
+
     rv = this.lookupClass(className)['proto']['vtable'][methodName]
 
     if typeof(rv) is 'undefined'
@@ -585,6 +588,17 @@ class SymbolTable
       'name': rv,
       'kind': SYMBOL_KIND_LABEL
     })
+  endmethod
+
+  method insertJmpTable(jmpTable) -> newEntry
+    global SYMBOL_KIND_JMP_TABLE
+    name = '__jmptable' + str(SymbolTable_GetNextId())
+    newEntry = {
+      'name': name,
+      'kind': SYMBOL_KIND_JMP_TABLE,
+      'labels': jmpTable
+    }
+    this.insertGlobal(name, newEntry)
   endmethod
 
   # ----------------------------------------------------------------------------

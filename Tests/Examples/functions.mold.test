@@ -150,8 +150,6 @@ endfunction
 print foo(1)
 print foo(0)
 
-EXPECTED_OUTPUT:
-output
 EXPECTED_ERROR
 error: unset return variable 'rv' in 'foo' function
 --------------------------------------------------------------------------------

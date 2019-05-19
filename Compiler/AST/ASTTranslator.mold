@@ -268,11 +268,11 @@ class ASTTranslator
   method _emitFunctionBody(funcName, funcProto)
   endmethod
 
-  method _onScopeEnter(blockNode)
-  endmethod
+  #method _onScopeEnter(blockNode)
+  #endmethod
 
-  method _onScopeLeave(blockNode)
-  endmethod
+  #method _onScopeLeave(blockNode)
+  #endmethod
 
   method _declareExternalFunction(funcName, funcProto)
     this.symbolTable.insertFunction(funcName, funcProto)
@@ -284,11 +284,11 @@ class ASTTranslator
 
   method _enterScope(ast)
     this.symbolTable = ast.symbolTable
-    this._onScopeEnter(ast)
+    #this._onScopeEnter(ast)
   endmethod
 
   method _leaveScope()
-    this._onScopeLeave()
+    #this._onScopeLeave()
     childTable = this.symbolTable
     this.symbolTable = this.symbolTable.parent
 
@@ -431,6 +431,7 @@ class ASTTranslator
 
       this._call(methodProto['baseMethod'], newParams, paramsCnt + 1)
     endif
+
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -815,6 +816,10 @@ class ASTTranslator
     this._error('_executeNodeIf() not implemented')
   endmethod
 
+  method _executeNodeSwitch(node)
+    this._error('switch not implemented')
+  endmethod
+
   method _executeNode(ast)
     global AST_OPCODE_PROGRAM, AST_OPCODE_BLOCK, AST_OPCODE_DECLARE_OR_ASSIGN
     global AST_OPCODE_FOR_VALUES_RANGE, AST_OPCODE_WHILE
@@ -903,7 +908,7 @@ class ASTTranslator
         this._storeAtIndexAndDrop(box, index, rval)
 
       else
-        die('error: unexpected rvalue node ' + str(lval['opcode']) + ' ' + str(lval['value']))
+        die('error: unexpected lvalue node ' + str(lval['opcode']) + ' ' + str(lval['value']))
       endif
 
     elif opcode is AST_OPCODE_FOR_VALUES_RANGE
@@ -972,7 +977,7 @@ class ASTTranslator
       endif
 
     elif opcode is AST_OPCODE_SWITCH
-      this._error('switch not implemented')
+      this._executeNodeSwitch(ast)
 
     elif opcode is AST_OPCODE_CLASS
       # Do nothing.
@@ -999,4 +1004,5 @@ class ASTTranslator
     #this._declareGlobals(ast)
     this._executeNode(ast)
   endmethod
+
 endclass

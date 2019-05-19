@@ -424,3 +424,26 @@ function foo(values, name) -> rv
   endwhile
 endfunction
 --------------------------------------------------------------------------------
+
+TEST "Block vs if"
+
+function foo(x, y)
+  print x + y
+  if x is 1
+    print x + y
+  endif
+endfunction
+
+foo(1, 2)
+
+EXPECTED_OUTPUT:
+function foo(x, y)
+  __cse0 = x + y
+  print __cse0
+  if x is 1
+    print __cse0
+  endif
+endfunction
+
+foo(1, 2)
+--------------------------------------------------------------------------------

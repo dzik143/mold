@@ -19,7 +19,6 @@ import 'Parser/ParserMold.mold'
 
 import 'AppMold.mold'
 import 'AST/ASTSymbolsCollector.mold'
-
 import 'AST/ASTPrinterText.mold'
 import 'AST/ASTPrinterHtml.mold'
 import 'AST/ASTTranslatorMIR1.mold'
@@ -192,12 +191,15 @@ else
     app._debug('Constant folding...')
     app.getAstOptimizerConstantFolding().processNode(ast)
 
+    app._debug('If optimization...')
+    app.getAstOptimizerIf().processNode(ast)
+
     app._debug('Dead code elimination...')
     app.getAstOptimizerDeadCodeRemove().processNode(ast)
 
     # TODO: Review it.
-    #app._debug('VCall optimization...')
-    #app.getAstOptimizerVCall().processNode(ast)
+#    app._debug('VCall optimization...')
+#    app.getAstOptimizerVCall().processNode(ast)
 
     app._debug('Common subexpression elimination (CSE)...')
     app.getAstOptimizerCSE().processNode(ast)

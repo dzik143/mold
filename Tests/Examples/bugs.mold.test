@@ -256,3 +256,27 @@ print 'OK!'
 EXPECTED_OUTPUT:
 OK!
 -------------------------------------------------------------------------------
+
+TEST "Bug: Broken code after CSE within different blocks"
+
+x     = [{'value': 1234}]
+idx   = 0
+obj   = {'idx': 0}
+value = -1
+
+for idx in 0 .. 10
+  if typeof(x[obj.idx]) isnt 'undefined'
+    if value is -1
+      value = x[obj.idx].value
+    endif
+  endif
+  obj.idx = obj.idx + 1
+endfor
+
+print obj
+print value
+
+EXPECTED_OUTPUT:
+{'idx': 10}
+1234
+-------------------------------------------------------------------------------

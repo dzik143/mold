@@ -77,6 +77,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.emitTargetOnlyOpcode('jmp', label)
   endmethod
 
+  method emitJmpByTable(jmpTable, labelIdx)
+    newQuad = ['jmp_by_table', jmpTable, labelIdx]
+    this._emitOneItem(newQuad)
+  endmethod
+
   method emitMoveVariantOpcode(dst, src)
     this.emitOneArgOpcode('move', dst, src)
   endmethod
@@ -129,8 +134,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method emitProcBegin(procMeta)
-    rv = this.emitTargetOnlyOpcode('proc', procMeta)
-    rv = this.emitTargetOnlyOpcode('init_frame', procMeta)
+    this.emitTargetOnlyOpcode('proc', procMeta)
+    this.emitTargetOnlyOpcode('init_frame', procMeta)
   endmethod
 
   method emitProcEnd()
@@ -217,11 +222,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
   #                     Implement ASTTranslator interface
   # ----------------------------------------------------------------------------
 
-  method _onScopeEnter(ast)
-  endmethod
+  #method _onScopeEnter(ast)
+  #endmethod
 
-  method _onScopeLeave()
-  endmethod
+  #method _onScopeLeave()
+  #endmethod
 
   method _neg(value) -> rv
     rv = this.popOneArgAndEmitOpcode('neg')
@@ -632,6 +637,62 @@ class ASTTranslatorMIR1 extends ASTTranslator
     endif
 
     this.emitLabel(endLabel)
+  endmethod
+
+  method _executeNodeSwitch(node)
+    children    = node.children
+    childrenCnt = node.childrenCnt
+    varName     = this._evaluateNode(children[0])
+
+    doneLabel    = this.symbolTable.createLabel()
+    defaultLabel = this.symbolTable.createLabel()
+    jmpTable     = []
+
+    symbolInfo = this.symbolTable.insertJmpTable(jmpTable)
+    symbolInfo.defaultLabel = defaultLabel
+
+    # Handle out-of-range
+    this.emitTwoArgsOpcode('jmp_if_lt', defaultLabel, varName, node.valueMin)
+    this.emitTwoArgsOpcode('jmp_if_gt', defaultLabel, varName, node.valueMax)
+
+    # Value is in-range, use jump table.
+    this.emitJmpByTable(symbolInfo.name, varName)
+
+    caseDefaultIdx = -1
+
+    # Emit case bodies.
+    for idx in 1 .. childrenCnt
+      values = children[idx].arrayOfValues
+
+      if typeof(values) isnt 'undefined'
+        if AST_IsEmpty(children[idx]) is true
+          # Nop code. Just jump to done label.
+          caseLabel = doneLabel
+
+        else
+          # There is some work to do.
+          caseLabel = this.symbolTable.createLabel()
+          this.emitLabel(caseLabel)
+          this._executeNode(children[idx])
+          this.emitJmp(doneLabel)
+        endif
+
+        valuesCnt = len(values)
+        for valueIdx in 0 .. valuesCnt
+          jmpTable[values[valueIdx]] = caseLabel
+        endfor
+      else
+        caseDefaultIdx = idx
+      endif
+    endfor
+
+    # Emit otherwise (default) case code if any.
+    this.emitLabel(defaultLabel)
+    if caseDefaultIdx isnt -1
+      this._executeNode(children[caseDefaultIdx])
+    endif
+
+    this.emitLabel(doneLabel)
   endmethod
 
   method _declareFunction(funcName, funcProto)

@@ -104,7 +104,7 @@ print 'x[0][0][0][0][0][0][0][0][0][0]:', x[0][0][0][0][0][0][0][0][0]
 # Print types stored in the whole tree.
 print 'types'
 print '====='
-print 'typeof(x)   :', typeof(x)
+print 'typeof(x):', typeof(x)
 print 'typeof(x[0]):', typeof(x[0])
 print 'typeof(x[0][0]):', typeof(x[0][0])
 print 'typeof(x[0][0][0]):', typeof(x[0][0][0])
@@ -136,7 +136,7 @@ x[0][0][0][0][0][0][0][0][0]: [['x']]
 x[0][0][0][0][0][0][0][0][0][0]: ['x']
 types
 =====
-typeof(x)   : array
+typeof(x): array
 typeof(x[0]): array
 typeof(x[0][0]): array
 typeof(x[0][0][0]): array
