@@ -826,7 +826,7 @@ class ASTTranslator
     global AST_OPCODE_CALL, AST_OPCODE_FUNCTION, AST_OPCODE_IF, AST_OPCODE_SWITCH
     global AST_OPCODE_VARIABLE, AST_OPCODE_REFERENCE, AST_OPCODE_SWITCH_CASE_OTHERWISE
     global AST_OPCODE_CLASS, AST_OPCODE_CLASS_METHOD, AST_OPCODE_INVOKE_METHOD
-    global AST_OPCODE_NOP, AST_DATA_STRING
+    global AST_OPCODE_NOP, AST_DATA_STRING, AST_OPCODE_ADD
     global SYMBOL_KIND_VAR_RETVAL
 
     # Fetch opcode.
@@ -893,6 +893,12 @@ class ASTTranslator
         lval = lval['value']
         rval = this._evaluateNode(children[1])
         this._assign(lval, rval)
+
+        # Special case: x = x + y
+        if (children[1].opcode is AST_OPCODE_ADD) and (lval is children[1].children[0].value)
+          symbolInfo = this.symbolTable.lookup(lval)
+          symbolInfo.duplicateOnFirstWrite = true
+        endif
 
       elif lval['opcode'] is AST_OPCODE_REFERENCE
         # x[i] = y
