@@ -170,7 +170,7 @@ TEST "Bug: Crash while releasing old array item"
 
 x    = []
 x[0] = {}
-x[0] = 1234 
+x[0] = 1234
 
 y      = {}
 y['a'] = {}
@@ -221,9 +221,9 @@ class Parser
     _idx_  = 0
 
     this.stackIdx = 1
-    
+
     if false
-    
+
     elif _idx_ is 0
       this.ret = _stack[this.stackIdx - 1]
 

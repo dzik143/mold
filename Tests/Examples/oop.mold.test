@@ -353,7 +353,7 @@ class Base
   method constructor(app)
     this.app = app
   endmethod
-             
+
   method foo(x)
     print 'Base::foo(', x, ')'
     this.app.bar(x + 1)
@@ -368,7 +368,7 @@ class App
   method bar(x)
     print 'App::bar(', x, ')'
   endmethod
-  
+
   method foo(x)
     print 'App::foo(', x, ')'
     this.obj.foo(x + 1)
@@ -541,7 +541,7 @@ class Base
     rv = 1234
     print 'foo: rv before this.bar() is', rv
     this.bar(1, 2, 3, 4)
-    print 'foo: rv after this.bar() is', rv                    
+    print 'foo: rv after this.bar() is', rv
   endmethod
 endclass
 
@@ -594,13 +594,13 @@ class Base
       this[str(idx)] = idx
     endfor
   endmethod
-  
+
   method foo()
     acc = 0
     for idx in 0 .. 1024*16
       acc = acc + this[str(idx)]
     endfor
-    print acc    
+    print acc
   endmethod
 endclass
 
