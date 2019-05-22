@@ -38,15 +38,20 @@ MAX_REF_CNT   EQU 500000
 ;
 ;###############################################################################
 
-proc __MOLD_MemoryAlloc capacity
+__MOLD_MemoryAlloc:
 
   ; ----------------------------------------------------------------------------
   ; Init stack frame
   ; ----------------------------------------------------------------------------
 
-  local .alignedCapacity dq ?
-  local .bufferHolder    dq ?
+  .alignedCapacity EQU rbp - 24 ; 8 bytes
+  .bufferHolder    EQU rbp - 32 ; 8 bytes
 
+  ;local .alignedCapacity dq ?
+  ;local .bufferHolder    dq ?
+
+  push    rbp
+  mov     rbp, rsp
   sub     rsp, 64
 
   ; ----------------------------------------------------------------------------
@@ -113,13 +118,17 @@ end if
   mov     rax, [.bufferHolder]
 
   add     rsp, 64
+  pop     rbp
   ret
+
+  restore .alignedCapacity
+  restore .bufferHolder
 
 ;.fmt db 'Init refCnt to 1', 13, 10, 0
 .outOfMemory:
   cinvoke printf, 'PANIC! Out of memory'
   int 3
-endp
+
 
 proc __MOLD_MemoryAddRef buf
   ; rcx = buf
@@ -298,7 +307,7 @@ end if
 .staticBuffer:
 
   cinvoke printf, 'TODO: Realloc of static buffer'
-  cinvoke ExitProcess, -1
+  int 3
 
   ; ----------------------------------------------------------------------------
   ; Calculate new buffer capacity
@@ -370,6 +379,155 @@ end if
   cinvoke printf, 'error: out of memory'
   cinvoke ExitProcess, -1
 endp
+
+;###############################################################################
+;
+; Realloc buffer to desired size.
+;
+; RCX - pointer to Buffer_t struct allocated by __MOLD_MemoryAlloc before (IN).
+; RDX - desired size in bytes (IN).
+;
+; RETURNS: Pointer to Buffer_t struct (RAX).
+;
+;###############################################################################
+
+__MOLD_MemoryRealloc:
+
+  ; ----------------------------------------------------------------------------
+  ; Is it empty buffer?
+  ; ----------------------------------------------------------------------------
+  or      rcx, rcx            ; Is oldBuffer NULL?
+  cmovz   rcx, rdx            ; rcx = new capacity
+  jz      __MOLD_MemoryAlloc  ; passthrough to malloc
+
+  ; ----------------------------------------------------------------------------
+  ; Set up stack frame
+  ; ----------------------------------------------------------------------------
+
+  push    r12
+  sub     rsp, 32
+
+  mov     r12, rcx                       ; r12 = Buffer_t struct
+
+  ; ------------
+  ; DEBUG
+  ; ------------
+if DEBUG
+  push rcx rdx r8 r9 r10 r11
+  mov  rdx, rcx
+  cinvoke printf, .fmtDebug1
+  pop  r11 r10 r9 r8 rdx rcx
+  jmp .afterDebug1
+.fmtDebug1 db 'going to resize ptr %p', 13, 10, 0
+.afterDebug1:
+end if
+  ; ------------
+  ; END OF DEBUG
+  ; ------------
+
+  ; ----------------------------------------------------------------------------
+  ; Is it static buffer?
+  ; ----------------------------------------------------------------------------
+  mov     rax, [rcx + Buffer_t.refCnt]
+  test    rax, rax
+  jnl     .dynamicBuffer
+
+.staticBuffer:
+  mov     rcx, rdx                        ; rcx = new capacity
+  call    __MOLD_MemoryAlloc              ; rax = new allocated Buffer_t
+
+  push    rsi
+  push    rdi
+
+  mov     rcx, [r12 + Buffer_t.capacity]
+  mov     rsi, [r12 + Buffer_t.bytesPtr]
+  mov     rdi, [rax + Buffer_t.bytesPtr]
+  rep     movsb
+
+  pop     rdi
+  pop     rsi
+
+  jmp     .done
+
+  ; ----------------------------------------------------------------------------
+  ; Calculate new buffer capacity
+  ; ----------------------------------------------------------------------------
+
+.dynamicBuffer:
+
+  mov     r11, [r12 + Buffer_t.capacity] ; r11 = old capacity
+  cmp     rdx, r11
+  mov     rax, r12
+  jbe     .noReallocNeeded
+
+  add     rdx, 64                        ; rdx = newCapacity + 64
+  and     rdx, 0xffffffffffffffc0        ; rdx = (newCapacity + 64) mod 64
+  push    rdx
+
+  ; ------------
+  ; DEBUG
+  ; ------------
+if DEBUG
+  push rcx rdx r8 r9 r10 r11
+  mov  r9, rdx
+  mov  rdx, rcx
+  cinvoke printf, .fmtDebug2, rdx, r11, r9
+  pop  r11 r10 r9 r8 rdx rcx
+  jmp .afterDebug2
+.fmtDebug2 db 'resizing buffer ptr %p from %d to %d bytes', 13, 10, 0
+.afterDebug2:
+end if
+
+  ; ----------------------------------------------------------------------------
+  ; Log reallocation if if needed
+  ; ----------------------------------------------------------------------------
+
+  call    __MOLD_MemoryLogRealloc
+
+  ; ------------
+  ; END OF DEBUG
+  ; ------------
+
+  ; ----------------------------------------------------------------------------
+  ; Reallocate buffer to new size
+  ; ----------------------------------------------------------------------------
+
+  mov     rcx, [r12 + Buffer_t.bytesPtr] ; rcx = old memory block
+  cinvoke realloc                        ; rax = new memory block
+  test    rax, rax
+  jz      .errorOutOfMemory
+
+  mov     [r12 + Buffer_t.bytesPtr], rax ; rv.bytesPtr = new memory block
+
+  ; ----------------------------------------------------------------------------
+  ; Zero fill new allocated content
+  ; ----------------------------------------------------------------------------
+
+  mov     rcx, rax                         ; rcx = new memory block
+  mov     rdx, [r12 + Buffer_t.capacity]   ; rdx = old capacity
+  add     rcx, rdx                         ; rcx = first new byte
+
+; TODO !!!  call    [RtlZeroMemory]                  ; clean new bytes
+  mov     rax, r12                         ; rax = new buffer
+  pop     qword [rax + Buffer_t.capacity]  ; rv.capacity = newCapacity
+
+  ; ----------------------------------------------------------------------------
+  ; Clean up stack frame
+  ; ----------------------------------------------------------------------------
+
+.noReallocNeeded:
+.done:
+
+  add     rsp, 32
+  pop     r12
+
+  ret
+
+.errorOutOfMemory:
+  cinvoke printf, 'error: out of memory'
+  cinvoke ExitProcess, -1
+
+
 
 proc __MOLD_MemoryDump buf
     push rax r10 r11 r12

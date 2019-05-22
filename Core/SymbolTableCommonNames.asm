@@ -23,6 +23,7 @@ name__MOLD_MemoryAlloc               db '__MOLD_MemoryAlloc', 0
 name__MOLD_MemoryAddRef              db '__MOLD_MemoryAddRef', 0
 name__MOLD_MemoryRelease             db '__MOLD_MemoryRelease', 0
 name__MOLD_MemoryIncreaseBufferTwice db '__MOLD_MemoryIncreaseBufferTwice', 0
+name__MOLD_MemoryRealloc             db '__MOLD_MemoryRealloc', 0
 name__MOLD_MemoryDump                db '__MOLD_MemoryDump', 0
 
 ; Variant.asm

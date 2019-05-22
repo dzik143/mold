@@ -23,6 +23,7 @@ dq __MOLD_MemoryAlloc               , name__MOLD_MemoryAlloc
 dq __MOLD_MemoryAddRef              , name__MOLD_MemoryAddRef
 dq __MOLD_MemoryRelease             , name__MOLD_MemoryRelease
 dq __MOLD_MemoryIncreaseBufferTwice , name__MOLD_MemoryIncreaseBufferTwice
+dq __MOLD_MemoryRealloc             , name__MOLD_MemoryRealloc
 dq __MOLD_MemoryDump                , name__MOLD_MemoryDump
 
 ; Variant.asm

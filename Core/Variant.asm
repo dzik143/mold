@@ -54,6 +54,8 @@ VARIANT_MAP       EQU 8
 VARIANT_OBJECT    EQU 9
 VARIANT_TYPE_MAX  EQU 9
 
+VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE EQU 1
+
 VARIANT_MAP_DEFAULT_BUCKETS_CNT    EQU 16
 VARIANT_OBJECT_DEFAULT_BUCKETS_CNT EQU 16
 VARIANT_ARRAY_DEFAULT_ITEMS_CNT    EQU 16
@@ -891,12 +893,31 @@ proc __MOLD_VariantAdd x, y, rv
 
 ; string x string
 .case_ss:
+     cmp       r8, rcx
+     jz        .case_ss_overlapped_source_and_destination
+
+.case_ss_source_and_destination_differ:
+     mov       [r8 + Variant_t.value], 0
+     jmp       .case_ss_do_work
+
+.case_ss_overlapped_source_and_destination:
+
+     ; Accumulate result:
+     ; x = x + y
+
+     push  rcx
+     mov   rcx, [rcx + Variant_t.value]
+     call  __MOLD_MemoryAddRef
+     pop   rcx
+
+.case_ss_do_work:
 
      push      rsi
      push      rdi
 
      mov       r9,  [rcx + Variant_t.value]   ; r9  = x.buffer (Buffer_t)
      mov       r10, [rdx + Variant_t.value]   ; r10 = y.buffer (Buffer_t)
+     push      r9
 
      mov       r9,  [r9  + Buffer_t.bytesPtr] ; r9  = x.buffer (String_t)
      mov       r10, [r10 + Buffer_t.bytesPtr] ; r10 = y.buffer (String_t)
@@ -906,32 +927,39 @@ proc __MOLD_VariantAdd x, y, rv
      ; it's not really needed
      ; -------------------------------
 
-     mov       rcx, [r9  + String_t.length] ; rcx = len(x)
-     add       rcx, [r10 + String_t.length] ; rcx = len(x) + len(y)
-     mov       r11, rcx                     ; r11 = len(x) + len(y)
-     inc       rcx                          ; rcx = len(x) + len(y) + 1
+     mov       rdx, [r9  + String_t.length] ; rdx = len(x)
+     add       rdx, [r10 + String_t.length] ; rdx = len(x) + len(y)
+     mov       r11, rdx                     ; r11 = len(x) + len(y)
+     add       rdx, 1 + 8                   ; rdx = len(x) + len(y) + 1 + len(int64)
 
      ; -------------------------------
      ; Allocate new buffer
      ; -------------------------------
 
      push      r8 r9 r10 r11
-     call      __MOLD_MemoryAlloc                    ; rax = new buffer (Buffer_t)
+     mov       rcx, 0
+     test      [r8 + Variant_t.flags], VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE
+     cmovz     rcx, [r8 + Variant_t.value]           ; rcx = dst buffer (Buffer_t)
+     and       [r8 + Variant_t.flags], not VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE
+     call      __MOLD_MemoryRealloc                  ; rax = new buffer (Buffer_t)
      pop       r11 r10 r9 r8
 
      mov       rdx, [rax + Buffer_t.bytesPtr]        ; rdx = new String_t
-     mov       [rdx + String_t.length], r11          ; rv.length = len(x) + len(y)
 
      ; -------------------------------
      ; Copy first string.
      ; TODO: Don't copy byte-by-byte
      ; -------------------------------
 
-     ; cld
+     pop       r9
+     mov       r9,  [r9  + Buffer_t.bytesPtr]        ; r9  = dst = x.buffer (String_t)
 
-     lea       rdi, [rdx + String_t.text]   ; rdi = destination = rv.text
-     lea       rsi, [r9  + String_t.text]   ; rsi = source      = x.text
-     mov       rcx, [r9  + String_t.length] ; rcx = x.length
+     cmp       rdx, r9
+     jz        .ss_overlapped_dst
+
+     lea       rdi, [rdx + String_t.text]            ; rdi = dst      = rv.text  (char*)
+     lea       rsi, [r9  + String_t.text]            ; rsi = src      = x.text   (char*)
+     mov       rcx, [r9  + String_t.length]          ; rcx = len(src) = x.length (int64)
      rep       movsb
 
      ; -------------------------------
@@ -939,8 +967,12 @@ proc __MOLD_VariantAdd x, y, rv
      ; TODO: Don't copy byte-by-byte
      ; -------------------------------
 
-     lea       rsi, [r10 + String_t.text]   ; rsi = source = y.text
-     mov       rcx, [r10 + String_t.length] ; rcx = y.length
+.ss_overlapped_dst:
+
+     lea       rdi, [rdx + String_t.text]            ; rdi = dst = rv.text  (char*)
+     lea       rsi, [r10 + String_t.text]            ; rsi = src = y.text   (char*)
+     add       rdi, [r9 + String_t.length]           ; rdi = dst + x.length (char*)
+     mov       rcx, [r10 + String_t.length]          ; rcx = len(src) = y.length
      rep       movsb
 
      ; -------------------------------
@@ -948,6 +980,7 @@ proc __MOLD_VariantAdd x, y, rv
      ; -------------------------------
 
      mov       byte [rdi], 0
+     mov       [rdx + String_t.length], r11          ; rv.length = len(x) + len(y)
 
      mov       [r8 + Variant_t.type],  VARIANT_STRING
      xchg      [r8 + Variant_t.value], rax
