@@ -51,8 +51,8 @@ astOptimizerDeadCodeRemove.processNode(ast)
 print 'Common subexpression elimination...'
 astOptimizerCSE.processNode(ast)
 
-#print 'VCall optimization...'
-#astOptimizerVCall.processNode(ast)
+print 'VCall optimization...'
+astOptimizerVCall.processNode(ast)
 
 print 'Type cast...'
 app.getAstTypeCast().processNode(ast)

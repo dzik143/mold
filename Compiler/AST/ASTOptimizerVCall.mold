@@ -48,10 +48,18 @@ class ASTOptimizerVCall
           # We already know class proto.
           # Convert vcall to ordinary call.
           methodProto = classProto.vtable[node.value]
+
           if typeof(methodProto) isnt 'undefined'
-            node.value  = methodProto.fullName
-            node.opcode = AST_OPCODE_CALL
-            this._debug('Changed vcall [' + node.value + '] to ordinary call at node #' + str(node.id))
+            if methodProto.isOverloaded is true
+              # Method is overloaded by another class.
+              # Keep virtual call.
+              this._debug('Skipped vcall [' + node.value + '] at node #' + str(node.id))
+
+            else
+              node.value  = methodProto.fullName
+              node.opcode = AST_OPCODE_CALL
+              this._debug('Changed vcall [' + node.value + '] to ordinary call at node #' + str(node.id))
+            endif
           endif
         endif
       endif

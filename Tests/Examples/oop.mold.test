@@ -327,6 +327,34 @@ Base::foo()
 Base::bar()
 -------------------------------------------------------------------------------
 
+TEST "Call overloaded method from base class"
+
+class Base
+  method _doWork(x, y, z)
+    print 'Base::_doWork(', x, y, z, ')'
+  endmethod
+
+  method foo(x, y, z)
+    this._doWork(x, y, z)
+  endmethod
+endclass
+
+class Derived extends Base
+  method _doWork(x, y, z)
+    print 'Derived::_doWork(', x, y, z, ')'
+  endmethod
+endclass
+
+base    = new Base()
+derived = new Derived()
+base.foo(1, 2, 3)
+derived.foo(1, 2, 3)
+
+EXPECTED_OUTPUT:
+Base::_doWork( 1 2 3 )
+Derived::_doWork( 1 2 3 )
+-------------------------------------------------------------------------------
+
 TEST "Bug: Forward method call"
 class Base
   method foo()

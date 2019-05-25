@@ -197,9 +197,8 @@ else
     app._debug('Dead code elimination...')
     app.getAstOptimizerDeadCodeRemove().processNode(ast)
 
-    # TODO: Review it.
-#    app._debug('VCall optimization...')
-#    app.getAstOptimizerVCall().processNode(ast)
+    app._debug('VCall optimization...')
+    app.getAstOptimizerVCall().processNode(ast)
 
     app._debug('Common subexpression elimination (CSE)...')
     app.getAstOptimizerCSE().processNode(ast)

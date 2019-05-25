@@ -175,7 +175,10 @@ class ASTSymbolsCollector
 
           if typeof(baseMethods[methodName]) isnt 'undefined'
             # Save proto of base method if any.
-            child['baseMethod'] = baseMethods[methodName]
+            baseMethodProto     = baseMethods[methodName]
+            child['baseMethod'] = baseMethodProto
+            baseMethodProto.isOverloaded = true
+
           else
             this.vtableKeys[this.vtableKeysCnt] = methodFullName
             this.vtableKeysCnt                  = this.vtableKeysCnt + 1
