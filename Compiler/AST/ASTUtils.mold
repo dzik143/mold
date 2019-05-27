@@ -480,7 +480,7 @@ function AST_IsImmOrVar(x) -> rv
   endif
 endfunction
 
-function AST_Hash(node) -> rv
+function AST_HashInternal(node, isCodeMode) -> rv
   global AST_DATA_ARRAY
   global AST_DATA_MAP
   global AST_OPCODE_CALL
@@ -503,18 +503,23 @@ function AST_Hash(node) -> rv
       rv = '@' + str(node.id)
 
     elif AST_IsVar(node)
-      if typeof(node.storedValue) is 'undefined'
-        # TODO: Review it.
+      if isCodeMode is true
         rv = '@' + node.value
 
-      elif typeof(node.storedValue) is 'array'
-        rv = ''
-        for idx in 0 .. len(node.storedValue)
-          rv = rv + '@' + str(node.storedValue[idx].id)
-        endfor
-
       else
-        rv = '@' + str(node.storedValue.id)
+        if typeof(node.storedValue) is 'undefined'
+          # TODO: Review it.
+          rv = '@' + node.value
+
+        elif typeof(node.storedValue) is 'array'
+          rv = ''
+          for idx in 0 .. len(node.storedValue)
+            rv = rv + '@' + str(node.storedValue[idx].id)
+          endfor
+
+        else
+          rv = '@' + str(node.storedValue.id)
+        endif
       endif
 /*
     elif node.opcode is AST_DATA_ARRAY
@@ -539,21 +544,31 @@ function AST_Hash(node) -> rv
       # TODO: Review it.
       rv = AST_GetOpcodeAsShortText(opcode) + ':' + node.value + ',' + str(childrenCnt)
       for idx in 0 .. childrenCnt
-        rv  = rv + ',' + AST_Hash(children[idx])
+        rv  = rv + ',' + AST_HashInternal(children[idx], isCodeMode)
       endfor
 
     elif opcode is AST_OPCODE_TYPE_CAST
-      rv = 'cast,' + str(node.astDataType) + ',' + AST_Hash(children[0])
+      rv = 'cast,' + str(node.astDataType) + ',' + AST_HashInternal(children[0], isCodeMode)
 
     else
       rv = AST_GetOpcodeAsShortText(opcode) + ',' + str(childrenCnt)
       for idx in 0 .. childrenCnt
-        rv  = rv + ',' + AST_Hash(children[idx])
+        rv  = rv + ',' + AST_HashInternal(children[idx], isCodeMode)
       endfor
     endif
 
-    node.hash = rv
+    if isCodeMode is false
+      node.hash = rv
+    endif
   endif
+endfunction
+
+function AST_Hash(node) -> rv
+  rv = AST_HashInternal(node, false)
+endfunction
+
+function AST_HashForCodeComparison(node) -> rv
+  rv = AST_HashInternal(node, true)
 endfunction
 
 function AST_HasSideEffects(node) -> rv
