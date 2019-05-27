@@ -110,7 +110,16 @@ class ASTOptimizerCSE
       AST_Hash(rval)
 
       newRval = this._processNode(rval, mapOfExpressions, symbolTable)
-      if newRval isnt rval
+
+      if (lval.opcode is AST_OPCODE_VARIABLE) and (newRval.opcode is AST_OPCODE_VARIABLE) and (lval.value is newRval.value)
+        # Useless assign: x = x
+        this._debug('Useless self-assign at node #' + str(node.id) + ' (' + lval.hash + ')')
+        rv.opcode      = AST_OPCODE_NOP
+        rv.children    = []
+        rv.childrenCnt = 0
+
+      elif newRval isnt rval
+        # Update rval if needed.
         children[1] = newRval
       endif
 
