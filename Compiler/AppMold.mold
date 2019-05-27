@@ -22,6 +22,7 @@ import 'AST/ASTOptimizerCSE.mold'
 import 'AST/ASTOptimizerDeadCodeRemove.mold'
 import 'AST/ASTOptimizerVCall.mold'
 import 'AST/ASTOptimizerIf.mold'
+import 'AST/ASTOptimizerInline.mold'
 import 'AST/ASTTypeCast.mold'
 
 # TODO: Clean up this mess.
@@ -49,6 +50,7 @@ class AppMold
     this.astOptimizerDeadCodeRemove  = new ASTOptimizerDeadCodeRemove(this)
     this.astOptimizerVCall           = new ASTOptimizerVCall(this)
     this.astOptimizerIf              = new ASTOptimizerIf(this)
+    this.astOptimizerInline          = new ASTOptimizerInline(this)
     this.astTypeCast                 = new ASTTypeCast(this)
     this.astModuleResolver           = new ASTModuleResolver(this)
 
@@ -138,6 +140,10 @@ class AppMold
 
   method getAstOptimizerIf() -> rv
     rv = this.astOptimizerIf
+  endmethod
+
+  method getAstOptimizerInline() -> rv
+    rv = this.astOptimizerInline
   endmethod
 
   method getAstModuleResolver() -> rv
