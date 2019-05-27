@@ -183,11 +183,17 @@ else
     # - dead code elimination,
     # - common subexpression elimination (CSE).
 
-    # Common preprocess before go-on with any AST optimization.
+    # TODO: More generic way to apply selected optimizations.
+    app._debug('VCall optimization...')
+    app.getAstOptimizerVCall().processNode(ast)
+
+    app._debug('Inline optimization... (TEMPORARY DISABLED!)')
+#    app.getAstOptimizerInline().processNode(ast)
+
+    # Common preprocess before go-on with further AST optimization.
     app._debug('Evaluating AST nodes...')
     app.getAstEvaluator().processNode(ast)
 
-    # TODO: More generic way to apply selected optimizations.
     app._debug('Constant folding...')
     app.getAstOptimizerConstantFolding().processNode(ast)
 
@@ -197,18 +203,15 @@ else
     app._debug('Dead code elimination...')
     app.getAstOptimizerDeadCodeRemove().processNode(ast)
 
-    app._debug('VCall optimization...')
-    app.getAstOptimizerVCall().processNode(ast)
-
     app._debug('Common subexpression elimination (CSE)...')
     app.getAstOptimizerCSE().processNode(ast)
+
   else
     die('error: optimization level #' + str(optimizationLevel) + ' is not implemented yet')
   endif
 
   if (mode is 'mir0') or (mode is 'interpreter')
     die('error: mir0 based modes are temporary disabled')
-
     # Translate program to MIR0 (stack based).
 #    astTranslator = new ASTTranslatorMIR0()
 #    astTranslator.run(ast)
