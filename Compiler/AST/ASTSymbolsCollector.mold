@@ -30,6 +30,13 @@ class ASTSymbolsCollector
   #                          Internal API (private)
   # ----------------------------------------------------------------------------
 
+  method _debug(msg)
+    global DEBUG_AST_OPTIMIZER
+    if DEBUG_AST_OPTIMIZER is true
+      print '[ ASTSymbolsCollector ]', msg
+    endif
+  endmethod
+
   method _collectSymbolsFromLeftNode(symbolTable, node)
     this._collectSymbols(symbolTable, node, true)
   endmethod
@@ -88,6 +95,13 @@ class ASTSymbolsCollector
     opcode      = node.opcode
     children    = node.children
     childrenCnt = node.childrenCnt
+
+    # TODO: Remove it.
+    # We use it to work-around problem with emitting [object] to
+    # external source.ast file.
+    for idx in 0 .. childrenCnt
+      children[idx].parent = node
+    endfor
 
     # TODO: Clean up this mess.
     if (opcode is AST_OPCODE_VARIABLE) and (node.value is '__this_placeholder__')
@@ -225,7 +239,7 @@ class ASTSymbolsCollector
 
       if typeof(nodeBody.symbolTable) is 'undefined'
         # Init new symbol table if not existing yet.
-        nodeBody.symbolTable = symbolTable.enterScopeForProcedure()
+        nodeBody.symbolTable = symbolTable.enterScopeForProcedure(funcName)
 
         # TODO: Why we need to add this param by hand?
         if opcode is AST_OPCODE_CLASS_METHOD
@@ -530,13 +544,19 @@ class ASTSymbolsCollector
           # One of built-in function - declaration is not needed.
           if symbolTable.isset(funcName) is false
             # TODO: Fill up proto?
-            symbolTable.insertFunction(funcName, {})
+            symbolTable.insertFunction(funcName, {'builtIn': true})
           endif
         endif
 
         # Mark that function was called.
-        symbolTable.lookupForCall(node.value)
-        isLeftNode = false
+        node.symbolInfo = symbolTable.lookupForCall(node.value)
+        isLeftNode      = false
+
+        # Mark recursive calls. We use it in further optizations.
+        if (node.symbolInfo.proto.isRecursive isnt true) and (symbolTable.getCurrentFunctionName() is funcName)
+          this._debug('Recursive call detected at node #' + str(node.id) + ' (' + funcName + ')')
+          node.symbolInfo.proto.isRecursive = true
+        endif
 
         # Import global symbol.
         if funcName is 'global'

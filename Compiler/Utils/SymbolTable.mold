@@ -234,9 +234,10 @@ class SymbolTable
     endif
 
     rv = new SymbolTable(this.app)
-    rv.parent  = this
-    rv.deepIdx = this.deepIdx + 1
-    rv.global  = this.global
+    rv.parent       = this
+    rv.deepIdx      = this.deepIdx + 1
+    rv.global       = this.global
+    rv.functionName = this.functionName
   endmethod
 
   method enterScopeForLoop() -> rv
@@ -244,9 +245,10 @@ class SymbolTable
     rv.loopLevel = this.loopLevel + 1
   endmethod
 
-  method enterScopeForProcedure() -> rv
-    rv           = this.enterScope()
-    rv.procLevel = this.procLevel + 1
+  method enterScopeForProcedure(functionName) -> rv
+    rv              = this.enterScope()
+    rv.procLevel    = this.procLevel + 1
+    rv.functionName = functionName
   endmethod
 
   method leaveScope() -> rv
@@ -294,6 +296,10 @@ class SymbolTable
     endif
   endmethod
 
+  method getCurrentFunctionName() -> rv
+    rv = this.functionName
+  endmethod
+
   # ----------------------------------------------------------------------------
   #                               Class helpers
   # ----------------------------------------------------------------------------
@@ -333,7 +339,7 @@ class SymbolTable
   #                               Variable helper
   # ----------------------------------------------------------------------------
 
-  method insertLocal(name)
+  method insertLocal(name) -> newEntry
     global SYMBOL_KIND_VAR_LOCAL
 
     if this.deepIdx < 1
