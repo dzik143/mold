@@ -58,6 +58,7 @@ class ASTOptimizerIf
       goOn           = true
       currentIfNode  = node
       cond           = currentIfNode.children[0]
+      casesCnt       = 0
 
       while goOn is true
         # if x is 1
@@ -74,9 +75,10 @@ class ASTOptimizerIf
             # Convert into switch with choice map.
             caseNode     = currentIfNode.children[1]
             caseValue    = cond.children[1].value
-            caseNodeHash = AST_Hash(caseNode)
+            caseNodeHash = AST_HashForCodeComparison(caseNode)
 
             reusedNode = caseHashMap[caseNodeHash]
+            casesCnt   = casesCnt + 1
 
             if typeof(reusedNode) is 'undefined'
               # Case code seen first time. Go on.
@@ -89,7 +91,6 @@ class ASTOptimizerIf
               # Reuse it.
               reusedNode.arrayOfValues[len(reusedNode.arrayOfValues)] = caseValue
             endif
-
 
             if caseValue > valueMax
               valueMax = caseValue
@@ -109,11 +110,11 @@ class ASTOptimizerIf
         endif
       endwhile
 
-      if len(newChildren) >= 3
+      if casesCnt >= 3
         # TODO: Use null?
         # Handle otherwise node.
         lastCaseNode = newChildren[len(newChildren) - 1]
-        if (currentIfNode.opcode isnt AST_OPCODE_IF) or (currentIfNode.children[1] isnt lastCaseNode)
+        if (currentIfNode.opcode isnt AST_OPCODE_IF) or (AST_HashForCodeComparison(currentIfNode.children[1]) isnt AST_HashForCodeComparison(lastCaseNode))
           newChildren[len(newChildren)] = currentIfNode
           this._processNode(currentIfNode)
         endif
