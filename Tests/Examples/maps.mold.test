@@ -194,3 +194,42 @@ EXPECTED_OUTPUT:
 {'': 1234}
 1234
 -------------------------------------------------------------------------------
+
+TEST "Update map inside function call #1"
+
+function updateBox(box)
+  box.value = 4321
+endfunction
+
+box  = {'value': 1234}
+value = box.value
+print 'value before:', value
+
+updateBox(box)
+value = box.value
+print 'value after:', value
+
+EXPECTED_OUTPUT:
+value before: 1234
+value after: 4321
+-------------------------------------------------------------------------------
+
+TEST "Update map inside function call #2 (nested)"
+
+function updateBox(box)
+  box.inner[0] = 4321
+endfunction
+
+box  = {'inner': [1234]}
+value = box.inner[0]
+print 'value before:', value
+
+updateBox(box)
+
+value = box.inner[0]
+print 'value after:', value
+
+EXPECTED_OUTPUT:
+value before: 1234
+value after: 4321
+-------------------------------------------------------------------------------

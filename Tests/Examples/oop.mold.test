@@ -498,6 +498,25 @@ EXPECTED_OUTPUT:
 foo
 -------------------------------------------------------------------------------
 
+TEST "Recursive method call"
+
+class Base
+  method foo(x) -> rv
+    if x is 0
+      rv = 1
+    else
+      rv = x * this.foo(x - 1)
+    endif
+  endmethod
+endclass
+
+obj = new Base()
+print obj.foo(10)
+
+EXPECTED_OUTPUT:
+3628800
+-------------------------------------------------------------------------------
+
 TEST "Method with long call list"
 
 class Base
