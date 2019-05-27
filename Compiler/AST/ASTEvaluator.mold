@@ -165,7 +165,7 @@ class ASTEvaluator
     global AST_OPCODE_BOOL_NOT
     global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV, AST_OPCODE_IDIV
     global AST_DATA_BOOL, AST_DATA_INTEGER, AST_DATA_DOUBLE, AST_DATA_STRING
-    global AST_DATA_ARRAY, AST_DATA_MAP, AST_DATA_UNDEFINED
+    global AST_DATA_ARRAY, AST_DATA_MAP, AST_DATA_UNDEFINED, AST_DATA_OBJECT
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
     global AST_OPCODE_REFERENCE
     global AST_OPCODE_CALL, AST_OPCODE_INVOKE_METHOD
@@ -287,6 +287,33 @@ class ASTEvaluator
       # N-th loop rotate.
       this._processConditionalNode(values, cond)
       this._processConditionalNode(values, body)
+
+    elif (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_INVOKE_METHOD)
+      # foo(a, b, c, ...)
+      # obj.foo(a,b, c, ...)
+      # Parameter may be changed inside call.
+      # TODO: Track real in/out parameters intent.
+      for idx in 0 .. childrenCnt
+        childNode = children[idx]
+
+        if childNode.opcode is AST_OPCODE_VARIABLE
+          symbolInfo = childNode.symbolInfo
+
+          # TODO: Review it.
+          # global(x) gives undefined symbolInfo.
+          if typeof(symbolInfo) isnt 'undefined'
+            astType = symbolInfo.astType
+
+            if (typeof(astType) is 'undefined') or (astType is -1) or (astType is AST_DATA_OBJECT) or (astType is AST_DATA_MAP) or (astType is AST_DATA_ARRAY)
+              # Unknown or box like variable is passed as call parameter.
+              # We assume that it may be changed inside function.
+              this._assignValue(values, childNode, childNode)
+            endif
+          endif
+        endif
+
+        this._processNode(values, childNode)
+      endfor
 
     else
       if (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
