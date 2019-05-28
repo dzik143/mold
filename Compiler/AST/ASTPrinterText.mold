@@ -242,7 +242,7 @@ class ASTPrinterText
       __mold_printToStdOutput(node.name)
       print ''
       this._printNode_codeBlock(prefix, node)
-      __mold_printToStdOutput('endclass')
+      print 'endclass'
 
     elif (opcode is AST_OPCODE_CLASS_METHOD) or (opcode is AST_OPCODE_FUNCTION)
       if opcode is AST_OPCODE_CLASS_METHOD
@@ -280,6 +280,11 @@ class ASTPrinterText
 
     elif opcode is AST_OPCODE_INVOKE_METHOD
       # TODO: Is it left or right node?
+      if node.parent.opcode is AST_OPCODE_BLOCK
+        # Left node - add spaces prefix.
+        __mold_printToStdOutput(prefix)
+      endif
+
       this._printNode(prefix, children[0])
       __mold_printToStdOutput('.')
       __mold_printToStdOutput(value)
