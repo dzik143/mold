@@ -50,9 +50,6 @@ class VMachineStack
     global MIR_OPCODE_GETLEN, MIR_OPCODE_LOAD_ARGC, MIR_OPCODE_LOAD_ARGV
     global MIR_OPCODE_LOAD_MOLD_SOURCE, MIR_OPCODE_MOVE_BACK, MIR_OPCODE_PRINT_ERROR
 
-    # TODO: Review it: global argc, argv
-
-
     # TODO: Optimize it.
     dataStack = [[]]
     locals    = dataStack[0]
@@ -76,11 +73,6 @@ class VMachineStack
 
     # Dirty hack: push main() return address out of code.
     stack.push(99999999)
-
-    # TODO: Better handling of undefined retval.
-    x             = []
-    defaultRetVal = '__mold_unsetRetVal__'
-    badRetVal     = x[0]
 
     deepIdx        = 0
     paramBaseStack = []
@@ -242,8 +234,6 @@ class VMachineStack
           # We need it to avoid eating new result (this pointer)
           # when constructor called just after.
           retValStack[deepIdx] = stack.peekN(proto['paramsCnt'] + 2)
-        else
-          retValStack[deepIdx] = defaultRetVal
         endif
 
       elif opcode is MIR_OPCODE_INIT_FRAME
@@ -258,13 +248,6 @@ class VMachineStack
         stack.push(retValStack[deepIdx])
         deepIdx = deepIdx - 1
         locals  = dataStack[deepIdx]
-
-      #elif opcode is MIR_OPCODE_RETVAL_GUARD
-      #  # TODO: More elegant way.
-      #  if retValStack[deepIdx] is defaultRetVal
-      #    die("error: unset return variable '" + item[1] + "' in '" + item[2] + "' function")
-      #    retValStack[deepIdx] = badRetVal
-      #  endif
 
       elif opcode is MIR_OPCODE_LOAD_RETVAL
         stack.push(retValStack[deepIdx])
@@ -300,9 +283,8 @@ class VMachineStack
         ip      = methodProto['ptr'] - 1
         deepIdx = deepIdx + 1
         # TODO: Better handling here?
-        retValStack[deepIdx] = defaultRetVal
-        locals               = []
-        dataStack[deepIdx]   = locals
+        locals             = []
+        dataStack[deepIdx] = locals
 
       elif opcode is MIR_OPCODE_PRINT
         # Built-in print
