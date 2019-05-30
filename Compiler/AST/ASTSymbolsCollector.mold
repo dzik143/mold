@@ -255,23 +255,11 @@ class ASTSymbolsCollector
 
         for idx in 0 .. funcProto.paramsCnt
           paramName = funcProto.params[idx]
-          #paramNode = AST_CreateNodeVariable(paramName)
-          # TODO: Clean up this mess.
-          #funcProto.children[funcProto.childrenCnt] = paramNode
-          #funcProto.childrenCnt = funcProto.childrenCnt + 1
-
           nodeBody.symbolTable.insertParam(paramName, paramShift + idx)
-          #nodeBody.symbolTable.assignNode(paramName, paramNode)
 
           # TODO: Handle non-variant parameters.
           nodeBody.symbolTable.assignType(paramName, -1)
         endfor
-
-        # TODO: Review it.
-        #if typeof(funcProto.rv) isnt 'undefined'
-        #  nodeBody.symbolTable.insertRetVal(funcProto.rv)
-        #  #nodeBody.symbolTable.assignNode(funcProto.rv, AST_CreateNodeVariable(funcProto.rv))
-        #endif
       endif
 
       this._collectSymbolsFromLeftNode(nodeBody.symbolTable, nodeBody)
@@ -329,7 +317,7 @@ class ASTSymbolsCollector
       node.symbolInfo = symbolInfo
 
     elif opcode is AST_OPCODE_REFERENCE
-       # Thera are two cases:
+       # There are two cases:
        # 1. x[i] = ...  : x is left , i is right
        # 2. ...  = x[i] : x is right, i is right
        # Rule:
@@ -363,32 +351,10 @@ class ASTSymbolsCollector
           symbolInfo = symbolTable.lookupForWriteOrInsert(lval.value)
         endif
 
-        readHits = symbolInfo.readHits
-
         lval.symbolInfo = symbolInfo
 
         # Scan rval.
         this._collectSymbolsFromRightNode(symbolTable, rval)
-
-        #if symbolInfo.kind isnt SYMBOL_KIND_VAR_RETVAL
-        #  # TODO: Handle non-variant function return type.
-        #  symbolTable.assignType(lval.value, AST_GetDataType(rval))
-        #endif
-
-        # Track data types.
-        # TODO: Review it?
-        # We need it to handle x = x o ... assing
-        # (x is on both sides and can change type during processing of right side)
-        # astDataTypeBefore = AST_GetDataType(rval)
-
-        #if symbolInfo.kind is SYMBOL_KIND_VAR_GLOBAL
-        #  # We ignore local access to global variables here to avoid false "init value".
-        #  # TODO: Use null?
-        #  x = []
-        #  symbolTable.assignNode(lval.value, x[0])
-        #  symbolTable.assignValue(lval.value, x[0])
-        #
-        #else
 
         # Save value node for constant propagation.
         symbolTable.assignNode(lval.value, lval)
@@ -396,7 +362,6 @@ class ASTSymbolsCollector
         if AST_IsImm(rval)
           symbolTable.assignValue(lval.value, rval.value)
         endif
-
 
         # Handle well-known types.
         if rval.opcode is AST_OPCODE_CALL_NEW
@@ -418,22 +383,10 @@ class ASTSymbolsCollector
               symbolInfo.classProto = newClassProto
             endif
           endif
-
-        #elif rval.opcode is AST_OPCODE_CALL
-          # TODO
-          #funcProto = symbolTable.lookupFunction(rval.value, rval.childrenCnt).proto
-          #if typeof(funcProto.rv) is 'undefined'
-          #  die('error: function "' + funcProto.name + '" has no return value')
-          #endif
         endif
 
         # TODO: Review it.
         symbolTable.assignType(lval.value, AST_GetDataType(rval))
-
-        # Restore read stats for lval variable to avoid false x = x + 1 usage.
-        # It's not useful read.
-        # TODO: Review it.
-        #symbolInfo.readHits = readHits
 
         # TODO?
         # Handle overwrite one object by instance of another one.
@@ -559,7 +512,6 @@ class ASTSymbolsCollector
       iterNode.symbolInfo = bodyNode.symbolTable.lookupForReadAndWrite(iterNode.value)
       bodyNode.symbolTable.assignType(iterNode.value, AST_DATA_INTEGER)
 
-      #this._collectSymbolsFromLeftNode(symbolTable, iterNode)
       this._collectSymbolsFromRightNode(symbolTable, idxStartNode)
       this._collectSymbolsFromRightNode(symbolTable, idxEndNode)
       this._collectSymbolsFromRightNode(symbolTable, idxStepNode)

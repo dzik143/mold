@@ -96,14 +96,6 @@ class ASTOptimizerCSE
 
       if lval.opcode is AST_OPCODE_VARIABLE
         AST_Hash(lval)
-
-      elif lval.opcode is AST_OPCODE_REFERENCE
-        # x[i] = ...
-        # Clean hash to force refresh.
-        # TODO: Fix this hack.
-        #x = []
-        #this.mapOfExpressions[AST_Hash(lval)] = x[0]
-        #lval.hash = x[0]
       endif
 
       # TODO: Clean up this mess.

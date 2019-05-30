@@ -6,13 +6,6 @@ DEBUG_AST_OPTIMIZER = true
 DEBUG_MOLD = true
 NodeId = 1000
 
-
-#import 'AST/AST.mold'
-#import 'Parser/ParserMold.mold'
-
-#class Parser
-#endclass
-
 DEBUG_AST_OPTIMIZER = true
 UNICC_DEBUG         = true
 

@@ -56,7 +56,6 @@ class Stack
 
   method eat()
     this.size = this.size - 1
-    #this.pop()
   endmethod
 
   method eatN(n)

@@ -15,7 +15,6 @@
 import 'Utils/SymbolTable.mold'
 import 'AST/ASTModuleResolver.mold'
 import 'AST/ASTSymbolsCollector.mold'
-import 'AST/ASTOptimizer.mold'
 import 'AST/ASTEvaluator.mold'
 import 'AST/ASTOptimizerConstantFolding.mold'
 import 'AST/ASTOptimizerCSE.mold'
@@ -44,7 +43,6 @@ class AppMold
     this.symbolTable                 = new SymbolTable(this)
     this.astOptimizerConstantFolding = new ASTOptimizerConstantFolding(this)
     this.astSymbolsCollector         = new ASTSymbolsCollector(this)
-    this.astOptimizer                = new ASTOptimizer(this)
     this.astEvaluator                = new ASTEvaluator(this)
     this.astOptimizerCSE             = new ASTOptimizerCSE(this)
     this.astOptimizerDeadCodeRemove  = new ASTOptimizerDeadCodeRemove(this)
@@ -112,10 +110,6 @@ class AppMold
 
   method getAstSymbolsCollector() -> rv
     rv = this.astSymbolsCollector
-  endmethod
-
-  method getAstOptimizer() -> rv
-    rv = this.astOptimizer
   endmethod
 
   method getAstOptimizerConstantFolding() -> rv

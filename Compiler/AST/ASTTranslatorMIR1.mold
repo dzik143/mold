@@ -222,12 +222,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
   #                     Implement ASTTranslator interface
   # ----------------------------------------------------------------------------
 
-  #method _onScopeEnter(ast)
-  #endmethod
-
-  #method _onScopeLeave()
-  #endmethod
-
   method _neg(value) -> rv
     rv = this.popOneArgAndEmitOpcode('neg')
   endmethod
@@ -528,8 +522,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
     methodId = this.code.methodsMap[methodName]
 
     if typeof(methodId) is 'undefined'
-      # TODO: Clean up this mess.
-      #die("error: object has no method '" + methodName + "'")
       # Forward declaration.
       methodId = this.code.createMethod(methodName)
     endif
@@ -541,7 +533,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.mapOfCalledMethods[methodName] = true
 
     params = this.popParametersBeforeCall(paramsCnt)
-    #this.emitTwoArgsOpcode('vcall', rv, methodId, params)
+
     # TODO: Use emitTwoArgsOpcode() if fixed.
     this._emitOneItem(['vcall', rv, methodId, params])
 
@@ -568,9 +560,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
       # Enter loop scope.
       this._enterScope(bodyAst)
 
-      #oldSymbolTable   = this.symbolTable
-      #this.symbolTable = bodyAst.symbolTable
-
       # Is it the end?
       # if not (idx < idxEnd) goto end
       this.emitTwoArgsOpcode('jmp_if_ge', labelForEnd, iterName, idxEnd)
@@ -590,7 +579,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
       this.emitTargetOnlyOpcode('jmp', labelForBegin)
 
       # Leave loop scope.
-      #this.symbolTable = oldSymbolTable
       this._leaveScope()
 
     this.emitLabel(labelForEnd)
@@ -743,11 +731,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
     for idx in 0 .. codeNodesCnt
       this._executeNode(codeNodes[idx])
     endfor
-
-    # TODO: Handle undefined variants ?
-    #if typeof(rvName) isnt 'undefined'
-    #  this.emitZeroArgsOpcode('rv_guard')
-    #endif
 
     this.emitRet()
     this.emitProcEnd()

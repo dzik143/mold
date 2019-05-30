@@ -281,16 +281,11 @@ class CodeGeneratorX64
             endif
           endif
 
-          #if opcode is 'conv'
-          #  dstType = currentSymbols[dst].type
-          #  opcode  = opcode + '_' + xType + '_to_' + dstType
-          #else
           opcode = opcode + '_' + xType
-          #endif
         endif
       endif
 
-      #print '[x86]', opcode, dst, x, y
+      # print '[x86]', opcode, dst, x, y
 
       # Dispatch opcode.
       if opcode is 'nop'
@@ -927,50 +922,28 @@ class CodeGeneratorX64
         name      = item[2]
         params    = item[3]
         paramsCnt = len(params)
-        /*
-        if name is 'bitwiseAnd'
-          # TODO: Clean up this hack.
-          this.variantDestroy(rv)
-          print '  mov rax, [', params[0], '+ Variant_t.value]'
-          print '  and rax, [', params[1], '+ Variant_t.value]'
-          print '  mov [', rv, '+ Variant_t.type], VARIANT_INTEGER'
-          print '  mov [', rv, '+ Variant_t.value], rax'
 
-        elif name is 'ord'
-          # TODO: Clean up this hack.
+        # Generic call.
+        if typeof(rv) isnt 'undefined'
+          # Function has return value.
+          # TODO: Clean up this mess.
           this.variantDestroy(rv)
-          print '  mov eax, 0'
-          print '  mov al, byte ptr [', params[0], '+ Variant_t.value]'
-          print '  cmp dword ptr [', params[0], '+ Variant_t.type], VARIANT_STRING'
-          print '  cmovz rcx, byte ptr [', params[0], '+ Buffer_t.bytesPtr]'
-          print '  cmovz al, [rcx]'
-          print '  mov [', rv, '+ Variant_t.type], VARIANT_INTEGER'
-          print '  mov [', rv, '+ Variant_t.value], rax'
+          this.push('rdi')
+          this.pushParametersBeforeCall(params)
+          this.lea('rdi', rv)
+          this.mov('[rdi + Variant_t.type]', 'VARIANT_UNDEFINED')
+          this.call(name)
+          this.pop('rdi')
 
         else
-        */
-          # Generic call.
-          if typeof(rv) isnt 'undefined'
-            # Function has return value.
-            # TODO: Clean up this mess.
-            this.variantDestroy(rv)
-            this.push('rdi')
-            this.pushParametersBeforeCall(params)
-            this.lea('rdi', rv)
-            this.mov('[rdi + Variant_t.type]', 'VARIANT_UNDEFINED')
-            this.call(name)
-            this.pop('rdi')
+          # No return value.
+          this.pushParametersBeforeCall(params)
+          this.call(name)
+        endif
 
-          else
-            # No return value.
-            this.pushParametersBeforeCall(params)
-            this.call(name)
-          endif
-
-          if paramsCnt > 4
-            print '  add rsp,', paramsCnt * 8 - 32
-          endif
-        #endif
+        if paramsCnt > 4
+          print '  add rsp,', paramsCnt * 8 - 32
+        endif
 
       elif opcode is 'vcall'
         rv        = item[1]
@@ -1107,26 +1080,7 @@ class CodeGeneratorX64
         print ''
         print '  ; clean frame'
         print '  ; -----------'
-/*
-        TODO
 
-        localsCnt  = currentProcProto['localsCnt']
-        tempsCnt   = currentProcProto['tempsCnt']
-
-        for idx in 0 .. localsCnt
-          this.variantDestroy('.loc' + str(idx))
-        endfor
-
-        for idx in 0 .. tempsCnt
-          this.variantDestroy('.tmp' + str(idx))
-        endfor
-
-        if (currentProcName is 'start') and (globalsCnt > 0)
-          for globalIdx in 0 .. globalsCnt
-            this.variantDestroy('global' + str(globalIdx))
-          endfor
-        endif
-*/
         # TODO: Clean up this mess.
         symbols = currentSymbols
 
@@ -1150,21 +1104,6 @@ class CodeGeneratorX64
         print '  add  rsp,', currentFrameSize
         print '  pop  rbp'
         print '  ret'
-
-        # TODO: Is it still needed?
-        /*
-        if (typeof(currentProcRv) isnt 'undefined') and (currentProcName isnt 'constructor')
-          print ''
-          print '; return value guard'
-          print '; ------------------'
-          print '.errorUnsetRetVal:'
-          print '  invoke GetStdHandle, -12'
-          print '  invoke WriteFile, rax, .unsetRetValMsg, 53, NumberOfBytesWritten, 0'
-          print '  mov    [rdi + Variant_t.type], VARIANT_UNDEFINED'
-          print '  call   [ExitProcess]'
-          print '  .unsetRetValMsg db "error: unset return variable ' + "'" + currentProcRv + "' in '" + currentProcName + "' function" + '", 13, 10'
-        endif
-        */
 
       elif opcode is 'proc'
         proto            = item[1]
@@ -1306,11 +1245,6 @@ class CodeGeneratorX64
         print ''
         print '  ; code'
         print '  ; ----'
-
-      #elif opcode is 'rv_guard'
-      #  # TODO: Is it still needed?
-      #  print '  cmp  [rdi + Variant_t.type], -1'
-      #  print '  jz   .errorUnsetRetVal'
 
       elif originalOpcode is 'create_array'
         this.variantDestroy(dst)
@@ -1501,12 +1435,6 @@ class CodeGeneratorX64
       print 'dq ', procName, ',', 'name_' + procName
     endfor
 
-    #for procIdx in 0 .. proceduresCnt
-    #  # Fetch procedure meta.
-    #  procName  = procedures[procIdx]['name']
-    #  print 'dq ', procName, ',', 'name_' + procName
-    #endfor
-
     print 'dq endOfCodeSection, name_endOfCodeSection'
     print 'SymbolTableEnd:'
     print 'dq 0, 0'
@@ -1520,11 +1448,6 @@ class CodeGeneratorX64
       print 'name_' + procName, 'db', "'" + procName + "', 0"
     endfor
 
-    #for procIdx in 0 .. proceduresCnt
-    #  # Fetch procedure meta.
-    #  procName  = procedures[procIdx]['name']
-    #  print 'name_' + procName, 'db', "'" + procName + "', 0"
-    #endfor
     print "name_endOfCodeSection db 'out of code section', 0"
 
   endmethod

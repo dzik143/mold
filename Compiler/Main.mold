@@ -1,7 +1,7 @@
 ################################################################################
 #                                                                              #
 # This file is part of Mold project.                                           #
-# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+# Copyright (c) 2015, 2019 Sylwester Wysocki (sw143@wp.pl).                    #
 #                                                                              #
 # The Mold code and any derived work however based on this software are        #
 # copyright of Sylwester Wysocki. Redistribution and use of the present        #
@@ -25,17 +25,7 @@ import 'AST/ASTTranslatorMIR0.mold'
 import 'AST/ASTTranslatorMIR1.mold'
 import 'MIR/MIRQuadCollector.mold'
 import 'CodeGenerator/CodeGeneratorX64.mold'
-
-#import 'AST/ASTTranslator.mold'
-#import 'AST/ASTTranslatorMIR0.mold'
-#import 'AST/ASTTranslatorMIR1.mold'
-
-#import 'MIR/MIRQuadCollector.mold'
-#import 'MIR/MIRQuadTypeGuess.mold'
-#import 'MIR/MIRQuadTypeConvert.mold'
 import 'MIR/MIRQuadOptimizer.mold'
-
-#import 'CodeGenerator/CodeGeneratorX64.mold'
 import 'VM/VMachineStack.mold'
 
 # ------------------------------------------------------------------------------
@@ -189,7 +179,7 @@ else
     app.getAstOptimizerVCall().processNode(ast)
 
     app._debug('Inline optimization... (TEMPORARY DISABLED!)')
-#    app.getAstOptimizerInline().processNode(ast)
+    #app.getAstOptimizerInline().processNode(ast)
 
     # Common preprocess before go-on with further AST optimization.
     app._debug('Evaluating AST nodes...')
@@ -266,12 +256,6 @@ else
       # Run build quads process.
       app._debug('Translating AST...')
       astTranslator.run(ast)
-
-      # TODO
-      #if optimizationLevel >= 1
-      #  # TODO: Auto flush on stream end.
-      #  mirQuadTypeGuess.flush()
-      #endif
 
       if mode is 'mir1'
         # Print MIR quads only

@@ -59,12 +59,6 @@ class ASTOptimizerConstantFolding
       elif type is 'string'
         newOpcode = AST_DATA_STRING
 
-      #elif type is 'array'
-      #  newOpcode = AST_DATA_ARRAY
-      #
-      #elif type is 'map'
-      #  newOpcode = AST_DATA_MAP
-
       elif type is 'undefined'
         newOpcode = AST_DATA_UNDEFINED
 
@@ -377,7 +371,6 @@ class ASTOptimizerConstantFolding
         endif
 
         # TODO: Clean up this mess.
-        #if newValue isnt value
         if typeof(newValue) isnt 'undefined'
           this._setToImm(node, newValue)
           isNodeChanged = true

@@ -326,10 +326,6 @@ class ASTTranslatorMIR0 extends ASTTranslator
     endLabelId  = code.createLabel()
 
     # [step, endIdx, startIdx]
-    #if this._isset(iterName) is false
-    #  symbolTable.insertLocalVolatile(iterName)
-    #endif
-
     iterSymbolInfo    = symbolTable.lookup(iterName)
     iterId            = code.storeLocal(iterSymbolInfo.id)
     iterSymbolInfo.id = iterId
@@ -398,8 +394,6 @@ class ASTTranslatorMIR0 extends ASTTranslator
   endmethod
 
   method _emitFunctionBody(funcName, funcProto)
-    # __mold_warning '_emitFunctionBody ' + funcName
-
     this._debug('Going to emit function body "' + str(funcName) + '"')
 
     params      = funcProto['params']
@@ -409,20 +403,12 @@ class ASTTranslatorMIR0 extends ASTTranslator
     codeAst     = children[0]
     rvName      = funcProto['rv']
 
-    # TODO: Review it.
-    #if funcProto['name'] is 'constructor'
-    #  rvName = '__mold_this'
-    #endif
-
     code = this.code
 
     # TODO: Simplify it.
     oldSymbolTable   = this.symbolTable
     this.symbolTable = codeAst.symbolTable
 
-    # TODO: Review it. Original code was:
-    #labelId = funcProto['labelId']
-    #code.emitLabel(labelId)
     labelId = code.createAndEmitLabel()
 
     funcProto['ptr'] = code.resolveLabel(labelId)
@@ -431,50 +417,26 @@ class ASTTranslatorMIR0 extends ASTTranslator
     code.comment('function ' + funcName)
     code.comment('-----------------------------------------------')
 
-    #symbolTable.enterScope()
+    code.beginProc(funcName, params, paramsCnt, rvName)
 
-      code.beginProc(funcName, params, paramsCnt, rvName)
+    # TODO: Clean up this mess.
+    if typeof(funcProto.className) isnt 'undefined'
+      # Add this parameter.
+      paramsCnt = paramsCnt + 1
+    endif
 
-      #deepIdx = symbolTable.getDeep()
-      #if deepIdx > 1
-      #  this._error('nested functions are not supported yet')
-      #endif
+    code.initFrame(paramsCnt)
 
-      # Insert call parameters to symbol table.
-      #for idx in 0 .. paramsCnt
-      #  symbolTable.insertParam(params[idx], idx)
-      #endfor
+    # Translate code.
+    codeNodes    = codeAst['children']
+    codeNodesCnt = codeAst['childrenCnt']
 
-      # TODO: Clean up this mess.
-      if typeof(funcProto.className) isnt 'undefined'
-        # Add this parameter.
-        paramsCnt = paramsCnt + 1
-      endif
+    for idx in 0 .. codeNodesCnt
+      this._executeNode(codeNodes[idx])
+    endfor
 
-      code.initFrame(paramsCnt)
-
-      # Translate function code.
-      # Declare variable to store return value.
-      #if typeof(rvName) isnt 'undefined'
-      #  symbolTable.insertRetVal(rvName)
-      #endif
-
-      # Translate code.
-      codeNodes    = codeAst['children']
-      codeNodesCnt = codeAst['childrenCnt']
-
-      for idx in 0 .. codeNodesCnt
-        this._executeNode(codeNodes[idx])
-      endfor
-
-      #if typeof(rvName) isnt 'undefined'
-      #  code.retValGuard(rvName, funcName)
-      #endif
-
-      code.ret(paramsCnt)
-      code.endProc()
-
-    #symbolTable.leaveScope()
+    code.ret(paramsCnt)
+    code.endProc()
 
     this.symbolTable = oldSymbolTable
 
@@ -491,33 +453,11 @@ class ASTTranslatorMIR0 extends ASTTranslator
   # ----------------------------------------------------------------------------
 
   method run(ast)
-    #x    = []
-    #noRv = x[0]
-
-    # Jmp to entry point.
-    #code         = this.code
-    #entryPointId = code.createLabel()
-    #code.jmp(entryPointId)
-
-    # Insert argv[] and argc to globals.
-
-    # TODO: Clean up this mess.
-    #this.code.symbolTable = this.symbolTable
-
-    # Resolve imports recursively.
-    #this._resolveImports(ast)
-    #this._declareGlobals(ast)
-
-    # Translate main code behind entry point.
-
-    #code.comment('-----------------------------------------------')
-    #code.comment('entry point')
-    #code.comment('-----------------------------------------------')
-
     this._executeNode(ast)
 
     # TODO: Review it.
     this.symbolTable = ast.symbolTable
+
     this._emitGlobals()
   endmethod
 endclass
