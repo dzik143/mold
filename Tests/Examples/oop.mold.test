@@ -91,7 +91,7 @@ class Animal
 endclass
 
 dzik     = new Animal('Dzik Ambrozy')
-paprotka = new Animal('Paprotka monika')
+paprotka = new Animal('Paprotka Monika')
 
 dzik.sayHello()
 paprotka.sayHello()
@@ -101,11 +101,11 @@ print 'paprotka.name =', paprotka.name
 
 EXPECTED_OUTPUT:
 Animal created: Dzik Ambrozy
-Animal created: Paprotka monika
+Animal created: Paprotka Monika
 Hello, I'm Dzik Ambrozy
-Hello, I'm Paprotka monika
+Hello, I'm Paprotka Monika
 dzik.name     = Dzik Ambrozy
-paprotka.name = Paprotka monika
+paprotka.name = Paprotka Monika
 -------------------------------------------------------------------------------
 
 TEST "Derived class"
@@ -656,4 +656,101 @@ obj.foo()
 
 EXPECTED_OUTPUT:
 134209536
+--------------------------------------------------------------------------------
+
+TEST "Two classes, one virtual call"
+
+class A
+  method foo()
+    print 'A::foo()'
+  endmethod
+endclass
+
+class B
+  method foo()
+    print 'B::foo()'
+  endmethod
+endclass
+
+function run(x)
+  if x is 1
+    obj = new A()
+    obj.foo()
+
+  else
+    obj = new B()
+    obj.foo()
+  endif
+endfunction
+
+run(1)
+run(2)
+
+EXPECTED_OUTPUT:
+A::foo()
+B::foo()
+--------------------------------------------------------------------------------
+
+TEST "Overwrite object variable with instance of another class #1"
+
+class A
+  method foo(x)
+    print 'A::foo(', x, ')'
+  endmethod
+endclass
+
+class B
+  method foo(x)
+    print 'B::foo(', x, ')'
+  endmethod
+endclass
+
+function run(x)
+  obj = new A()
+  obj.foo(x)
+
+  if x is 1
+    obj = new B()
+    obj.foo(x)
+  endif
+endfunction
+
+run(1)
+run(2)
+
+EXPECTED_OUTPUT:
+A::foo( 1 )
+B::foo( 1 )
+A::foo( 2 )
+--------------------------------------------------------------------------------
+
+TEST "Overwrite object variable with instance of another class #2"
+
+class A
+  method foo()
+    print 'A::foo()'
+  endmethod
+endclass
+
+class B
+  method foo()
+    print 'B::foo()'
+  endmethod
+endclass
+
+# Create two objects.
+objA = new A()
+objB = new B()
+
+# Use A instance.
+obj = objA
+obj.foo()
+
+# Use B instance.
+obj = objB
+obj.foo()
+
+EXPECTED_OUTPUT:
+A::foo()
+B::foo()
 --------------------------------------------------------------------------------

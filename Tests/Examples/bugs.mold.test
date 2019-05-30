@@ -260,7 +260,6 @@ OK!
 TEST "Bug: Broken code after CSE within different blocks"
 
 x     = [{'value': 1234}]
-idx   = 0
 obj   = {'idx': 0}
 value = -1
 
@@ -279,4 +278,40 @@ print value
 EXPECTED_OUTPUT:
 {'idx': 10}
 1234
+-------------------------------------------------------------------------------
+
+TEST "Bug: Fake useless assign alert (dead code remove)"
+
+function bar(name, idx)
+  print 'bar(', name, idx, ')'
+endfunction
+
+function foo(opcode)
+  paramIdx = 0
+
+  if opcode is 1234
+    bar('first', 0)
+    paramIdx = paramIdx + 1
+  endif
+
+  for idx in 0 .. 10
+    bar('next', paramIdx)
+    paramIdx = paramIdx + 1
+  endfor
+endfunction
+
+foo(1234)
+
+EXPECTED_OUTPUT:
+bar( first 0 )
+bar( next 1 )
+bar( next 2 )
+bar( next 3 )
+bar( next 4 )
+bar( next 5 )
+bar( next 6 )
+bar( next 7 )
+bar( next 8 )
+bar( next 9 )
+bar( next 10 )
 -------------------------------------------------------------------------------
