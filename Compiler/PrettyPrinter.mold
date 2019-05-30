@@ -1,5 +1,4 @@
 DEBUG_AST_OPTIMIZER = true
-DEBUG_MOLD = true
 NodeId = 1000
 
 import 'AppMold.mold'
@@ -8,9 +7,10 @@ import 'AST/ASTPrinterText.mold'
 import 'AST/ASTPrinterHtml.mold'
 
 SHOW_TYPE_CAST_NODES_ENABLED = false #true
+DEBUG_MOLD = true
 
 x = []
-undefined = [0]
+undefined = x[0]
 object = 0
 import '1.ast'
 #import 'Parser/ParserMold.mold'
@@ -29,7 +29,7 @@ astSymbolsCollector = app.getAstSymbolsCollector()
 astPrinterText      = new ASTPrinterText()
 astPrinterHtml      = new ASTPrinterHtml()
 
-print 'Building symbol table...'
+app._debug('Building symbol table...')
 astSymbolsCollector.buildSymbolTable(ast)
 
 # ------------------------------------------------------------------------------
@@ -38,8 +38,8 @@ astSymbolsCollector.buildSymbolTable(ast)
 app._debug('VCall optimization...')
 app.getAstOptimizerVCall().processNode(ast)
 
-app._debug('Inline optimization...')
-app.getAstOptimizerInline().processNode(ast)
+#app._debug('Inline optimization...')
+#app.getAstOptimizerInline().processNode(ast)
 
 # Common preprocess before go-on with further AST optimization.
 app._debug('Evaluating AST nodes...')
@@ -59,7 +59,7 @@ app.getAstOptimizerCSE().processNode(ast)
 
 # ------------------------------------------------------------------------------
 
-print 'Type cast...'
+app._debug('Type cast...')
 app.getAstTypeCast().processNode(ast)
 
 astPrinterText.printNode(ast)

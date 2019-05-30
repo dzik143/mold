@@ -92,14 +92,14 @@ class MIRCode
     this.procedures    = []
     this.proceduresCnt = 0
     this.tmpMax        = 0
-    this.localMax      = 0
+    this.localMax      = -1
     this.globalMax     = -1
 
     # Track types and var usage.
-    this.localWriteCnt  = []
-    this.localReadCnt   = []
-    this.globalWriteCnt = []
-    this.globalReadCnt  = []
+    #this.localWriteCnt  = []
+    #this.localReadCnt   = []
+    #this.globalWriteCnt = []
+    #this.globalReadCnt  = []
 
     # Store class metas.
     this.classMap       = {}
@@ -133,14 +133,15 @@ class MIRCode
 
   method endProc()
     proto = this.procedures[this.proceduresCnt]
+
     proto['endAddr']   = this.codeCnt
     proto['localsCnt'] = this.localMax + 1
     proto['tempsCnt']  = this.codeCnt - proto['startAddr']
 
-    proto['localWriteCnt']  = this.localWriteCnt
-    proto['localReadCnt']   = this.localReadCnt
-    proto['globalWriteCnt'] = this.globalWriteCnt
-    proto['globalReadCnt']  = this.globalReadCnt
+    #proto['localWriteCnt']  = this.localWriteCnt
+    #proto['localReadCnt']   = this.localReadCnt
+    #proto['globalWriteCnt'] = this.globalWriteCnt
+    #proto['globalReadCnt']  = this.globalReadCnt
 
     this.proceduresCnt = this.proceduresCnt + 1
   endmethod
@@ -301,16 +302,17 @@ class MIRCode
   method loadLocal(id)
     global MIR_OPCODE_LOAD_LOCAL
     this.push1(MIR_OPCODE_LOAD_LOCAL, id)
+
     if id > this.localMax
       this.localMax = id
     endif
 
     # Count read hits.
-    readCnt = this.localReadCnt[id]
-    if typeof(readCnt) is 'undefined'
-      readCnt = 0
-    endif
-    this.localReadCnt[id] = readCnt + 1
+    #readCnt = this.localReadCnt[id]
+    #if typeof(readCnt) is 'undefined'
+    #  readCnt = 0
+    #endif
+    #this.localReadCnt[id] = readCnt + 1
   endmethod
 
   method loadParamN(id)
@@ -322,16 +324,16 @@ class MIRCode
     global MIR_OPCODE_LOAD_GLOBAL
     this.push1(MIR_OPCODE_LOAD_GLOBAL, id)
 
-    if id > this.globalMax
-      this.globalMax = id
-    endif
+    #if id > this.globalMax
+    #  this.globalMax = id
+    #endif
 
     # Count read hits.
-    readCnt = this.globalReadCnt[id]
-    if typeof(readCnt) is 'undefined'
-      readCnt = 0
-    endif
-    this.globalReadCnt[id] = readCnt + 1
+    #readCnt = this.globalReadCnt[id]
+    #if typeof(readCnt) is 'undefined'
+    #  readCnt = 0
+    #endif
+    #this.globalReadCnt[id] = readCnt + 1
 
   endmethod
 
@@ -345,19 +347,24 @@ class MIRCode
     this.push0(MIR_OPCODE_LOAD_INDEX)
   endmethod
 
-  method storeLocal(id)
+  method storeLocal(id) -> newId
     global MIR_OPCODE_STORE_LOCAL
-    this.push1(MIR_OPCODE_STORE_LOCAL, id)
-    if id > this.localMax
-      this.localMax = id
+
+    if typeof(id) is 'undefined'
+      newId = this.localMax + 1
+      this.localMax = newId
+    else
+      newId = id
     endif
 
+    this.push1(MIR_OPCODE_STORE_LOCAL, newId)
+
     # Count write hits.
-    writeCnt = this.localWriteCnt[id]
-    if typeof(writeCnt) is 'undefined'
-      writeCnt = 0
-    endif
-    this.localWriteCnt[id] = writeCnt + 1
+    #writeCnt = this.localWriteCnt[id]
+    #if typeof(writeCnt) is 'undefined'
+    #  writeCnt = 0
+    #endif
+    #this.localWriteCnt[id] = writeCnt + 1
   endmethod
 
   method storeParamN(id)
@@ -365,20 +372,24 @@ class MIRCode
     this.push1(MIR_OPCODE_STORE_PARAMN, id)
   endmethod
 
-  method storeGlobal(id)
+  method storeGlobal(id) -> newId
     global MIR_OPCODE_STORE_GLOBAL
-    this.push1(MIR_OPCODE_STORE_GLOBAL, id)
 
-    if id > this.globalMax
-      this.globalMax = id
+    if typeof(id) is 'undefined'
+      newId = this.globalMax + 1
+      this.globalMax = newId
+    else
+      newId = id
     endif
+
+    this.push1(MIR_OPCODE_STORE_GLOBAL, newId)
 
     # Count write hits.
-    writeCnt = this.globalWriteCnt[id]
-    if typeof(writeCnt) is 'undefined'
-      writeCnt = 0
-    endif
-    this.globalWriteCnt[id] = writeCnt + 1
+    #writeCnt = this.globalWriteCnt[id]
+    #if typeof(writeCnt) is 'undefined'
+    #  writeCnt = 0
+    #endif
+    #this.globalWriteCnt[id] = writeCnt + 1
   endmethod
 
   method storeRetVal()
@@ -514,11 +525,21 @@ class MIRCode
     this.push0(MIR_OPCODE_LOAD_MOLD_SOURCE)
   endmethod
 
-  method initFrame(frameInfo)
+  method initFrame(paramsCnt)
     global MIR_OPCODE_INIT_FRAME
+    /*
     procProto = this.procedures[this.proceduresCnt]
     procProto['symbols'] = frameInfo
-    this.push1(MIR_OPCODE_INIT_FRAME, procProto.paramsCnt)
+
+    # TODO: Clean up this mess.
+    if typeof(procProto.classProto) isnt 'undefined'
+      # Add this parameter.
+      paramsCnt = procProto.paramsCnt + 1
+    else
+      paramsCnt = procProto.paramsCnt
+    endif
+    */
+    this.push1(MIR_OPCODE_INIT_FRAME, paramsCnt)
   endmethod
 
   method createLabel() -> rv

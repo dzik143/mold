@@ -21,6 +21,7 @@ import 'AppMold.mold'
 import 'AST/ASTSymbolsCollector.mold'
 import 'AST/ASTPrinterText.mold'
 import 'AST/ASTPrinterHtml.mold'
+import 'AST/ASTTranslatorMIR0.mold'
 import 'AST/ASTTranslatorMIR1.mold'
 import 'MIR/MIRQuadCollector.mold'
 import 'CodeGenerator/CodeGeneratorX64.mold'
@@ -65,19 +66,19 @@ for idx in 1 .. argc
     # mold -c <file.mold>
     mode = 'compiler'
     print 'Error: compiler mode not implemented yet.'
-    print 'Try --asm option and assemble result on by own instead.'
+    print 'Try --asm option and assemble result on by own.'
     exit()
 
   elif argv[idx] is '--asm'
-    # Generate assembler
+    # Generate assembler output
     mode = 'asm'
 
   elif argv[idx] is '--mir0'
-    # Generate assembler
+    # Generate MIR0 output (stack based)
     mode = 'mir0'
 
   elif (argv[idx] is '--mir') or (argv[idx] is '--mir1')
-    # Generate assembler
+    # Generate MIR1 output (register based)
     mode = 'mir1'
 
   elif argv[idx] is '--ast'
@@ -211,24 +212,24 @@ else
   endif
 
   if (mode is 'mir0') or (mode is 'interpreter')
-    die('error: mir0 based modes are temporary disabled')
+    #die('error: mir0 based modes are temporary disabled')
     # Translate program to MIR0 (stack based).
-#    astTranslator = new ASTTranslatorMIR0()
-#    astTranslator.run(ast)
-#    code = astTranslator.code
+    astTranslator = new ASTTranslatorMIR0(app)
+    astTranslator.run(ast)
+    code = astTranslator.code
 
     # Load MIR0 code into virtual machine.
-#    vm = new VMachineStack()
-#    vm.loadCode(code)
-#
-#    if mode is 'mir0'
-#      # Dump stack MIR0 only.
-#      vm.dumpCode()
-#
-#    elif mode is 'interpreter'
-#      # Run virtual machine (stack based).
-#      vm.run()
-#    endif
+    vm = new VMachineStack()
+    vm.loadCode(code)
+
+    if mode is 'mir0'
+      # Dump stack MIR0 only.
+      vm.dumpCode()
+
+    elif mode is 'interpreter'
+      # Run virtual machine (stack based).
+      vm.run()
+    endif
 
   else
     # Prepare quads process toolchain.

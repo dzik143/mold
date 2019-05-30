@@ -250,14 +250,20 @@ class ASTOptimizerInline
         this._processNode_injectInlineFunctions(newChildren, symbolTable, rvalNode)
 
       elif (childNode.opcode is AST_OPCODE_CALL) or (childNode.opcode is AST_OPCODE_INVOKE_METHOD)
+        # foo()
         callParams    = childNode.children
         callParamsCnt = childNode.childrenCnt
 
+        # Resolve function calls in parameters list.
         for paramIdx in 0 .. callParamsCnt
           this._processNode_injectInlineFunctions(newChildren, symbolTable, callParams[paramIdx])
         endfor
 
+        # Resolve function call itself.
+        this._processNode_injectInlineFunctions(newChildren, symbolTable, childNode)
+
       else
+        # Process nodes recursively.
         this._processNode(symbolTable, childNode)
       endif
 

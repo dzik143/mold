@@ -241,7 +241,7 @@ class VMachineStack
           # TODO: Handle it in better way.
           # We need it to avoid eating new result (this pointer)
           # when constructor called just after.
-          retValStack[deepIdx] = stack.peekN(proto['paramsCnt'] + 1)
+          retValStack[deepIdx] = stack.peekN(proto['paramsCnt'] + 2)
         else
           retValStack[deepIdx] = defaultRetVal
         endif
@@ -259,12 +259,12 @@ class VMachineStack
         deepIdx = deepIdx - 1
         locals  = dataStack[deepIdx]
 
-      elif opcode is MIR_OPCODE_RETVAL_GUARD
-        # TODO: More elegant way.
-        if retValStack[deepIdx] is defaultRetVal
-          die("error: unset return variable '" + item[1] + "' in '" + item[2] + "' function")
-          retValStack[deepIdx] = badRetVal
-        endif
+      #elif opcode is MIR_OPCODE_RETVAL_GUARD
+      #  # TODO: More elegant way.
+      #  if retValStack[deepIdx] is defaultRetVal
+      #    die("error: unset return variable '" + item[1] + "' in '" + item[2] + "' function")
+      #    retValStack[deepIdx] = badRetVal
+      #  endif
 
       elif opcode is MIR_OPCODE_LOAD_RETVAL
         stack.push(retValStack[deepIdx])
@@ -292,7 +292,7 @@ class VMachineStack
           die("error: object has no method '" + methodName + "'")
         endif
 
-        if methodProto['paramsCnt'] isnt paramsCnt
+        if methodProto['paramsCnt'] isnt paramsCnt - 1
           die('error: ' + methodName + ' function requires exactly ' + str(methodProto['paramsCnt']) + ' parameter(s), but ' + str(paramsCnt) + ' were passed')
         endif
 
@@ -311,12 +311,13 @@ class VMachineStack
         sep       = ''
 
         # TODO: Optimize it.
-        for idx in 0 .. paramsCnt
+        for paramIdx in 0 .. paramsCnt
           __mold_printToStdOutput(sep)
-          __mold_printToStdOutput(stack.peekN(paramsCnt - idx))
+          __mold_printToStdOutput(stack.peekN(paramsCnt - paramIdx))
           sep = ' '
         endfor
         print ''
+
         stack.eatN(paramsCnt - 1)
 
       elif opcode is MIR_OPCODE_PRINT_STDOUT
@@ -370,7 +371,10 @@ class VMachineStack
     commentsCnt = codeObj.commentsCnt
     commentIdx  = 0
     labelIdx    = 0
-    ip          = 0
+
+    # TODO: It should works without this declaration, but after
+    # compilation does not.
+    txt = '[error]'
 
     for ip in 0 .. codeCnt
       # Fetch instruction
@@ -388,12 +392,12 @@ class VMachineStack
       endwhile
 
       # Emit label if any.
-      while (labelIdx < labelsCnt) and (labels[labelIdx] is ip)
-        # TODO
-        labelIdAsText = str(labels[labelIdx])
-        print labelIdAsText + ':'
-        labelIdx = labelIdx + 1
-      endwhile
+      #while (labelIdx < labelsCnt) and (labels[labelIdx] is ip)
+      #  # TODO
+      #  labelIdAsText = str(labels[labelIdx])
+      #  print labelIdAsText + ':'
+      #  labelIdx = labelIdx + 1
+      #endwhile
 
       # Dispatch opcode.
       if opcode is MIR_OPCODE_NOP
@@ -510,7 +514,7 @@ class VMachineStack
         txt = 'jmp.if.false ' + arg
 
       elif opcode is MIR_OPCODE_CALL
-        txt = 'call ' + arg
+        txt = 'call ' + str(item[1].ptr)
 
       elif opcode is MIR_OPCODE_INIT_FRAME
         txt = 'init.frame ' + arg
@@ -536,8 +540,8 @@ class VMachineStack
       elif opcode is MIR_OPCODE_VCALL
         txt = 'vcall ' + arg1
 
-      elif opcode is MIR_OPCODE_RETVAL_GUARD
-        txt = 'retval.guard'
+      #elif opcode is MIR_OPCODE_RETVAL_GUARD
+      #  txt = 'retval.guard'
 
       elif opcode is MIR_OPCODE_CREATE_OBJECT
         txt = 'create.object ' + item[1]['name']
@@ -572,8 +576,14 @@ class VMachineStack
         die("unknown opcode '" + str(opcode) + "'")
       endif
 
-      print '  ' + txt
+      labelPrefix = str(ip) + ':'
+      spacesCnt   = 5 - len(labelPrefix)
 
+      for spaceIdx in 0 .. spacesCnt
+        labelPrefix = labelPrefix + ' '
+      endfor
+
+      print labelPrefix, txt
     endfor
   endmethod
 endclass

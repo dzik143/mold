@@ -283,6 +283,7 @@ class ASTTranslator
   # ----------------------------------------------------------------------------
 
   method _enterScope(ast)
+    # This is real code:
     this.symbolTable = ast.symbolTable
     #this._onScopeEnter(ast)
   endmethod
@@ -313,7 +314,11 @@ class ASTTranslator
 
       else
         # TODO: Accumulate hits?
-
+        if symbolsCurrent[id].astType isnt item.astType
+          die('error: type conflict for variable "' + item.name + '"')
+          #symbolsCurrent[id].astType = -1
+          #item.astType = -1
+        endif
       endif
     endfor
   endmethod
@@ -935,7 +940,7 @@ class ASTTranslator
       this.symbolTable = bodyAst.symbolTable
 
       # Is it really needed?
-      astDataType = AST_GetDataType(children[1])
+      astDataType = AST_GetDataType(children[0])
       mirDataType = AST_ConvertDataTypeToMIR(astDataType)
       this.symbolTable.assignMirType(iteratorName, mirDataType)
 

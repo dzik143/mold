@@ -413,11 +413,12 @@ class SymbolTable
     endif
   endmethod
 
-  method insertParam(name) -> newEntry
+  method insertParam(name, paramId) -> newEntry
     global SYMBOL_KIND_VAR_PARAM
     newEntry = {
       'name': name,
-      'kind': SYMBOL_KIND_VAR_PARAM
+      'kind': SYMBOL_KIND_VAR_PARAM,
+      'id': paramId
     }
     this.insert(name, newEntry)
   endmethod

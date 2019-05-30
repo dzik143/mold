@@ -36,11 +36,14 @@ class Stack
 
   method pop() -> rv
     if this.size is 0
+      # TODO: Handle terminal node.
+      rv = -1
       die('error: stack is empty')
-    endif
+    else
 
-    this.size = this.size - 1
-    rv = this.data[this.size]
+      this.size = this.size - 1
+      rv = this.data[this.size]
+    endif
   endmethod
 
   method over()
@@ -52,7 +55,8 @@ class Stack
   endmethod
 
   method eat()
-    this.pop()
+    this.size = this.size - 1
+    #this.pop()
   endmethod
 
   method eatN(n)

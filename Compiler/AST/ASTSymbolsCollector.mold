@@ -241,12 +241,16 @@ class ASTSymbolsCollector
         # Init new symbol table if not existing yet.
         nodeBody.symbolTable = symbolTable.enterScopeForProcedure(funcName)
 
+        paramShift = 0
+
         # TODO: Why we need to add this param by hand?
         if opcode is AST_OPCODE_CLASS_METHOD
           # Optimize it.
-          symbolInfo = nodeBody.symbolTable.insertParam('this')
+          symbolInfo = nodeBody.symbolTable.insertParam('this', 0)
           symbolInfo.classProto = funcProto.classProto
           nodeBody.symbolTable.assignType('this', AST_DATA_OBJECT)
+
+          paramShift = 1
         endif
 
         for idx in 0 .. funcProto.paramsCnt
@@ -256,7 +260,7 @@ class ASTSymbolsCollector
           #funcProto.children[funcProto.childrenCnt] = paramNode
           #funcProto.childrenCnt = funcProto.childrenCnt + 1
 
-          nodeBody.symbolTable.insertParam(paramName)
+          nodeBody.symbolTable.insertParam(paramName, paramShift + idx)
           #nodeBody.symbolTable.assignNode(paramName, paramNode)
 
           # TODO: Handle non-variant parameters.
@@ -398,7 +402,21 @@ class ASTSymbolsCollector
         if rval.opcode is AST_OPCODE_CALL_NEW
           # lval = new Xxx(...)
           if symbolTable.isset(rval.value) is true
-            symbolInfo.classProto = symbolTable.lookupClass(rval.value).proto
+            oldClassProto = symbolInfo.classProto
+            newClassProto = symbolTable.lookupClass(rval.value).proto
+
+            if (typeof(oldClassProto) isnt 'undefined') and (oldClassProto isnt newClassProto)
+              # Class mismatch.
+              # obj = new A()
+              # obj = new B()
+              #
+              # TODO: Clean up this mess.
+              this._debug('Class mismatch while assigning new object at node #' + str(node.id))
+              x = []
+              symbolInfo.classProto = x[0]
+            else
+              symbolInfo.classProto = newClassProto
+            endif
           endif
 
         #elif rval.opcode is AST_OPCODE_CALL
@@ -414,7 +432,15 @@ class ASTSymbolsCollector
 
         # Restore read stats for lval variable to avoid false x = x + 1 usage.
         # It's not useful read.
-        symbolInfo.readHits = readHits
+        # TODO: Review it.
+        #symbolInfo.readHits = readHits
+
+        # TODO?
+        # Handle overwrite one object by instance of another one.
+        # objA = new A()
+        # objB = new B()
+        # obj = objA
+        # obj = objB
 
       else
         # Complex lval - go on deeper.
@@ -490,6 +516,17 @@ class ASTSymbolsCollector
               endif
 
               symbolInfo1.astType = astType
+
+            else
+              classProto1 = symbolInfo1.classProto
+              classProto2 = symbolInfo2.classProto
+
+              if classProto1 isnt classProto2
+                # Object class mismatch. Keep virtual call.
+                # TODO: Clean up this mess.
+                x = []
+                symbolInfo1.classProto = x[0]
+              endif
             endif
 
             # TODO: Optimize it.
@@ -511,6 +548,10 @@ class ASTSymbolsCollector
       idxEndNode   = children[2]
       idxStepNode  = children[3]
       bodyNode     = children[4]
+
+      if symbolTable.isset(iterNode.value) is true
+        die('error: "' + iterNode.value + '" is already defined in another context')
+      endif
 
       # TODO: Optimize it.
       bodyNode.symbolTable = symbolTable.enterScopeForLoop()

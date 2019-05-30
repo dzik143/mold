@@ -15,12 +15,6 @@
 import 'AST/ASTTranslator.mold'
 import 'MIR/MIR.mold'
 
-# ------------------------------------------------------------------------------
-# WARNING !
-# This class is obsolete and is not used in current toolchain.
-# It translates AST to MIR0 (stack based).
-# ------------------------------------------------------------------------------
-
 class ASTTranslatorMIR0 extends ASTTranslator
 
   # ----------------------------------------------------------------------------
@@ -42,6 +36,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
   endmethod
 
   method _callStrEscape(x) -> rv
+    rv = false
     this._error('_callStrEscape not implemented')
   endmethod
 
@@ -145,6 +140,17 @@ class ASTTranslatorMIR0 extends ASTTranslator
     rv = false
   endmethod
 
+  method _loadImmAsVariant(value) -> rv
+    # TODO: Is it really needed?
+    rv = this._loadImm(value)
+  endmethod
+
+  method _convert(x, srcType, dstType) -> rv
+    # TODO: Review it.
+    # Do nothing. We always use variant.
+    rv = false
+  endmethod
+
   method _compareEQ(x, y) -> rv
     this.code.cmpEQ()
     rv = false
@@ -180,10 +186,12 @@ class ASTTranslatorMIR0 extends ASTTranslator
     global SYMBOL_KIND_VAR_GLOBAL
     global SYMBOL_KIND_VAR_PARAM
     global SYMBOL_KIND_VAR_RETVAL
+    global SYMBOL_KIND_CONST
 
-    info = this.symbolTable.lookup(name)
-    kind = info['kind']
-    id   = info['id']
+    symbolInfo = this.symbolTable.lookup(name)
+
+    kind = symbolInfo['kind']
+    id   = symbolInfo['id']
     rv   = false
 
     if kind is SYMBOL_KIND_VAR_LOCAL
@@ -202,6 +210,10 @@ class ASTTranslatorMIR0 extends ASTTranslator
       # Return value of current function.
       this.code.loadRetVal()
 
+    elif kind is SYMBOL_KIND_CONST
+      # Constant - treat as imm.
+      this.code.loadImm(symbolInfo.value)
+
     else
       this._error("unexpected symbol kind '" + name + "' (" + str(kind) + ")")
     endif
@@ -213,17 +225,17 @@ class ASTTranslatorMIR0 extends ASTTranslator
     global SYMBOL_KIND_VAR_PARAM
     global SYMBOL_KIND_VAR_RETVAL
 
-    info = this.symbolTable.lookup(name)
-    kind = info['kind']
-    id   = info['id']
+    symbolInfo = this.symbolTable.lookup(name)
+    kind       = symbolInfo['kind']
+    id         = symbolInfo['id']
 
     if kind is SYMBOL_KIND_VAR_LOCAL
       # Local variable
-      this.code.storeLocal(id)
+      symbolInfo.id = this.code.storeLocal(id)
 
     elif kind is SYMBOL_KIND_VAR_GLOBAL
       # Global variable
-      this.code.storeGlobal(id)
+      symbolInfo.id = this.code.storeGlobal(id)
 
     elif kind is SYMBOL_KIND_VAR_PARAM
       # One of call parameters.
@@ -234,6 +246,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
       this.code.storeRetVal()
 
     else
+      # TODO: Handle terminal nodes.
       this._error("unexpected symbol kind '" + name + "' (" + str(kind) + ")")
     endif
   endmethod
@@ -313,12 +326,13 @@ class ASTTranslatorMIR0 extends ASTTranslator
     endLabelId  = code.createLabel()
 
     # [step, endIdx, startIdx]
-    if this._isset(iterName) is false
-      symbolTable.insertLocalVolatile(iterName)
-    endif
+    #if this._isset(iterName) is false
+    #  symbolTable.insertLocalVolatile(iterName)
+    #endif
 
-    iterId = symbolTable.lookup(iterName)['id']
-    code.storeLocal(iterId)
+    iterSymbolInfo    = symbolTable.lookup(iterName)
+    iterId            = code.storeLocal(iterSymbolInfo.id)
+    iterSymbolInfo.id = iterId
 
     # [step, endIdx]
     code.emitLabel(loopLabelId)
@@ -411,10 +425,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
     #code.emitLabel(labelId)
     labelId = code.createAndEmitLabel()
 
-    this._debug('DUPA22')
     funcProto['ptr'] = code.resolveLabel(labelId)
-
-    this._debug('DUPA3')
 
     code.comment('-----------------------------------------------')
     code.comment('function ' + funcName)
@@ -434,8 +445,13 @@ class ASTTranslatorMIR0 extends ASTTranslator
       #  symbolTable.insertParam(params[idx], idx)
       #endfor
 
-      # TODO: Simplify it.
-      code.initFrame(this.symbolTable.exportSymbols())
+      # TODO: Clean up this mess.
+      if typeof(funcProto.className) isnt 'undefined'
+        # Add this parameter.
+        paramsCnt = paramsCnt + 1
+      endif
+
+      code.initFrame(paramsCnt)
 
       # Translate function code.
       # Declare variable to store return value.
@@ -451,9 +467,9 @@ class ASTTranslatorMIR0 extends ASTTranslator
         this._executeNode(codeNodes[idx])
       endfor
 
-      if typeof(rvName) isnt 'undefined'
-        code.retValGuard(rvName, funcName)
-      endif
+      #if typeof(rvName) isnt 'undefined'
+      #  code.retValGuard(rvName, funcName)
+      #endif
 
       code.ret(paramsCnt)
       code.endProc()
@@ -475,21 +491,18 @@ class ASTTranslatorMIR0 extends ASTTranslator
   # ----------------------------------------------------------------------------
 
   method run(ast)
-    x    = []
-    noRv = x[0]
+    #x    = []
+    #noRv = x[0]
 
     # Jmp to entry point.
-    code         = this.code
-    entryPointId = code.createLabel()
-    code.jmp(entryPointId)
+    #code         = this.code
+    #entryPointId = code.createLabel()
+    #code.jmp(entryPointId)
 
     # Insert argv[] and argc to globals.
-    # TODO: Review it.
-    this.symbolTable = ast.symbolTable
-    this._emitGlobals()
 
     # TODO: Clean up this mess.
-    this.code.symbolTable = this.symbolTable
+    #this.code.symbolTable = this.symbolTable
 
     # Resolve imports recursively.
     #this._resolveImports(ast)
@@ -497,18 +510,14 @@ class ASTTranslatorMIR0 extends ASTTranslator
 
     # Translate main code behind entry point.
 
-    code.comment('-----------------------------------------------')
-    code.comment('entry point')
-    code.comment('-----------------------------------------------')
-
-    code.emitLabel(entryPointId)
-    code.beginProc('start', false, 0, noRv)
-
-    # TODO: Simplify it.
-    code.initFrame(this.symbolTable.exportSymbols())
+    #code.comment('-----------------------------------------------')
+    #code.comment('entry point')
+    #code.comment('-----------------------------------------------')
 
     this._executeNode(ast)
-    code.ret(0)
-    code.endProc()
+
+    # TODO: Review it.
+    this.symbolTable = ast.symbolTable
+    this._emitGlobals()
   endmethod
 endclass
