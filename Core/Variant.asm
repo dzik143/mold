@@ -2712,24 +2712,31 @@ __MOLD_LoadExternalFunction:
 
 __MOLD_Peek:
 __mold_peek:
-    ; TODO: Don't alloc new string.
-    mov    r8, rdi
-    call   __MOLD_VariantLoadFromIndex
 
-    mov    rdx, [rdi + Variant_t.value]
-    mov    rdx, [rdx + Buffer_t.bytesPtr]
-    mov    al, [rdx + String_t.text]
-    and    rax, 0xff
+    cmp    [rcx + Variant_t.type], VARIANT_STRING
+    jnz    .errorNotString
 
-    push   rax
-    mov    rcx, rdi
-    call   __MOLD_VariantDestroy
-    pop    rax
+    mov    rcx, [rcx + Variant_t.value]    ; rcx = string (Buffer_t)
+    mov    rdx, [rdx + Variant_t.value]    ; rdx = index  (int64)
+    mov    rcx, [rcx + Buffer_t.bytesPtr]  ; rcx = string (String_t)
+
+    cmp    [rcx + String_t.length], rdx    ; is len(string) <= index?
+    jbe    .errorOutOfRange
+
+    mov    al, [rcx + String_t.text + rdx] ; al  = string[index]
+    and    rax, 0xff                       ; rax = string[index]
 
     mov    [rdi + Variant_t.value], rax
     mov    [rdi + Variant_t.type], VARIANT_INTEGER
-
     ret
+
+.errorNotString:
+    cinvoke printf, 'peek: not a string'
+    int 3
+
+.errorOutOfRange:
+    cinvoke printf, 'peek: out of range'
+    int 3
 
 ;###############################################################################
 ;
