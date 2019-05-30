@@ -198,8 +198,12 @@ else
     app._debug('Constant folding...')
     app.getAstOptimizerConstantFolding().processNode(ast)
 
-    app._debug('If optimization...')
-    app.getAstOptimizerIf().processNode(ast)
+    if (mode is 'mir0') or (mode is 'interpreter')
+      app._debug('If optimization... (TEMPORARY DISABLED FOR MIR0!)')
+    else
+      app._debug('If optimization...')
+      app.getAstOptimizerIf().processNode(ast)
+    endif
 
     app._debug('Dead code elimination...')
     app.getAstOptimizerDeadCodeRemove().processNode(ast)
