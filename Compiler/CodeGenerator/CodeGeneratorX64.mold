@@ -91,11 +91,6 @@ class CodeGeneratorX64
     endif
   endmethod
 
-  method variantMoveAndDestroy(dst, src)
-    this.variantDestroy(dst)
-    this.variantMove(dst, src)
-  endmethod
-
   method pushParametersBeforeCall(params)
     paramsCnt = len(params)
     regParams = ['rcx', 'rdx', 'r8', 'r9']
