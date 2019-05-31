@@ -327,3 +327,14 @@ TEST "Overlapped source and destination string: x = y + x (SKIPPED!)
 
 EXPECTED_OUTPUT:
 -------------------------------------------------------------------------------
+
+TEST "Store one character at array index'
+x = 'text'
+y = [x[0]]
+print x
+print y
+
+EXPECTED_OUTPUT:
+text
+['t']
+-------------------------------------------------------------------------------

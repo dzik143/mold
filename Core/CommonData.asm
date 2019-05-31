@@ -27,6 +27,7 @@ MemoryReallocCnt dq 0
 
 PrintBuffer db 0 dup 32
 
+
 ; Static 'true' and 'false' strings.
 StringTrue              Variant_t VARIANT_STRING, 0, StringTrueBufferHolder
 StringTrueBufferHolder  Buffer_t 5, -1, 0, StringTrueBufferBytes
@@ -52,3 +53,13 @@ StringBoolean             Variant_t VARIANT_STRING, 0, StringBooleanBufferHolder
 StringBooleanBufferHolder Buffer_t  8, -1, 0, StringBooleanBufferBytes
 StringBooleanBufferBytes  StringHead_t 7
                           db 'boolean', 0
+
+OneCharacterStringTemp             Variant_t VARIANT_STRING, 0, OneCharacterStringTempBufferHolder
+OneCharacterStringTempBufferHolder Buffer_t  2, -1, 0, OneCharacterStringTempBufferBytes
+OneCharacterStringTempBufferBytes  StringHead_t 1
+OneCharacterStringTempPeek         db 0, 0
+
+OneCharacterStringTemp2             Variant_t VARIANT_STRING, 0, OneCharacterStringTempBufferHolder2
+OneCharacterStringTempBufferHolder2 Buffer_t  2, -1, 0, OneCharacterStringTempBufferBytes2
+OneCharacterStringTempBufferBytes2  StringHead_t 1
+OneCharacterStringTempPeek2         db 0, 0

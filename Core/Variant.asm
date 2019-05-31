@@ -55,6 +55,7 @@ VARIANT_OBJECT    EQU 9
 VARIANT_TYPE_MAX  EQU 9
 
 VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE EQU 1
+VARIANT_FLAG_ONE_CHARACTER            EQU 2
 
 VARIANT_MAP_DEFAULT_BUCKETS_CNT    EQU 16
 VARIANT_OBJECT_DEFAULT_BUCKETS_CNT EQU 16
@@ -125,6 +126,9 @@ proc __MOLD_VariantCheck
     jmp  .ok
 
 .checkString:
+
+    test  [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jnz   .ok
 
     mov   rax, [rcx + Variant_t.value]
     test  rax, rax
@@ -218,6 +222,7 @@ proc __MOLD_PrintVariant uses r12, v
 .fmtSeparator db ', ', 0
 .fmtEmpty     db '', 0
 .fmtAfterKey  db ': ', 0
+.fmtChar      db '%c', 0
 .jmpTable     dq .boolean, .array, .map, .object
 
 .complexOrBoolean:
@@ -238,18 +243,16 @@ proc __MOLD_PrintVariant uses r12, v
     ret
 
 .string:
+    test    [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jz      .ordinaryString
 
-  ; TODO: Wrong order when redirect to file?
-  ;  cinvoke GetStdHandle, -11
+.oneCharacterString:
+    cinvoke printf, .fmtChar, dl
+    ret
 
-  ;  mov     rcx, rax
-  ;  mov     r8,  [rdx + String_t.length]
+.ordinaryString:
     mov     rdx, [rdx + Buffer_t.bytesPtr]
     lea     rdx, [rdx + String_t.text]
-  ;  lea     r9,  [NumberOfBytesWritten]
-
-  ;  cinvoke WriteFile, rcx, rdx, r8, r9, 0
-
     cinvoke printf, .fmtString, rdx
 
     ret
@@ -489,14 +492,18 @@ __MOLD_VariantConvertToString:
     ; -----------------------------------------------
 
 .string:
-    mov     [rdx + Variant_t.type], VARIANT_STRING ; rv.type  = VARIANT_STRING
-    mov     [rdx + Variant_t.value], r9
+    ; TODO: Clean up this mess.
+    xchg    rcx, rdx
+    jmp     __MOLD_VariantMove
 
-    DEBUG_CHECK_VARIANT rdx
+    ;mov     [rdx + Variant_t.type], VARIANT_STRING ; rv.type  = VARIANT_STRING
+    ;mov     [rdx + Variant_t.value], r9
 
-    mov     rcx, rdx
-    call    __MOLD_VariantAddRef
-    ret
+    ;DEBUG_CHECK_VARIANT rdx
+
+    ;mov     rcx, rdx
+    ;call    __MOLD_VariantAddRef
+    ;ret
 
 .notString:
 
@@ -553,6 +560,7 @@ __MOLD_VariantConvertPrimitiveToString:
 
     mov     [rdx + Variant_t.type], VARIANT_STRING ; rv.type  = VARIANT_STRING
     mov     [rdx + Variant_t.value], rax           ; rv.value = new string buffer
+    mov     [rdx + Variant_t.flags], 0             ; rv.flags = none
     mov     rax, [rax + Buffer_t.bytesPtr]
     push    rax
 
@@ -919,6 +927,11 @@ proc __MOLD_VariantAdd x, y, rv
      mov       r10, [rdx + Variant_t.value]   ; r10 = y.buffer (Buffer_t)
      push      r9
 
+     mov       [OneCharacterStringTempPeek], r10b
+     lea       rax, [OneCharacterStringTempBufferHolder]
+     test      [rdx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+     cmovnz    r10, rax
+
      mov       r9,  [r9  + Buffer_t.bytesPtr] ; r9  = x.buffer (String_t)
      mov       r10, [r10 + Buffer_t.bytesPtr] ; r10 = y.buffer (String_t)
 
@@ -982,7 +995,8 @@ proc __MOLD_VariantAdd x, y, rv
      mov       byte [rdi], 0
      mov       [rdx + String_t.length], r11          ; rv.length = len(x) + len(y)
 
-     mov       [r8 + Variant_t.type],  VARIANT_STRING
+     mov       [r8 + Variant_t.type], VARIANT_STRING
+     and       [r8 + Variant_t.flags], NOT VARIANT_FLAG_ONE_CHARACTER
      xchg      [r8 + Variant_t.value], rax
      mov       rsi, r8
 
@@ -1183,23 +1197,23 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
 
   ; string x string
   .case_ss:
-    mov       rcx, [rcx + Variant_t.value] ; rcx = x.value
-    mov       rdx, [rdx + Variant_t.value] ; rdx = y.value
+    ; TODO: Clean up this mess.
+    ; TODO: Is this code used anymore?
+    cinvoke printf, 'error: string order compare not implemented'
+    int 3
 
-    push      r8
-    cinvoke   strcmp
-    pop       r8
+    ;push      r8
+    ;cinvoke   strcmp
+    ;pop       r8
 
-    mov       rdx, rax
-    xor       rax, rax
-    test      rdx, rdx
-    opcode_ii al
+    ;mov       rdx, rax
+    ;xor       rax, rax
+    ;test      rdx, rdx
+    ;opcode_ii al
 
-    mov       [r8 + Variant_t.value], rax
-
-    DEBUG_CHECK_VARIANT r8
-
-    ret
+    ;mov       [r8 + Variant_t.value], rax
+    ;DEBUG_CHECK_VARIANT r8
+    ;ret
 
   .error:
     mov       [r8 + Variant_t.value], 0
@@ -1268,10 +1282,23 @@ proc __MOLD_VariantCompareEQ x, y, rv
 
 .compare_ss:
     ; TODO: Optimize it.
-    mov     rcx, [rcx + Variant_t.value]   ; rcx  = x.value
-    mov     rdx, [rdx + Variant_t.value]   ; rdx = x.value
-    mov     rcx, [rcx + Buffer_t.bytesPtr]
-    mov     rdx, [rdx + Buffer_t.bytesPtr]
+    mov     r9,  [rcx + Variant_t.value]   ; r9  = x.value
+    mov     r10, [rdx + Variant_t.value]   ; r10 = x.value
+
+    ; TODO: Clean up this mess.
+    mov     [OneCharacterStringTempPeek], r9b
+    mov     [OneCharacterStringTempPeek2], r10b
+
+    lea     rax, [OneCharacterStringTempBufferHolder]
+    test    [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    cmovnz  r9, rax
+
+    lea     rax, [OneCharacterStringTempBufferHolder2]
+    test    [rdx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    cmovnz  r10, rax
+
+    mov     rcx, [r9 + Buffer_t.bytesPtr]
+    mov     rdx, [r10 + Buffer_t.bytesPtr]
 
     lea     rcx, [rcx + String_t.text]
     lea     rdx, [rdx + String_t.text]
@@ -1279,6 +1306,7 @@ proc __MOLD_VariantCompareEQ x, y, rv
     push    r8
     cinvoke strcmp
     pop     r8
+
     test    rax, rax
     setz    al
     and     rax, 1
@@ -1966,9 +1994,6 @@ proc __MOLD_VariantLoadFromIndex box, index, rv
     ret
 
 .string:
-    ; TODO: Optimize it.
-    ; TODO: Clean up this mess.
-
     mov    [r8 + Variant_t.type], VARIANT_UNDEFINED
 
     cmp    [rdx + Variant_t.type], VARIANT_INTEGER
@@ -1982,38 +2007,14 @@ proc __MOLD_VariantLoadFromIndex box, index, rv
     mov    rcx, [rcx + Buffer_t.bytesPtr]         ; rcx = string buffer (String_t)
     mov    rdx, [rdx + Variant_t.value]           ; rdx = idx           (integer)
 
+    mov    eax, 0                                 ; rax = 0
     cmp    rdx, [rcx + String_t.length]
     jae    .stringOutOfRangePeek
 
-    mov    al,  [rcx + String_t.text + rdx]       ; al  = value[idx]    (char)
-
-    ; --------------------------------------------------------------------------
-    ; Already string target, just copy one char
-    ; --------------------------------------------------------------------------
-
-.reuseExistingString:
-
-    ; TODO
-    ;cmp   [r8 + Variant_t.type], VARIANT_STRING
-    ;jnz   .targetNotAString
-
-    ; --------------------------------------------------------------------------
-    ; Target is not a string, allocate new one.
-    ; --------------------------------------------------------------------------
-
-.allocNewString:
-
-    push   rax r8
-    mov    rcx, 8
-    call   __MOLD_MemoryAlloc
-    pop    r8 rcx
-
-    mov    [r8 + Variant_t.type], VARIANT_STRING
-    mov    [r8 + Variant_t.value], rax
-
-    mov    rax, [rax + Buffer_t.bytesPtr]
-    mov    [rax + String_t.length], 1
-    mov    qword [rax + String_t.text], rcx
+    mov    al, [rcx + String_t.text + rdx]        ; rax = str[idx] (char)
+    mov    [r8 + Variant_t.type], VARIANT_STRING  ; rv.type  = string
+    mov    [r8 + Variant_t.value], rax            ; rv.value = box[idx] (char)
+    or     [r8 + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
 
 .stringOutOfRangePeek:
 
@@ -2398,11 +2399,15 @@ proc __MOLD_VariantDestroy
     ; ##########################################################################
 
 .freeString:
+    test   [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jnz    .oneCharacterString
+
     push   rcx
     mov    rcx, [rcx + Variant_t.value]
     call   __MOLD_MemoryRelease
     pop    rcx
 
+.oneCharacterString:
     mov    [rcx + Variant_t.value], 0
     ret
 endp
@@ -2438,9 +2443,15 @@ proc __MOLD_VariantLength value, rv
     ret
 
 .string:
+    mov     eax, 1
+    test    [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jnz     .oneCharacterString
+
     mov     rcx, [rcx + Variant_t.value]
     mov     rcx, [rcx + Buffer_t.bytesPtr]
     mov     rax, [rcx + String_t.length]
+
+.oneCharacterString:
     mov     [rdx + Variant_t.value], rax
 
     DEBUG_CHECK_VARIANT rdx
@@ -2478,12 +2489,19 @@ endp
 
 proc __MOLD_VariantAddRef
     ; rcx = Variant_t
+    ; TODO: Clean up this mess.
 
     DEBUG_CHECK_VARIANT rcx
 
-    cmp    [rcx + Variant_t.type], VARIANT_STRING
-    je    .addRef
+    cmp   [rcx + Variant_t.type], VARIANT_STRING
+    jnz    .notAString
 
+.string:
+    test  [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jnz   .noRefNeeded
+    jmp   .addRef
+
+.notAString:
     cmp   [rcx + Variant_t.type], VARIANT_ARRAY
     jb    .noRefNeeded
 
@@ -2506,17 +2524,26 @@ proc __MOLD_VariantMove
 
     DEBUG_CHECK_VARIANT rdx
 
-    mov   eax , [rdx + Variant_t.type]
-    mov   rdx , [rdx + Variant_t.value]
+    mov   rax, qword [rdx + Variant_t.type]  ; rax = type:flags (32bit + 32bit)
+    mov   rdx, qword [rdx + Variant_t.value] ; rdx = value      (64bit)
 
-    mov   [rcx + Variant_t.type] , eax
-    mov   [rcx + Variant_t.value] , rdx
+    mov   qword [rcx + Variant_t.type] , rax
+    mov   qword [rcx + Variant_t.value] , rdx
 
     DEBUG_CHECK_VARIANT rcx
 
+    ; TODO: Clean up this mess.
     cmp  eax, VARIANT_STRING
-    je   .addRef
+    jnz  .notAString
 
+.string:
+    test [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jnz  .noRefNeeded
+    mov  rcx, rdx
+    call __MOLD_MemoryAddRef
+    ret
+
+.notAString:
     cmp  eax, VARIANT_ARRAY
     jb   .noRefNeeded
 
@@ -2716,16 +2743,22 @@ __mold_peek:
     cmp    [rcx + Variant_t.type], VARIANT_STRING
     jnz    .errorNotString
 
-    mov    rcx, [rcx + Variant_t.value]    ; rcx = string (Buffer_t)
+    mov    rax, [rcx + Variant_t.value]    ; rax = string (Buffer_t)
+    test   [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jnz    .oneCharacterString
+
+.ordinaryString:
+
     mov    rdx, [rdx + Variant_t.value]    ; rdx = index  (int64)
-    mov    rcx, [rcx + Buffer_t.bytesPtr]  ; rcx = string (String_t)
+    mov    rcx, [rax + Buffer_t.bytesPtr]  ; rcx = string (String_t)
 
     cmp    [rcx + String_t.length], rdx    ; is len(string) <= index?
     jbe    .errorOutOfRange
 
     mov    al, [rcx + String_t.text + rdx] ; al  = string[index]
-    and    rax, 0xff                       ; rax = string[index]
 
+.oneCharacterString:
+    and    rax, 0xff                       ; rax = string[index]
     mov    [rdi + Variant_t.value], rax
     mov    [rdi + Variant_t.type], VARIANT_INTEGER
     ret
