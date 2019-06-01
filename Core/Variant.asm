@@ -83,7 +83,12 @@ struct String_t
 ends
 
 struct Array_t
-  itemsCnt dq ?
+  innerType dd ?
+  itemSize  db ?
+  reserved1 db ?
+  reserved2 db ?
+  reserved3 db ?
+  itemsCnt  dq ?
   items Variant_t ?
 ends
 
@@ -274,6 +279,9 @@ proc __MOLD_PrintVariant uses r12, v
     mov     rbx, [rdx + Array_t.itemsCnt]
     lea     rsi, [rdx + Array_t.items]
 
+    cmp     [rdx + Array_t.innerType], 0
+    jnz     .errorNonVariantItem
+
     or      rbx, rbx
     jz      .arrayEmpty
 
@@ -369,6 +377,11 @@ proc __MOLD_PrintVariant uses r12, v
 .error:
     cinvoke printf, '__MOLD_VariantPrint: error: invalid type %d', rax
     int 3
+
+.errorNonVariantItem:
+    cinvoke printf, '__MOLD_VariantPrint: error: non-variant inner types not implemented'
+    int 3
+
 endp
 
 proc __MOLD_PrintVariantLn
@@ -1864,12 +1877,7 @@ proc __MOLD_VariantLoadFromIndex box, index, rv
 
     cmp    rax, VARIANT_STRING
     je     .string
-
     jmp    .error
-
-;    jmp    [.jmpTable + rax * 8 - VARIANT_ARRAY * 8]
-
-;.jmpTable dq .array, .map, .map
 
     ; ==========================================================================
     ;                                    Array
@@ -1881,47 +1889,63 @@ proc __MOLD_VariantLoadFromIndex box, index, rv
 
     mov   rdx, [rdx + Variant_t.value]              ; rdx = idx          (integer)
     mov   rcx, [rcx + Variant_t.value]              ; rcx = array buffer (Buffer_t)
-    mov   rcx, [rcx + Buffer_t.bytesPtr]            ; rcx = array buffer (Array_t)
+    mov   r9,  [rcx + Buffer_t.bytesPtr]            ; r9  = array buffer (Array_t)
 
-    cmp   rdx, [rcx + Array_t.itemsCnt]
+    mov   eax, 0                                    ; eax = innerType    (undefined)
+    mov   ecx, 0                                    ; ecx = return value (undefined)
+
+    cmp   rdx, [r9 + Array_t.itemsCnt]
     jae   .errorOutOfBounds
 
-    shl   rdx, 1
-    mov   rax, [rcx + Array_t.items + rdx * 8]     ; array[idx] = value
-    mov   rcx, [rcx + Array_t.items + rdx * 8 + 8] ;
+    or    eax, [r9 + Array_t.innerType]             ; eax = innerType (got from box)
+    jz    .arrayLoadVariant
 
-    mov   [r8], rax                                ; rv = array[idx]
-    mov   [r8 + 8], rcx                            ;
+    ; TODO: Handle non-integer primitive.
+.arrayLoadPrimitive:
+    mov    cl, [r9 + Array_t.itemSize]               ; cl  = log2(size(item))
+    jmp    qword [.arrayLoadPrimitiveJumpTable + rcx*8]
+
+.arrayLoadInt8:
+    movsx  rcx, byte [r9 + Array_t.items + rdx]
+    jmp    .arrayDone
+
+.arrayLoadInt16:
+    movsx  rcx, word [r9 + Array_t.items + rdx*2]
+    jmp    .arrayDone
+
+.arrayLoadInt32:
+    movsxd rcx, dword [r9 + Array_t.items + rdx*4]
+    jmp    .arrayDone
+
+.arrayLoadInt64:
+    mov    rcx, qword [r9 + Array_t.items + rdx*8]
+    jmp    .arrayDone
+
+.arrayLoadVariant:
+    shl    rdx, 4
+    mov    rax, [r9 + Array_t.items + rdx]           ; rax = box[idx].type
+    mov    rcx, [r9 + Array_t.items + rdx + 8]       ; rcx = box[idx].value
+
+.errorOutOfBounds:
+.arrayDone:
+    mov   qword [r8 + Variant_t.type], rax         ; rv.type  = box[idx].type
+    mov   qword [r8 + Variant_t.value], rcx        ; rv.value = box[idx].value
 
     ; TODO: Clean up this mess.
-;    push  rcx r8
-;    cinvoke printf, '-> DUPA | '
-;    pop   r8 rcx
-
-;    push  rcx r8
-;    mov   rcx, r8
-;    call  __MOLD_PrintVariant
-;    pop   r8 rcx
-
     push  r8
     mov   rcx, r8
     call  __MOLD_VariantAddRef
     pop   r8
 
-;    push  rcx r8
-;    cinvoke printf, '<- DUPA |'
-;    pop   r8 rcx
-
     DEBUG_CHECK_VARIANT r8
 
     ret
 
-.errorOutOfBounds:
-    mov   [r8 + Variant_t.type], VARIANT_UNDEFINED
-
-    DEBUG_CHECK_VARIANT r8
-
-    ret
+.arrayLoadPrimitiveJumpTable:
+dq .arrayLoadInt8
+dq .arrayLoadInt16
+dq .arrayLoadInt32
+dq .arrayLoadInt64
 
     ; ==========================================================================
     ;                           Hash map or object
@@ -2038,6 +2062,7 @@ proc __MOLD_VariantLoadFromIndex box, index, rv
     jmp     .errorFinal
 
 .errorFinal:
+;    int 3
     cinvoke ExitProcess, 0
     ret
 endp
@@ -2303,6 +2328,9 @@ proc __MOLD_VariantDestroy
     or     rbx, rbx
     jz     .emptyArray
 
+    cmp    [rcx + Array_t.innerType], 0
+    jnz    .nonVariantArray
+
     lea    rsi, [rcx + Array_t.items]
 
 .freeArrayItem:
@@ -2314,6 +2342,7 @@ proc __MOLD_VariantDestroy
     jnz    .freeArrayItem
 
 .emptyArray:
+.nonVariantArray:
     pop    rsi
     pop    rbx
 

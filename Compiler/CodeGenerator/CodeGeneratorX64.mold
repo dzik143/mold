@@ -196,15 +196,85 @@ class CodeGeneratorX64
   endmethod
 
   method emitArrayBufferContent(name, items, wantDeepIdx, deepIdx)
-    itemsCnt = len(items)
+    itemsCnt  = len(items)
+
+    # TODO: Optimize it.
+    # TODO: Move innerType check to earliear stage.
+    innerType        = typeof(items[0])
+    innerSize        = 0
+    innerTypeForEmit = '0'
+    innerAsmType     = 'db'
+    innerValueMin    = items[0] # TODO: Use MAX_INTEGER like const?
+    innerValueMax    = items[0] # TODO: Use MIN_INTEGER like const?
+    innerItemIdx     = 1
+
+    goOn = true
+
+    while (goOn is true) and (innerItemIdx < itemsCnt)
+      itemValue = items[innerItemIdx]
+      itemType  = typeof(itemValue)
+
+      if itemType isnt innerType
+        # Various types in one array.
+        # Fall-back to variant storage and don't go anymore.
+        goOn = false
+
+      elif itemType is 'integer'
+        innerTypeForEmit = 'VARIANT_INTEGER'
+
+        # Track max/min values to compact array storage.
+        if (innerSize < 3) and ((itemValue < -2147483648) or (itemValue > 2147483647))
+         # 2^3 bytes = 8 bytes = 64 bit (qword)
+         innerSize    = 3
+         innerAsmType = 'dq'
+
+        elif (innerSize < 2) and ((itemValue < -32768) or (itemValue > 32767))
+         # 2^2 bytes = 4 bytes = 32 bit (dword)
+         innerSize    = 2
+         innerAsmType = 'dd'
+
+        elif (innerSize < 2) and ((itemValue < -128) or (itemValue > 127))
+         # 2^1 bytes = 2 bytes = 16 bit (word)
+         innerSize    = 1
+         innerAsmType = 'dw'
+        endif
+      endif
+
+      # Go to next item.
+      innerItemIdx = innerItemIdx + 1
+    endwhile
+
+    #print '; innerType:'     , innerType
+    #print '; innerValueMin:' , innerValueMin
+    #print '; innerValueMax:' , innerValueMax
 
     if wantDeepIdx is deepIdx
       bufferName      = name + '_buffer'
       bufferNameBytes = name + '_bufferBytes'
 
-      print bufferNameBytes, 'dq', itemsCnt
+      print bufferNameBytes, 'dd', innerTypeForEmit, '; inner type'
+      print 'db', innerSize, ' ; inner size'
+      print 'db ?, ?, ? ; reserved'
+      print 'dq', itemsCnt, '; itemsCnt'
+
+      # Emit items as flat array if possible.
+      if innerTypeForEmit isnt '0'
+        __mold_printToStdOutput(innerAsmType)
+        sep = ' '
+
+        for itemIdx in 0 .. itemsCnt
+          __mold_printToStdOutput(sep)
+          __mold_printToStdOutput(items[itemIdx])
+          sep = ', '
+        endfor
+        print ''
+
+        # Don't go on recursively.
+        itemsCnt = -1
+      endif
     endif
 
+    # Go on recursively for variant arrays.
     for itemIdx in 0 .. itemsCnt
       this.emitConstant(name + '_' + str(itemIdx), items[itemIdx], wantDeepIdx, deepIdx)
     endfor
@@ -1145,10 +1215,13 @@ class CodeGeneratorX64
           if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) or (symbol.kind is SYMBOL_KIND_VAR_PARAM)
             if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
               varSize = 16
+
             elif (symbol.type is 'int64') or (symbol.type is 'float64')
               varSize = 8
+
             elif (symbol.type is 'int32') or (symbol.type is 'bool32')
               varSize = 4
+
             else
               # TODO: Remove unneded assign.
               varSize = -1
@@ -1291,14 +1364,19 @@ class CodeGeneratorX64
       if symbol.kind is SYMBOL_KIND_VAR_GLOBAL
         if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
           print symbol.name, ' Variant_t 0, 0, 0'
+
         elif symbol.type is 'int64'
           print symbol.name, ' dq 0'
+
         elif symbol.type is 'int32'
           print symbol.name, ' dd 0'
+
         elif symbol.type is 'float64'
           print symbol.name, ' dq 0'
+
         elif symbol.type is 'bool32'
           print symbol.name, ' dd 0'
+
         else
           die('error: unhandled global type: ' + str(symbol.type))
         endif
