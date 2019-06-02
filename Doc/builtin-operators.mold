@@ -1,6 +1,6 @@
 # Assign value
 x = y # Assign y to x
-               
+
 # Arithmetic
 -x      # unary minus (result is a x with opposite sign)
 x + y   # add x to y (result is a sum)

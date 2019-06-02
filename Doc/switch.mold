@@ -9,12 +9,12 @@
 switch x
   case 1
     print 'x is 1'
-    
+
   case 2
     print 'x is 2'
 
   case 3
-    print 'x is 3'  
+    print 'x is 3'
 endswitch
 
 # We there are *EXACTLY* three scenarios, which are correct for x value and
@@ -22,13 +22,13 @@ endswitch
 switch x
   case 1
     print 'x is 1'
-    
+
   case 2
     print 'x is 2'
 
   case 3
     print 'x is 3'
-    
+
   otherwise
     # Unpredicted x value.
     print 'x is neither 1 nor 2 nor 3'
@@ -38,13 +38,13 @@ endswitch
 switch x
   case 1, 2, 3
     print 'x is 1, 2 or 3'
-    
+
   case 4..8
     print 'x is 4, 5, 6, 7 or 8'
 
   case 100
     print 'x is 100'
-    
+
   otherwise
     # Unpredicted x value.
     print 'x is neither 1 nor 2 nor 3'

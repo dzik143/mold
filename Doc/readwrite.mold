@@ -60,7 +60,7 @@ read from 'test.dat' values int32(a), int32(b), int32(c), float64(x), @close
 # ------------------------------------------------------------------------------
 # Multi-line read or write blocks
 # - we have a lot of I/O work to do and we want to keep clear source code
-#   to localize blocks, where contact with outer world (external file, network 
+#   to localize blocks, where contact with outer world (external file, network
 #   etc.) is located.
 # ------------------------------------------------------------------------------
 
@@ -95,7 +95,7 @@ write to 'test.dat'
 then
   # This code is executed asychronous when write is finished.
   print 'Write success!'
-  
+
 exception
   # This code is executed when write operation failed.
   print 'Error!'
@@ -106,17 +106,17 @@ endwrite
 # - we want to validate data, which we just read from external source
 # ------------------------------------------------------------------------------
 
-read from 'test.dat' 
+read from 'test.dat'
   # Load graph header.
   int32(numberOfVertexes)
   int32(numberOfConnections)
-  
+
   # Load connection pairs (startVertex, endVertex)
   for idx in 0 .. numberOfConnections
     int32(road[idx].startVertex) in range (0, numberOfVertexes)
     int32(road[idx].endVertex)   in range (0, numberOfVertexes)
   endfor
-  
+
 exception
   # Error while reading or vertex out-of-range.
 endread

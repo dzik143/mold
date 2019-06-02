@@ -10,7 +10,7 @@ max(a, b, c, d, ...) # maximum from list of values
 min(a, b, c, d, ...) # minimum from list of values
 avg(a, b, c, d, ...) # average value from list of values
 sum(a, b, c, d, ...) # sum of list of values
-                                            
+
 # ------------------------------------------------------------------------------
 # Bitwise operations
 # ------------------------------------------------------------------------------

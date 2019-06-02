@@ -4,9 +4,9 @@ switch [x, y]
     # anything x variant
 
   when ['integer', *], [*, 'double']
-    
+
 endswitch
- 
+
 
 ######################################
 # Read / write text data
@@ -98,7 +98,7 @@ write to 'test.dat'
 then
   # This code is executed asychronous when write is finished.
   print 'Write success!'
-  
+
 exception
   # This code is executed when write operation failed.
   print 'Error!'
@@ -108,32 +108,32 @@ endwrite
 # Validate data while reading
 ######################################
 
-read from 'test.dat' 
+read from 'test.dat'
   # Load graph header.
   int32(numberOfVertexes)
   int32(numberOfConnections)
-  
+
   # Load connection pairs (startVertex, endVertex)
   for idx in 0 .. numberOfConnections
     int32(road[idx].startVertex) in range (0, numberOfVertexes)
     int32(road[idx].endVertex)   in range (0, numberOfVertexes)
   endfor
-  
+
 exception
   # Error while reading or vertex out-of-range.
 endread
-                              
+
 ######################################
 
 read from '::80'
   # Read new data.
-  
-  
+
+
 connection
   # New connection arrived.
-  
-exception  
-  
+
+exception
+
 endread
 
 ######################################
@@ -182,6 +182,9 @@ x isnt storing y - x is array of map, but doesnt hold value y
 # Check does one element is stored inside other one (inside array or map)
 x is holded by y   - x is array or map and holds value y at some index/key
 x isnt holded by y - x is array of map, but doesnt hold value y
+
+x is holding y
+x isnt holding y
 
 x is inside y
 x is outside y

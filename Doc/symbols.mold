@@ -1,11 +1,11 @@
 Nieu¾yte:
 ~
-%   
-&   
+%
+&
 \
 ?
-            
-    
+
+
 
 Wykorzystane:
 
@@ -29,7 +29,7 @@ _   _foo     prywatna metoda
 
 []  x[i]     tablice
 {}: {'x': 1} mapy
-    
+
 ;            jednolinijkowe wyra¾enie
 
 '   'abc'    napisy
