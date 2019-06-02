@@ -87,7 +87,7 @@ class Vector3
   endmethod
 
   method getLength() -> rv
-    # Define method with calculate the length of the vector (norm).
+    # Define method whitch calculate the length of the vector (norm).
     rv = sqrt(this.x^2 + this.y^2 + this.z^2)
   endmethod
 

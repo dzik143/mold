@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------
 # While loop
 # When to use:
-# - we *DONT'T KNOWN* know how many steps is needed to do our work.
+# - we *DONT'T KNOWN* how many steps is needed to do our work.
 # ------------------------------------------------------------------------------
 
 while goOn is true
