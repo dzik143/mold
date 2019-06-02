@@ -1,0 +1,19 @@
+# Assign value
+x = y # Assign y to x
+               
+# Arithmetic
+-x      # unary minus (result is a x with opposite sign)
+x + y   # add x to y (result is a sum)
+x - y   # subtract y from x (result is a difference)
+x / y   # divide x by y (result is quotient)
+x * y   # multiply x by y (result is a product)
+x // y  # divide x by y, but treat them as integer (result is quotient)
+x mod y # x modulo y (result is the rest from x per y division)
+x ^ y   # x raised to y (result is a y-th power of x)
+|x|     # absolute value of x
+n!      # factorial of n
+n!!     # double factorial of n
+
+# Single bit access
+x.0  # Access to less significant bit
+x.31 # Access to 31-th bit (most signigicant for little-endian 32-bit int)

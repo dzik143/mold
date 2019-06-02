@@ -162,3 +162,42 @@ if x in range(1,10)
 endif
 
 ######################################
+
+#
+# POMYSLY (TODO):
+#
+
+# Check for map keys (TODO: Review it)
+x has key y   - item x existent, its a map and has field y (so x.y is existent)
+x hasnt key y - item x existent, its a map, but there is NO y field (so x.y isnt existent)
+
+# Check for array index (TODO: Review it)
+x has index y   - item x existent, its a indexed array item and index at index y existent (so x[y] is existent)
+x hasnt index y - item x existent, its a indexed array item, but there is NOT item at index y (so x[y] isnt existent)
+
+# Check does one element is stored inside other one (inside array or map)
+x is storing y   - x is array or map and holds value y at some index/key
+x isnt storing y - x is array of map, but doesnt hold value y
+
+# Check does one element is stored inside other one (inside array or map)
+x is holded by y   - x is array or map and holds value y at some index/key
+x isnt holded by y - x is array of map, but doesnt hold value y
+
+x is inside y
+x is outside y
+
+###########################
+
+x = 'Hello' ~ ' ' ~ 'Mold'
+x = 'Hello' % ' ' % 'Mold'
+x = 'Hello'   ' '   'Mold'
+
+x = 'Hello' || ' ' || 'Mold'
+x = 'Hello' ++ ' ' ++ 'Mold'
+x = 'Hello' -- ' ' -- 'Mold'
+x = 'Hello' :: ' ' :: 'Mold'
+x = 'Hello' <> ' ' <> 'Mold'
+x = 'Hello' >< ' ' >< 'Mold'
+x = 'Hello' << ' ' << 'Mold'
+
+die('error: variable ${y} is not declared in this scope')

@@ -3,7 +3,7 @@
 #   - (x is true) and (y is false) is valid,
 #   - but x and y is *NOT* valid.
 #
-# 2. There is no not operator inside if conditions.
+# 2. There is no "not" operator inside if conditions.
 #   a. PROBLEM: Try to say what below code examples should do:
 #     - if x is not y,
 #     - if x is (not y),
@@ -11,13 +11,9 @@
 #     - if not (x is y)
 #
 #   b. SOLVE: Remove unary not operator and keep all conditions in 
-#     binary x o y form. Try to say what below code examples should do:
+#     binary x o y form. Try again and say what below code examples should do:
 #     - if x is y
 #     - if x isnt y
-#
-#   c. Which code is easier to understand?
-#
-# 3.
 
 # Simple one-condition if
 if x is y 
@@ -61,51 +57,35 @@ if ((x is 11) and (y is 21) or
   
 endif    
 
+# ------------------------------------------------------------------------------
+# Operators, which can be used inside if conditions
+# ------------------------------------------------------------------------------
+
 # Basic compare operators:
-x is y   - x is equal to y            (e.g. 3 is 3 gives true)
-x isnt y - x is differ from y         (e.g. 3 isnt 5 gives true)
-x < y    - x is lower than y          (e.g. 3 < 5 gives true)
-x > y    - x is greater than y        (e.g. 3 > 5 gives false)
-x <= y   - x is lower or equal to y   (e.g. 3 <= 5 gives true)
-x >= y   - x is greater or equal to y (e.g. 3 >= 5 gives false)
+x is y   # x is equal to y            (e.g. 3 is 3 gives true)
+x isnt y # x is differ from y         (e.g. 3 isnt 5 gives true)
+x < y    # x is lower than y          (e.g. 3 < 5 gives true)
+x > y    # x is greater than y        (e.g. 3 > 5 gives false)
+x <= y   # x is lower or equal to y   (e.g. 3 <= 5 gives true)
+x >= y   # x is greater or equal to y (e.g. 3 >= 5 gives false)
 
 # Boolean logic (lazy)
-(a o b) or  (c o d) - check first condition, if its false try second one
-(a o b) and (c o d) - check both conditions
+(a o b) or  (c o d) # check first condition, if it's false try second one
+(a o b) and (c o d) # check both conditions
 
-# Range operators:
-x in range(10, 20)     - x is 10, 11, 12, 13, 14,... or 20
-x out of range(10, 20) - x is lower than 10 or greater than 20
+# Range operators (TODO: Review it):
+x in range(10, 20)     # x is 10, 11, 12, 13, 14,... or 20
+x out of range(10, 20) # x is lower than 10 or greater than 20
 
 # Existent operators:
-x is existent    - variable x is defined (existent)
-x.y is existent  - both variable x and its inner field x.y are existent
-x[i] is existent - variable x is defined and has got item at index i
+x is existent    # variable x is defined (existent)
+x.y is existent  # both variable x and its inner field x.y are existent
+x[i] is existent # variable x is defined and has got item at index i
 
 # Existent operators (negation):
-x isnt existent    - x is undefined (not existent)
-x.y isnt existent  - x is undefined or field x.y does not exist
-x[i] isnt existent - x is undefined or item x[i] does not exist
+x isnt existent    # x is undefined (not existent)
+x.y isnt existent  # x is undefined or field x.y does not exist
+x[i] isnt existent # x is undefined or item x[i] does not exist
 
-#
-# POMYSLY (TODO):
-#
-
-# Check for map keys (TODO: Review it)
-x has key y   - item x existent, its a map and has field y (so x.y is existent)
-x hasnt key y - item x existent, its a map, but there is NO y field (so x.y isnt existent)
-
-# Check for array index (TODO: Review it)
-x has index y   - item x existent, its a indexed array item and index at index y existent (so x[y] is existent)
-x hasnt index y - item x existent, its a indexed array item, but there is NOT item at index y (so x[y] isnt existent)
-
-# Check does one element is stored inside other one (inside array or map)
-x is storing y   - x is array or map and holds value y at some index/key
-x isnt storing y - x is array of map, but doesnt hold value y
-
-# Check does one element is stored inside other one (inside array or map)
-x is holded by y   - x is array or map and holds value y at some index/key
-x isnt holded by y - x is array of map, but doesnt hold value y
-
-x is inside y
-x is outside y
+# Bit-mask matching (TODO: Review id)
+x bitmatch y # x biwise and y gives non-zero value

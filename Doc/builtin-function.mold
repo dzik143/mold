@@ -1,0 +1,41 @@
+# ------------------------------------------------------------------------------
+# Maximum, minimum and average value.
+# ------------------------------------------------------------------------------
+
+max(x, y) # maximum from two values
+min(x, y) # minimum from two values
+avg(x, y) # average value from two values
+
+max(a, b, c, d, ...) # maximum from list of values
+min(a, b, c, d, ...) # minimum from list of values
+avg(a, b, c, d, ...) # average value from list of values
+sum(a, b, c, d, ...) # sum of list of values
+                                            
+# ------------------------------------------------------------------------------
+# Bitwise operations
+# ------------------------------------------------------------------------------
+
+bitand(x, y) # x bitwise and y
+bitor(x, y)  # x bitwise or y
+bitxor(x, y) # x bitwise xor y
+bitnot(x)    # bitwise not x
+bitshl(x, y) # x bitwise shift left by y bits
+bitshr(x, y) # x bitwise shift right by y bits
+
+bitand(a, b, c, d, ...) # a bitwise and b and c and d and ...
+bitor(a, b, c, d, ...)  # a bitwise or b or c or d or ...
+bitxor(a, b, c, d, ...) # a bitwise xor b xor c xor d xor ...
+
+# ------------------------------------------------------------------------------
+# String and characters
+# ------------------------------------------------------------------------------
+
+ord(x) # ascii number of single character  (e.g. ord('a') gives 97)
+asc(x) # ascii character from given number (e.g. asc(97) gives 'a')
+
+# ------------------------------------------------------------------------------
+# Other
+# ------------------------------------------------------------------------------
+
+swap(x, y)  # exchange values of x and y variables
+align(x, y) # align x to y-bytes boundary (e.g. align(9, 8) gives 16)

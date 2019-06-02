@@ -1,6 +1,5 @@
 Nieu¾yte:
 ~
-@   
 %   
 &   
 \
@@ -39,3 +38,5 @@ _   _foo     prywatna metoda
 
 ,   [x, y]   separator w listach
 .   this.x   dost©p do pola
+
+@   @eol     dyrektywy w bloku I/O
