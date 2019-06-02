@@ -996,6 +996,26 @@ class CodeGeneratorX64
           print '  mov [', rv, '+ Variant_t.type], VARIANT_INTEGER'
           print '  mov [', rv, '+ Variant_t.value], rax'
 
+        elif name is '__mold_parseFloat'
+          # TODO: Clean up this hack.
+          this.variantDestroy(rv)
+          print '  mov rcx, [', params[0], '+ Variant_t.value]' # rcx = text (Buffer_t)
+          print '  mov rcx, [ rcx + Buffer_t.bytesPtr ]'        # rcx = text (String_t)
+          print '  lea rcx, [ rcx + String_t.text ]'            # rcx = text (char*)
+          print '  cinvoke atof'                                # rcx = atof(text)
+          print '  mov [', rv, '+ Variant_t.type], VARIANT_DOUBLE'
+          print '  movq [', rv, '+ Variant_t.value], xmm0'
+
+        elif name is '__mold_parseInteger'
+          # TODO: Clean up this hack.
+          this.variantDestroy(rv)
+          print '  mov rcx, [', params[0], '+ Variant_t.value]' # rcx = text (Buffer_t)
+          print '  mov rcx, [ rcx + Buffer_t.bytesPtr ]'        # rcx = text (String_t)
+          print '  lea rcx, [ rcx + String_t.text ]'            # rcx = text (char*)
+          print '  cinvoke atoi'                                # rcx = int(text)
+          print '  mov [', rv, '+ Variant_t.type], VARIANT_INTEGER'
+          print '  mov [', rv, '+ Variant_t.value], rax'
+
         else
           # Generic call.
           if typeof(rv) isnt 'undefined'

@@ -105,6 +105,22 @@ class AppMold
     }
     this.symbolTable.insertFunction('bitwiseAnd', bitwiseAndProto)
 
+    # TODO: More-friendly API here.
+    __mold_parseIntegerProto = {
+      'rv': 'rv',
+      'name': '__mold_parseInteger',
+      'paramsCnt': 1
+    }
+    this.symbolTable.insertFunction('__mold_parseInteger', __mold_parseIntegerProto)
+
+    # TODO: More-friendly API here.
+    __mold_parseFloatProto = {
+      'rv': 'rv',
+      'name': '__mold_parseFloat',
+      'paramsCnt': 1
+    }
+    this.symbolTable.insertFunction('__mold_parseFloat', __mold_parseFloatProto)
+
     this._debug('Ready to work')
   endmethod
 

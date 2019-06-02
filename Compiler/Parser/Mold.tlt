@@ -236,30 +236,6 @@ function ord(ch) -> rv
   endif
 endfunction
 
-function parseFloat(text) -> rv
-  textLen        = len(text)
-  integerPart    = 0
-  fractionalPart = 0
-  idx            = 0
-
-  # Collect integer part.
-  while (idx &lt; textLen) and (text[idx] isnt '.')
-    integerPart = 10 * integerPart + ord(text[idx]) - 48
-    idx = idx + 1
-  endwhile
-
-  # Collect fractional part if any.
-  if text[idx] is '.'
-    idx = textLen - 1
-    while text[idx] isnt '.'
-      fractionalPart = 0.1 * fractionalPart + ord(text[idx]) - 48
-      idx = idx - 1
-    endwhile
-  endif
-
-  rv =  integerPart + 0.1 * fractionalPart
-endfunction
-
 # -----------------------------------------------------------------------------
 #                                Parse tables
 # -----------------------------------------------------------------------------

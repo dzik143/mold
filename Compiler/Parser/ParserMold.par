@@ -24,6 +24,7 @@
 @UNTERMINATED_STRING '"' !'"'*     '\r\n' | '\'' !'\''*     '\r\n' ;
 
 @FLOAT   '0-9'+ '.' '0-9'+;
+@INTEGER '0-9'+;
 @TRUE    "true";
 @FALSE   "false";
 
@@ -386,12 +387,11 @@ number
   ;
 
 integer
-  : '0-9'         [* @@ = ord(@1) - 48 *]
-  | integer '0-9' [* @@ = 10 * @1 + ord(@2) - 48 *]
+  : @INTEGER [* @@ = __mold_parseInteger(@1) *]
   ;
 
 float
-  : @FLOAT [* @@ = parseFloat(@1) *]
+  : @FLOAT [* @@ = __mold_parseFloat(@1) *]
   ;
 
 string
@@ -417,4 +417,3 @@ bool
 error_unterminated_string
   : @UNTERMINATED_STRING [* this._handleError('unterminated string') *]
   ;
-

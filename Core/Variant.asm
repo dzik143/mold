@@ -2800,6 +2800,24 @@ __mold_peek:
     cinvoke printf, 'peek: out of range'
     int 3
 
+;__MOLD_ConvertStringToInteger:
+;    mov rcx, [ rcx + Variant_t.value]           ; rcx = text (Buffer_t)
+;    mov rcx, [ rcx + Buffer_t.bytesPtr ]        ; rcx = text (String_t)
+;    lea rcx, [ rcx + String_t.text ]            ; rcx = text (char*)
+;    cinvoke atoi                                ; rcx = atoi(text) (int32)
+;    mov [ rdi + Variant_t.type], VARIANT_INTEGER
+;    mov [ rdi + Variant_t.value], rax
+;    ret
+;
+;__MOLD_ConvertStringToFloat64:
+;    mov rcx, [ rcx + Variant_t.value]           ; rcx = text (Buffer_t)
+;    mov rcx, [ rcx + Buffer_t.bytesPtr ]        ; rcx = text (String_t)
+;    lea rcx, [ rcx + String_t.text ]            ; rcx = text (char*)
+;    cinvoke atof                                ; rcx = atof(text) (double)
+;    mov  [ rdi + Variant_t.type], VARIANT_DOUBLE
+;    movq [ rdi + Variant_t.value], xmm0
+;    ret
+
 ;###############################################################################
 ;
 ; Load file content to string
