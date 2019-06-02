@@ -97,6 +97,14 @@ class AppMold
     this.symbolTable.insertFunction('__mold_loadFile', __mold_loadFileProto)
     this.code.createExternalProc('__MOLD_LoadFile', 'variant', 1, 'variant', '__MOLD_LoadFile')
 
+    # TODO: More-friendly API here.
+    bitwiseAndProto = {
+      'rv': 'rv',
+      'name': 'bitwiseAnd',
+      'paramsCnt': 2
+    }
+    this.symbolTable.insertFunction('bitwiseAnd', bitwiseAndProto)
+
     this._debug('Ready to work')
   endmethod
 

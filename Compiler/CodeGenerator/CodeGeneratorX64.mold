@@ -988,26 +988,36 @@ class CodeGeneratorX64
         params    = item[3]
         paramsCnt = len(params)
 
-        # Generic call.
-        if typeof(rv) isnt 'undefined'
-          # Function has return value.
-          # TODO: Clean up this mess.
+        if name is 'bitwiseAnd'
+          # TODO: Clean up this hack.
           this.variantDestroy(rv)
-          this.push('rdi')
-          this.pushParametersBeforeCall(params)
-          this.lea('rdi', rv)
-          this.mov('[rdi + Variant_t.type]', 'VARIANT_UNDEFINED')
-          this.call(name)
-          this.pop('rdi')
+          print '  mov rax, [', params[0], '+ Variant_t.value]'
+          print '  and rax, [', params[1], '+ Variant_t.value]'
+          print '  mov [', rv, '+ Variant_t.type], VARIANT_INTEGER'
+          print '  mov [', rv, '+ Variant_t.value], rax'
 
         else
-          # No return value.
-          this.pushParametersBeforeCall(params)
-          this.call(name)
-        endif
+          # Generic call.
+          if typeof(rv) isnt 'undefined'
+            # Function has return value.
+            # TODO: Clean up this mess.
+            this.variantDestroy(rv)
+            this.push('rdi')
+            this.pushParametersBeforeCall(params)
+            this.lea('rdi', rv)
+            this.mov('[rdi + Variant_t.type]', 'VARIANT_UNDEFINED')
+            this.call(name)
+            this.pop('rdi')
 
-        if paramsCnt > 4
-          print '  add rsp,', paramsCnt * 8 - 32
+          else
+            # No return value.
+            this.pushParametersBeforeCall(params)
+            this.call(name)
+          endif
+
+          if paramsCnt > 4
+            print '  add rsp,', paramsCnt * 8 - 32
+          endif
         endif
 
       elif opcode is 'vcall'

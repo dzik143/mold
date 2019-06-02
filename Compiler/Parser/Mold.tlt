@@ -228,25 +228,6 @@ function debug(msg)
   endif
 endfunction
 
-function modulo(x, y) -> rv
-  rv = x - (x // y) * y
-endfunction
-
-function bitwiseAnd(n1, n2) -> rv
-  val = 1
-  rv  = 0
-
-  while (n1 > 0) or (n2 > 0)
-    if (modulo(n1, 2) is 1) and (modulo(n2, 2) is 1)
-      rv = rv + val
-    endif
-
-    n1  = n1 // 2
-    n2  = n2 // 2
-    val = val * 2
-  endwhile
-endfunction
-
 function ord(ch) -> rv
   if typeof(ch) is 'string'
     rv = __mold_peek(ch, 0)
