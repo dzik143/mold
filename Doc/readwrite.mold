@@ -1,0 +1,122 @@
+# ------------------------------------------------------------------------------
+# Read or write text data
+# - we want to store or load data in human readable form
+# ------------------------------------------------------------------------------
+
+# Write text data to stdout:
+# - one string (Hello),
+# - three variables (x,y,z),
+# - end of line character.
+write to stdout values 'Hello', x, y, z, @eol
+
+# Write text data to external file:
+# - open 'test.txt' for write (if not opened yet),
+# - write string (Hello),
+# - write three variables (x,y,z),
+# - write end of line character,
+# - close file (and flush before, this step is optional).
+write to 'test.txt' values 'Hello', x, y, z, @eol, @close
+
+# Read text data from stdin:
+# - three variables (x,y,z)
+# - match end of line
+read from stdin values x, y, z, @eol
+
+# Read text data from external file:
+# - open file 'text.txt' for write (if not opened yet),
+# - read three variables (x,y,z),
+# - match end of line character.
+read from 'test.txt' values x, y, z, @eol
+
+# ------------------------------------------------------------------------------
+# Read or write binary data
+# - we want to store or load data in machine binary format
+# ------------------------------------------------------------------------------
+
+# Write binary data to stdout:
+# - write three int32 values,
+# - wrwite one float64 value.
+write to stdout values int32(a), int32(b), int32(c), float64(x)
+
+# Write binary data to external file:
+# - open file 'test.dat' for write (if not opened yet),
+# - write three int32 values,
+# - write one float64 value,
+# - close file (and flush before, this step is optional)
+write to 'test.dat' values int32(a), int32(b), int32(c), float64(x), @close
+
+# Read binary data from stdin:
+# - read three int32 values,
+# - read one float64 value.
+read from stdin values int32(a), int32(b), int32(c), float64(x)
+
+# Read binary data from external file:
+# - open file 'test.dat' for read (if not opened yet),
+# - read three int32 values,
+# - read one float64 value,
+# - close file (this step is optional).
+read from 'test.dat' values int32(a), int32(b), int32(c), float64(x), @close
+
+# ------------------------------------------------------------------------------
+# Multi-line read or write blocks
+# - we have a lot of I/O work to do and we want to keep clear source code
+#   to localize blocks, where contact with outer world (external file, network 
+#   etc.) is located.
+# ------------------------------------------------------------------------------
+
+write to 'test.dat'
+  int32(a)
+  int32(b)
+  int32(c)
+  float64(x)
+  @close
+endwrite
+
+read from 'test.dat'
+  int32(a)
+  int32(b)
+  int32(c)
+  float64(x)
+  @close
+endwrite
+
+# ------------------------------------------------------------------------------
+# Asynchronous I/O
+# - we want to perform read or write operation in the background and
+#   do some other work in this time.
+# ------------------------------------------------------------------------------
+
+write to 'test.dat'
+  int32(a)
+  int32(b)
+  int32(c)
+  float64(x)
+
+then
+  # This code is executed asychronous when write is finished.
+  print 'Write success!'
+  
+exception
+  # This code is executed when write operation failed.
+  print 'Error!'
+endwrite
+
+# ------------------------------------------------------------------------------
+# Validate data while reading
+# - we want to validate data, which we just read from external source
+# ------------------------------------------------------------------------------
+
+read from 'test.dat' 
+  # Load graph header.
+  int32(numberOfVertexes)
+  int32(numberOfConnections)
+  
+  # Load connection pairs (startVertex, endVertex)
+  for idx in 0 .. numberOfConnections
+    int32(road[idx].startVertex) in range (0, numberOfVertexes)
+    int32(road[idx].endVertex)   in range (0, numberOfVertexes)
+  endfor
+  
+exception
+  # Error while reading or vertex out-of-range.
+endread

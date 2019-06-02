@@ -1,0 +1,16 @@
+# Function without return value.
+function foo(x, y, z)
+  print 'foo(', x, y, z, ')'
+endfunction
+
+# Function with return value 
+# (rv is user named, you can use another name)
+function sum(x, y, z) -> rv
+  rv = x + y + z
+endfunction
+
+# Call function as procedure (use on "left side").
+foo(1, 2, 3)
+
+# Call function and use its result (use on "right side")
+print sum(4, 5, 6)

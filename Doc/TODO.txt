@@ -1,0 +1,3 @@
+- uporz¥dkowa† funkcje w warunkach
+  -- if foo() is true czy if foo()??
+  -- Drugie crashuje po skompilowaniu z typami maszynowymi
