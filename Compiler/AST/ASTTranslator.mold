@@ -314,6 +314,13 @@ class ASTTranslator
     endfor
   endmethod
 
+  method _verifyNumberOfParameters(name, paramsExpectedCnt, paramsPassedCnt)
+    if paramsPassedCnt isnt paramsExpectedCnt
+      die('error: ' + name + ' function requires exactly ' + str(paramsExpectedCnt) + ' parameter(s), but ' + str(paramsPassedCnt) + ' were passed')
+    endif
+  endmethod
+
+/*
   method _getNextId() -> rv
     rv          = this.nextId
     this.nextId = this.nextId + 1
@@ -327,17 +334,11 @@ class ASTTranslator
     rv = '_l' + str(this._getNextId())
   endmethod
 
-  method _verifyNumberOfParameters(name, paramsExpectedCnt, paramsPassedCnt)
-    if paramsPassedCnt isnt paramsExpectedCnt
-      die('error: ' + name + ' function requires exactly ' + str(paramsExpectedCnt) + ' parameter(s), but ' + str(paramsPassedCnt) + ' were passed')
-    endif
-  endmethod
-
   method _createTempVarAndAssign(value) -> rv
     rv = this._createTempVar()
     this._declareAndAssign(rv, value)
   endmethod
-
+*/
   method _emitFunction(ast)
     global AST_OPCODE_CLASS_METHOD
 
@@ -516,6 +517,12 @@ class ASTTranslator
     #
     # END OF DEBUG ONLY
     #
+
+    # TODO: Clean up this mess.
+    # This is temporary hack to get result type before allocating new
+    # temp var.
+    #astDataType         = AST_GetDataType(ast)
+    #this.rvDataTypeHack = AST_ConvertDataTypeToMIR(astDataType)
 
     if opcode is AST_DATA_ARRAY
       if typeof(value) is 'array'

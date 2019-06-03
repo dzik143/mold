@@ -60,6 +60,15 @@ class SymbolTable
     # multiple time.
     this.literals = {}
 
+    # Track temporary variables usage and reuse them if possible.
+    this.poolOfTempVars = {
+      'int32':   {'cnt': 0, 'pool': []},
+      'int64':   {'cnt': 0, 'pool': []},
+      'float64': {'cnt': 0, 'pool': []},
+      'bool32':  {'cnt': 0, 'pool': []},
+      'variant': {'cnt': 0, 'pool': []}
+    }
+
     # TODO: Use null.
     this.parent = false
     this.global = this
@@ -613,19 +622,58 @@ class SymbolTable
   #                        Temporary variable helpers
   # ----------------------------------------------------------------------------
 
-  method createTempVar() -> rv
-    rv = 'tmp' + str(SymbolTable_GetNextId())
-    this.insertLocal(rv)
+  method getTempVar(wantedType) -> rv
+    # TODO: Review it.
+    if false #(wantedType isnt -1) and (this.poolOfTempVars[wantedType].cnt > 0)
+      # Get first free temp var from pool
+      poolObj = this.poolOfTempVars[wantedType]
+      poolCnt = poolObj.cnt - 1
+
+      poolObj.cnt = poolCnt
+      rv = poolObj.pool[poolCnt]
+      #print 'Get temp var [', rv, '] from pool', poolObj
+
+    else
+      # There is no free temp vars. Allocate new one.
+      rv = 'tmp' + str(SymbolTable_GetNextId())
+      this.insertLocal(rv)
+      # TODO: Clean up this mess.
+      symbolInfo        = this.lookup(rv)
+      symbolInfo.isTemp = true
+      #symbolInfo.refCnt = 1
+      #print 'Allocated new temp var [', rv, ']'
+    endif
   endmethod
 
-  method createTempVarForWrite() -> rv
-    rv = this.createTempVar()
+  method getTempVarForWrite(wantedType) -> rv
+    rv = this.getTempVar(wantedType)
     this.lookupForWrite(rv)
   endmethod
 
-  method createTempVarForReadAndWrite() -> rv
-    rv = this.createTempVar()
+  method getTempVarForReadAndWrite(wantedType) -> rv
+    rv = this.getTempVar(wantedType)
     this.lookupForRead(rv)
     this.lookupForWrite(rv)
+  endmethod
+
+  method releaseTempVar(name)
+    symbolInfo = this.lookup(name)
+    # TODO: Clean up this mess.
+    if symbolInfo.isTemp is true
+      #symbolInfo.refCnt = symbolInfo.refCnt - 1
+      #if symbolInfo.refCnt is 0
+        # Variable is not used anymore.
+        # Push back to pool of temp variables available to use.
+        mirType = symbolInfo.type
+
+        if typeof(mirType) isnt 'undefined'
+          poolObj = this.poolOfTempVars[mirType]
+          poolObj.pool[poolObj.cnt] = symbolInfo.name
+          poolObj.cnt               = poolObj.cnt + 1
+        endif
+
+        #print 'Release temp var [', symbolInfo.name, '] to pool', poolObj
+      #endif
+    endif
   endmethod
 endclass
