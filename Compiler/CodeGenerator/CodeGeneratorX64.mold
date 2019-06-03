@@ -1335,11 +1335,6 @@ class CodeGeneratorX64
           endfor
         endif
 
-        if typeof(currentProcRv) isnt 'undefined'
-          print ''
-          print '  mov [rdi + Variant_t.type], -1'
-        endif
-
         print ''
         print '  ; code'
         print '  ; ----'
