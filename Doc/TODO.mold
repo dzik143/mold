@@ -204,3 +204,64 @@ x = 'Hello' >< ' ' >< 'Mold'
 x = 'Hello' << ' ' << 'Mold'
 
 die('error: variable ${y} is not declared in this scope')
+
+##############################
+
+remove from arrayOrMapBox values  x,y,z
+remove from mapBox        keys    x,y,z
+remove from arrayBox      indexes x,y,z
+
+insert to mapBox   keys    a,b,c values x,y,z
+insert to arrayBox indexes 1,2,3 values x,y,z
+
+##############################
+
+remove from arrayOfMapBox
+  key(a), key(b), key(c)
+  value(x), value(y), value(z)
+endremove
+
+remove from arrayBox
+  index(a), index(b), index(c)
+  value(x), value(y), value(z)
+endremove
+
+##############################
+
+remove values  x,y,z from arrayOrMapBox
+remove keys    x,y,z from mapBox
+remove indexes x,y,z from arrayBox
+
+insert keys    a,b,c values x,y,z to mapBox
+insert indexes 1,2,3 values x,y,z to arrayBox
+
+##############################
+
+x,y,z are positive
+x,y,z are negative
+x,y,z are odd
+x,y,z are even
+x,y,z are divisible by n
+x,y,z are equal
+x,y,z are unique
+
+##############################
+
+x is ...
+x isnt ...
+x,y,z are ...
+x,y,z arent ...
+
+##############################
+
+if values  x,y,z are existent
+if values  x,y,z are existent in box
+if keys    x,y,z are existent in box
+if indexes x,y,z are existent in box
+
+if values  x,y,z arent existent
+if values  x,y,z arent existent in box
+if keys    x,y,z arent existent in box
+if indexes x,y,z arent existent in box
+
+#############################
