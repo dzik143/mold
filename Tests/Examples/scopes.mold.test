@@ -270,3 +270,23 @@ EXPECTED_OUTPUT:
 1003
 1006
 --------------------------------------------------------------------------------
+
+TEST "Bug: not propagated procedure level"
+
+x = 1234
+
+function foo()
+  for idx in 0 .. 2
+    x = []
+    print x
+  endfor
+endfunction
+
+foo()
+print 'OK!'
+
+EXPECTED_OUTPUT:
+[]
+[]
+OK!
+--------------------------------------------------------------------------------
