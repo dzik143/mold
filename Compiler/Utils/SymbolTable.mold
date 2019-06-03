@@ -236,6 +236,7 @@ class SymbolTable
     rv = new SymbolTable(this.app)
     rv.parent       = this
     rv.deepIdx      = this.deepIdx + 1
+    rv.procLevel    = this.procLevel
     rv.global       = this.global
     rv.functionName = this.functionName
   endmethod
