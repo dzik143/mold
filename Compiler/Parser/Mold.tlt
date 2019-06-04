@@ -351,12 +351,18 @@ class AST
     global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
 
     global AST_OPCODE_PROGRAM, AST_OPCODE_BLOCK, AST_OPCODE_DECLARE_OR_ASSIGN
-    global AST_OPCODE_FOR_VALUES_RANGE, AST_OPCODE_WHILE, AST_OPCODE_FOR
+    global AST_OPCODE_FOR_VALUES_RANGE, AST_OPCODE_WHILE
     global AST_OPCODE_CALL, AST_OPCODE_FUNCTION, AST_OPCODE_IF, AST_OPCODE_SWITCH
     global AST_OPCODE_VARIABLE, AST_OPCODE_REFERENCE
     global AST_OPCODE_CLASS, AST_OPCODE_CLASS_METHOD, AST_OPCODE_INVOKE_METHOD
     global AST_OPCODE_NOP, AST_DATA_STRING, AST_OPCODE_FOR_VALUES_RANGE
     global AST_OPCODE_CALL_DELETE
+
+    global AST_OPCODE_FOR_VALUES
+    global AST_OPCODE_FOR_INDEXES
+    global AST_OPCODE_FOR_INDEXES_VALUES
+    global AST_OPCODE_FOR_KEYS
+    global AST_OPCODE_FOR_KEYS_VALUES
 
     global null
 
@@ -443,6 +449,21 @@ class AST
 
     elif emit is 'for'
       opcode = AST_OPCODE_FOR_VALUES_RANGE
+
+    elif emit is 'for_values'
+      opcode = AST_OPCODE_FOR_VALUES
+
+    elif emit is 'for_indexes'
+      opcode = AST_OPCODE_FOR_INDEXES
+
+    elif emit is 'for_keys'
+      opcode = AST_OPCODE_FOR_KEYS
+
+    elif emit is 'for_keys_values'
+      opcode = AST_OPCODE_FOR_KEYS_VALUES
+
+    elif emit is 'for_keys_indexes_values'
+      opcode = AST_OPCODE_FOR_INDEXES_VALUES
 
     elif emit is 'while'
       opcode = AST_OPCODE_WHILE
