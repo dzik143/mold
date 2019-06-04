@@ -1171,6 +1171,10 @@ class CodeGeneratorX64
         print '  mov  rcx, 0'
         print '  call __MOLD_Halt'
 
+      elif opcode is 'inner_ret'
+        # TODO: Better handling of nested procedures.
+        print '  ret'
+
       elif opcode is 'ret'
         print ''
         print '  ; clean frame'

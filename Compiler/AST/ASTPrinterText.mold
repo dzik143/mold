@@ -69,7 +69,6 @@ class ASTPrinterText
     global AST_OPCODE_PROGRAM
     global AST_OPCODE_BLOCK
     global AST_OPCODE_IF
-    global AST_OPCODE_FOR
     global AST_OPCODE_WHILE
     global AST_OPCODE_FUNCTION
     global AST_OPCODE_CLASS
@@ -131,8 +130,12 @@ class ASTPrinterText
     global AST_OPCODE_IF
     global AST_OPCODE_SWITCH
     global AST_OPCODE_WHILE
-    global AST_OPCODE_FOR
     global AST_OPCODE_FOR_VALUES_RANGE
+    global AST_OPCODE_FOR_VALUES
+    global AST_OPCODE_FOR_KEYS
+    global AST_OPCODE_FOR_KEYS_VALUES
+    global AST_OPCODE_FOR_INDEXES
+    global AST_OPCODE_FOR_INDEXES_VALUES
 
     global AST_OPCODE_ASSIGN
     global AST_OPCODE_DECLARE
@@ -403,6 +406,20 @@ class ASTPrinterText
       print ''
 
       this._printNode_codeBlock(prefix, children[4])
+      __mold_printToStdOutput(prefix)
+      __mold_printToStdOutput('endfor')
+
+    elif opcode is AST_OPCODE_FOR_VALUES
+      __mold_printToStdOutput(prefix)
+      __mold_printToStdOutput('for values ')
+      this._printNode('', children[0])
+
+      __mold_printToStdOutput(' in ')
+      this._printNode('', children[1])
+
+      print ''
+
+      this._printNode_codeBlock(prefix, children[2])
       __mold_printToStdOutput(prefix)
       __mold_printToStdOutput('endfor')
 

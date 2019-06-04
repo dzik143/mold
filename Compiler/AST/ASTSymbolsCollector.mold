@@ -72,7 +72,6 @@ class ASTSymbolsCollector
     global AST_OPCODE_CALL
     global AST_OPCODE_IF
     global AST_OPCODE_WHILE
-    global AST_OPCODE_FOR_VALUES_RANGE
     global AST_OPCODE_INVOKE_METHOD
     global AST_OPCODE_REFERENCE
     global AST_OPCODE_FUNCTION
@@ -91,6 +90,13 @@ class ASTSymbolsCollector
     global SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_VAR_RETVAL, SYMBOL_KIND_CONST
     global AST_OPCODE_ADD, AST_OPCODE_MUL, AST_OPCODE_SUB, AST_OPCODE_DIV, AST_OPCODE_IDIV
     global AST_DATA_DOUBLE, AST_DATA_INTEGER
+
+    global AST_OPCODE_FOR_VALUES_RANGE
+    global AST_OPCODE_FOR_VALUES
+    global AST_OPCODE_FOR_KEYS
+    global AST_OPCODE_FOR_KEYS_VALUES
+    global AST_OPCODE_FOR_INDEXES
+    global AST_OPCODE_FOR_INDEXES_VALUES
 
     opcode      = node.opcode
     children    = node.children
@@ -515,6 +521,26 @@ class ASTSymbolsCollector
       this._collectSymbolsFromRightNode(symbolTable, idxStartNode)
       this._collectSymbolsFromRightNode(symbolTable, idxEndNode)
       this._collectSymbolsFromRightNode(symbolTable, idxStepNode)
+      this._collectSymbolsFromLeftNode(symbolTable, bodyNode)
+
+    elif opcode is AST_OPCODE_FOR_VALUES
+      # for values v in box
+      iterNode     = children[0]
+      boxNode      = children[1]
+      bodyNode     = children[2]
+
+      if symbolTable.isset(iterNode.value) is true
+        die('error: "' + iterNode.value + '" is already defined in another context')
+      endif
+
+      # TODO: Optimize it.
+      bodyNode.symbolTable = symbolTable.enterScopeForLoop()
+      bodyNode.symbolTable.insertLocal(iterNode.value)
+      # TODO: Review it.
+      iterNode.symbolInfo = bodyNode.symbolTable.lookupForReadAndWrite(iterNode.value)
+      boxNode.symbolInfo  = bodyNode.symbolTable.lookupForRead(boxNode.value)
+
+      this._collectSymbolsFromRightNode(symbolTable, boxNode)
       this._collectSymbolsFromLeftNode(symbolTable, bodyNode)
 
     elif opcode is AST_OPCODE_WHILE

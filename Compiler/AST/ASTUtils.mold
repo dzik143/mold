@@ -81,7 +81,6 @@ function AST_GetOpcodeAsText(opcode) -> rv
   global AST_OPCODE_CLASS_METHOD
   global AST_OPCODE_IF
   global AST_OPCODE_WHILE
-  global AST_OPCODE_FOR
   global AST_OPCODE_FOR_VALUES_RANGE
   global AST_OPCODE_TYPE_CAST
 
@@ -122,9 +121,6 @@ function AST_GetOpcodeAsText(opcode) -> rv
 
   elif opcode is AST_OPCODE_IF
     rv = 'IF'
-
-  elif opcode is AST_OPCODE_FOR
-    rv = 'FOR'
 
   elif opcode is AST_OPCODE_FOR_VALUES_RANGE
     rv = 'FOR'
@@ -243,7 +239,6 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   global AST_OPCODE_CLASS_METHOD
   global AST_OPCODE_IF
   global AST_OPCODE_WHILE
-  global AST_OPCODE_FOR
   global AST_OPCODE_FOR_VALUES_RANGE
 
   global AST_OPCODE_ASSIGN

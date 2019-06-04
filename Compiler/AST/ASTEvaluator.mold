@@ -156,6 +156,7 @@ class ASTEvaluator
     global AST_OPCODE_CALL
     global AST_OPCODE_CALL_NEW
     global AST_OPCODE_FOR_VALUES_RANGE
+    global AST_OPCODE_FOR_VALUES
     global AST_OPCODE_WHILE
     global AST_OPCODE_NEG
     global AST_OPCODE_NOP
@@ -263,6 +264,7 @@ class ASTEvaluator
       endif
 
     elif opcode is AST_OPCODE_FOR_VALUES_RANGE
+      # for idx in valueStart .. valueEnd by step valueStep
       iter           = children[0]
       iterBeginValue = children[1]
       body           = children[4]
@@ -273,6 +275,14 @@ class ASTEvaluator
       # First loop rotate.
       this._processConditionalNode(values, body)
 
+      # N-th loop rotate.
+      this._processConditionalNode(values, body)
+
+    elif opcode is AST_OPCODE_FOR_VALUES
+      # for values v in box
+      body = children[2]
+      # First loop rotate.
+      this._processConditionalNode(values, body)
       # N-th loop rotate.
       this._processConditionalNode(values, body)
 

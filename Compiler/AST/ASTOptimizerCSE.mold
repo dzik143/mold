@@ -71,6 +71,7 @@ class ASTOptimizerCSE
     global AST_OPCODE_CLASS
     global AST_OPCODE_CLASS_METHOD
     global AST_OPCODE_INVOKE_METHOD
+    global AST_OPCODE_FOR_INDEXES_VALUES
 
     # Switch symbolTable if needed.
     if typeof(node.symbolTable) isnt 'undefined'
@@ -157,7 +158,7 @@ class ASTOptimizerCSE
     else
 
       # TODO: Review it.
-      if opcode is AST_OPCODE_FOR_VALUES_RANGE
+      if (opcode >= AST_OPCODE_FOR_VALUES_RANGE) and (opcode < AST_OPCODE_FOR_INDEXES_VALUES)
         mapOfExpressions = {}
       endif
 
