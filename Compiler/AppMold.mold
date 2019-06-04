@@ -88,6 +88,16 @@ class AppMold
     this.code.createExternalProc('__MOLD_Peek', 'variant', 2, 'variant', '__MOLD_Peek')
 
     # TODO: More-friendly API here.
+    __mold_ordProto = {
+      'rv': 'rv',
+      'name': '__mold_ord',
+      'paramsCnt': 1,
+      'labelId': this.code.createExternalLabel('__MOLD_Ord')
+    }
+    this.symbolTable.insertFunction('__mold_ord', __mold_ordProto)
+    this.code.createExternalProc('__MOLD_Ord', 'variant', 1, 'variant', '__MOLD_Ord')
+
+    # TODO: More-friendly API here.
     __mold_loadFileProto = {
       'rv': 'rv',
       'name': '__mold_loadFile',

@@ -1,0 +1,2 @@
+convergence x precision 1e-5 max iters 1000
+endconvergence

@@ -23,7 +23,7 @@ endfor
 for idx in 0 .. 10 by step 2
 endfor
 
-# Iterate over number range in reverse order.
+# Iterate over numbers range in reverse order.
 # 9, 8, 7, 6, ... 0
 for idx in 0 .. 10 reverse
 endfor
@@ -36,7 +36,7 @@ endfor
 
 #
 # Scenario 1.
-# - We need to know *WHERE* items are stored inside box,
+# - We need to know *WHERE* items are stored inside the box,
 # - we iterate over *LOCATIONS* (map keys, array indexes, object property ids).
 #
 
@@ -57,7 +57,7 @@ endfor
 
 #
 # Scenario 2.
-# - We need to know *WHAT* is stored inside a box,
+# - We need to know *WHAT* is stored in the box,
 # - we process *VALUES* holded by a box.
 #
 
@@ -72,17 +72,17 @@ endfor
 # - we process *PAIRS* containing item *LOCATION* and *VALUE*.
 #
 
-# Iterate over map: we get (key, value) pairs.
+# Iterate over map: we process (key, value) pairs.
 for keys k values v in mapBox
   print k, '->', v
 endfor
 
-# Iterate over flat array: we get (idx, value) pairs.
+# Iterate over flat array: we process (idx, value) pairs.
 for indexes idx values v in arrayBox
   print idx, v
 endfor
 
-# Iterate over object: we get (propertyId, value) pairs.
+# Iterate over object: we process (propertyId, value) pairs.
 for properties propertyId values v in object
   print propertyId, v
 endfor
