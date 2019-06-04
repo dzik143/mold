@@ -86,7 +86,7 @@ class Stack
     else
       # TODO: Handle terminal nodes.
       rv = false
-      die('error: peek ' + str(idx) + ' item, but only ' + str(this.size) + ' availble')
+      die('error: peek ' + str(idx) + ' item, but only ' + str(this.size) + ' available')
     endif
   endmethod
 endclass

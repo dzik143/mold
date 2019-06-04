@@ -228,14 +228,6 @@ function debug(msg)
   endif
 endfunction
 
-function ord(ch) -> rv
-  if typeof(ch) is 'string'
-    rv = __mold_peek(ch, 0)
-  else
-    rv = ch
-  endif
-endfunction
-
 # -----------------------------------------------------------------------------
 #                                Parse tables
 # -----------------------------------------------------------------------------
@@ -690,7 +682,7 @@ class Parser
       if this.len &gt; 0
         # Update counters for line and column
         for idx in 0 .. this.len
-          if ord(this.buf[idx]) is 10
+          if __mold_ord(this.buf[idx]) is 10
             this.line   = this.line + 1
             this.column = 1
           else
@@ -815,7 +807,7 @@ class Parser
       mach = @@prefix_dfa_select[this.stack[this.stackIdx].state]
     endif
 
-    next = ord(this._getInput(length))
+    next = __mold_ord(this._getInput(length))
 
     if next is this.eof
       this.sym = @@eof
@@ -854,7 +846,7 @@ class Parser
 
             if innerGoOn is true
               length    = length + 1
-              next      = ord(this._getInput(length))
+              next      = __mold_ord(this._getInput(length))
               innerGoOn = false
             endif
           endif
