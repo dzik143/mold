@@ -2911,3 +2911,297 @@ __mold_loadFile:
 .stringPathExpectedError:
     cinvoke printf, "error: string path expected"
     cinvoke ExitProcess, -1
+
+
+;###############################################################################
+;
+; RCX - box                  (IN / VARIANT),
+; RDX - integer index        (IN / VARIANT),
+; R8  - key at given index   (OUT / VARIANT),
+; R9  - value at given index (OUT / VARIANT).
+;
+;###############################################################################
+
+;__MOLD_VariantLoadFromIndex_UnsecureByInteger:
+;;  mov     rcx, [rcx + Variant_t.value]          ; rcx = map (Buffer_t)
+;  mov     rdx, [rdx + Variant_t.value]          ; rdx = idx (int64)
+;  mov     rcx, [rcx + Buffer_t.bytesPtr]        ; rcx = map (Map_t)
+
+;  ; TODO: Optimize it.
+;  mov     rax, [rcx + Map_t.bucketsCnt]         ; rax = map.bucketsCnt
+ ; lea     rcx, [rcx + Map_t.buckets]            ; rcx = map.buckets
+;  shl     rax, 5                                ; rax = map.bucketsCnt * 32
+;  lea     rax, [rax + rdx * 4]                  ; rax = map.bucketsCnt * 32 + idx * 4
+;  mov     eax, [rcx + rax]                      ; rax = map.index[idx]
+;  lea     rcx, [rcx + rax]
+
+;  ; Copy key.
+;  mov     rax, [rcx]
+;  mov     r10, [rcx + 8]
+;  mov     [r8], rax
+;  mov     [r8 + 8], r10
+
+  ; Copy value.
+;  mov     rax, [rcx + 16]
+;  mov     r10, [rcx + 16 + 8]
+;  mov     [r9], rax
+;  mov     [r9 + 8], r10
+;
+;  ret
+
+
+;###############################################################################
+;
+; Process each (key, value) pairs in map.
+;
+; rcx - box (IN / Variant_t)
+; rdx - key iterator (OUT / Variant_t)
+; r8  - value iterator (OUT / Variant_t)
+; r9  - body loop callback (IN / function pointer)
+;
+;###############################################################################
+
+__MOLD_ForDriver_KeysAndValuesInMap:
+
+    push    rbx
+    push    rsi
+    push    rdi
+    push    r9
+
+    mov     rcx, [rcx + Variant_t.value]          ; rcx = map (Buffer_t)
+    mov     rcx, [rcx + Buffer_t.bytesPtr]        ; rcx = map (Map_t)
+    mov     rbx, [rcx + Map_t.bucketsUsedCnt]     ; rbx = map.bucketsUsedCnt (int64)
+
+    or      rbx, rbx
+    jz      .mapEmpty
+
+    mov     rax, [rcx + Map_t.bucketsCnt]         ; rax = map.bucketsCnt
+    lea     rdi, [rcx + Map_t.buckets]            ; rdi = map.buckets
+    shl     rax, 5                                ; rax = map.bucketsCnt * 32
+    lea     rsi, [rdi + rax]                      ; rsi = map.index
+
+.mapNextItem:
+
+    mov     eax, [rsi]                            ; rcx = bucketIdx
+    mov     rcx, rdi                              ; rcx = buckets
+    add     rcx, rax                              ; rcx = buckets[bucketIdx]
+
+    ; --------------------
+    ; Update key iterator
+    ; --------------------
+
+    mov     rax, [rcx]
+    mov     [rdx], rax
+
+    mov     rax, [rcx + 8]
+    mov     [rdx + 8], rax
+
+    ; ----------------------
+    ; Update value iterator
+    ; ----------------------
+
+    mov     rax, [rcx + 16]
+    mov     [r8], rax
+
+    mov     rax, [rcx + 16 + 8]
+    mov     [r8 + 8], rax
+
+    ; ------------------------------
+    ; Process next (key:value) pair
+    ; ------------------------------
+
+    push    rcx rdx r8
+    call    qword [rsp + 24]
+    pop     r8 rdx rcx
+
+    ; ----------------
+    ; Go to next pair
+    ; ----------------
+
+    add     rsi, 4
+    dec     rbx
+    jne     .mapNextItem
+
+.mapEmpty:
+.done:
+
+    pop     r9
+    pop     rdi
+    pop     rsi
+    pop     rbx
+
+    ret
+
+;###############################################################################
+;
+; Process each (idx, value) pairs in array.
+;
+; rcx - box (IN / Variant_t)
+; rdx - index iterator (OUT / Variant_t)
+; r8  - value iterator (OUT / Variant_t)
+; r9  - body loop callback (IN / function pointer)
+;
+;###############################################################################
+
+__MOLD_ForDriver_IndexesAndValuesInArray:
+
+    push    rbx
+    push    rsi
+    push    r9
+
+    mov     rcx, [rcx + Variant_t.value]          ; rcx = array (Buffer_t)
+    mov     rcx, [rcx + Buffer_t.bytesPtr]        ; rcx = array (Array_t)
+    mov     rbx, [rcx + Array_t.itemsCnt]         ; rbx = array.itemsCnt (int64)
+
+    or      rbx, rbx
+    jz      .arrayEmpty
+
+    lea     rsi, [rcx + Array_t.items]              ; rsi      = array.items
+    mov     [rdx + Variant_t.type], VARIANT_INTEGER ; idx.type = integer
+
+.arrayNextItem:
+
+    ; ----------------------
+    ; Update index iterator
+    ; ----------------------
+
+    inc     [rdx + Variant_t.value]
+
+    ; ----------------------
+    ; Update value iterator
+    ; ----------------------
+
+    mov     rax, [rsi]
+    mov     rcx, [rsi + 8]
+
+    mov     [r8], rax
+    mov     [r8 + 8], rcx
+
+    ; --------------------------------
+    ; Process next (index:value) pair
+    ; --------------------------------
+
+    push    rdx r8
+    call    qword [rsp + 16]
+    pop     r8 rdx
+
+    ; ----------------
+    ; Go to next pair
+    ; ----------------
+
+    add     rsi, 16
+    dec     rbx
+    jne     .arrayNextItem
+
+.arrayEmpty:
+.done:
+
+    pop     r9
+    pop     rsi
+    pop     rbx
+
+    ret
+
+;###############################################################################
+;
+; Process each (idx, character) pairs in array.
+;
+; rcx - text to process (IN / Variant_t)
+; rdx - index iterator (OUT / Variant_t)
+; r8  - character iterator (OUT / Variant_t)
+; r9  - body loop callback (IN / function address)
+;
+;###############################################################################
+
+__MOLD_ForDriver_IndexesAndValuesInString:
+
+    push    rbx
+    push    rsi
+    push    r9
+
+    mov     rcx, [rcx + Variant_t.value]          ; rcx = string (Buffer_t)
+    mov     rcx, [rcx + Buffer_t.bytesPtr]        ; rcx = string (String_t)
+    mov     rbx, [rcx + String_t.length]          ; rbx = string.length (int64)
+
+    or      rbx, rbx
+    jz      .stringEmpty
+
+    lea     rsi, [rcx + String_t.text]              ; rsi = string.text
+
+    mov     [rdx + Variant_t.type], VARIANT_INTEGER ; idx.type   = integer
+    mov     [r8  + Variant_t.type], VARIANT_STRING  ; value.type = string
+    mov     [r8  + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    mov     [r8  + Variant_t.value], 0
+
+.stringNextItem:
+
+    ; ----------------------
+    ; Update index iterator
+    ; ----------------------
+
+    inc     [rdx + Variant_t.value]
+
+    ; ----------------------
+    ; Update value iterator
+    ; ----------------------
+
+    lodsb
+    mov     [r8 + 8], al
+
+    ; --------------------------------
+    ; Process next (index:value) pair
+    ; --------------------------------
+
+    push    rdx r8
+    call    qword [rsp + 16]
+    pop     r8 rdx
+
+    ; ----------------
+    ; Go to next pair
+    ; ----------------
+
+    dec     rbx
+    jne     .stringNextItem
+
+.stringEmpty:
+.done:
+
+    pop     r9
+    pop     rsi
+    pop     rbx
+
+    ret
+
+;###############################################################################
+;
+; Process each (key, value) pairs in generic box.
+;
+; rcx - any box container (IN / Variant_t)
+; rdx - index iterator (OUT / Variant_t)
+; r8  - character iterator (OUT / Variant_t)
+; r9  - body loop callback (IN / function address)
+;
+;###############################################################################
+
+__MOLD_ForDriver_Generic:
+    mov     eax, [rcx + Variant_t.type]
+    cmp     eax, VARIANT_TYPE_MAX
+    ja      .errorInvalidType
+    jmp     qword [.jmpTable + rax*8]
+
+.jmpTable:
+    dq .errorInvalidType ; undefined
+    dq .errorInvalidType ; null
+    dq .errorInvalidType ; integer
+    dq .errorInvalidType ; float32
+    dq .errorInvalidType ; float64
+    dq __MOLD_ForDriver_IndexesAndValuesInString
+    dq .errorInvalidType ; boolean
+    dq __MOLD_ForDriver_IndexesAndValuesInArray
+    dq __MOLD_ForDriver_KeysAndValuesInMap
+    dq .errorInvalidType ; object (TODO: Not implemented yet)
+
+.errorInvalidType:
+    cinvoke printf, 'error: array, string or map expected'
+    cinvoke ExitProcess, -1
+
