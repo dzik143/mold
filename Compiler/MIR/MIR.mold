@@ -69,6 +69,8 @@ MIR_OPCODE_RETVAL_GUARD = 44
 MIR_OPCODE_INIT_FRAME = 45
 MIR_OPCODE_CONV2STR = 46
 
+MIR_OPCODE_FOR_VALUES = 100
+
 MIR_OPCODE_GETLEN           = 251
 MIR_OPCODE_LOAD_ARGC        = 252
 MIR_OPCODE_LOAD_ARGV        = 253
@@ -195,6 +197,11 @@ class MIRCode
 
   method push2(op, arg1, arg2)
     this.code[this.codeCnt] = [op, arg1, arg2]
+    this.codeCnt = this.codeCnt + 1
+  endmethod
+
+  method push3(op, arg1, arg2, arg3)
+    this.code[this.codeCnt] = [op, arg1, arg2, arg3]
     this.codeCnt = this.codeCnt + 1
   endmethod
 
@@ -556,5 +563,10 @@ class MIRCode
   method retValGuard(rvName, funcName)
     global MIR_OPCODE_RETVAL_GUARD
     this.push2(MIR_OPCODE_RETVAL_GUARD, rvName, funcName)
+  endmethod
+
+  method forValues(valueIterator, cb)
+    global MIR_OPCODE_FOR_VALUES
+    this.push2(MIR_OPCODE_FOR_VALUES, valueIterator, cb)
   endmethod
 endclass

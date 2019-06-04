@@ -262,7 +262,11 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
   global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
   global AST_OPCODE_FOR_VALUES_RANGE, AST_OPCODE_WHILE
-
+  global AST_OPCODE_FOR_VALUES
+  global AST_OPCODE_FOR_KEYS
+  global AST_OPCODE_FOR_KEYS_VALUES
+  global AST_OPCODE_FOR_INDEXES
+  global AST_OPCODE_FOR_INDEXES_VALUES
 
   if opcode is AST_OPCODE_REFERENCE
     rv = '&'
@@ -357,6 +361,9 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
 
   elif opcode is AST_OPCODE_IF
     rv = 'if'
+
+  elif opcode is AST_OPCODE_FOR_VALUES
+    rv = 'for_values'
 
   else
     # TODO: Handle terminal nodes.
