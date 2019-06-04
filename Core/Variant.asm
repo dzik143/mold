@@ -2991,20 +2991,20 @@ __MOLD_ForDriver_KeysAndValuesInMap:
     ; --------------------
 
     mov     rax, [rcx]
-    mov     [rdx], rax
+    mov     r9,  [rcx + 8]
 
-    mov     rax, [rcx + 8]
-    mov     [rdx + 8], rax
+    mov     [rdx], rax
+    mov     [rdx + 8], r9
 
     ; ----------------------
     ; Update value iterator
     ; ----------------------
 
     mov     rax, [rcx + 16]
-    mov     [r8], rax
+    mov     r9,  [rcx + 16 + 8]
 
-    mov     rax, [rcx + 16 + 8]
-    mov     [r8 + 8], rax
+    mov     [r8], rax
+    mov     [r8 + 8], r9
 
     ; ------------------------------
     ; Process next (key:value) pair
@@ -3119,19 +3119,23 @@ __MOLD_ForDriver_IndexesAndValuesInString:
     push    rsi
     push    r9
 
-    mov     rcx, [rcx + Variant_t.value]          ; rcx = string (Buffer_t)
-    mov     rcx, [rcx + Buffer_t.bytesPtr]        ; rcx = string (String_t)
-    mov     rbx, [rcx + String_t.length]          ; rbx = string.length (int64)
-
-    or      rbx, rbx
-    jz      .stringEmpty
-
-    lea     rsi, [rcx + String_t.text]              ; rsi = string.text
-
     mov     [rdx + Variant_t.type], VARIANT_INTEGER ; idx.type   = integer
     mov     [r8  + Variant_t.type], VARIANT_STRING  ; value.type = string
     mov     [r8  + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
     mov     [r8  + Variant_t.value], 0
+
+    mov     ebx, 1                                ; rbx = 1 = start from one char string
+    mov     rax, [rcx + Variant_t.value]          ; rax = string (Buffer_t)
+
+    test    [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jnz     .stringOneCharacter
+
+    mov     rcx, [rax + Buffer_t.bytesPtr]        ; rax = string (String_t)
+    lea     rsi, [rcx + String_t.text]            ; rsi = string.text (char *)
+    mov     rbx, [rcx + String_t.length]          ; rbx = string.length (int64)
+
+    or      rbx, rbx
+    jz      .stringEmpty
 
 .stringNextItem:
 
@@ -3146,6 +3150,9 @@ __MOLD_ForDriver_IndexesAndValuesInString:
     ; ----------------------
 
     lodsb
+
+.stringOneCharacter:
+
     mov     [r8 + 8], al
 
     ; --------------------------------
@@ -3201,7 +3208,9 @@ __MOLD_ForDriver_Generic:
     dq __MOLD_ForDriver_KeysAndValuesInMap
     dq .errorInvalidType ; object (TODO: Not implemented yet)
 
-.errorInvalidType:
-    cinvoke printf, 'error: array, string or map expected'
-    cinvoke ExitProcess, -1
+.errorMsgArrayStringOrMapExpected db 'error: array, string or map expected', 13, 10
 
+.errorInvalidType:
+    cinvoke GetStdHandle, -12
+    cinvoke WriteFile, rax, .errorMsgArrayStringOrMapExpected, 38, NumberOfBytesWritten, 0
+    cinvoke ExitProcess, -1
