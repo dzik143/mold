@@ -265,3 +265,5 @@ if keys    x,y,z arent existent in box
 if indexes x,y,z arent existent in box
 
 #############################
+
+read from system values @time(t), @cpuinfo(cpuinfo)
