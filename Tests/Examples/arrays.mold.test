@@ -104,7 +104,7 @@ print 'x[0][0][0][0][0][0][0][0][0][0]:', x[0][0][0][0][0][0][0][0][0]
 # Print types stored in the whole tree.
 print 'types'
 print '====='
-print 'typeof(x)   :', typeof(x)
+print 'typeof(x):', typeof(x)
 print 'typeof(x[0]):', typeof(x[0])
 print 'typeof(x[0][0]):', typeof(x[0][0])
 print 'typeof(x[0][0][0]):', typeof(x[0][0][0])
@@ -136,7 +136,7 @@ x[0][0][0][0][0][0][0][0][0]: [['x']]
 x[0][0][0][0][0][0][0][0][0][0]: ['x']
 types
 =====
-typeof(x)   : array
+typeof(x): array
 typeof(x[0]): array
 typeof(x[0][0]): array
 typeof(x[0][0][0]): array
@@ -196,7 +196,7 @@ TEST "Bug: crash on <string>[0] = 1"
 'text'[0] = 1
 
 EXPECTED_ERROR:
-error: array or map expected
+error: string type cannot be modified
 -------------------------------------------------------------------------------
 
 TEST "Bug: crash on <integer>[0] = 1"
@@ -1246,4 +1246,26 @@ EXPECTED_OUTPUT:
 1021
 1022
 1023
+-------------------------------------------------------------------------------
+
+TEST "Use array element in arithmetic #1 (integer)"
+
+x = [1,2,3]
+acc = 1000
+acc = acc + x[0]
+print typeof(acc), acc
+
+EXPECTED_OUTPUT:
+integer 1001
+-------------------------------------------------------------------------------
+
+TEST "Use array element in arithmetic #2 (float)"
+
+x = [1.2, 3.4, 5.6]
+acc = 1000
+acc = acc + x[0]
+print typeof(acc), acc
+
+EXPECTED_OUTPUT:
+float 1001.200000
 -------------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 ################################################################################
 #                                                                              #
 # This file is part of Mold project.                                           #
-# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+# Copyright (c) 2015, 2019 Sylwester Wysocki (sw143@wp.pl).                    #
 #                                                                              #
 # The Mold code and any derived work however based on this software are        #
 # copyright of Sylwester Wysocki. Redistribution and use of the present        #
@@ -22,6 +22,9 @@ SYMBOL_KIND_LABEL      = 6
 SYMBOL_KIND_FUNCTION   = 7
 SYMBOL_KIND_CLASS      = 8
 SYMBOL_KIND_METHOD     = 9
+SYMBOL_KIND_JMP_TABLE  = 10
+
+import 'AST/ASTUtils.mold'
 
 SYMBOL_KIND_AS_TEXT = [
   '[error]',
@@ -52,6 +55,19 @@ class SymbolTable
     this.deepMax   = 128
     this.loopLevel = 0
     this.procLevel = 0
+
+    # Track used literals to avoid emitting the same text
+    # multiple time.
+    this.literals = {}
+
+    # Track temporary variables usage and reuse them if possible.
+    this.poolOfTempVars = {
+      'int32':   {'cnt': 0, 'pool': []},
+      'int64':   {'cnt': 0, 'pool': []},
+      'float64': {'cnt': 0, 'pool': []},
+      'bool32':  {'cnt': 0, 'pool': []},
+      'variant': {'cnt': 0, 'pool': []}
+    }
 
     # TODO: Use null.
     this.parent = false
@@ -91,6 +107,12 @@ class SymbolTable
       entry.writeHits = 0
       entry.readHits  = 0
       entry.loopLevel = this.loopLevel
+
+      # Default data type to variant if not set.
+      # TODO: Review it?
+      #if typeof(entry.astType) is 'undefined'
+      #  entry.astType = -1
+      #endif
     endif
   endmethod
 
@@ -103,11 +125,13 @@ class SymbolTable
     symbolsIndex = this.symbols._index
 
     newIndex = []
+
     for idx in 0 .. len(symbolsIndex)
       if symbolsIndex[idx].name isnt entry.name
         newIndex[len(newIndex)] = symbolsIndex[idx]
       endif
     endfor
+
     this.symbols._index = newIndex
   endmethod
 
@@ -125,6 +149,7 @@ class SymbolTable
 
   method _lookupInternal(name) -> rv
     global SYMBOL_KIND_VAR_LOCAL
+    global SYMBOL_KIND_VAR_GLOBAL
 
     rv  = this.symbols[name]
     tab = this
@@ -137,9 +162,11 @@ class SymbolTable
     # Handle unimported global.
     # TODO: Clean up this mess.
     if (typeof(rv) isnt 'undefined')
-      if (tab.procLevel is 0) and (this.procLevel > 0) and (rv.kind is SYMBOL_KIND_VAR_LOCAL)
-        x  = []
-        rv = x[0]
+      if (tab.procLevel is 0) and (this.procLevel > 0)
+        if (rv.kind is SYMBOL_KIND_VAR_LOCAL) or (rv.kind is SYMBOL_KIND_VAR_GLOBAL)
+          x  = []
+          rv = x[0]
+        endif
       endif
     endif
   endmethod
@@ -216,9 +243,11 @@ class SymbolTable
     endif
 
     rv = new SymbolTable(this.app)
-    rv.parent  = this
-    rv.deepIdx = this.deepIdx + 1
-    rv.global  = this.global
+    rv.parent       = this
+    rv.deepIdx      = this.deepIdx + 1
+    rv.procLevel    = this.procLevel
+    rv.global       = this.global
+    rv.functionName = this.functionName
   endmethod
 
   method enterScopeForLoop() -> rv
@@ -226,9 +255,10 @@ class SymbolTable
     rv.loopLevel = this.loopLevel + 1
   endmethod
 
-  method enterScopeForProcedure() -> rv
-    rv           = this.enterScope()
-    rv.procLevel = this.procLevel + 1
+  method enterScopeForProcedure(functionName) -> rv
+    rv              = this.enterScope()
+    rv.procLevel    = this.procLevel + 1
+    rv.functionName = functionName
   endmethod
 
   method leaveScope() -> rv
@@ -260,12 +290,24 @@ class SymbolTable
     global SYMBOL_KIND_FUNCTION
     rv = this.lookupGlobal(name)
 
-    if rv['kind'] isnt SYMBOL_KIND_FUNCTION
+    if rv.kind isnt SYMBOL_KIND_FUNCTION
       die("error: '" + name + "' is not a function")
 
-    elif rv['proto']['paramsCnt'] isnt paramsCnt
-      die("error: function '" + name + "' requires exactly " + str(rv['proto']['paramsCnt']) + ' parameters, but ' + str(paramsCnt) + ' were passed')
+    else
+      # TODO: Clean up this mess.
+      if typeof(rv.proto.classProto) isnt 'undefined'
+        # Adjust for this parameter for direct call.
+        paramsCnt = paramsCnt - 1
+      endif
+
+      if rv.proto.paramsCnt isnt paramsCnt
+        die("error: function '" + name + "' requires exactly " + str(rv['proto']['paramsCnt']) + ' parameters, but ' + str(paramsCnt) + ' were passed')
+      endif
     endif
+  endmethod
+
+  method getCurrentFunctionName() -> rv
+    rv = this.functionName
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -291,6 +333,8 @@ class SymbolTable
   endmethod
 
   method lookupMethod(className, methodName, paramsCnt) -> rv
+    print 'lookupMethod', className, methodName
+
     rv = this.lookupClass(className)['proto']['vtable'][methodName]
 
     if typeof(rv) is 'undefined'
@@ -305,7 +349,7 @@ class SymbolTable
   #                               Variable helper
   # ----------------------------------------------------------------------------
 
-  method insertLocal(name)
+  method insertLocal(name) -> newEntry
     global SYMBOL_KIND_VAR_LOCAL
 
     if this.deepIdx < 1
@@ -321,6 +365,7 @@ class SymbolTable
 
   method importGlobal(name)
     global SYMBOL_KIND_VAR_GLOBAL
+    global SYMBOL_KIND_CONST
 
     if this.deepIdx <= 1
       die('error: global directive used in global space')
@@ -332,6 +377,9 @@ class SymbolTable
 
       if symbolInfo.kind is SYMBOL_KIND_VAR_GLOBAL
         # It's already imported global. Do nothing.
+
+      elif symbolInfo.kind is SYMBOL_KIND_CONST
+        # It's a global constant. Do nothing.
       else
         # It's already declared as another kind.
         die("error: conflicting declaration 'global " + name + "'")
@@ -347,39 +395,58 @@ class SymbolTable
       # Find symbol in global scope.
       symbolInfo = mainScope.lookup(name)
 
+      # Keep access stats after import.
+      writeHits = symbolInfo.writeHits
+      readHits  = symbolInfo.readHits
+      loopLevel = this.loopLevel
+
       if symbolInfo.kind isnt SYMBOL_KIND_VAR_GLOBAL
         # Symbol found in main() function for first time.
         # Change to global and move to global symbol table.
         symbolInfo.kind = SYMBOL_KIND_VAR_GLOBAL
+
+        # Move into global scope.
         this.global.insert(name, symbolInfo)
       endif
 
       # Import global var into current scope.
       this.insert(name, symbolInfo)
+
+      # Keep access stats after import.
+      symbolInfo.writeHits = writeHits
+      symbolInfo.readHits  = readHits
+
+      # TODO: Use max.
+      if loopLevel > symbolInfo.loopLevel
+        symbolInfo.loopLevel = loopLevel
+      endif
     endif
   endmethod
 
-  method insertParam(name)
+  method insertParam(name, paramId) -> newEntry
     global SYMBOL_KIND_VAR_PARAM
     newEntry = {
       'name': name,
-      'kind': SYMBOL_KIND_VAR_PARAM
+      'kind': SYMBOL_KIND_VAR_PARAM,
+      'id': paramId
     }
     this.insert(name, newEntry)
   endmethod
 
-  method insertRetVal(name)
+  method insertRetVal(name) -> newEntry
     global SYMBOL_KIND_VAR_RETVAL
     newEntry = {
       'name': '__rv',
       'kind': SYMBOL_KIND_VAR_RETVAL,
-      'alias': name
+      'alias': name,
+      'astType': -1
     }
     this.insert('__rv', newEntry)
     this.symbols[name] = newEntry
+    this.lookupForRead('__rv')
   endmethod
 
-  method insertConst(name, value)
+  method insertConst(name, value) -> newEntry
     global SYMBOL_KIND_CONST
     newEntry = {
       'name': name,
@@ -390,6 +457,17 @@ class SymbolTable
     # TODO: Review it
     this.insert(name, newEntry)
     this.global.insert(name, newEntry)
+  endmethod
+
+  method insertLiteral(text) -> literalEntry
+    literalEntry = this.global.literals[text]
+
+    if typeof(literalEntry) is 'undefined'
+      # Literal seen first time. Wrap it into new constant.
+      name         = '__literal' + str(SymbolTable_GetNextId())
+      literalEntry = this.insertConst(name, text)
+      this.global.literals[text] = literalEntry
+    endif
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -409,6 +487,51 @@ class SymbolTable
   method assignNode(name, node)
     symbolInfo = this.lookup(name)
     symbolInfo.node = node
+  endmethod
+
+  method assignType(name, newType)
+    global AST_DATA_INTEGER
+    global AST_DATA_DOUBLE
+
+    symbolInfo = this.lookup(name)
+    oldType    = symbolInfo.astType
+
+    if newType isnt oldType
+      goOn = false
+
+      if typeof(oldType) is 'undefined'
+        # First type assign. Go on.
+        goOn = true
+
+      elif oldType is -1
+        # Type is already variant. Don't touch it.
+
+      elif (oldType is AST_DATA_INTEGER) and (newType is AST_DATA_DOUBLE)
+        # integer -> double
+        # Go on.
+        goOn = true
+
+      elif newType is -1
+        # Variant overwrite all types. Go on.
+        goOn = true
+
+      else
+        # Error - type mismatch.
+        die('error: attemp to assign ' + AST_ConvertDataTypeToText(newType) + ' to ' + AST_ConvertDataTypeToText(oldType))
+      endif
+
+      if goOn is true
+        symbolInfo.astType = newType
+        this._debug('Assign AST type [' + AST_ConvertDataTypeToText(newType) + '] to variable [' + str(name) + ']')
+      else
+        this._debug('Ignored ineffective AST type change from [' + AST_ConvertDataTypeToText(oldType) + '] to [' + AST_ConvertDataTypeToText(newType) + '] for variable [' + str(name) + ']')
+      endif
+    endif
+  endmethod
+
+  method assignMirType(name, type)
+    symbolInfo = this.lookup(name)
+    symbolInfo.type = type
   endmethod
 
   method vacuum()
@@ -436,6 +559,39 @@ class SymbolTable
 */
   endmethod
 
+  method removeUnusedSymbols()
+    global SYMBOL_KIND_VAR_PARAM
+    global SYMBOL_KIND_VAR_RETVAL
+
+    index      = this.symbols._index
+    indexCnt   = len(index)
+    newIndex   = []
+    newSymbols = {'_index': newIndex}
+
+    # TODO: Use remove() if ready.
+    #this.symbols = {'_index': []}
+
+    for idx in 0 .. indexCnt
+      symbolInfo = index[idx]
+      if (symbolInfo.writeHits > 0) or (symbolInfo.readHits > 0) or (symbolInfo.kind is SYMBOL_KIND_VAR_PARAM) or (symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL)
+        # Variable is used at least once time. Keep it in table.
+        newIndex[len(newIndex)]     = symbolInfo
+        newSymbols[symbolInfo.name] = symbolInfo
+
+        # TODO: Clean up this mess.
+        # Always keep return val.
+        if symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
+          newSymbols[symbolInfo.alias] = symbolInfo
+        endif
+      else
+        # Variable was never accesed for read. Remove it from table.
+        this._debug('Removed unused symbol [' + symbolInfo.name + ']')
+      endif
+    endfor
+
+    this.symbols = newSymbols
+  endmethod
+
   # ----------------------------------------------------------------------------
   #                               Label helpers
   # ----------------------------------------------------------------------------
@@ -451,23 +607,73 @@ class SymbolTable
     })
   endmethod
 
+  method insertJmpTable(jmpTable) -> newEntry
+    global SYMBOL_KIND_JMP_TABLE
+    name = '__jmptable' + str(SymbolTable_GetNextId())
+    newEntry = {
+      'name': name,
+      'kind': SYMBOL_KIND_JMP_TABLE,
+      'labels': jmpTable
+    }
+    this.insertGlobal(name, newEntry)
+  endmethod
+
   # ----------------------------------------------------------------------------
   #                        Temporary variable helpers
   # ----------------------------------------------------------------------------
 
-  method createTempVar() -> rv
-    rv = 'tmp' + str(SymbolTable_GetNextId())
-    this.insertLocal(rv)
+  method getTempVar(wantedType) -> rv
+    # TODO: Review it.
+    if false #(wantedType isnt -1) and (this.poolOfTempVars[wantedType].cnt > 0)
+      # Get first free temp var from pool
+      poolObj = this.poolOfTempVars[wantedType]
+      poolCnt = poolObj.cnt - 1
+
+      poolObj.cnt = poolCnt
+      rv = poolObj.pool[poolCnt]
+      #print 'Get temp var [', rv, '] from pool', poolObj
+
+    else
+      # There is no free temp vars. Allocate new one.
+      rv = 'tmp' + str(SymbolTable_GetNextId())
+      this.insertLocal(rv)
+      # TODO: Clean up this mess.
+      symbolInfo        = this.lookup(rv)
+      symbolInfo.isTemp = true
+      #symbolInfo.refCnt = 1
+      #print 'Allocated new temp var [', rv, ']'
+    endif
   endmethod
 
-  method createTempVarForWrite() -> rv
-    rv = this.createTempVar()
+  method getTempVarForWrite(wantedType) -> rv
+    rv = this.getTempVar(wantedType)
     this.lookupForWrite(rv)
   endmethod
 
-  method createTempVarForReadAndWrite() -> rv
-    rv = this.createTempVar()
+  method getTempVarForReadAndWrite(wantedType) -> rv
+    rv = this.getTempVar(wantedType)
     this.lookupForRead(rv)
     this.lookupForWrite(rv)
+  endmethod
+
+  method releaseTempVar(name)
+    symbolInfo = this.lookup(name)
+    # TODO: Clean up this mess.
+    if symbolInfo.isTemp is true
+      #symbolInfo.refCnt = symbolInfo.refCnt - 1
+      #if symbolInfo.refCnt is 0
+        # Variable is not used anymore.
+        # Push back to pool of temp variables available to use.
+        mirType = symbolInfo.type
+
+        if typeof(mirType) isnt 'undefined'
+          poolObj = this.poolOfTempVars[mirType]
+          poolObj.pool[poolObj.cnt] = symbolInfo.name
+          poolObj.cnt               = poolObj.cnt + 1
+        endif
+
+        #print 'Release temp var [', symbolInfo.name, '] to pool', poolObj
+      #endif
+    endif
   endmethod
 endclass

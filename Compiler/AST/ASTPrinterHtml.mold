@@ -29,7 +29,7 @@ class ASTPrinterHtml
     symbolsCnt   = len(symbolsIndex)
 
     print '<table border="1">'
-    print '<tr><th>var</th><th>write</th><th>read</th><th>init value</th><th>kind</th><th>loop level</th></tr>'
+    print '<tr><th>var</th><th>write</th><th>read</th><th>init value</th><th>kind</th><th>data type</th><th>loop level</th><th>class name</th></tr>'
 
     for idx in 0 .. symbolsCnt
       symbolInfo = symbolsIndex[idx]
@@ -48,7 +48,15 @@ class ASTPrinterHtml
       print '<td>', symbolInfo.readHits, '</td>'
       print '<td>', value, '</td>'
       print '<td>', SYMBOL_KIND_AS_TEXT[symbolInfo.kind], '</td>'
+      print '<td>', AST_ConvertDataTypeToText(symbolInfo.astType), '</td>'
       print '<td>', symbolInfo.loopLevel, '</td>'
+
+      if typeof(symbolInfo.classProto) isnt 'undefined'
+        print '<td>' + symbolInfo.classProto.name + '</td>'
+      else
+        print '<td>-</td>'
+      endif
+
       print '</tr>'
     endfor
     print '</table>'
@@ -63,6 +71,7 @@ class ASTPrinterHtml
     global AST_OPCODE_FUNCTION
     global AST_OPCODE_CLASS
     global AST_OPCODE_CLASS_METHOD
+    global AST_OPCODE_TYPE_CAST
 
     opcode      = node.opcode
     childrenCnt = node.childrenCnt
@@ -73,6 +82,10 @@ class ASTPrinterHtml
 
     if typeof(node.hash) isnt 'undefined'
       print '<tr><td><small><i>', node.hash, '</i></small></td></tr>'
+    endif
+
+    if node.hasSideEffects is true
+      print '<tr><td><small>has side effects</small></td></tr>'
     endif
 
     if (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
@@ -103,9 +116,13 @@ class ASTPrinterHtml
       if (opcode < AST_OPCODE_PROGRAM) or (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_INVOKE_METHOD) or (opcode is AST_OPCODE_VARIABLE)
         value = node.value
         if typeof(value) is 'string'
-          value = "'" + value + "'"
+          value = "'" + value + "' <i>(" + AST_ConvertDataTypeToText(AST_GetDataType(node)) + ")</i>"
         endif
+
         print '<tr><td>', value, '</td></tr>'
+
+      elif opcode is AST_OPCODE_TYPE_CAST
+        print '<tr><td><i>(' + AST_ConvertDataTypeToText(node.astDataType) + ')</i></td></tr>'
       endif
 
       print '<tr>'

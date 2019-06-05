@@ -1,0 +1,42 @@
+Nieu¾yte:
+~
+%
+&
+\
+?
+
+
+
+Wykorzystane:
+
+#   #        komentarz
+$   $x       wyra¾enie symboliczne
+
+()  foo(1)   nawias
+_   _foo     prywatna metoda
+
+=   x = 1    przypisanie
+-   x - y    odejmowanie
++   x + y    dodawanie
+*   x * y    mno¾enie
+/   x / y    dzielenie
+^   x^2      pot©gowanie
+|   |x|      warto˜† bezwzgl©dna
+!   x!       silnia
+
+<   x < y    por¢wnanie mniejszy ni¾
+>   x > y    por¢wnanie wi©kszy ni¾
+
+[]  x[i]     tablice
+{}: {'x': 1} mapy
+
+;            jednolinijkowe wyra¾enie
+
+'   'abc'    napisy
+"   "abc"    napisy
+`   `abc`    napisy
+
+,   [x, y]   separator w listach
+.   this.x   dost©p do pola
+
+@   @eol     dyrektywy w bloku I/O

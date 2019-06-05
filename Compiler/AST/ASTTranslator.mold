@@ -35,8 +35,6 @@ class ASTTranslator
     # TODO: Use null?
     this.currentClassProto    = false
     this.currentFunctionProto = false
-    this.lastReturnType       = 'unknown'
-    this.lastReturnClassName  = 'unknown'
 
     # TODO: Use many deep levels in symbol table.
     this.branchDeepIdx = 0
@@ -45,6 +43,12 @@ class ASTTranslator
   # ----------------------------------------------------------------------------
   #                             Error handlers
   # ----------------------------------------------------------------------------
+
+  method _debug(msg)
+    if false
+      print '[ ASTTranslator ]', msg
+    endif
+  endmethod
 
   method _error(msg)
     die('error: ' + msg)
@@ -55,14 +59,17 @@ class ASTTranslator
   # ----------------------------------------------------------------------------
 
   method _callLen(x) -> rv
+    rv = false
     this._error('_callLen not implemented')
   endmethod
 
   method _callStr(x) -> rv
+    rv = false
     this._error('_callStr not implemented')
   endmethod
 
   method _callStrEscape(x) -> rv
+    rv = false
     this._error('_callStrEscape not implemented')
   endmethod
 
@@ -83,22 +90,27 @@ class ASTTranslator
   endmethod
 
   method _callMoldCreateObject(classProto) -> rv
+    rv = false
     this._error('_callMoldCreateObject not implemented')
   endmethod
 
   method _callMoldGetClassName(thiz) -> rv
+    rv = false
     this._error('_callMoldGetClassName not implemented')
   endmethod
 
   method _callMoldParseFile(filePath) -> rv
+    rv = false
     this._error('_callMoldParseFile not implemented')
   endmethod
 
   method _loadArgsVector() -> rv
+    rv = false
     this._error('_loadArgsVector not implemented')
   endmethod
 
   method _loadArgsCount() -> rv
+    rv = false
     this._error('_callLoadArgsCount not implemented')
   endmethod
 
@@ -107,26 +119,38 @@ class ASTTranslator
   # ----------------------------------------------------------------------------
 
   method _loadArray() -> rv
+    rv = false
     this._error('_loadArray() not implemented')
   endmethod
 
   method _loadMap() -> rv
+    rv = false
     this._error('_loadMap() not implemented')
   endmethod
 
   method _loadImm(value) -> rv
+    rv = false
     this._error('_loadImm() not implemented')
   endmethod
 
+  method _loadImmAsVariant(value) -> rv
+    # TODO: Review is it really needed?
+    rv = false
+    this._error('_loadImmAsVariant() not implemented')
+  endmethod
+
   method _loadVariable(name) -> rv
+    rv = false
     this._error('_loadVariable() not implemented')
   endmethod
 
   method _call(funcProto, params, paramsCnt) -> rv
+    rv = false
     this._error('_call() not implemented')
   endmethod
 
   method _invokeMethod(methodName, params, paramsCnt) -> rv
+    rv = false
     this._error('_invokeMethod() not implemented')
   endmethod
 
@@ -135,66 +159,82 @@ class ASTTranslator
   endmethod
 
   method _typeof(value) -> rv
+    rv = false
     this._error('_typeof() not implemented')
   endmethod
 
   method _neg(value) -> rv
+    rv = false
     this._error('_neg() not implemented')
   endmethod
 
   method _add(x, y) -> rv
+    rv = false
     this._error('_add() not implemented')
   endmethod
 
   method _sub(x, y) -> rv
+    rv = false
     this._error('_sub() not implemented')
   endmethod
 
   method _mul(x, y) -> rv
+    rv = false
     this._error('_mul() not implemented')
   endmethod
 
   method _div(x, y) -> rv
+    rv = false
     this._error('_div() not implemented')
   endmethod
 
   method _idiv(x, y) -> rv
+    rv = false
     this._error('_idiv() not implemented')
   endmethod
 
   method _compareEQ(x, y) -> rv
+    rv = false
     this._error('_compareEQ() not implemented')
   endmethod
 
   method _compareNEQ(x, y) -> rv
+    rv = false
     this._error('_compareNEQ() not implemented')
   endmethod
 
   method _compareLT(x, y) -> rv
+    rv = false
     this._error('_compareLT() not implemented')
   endmethod
 
   method _compareLE(x, y) -> rv
+    rv = false
     this._error('_compareLE() not implemented')
   endmethod
 
   method _compareGT(x, y) -> rv
+    rv = false
     this._error('_compareGT() not implemented')
   endmethod
 
   method _compareGE(x, y) -> rv
+    rv = false
     this._error('_compareGE() not implemented')
   endmethod
 
   method _boolAnd(x, y) -> rv
+    rv = false
     this._error('_boolAnd() not implemented')
   endmethod
 
   method _boolOr(x, y) -> rv
+    rv = false
     this._error('_boolOr() not implemented')
   endmethod
 
   method _loadFromIndex(box, idx) -> rv
+    rv = false
     this._error('_loadFromIndex() not implemented')
   endmethod
 
@@ -207,7 +247,13 @@ class ASTTranslator
   endmethod
 
   method _createObject(classProto) -> rv
+    rv = false
     this._error('_createObject() not implemented')
+  endmethod
+
+  method _convert(srcNode, srcType, dstType) -> rv
+    rv = false
+    this._error('_convert() is not implemented')
   endmethod
 
   method _dropRetVal()
@@ -222,12 +268,6 @@ class ASTTranslator
   method _emitFunctionBody(funcName, funcProto)
   endmethod
 
-  method _onScopeEnter(blockNode)
-  endmethod
-
-  method _onScopeLeave(blockNode)
-  endmethod
-
   method _declareExternalFunction(funcName, funcProto)
     this.symbolTable.insertFunction(funcName, funcProto)
   endmethod
@@ -238,11 +278,9 @@ class ASTTranslator
 
   method _enterScope(ast)
     this.symbolTable = ast.symbolTable
-    this._onScopeEnter(ast)
   endmethod
 
   method _leaveScope()
-    this._onScopeLeave()
     childTable = this.symbolTable
     this.symbolTable = this.symbolTable.parent
 
@@ -267,11 +305,22 @@ class ASTTranslator
 
       else
         # TODO: Accumulate hits?
-
+        if symbolsCurrent[id].astType isnt item.astType
+          die('error: type conflict for variable "' + item.name + '"')
+          #symbolsCurrent[id].astType = -1
+          #item.astType = -1
+        endif
       endif
     endfor
   endmethod
 
+  method _verifyNumberOfParameters(name, paramsExpectedCnt, paramsPassedCnt)
+    if paramsPassedCnt isnt paramsExpectedCnt
+      die('error: ' + name + ' function requires exactly ' + str(paramsExpectedCnt) + ' parameter(s), but ' + str(paramsPassedCnt) + ' were passed')
+    endif
+  endmethod
+
+/*
   method _getNextId() -> rv
     rv          = this.nextId
     this.nextId = this.nextId + 1
@@ -285,17 +334,11 @@ class ASTTranslator
     rv = '_l' + str(this._getNextId())
   endmethod
 
-  method _verifyNumberOfParameters(name, paramsExpectedCnt, paramsPassedCnt)
-    if paramsPassedCnt isnt paramsExpectedCnt
-      die('error: ' + name + ' function requires exactly ' + str(paramsExpectedCnt) + ' parameter(s), but ' + str(paramsPassedCnt) + ' were passed')
-    endif
-  endmethod
-
   method _createTempVarAndAssign(value) -> rv
     rv = this._createTempVar()
     this._declareAndAssign(rv, value)
   endmethod
-
+*/
   method _emitFunction(ast)
     global AST_OPCODE_CLASS_METHOD
 
@@ -304,11 +347,13 @@ class ASTTranslator
     children  = ast['children']
 
     if typeof(children) isnt 'undefined'
+      this.app._debug('Emitting function ' + funcName + '...')
+
       oldSymbolTable   = this.symbolTable
       this.symbolTable = ast.children[0].symbolTable
 
       if typeof(funcProto.className) isnt 'undefined'
-        this.currentClassProto    = oldSymbolTable.lookupClass(funcProto.className)['proto']
+        this.currentClassProto = oldSymbolTable.lookupClass(funcProto.className)['proto']
       endif
 
       this.currentFunctionProto = funcProto
@@ -328,6 +373,8 @@ class ASTTranslator
     global SYMBOL_KIND_CLASS
     global SYMBOL_KIND_METHOD
 
+    this._debug('Going to emit globals')
+
     symbols = this.symbolTable.exportSymbols()
     symbolsIndex = symbols._index
     symbolsCnt   = len(symbolsIndex)
@@ -343,6 +390,8 @@ class ASTTranslator
         this._declareClass(symbolInfo.name, symbolInfo.proto)
       endif
     endfor
+
+    this._debug('Globals emmited')
   endmethod
 
   method _callSuper(params, paramsCnt)
@@ -379,6 +428,7 @@ class ASTTranslator
 
       this._call(methodProto['baseMethod'], newParams, paramsCnt + 1)
     endif
+
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -390,8 +440,8 @@ class ASTTranslator
   endmethod
 
   method _getMethodProto(className, methodName, paramsCnt) -> rv
+    rv = false
     die('ASTTranslator::_getMethodProto() not implemented')
-    #rv = this.symbolTable.lookupMethod(className, methodName, paramsCnt)
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -419,13 +469,6 @@ class ASTTranslator
 
   method _declareVariable(name)
     die('ASTTranslator::_declareVariable() not implemented')
-
-    # this.symbolTable.insertLocal(name)
-
-    # TODO: Use many deep levels in symbol table.
-    #if this.branchDeepIdx > 0
-    #  this.symbolTable.setType(name, 'variant')
-    #endif
   endmethod
 
   method _assign(name, value)
@@ -438,7 +481,7 @@ class ASTTranslator
 
   method _evaluateNode(ast) -> rv
     global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
-    global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+    global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_NULL, AST_DATA_UNDEFINED
     global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
     global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
@@ -448,45 +491,68 @@ class ASTTranslator
     global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
     global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
     global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
-
-    rvType      = 'unknown'
-    rvClassName = 'unknown'
+    global AST_OPCODE_TYPE_CAST
 
     opcode      = ast['opcode']
     value       = ast['value']
     children    = ast['children']
     childrenCnt = ast['childrenCnt']
 
-    if opcode is AST_DATA_ARRAY
-      rvType = 'array'
+    this._debug('_evaluateNode: ' + str(opcode) + ', ' + str(value))
 
+    #
+    # DEBUG ONLY
+    #
+
+    if (ast.isTranslated is true) and (AST_IsImmOrVar(ast) is false)
+      die('error: node #' + str(ast.id) + ' is already translated (eval)')
+    endif
+
+    if childrenCnt isnt len(ast.children)
+      die('error: inconsistent childrenCnt (' + str(childrenCnt) + ') vs len(children) (' + str(len(ast.children)) + ') at node #' + str(ast.id))
+    endif
+
+    ast.isTranslated = true
+
+    #
+    # END OF DEBUG ONLY
+    #
+
+    # TODO: Clean up this mess.
+    # This is temporary hack to get result type before allocating new
+    # temp var.
+    #astDataType         = AST_GetDataType(ast)
+    #this.rvDataTypeHack = AST_ConvertDataTypeToMIR(astDataType)
+
+    if opcode is AST_DATA_ARRAY
       if typeof(value) is 'array'
         rv = this._loadImm(value)
 
       else
         rv = this._loadArray()
-
+        # TODO: Handle non-variant indexes and values.
         for idx in 0 .. childrenCnt
-          key   = this._loadImm(idx)
+          key   = this._loadImmAsVariant(idx)
           value = this._evaluateNode(children[idx])
-          this._storeAtIndex(rv, key, value)
+          valueAsVariant = this._convert(value, AST_GetDataType(children[idx]), -1)
+          this._storeAtIndex(rv, key, valueAsVariant)
         endfor
       endif
 
     elif opcode is AST_DATA_MAP
-      rvType = 'map'
-      rv     = this._loadMap()
+      rv = this._loadMap()
 
       for idx in 0 .. childrenCnt step 2
+        # TODO: Handle non-variant values.
         key   = this._evaluateNode(children[idx])
         value = this._evaluateNode(children[idx + 1])
-        this._storeAtIndex(rv, key, value)
+        valueAsVariant = this._convert(value, AST_GetDataType(children[idx + 1]), -1)
+        this._storeAtIndex(rv, key, valueAsVariant)
       endfor
 
     elif (opcode < AST_OPCODE_PROGRAM)
       # Imm data node, just return value.
-      rvType = 'imm'
-      rv     = this._loadImm(value)
+      rv = this._loadImm(value)
 
     elif opcode is AST_OPCODE_CALL
       # foo(x,y,z...).
@@ -499,8 +565,7 @@ class ASTTranslator
     elif opcode is AST_OPCODE_VARIABLE
       if value is 'argv'
         # Built-in access to command line parametrs.
-        rvType = 'array'
-        rv     = this._loadArgsVector()
+        rv = this._loadArgsVector()
 
         if this.symbolTable.procLevel > 0
           this.symbolTable.importGlobal('argv')
@@ -508,8 +573,7 @@ class ASTTranslator
 
       elif value is 'argc'
         # Built-in access to command line parametrs.
-        rvType = 'integer'
-        rv     = this._loadArgsCount()
+        rv = this._loadArgsCount()
 
         if this.symbolTable.procLevel > 0
           this.symbolTable.importGlobal('argc')
@@ -518,30 +582,17 @@ class ASTTranslator
       else
         # Treat as ordinary variable.
         rv = this._loadVariable(value)
+      endif
 
-        # Try to determine variable type.
-        if value is 'this'
-          # This parameter, we known we're inside class declaration.
-          rvType = 'object'
-          if this.currentClassProto isnt false
-            rvClassName = this.currentClassProto['name']
-          endif
+    elif opcode is AST_OPCODE_TYPE_CAST
+      srcNode = children[0]
+      srcType = AST_GetDataType(srcNode)
+      dstType = AST_GetDataType(ast)
 
-        else
-          # TODO
-          # Default way, ask symbol table.
-          #symbolInfo  = this.symbolTable.lookup(value)
-          #rvType      = symbolInfo['type']
-          #rvClassName = symbolInfo['className']
+      rv = this._evaluateNode(srcNode)
 
-          #if typeof(rvType) is 'undefined'
-          #  rvType = 'unknown'
-          #endif
-
-          #if typeof(rvClassName) is 'undefined'
-          #  rvClassName = 'unknown'
-          #endif
-        endif
+      if srcType isnt dstType
+        rv = this._convert(rv, srcType, dstType)
       endif
 
     elif opcode is AST_OPCODE_NEG
@@ -577,9 +628,6 @@ class ASTTranslator
         this._call(methodProto, params, paramsCnt)
       endif
 
-      rvType      = 'object'
-      rvClassName = value
-
     elif childrenCnt is 2
       # x OP y
       left  = this._evaluateNode(children[0])
@@ -589,33 +637,22 @@ class ASTTranslator
         # x[idx]
         rv = this._loadFromIndex(left, right)
 
-        if (this.currentClassProto isnt false) and (children[0]['value'] is 'this') and (children[1]['opcode'] is AST_DATA_STRING)
-          fieldName   = children[1]['value']
-          rvClassName = this.currentClassProto['propertyClassNames'][fieldName]
-        endif
-
       elif opcode is AST_OPCODE_COMPARE_EQ
-        rvType = 'boolean'
-        rv     = this._compareEQ(left, right)
+        rv = this._compareEQ(left, right)
 
       elif opcode is AST_OPCODE_COMPARE_NEQ
-        rvType = 'boolean'
-        rv     = this._compareNEQ(left, right)
+        rv = this._compareNEQ(left, right)
 
       elif opcode is AST_OPCODE_COMPARE_GT
-        rvType = 'boolean'
-        rv     = this._compareGT(left, right)
+        rv = this._compareGT(left, right)
 
       elif opcode is AST_OPCODE_COMPARE_GE
-        rvType = 'boolean'
-        rv     = this._compareGE(left, right)
+        rv = this._compareGE(left, right)
 
       elif opcode is AST_OPCODE_COMPARE_LT
-        rvType = 'boolean'
-        rv     = this._compareLT(left, right)
+        rv = this._compareLT(left, right)
 
       elif opcode is AST_OPCODE_COMPARE_LE
-        rvType = 'boolean'
         rv = this._compareLE(left, right)
 
       elif opcode is AST_OPCODE_ADD
@@ -632,14 +669,23 @@ class ASTTranslator
 
       elif opcode is AST_OPCODE_IDIV
         rv = this._idiv(left, right)
+
+      else
+        rv = -1
       endif
 
     else
+      # TODO: Handle terminal nodes.
+      rv = -1
       die('error: unexpected rvalue node ' + str(opcode) + ' ' + str(value))
     endif
 
-    this.lastReturnType      = rvType
-    this.lastReturnClassName = rvClassName
+    # TODO: Return symbolInfo instead of symbol name?
+    if typeof(rv) is 'string'
+      astDataType = AST_GetDataType(ast)
+      mirDataType = AST_ConvertDataTypeToMIR(astDataType)
+      this.symbolTable.assignMirType(rv, mirDataType)
+    endif
   endmethod
 
   method _evaluateNodeCall(ast) -> rv
@@ -728,8 +774,7 @@ class ASTTranslator
 
     # Evaluate this and try to resolve static className
     # (compilation time) if possible.
-    thiz      = this._evaluateNode(children[0])
-    className = this.lastReturnClassName
+    thiz = this._evaluateNode(children[0])
 
     # Evaluate parameters.
     params    = []
@@ -742,23 +787,16 @@ class ASTTranslator
 
     # Call method.
     # TODO: Change to static call if possible.
-    #if className is 'unknown'
-      # Class name is unknown. Pure virtual (runtime) call needed.
-      rv = this._invokeMethod(methodName, params, paramsCnt)
-
-    #else
-    #  # TODO: Class name is known at compilation time. Just call
-    #  # target address.
-    #  methodProto = this._getMethodProto(className, methodName, paramsCnt)
-    #  rv          = this._call(methodProto, params, paramsCnt)
-    #endif
+    rv = this._invokeMethod(methodName, params, paramsCnt)
   endmethod
 
   method _evaluateNodeLazyBoolAnd(leftAst, rightAst) -> rv
+    rv = false
     this._error('_evaluateNodeBoolAnd() not implemented')
   endmethod
 
   method _evaluateNodeLazyBoolOr(leftAst, rightAst) -> rv
+    rv = false
     this._error('_evaluateNodeBoolOr() not implemented')
   endmethod
 
@@ -774,19 +812,51 @@ class ASTTranslator
     this._error('_executeNodeIf() not implemented')
   endmethod
 
+  method _executeNodeSwitch(node)
+    this._error('switch not implemented')
+  endmethod
+
   method _executeNode(ast)
     global AST_OPCODE_PROGRAM, AST_OPCODE_BLOCK, AST_OPCODE_DECLARE_OR_ASSIGN
     global AST_OPCODE_FOR_VALUES_RANGE, AST_OPCODE_WHILE
     global AST_OPCODE_CALL, AST_OPCODE_FUNCTION, AST_OPCODE_IF, AST_OPCODE_SWITCH
-    global AST_OPCODE_VARIABLE, AST_OPCODE_REFERENCE, AST_OPCODE_SWITCH_CASE_OTHERWISE
+    global AST_OPCODE_VARIABLE, AST_OPCODE_REFERENCE
     global AST_OPCODE_CLASS, AST_OPCODE_CLASS_METHOD, AST_OPCODE_INVOKE_METHOD
-    global AST_OPCODE_NOP, AST_DATA_STRING
+    global AST_OPCODE_NOP, AST_DATA_STRING, AST_OPCODE_ADD
+    global SYMBOL_KIND_VAR_RETVAL
+    global AST_OPCODE_FOR_VALUES
+    global AST_OPCODE_FOR_KEYS
+    global AST_OPCODE_FOR_KEYS_VALUES
+    global AST_OPCODE_FOR_INDEXES
+    global AST_OPCODE_FOR_INDEXES_VALUES
 
     # Fetch opcode.
     opcode      = ast['opcode']
     value       = ast['value']
     children    = ast['children']
     childrenCnt = ast['childrenCnt']
+
+    this._debug('_executeNode: ' + str(opcode) + ', ' + str(value))
+
+    #
+    # DEBUG ONLY
+    #
+
+    # print ast.id, opcode, value
+
+    if ast.isTranslated is true
+      die('error: node #' + str(ast.id) + ' is already translated')
+    endif
+
+    if childrenCnt isnt len(ast.children)
+      die('error: inconsistent childrenCnt (' + str(childrenCnt) + ') vs len(children) (' + str(len(ast.children)) + ') at node #' + str(ast.id))
+    endif
+
+    ast.isTranslated = true
+
+    #
+    # END OF DEBUG ONLY
+    #
 
     # Dispatch opcode.
     if opcode is AST_OPCODE_PROGRAM
@@ -803,10 +873,7 @@ class ASTTranslator
       this.currentFunctionProto = false
 
     elif opcode is AST_OPCODE_BLOCK
-      # OLD IMPLEMENTATION
-      #oldSymbolTable   = this.symbolTable
-      #this.symbolTable = ast.symbolTable
-      #this._onBlockEnter(ast)
+      oldSymbolTable   = this.symbolTable
 
       this._enterScope(ast)
 
@@ -816,9 +883,7 @@ class ASTTranslator
 
       this._leaveScope()
 
-      # OLD IMPLEMENTATION
-      #this.symbolTable = oldSymbolTable
-      #this._onBlockLeave(ast)
+      this.symbolTable = oldSymbolTable
 
     elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
       # x = y
@@ -828,39 +893,29 @@ class ASTTranslator
         # x = y
         lval = lval['value']
         rval = this._evaluateNode(children[1])
+        this._assign(lval, rval)
 
-        # Assign new value.
-        #if this._isset(lval) is false
-        #  this._declareAndAssign(lval, rval)
-        #else
-          this._assign(lval, rval)
-        #endif
-
-        # Save assigned type.
-        # TODO: Handle type mismatch.
-        #symbolInfo              = this.symbolTable.lookup(lval)
-        #symbolInfo['type']      = this.lastReturnType
-        #symbolInfo['className'] = this.lastReturnClassName
+        # Special case: x = x + y
+        if (children[1].opcode is AST_OPCODE_ADD) and (lval is children[1].children[0].value)
+          symbolInfo = this.symbolTable.lookup(lval)
+          symbolInfo.duplicateOnFirstWrite = true
+        endif
 
       elif lval['opcode'] is AST_OPCODE_REFERENCE
         # x[i] = y
         boxNode   = lval['children'][0]
         indexNode = lval['children'][1]
+        valueNode = children[1]
 
+        # TODO: Handle non-variant index and value.
         box   = this._evaluateNode(boxNode)
         index = this._evaluateNode(indexNode)
-        rval  = this._evaluateNode(children[1])
-
-        # TODO
-        #if (boxNode['value'] is 'this') and (indexNode['opcode'] is AST_DATA_STRING)
-        #  fieldName = indexNode['value']
-        #  this.currentClassProto['propertyClassNames'][fieldName] = this.lastReturnClassName
-        #endif
+        rval  = this._evaluateNode(valueNode)
 
         this._storeAtIndexAndDrop(box, index, rval)
 
       else
-        die('error: unexpected rvalue node ' + str(lval['opcode']) + ' ' + str(lval['value']))
+        die('error: unexpected lvalue node ' + str(lval['opcode']) + ' ' + str(lval['value']))
       endif
 
     elif opcode is AST_OPCODE_FOR_VALUES_RANGE
@@ -879,8 +934,25 @@ class ASTTranslator
       # TODO: Clean up this mess?
       oldSymbolTable   = this.symbolTable
       this.symbolTable = bodyAst.symbolTable
+
+      # Is it really needed?
+      astDataType = AST_GetDataType(children[0])
+      mirDataType = AST_ConvertDataTypeToMIR(astDataType)
+      this.symbolTable.assignMirType(iteratorName, mirDataType)
+
       this._executeNodeFor(iteratorName, valueStart, valueEnd, valueStep, bodyAst)
       this.symbolTable = oldSymbolTable
+
+    elif opcode is AST_OPCODE_FOR_VALUES
+      # for values v in box
+      valueIterator = children[0]['value']
+      box           = this._evaluateNode(children[1])
+      loopBodyNode  = children[2]
+
+      # Enter loop scope.
+      this._enterScope(loopBodyNode)
+      this._executeNodeForValues(valueIterator, box, loopBodyNode)
+      this._leaveScope()
 
     elif opcode is AST_OPCODE_WHILE
       # while (cond)
@@ -923,7 +995,7 @@ class ASTTranslator
       endif
 
     elif opcode is AST_OPCODE_SWITCH
-      this._error('switch not implemented')
+      this._executeNodeSwitch(ast)
 
     elif opcode is AST_OPCODE_CLASS
       # Do nothing.
@@ -946,8 +1018,6 @@ class ASTTranslator
   # ----------------------------------------------------------------------------
 
   method run(ast)
-    #this._resolveImports(ast)
-    #this._declareGlobals(ast)
     this._executeNode(ast)
   endmethod
 endclass

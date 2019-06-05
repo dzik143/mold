@@ -8,9 +8,9 @@
 # This file is part of Mold project.                                           #
 # Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
 #                                                                              #
-# The Mold code and any derived work however based on this software are        # 
+# The Mold code and any derived work however based on this software are        #
 # copyright of Sylwester Wysocki. Redistribution and use of the present        #
-# software is allowed according to terms specified in the file LICENSE         # 
+# software is allowed according to terms specified in the file LICENSE         #
 # which comes in the source distribution.                                      #
 #                                                                              #
 # All rights reserved.                                                         #
@@ -177,9 +177,9 @@
 # This file is part of Mold project.                                           #
 # Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
 #                                                                              #
-# The Mold code and any derived work however based on this software are        # 
+# The Mold code and any derived work however based on this software are        #
 # copyright of Sylwester Wysocki. Redistribution and use of the present        #
-# software is allowed according to terms specified in the file LICENSE         # 
+# software is allowed according to terms specified in the file LICENSE         #
 # which comes in the source distribution.                                      #
 #                                                                              #
 # All rights reserved.                                                         #
@@ -226,57 +226,6 @@ function debug(msg)
   if UNICC_DEBUG is true
     print 'debug:', msg
   endif
-endfunction
-
-function modulo(x, y) -> rv
-  rv = x - (x // y) * y
-endfunction
-
-function bitwiseAnd(n1, n2) -> rv
-  val = 1
-  rv  = 0
-
-  while (n1 > 0) or (n2 > 0)
-    if (modulo(n1, 2) is 1) and (modulo(n2, 2) is 1)
-      rv = rv + val
-    endif
-
-    n1  = n1 // 2
-    n2  = n2 // 2
-    val = val * 2
-  endwhile
-endfunction
-
-function ord(ch) -> rv
-  if typeof(ch) is 'string'
-    rv = __mold_peek(ch, 0)
-  else
-    rv = ch
-  endif
-endfunction
-
-function parseFloat(text) -> rv
-  textLen        = len(text)
-  integerPart    = 0
-  fractionalPart = 0
-  idx            = 0
-
-  # Collect integer part.
-  while (idx &lt; textLen) and (text[idx] isnt '.')
-    integerPart = 10 * integerPart + ord(text[idx]) - 48
-    idx = idx + 1
-  endwhile
-
-  # Collect fractional part if any.
-  if text[idx] is '.'
-    idx = textLen - 1
-    while text[idx] isnt '.'
-      fractionalPart = 0.1 * fractionalPart + ord(text[idx]) - 48
-      idx = idx - 1
-    endwhile
-  endif
-
-  rv =  integerPart + 0.1 * fractionalPart
 endfunction
 
 # -----------------------------------------------------------------------------
@@ -356,7 +305,7 @@ class AST
     this.emit  = emit
     this.token = token
     this.id    = NodeId
-    
+
     NodeId = NodeId + 1
   endmethod
 
@@ -390,7 +339,7 @@ class AST
 
   method _convertInternal(node, deepIdx) -> rv
     global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
-    global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+    global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_NULL, AST_DATA_UNDEFINED
     global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
     global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
@@ -402,12 +351,18 @@ class AST
     global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
 
     global AST_OPCODE_PROGRAM, AST_OPCODE_BLOCK, AST_OPCODE_DECLARE_OR_ASSIGN
-    global AST_OPCODE_FOR_VALUES_RANGE, AST_OPCODE_WHILE, AST_OPCODE_FOR
+    global AST_OPCODE_FOR_VALUES_RANGE, AST_OPCODE_WHILE
     global AST_OPCODE_CALL, AST_OPCODE_FUNCTION, AST_OPCODE_IF, AST_OPCODE_SWITCH
-    global AST_OPCODE_VARIABLE, AST_OPCODE_REFERENCE, AST_OPCODE_SWITCH_CASE_OTHERWISE
+    global AST_OPCODE_VARIABLE, AST_OPCODE_REFERENCE
     global AST_OPCODE_CLASS, AST_OPCODE_CLASS_METHOD, AST_OPCODE_INVOKE_METHOD
     global AST_OPCODE_NOP, AST_DATA_STRING, AST_OPCODE_FOR_VALUES_RANGE
-    global AST_OPCODE_ELIF, AST_OPCODE_CALL_DELETE
+    global AST_OPCODE_CALL_DELETE
+
+    global AST_OPCODE_FOR_VALUES
+    global AST_OPCODE_FOR_INDEXES
+    global AST_OPCODE_FOR_INDEXES_VALUES
+    global AST_OPCODE_FOR_KEYS
+    global AST_OPCODE_FOR_KEYS_VALUES
 
     global null
 
@@ -430,7 +385,7 @@ class AST
       opcode = AST_DATA_BOOL
 
     elif emit is 'unused'
-      opcode = AST_DATA_PTR
+      opcode = AST_DATA_OBJECT
 
     elif emit is 'null'
       opcode = AST_DATA_NULL
@@ -495,24 +450,39 @@ class AST
     elif emit is 'for'
       opcode = AST_OPCODE_FOR_VALUES_RANGE
 
+    elif emit is 'for_values'
+      opcode = AST_OPCODE_FOR_VALUES
+
+    elif emit is 'for_indexes'
+      opcode = AST_OPCODE_FOR_INDEXES
+
+    elif emit is 'for_keys'
+      opcode = AST_OPCODE_FOR_KEYS
+
+    elif emit is 'for_keys_values'
+      opcode = AST_OPCODE_FOR_KEYS_VALUES
+
+    elif emit is 'for_keys_indexes_values'
+      opcode = AST_OPCODE_FOR_INDEXES_VALUES
+
     elif emit is 'while'
       opcode = AST_OPCODE_WHILE
 
     elif emit is 'cmpeq'
       opcode = AST_OPCODE_COMPARE_EQ
-     
+
     elif emit is 'cmpne'
       opcode = AST_OPCODE_COMPARE_NEQ
-      
+
     elif emit is 'cmpgt'
       opcode = AST_OPCODE_COMPARE_GT
 
     elif emit is 'cmpge'
       opcode = AST_OPCODE_COMPARE_GE
-    
+
     elif emit is 'cmplt'
       opcode = AST_OPCODE_COMPARE_LT
-    
+
     elif emit is 'cmple'
       opcode = AST_OPCODE_COMPARE_LE
 
@@ -524,7 +494,7 @@ class AST
 
     elif emit is 'not'
       opcode = AST_OPCODE_BOOL_NOT
-      
+
     elif emit is 'function'
       opcode = AST_OPCODE_FUNCTION
       rv['name']      = value['name']
@@ -549,26 +519,28 @@ class AST
       newParams = ['this']
       params    = value['parameters']
       paramsCnt = len(params)
-      
+
       for idx in 0 .. paramsCnt
         newParams[idx + 1] = params[idx]
       endfor
-      
+
       rv['name']      = value['name']
       rv['params']    = newParams
       rv['paramsCnt'] = len(newParams)
       rv['rv']        = value['rv']
-      
+
     elif emit is 'vcall'
       opcode = AST_OPCODE_INVOKE_METHOD
-      
+
     elif emit is 'new'
       opcode = AST_OPCODE_CALL_NEW
-      
+
     elif emit is 'delete'
       opcode = AST_OPCODE_CALL_DELETE
-    
+
     else
+      # TODO: Remove opcode assign.
+      opcode = -1
       die('Unrecognized opcode ' + emit)
     endif
 
@@ -583,7 +555,7 @@ class AST
       children[childrenCnt] = newChild
       childrenCnt           = childrenCnt + 1
       node                  = node.next
-  
+
       newChild.parent = node
     endwhile
 
@@ -731,7 +703,7 @@ class Parser
       if this.len &gt; 0
         # Update counters for line and column
         for idx in 0 .. this.len
-          if ord(this.buf[idx]) is 10
+          if __mold_ord(this.buf[idx]) is 10
             this.line   = this.line + 1
             this.column = 1
           else
@@ -856,7 +828,7 @@ class Parser
       mach = @@prefix_dfa_select[this.stack[this.stackIdx].state]
     endif
 
-    next = ord(this._getInput(length))
+    next = __mold_ord(this._getInput(length))
 
     if next is this.eof
       this.sym = @@eof
@@ -895,7 +867,7 @@ class Parser
 
             if innerGoOn is true
               length    = length + 1
-              next      = ord(this._getInput(length))
+              next      = __mold_ord(this._getInput(length))
               innerGoOn = false
             endif
           endif
@@ -1002,7 +974,7 @@ class Parser
     global _productions
 
     global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
-    global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+    global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_NULL, AST_DATA_UNDEFINED
     global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
     global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
@@ -1017,7 +989,7 @@ class Parser
     global AST_OPCODE_DECLARE_OR_ASSIGN
 
     goOn       = true
-    innerGoOn  = 1
+    innerGoOn  = true
     masterIter = 1
 
     #
@@ -1064,9 +1036,9 @@ class Parser
         this.buf[this.len] = 0
 
         this.stackIdx = this.stackIdx + 1
-        
+
         #print 'PUSH TO STACK (shift)', this.stackIdx
-        
+
         this.stack[this.stackIdx] = new Token()
 
         #
@@ -1181,13 +1153,13 @@ class Parser
 
               this.stack[this.stackIdx].node.next = node
             endif
-            
+
             node = this.stack[this.stackIdx].node
-  
+
             this.stack[this.stackIdx].node = null
 
           endif
-          
+
           this.stackIdx = this.stackIdx - 1
         endfor
 
@@ -1227,7 +1199,7 @@ class Parser
           this._getGo()
 
           this.stackIdx = this.stackIdx + 1
-          
+
           this.stack[this.stackIdx]        = new Token()
           this.stack[this.stackIdx].value  = this.ret
           this.stack[this.stackIdx].symbol = _symbols[this.lhs]
@@ -1248,7 +1220,7 @@ class Parser
 
       debug('END CONDITION: reduce=[' + str(bitwiseAnd(this.act, UNICC_REDUCE)) + '], idx=[' + str(this.idx) +'], goalIdx=[' + str(@@goal-production) + ']')
 
-      if bitwiseAnd(this.act, UNICC_REDUCE) and (this.idx is @@goal-production)
+      if (bitwiseAnd(this.act, UNICC_REDUCE) isnt 0) and (this.idx is @@goal-production)
         goOn = false
       endif
 
@@ -1258,19 +1230,19 @@ class Parser
         die('MAX ITERS reached!')
       endif
     endwhile
-    
+
     ast = this.getAst()
   endmethod
-  
+
   method parseFile(path) -> ast
     # Load source code from file.
     source        = __mold_loadFile(path)
     this.filePath = path
-    
-    # Parse source into AST tree.    
+
+    # Parse source into AST tree.
     ast = this._parseInternal(source)
   endmethod
-                  
+
   method parseText(text) -> ast
     this.filePath = ''
     ast           = this._parseInternal(text)

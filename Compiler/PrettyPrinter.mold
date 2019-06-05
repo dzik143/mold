@@ -1,12 +1,16 @@
 DEBUG_AST_OPTIMIZER = true
+NodeId = 1000
 
 import 'AppMold.mold'
 import 'AST/ASTSymbolsCollector.mold'
 import 'AST/ASTPrinterText.mold'
 import 'AST/ASTPrinterHtml.mold'
 
+SHOW_TYPE_CAST_NODES_ENABLED = false #true
+DEBUG_MOLD = true
+
 x = []
-undefined = [0]
+undefined = x[0]
 object = 0
 import '1.ast'
 #import 'Parser/ParserMold.mold'
@@ -18,28 +22,48 @@ import '1.ast'
 # TODO: Remove this step.
 #ast = ast.convert()
 
-
 print '<pre>'
 
-app                        = new AppMold()
-astSymbolsCollector        = app.getAstSymbolsCollector()
-astConstantFolder          = app.getAstConstantFolder()
-astEvaluator               = app.getAstEvaluator()
-astOptimizerCSE            = app.getAstOptimizerCSE()
-astOptimizerDeadCodeRemove = app.getAstOptimizerDeadCodeRemove()
-astPrinterText             = new ASTPrinterText()
-astPrinterHtml             = new ASTPrinterHtml()
+app                 = new AppMold()
+astSymbolsCollector = app.getAstSymbolsCollector()
+astPrinterText      = new ASTPrinterText()
+astPrinterHtml      = new ASTPrinterHtml()
 
+app._debug('Building symbol table...')
 astSymbolsCollector.buildSymbolTable(ast)
-#astEvaluator.processNode(ast)
-#astConstantFolder.processNode(ast)
 
-#astOptimizerCSE.processNode(ast)
-#astOptimizerDeadCodeRemove.processNode(ast)
+# ------------------------------------------------------------------------------
+
+# TODO: More generic way to apply selected optimizations.
+app._debug('VCall optimization...')
+app.getAstOptimizerVCall().processNode(ast)
+
+#app._debug('Inline optimization...')
+#app.getAstOptimizerInline().processNode(ast)
+
+# Common preprocess before go-on with further AST optimization.
+app._debug('Evaluating AST nodes...')
+app.getAstEvaluator().processNode(ast)
+
+app._debug('Constant folding...')
+app.getAstOptimizerConstantFolding().processNode(ast)
+
+app._debug('If optimization...')
+app.getAstOptimizerIf().processNode(ast)
+
+app._debug('Dead code elimination...')
+app.getAstOptimizerDeadCodeRemove().processNode(ast)
+
+app._debug('Common subexpression elimination (CSE)...')
+app.getAstOptimizerCSE().processNode(ast)
+
+# ------------------------------------------------------------------------------
+
+app._debug('Type cast...')
+app.getAstTypeCast().processNode(ast)
 
 astPrinterText.printNode(ast)
 
 print '</pre>'
-
 
 astPrinterHtml.printNode(ast)

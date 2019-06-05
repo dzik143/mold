@@ -67,6 +67,44 @@ len(x + z)     = 6
 len(x + y + z) = 9
 -------------------------------------------------------------------------------
 
+TEST "Concatenation #3"
+acc = 'a'
+print '(1) [', acc, ']', len(acc)
+
+acc = acc + 'x'
+print '(2) [', acc, ']', len(acc)
+
+acc = acc + 'ZyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyZ'
+print '(3) [', acc, ']', len(acc)
+
+EXPECTED_OUTPUT:
+(1) [ a ] 1
+(2) [ ax ] 2
+(3) [ axZyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyZ ] 78
+-------------------------------------------------------------------------------
+
+TEST "Concatenation #4"
+acc = ''
+for idx in 0 .. 100000
+  acc = acc + 'x'
+endfor
+
+print 'len(acc)    =', len(acc)
+print 'acc[0]      =', acc[0]
+print 'acc[1]      =', acc[1]
+print 'acc[1000]   =', acc[1000]
+print 'acc[99999]  =', acc[99999]
+print 'acc[100000] =', acc[100000]
+
+EXPECTED_OUTPUT:
+len(acc)    = 100000
+acc[0]      = x
+acc[1]      = x
+acc[1000]   = x
+acc[99999]  = x
+acc[100000] = undefined
+-------------------------------------------------------------------------------
+
 TEST "Embedded single quata withing double quoatas"
 print "'"
 
@@ -256,4 +294,47 @@ print 'len(x) =', len(x)
 EXPECTED_OUTPUT:
 x      = XxxxxxxxxxxxxxxxxxxxxxxxxxxX>>> o <<<YyyyyyyyyyyyyyyyyyyyyyyyyyyY
 len(x) = 65
+-------------------------------------------------------------------------------
+
+TEST "Overlapped source and destination string: x = x + y
+
+function final(x)
+  print x + ':final'
+endfunction
+
+function bar(x)
+  x = x + ':bar'
+  final(x)
+endfunction
+
+function foo(x)
+  x = x + ':foo'
+  bar(x)
+  bar(x)
+endfunction
+
+foo('init')
+
+EXPECTED_OUTPUT:
+init:foo:bar:final
+init:foo:bar:final
+-------------------------------------------------------------------------------
+TEST "Overlapped source and destination string: x = y + x (SKIPPED!)
+
+#x = 'b'
+#x = 'a' + x
+#print x
+
+EXPECTED_OUTPUT:
+-------------------------------------------------------------------------------
+
+TEST "Store one character at array index'
+x = 'text'
+y = [x[0]]
+print x
+print y
+
+EXPECTED_OUTPUT:
+text
+['t']
 -------------------------------------------------------------------------------

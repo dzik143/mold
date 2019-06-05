@@ -18,9 +18,7 @@ import 'AST/ASTUtils.mold'
 class ASTSymbolsCollector
 
   method constructor(app)
-    this.app               = app
-    this.astEvaluator      = app.getAstEvaluator()
-    this.astConstantFolder = app.getAstConstantFolder()
+    this.app = app
 
     # TODO: Remove redundant array if map iteration will work.
     this.vtable        = {}
@@ -32,12 +30,38 @@ class ASTSymbolsCollector
   #                          Internal API (private)
   # ----------------------------------------------------------------------------
 
+  method _debug(msg)
+    global DEBUG_AST_OPTIMIZER
+    if DEBUG_AST_OPTIMIZER is true
+      print '[ ASTSymbolsCollector ]', msg
+    endif
+  endmethod
+
   method _collectSymbolsFromLeftNode(symbolTable, node)
     this._collectSymbols(symbolTable, node, true)
   endmethod
 
   method _collectSymbolsFromRightNode(symbolTable, node)
     this._collectSymbols(symbolTable, node, false)
+  endmethod
+
+  method _updateVariableSymbolInfo(node, variableName, newSymbolInfo)
+    global AST_OPCODE_VARIABLE
+
+    # TODO: Clean up this mess.
+    if node.opcode is AST_OPCODE_VARIABLE
+      if node.value is variableName
+        node.symbolInfo = newSymbolInfo
+      endif
+
+    else
+      childrenCnt = node.childrenCnt
+      children    = node.children
+
+      for idx in 0 .. childrenCnt
+        this._updateVariableSymbolInfo(children[idx], variableName, newSymbolInfo)
+      endfor
+    endif
   endmethod
 
   method _collectSymbols(symbolTable, node, isLeftNode)
@@ -48,19 +72,42 @@ class ASTSymbolsCollector
     global AST_OPCODE_CALL
     global AST_OPCODE_IF
     global AST_OPCODE_WHILE
-    global AST_OPCODE_FOR_VALUES_RANGE
     global AST_OPCODE_INVOKE_METHOD
     global AST_OPCODE_REFERENCE
     global AST_OPCODE_FUNCTION
     global AST_OPCODE_CLASS
     global AST_OPCODE_CLASS_METHOD
     global AST_OPCODE_NOP
+    global AST_OPCODE_TYPE_CAST
+    global AST_OPCODE_COMPARE_EQ
+    global AST_OPCODE_COMPARE_LE
+    global AST_OPCODE_BOOL_NOT
+    global AST_OPCODE_CALL_NEW
+    global AST_DATA_BOOL
+    global AST_DATA_OBJECT
+    global AST_DATA_ARRAY
+    global AST_DATA_STRING
+    global SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_VAR_RETVAL, SYMBOL_KIND_CONST
+    global AST_OPCODE_ADD, AST_OPCODE_MUL, AST_OPCODE_SUB, AST_OPCODE_DIV, AST_OPCODE_IDIV
+    global AST_DATA_DOUBLE, AST_DATA_INTEGER
 
-    #this.astConstantFolder.processNodeUntilNotChanged(node)
+    global AST_OPCODE_FOR_VALUES_RANGE
+    global AST_OPCODE_FOR_VALUES
+    global AST_OPCODE_FOR_KEYS
+    global AST_OPCODE_FOR_KEYS_VALUES
+    global AST_OPCODE_FOR_INDEXES
+    global AST_OPCODE_FOR_INDEXES_VALUES
 
     opcode      = node.opcode
     children    = node.children
     childrenCnt = node.childrenCnt
+
+    # TODO: Remove it.
+    # We use it to work-around problem with emitting [object] to
+    # external source.ast file.
+    for idx in 0 .. childrenCnt
+      children[idx].parent = node
+    endfor
 
     # TODO: Clean up this mess.
     if (opcode is AST_OPCODE_VARIABLE) and (node.value is '__this_placeholder__')
@@ -74,6 +121,17 @@ class ASTSymbolsCollector
         this._collectSymbolsFromLeftNode(node.symbolTable, children[idx])
       endfor
 
+    elif opcode is AST_DATA_STRING
+      if isLeftNode is true
+        die('error: string type cannot be modified')
+      endif
+
+      symbolInfo = symbolTable.insertLiteral(node.value)
+
+      node.opcode     = AST_OPCODE_VARIABLE
+      node.value      = symbolInfo.name
+      node.symbolInfo = symbolInfo
+
     elif opcode is AST_OPCODE_CLASS
       # Collect members.
       # TODO: Avoid redundant methodsAsArray when map iteration will work.
@@ -83,6 +141,7 @@ class ASTSymbolsCollector
       baseMethods           = {}
       methodsAsFlatArray    = []
       methodsAsFlatArrayCnt = 0
+      classProto            = {}
 
       # Import base class if any.
       if typeof(baseName) isnt 'undefined'
@@ -131,11 +190,15 @@ class ASTSymbolsCollector
             methodsAsFlatArrayCnt = methodsAsFlatArrayCnt + 1
           endif
 
-          child['className'] = className
+          child['className']  = className
+          child['classProto'] = classProto
 
           if typeof(baseMethods[methodName]) isnt 'undefined'
             # Save proto of base method if any.
-            child['baseMethod'] = baseMethods[methodName]
+            baseMethodProto     = baseMethods[methodName]
+            child['baseMethod'] = baseMethodProto
+            baseMethodProto.isOverloaded = true
+
           else
             this.vtableKeys[this.vtableKeysCnt] = methodFullName
             this.vtableKeysCnt                  = this.vtableKeysCnt + 1
@@ -148,14 +211,12 @@ class ASTSymbolsCollector
       endfor
 
       # Declare new class.
-      classProto = {
-        'name': className,
-        'baseName': node['baseName'],
-        'vtable': vtable,
-        'methodsAsFlatArray': methodsAsFlatArray,
-        'methodsAsFlatArrayCnt': methodsAsFlatArrayCnt,
-        'propertyClassNames': {}
-      }
+      classProto.name                  = className
+      classProto.baseName              = node['baseName']
+      classProto.vtable                = vtable
+      classProto.methodsAsFlatArray    = methodsAsFlatArray
+      classProto.methodsAsFlatArrayCnt = methodsAsFlatArrayCnt
+      classProto.propertyClassNames    = {}
 
       node['proto'] = classProto
 
@@ -184,31 +245,53 @@ class ASTSymbolsCollector
 
       if typeof(nodeBody.symbolTable) is 'undefined'
         # Init new symbol table if not existing yet.
-        nodeBody.symbolTable = symbolTable.enterScopeForProcedure()
+        nodeBody.symbolTable = symbolTable.enterScopeForProcedure(funcName)
+
+        paramShift = 0
 
         # TODO: Why we need to add this param by hand?
         if opcode is AST_OPCODE_CLASS_METHOD
-          nodeBody.symbolTable.insertParam('this')
+          # Optimize it.
+          symbolInfo = nodeBody.symbolTable.insertParam('this', 0)
+          symbolInfo.classProto = funcProto.classProto
+          nodeBody.symbolTable.assignType('this', AST_DATA_OBJECT)
+
+          paramShift = 1
         endif
 
         for idx in 0 .. funcProto.paramsCnt
           paramName = funcProto.params[idx]
-          #paramNode = AST_CreateNodeVariable(paramName)
-          # TODO: Clean up this mess.
-          #funcProto.children[funcProto.childrenCnt] = paramNode
-          #funcProto.childrenCnt = funcProto.childrenCnt + 1
+          nodeBody.symbolTable.insertParam(paramName, paramShift + idx)
 
-          nodeBody.symbolTable.insertParam(paramName)
-          #nodeBody.symbolTable.assignNode(paramName, paramNode)
+          # TODO: Handle non-variant parameters.
+          nodeBody.symbolTable.assignType(paramName, -1)
         endfor
-
-        if typeof(funcProto.rv) isnt 'undefined'
-          nodeBody.symbolTable.insertRetVal(funcProto.rv)
-          #nodeBody.symbolTable.assignNode(funcProto.rv, AST_CreateNodeVariable(funcProto.rv))
-        endif
       endif
 
       this._collectSymbolsFromLeftNode(nodeBody.symbolTable, nodeBody)
+
+      # Verify is return value set after function end if needed.
+      if typeof(funcProto.rv) isnt 'undefined'
+        if nodeBody.symbolTable.isset(funcProto.rv) is true
+          # Return value is set inside all branches. Go on.
+          # Change variable kind to RETVAL and force variant type.
+          # TODO: Handle non-variant return values.
+          symbolInfo         = nodeBody.symbolTable.lookup(funcProto.rv)
+          symbolInfo.kind    = SYMBOL_KIND_VAR_RETVAL
+          symbolInfo.astType = -1
+
+          # TODO: Clean up this mess.
+          symbolInfo.name     = '__rv'
+          symbolInfo.alias    = funcProto.rv
+          symbolInfo.readHits = symbolInfo.readHits + 1
+          nodeBody.symbolTable.symbols['__rv'] = symbolInfo
+
+        else
+          # Error - there is at least one branch, where return value is
+          # not set.
+          die("error: unset return variable '" + funcProto.rv + "' in '" + funcName + "' function")
+        endif
+      endif
 
     elif opcode is AST_OPCODE_BLOCK
       if typeof(node.symbolTable) is 'undefined'
@@ -230,22 +313,32 @@ class ASTSymbolsCollector
     elif opcode is AST_OPCODE_VARIABLE
       if isLeftNode is true
         # x = ...
-        symbolTable.lookupForWrite(node.value)
+        symbolInfo = symbolTable.lookupForWrite(node.value)
       else
         # ... = x
-        symbolTable.lookupForRead(node.value)
+        symbolInfo = symbolTable.lookupForRead(node.value)
       endif
 
+      # Track data type.
+      node.symbolInfo = symbolInfo
+
     elif opcode is AST_OPCODE_REFERENCE
-       # Thera are two cases:
+       # There are two cases:
        # 1. x[i] = ...  : x is left , i is right
        # 2. ...  = x[i] : x is right, i is right
        # Rule:
        # - x always save L/R context,
-       # - i has always R context (lookup for read).
+       # - index (i) has always R context (lookup for read).
 
        this._collectSymbols(symbolTable, children[0], isLeftNode)
        this._collectSymbolsFromRightNode(symbolTable, children[1])
+
+       # TODO: Review it.
+       # It's not needed - we already accessed box container.
+       if children[0].opcode is AST_OPCODE_VARIABLE
+         # x[i] = ... is read for x too.
+         symbolTable.lookupForRead(children[0].value)
+       endif
 
     elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
       # lval = rval
@@ -253,9 +346,21 @@ class ASTSymbolsCollector
       rval = children[1]
 
       if lval.opcode is AST_OPCODE_VARIABLE
-        # Simple lval (single variable) - insert into symbol table.
-        symbolInfo = symbolTable.lookupForWriteOrInsert(lval.value)
-        readHits   = symbolInfo.readHits
+        # TODO: Review it.
+        # Handle constant arrays.
+        if (rval.opcode is AST_DATA_ARRAY) and (typeof(rval.value) is 'array')
+          # Insert new constant.
+          symbolInfo  = symbolTable.insertConst(lval.value, rval.value)
+          node.opcode = AST_OPCODE_NOP
+        else
+          # Simple lval (single variable) - insert into symbol table.
+          symbolInfo = symbolTable.lookupForWriteOrInsert(lval.value)
+        endif
+
+        lval.symbolInfo = symbolInfo
+
+        # Scan rval.
+        this._collectSymbolsFromRightNode(symbolTable, rval)
 
         # Save value node for constant propagation.
         symbolTable.assignNode(lval.value, lval)
@@ -264,12 +369,37 @@ class ASTSymbolsCollector
           symbolTable.assignValue(lval.value, rval.value)
         endif
 
-        # Scan rval.
-        this._collectSymbolsFromRightNode(symbolTable, rval)
+        # Handle well-known types.
+        if rval.opcode is AST_OPCODE_CALL_NEW
+          # lval = new Xxx(...)
+          if symbolTable.isset(rval.value) is true
+            oldClassProto = symbolInfo.classProto
+            newClassProto = symbolTable.lookupClass(rval.value).proto
 
-        # Restore read stats for lval variable to avoid false x = x + 1 usage.
-        # It's not useful read.
-        symbolInfo.readHits = readHits
+            if (typeof(oldClassProto) isnt 'undefined') and (oldClassProto isnt newClassProto)
+              # Class mismatch.
+              # obj = new A()
+              # obj = new B()
+              #
+              # TODO: Clean up this mess.
+              this._debug('Class mismatch while assigning new object at node #' + str(node.id))
+              x = []
+              symbolInfo.classProto = x[0]
+            else
+              symbolInfo.classProto = newClassProto
+            endif
+          endif
+        endif
+
+        # TODO: Review it.
+        symbolTable.assignType(lval.value, AST_GetDataType(rval))
+
+        # TODO?
+        # Handle overwrite one object by instance of another one.
+        # objA = new A()
+        # objB = new B()
+        # obj = objA
+        # obj = objB
 
       else
         # Complex lval - go on deeper.
@@ -314,27 +444,53 @@ class ASTSymbolsCollector
 
           if typeof(symbolInfo2) isnt 'undefined'
             # Symbol defined in both nodes - move into parent node.
-            # TODO: Use max(x, y) if ready.
-            if symbolInfo1.readHits > symbolInfo2.readHits
-              readHits = symbolInfo1.readHits
-            else
-              readHits = symbolInfo2.readHits
-            endif
+            # TODO: Use max(x, y) or x+y?
+            readHits  = symbolInfo1.readHits  + symbolInfo2.readHits
+            writeHits = symbolInfo1.writeHits + symbolInfo2.writeHits
 
-            if symbolInfo1.writeHits > symbolInfo2.writeHits
-              writeHits = symbolInfo1.writeHits
-            else
-              writeHits = symbolInfo2.writeHits
-            endif
+            # Remove from child true/false node.
+            symbolTable1.remove(symbolInfo1.name)
+            symbolTable2.remove(symbolInfo1.name)
 
-            symbolTable.insert(symbolInfo1.name, symbolInfo1)
+            if symbolTable.isset(symbolInfo1.name) is false
+              symbolTable.insert(symbolInfo1.name, symbolInfo1)
+            endif
 
             symbolInfo1.readHits  = readHits
             symbolInfo1.writeHits = writeHits
 
-            # And remove from child true/false node.
-            symbolTable1.remove(symbolInfo1.name)
-            symbolTable2.remove(symbolInfo1.name)
+            # Merge AST data type.
+            astType1 = symbolTable1.astType
+            astType2 = symbolTable2.astType
+
+            if astType1 isnt astType2
+              # Type mismatch.
+              astType = -1
+
+              if (astType1 is AST_DATA_DOUBLE) and (astType2 is AST_DATA_INTEGER)
+                astType = AST_DATA_DOUBLE
+
+              elif (astType1 is AST_DATA_INTEGER) and (astType2 is AST_DATA_DOUBLE)
+                astType = AST_DATA_DOUBLE
+              endif
+
+              symbolInfo1.astType = astType
+
+            else
+              classProto1 = symbolInfo1.classProto
+              classProto2 = symbolInfo2.classProto
+
+              if classProto1 isnt classProto2
+                # Object class mismatch. Keep virtual call.
+                # TODO: Clean up this mess.
+                x = []
+                symbolInfo1.classProto = x[0]
+              endif
+            endif
+
+            # TODO: Optimize it.
+            this._updateVariableSymbolInfo(children[1], symbolInfo1.name, symbolInfo1)
+            this._updateVariableSymbolInfo(children[2], symbolInfo1.name, symbolInfo1)
           endif
         endfor
       endif
@@ -352,15 +508,39 @@ class ASTSymbolsCollector
       idxStepNode  = children[3]
       bodyNode     = children[4]
 
+      if symbolTable.isset(iterNode.value) is true
+        die('error: "' + iterNode.value + '" is already defined in another context')
+      endif
+
       # TODO: Optimize it.
       bodyNode.symbolTable = symbolTable.enterScopeForLoop()
       bodyNode.symbolTable.insertLocal(iterNode.value)
-      bodyNode.symbolTable.lookupForReadAndWrite(iterNode.value)
+      iterNode.symbolInfo = bodyNode.symbolTable.lookupForReadAndWrite(iterNode.value)
+      bodyNode.symbolTable.assignType(iterNode.value, AST_DATA_INTEGER)
 
-      #this._collectSymbolsFromLeftNode(symbolTable, iterNode)
       this._collectSymbolsFromRightNode(symbolTable, idxStartNode)
       this._collectSymbolsFromRightNode(symbolTable, idxEndNode)
       this._collectSymbolsFromRightNode(symbolTable, idxStepNode)
+      this._collectSymbolsFromLeftNode(symbolTable, bodyNode)
+
+    elif opcode is AST_OPCODE_FOR_VALUES
+      # for values v in box
+      iterNode     = children[0]
+      boxNode      = children[1]
+      bodyNode     = children[2]
+
+      if symbolTable.isset(iterNode.value) is true
+        die('error: "' + iterNode.value + '" is already defined in another context')
+      endif
+
+      # TODO: Optimize it.
+      bodyNode.symbolTable = symbolTable.enterScopeForLoop()
+      bodyNode.symbolTable.insertLocal(iterNode.value)
+      # TODO: Review it.
+      iterNode.symbolInfo = bodyNode.symbolTable.lookupForReadAndWrite(iterNode.value)
+      boxNode.symbolInfo  = bodyNode.symbolTable.lookupForRead(boxNode.value)
+
+      this._collectSymbolsFromRightNode(symbolTable, boxNode)
       this._collectSymbolsFromLeftNode(symbolTable, bodyNode)
 
     elif opcode is AST_OPCODE_WHILE
@@ -374,35 +554,46 @@ class ASTSymbolsCollector
       this._collectSymbolsFromLeftNode(symbolTable, bodyNode)
 
     else
+      goOnIntoChildren = true
+
       if opcode is AST_OPCODE_CALL
         funcName = node.value
         if (funcName is 'typeof') or (funcName is 'print') or (funcName is 'super') or (funcName is 'len') or (funcName is 'str') or (funcName is 'strescape') or (funcName is 'exit') or (funcName is 'die') or (funcName is '__mold_createObject') or (funcName is '__mold_getClassName') or (funcName is '__mold_warning') or (funcName is '__mold_printToStdOutput') or (funcName is '__mold_parseFile') or (funcName is 'moldParseFile') or (funcName is 'global')
+        # or (funcName is '__mold_openExternalModule') or (funcName is '__mold_loadExternalFunction') or (funcName is '__mold_peek') or (funcName is '__mold_loadFile')
           # One of built-in function - declaration is not needed.
           if symbolTable.isset(funcName) is false
             # TODO: Fill up proto?
-            symbolTable.insertFunction(funcName, {})
+            symbolTable.insertFunction(funcName, {'builtIn': true})
           endif
         endif
 
         # Mark that function was called.
-        symbolTable.lookupForCall(node.value)
-        isLeftNode = false
+        node.symbolInfo = symbolTable.lookupForCall(node.value)
+        isLeftNode      = false
+
+        # Mark recursive calls. We use it in further optizations.
+        if (node.symbolInfo.proto.isRecursive isnt true) and (symbolTable.getCurrentFunctionName() is funcName)
+          this._debug('Recursive call detected at node #' + str(node.id) + ' (' + funcName + ')')
+          node.symbolInfo.proto.isRecursive = true
+        endif
 
         # Import global symbol.
         if funcName is 'global'
-          node.opcode = AST_OPCODE_NOP
           for idx in 0 .. childrenCnt
             symbolTable.importGlobal(children[idx].value)
           endfor
+          goOnIntoChildren = false
         endif
 
       elif opcode is AST_OPCODE_INVOKE_METHOD
         isLeftNode = false
       endif
 
-      for idx in 0 .. childrenCnt
-        this._collectSymbols(symbolTable, children[idx], isLeftNode)
-      endfor
+      if goOnIntoChildren is true
+        for idx in 0 .. childrenCnt
+          this._collectSymbols(symbolTable, children[idx], isLeftNode)
+        endfor
+      endif
     endif
   endmethod
 
@@ -420,6 +611,5 @@ class ASTSymbolsCollector
     endif
 
     this._collectSymbolsFromLeftNode(node.symbolTable, node)
-
   endmethod
 endclass

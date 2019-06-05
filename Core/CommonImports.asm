@@ -42,4 +42,6 @@ import msvcrt,\
   strlen,  'strlen', \
   strcpy,  'strcpy', \
   snprintf, '_snprintf', \
+  atof, 'atof', \
+  atoi, 'atoi', \
   __getmainargs, '__getmainargs'

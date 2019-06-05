@@ -1,0 +1,118 @@
+# Boxes hold *SET* of another items,
+# There are three types of boxes:
+# - array  (ordered, changes size at runtime, access by integer index),
+# - map    (unordered, changes size at runtime, access by string key),
+# - object (unordered, has constant structure, access by method call).
+
+# ------------------------------------------------------------------------------
+# Array
+# When to use:
+# - we need to store set of items in known order (0, 1, 2, 3, 4,...),
+# - we need to access items by it's number (index),
+# - number of items may vary during work.
+# ------------------------------------------------------------------------------
+
+# Create empty array.
+x = []
+
+# Create array with initial content.
+x = [1, 2, 3]
+
+# Store (or modify if already exists) single item at index (integer number).
+x[0] = 1      # Store integer number 1 at index 0.
+x[1] = 'text' # Store string 'text' at index 0.
+x[2] = 3.14   # Store float number at index 2.
+
+# Access single items by index (integer number).
+print x[0]
+print x[1]
+print x[2]
+
+# Use another variable as array index.
+idx    = 2
+x[idx] = 2.18 # Modify value stored at index given in another variable
+
+# Print whole array to standard output.
+print x
+
+# ------------------------------------------------------------------------------
+# Map
+# When to use:
+# - we need to access items by textual key,
+# - the order of items has no matter for us,
+# - number of items may vary during work.
+# ------------------------------------------------------------------------------
+
+# Create new map.
+x = {}
+
+# Create map with initial content.
+x = {
+  'someKey': 'some value',
+  'anotherKey': 1234
+}
+
+# Store (or modify if already exists) single item by key.
+x{'value'} = 1     # Store integer number 1 at key 'value'
+x{'color'} = 'red' # Store string 'red' at key 'color'
+x{'pi'}    = 3.14  # Store float number at key 'pi'
+
+# Access single items by key.
+print x{'value'}
+print x{'color'}
+print x{'pi'}
+
+# Use another variable as map key.
+key    = 'color'
+x{key} = 'blue' # Modify value stored at key given in another variable
+
+# Print whole map to standard output.
+print x
+
+# ------------------------------------------------------------------------------
+# Object
+# When to use:
+# - we *EXACTLY* known structure of our data (size and list of properties),
+# - we want to *ENCAPSULATE* code, which work on our data.
+# ------------------------------------------------------------------------------
+
+# Define single class
+# This structure is defined *ONCE* and do *NOT* changes at runtime.
+class Vector3
+  method constructor(x, y, z)
+    # Define three properties (fields).
+    this.x = x
+    this.y = y
+    this.z = z
+  endmethod
+
+  method getLength() -> rv
+    # Define method whitch calculate the length of the vector (norm).
+    rv = sqrt(this.x^2 + this.y^2 + this.z^2)
+  endmethod
+
+  method add(v) -> rv
+    # Define method which add another vector to current one.
+    this.x = this.x + v.x
+    this.y = this.y + v.y
+    this.z = this.z + v.z
+  endmethod
+
+  method _foo()
+    # This is some private method.
+    # It cannot be called outside this object.
+  endmethod
+endclass
+
+# Create instance of class.
+v1 = new Vector3(1,2,3)
+v2 = new Vector3(4,5,6)
+
+# Call some method.
+v1.add(v2)
+
+# Call method with return value.
+print v1.getLength()
+
+# Access single property by name.
+print v1.x, v1.y, v1.z

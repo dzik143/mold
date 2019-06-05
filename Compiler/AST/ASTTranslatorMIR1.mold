@@ -26,7 +26,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
     super(app)
     # TODO: Remove codeObj.
     this.app          = app
-    this.code         = new MIRCode()
+    # TODO: Clean up this mess.
+    this.code         = app.getMir1Code()
     this.stack        = new Stack()
     this.outputObject = false
 
@@ -76,18 +77,29 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.emitTargetOnlyOpcode('jmp', label)
   endmethod
 
+  method emitJmpByTable(jmpTable, labelIdx)
+    newQuad = ['jmp_by_table', jmpTable, labelIdx]
+    this._emitOneItem(newQuad)
+  endmethod
+
   method emitMoveVariantOpcode(dst, src)
     this.emitOneArgOpcode('move', dst, src)
   endmethod
 
   method popForRead() -> rv
     rv = this.stack.pop()
-    this.symbolTable.lookupForRead(rv)
+    # TODO: Is it really needed at translation stage?
+    # this.symbolTable.lookupForRead(rv)
+    # TODO: Review it.
+    this.symbolTable.releaseTempVar(rv)
   endmethod
 
   method popForWrite() -> rv
     rv = this.stack.pop()
-    this.symbolTable.lookupForWrite(rv)
+    # TODO: Is it really needed at translation stage?
+    # this.symbolTable.lookupForWrite(rv)
+    # TODO: Review it.
+    this.symbolTable.releaseTempVar(rv)
   endmethod
 
   method push(x)
@@ -95,7 +107,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method popOneArgAndEmitOpcode(opcode) -> rv
-    rv = this.symbolTable.createTempVarForWrite()
+    rv = this.symbolTable.getTempVarForReadAndWrite(-1)
     x  = this.popForRead()
 
     this.push(rv)
@@ -103,9 +115,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method popTwoArgsAndEmitOpcode(opcode) -> rv
-    global SYMBOL_KIND_CONST
-
-    rv = this.symbolTable.createTempVarForWrite()
+    rv = this.symbolTable.getTempVarForReadAndWrite(-1)
     y  = this.popForRead()
     x  = this.popForRead()
 
@@ -119,15 +129,19 @@ class ASTTranslatorMIR1 extends ASTTranslator
     for idx in 0 .. paramsCnt
       item        = this.stack.peekN(paramsCnt - idx)
       params[idx] = item
-      this.symbolTable.lookupForRead(item)
+
+      # TODO: Is it really needed at translation stage?
+      #this.symbolTable.lookup(item)
+      # TODO: Review it.
+      this.symbolTable.releaseTempVar(item)
     endfor
 
     this.stack.eatN(paramsCnt)
   endmethod
 
   method emitProcBegin(procMeta)
-    rv = this.emitTargetOnlyOpcode('proc', procMeta)
-    rv = this.emitTargetOnlyOpcode('init_frame', procMeta)
+    this.emitTargetOnlyOpcode('proc', procMeta)
+    this.emitTargetOnlyOpcode('init_frame', procMeta)
   endmethod
 
   method emitProcEnd()
@@ -154,6 +168,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _callStrEscape(x) -> rv
+    rv = false
     this._error('_callStrEscape() is not implemented')
   endmethod
 
@@ -195,6 +210,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _callMoldParseFile(filePath) -> rv
+    rv = false
     this._error('_callMoldParseFile() is obsolete')
   endmethod
 
@@ -211,12 +227,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
   # ----------------------------------------------------------------------------
   #                     Implement ASTTranslator interface
   # ----------------------------------------------------------------------------
-
-  method _onScopeEnter(ast)
-  endmethod
-
-  method _onScopeLeave()
-  endmethod
 
   method _neg(value) -> rv
     rv = this.popOneArgAndEmitOpcode('neg')
@@ -243,13 +253,13 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _loadArray() -> rv
-    rv = this.symbolTable.createTempVarForWrite()
+    rv = this.symbolTable.getTempVarForReadAndWrite('variant')
     this.emitTargetOnlyOpcode('create_array', rv)
     this.push(rv)
   endmethod
 
   method _loadMap() -> rv
-    rv = this.symbolTable.createTempVarForWrite()
+    rv = this.symbolTable.getTempVarForReadAndWrite('variant')
     this.emitTargetOnlyOpcode('create_map', rv)
     this.push(rv)
   endmethod
@@ -258,22 +268,61 @@ class ASTTranslatorMIR1 extends ASTTranslator
     type = typeof(value)
 
     if type is 'integer'
-      rv = this.symbolTable.createTempVarForWrite()
-
       if (value >= -2147483648) and (value <= 2147483647)
         # 32-bit integer
+        # TODO: Review it: this.emitOneArgOpcode('conv_int32_to_variant', rv, value)
+        rv = this.symbolTable.getTempVarForReadAndWrite('int32')
+        this.emitOneArgOpcode('load_int32', rv, value)
+      else
+        # 64-bit integer
+        # TODO: Review it: this.emitOneArgOpcode('conv_int64_to_variant', rv, value)
+        rv = this.symbolTable.getTempVarForReadAndWrite('int64')
+        this.emitOneArgOpcode('load_int64', rv, value)
+      endif
+
+    elif type is 'float'
+      rv = this.symbolTable.getTempVarForReadAndWrite('float64')
+      # TODO: Review it: this.emitOneArgOpcode('conv_float64_to_variant', rv, value)
+      this.emitOneArgOpcode('load_float64', rv, value)
+
+    elif type is 'boolean'
+      rv = this.symbolTable.getTempVarForReadAndWrite('bool32')
+      # TODO: Review it: this.emitOneArgOpcode('conv_bool32_to_variant', rv, value)
+      this.emitOneArgOpcode('load_bool32', rv, value)
+
+    elif (type is 'string') or (type is 'array')
+      # TODO: Review it.
+      rv = this.symbolTable.createConstFromValue(value)
+
+    else
+      # TODO: Handle terminal nodes.
+      rv = false
+      die('error: unhandled imm type: ' + str(type))
+    endif
+
+    this.push(rv)
+  endmethod
+
+  method _loadImmAsVariant(value) -> rv
+    type = typeof(value)
+
+    if type is 'integer'
+      if (value >= -2147483648) and (value <= 2147483647)
+        # 32-bit integer
+        rv = this.symbolTable.getTempVarForReadAndWrite('int32')
         this.emitOneArgOpcode('conv_int32_to_variant', rv, value)
       else
         # 64-bit integer
+        rv = this.symbolTable.getTempVarForReadAndWrite('int32')
         this.emitOneArgOpcode('conv_int64_to_variant', rv, value)
       endif
 
     elif type is 'float'
-      rv = this.symbolTable.createTempVarForWrite()
+      rv = this.symbolTable.getTempVarForReadAndWrite('float64')
       this.emitOneArgOpcode('conv_float64_to_variant', rv, value)
 
     elif type is 'boolean'
-      rv = this.symbolTable.createTempVarForWrite()
+      rv = this.symbolTable.getTempVarForReadAndWrite('bool32')
       this.emitOneArgOpcode('conv_bool32_to_variant', rv, value)
 
     elif (type is 'string') or (type is 'array')
@@ -281,10 +330,24 @@ class ASTTranslatorMIR1 extends ASTTranslator
       rv = this.symbolTable.createConstFromValue(value)
 
     else
+      # TODO: Handle terminal nodes.
+      rv = false
       die('error: unhandled imm type: ' + str(type))
     endif
 
     this.push(rv)
+  endmethod
+
+  method _convert(x, srcType, dstType) -> rv
+    srcTypeMIR = AST_ConvertDataTypeToMIR(srcType)
+    dstTypeMIR = AST_ConvertDataTypeToMIR(dstType)
+
+    if srcTypeMIR is dstTypeMIR
+      rv = x
+    else
+      opcode = 'conv_' + srcTypeMIR + '_to_' + dstTypeMIR
+      rv = this.popOneArgAndEmitOpcode(opcode)
+    endif
   endmethod
 
   method _compareEQ(x, y) -> rv
@@ -317,10 +380,9 @@ class ASTTranslatorMIR1 extends ASTTranslator
     global SYMBOL_KIND_VAR_PARAM
 
     symInfo = this.symbolTable.lookup(name)
+
     if symInfo.kind is SYMBOL_KIND_VAR_RETVAL
       name = '__rv'
-    #elif (symInfo.kind is SYMBOL_KIND_VAR_LOCAL) or (symInfo.kind is SYMBOL_KIND_VAR_PARAM)
-    #  name = '.' + name
     endif
 
     this.push(name)
@@ -329,27 +391,32 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
   method _assign(name, unusedValue)
     global SYMBOL_KIND_VAR_RETVAL
-    symInfo = this.symbolTable.lookupForWrite(name)
-    if symInfo.kind is SYMBOL_KIND_VAR_RETVAL
+    symbolInfo = this.symbolTable.lookup(name)
+    if symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
       name = '__rv'
+    else
+      # TODO: Is it really needed?
+      symbolInfo.type = AST_ConvertDataTypeToMIR(symbolInfo.astType)
     endif
 
     this.emitMoveVariantOpcode(name, this.popForRead())
   endmethod
 
   method _call(proto, unusedParams, paramsCnt) -> rv
-#    paramsCnt = proto['paramsCnt']
-    rv        = this.symbolTable.createTempVarForWrite()
-    params    = this.popParametersBeforeCall(paramsCnt)
-    name      = proto['fullName']
+    if typeof(proto.rv) is 'undefined'
+      # TODO: Clean up this mess.
+      x = []
+      rv = x[0]
+    else
+      rv = this.symbolTable.getTempVarForReadAndWrite('variant')
+    endif
+
+    params = this.popParametersBeforeCall(paramsCnt)
+    name   = proto['fullName']
 
     if typeof(name) is 'undefined'
       name = proto['name']
     endif
-
-    this.symbolTable.lookupForWrite(rv)
-
-    #this.emitTwoArgsOpcode('call', rv, name, params)
 
     # TODO: Use emitTwoArgsOpcode() after fix.
     this._emitOneItem(['call', rv, name, params])
@@ -359,6 +426,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
       # We need it to avoid eating new result (this pointer)
       # when constructor called just after.
       this.push(params[0])
+
     else
       this.push(rv)
     endif
@@ -396,12 +464,15 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
   method _createObject(classProto) -> rv
     if classProto is false
+      # TODO: Handle terminal nodes.
+      rv = false
+
       # Dynamic code, adjust class proto at run-time.
       this._error('error: missing classProto in MIR_OPCODE_CREATE_OBJECT')
 
     else
       # Static code, we got class proto inside MIR opcode.
-      rv = this.symbolTable.createTempVarForWrite()
+      rv = this.symbolTable.getTempVarForReadAndWrite('variant')
       this.emitOneArgOpcode('create_object', rv, classProto.name)
       this.push(rv)
     endif
@@ -416,9 +487,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
     #   rv = right()
     # .done:
 
-    this._loadImm(false)                                               # [false]
+    tmp = this._loadImm(false)                                         # [false]
     this._evaluateNode(leftAst)                                        # [false x]
     this.emitOneArgOpcode('jmp_if_false', endLabel, this.popForRead()) # [false]
+
+    this.symbolTable.assignMirType(tmp, 'bool32')
 
     # Evaluate right node only if left is true.
     this._evaluateNode(rightAst)     # [y]
@@ -436,9 +509,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
     #   rv = right()
     # .done:
 
-    this._loadImm(true)                                               # [true]
+    tmp = this._loadImm(true)                                         # [true]
     this._evaluateNode(leftAst)                                       # [true x]
     this.emitOneArgOpcode('jmp_if_true', endLabel, this.popForRead()) # [true]
+
+    this.symbolTable.assignMirType(tmp, 'bool32')
 
     # Evaluate right node only if left is false.
     this._evaluateNode(rightAst)    # [y]
@@ -449,12 +524,10 @@ class ASTTranslatorMIR1 extends ASTTranslator
   method _invokeMethod(methodName, unusedParams, paramsCnt) -> rv
     # TODO: Remove paramsCnt
     # TODO: Remove codeObj
-    rv       = this.symbolTable.createTempVarForWrite()
+    rv       = this.symbolTable.getTempVarForReadAndWrite('variant')
     methodId = this.code.methodsMap[methodName]
 
     if typeof(methodId) is 'undefined'
-      # TODO: Clean up this mess.
-      #die("error: object has no method '" + methodName + "'")
       # Forward declaration.
       methodId = this.code.createMethod(methodName)
     endif
@@ -466,7 +539,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.mapOfCalledMethods[methodName] = true
 
     params = this.popParametersBeforeCall(paramsCnt)
-    #this.emitTwoArgsOpcode('vcall', rv, methodId, params)
+
     # TODO: Use emitTwoArgsOpcode() if fixed.
     this._emitOneItem(['vcall', rv, methodId, params])
 
@@ -474,25 +547,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _executeNodeFor(iterName, idxStart, idxEnd, idxStep, bodyAst)
-    #symbolTable = this.symbolTable
-
-    #if this._isset(iterName) is false
-    #  symbolTable.insertLocalVolatile(iterName)
-    #endif
-
-    # TODO: Optimize it.
-    #symbolTable.lookupForReadAndWrite(iterName)
-
-    # Stack: [idxStep, idxEnd, idxStart]
-    #idxStart = this.popForRead()
-    #idxEnd   = this.popForRead()
-    #idxStep  = this.popForRead()
-
-    # TODO: Handle it in more general way.
-    #this.symbolTable.setType(iterName, 'integer')
-    #this.symbolTable.setType(idxStep, 'integer')
-    #this.symbolTable.setType(idxEnd, 'integer')
-
     labelForBegin = this.symbolTable.createLabel()
     labelForEnd   = this.symbolTable.createLabel()
 
@@ -512,19 +566,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
       # Enter loop scope.
       this._enterScope(bodyAst)
 
-      #oldSymbolTable   = this.symbolTable
-      #this.symbolTable = bodyAst.symbolTable
-
       # Is it the end?
       # if not (idx < idxEnd) goto end
-      # OLD IMPLEMENTATION:
-      goOn = this.symbolTable.createTempVarForReadAndWrite()
-      this.emitTwoArgsOpcode('cmp_lt', goOn, iterName, idxEnd)
-      this.emitOneArgOpcode('jmp_if_false', labelForEnd, goOn)
-      #this.emitTwoArgsOpcode('jmp_if_ge', labelForEnd, iterName, idxEnd)
+      this.emitTwoArgsOpcode('jmp_if_ge', labelForEnd, iterName, idxEnd)
 
       # Loop body.
-      # OLD CODE: this._executeNode(bodyAst)
       childrenCnt = bodyAst.childrenCnt
       children    = bodyAst.children
 
@@ -539,10 +585,33 @@ class ASTTranslatorMIR1 extends ASTTranslator
       this.emitTargetOnlyOpcode('jmp', labelForBegin)
 
       # Leave loop scope.
-      #this.symbolTable = oldSymbolTable
       this._leaveScope()
 
     this.emitLabel(labelForEnd)
+  endmethod
+
+  method _executeNodeForValues(valueIterator, box, bodyAst)
+    labelForBegin = this.symbolTable.createLabel()
+    labelForEnd   = this.symbolTable.createLabel()
+
+    # Avoid execution direct exeution of loop body.
+    # TODO: Handle inner function in better way.
+    this.emitTargetOnlyOpcode('jmp', labelForEnd)
+
+      # Translate loop body as inner function.
+      this.emitLabel(labelForBegin)
+      this._executeNode(bodyAst)
+      this.emitZeroArgsOpcode('inner_ret')
+
+    this.emitLabel(labelForEnd)
+
+    # Emit call to loop handler.
+    #this._emitOneItem(['for_values', labelForBegin, box, valueIterator])
+    params = [box, valueIterator, valueIterator, labelForBegin]
+    # TODO: Use null
+    x = []
+    rv = x[0]
+    this._emitOneItem(['call', rv, '__MOLD_ForDriver_Generic', params])
   endmethod
 
   method _executeNodeWhile(condAst, bodyAst)
@@ -588,6 +657,62 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.emitLabel(endLabel)
   endmethod
 
+  method _executeNodeSwitch(node)
+    children    = node.children
+    childrenCnt = node.childrenCnt
+    varName     = this._evaluateNode(children[0])
+
+    doneLabel    = this.symbolTable.createLabel()
+    defaultLabel = this.symbolTable.createLabel()
+    jmpTable     = []
+
+    symbolInfo = this.symbolTable.insertJmpTable(jmpTable)
+    symbolInfo.defaultLabel = defaultLabel
+
+    # Handle out-of-range
+    this.emitTwoArgsOpcode('jmp_if_lt', defaultLabel, varName, node.valueMin)
+    this.emitTwoArgsOpcode('jmp_if_gt', defaultLabel, varName, node.valueMax)
+
+    # Value is in-range, use jump table.
+    this.emitJmpByTable(symbolInfo.name, varName)
+
+    caseDefaultIdx = -1
+
+    # Emit case bodies.
+    for idx in 1 .. childrenCnt
+      values = children[idx].arrayOfValues
+
+      if typeof(values) isnt 'undefined'
+        if AST_IsEmpty(children[idx]) is true
+          # Nop code. Just jump to done label.
+          caseLabel = doneLabel
+
+        else
+          # There is some work to do.
+          caseLabel = this.symbolTable.createLabel()
+          this.emitLabel(caseLabel)
+          this._executeNode(children[idx])
+          this.emitJmp(doneLabel)
+        endif
+
+        valuesCnt = len(values)
+        for valueIdx in 0 .. valuesCnt
+          jmpTable[values[valueIdx]] = caseLabel
+        endfor
+      else
+        caseDefaultIdx = idx
+      endif
+    endfor
+
+    # Emit otherwise (default) case code if any.
+    this.emitLabel(defaultLabel)
+    if caseDefaultIdx isnt -1
+      this._executeNode(children[caseDefaultIdx])
+    endif
+
+    this.emitLabel(doneLabel)
+  endmethod
+
   method _declareFunction(funcName, funcProto)
     # TODO: More elegant way.
     if funcProto.name isnt funcProto.fullName
@@ -600,8 +725,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _emitFunctionBody(funcName, funcProto)
-    # print '-> _emitFunctionBody', funcName
-
     params      = funcProto['params']
     paramsCnt   = funcProto['paramsCnt']
     children    = funcProto['children']
@@ -621,58 +744,32 @@ class ASTTranslatorMIR1 extends ASTTranslator
     oldSymbolTable   = this.symbolTable
     this.symbolTable = codeAst.symbolTable
 
-    #symbolTable.enterScope()
+    # TODO: Simplify it.
+    this.emitProcBegin({
+      'name': funcName,
+      'symbols': this.symbolTable.exportSymbols(),
+      'symbolTable': this.symbolTable,
+      'params': params,
+      'paramsCnt': paramsCnt,
+      'rv': rvName
+    })
 
-    #  deepIdx = symbolTable.getDeep()
-    #  if deepIdx > 1
-    #    this._error('nested functions are not supported yet')
-    #  endif
+    # Translate function code.
+    codeNodes    = codeAst['children']
+    codeNodesCnt = codeAst['childrenCnt']
 
-      # Insert call parameters to symbol table.
-    #  for idx in 0 .. paramsCnt
-    #    symbolTable.insertParam(params[idx], idx)
-    #  endfor
+    for idx in 0 .. codeNodesCnt
+      this._executeNode(codeNodes[idx])
+    endfor
 
-      # TODO: Simplify it.
-      this.emitProcBegin({
-        'name': funcName,
-        'symbols': this.symbolTable.exportSymbols(),
-        'symbolTable': this.symbolTable,
-        'params': params,
-        'paramsCnt': paramsCnt,
-        'rv': rvName
-      })
+    this.emitRet()
+    this.emitProcEnd()
 
-      # Translate function code.
-      # Declare variable to store return value.
-      #if typeof(rvName) isnt 'undefined'
-      #  symbolTable.insertRetVal(rvName)
-      #endif
-
-      # Translate code.
-      codeNodes    = codeAst['children']
-      codeNodesCnt = codeAst['childrenCnt']
-
-      for idx in 0 .. codeNodesCnt
-        this._executeNode(codeNodes[idx])
-      endfor
-
-      if typeof(rvName) isnt 'undefined'
-        this.emitZeroArgsOpcode('rv_guard')
-      endif
-
-      this.emitRet()
-      this.emitProcEnd()
-
-      this.symbolTable = oldSymbolTable
-
-    #symbolTable.leaveScope()
-
-    #print '<- _emitFunctionBody', funcName
+    this.symbolTable = oldSymbolTable
   endmethod
 
   method _dropRetVal()
-    this.stack.pop()
+    this.stack.eat()
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -682,70 +779,17 @@ class ASTTranslatorMIR1 extends ASTTranslator
   method run(ast)
     code = this.code
 
-    # Insert argv[] and argc to globals.
     # TODO: Review it.
     this.symbolTable = ast.symbolTable
 
     this._emitGlobals()
-
-    # TODO: More-friendly API here.
-    __mold_openExternalModuleProto = {
-      'name': '__mold_openExternalModule',
-      'paramsCnt': 1,
-      'labelId': code.createExternalLabel('__MOLD_OpenExternalModule')
-    }
-    this._declareExternalFunction('__mold_openExternalModule', __mold_openExternalModuleProto)
-    code.createExternalProc('__MOLD_OpenExternalModule', 'variant', 1, 'variant', '__MOLD_OpenExternalModule')
-
-    # TODO: More-friendly API here.
-    __mold_loadExternalFunctionProto = {
-      'name': '__mold_loadExternalFunction',
-      'paramsCnt': 5,
-      'labelId': code.createExternalLabel('__MOLD_LoadExternalFunction')
-    }
-    this._declareExternalFunction('__mold_loadExternalFunction', __mold_loadExternalFunctionProto)
-    code.createExternalProc('__MOLD_LoadExternalFunction', 'variant', 5, 'variant', '__MOLD_LoadExternalFunction')
-
-    # TODO: More-friendly API here.
-    __mold_peekProto = {
-      'name': '__mold_peek',
-      'paramsCnt': 2,
-      'labelId': code.createExternalLabel('__MOLD_Peek')
-    }
-    this._declareExternalFunction('__mold_peek', __mold_peekProto)
-    code.createExternalProc('__MOLD_Peek', 'variant', 2, 'variant', '__MOLD_Peek')
-
-    # TODO: More-friendly API here.
-    __mold_loadFileProto = {
-      'name': '__mold_loadFile',
-      'paramsCnt': 1,
-      'labelId': code.createExternalLabel('__MOLD_LoadFile')
-    }
-    this._declareExternalFunction('__mold_loadFile', __mold_loadFileProto)
-    code.createExternalProc('__MOLD_LoadFile', 'variant', 1, 'variant', '__MOLD_LoadFile')
-
-    # Resolve imports recursively.
-    #this._resolveImports(ast)
-    #this._declareGlobals(ast)
-    #print 'SYMBOLS', this.symbolTable.exportSymbols()
 
     # Translate main code behind entry point.
     this.emitComment('-----------------------------------------------')
     this.emitComment('entry point')
     this.emitComment('-----------------------------------------------')
 
-#    this.emitProcBegin({
-#      'name': 'start',
-#      'symbols': this.symbolTable.exportSymbols(),
-#      'localsCnt': 0,
-#      'tempsCnt': 0,
-#      'paramsCnt': 0
-#    })
-
     this._executeNode(ast)
-
-#    this.emitRet()
-#    this.emitProcEnd()
 
     # TODO: Clean up this mess.
     this.code.symbolTable = this.symbolTable

@@ -24,6 +24,7 @@
 @UNTERMINATED_STRING '"' !'"'*     '\r\n' | '\'' !'\''*     '\r\n' ;
 
 @FLOAT   '0-9'+ '.' '0-9'+;
+@INTEGER '0-9'+;
 @TRUE    "true";
 @FALSE   "false";
 
@@ -48,11 +49,16 @@ stmt
   | function_call @EOL
   | method_call @EOL
   | stmt_import @EOL
-  | function_declaration @EOL =function
-  | class_declaration @EOL    =class
-  | stmt_if @EOL              =if
-  | stmt_for @EOL             =for
-  | stmt_while @EOL           =while
+  | function_declaration @EOL     =function
+  | class_declaration @EOL        =class
+  | stmt_if @EOL                  =if
+  | stmt_for @EOL                 =for
+  | stmt_while @EOL               =while
+  | stmt_for_values @EOL          =for_values
+  | stmt_for_keys @EOL            =for_keys
+  | stmt_for_keys_values @EOL     =for_keys_values
+  | stmt_for_indexes @EOL         =for_indexes
+  | stmt_for_indexes_values @EOL  =for_indexes_values
   | @EOL
   ;
 
@@ -301,6 +307,29 @@ step
   ;
 
 //
+// for values v in box              (generic iteration over values)
+// for keys k in box                (map iteration over keys)
+// for keys k values v in box       (map iteration over key:value pairs)
+// for indexes idx in box           (array iteration over indexes)
+// for indexes idx values v in box  (array iteration over index:value pairs)
+//
+
+stmt_for_values
+  : "for" "values" var "in" rval stmt_list "endfor";
+
+stmt_for_keys
+  : "for" "keys" var "in" rval stmt_list "endfor";
+
+stmt_for_indexes
+  : "for" "indexes" var "in" rval stmt_list "endfor";
+
+stmt_for_keys_values
+  : "for" "keys" var "values" var "in" rval stmt_list "endfor";
+
+stmt_for_indexes_values
+  : "for" "indexes" var "values" var "in" rval stmt_list "endfor";
+
+//
 // While loop.
 //
 
@@ -386,12 +415,11 @@ number
   ;
 
 integer
-  : '0-9'         [* @@ = ord(@1) - 48 *]
-  | integer '0-9' [* @@ = 10 * @1 + ord(@2) - 48 *]
+  : @INTEGER [* @@ = __mold_parseInteger(@1) *]
   ;
 
 float
-  : @FLOAT [* @@ = parseFloat(@1) *]
+  : @FLOAT [* @@ = __mold_parseFloat(@1) *]
   ;
 
 string
@@ -417,4 +445,3 @@ bool
 error_unterminated_string
   : @UNTERMINATED_STRING [* this._handleError('unterminated string') *]
   ;
-

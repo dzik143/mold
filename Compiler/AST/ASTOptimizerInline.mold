@@ -1,0 +1,280 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'AST/AST.mold'
+import 'AST/ASTUtils.mold'
+
+class ASTOptimizerInline
+  method constructor(app)
+    this.app              = app
+    this.symbolTable      = app.getSymbolTable()
+    this.symbolsCollector = app.getAstSymbolsCollector()
+  endmethod
+
+  method _debug(msg)
+    global DEBUG_AST_OPTIMIZER
+    if DEBUG_AST_OPTIMIZER is true
+      print '[ ASTOptimizerInline ]', msg
+    endif
+  endmethod
+
+  method _resolveParamsForInline(symbolTable, namePrefix, node) -> rv
+    global AST_OPCODE_VARIABLE
+    global SYMBOL_KIND_VAR_PARAM
+    global SYMBOL_KIND_VAR_RETVAL
+
+    newChildren = []
+    children    = node.children
+    childrenCnt = node.childrenCnt
+    newValue    = node.value
+    newOpcode   = node.opcode
+
+    if node.opcode is AST_OPCODE_VARIABLE
+      if symbolTable.isset(node.value)
+        symbolInfo = symbolTable.lookup(node.value)
+
+        if (symbolInfo.kind is SYMBOL_KIND_VAR_PARAM) or (symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL)
+          newValue = namePrefix + node.value
+        endif
+      endif
+
+    else
+      for idx in 0 .. childrenCnt
+        newChildren[idx] = this._resolveParamsForInline(symbolTable, namePrefix, children[idx])
+      endfor
+    endif
+
+    rv = {
+      'id': AST_GetNextId(),
+      'opcode': newOpcode,
+      'childrenCnt': len(newChildren),
+      'children': newChildren,
+      'value': newValue
+    }
+  endmethod
+
+  method _injectParamInit(dst, symbolTable, paramName, paramInitValueNode)
+    global AST_OPCODE_DECLARE_OR_ASSIGN
+    global AST_OPCODE_VARIABLE
+
+    symbolTable.lookupForWriteOrInsert(paramName)
+
+    dst[len(dst)] = {
+      'id': AST_GetNextId(),
+      'opcode': AST_OPCODE_DECLARE_OR_ASSIGN,
+      'childrenCnt': 2,
+      'children': [
+        {
+          'id': AST_GetNextId(),
+          'opcode': AST_OPCODE_VARIABLE,
+          'childrenCnt': 0,
+          'children': [],
+          'value': paramName
+        },
+        paramInitValueNode
+      ]
+    }
+  endmethod
+
+  method _injectFunctionBody(dst, symbolTable, callNode)
+    global AST_OPCODE_DECLARE_OR_ASSIGN
+    global AST_OPCODE_VARIABLE
+    global AST_OPCODE_NOP
+    global AST_OPCODE_BLOCK
+    global AST_OPCODE_CALL
+
+    symbolInfo    = callNode.symbolInfo
+    functionProto = symbolInfo.proto
+
+    if (typeof(functionProto) is 'undefined') or (functionProto.builtIn is true)
+      # Built-in function. Don't touch.
+
+    elif functionProto.isRecursive is true
+      # Skip recursive call.
+      this._debug('Skipped recursive call at node #' + str(callNode.id) + ' (' + callNode.value + ')')
+
+    else
+      params     = functionProto.params
+      paramsCnt  = functionProto.paramsCnt
+      namePrefix = '__inline' + str(callNode.id) + '_'
+
+      bodyNode    = functionProto.children[0]
+      children    = bodyNode.children
+      childrenCnt = bodyNode.childrenCnt
+
+      symbolInfo.readHits = symbolInfo.readHits - 1
+
+      # Init temporary variable to store return value if needed.
+      rvName     = functionProto.rv
+      rvFullName = rvName
+
+      if typeof(rvName) isnt 'undefined'
+        rvFullName = namePrefix + rvName
+        symbolTable.insertLocal(rvFullName)
+      endif
+
+      # Init this parameter if needed.
+      if typeof(functionProto.classProto) isnt 'undefined'
+        thizParamNode  = callNode.children[0]
+        thizSymbolInfo = thizParamNode.symbolInfo
+        paramName      = namePrefix + 'this'
+        childIdx       = 1
+
+        # TODO: Review it.
+        # x = new Object()
+        # x = x.foo(x)
+        # print x <---- BUG! x has readHits 0 now.
+
+        #if typeof(thizSymbolInfo) isnt 'undefined'
+        #  #thizSymbolInfo.readHits = thizSymbolInfo.readHits - 1
+        #endif
+
+        this._injectParamInit(dst, symbolTable, paramName, thizParamNode)
+      else
+
+        childIdx = 0
+      endif
+
+      # Init ordinary call parameters.
+      for paramIdx in 0 .. paramsCnt
+        paramName          = namePrefix + params[paramIdx]
+        paramInitValueNode = callNode.children[childIdx]
+        this._injectParamInit(dst, symbolTable, paramName, paramInitValueNode)
+        childIdx = childIdx + 1
+      endfor
+
+      # Inject function body.
+      for idx in 0 .. childrenCnt
+        childNode = children[idx]
+        if (childNode.opcode is AST_OPCODE_CALL) and (childNode.value is 'global') and (symbolTable.deepIdx <= 1)
+          # Ignore global directive if we inject function body into global space.
+          # It's not needed anymore.
+        else
+          newNode       = this._resolveParamsForInline(bodyNode.symbolTable, namePrefix, childNode)
+          dst[len(dst)] = newNode
+          this.symbolsCollector._collectSymbols(symbolTable, newNode, true)
+        endif
+      endfor
+
+      # Remove original call node.
+      callNode.children    = []
+      callNode.childrenCnt = 0
+
+      this._debug('Inject function body (' + callNode.value + ') at node #' + str(callNode.id))
+
+      if callNode.parent.opcode is AST_OPCODE_BLOCK
+        # Call is localized on left side (used as pure call without
+        # return value).
+        callNode.opcode = AST_OPCODE_NOP
+
+      else
+        # Call is localized on right side (used for read).
+        # Replace function call by return value.
+        callNode.opcode     = AST_OPCODE_VARIABLE
+        callNode.value      = namePrefix + rvName
+        callNode.symbolInfo = symbolTable.lookupForRead(rvFullName)
+      endif
+    endif
+  endmethod
+
+  method _processNode_injectInlineFunctions(dst, symbolTable, node)
+    global AST_OPCODE_CALL
+    global AST_OPCODE_BOOL_AND
+    global AST_OPCODE_BOOL_OR
+
+    opcode      = node.opcode
+    children    = node.children
+    childrenCnt = node.childrenCnt
+
+    if (node.opcode is AST_OPCODE_BOOL_AND) or (node.opcode is AST_OPCODE_BOOL_OR)
+      # Lazy and/or. Don't touch.
+
+    else
+      # Process child nodes recursively.
+      for idx in 0 .. childrenCnt
+        childNode = children[idx]
+        this._processNode_injectInlineFunctions(dst, symbolTable, childNode)
+      endfor
+
+      if node.opcode is AST_OPCODE_CALL
+        this._injectFunctionBody(dst, symbolTable, node)
+      endif
+    endif
+  endmethod
+
+  method _processNode(symbolTable, node)
+    global AST_OPCODE_CALL
+    global AST_OPCODE_DECLARE_OR_ASSIGN
+    global AST_OPCODE_INVOKE_METHOD
+
+    opcode      = node.opcode
+    children    = node.children
+    childrenCnt = node.childrenCnt
+
+    # Switch symbolTable if needed.
+    if typeof(node.symbolTable) isnt 'undefined'
+      symbolTable = node.symbolTable
+    endif
+
+    # TODO: Use null?
+    # TODO: Optimize it.
+    newChildren = []
+
+    # Process child nodes recursively.
+    for idx in 0 .. childrenCnt
+      childNode = children[idx]
+
+      if childNode.opcode is AST_OPCODE_DECLARE_OR_ASSIGN
+        # Input:
+        #   x = foo(...)
+        #
+        # Output:
+        #   foo_body_1
+        #   foo_body_2
+        #   ...
+        #   inline_rv = foo_body_n
+        #   x = inline_rv
+        #
+        rvalNode = childNode.children[1]
+        this._processNode_injectInlineFunctions(newChildren, symbolTable, rvalNode)
+
+      elif (childNode.opcode is AST_OPCODE_CALL) or (childNode.opcode is AST_OPCODE_INVOKE_METHOD)
+        # foo()
+        callParams    = childNode.children
+        callParamsCnt = childNode.childrenCnt
+
+        # Resolve function calls in parameters list.
+        for paramIdx in 0 .. callParamsCnt
+          this._processNode_injectInlineFunctions(newChildren, symbolTable, callParams[paramIdx])
+        endfor
+
+        # Resolve function call itself.
+        this._processNode_injectInlineFunctions(newChildren, symbolTable, childNode)
+
+      else
+        # Process nodes recursively.
+        this._processNode(symbolTable, childNode)
+      endif
+
+      newChildren[len(newChildren)] = childNode
+    endfor
+
+    node.children    = newChildren
+    node.childrenCnt = len(newChildren)
+  endmethod
+
+  method processNode(node)
+    this._processNode(node.symbolTable, node)
+  endmethod
+endclass

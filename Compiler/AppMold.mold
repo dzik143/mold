@@ -15,15 +15,24 @@
 import 'Utils/SymbolTable.mold'
 import 'AST/ASTModuleResolver.mold'
 import 'AST/ASTSymbolsCollector.mold'
-import 'AST/ASTOptimizer.mold'
 import 'AST/ASTEvaluator.mold'
-import 'AST/ASTConstantFolder.mold'
+import 'AST/ASTOptimizerConstantFolding.mold'
 import 'AST/ASTOptimizerCSE.mold'
 import 'AST/ASTOptimizerDeadCodeRemove.mold'
+import 'AST/ASTOptimizerVCall.mold'
+import 'AST/ASTOptimizerIf.mold'
+import 'AST/ASTOptimizerInline.mold'
+import 'AST/ASTTypeCast.mold'
+
+# TODO: Clean up this mess.
+import 'MIR/MIR.mold'
+
+DEBUG_MOLD = false
 
 class AppMold
   method _debug(msg)
-    if false
+    global DEBUG_MOLD
+    if DEBUG_MOLD is true
       print '[ AppMold ]', msg
     endif
   endmethod
@@ -31,14 +40,102 @@ class AppMold
   method constructor()
     this._debug('Created new object')
 
-    this.astConstantFolder          = new ASTConstantFolder(this)
-    this.symbolTable                = new SymbolTable(this)
-    this.astSymbolsCollector        = new ASTSymbolsCollector(this)
-    this.astOptimizer               = new ASTOptimizer(this)
-    this.astEvaluator               = new ASTEvaluator(this)
-    this.astOptimizerCSE            = new ASTOptimizerCSE(this)
-    this.astOptimizerDeadCodeRemove = new ASTOptimizerDeadCodeRemove(this)
-    this.astModuleResolver          = new ASTModuleResolver(this)
+    this.symbolTable                 = new SymbolTable(this)
+    this.astOptimizerConstantFolding = new ASTOptimizerConstantFolding(this)
+    this.astSymbolsCollector         = new ASTSymbolsCollector(this)
+    this.astEvaluator                = new ASTEvaluator(this)
+    this.astOptimizerCSE             = new ASTOptimizerCSE(this)
+    this.astOptimizerDeadCodeRemove  = new ASTOptimizerDeadCodeRemove(this)
+    this.astOptimizerVCall           = new ASTOptimizerVCall(this)
+    this.astOptimizerIf              = new ASTOptimizerIf(this)
+    this.astOptimizerInline          = new ASTOptimizerInline(this)
+    this.astTypeCast                 = new ASTTypeCast(this)
+    this.astModuleResolver           = new ASTModuleResolver(this)
+
+    # TODO: Clean up this mess.
+    this.code = new MIRCode()
+
+    this._debug('Setting up built-in functions...')
+
+    # TODO: More-friendly API here.
+    __mold_openExternalModuleProto = {
+      'rv': 'rv',
+      'name': '__mold_openExternalModule',
+      'paramsCnt': 1,
+      'labelId': this.code.createExternalLabel('__MOLD_OpenExternalModule')
+    }
+    this.symbolTable.insertFunction('__mold_openExternalModule', __mold_openExternalModuleProto)
+    this.code.createExternalProc('__MOLD_OpenExternalModule', 'variant', 1, 'variant', '__MOLD_OpenExternalModule')
+
+    # TODO: More-friendly API here.
+    __mold_loadExternalFunctionProto = {
+      'rv': 'rv',
+      'name': '__mold_loadExternalFunction',
+      'paramsCnt': 5,
+      'labelId': this.code.createExternalLabel('__MOLD_LoadExternalFunction')
+    }
+    this.symbolTable.insertFunction('__mold_loadExternalFunction', __mold_loadExternalFunctionProto)
+    this.code.createExternalProc('__MOLD_LoadExternalFunction', 'variant', 5, 'variant', '__MOLD_LoadExternalFunction')
+
+    # TODO: More-friendly API here.
+    __mold_peekProto = {
+      'rv': 'rv',
+      'name': '__mold_peek',
+      'paramsCnt': 2,
+      'labelId': this.code.createExternalLabel('__MOLD_Peek')
+    }
+    this.symbolTable.insertFunction('__mold_peek', __mold_peekProto)
+    this.code.createExternalProc('__MOLD_Peek', 'variant', 2, 'variant', '__MOLD_Peek')
+
+    # TODO: More-friendly API here.
+    __mold_ordProto = {
+      'rv': 'rv',
+      'name': '__mold_ord',
+      'paramsCnt': 1,
+      'labelId': this.code.createExternalLabel('__MOLD_Ord')
+    }
+    this.symbolTable.insertFunction('__mold_ord', __mold_ordProto)
+    this.code.createExternalProc('__MOLD_Ord', 'variant', 1, 'variant', '__MOLD_Ord')
+
+    # TODO: More-friendly API here.
+    __mold_loadFileProto = {
+      'rv': 'rv',
+      'name': '__mold_loadFile',
+      'paramsCnt': 1,
+      'labelId': this.code.createExternalLabel('__MOLD_LoadFile')
+    }
+    this.symbolTable.insertFunction('__mold_loadFile', __mold_loadFileProto)
+    this.code.createExternalProc('__MOLD_LoadFile', 'variant', 1, 'variant', '__MOLD_LoadFile')
+
+    # TODO: More-friendly API here.
+    bitwiseAndProto = {
+      'rv': 'rv',
+      'name': 'bitwiseAnd',
+      'paramsCnt': 2
+    }
+    this.symbolTable.insertFunction('bitwiseAnd', bitwiseAndProto)
+
+    # TODO: More-friendly API here.
+    __mold_parseIntegerProto = {
+      'rv': 'rv',
+      'name': '__mold_parseInteger',
+      'paramsCnt': 1
+    }
+    this.symbolTable.insertFunction('__mold_parseInteger', __mold_parseIntegerProto)
+
+    # TODO: More-friendly API here.
+    __mold_parseFloatProto = {
+      'rv': 'rv',
+      'name': '__mold_parseFloat',
+      'paramsCnt': 1
+    }
+    this.symbolTable.insertFunction('__mold_parseFloat', __mold_parseFloatProto)
+
+    this._debug('Ready to work')
+  endmethod
+
+  method getMir1Code() -> rv
+    rv = this.code
   endmethod
 
   method getSymbolTable() -> rv
@@ -49,12 +146,8 @@ class AppMold
     rv = this.astSymbolsCollector
   endmethod
 
-  method getAstOptimizer() -> rv
-    rv = this.astOptimizer
-  endmethod
-
-  method getAstConstantFolder() -> rv
-    rv = this.astConstantFolder
+  method getAstOptimizerConstantFolding() -> rv
+    rv = this.astOptimizerConstantFolding
   endmethod
 
   method getAstEvaluator() -> rv
@@ -69,7 +162,23 @@ class AppMold
     rv = this.astOptimizerDeadCodeRemove
   endmethod
 
+  method getAstOptimizerVCall() -> rv
+    rv = this.astOptimizerVCall
+  endmethod
+
+  method getAstOptimizerIf() -> rv
+    rv = this.astOptimizerIf
+  endmethod
+
+  method getAstOptimizerInline() -> rv
+    rv = this.astOptimizerInline
+  endmethod
+
   method getAstModuleResolver() -> rv
     rv = this.astModuleResolver
+  endmethod
+
+  method getAstTypeCast() -> rv
+    rv = this.astTypeCast
   endmethod
 endclass

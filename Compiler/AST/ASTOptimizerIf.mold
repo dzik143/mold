@@ -1,0 +1,139 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'AST/AST.mold'
+import 'AST/ASTUtils.mold'
+
+class ASTOptimizerIf
+  method constructor(app)
+    this.app = app
+  endmethod
+
+  method _debug(msg)
+    global DEBUG_AST_OPTIMIZER
+    if DEBUG_AST_OPTIMIZER is true
+      print '[ ASTOptimizerIf ]', msg
+    endif
+  endmethod
+
+  method _processNode(node)
+    global AST_OPCODE_IF
+    global AST_OPCODE_SWITCH
+    global AST_OPCODE_COMPARE_EQ
+    global AST_OPCODE_VARIABLE
+    global AST_DATA_INTEGER
+
+    opcode      = node.opcode
+    children    = node.children
+    childrenCnt = node.childrenCnt
+    cond        = children[0]
+
+    if (opcode is AST_OPCODE_IF) and (childrenCnt is 3) and (cond.opcode is AST_OPCODE_COMPARE_EQ) and (cond.children[1].opcode is AST_DATA_INTEGER)
+      # if cond1
+      #   ...
+      # else
+      #   if cond2
+      #     ...
+
+      # TODO: Use null?
+      newChildren = [cond.children[0]]
+      caseHashMap = {}
+
+      exprHash  = AST_Hash(cond.children[0])
+      valueMin  = 2147483647  # TODO: Use MAX_INTEGER etc.?
+      valueMax  = -2147483647 # TODO: Use MIN_INTEGER etc.?
+
+      # Go into else if node.
+      goOn           = true
+      currentIfNode  = node
+      cond           = currentIfNode.children[0]
+      casesCnt       = 0
+
+      while goOn is true
+        # if x is 1
+        # else
+        #   if x is 2
+        #   ...
+        goOn = false
+
+        if currentIfNode.opcode is AST_OPCODE_IF
+          if (cond.opcode is AST_OPCODE_COMPARE_EQ) and (cond.children[1].opcode is AST_DATA_INTEGER) and (AST_Hash(cond.children[0]) is exprHash)
+
+            # TODO: Handle values ranges.
+            # x is imm
+            # Convert into switch with choice map.
+            caseNode     = currentIfNode.children[1]
+            caseValue    = cond.children[1].value
+            caseNodeHash = AST_HashForCodeComparison(caseNode)
+
+            reusedNode = caseHashMap[caseNodeHash]
+            casesCnt   = casesCnt + 1
+
+            if typeof(reusedNode) is 'undefined'
+              # Case code seen first time. Go on.
+              caseHashMap[caseNodeHash] = caseNode
+              newChildren[len(newChildren)] = caseNode
+              caseNode.arrayOfValues = [caseValue]
+
+            else
+              # Case code is already used for some another branch.
+              # Reuse it.
+              reusedNode.arrayOfValues[len(reusedNode.arrayOfValues)] = caseValue
+            endif
+
+            if caseValue > valueMax
+              valueMax = caseValue
+            endif
+
+            if caseValue < valueMin
+              valueMin = caseValue
+            endif
+
+            if currentIfNode.childrenCnt is 3
+              # Save otherwise node.
+              goOn          = true
+              currentIfNode = currentIfNode.children[2]
+              cond          = currentIfNode.children[0]
+            endif
+          endif
+        endif
+      endwhile
+
+      if casesCnt >= 3
+        # TODO: Use null?
+        # Handle otherwise node.
+        lastCaseNode = newChildren[len(newChildren) - 1]
+        if (currentIfNode.opcode isnt AST_OPCODE_IF) or (AST_HashForCodeComparison(currentIfNode.children[1]) isnt AST_HashForCodeComparison(lastCaseNode))
+          newChildren[len(newChildren)] = currentIfNode
+          this._processNode(currentIfNode)
+        endif
+
+        node.children    = newChildren
+        node.childrenCnt = len(newChildren)
+        node.opcode      = AST_OPCODE_SWITCH
+        node.valueMin    = valueMin
+        node.valueMax    = valueMax
+      endif
+    else
+      # Process child nodes recursively.
+      for idx in 0 .. childrenCnt
+        this._processNode(children[idx])
+      endfor
+    endif
+  endmethod
+
+  method processNode(node)
+    this._processNode(node)
+  endmethod
+endclass

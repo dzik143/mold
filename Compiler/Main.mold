@@ -1,7 +1,7 @@
 ################################################################################
 #                                                                              #
 # This file is part of Mold project.                                           #
-# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+# Copyright (c) 2015, 2019 Sylwester Wysocki (sw143@wp.pl).                    #
 #                                                                              #
 # The Mold code and any derived work however based on this software are        #
 # copyright of Sylwester Wysocki. Redistribution and use of the present        #
@@ -21,20 +21,11 @@ import 'AppMold.mold'
 import 'AST/ASTSymbolsCollector.mold'
 import 'AST/ASTPrinterText.mold'
 import 'AST/ASTPrinterHtml.mold'
+import 'AST/ASTTranslatorMIR0.mold'
 import 'AST/ASTTranslatorMIR1.mold'
 import 'MIR/MIRQuadCollector.mold'
 import 'CodeGenerator/CodeGeneratorX64.mold'
-
-#import 'AST/ASTTranslator.mold'
-#import 'AST/ASTTranslatorMIR0.mold'
-#import 'AST/ASTTranslatorMIR1.mold'
-
-#import 'MIR/MIRQuadCollector.mold'
-#import 'MIR/MIRQuadTypeGuess.mold'
-#import 'MIR/MIRQuadTypeConvert.mold'
-#import 'MIR/MIRQuadOptimizer.mold'
-
-#import 'CodeGenerator/CodeGeneratorX64.mold'
+import 'MIR/MIRQuadOptimizer.mold'
 import 'VM/VMachineStack.mold'
 
 # ------------------------------------------------------------------------------
@@ -65,19 +56,19 @@ for idx in 1 .. argc
     # mold -c <file.mold>
     mode = 'compiler'
     print 'Error: compiler mode not implemented yet.'
-    print 'Try --asm option and assemble result by own instead.'
+    print 'Try --asm option and assemble result on by own.'
     exit()
 
   elif argv[idx] is '--asm'
-    # Generate assembler
+    # Generate assembler output
     mode = 'asm'
 
   elif argv[idx] is '--mir0'
-    # Generate assembler
+    # Generate MIR0 output (stack based)
     mode = 'mir0'
 
   elif (argv[idx] is '--mir') or (argv[idx] is '--mir1')
-    # Generate assembler
+    # Generate MIR1 output (register based)
     mode = 'mir1'
 
   elif argv[idx] is '--ast'
@@ -88,9 +79,17 @@ for idx in 1 .. argc
     # Show AST tree as JSON.
     mode = 'astjson'
 
-  elif argv[idx] is '--debug'
+  elif argv[idx] is '--prettyPrinter'
+    # Show parsed mold code
+    mode = 'prettyPrinter'
+
+  elif argv[idx] is '--debug-parser'
     # Enable debug logs
     UNICC_DEBUG = true
+
+  elif argv[idx] is '--debug'
+    DEBUG_AST_OPTIMIZER = true
+    DEBUG_MOLD          = true
 
   elif argv[idx] is '-O0'
     optimizationLevel = 0
@@ -123,7 +122,11 @@ endif
 #
 
 app    = new AppMold()
+
+app._debug('Creating parser object...')
 parser = new Parser()
+
+app._debug('Parsing source...')
 ast    = parser.parseFile(path)
 
 #
@@ -142,89 +145,136 @@ elif mode is 'astjson'
 else
   # Convert AST to understood by translator format.
   # TODO: Remove this step.
+  app._debug('Converting AST...')
   ast = ast.convert()
 
   # Resolve imports if any.
+  app._debug('Resolving imports...')
   astModuleResolver = app.getAstModuleResolver()
   astModuleResolver.resolveImports(ast)
 
   # Build symbol table.
+  app._debug('Building symbol table...')
   astSymbolsCollector = app.getAstSymbolsCollector()
   astSymbolsCollector.buildSymbolTable(ast)
 
+  # Optimize AST if needed.
+  app._debug('Optimizing AST...')
+
+  if optimizationLevel is 0
+    # No optimization - do nothing.
+    # TODO: Why we need call evaluate here?
+    # (Newton method test failed without it)
+    app._debug('Evaluating AST nodes...')
+    app.getAstEvaluator().processNode(ast)
+
+  elif optimizationLevel is 1
+    # Optimization level #1 (basic AST optimizations):
+    # - constant folding,
+    # - dead code elimination,
+    # - common subexpression elimination (CSE).
+
+    # TODO: More generic way to apply selected optimizations.
+    app._debug('VCall optimization...')
+    app.getAstOptimizerVCall().processNode(ast)
+
+    app._debug('Inline optimization... (TEMPORARY DISABLED!)')
+    #app.getAstOptimizerInline().processNode(ast)
+
+    # Common preprocess before go-on with further AST optimization.
+    app._debug('Evaluating AST nodes...')
+    app.getAstEvaluator().processNode(ast)
+
+    app._debug('Constant folding...')
+    app.getAstOptimizerConstantFolding().processNode(ast)
+
+    if (mode is 'mir0') or (mode is 'interpreter')
+      app._debug('If optimization... (TEMPORARY DISABLED FOR MIR0!)')
+    else
+      app._debug('If optimization...')
+      app.getAstOptimizerIf().processNode(ast)
+    endif
+
+    app._debug('Dead code elimination...')
+    app.getAstOptimizerDeadCodeRemove().processNode(ast)
+
+    app._debug('Common subexpression elimination (CSE)...')
+    app.getAstOptimizerCSE().processNode(ast)
+
+  else
+    die('error: optimization level #' + str(optimizationLevel) + ' is not implemented yet')
+  endif
+
   if (mode is 'mir0') or (mode is 'interpreter')
-    die('error: mir0 based modes are temporary disabled')
+    #die('error: mir0 based modes are temporary disabled')
     # Translate program to MIR0 (stack based).
-    #astTranslator = new ASTTranslatorMIR0()
-    #astTranslator.run(ast)
-    #code = astTranslator.code
+    astTranslator = new ASTTranslatorMIR0(app)
+    astTranslator.run(ast)
+    code = astTranslator.code
 
     # Load MIR0 code into virtual machine.
-    #vm = new VMachineStack()
-    #vm.loadCode(code)
-    #
-    #if mode is 'mir0'
-    #  # Dump stack MIR0 only.
-    #  vm.dumpCode()
-    #
-    #elif mode is 'interpreter'
-    #  # Run virtual machine (stack based).
-    #  vm.run()
-    #endif
+    vm = new VMachineStack()
+    vm.loadCode(code)
+
+    if mode is 'mir0'
+      # Dump stack MIR0 only.
+      vm.dumpCode()
+
+    elif mode is 'interpreter'
+      # Run virtual machine (stack based).
+      vm.run()
+    endif
 
   else
     # Prepare quads process toolchain.
-    # [AST] -> [MIR1] -> [Optimizer] -> [Collector]
+    # [AST] -> [MIR1] -> [Collector]
     # Translate program to MIR1 (register based).
     astTranslator    = new ASTTranslatorMIR1(app)
     mirQuadCollector = new MIRQuadCollector()
+    mirQuadOptimizer = new MIRQuadOptimizer()
 
-    if optimizationLevel is 0
-      # No optimization - pass raw MIR1 to code generator.
-      astTranslator.connectTo(mirQuadCollector)
-
-    /*
-    elif optimizationLevel is 1
-      # Optimization level 1:
-      # - Remove redundant load/store
-      # - Use machine types if possible.
-      mirQuadOptimizer   = new MIRQuadOptimizer()
-      mirQuadTypeGuess   = new MIRQuadTypeGuess()
-      mirQuadTypeConvert = new MIRQuadTypeConvert()
-
-      astTranslator.connectTo(mirQuadOptimizer)
-
-      mirQuadOptimizer.connectTo(mirQuadTypeGuess).connectTo(mirQuadTypeConvert).connectTo(mirQuadCollector)
-    */
-    else
-      die('error: optimization level #' + str(optimizationLevel) + ' is not implemented yet')
-    endif
-
-    # Run build quads process.
-    astTranslator.run(ast)
-
-    # TODO
-    #if optimizationLevel >= 1
-    #  # TODO: Auto flush on stream end.
-    #  mirQuadTypeGuess.flush()
-    #endif
-
-    if mode is 'mir1'
-      # Print MIR quads only
-      mirQuadCollector.printQuads()
-
-    elif mode is 'asm'
-      # TODO: Better way to pass quads + meta.
-      code             = astTranslator.code
-      code.quads       = mirQuadCollector.getQuads()
-      code.symbolTable = app.getSymbolTable()
-
-      # Generate x64 code.
-      codeGenerator = new CodeGeneratorX64()
-      codeGenerator.run(code)
+    if mode is 'prettyPrinter'
+      # Show formatted mold code.
+      astPrinterText = new ASTPrinterText()
+      astPrinterText.printNode(ast)
 
     else
-      BadUsageError()
+      # Go on with further code processing.
+      # Pass translated AST to MIR1.
+
+      if optimizationLevel is 0
+        # No optimization. Pass translated AST to MIR1 directly.
+        astTranslator.connectTo(mirQuadCollector)
+
+      elif optimizationLevel is 1
+        astTranslator.connectTo(mirQuadOptimizer).connectTo(mirQuadCollector)
+      endif
+
+      app._debug('Type cast...')
+      app.getAstTypeCast().processNode(ast)
+
+      # Run build quads process.
+      app._debug('Translating AST...')
+      astTranslator.run(ast)
+
+      if mode is 'mir1'
+        # Print MIR quads only
+        mirQuadCollector.printQuads()
+
+      elif mode is 'asm'
+        # TODO: Better way to pass quads + meta.
+        code             = astTranslator.code
+        code.quads       = mirQuadCollector.getQuads()
+        code.symbolTable = app.getSymbolTable()
+
+        # Generate x64 code.
+        app._debug('Generating x64 code...')
+        codeGenerator = new CodeGeneratorX64()
+        codeGenerator.run(code)
+
+      else
+        BadUsageError()
+      endif
     endif
   endif
 endif

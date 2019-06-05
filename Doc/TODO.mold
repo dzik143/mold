@@ -1,0 +1,267 @@
+switch [x, y]
+  when ['variant', *], [*, 'variant']
+    # variant  x anything
+    # anything x variant
+
+  when ['integer', *], [*, 'double']
+
+endswitch
+
+
+######################################
+# Read / write text data
+######################################
+
+# Write text data to stdout:
+# - one string (Hello),
+# - three variables (x,y,z),
+# - end of line character.
+write to stdout values 'Hello', x, y, z, @eol
+
+# Write text data to external file:
+# - open 'test.txt' for write (if not opened yet),
+# - write string (Hello),
+# - write three variables (x,y,z),
+# - write end of line character,
+# - close file (and flush before, this step is optional).
+write to 'test.txt' values 'Hello', x, y, z, @eol, @close
+
+# Read text data from stdin:
+# - three variables (x,y,z)
+# - match end of line
+read from stdin values x, y, z, @eol
+
+# Read text data from external file:
+# - open file 'text.txt' for write (if not opened yet),
+# - read three variables (x,y,z),
+# - match end of line character.
+read from 'test.txt' values x, y, z, @eol
+
+######################################
+# Read / write binary data
+######################################
+
+# Write binary data to stdout:
+# - write three int32 values,
+# - wrwite one float64 value.
+write to stdout values int32(a), int32(b), int32(c), float64(x)
+
+# Write binary data to external file:
+# - open file 'test.dat' for write (if not opened yet),
+# - write three int32 values,
+# - write one float64 value,
+# - close file (and flush before, this step is optional)
+write to 'test.dat' values int32(a), int32(b), int32(c), float64(x), @close
+
+# Read binary data from stdin:
+# - read three int32 values,
+# - read one float64 value.
+read from stdin values int32(a), int32(b), int32(c), float64(x)
+
+# Read binary data from external file:
+# - open file 'test.dat' for read (if not opened yet),
+# - read three int32 values,
+# - read one float64 value,
+# - close file (this step is optional).
+read from 'test.dat' values int32(a), int32(b), int32(c), float64(x), @close
+
+######################################
+# Multi-line read/write blocks:
+######################################
+
+write to 'test.dat'
+  int32(a)
+  int32(b)
+  int32(c)
+  float64(x)
+  @close
+endwrite
+
+read from 'test.dat'
+  int32(a)
+  int32(b)
+  int32(c)
+  float64(x)
+  @close
+endwrite
+
+######################################
+# Asynchornous IO
+######################################
+
+write to 'test.dat'
+  int32(a)
+  int32(b)
+  int32(c)
+  float64(x)
+
+then
+  # This code is executed asychronous when write is finished.
+  print 'Write success!'
+
+exception
+  # This code is executed when write operation failed.
+  print 'Error!'
+endwrite
+
+######################################
+# Validate data while reading
+######################################
+
+read from 'test.dat'
+  # Load graph header.
+  int32(numberOfVertexes)
+  int32(numberOfConnections)
+
+  # Load connection pairs (startVertex, endVertex)
+  for idx in 0 .. numberOfConnections
+    int32(road[idx].startVertex) in range (0, numberOfVertexes)
+    int32(road[idx].endVertex)   in range (0, numberOfVertexes)
+  endfor
+
+exception
+  # Error while reading or vertex out-of-range.
+endread
+
+######################################
+
+read from '::80'
+  # Read new data.
+
+
+connection
+  # New connection arrived.
+
+exception
+
+endread
+
+######################################
+
+foo(x,y,z) then
+  print 'Done!'
+endthen
+
+######################################
+
+if x.y.z is existent
+endif
+
+if x.y.z isnt existent
+endif
+
+if [x,y,z] are [1,2,3]
+endif
+
+if [x,y,z] arent [1,2,3]
+endif
+
+######################################
+
+if x in range(1,10)
+endif
+
+######################################
+
+#
+# POMYSLY (TODO):
+#
+
+# Check for map keys (TODO: Review it)
+x has key y   - item x existent, its a map and has field y (so x.y is existent)
+x hasnt key y - item x existent, its a map, but there is NO y field (so x.y isnt existent)
+
+# Check for array index (TODO: Review it)
+x has index y   - item x existent, its a indexed array item and index at index y existent (so x[y] is existent)
+x hasnt index y - item x existent, its a indexed array item, but there is NOT item at index y (so x[y] isnt existent)
+
+# Check does one element is stored inside other one (inside array or map)
+x is storing y   - x is array or map and holds value y at some index/key
+x isnt storing y - x is array of map, but doesnt hold value y
+
+# Check does one element is stored inside other one (inside array or map)
+x is holded by y   - x is array or map and holds value y at some index/key
+x isnt holded by y - x is array of map, but doesnt hold value y
+
+x is holding y
+x isnt holding y
+
+x is inside y
+x is outside y
+
+###########################
+
+x = 'Hello' ~ ' ' ~ 'Mold'
+x = 'Hello' % ' ' % 'Mold'
+x = 'Hello'   ' '   'Mold'
+
+x = 'Hello' || ' ' || 'Mold'
+x = 'Hello' ++ ' ' ++ 'Mold'
+x = 'Hello' -- ' ' -- 'Mold'
+x = 'Hello' :: ' ' :: 'Mold'
+x = 'Hello' <> ' ' <> 'Mold'
+x = 'Hello' >< ' ' >< 'Mold'
+x = 'Hello' << ' ' << 'Mold'
+
+die('error: variable ${y} is not declared in this scope')
+
+##############################
+
+remove from arrayOrMapBox values  x,y,z
+remove from mapBox        keys    x,y,z
+remove from arrayBox      indexes x,y,z
+
+insert to mapBox   keys    a,b,c values x,y,z
+insert to arrayBox indexes 1,2,3 values x,y,z
+
+##############################
+
+remove from arrayOfMapBox
+  key(a), key(b), key(c)
+  value(x), value(y), value(z)
+endremove
+
+remove from arrayBox
+  index(a), index(b), index(c)
+  value(x), value(y), value(z)
+endremove
+
+##############################
+
+remove values  x,y,z from arrayOrMapBox
+remove keys    x,y,z from mapBox
+remove indexes x,y,z from arrayBox
+
+insert keys    a,b,c values x,y,z to mapBox
+insert indexes 1,2,3 values x,y,z to arrayBox
+
+##############################
+
+x,y,z are positive
+x,y,z are negative
+x,y,z are odd
+x,y,z are even
+x,y,z are divisible by n
+x,y,z are equal
+x,y,z are unique
+
+##############################
+
+x is ...
+x isnt ...
+x,y,z are ...
+x,y,z arent ...
+
+##############################
+
+if values  x,y,z are existent
+if values  x,y,z are existent in box
+if keys    x,y,z are existent in box
+if indexes x,y,z are existent in box
+
+if values  x,y,z arent existent
+if values  x,y,z arent existent in box
+if keys    x,y,z arent existent in box
+if indexes x,y,z arent existent in box
+
+#############################

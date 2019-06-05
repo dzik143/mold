@@ -1,6 +1,11 @@
 x = []
-undefined = [0]
+undefined = x[0]
 object = 0
+
+DEBUG_AST_OPTIMIZER = true
+DEBUG_MOLD = true
+NodeId = 1000
+
 
 #import 'AST/AST.mold'
 #import 'Parser/ParserMold.mold'
@@ -8,16 +13,21 @@ object = 0
 #class Parser
 #endclass
 
-DEBUG_AST_OPTIMIZER = false
+DEBUG_AST_OPTIMIZER = true
 UNICC_DEBUG         = true
 
+import 'Utils/SymbolTable.mold'
 import 'AppMold.mold'
 import 'AST/ASTSymbolsCollector.mold'
 import 'AST/ASTPrinterText.mold'
 import 'AST/ASTPrinterHtml.mold'
+import 'AST/ASTTranslatorMIR0.mold'
+
 import 'AST/ASTTranslatorMIR1.mold'
 import 'MIR/MIRQuadCollector.mold'
+import 'MIR/MIRQuadOptimizer.mold'
 import 'CodeGenerator/CodeGeneratorX64.mold'
+import 'VM/VMachineStack.mold'
 
 import '1.ast'
 #import 'Parser/ParserMold.mold'
@@ -32,31 +42,49 @@ import '1.ast'
 
 #print '<pre>'
 
-app                        = new AppMold()
-astSymbolsCollector        = app.getAstSymbolsCollector()
-astConstantFolder          = app.getAstConstantFolder()
-astEvaluator               = app.getAstEvaluator()
-astOptimizerCSE            = app.getAstOptimizerCSE()
-astOptimizerDeadCodeRemove = app.getAstOptimizerDeadCodeRemove()
-astModuleResolver          = app.getAstModuleResolver()
-astPrinterText             = new ASTPrinterText()
-astPrinterHtml             = new ASTPrinterHtml()
-
-print 'Collecting symbols...'
+app                 = new AppMold()
+astSymbolsCollector = app.getAstSymbolsCollector()
+astModuleResolver   = app.getAstModuleResolver()
+astPrinterText      = new ASTPrinterText()
+astPrinterHtml      = new ASTPrinterHtml()
 
 if typeof(astModuleResolver) isnt 'undefined'
+  print 'Resolving imports...'
   astModuleResolver.resolveImports(ast)
 endif
 
+print 'Building symbol table...'
 astSymbolsCollector.buildSymbolTable(ast)
 
-#astEvaluator.processNode(ast)
-#astConstantFolder.processNode(ast)
+# ------------------------------------------------------------------------------
 
-#astEvaluator.processNode(ast)
-#astConstantFolder.processNode(ast)
-#astOptimizerCSE.processNode(ast)
-#astOptimizerDeadCodeRemove.processNode(ast)
+# TODO: More generic way to apply selected optimizations.
+app._debug('VCall optimization...')
+app.getAstOptimizerVCall().processNode(ast)
+
+app._debug('Inline optimization... (TEMPORARY DISABLED!)')
+#app.getAstOptimizerInline().processNode(ast)
+
+# Common preprocess before go-on with further AST optimization.
+app._debug('Evaluating AST nodes...')
+app.getAstEvaluator().processNode(ast)
+
+app._debug('Constant folding...')
+app.getAstOptimizerConstantFolding().processNode(ast)
+
+app._debug('If optimization...')
+app.getAstOptimizerIf().processNode(ast)
+
+app._debug('Dead code elimination...')
+app.getAstOptimizerDeadCodeRemove().processNode(ast)
+
+app._debug('Common subexpression elimination (CSE)...')
+app.getAstOptimizerCSE().processNode(ast)
+
+# ------------------------------------------------------------------------------
+
+print 'Type cast...'
+app.getAstTypeCast().processNode(ast)
 
 #astPrinterText.printNode(ast)
 
@@ -65,11 +93,15 @@ astSymbolsCollector.buildSymbolTable(ast)
 
 #astPrinterHtml.printNode(ast)
 
-print 'Going to translate AST...'
-
+print 'Going to translate AST (init)...'
 astTranslator = new ASTTranslatorMIR1(app)
-mirCollector  = new MIRQuadCollector()
-astTranslator.connectTo(mirCollector)
+
+# MIR1 (register based)
+print 'Going to translate AST to MIR1...'
+mirCollector = new MIRQuadCollector()
+mirOptimizer = new MIRQuadOptimizer()
+#astTranslator.connectTo(mirCollector)
+astTranslator.connectTo(mirOptimizer).connectTo(mirCollector)
 
 astTranslator.run(ast)
 mirCollector.printQuads()

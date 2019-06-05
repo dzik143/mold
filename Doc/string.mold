@@ -1,0 +1,21 @@
+# Three equivalent quotes to store strings:
+'single quoted string'
+"double quoted string"
+`one more way for defining strings`
+
+# String concatenation.
+x = 'Hello'
+y = 'Mold'
+z = x + ' ' + y # Now z stored 'Hello Mold' text
+
+# Access single character by index.
+print x[0]
+
+# Get string length
+print len(x)
+
+# String with inlined variable values.
+x = 1
+y = 2
+z = 'x has ${x} value, and y is ${y}'
+print z

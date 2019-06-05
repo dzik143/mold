@@ -21,8 +21,8 @@ class ASTTranslatorMIR0 extends ASTTranslator
   #                                Init code
   # ----------------------------------------------------------------------------
 
-  method constructor()
-    super()
+  method constructor(app)
+    super(app)
     this.code = new MIRCode()
   endmethod
 
@@ -36,6 +36,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
   endmethod
 
   method _callStrEscape(x) -> rv
+    rv = false
     this._error('_callStrEscape not implemented')
   endmethod
 
@@ -139,6 +140,17 @@ class ASTTranslatorMIR0 extends ASTTranslator
     rv = false
   endmethod
 
+  method _loadImmAsVariant(value) -> rv
+    # TODO: Is it really needed?
+    rv = this._loadImm(value)
+  endmethod
+
+  method _convert(x, srcType, dstType) -> rv
+    # TODO: Review it.
+    # Do nothing. We always use variant.
+    rv = false
+  endmethod
+
   method _compareEQ(x, y) -> rv
     this.code.cmpEQ()
     rv = false
@@ -174,10 +186,12 @@ class ASTTranslatorMIR0 extends ASTTranslator
     global SYMBOL_KIND_VAR_GLOBAL
     global SYMBOL_KIND_VAR_PARAM
     global SYMBOL_KIND_VAR_RETVAL
+    global SYMBOL_KIND_CONST
 
-    info = this.symbolTable.lookupForRead(name)
-    kind = info['kind']
-    id   = info['id']
+    symbolInfo = this.symbolTable.lookup(name)
+
+    kind = symbolInfo['kind']
+    id   = symbolInfo['id']
     rv   = false
 
     if kind is SYMBOL_KIND_VAR_LOCAL
@@ -196,6 +210,10 @@ class ASTTranslatorMIR0 extends ASTTranslator
       # Return value of current function.
       this.code.loadRetVal()
 
+    elif kind is SYMBOL_KIND_CONST
+      # Constant - treat as imm.
+      this.code.loadImm(symbolInfo.value)
+
     else
       this._error("unexpected symbol kind '" + name + "' (" + str(kind) + ")")
     endif
@@ -207,17 +225,17 @@ class ASTTranslatorMIR0 extends ASTTranslator
     global SYMBOL_KIND_VAR_PARAM
     global SYMBOL_KIND_VAR_RETVAL
 
-    info = this.symbolTable.lookupForWrite(name)
-    kind = info['kind']
-    id   = info['id']
+    symbolInfo = this.symbolTable.lookup(name)
+    kind       = symbolInfo['kind']
+    id         = symbolInfo['id']
 
     if kind is SYMBOL_KIND_VAR_LOCAL
       # Local variable
-      this.code.storeLocal(id)
+      symbolInfo.id = this.code.storeLocal(id)
 
     elif kind is SYMBOL_KIND_VAR_GLOBAL
       # Global variable
-      this.code.storeGlobal(id)
+      symbolInfo.id = this.code.storeGlobal(id)
 
     elif kind is SYMBOL_KIND_VAR_PARAM
       # One of call parameters.
@@ -228,6 +246,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
       this.code.storeRetVal()
 
     else
+      # TODO: Handle terminal nodes.
       this._error("unexpected symbol kind '" + name + "' (" + str(kind) + ")")
     endif
   endmethod
@@ -307,12 +326,9 @@ class ASTTranslatorMIR0 extends ASTTranslator
     endLabelId  = code.createLabel()
 
     # [step, endIdx, startIdx]
-    if this._isset(iterName) is false
-      symbolTable.insertLocalVolatile(iterName)
-    endif
-
-    iterId = symbolTable.lookupForReadAndWrite(iterName)['id']
-    code.storeLocal(iterId)
+    iterSymbolInfo    = symbolTable.lookup(iterName)
+    iterId            = code.storeLocal(iterSymbolInfo.id)
+    iterSymbolInfo.id = iterId
 
     # [step, endIdx]
     code.emitLabel(loopLabelId)
@@ -332,6 +348,31 @@ class ASTTranslatorMIR0 extends ASTTranslator
     code.emitLabel(endLabelId)
     code.dropN(2)                 # []
   endmethod
+
+  method _executeNodeForValues(iterName, box, bodyAst)
+    symbolTable = this.symbolTable
+    code        = this.code
+    loopLabelId = code.createLabel()
+    endLabelId  = code.createLabel()
+
+    # Avoid exeuting loop body directly.
+    # TODO: Handle inner function in better way.
+    code.jmp(endLabelId)
+
+    # TODO: Review it.
+    iterSymbolInfo    = symbolTable.lookup(iterName)
+    iterId            = code.storeLocal(iterSymbolInfo.id)
+    iterSymbolInfo.id = iterId
+
+    # Translate loop body as inner function.
+    code.emitLabel(loopLabelId)
+      this._executeNode(bodyAst)
+      code.ret(0)
+    code.emitLabel(endLabelId)
+
+    code.forValues(iterId, code.resolveLabel(loopLabelId))
+  endmethod
+
 
   method _executeNodeWhile(condAst, bodyAst)
     code        = this.code
@@ -378,7 +419,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
   endmethod
 
   method _emitFunctionBody(funcName, funcProto)
-    # __mold_warning '_emitFunctionBody ' + funcName
+    this._debug('Going to emit function body "' + str(funcName) + '"')
 
     params      = funcProto['params']
     paramsCnt   = funcProto['paramsCnt']
@@ -387,17 +428,13 @@ class ASTTranslatorMIR0 extends ASTTranslator
     codeAst     = children[0]
     rvName      = funcProto['rv']
 
-    # TODO: Review it.
-    #if funcProto['name'] is 'constructor'
-    #  rvName = '__mold_this'
-    #endif
+    code = this.code
 
-    code        = this.code
-    symbolTable = this.symbolTable
+    # TODO: Simplify it.
+    oldSymbolTable   = this.symbolTable
+    this.symbolTable = codeAst.symbolTable
 
-    labelId = funcProto['labelId']
-
-    code.emitLabel(labelId)
+    labelId = code.createAndEmitLabel()
 
     funcProto['ptr'] = code.resolveLabel(labelId)
 
@@ -405,45 +442,31 @@ class ASTTranslatorMIR0 extends ASTTranslator
     code.comment('function ' + funcName)
     code.comment('-----------------------------------------------')
 
-    symbolTable.enterScope()
+    code.beginProc(funcName, params, paramsCnt, rvName)
 
-      code.beginProc(funcName, params, paramsCnt, rvName)
+    # TODO: Clean up this mess.
+    if typeof(funcProto.className) isnt 'undefined'
+      # Add this parameter.
+      paramsCnt = paramsCnt + 1
+    endif
 
-      deepIdx = symbolTable.getDeep()
-      if deepIdx > 1
-        this._error('nested functions are not supported yet')
-      endif
+    code.initFrame(paramsCnt)
 
-      # Insert call parameters to symbol table.
-      for idx in 0 .. paramsCnt
-        symbolTable.insertParam(params[idx], idx)
-      endfor
+    # Translate code.
+    codeNodes    = codeAst['children']
+    codeNodesCnt = codeAst['childrenCnt']
 
-      # TODO: Simplify it.
-      code.initFrame(symbolTable.exportSymbols())
+    for idx in 0 .. codeNodesCnt
+      this._executeNode(codeNodes[idx])
+    endfor
 
-      # Translate function code.
-      # Declare variable to store return value.
-      if typeof(rvName) isnt 'undefined'
-        symbolTable.insertRetVal(rvName)
-      endif
+    code.ret(paramsCnt)
+    code.endProc()
 
-      # Translate code.
-      codeNodes    = codeAst['children']
-      codeNodesCnt = codeAst['childrenCnt']
+    this.symbolTable = oldSymbolTable
 
-      for idx in 0 .. codeNodesCnt
-        this._executeNode(codeNodes[idx])
-      endfor
+    this._debug('Function body emmited')
 
-      if typeof(rvName) isnt 'undefined'
-        code.retValGuard(rvName, funcName)
-      endif
-
-      code.ret(paramsCnt)
-      code.endProc()
-
-    symbolTable.leaveScope()
   endmethod
 
   method _dropRetVal()
@@ -455,67 +478,11 @@ class ASTTranslatorMIR0 extends ASTTranslator
   # ----------------------------------------------------------------------------
 
   method run(ast)
-    x    = []
-    noRv = x[0]
-
-    # Jmp to entry point.
-    code         = this.code
-    entryPointId = code.createLabel()
-    code.jmp(entryPointId)
-
-    # TODO: More-friendly API here.
-    __mold_openExternalModuleProto = {
-      'name': '__mold_openExternalModule',
-      'paramsCnt': 1,
-      'labelId': code.createExternalLabel('__MOLD_OpenExternalModule')
-    }
-    this._declareExternalFunction('__mold_openExternalModule', __mold_openExternalModuleProto)
-    code.createExternalProc('__MOLD_OpenExternalModule', 'variant', 1, 'variant', '__MOLD_OpenExternalModule')
-
-    # TODO: More-friendly API here.
-    __mold_loadExternalFunctionProto = {
-      'name': '__mold_loadExternalFunction',
-      'paramsCnt': 5,
-      'labelId': code.createExternalLabel('__MOLD_LoadExternalFunction')
-    }
-    this._declareExternalFunction('__mold_loadExternalFunction', __mold_loadExternalFunctionProto)
-    code.createExternalProc('__MOLD_LoadExternalFunction', 'variant', 5, 'variant', '__MOLD_LoadExternalFunction')
-
-    # TODO: More-friendly API here.
-    __mold_peekProto = {
-      'name': '__mold_peek',
-      'paramsCnt': 2,
-      'labelId': code.createExternalLabel('__MOLD_Peek')
-    }
-    this._declareExternalFunction('__mold_peek', __mold_peekProto)
-    code.createExternalProc('__MOLD_Peek', 'variant', 2, 'variant', '__MOLD_Peek')
-
-    # TODO: More-friendly API here.
-    __mold_loadFileProto = {
-      'name': '__mold_loadFile',
-      'paramsCnt': 1,
-      'labelId': code.createExternalLabel('__MOLD_LoadFile')
-    }
-    this._declareExternalFunction('__mold_loadFile', __mold_loadFileProto)
-    code.createExternalProc('__MOLD_LoadFile', 'variant', 1, 'variant', '__MOLD_LoadFile')
-
-    # Resolve imports recursively.
-    this._resolveImports(ast)
-    this._declareGlobals(ast)
-
-    # Translate main code behind entry point.
-    code.comment('-----------------------------------------------')
-    code.comment('entry point')
-    code.comment('-----------------------------------------------')
-
-    code.emitLabel(entryPointId)
-    code.beginProc('start', false, 0, noRv)
-
-    # TODO: Simplify it.
-    code.initFrame(this.symbolTable.exportSymbols())
-
     this._executeNode(ast)
-    code.ret(0)
-    code.endProc()
+
+    # TODO: Review it.
+    this.symbolTable = ast.symbolTable
+
+    this._emitGlobals()
   endmethod
 endclass

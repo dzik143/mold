@@ -1,0 +1,102 @@
+# Notes:
+# 1. each boolean condition has x o y form (o is binary operator):
+#   - (x is true) and (y is false) is valid,
+#   - but x and y is *NOT* valid.
+#
+# 2. There is no "not" operator inside if conditions.
+#   a. PROBLEM: Try to say what below code examples should do:
+#     - if x is not y,
+#     - if x is (not y),
+#     - if not x is y
+#     - if not (x is y)
+#
+#   b. SOLVE: Remove unary not operator and keep all conditions in
+#     binary x o y form. Try again and say what below code examples should do:
+#     - if x is y
+#     - if x isnt y
+
+# Simple one-condition if
+if x is y
+  print 'x is y'
+endif
+
+# Simple if-else-endif block.
+if x is y
+  print 'x is y'
+else
+  print 'x is NOT y'
+endif
+
+# if-elif-elif-elif...-endif chain.
+if x is 1
+  print 'x is 1'
+
+elif x is 2
+  print 'x is 2'
+
+elif x is 3
+  print 'x is 3'
+
+else
+  print 'x is neither 1 nor 2 nor 3'
+endif
+
+# Multiple conditions (boolean and).
+if (x is 1) and (y is 2)
+endif
+
+# Multiple conditions (boolean or).
+if (x is 1) or (y is 2)
+endif
+
+# Multi-line conditions list.
+# We wrap all conditions within parentheses..
+if ((x is 11) and (y is 21) or
+    (x is 12) and (y is 22) or
+    (x is 13) and (y is 23))
+
+endif
+
+# ------------------------------------------------------------------------------
+# Operators, which can be used inside if conditions
+# ------------------------------------------------------------------------------
+
+# Basic compare operators:
+x is y   # x is equal to y            (e.g. 3 is 3 gives true)
+x isnt y # x is differ from y         (e.g. 3 isnt 5 gives true)
+x < y    # x is lower than y          (e.g. 3 < 5 gives true)
+x > y    # x is greater than y        (e.g. 3 > 5 gives false)
+x <= y   # x is lower or equal to y   (e.g. 3 <= 5 gives true)
+x >= y   # x is greater or equal to y (e.g. 3 >= 5 gives false)
+
+# Boolean logic (lazy)
+(a o b) or  (c o d) # check first condition, if it's false try second one
+(a o b) and (c o d) # check both conditions
+
+# Parity operators (even / odd):
+x is odd             # x is odd integer (is NOT divisible by 2)
+x is even            # x is even integer (is divisible by 2)
+x is divisible by y  # the rest of x by y division is 0 (x mod y gives 0)
+
+# Parity operators (even / odd) (negation):
+x isnt odd             # x is NOT odd integer (is divisible by 2)
+x isnt even            # x is NOT even integer (is NOT divisible by 2)
+x isnt divisible by y  # the rest of x per y division is NOT 0
+
+# Range operators (TODO: Review it):
+x in range(10, 20)     # x is 10, 11, 12, 13, 14,... or 20
+x out of range(10, 20) # x is lower than 10 or greater than 20
+
+# Existent operators:
+x is existent    # variable x is defined (existent)
+x.y is existent  # both variable x and its inner field x.y are existent
+x[i] is existent # variable x is defined and has got item at index i
+
+# Existent operators (negation):
+x isnt existent    # x is undefined (not existent)
+x.y isnt existent  # x is undefined or field x.y does not exist
+x[i] isnt existent # x is undefined or item x[i] does not exist
+
+# Bit-mask matching (TODO: Review id)
+x is bitmatch   y # x biwise and y gives non-zero value (in C: x & y != 0)
+x isnt bitmatch y # x biwise and y gives zero value     (in C: x & y == 0)

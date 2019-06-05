@@ -16,6 +16,8 @@ import 'AST/AST.mold'
 import 'AST/ASTUtils.mold'
 import 'Utils/SymbolTable.mold'
 
+SHOW_TYPE_CAST_NODES_ENABLED = false
+
 class ASTPrinterText
 
   method _printNode_twoArgsOp(node, op)
@@ -60,7 +62,6 @@ class ASTPrinterText
       # Simple node.
       this._printNode('', y)
     endif
-
   endmethod
 
   method _printNode_codeBlock(prefix, node)
@@ -68,19 +69,23 @@ class ASTPrinterText
     global AST_OPCODE_PROGRAM
     global AST_OPCODE_BLOCK
     global AST_OPCODE_IF
-    global AST_OPCODE_FOR
     global AST_OPCODE_WHILE
+    global AST_OPCODE_FUNCTION
+    global AST_OPCODE_CLASS
+    global AST_OPCODE_CLASS_METHOD
 
     children    = node.children
     childrenCnt = node.childrenCnt
 
-    prefix = prefix + '  '
+    if (node.opcode isnt AST_OPCODE_CLASS) and (node.opcode isnt AST_OPCODE_FUNCTION) and (node.opcode isnt AST_OPCODE_CLASS_METHOD)
+      prefix = prefix + '  '
+    endif
 
     for idx in 0 .. childrenCnt
       if children[idx].opcode isnt AST_OPCODE_NOP
         this._printNode(prefix, children[idx])
 
-        if (children[idx].opcode isnt AST_OPCODE_BLOCK) and (children[idx].opcode isnt AST_OPCODE_IF)
+        if (children[idx].opcode isnt AST_OPCODE_BLOCK) and (children[idx].opcode isnt AST_OPCODE_IF) and (node.opcode isnt AST_OPCODE_CLASS)
           print ''
         endif
       endif
@@ -110,7 +115,7 @@ class ASTPrinterText
 
   method _printNode(prefix, node)
     global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
-    global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+    global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_NULL, AST_DATA_UNDEFINED
     global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
     global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
@@ -123,10 +128,14 @@ class ASTPrinterText
     global AST_OPCODE_BLOCK, AST_OPCODE_FUNCTION, AST_OPCODE_CLASS
     global AST_OPCODE_CLASS_METHOD
     global AST_OPCODE_IF
-    global AST_OPCODE_ELIF
+    global AST_OPCODE_SWITCH
     global AST_OPCODE_WHILE
-    global AST_OPCODE_FOR
     global AST_OPCODE_FOR_VALUES_RANGE
+    global AST_OPCODE_FOR_VALUES
+    global AST_OPCODE_FOR_KEYS
+    global AST_OPCODE_FOR_KEYS_VALUES
+    global AST_OPCODE_FOR_INDEXES
+    global AST_OPCODE_FOR_INDEXES_VALUES
 
     global AST_OPCODE_ASSIGN
     global AST_OPCODE_DECLARE
@@ -137,7 +146,7 @@ class ASTPrinterText
     global AST_OPCODE_VARIABLE
 
     global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
-    global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+    global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_NULL, AST_DATA_UNDEFINED
     global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
     global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
@@ -147,6 +156,8 @@ class ASTPrinterText
     global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
     global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
     global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+    global AST_OPCODE_TYPE_CAST
+    global SHOW_TYPE_CAST_NODES_ENABLED
 
     global SYMBOL_KIND_CONST
 
@@ -189,7 +200,9 @@ class ASTPrinterText
         # Empty map.
         print '{}'
       else
-        die('error: non-imm maps are not supported yet')
+        # TODO: Handle non-imm maps.
+        print '[map]'
+        # die('error: non-imm maps are not supported yet')
       endif
 
     elif opcode < AST_OPCODE_PROGRAM
@@ -231,7 +244,7 @@ class ASTPrinterText
       __mold_printToStdOutput(node.name)
       print ''
       this._printNode_codeBlock(prefix, node)
-      __mold_printToStdOutput('endclass')
+      print 'endclass'
 
     elif (opcode is AST_OPCODE_CLASS_METHOD) or (opcode is AST_OPCODE_FUNCTION)
       if opcode is AST_OPCODE_CLASS_METHOD
@@ -269,6 +282,11 @@ class ASTPrinterText
 
     elif opcode is AST_OPCODE_INVOKE_METHOD
       # TODO: Is it left or right node?
+      if node.parent.opcode is AST_OPCODE_BLOCK
+        # Left node - add spaces prefix.
+        __mold_printToStdOutput(prefix)
+      endif
+
       this._printNode(prefix, children[0])
       __mold_printToStdOutput('.')
       __mold_printToStdOutput(value)
@@ -301,6 +319,53 @@ class ASTPrinterText
       endif
 
       print prefix + 'endif'
+
+    elif opcode is AST_OPCODE_SWITCH
+      __mold_printToStdOutput(prefix + 'switch ')
+      this._printNode('', children[0])
+      print ''
+
+      for idx in 1 .. childrenCnt
+        values = children[idx].arrayOfValues
+
+        if typeof(values) isnt 'undefined'
+          # Render when value1, value2, ..., valueN list
+          __mold_printToStdOutput(prefix)
+          __mold_printToStdOutput('  when ')
+          sep = ''
+
+          for valueIdx in 0 .. len(values)
+            __mold_printToStdOutput(sep)
+            __mold_printToStdOutput(values[valueIdx])
+            sep = ', '
+          endfor
+          print ''
+        else
+          print prefix + '  otherwise'
+        endif
+
+        # Emit code.
+        if children[idx].opcode is AST_OPCODE_BLOCK
+          this._printNode(prefix + '  ', children[idx])
+        else
+          this._printNode(prefix + '    ', children[idx])
+        endif
+      endfor
+
+      print prefix + 'endswitch'
+
+    elif opcode is AST_OPCODE_TYPE_CAST
+      if SHOW_TYPE_CAST_NODES_ENABLED is true
+        srcType  = AST_GetDataType(children[0])
+        dstType  = AST_GetDataType(node)
+        funcName = 'conv_' + AST_ConvertDataTypeToMIR(srcType) + '_to_' + AST_ConvertDataTypeToMIR(dstType)
+
+        __mold_printToStdOutput(prefix)
+        __mold_printToStdOutput(funcName)
+        this._printNode_paramsList(node, 0, true)
+      else
+        this._printNode(prefix, children[0])
+      endif
 
     elif opcode is AST_OPCODE_CALL
       __mold_printToStdOutput(prefix)
@@ -344,7 +409,27 @@ class ASTPrinterText
       __mold_printToStdOutput(prefix)
       __mold_printToStdOutput('endfor')
 
+    elif opcode is AST_OPCODE_FOR_VALUES
+      __mold_printToStdOutput(prefix)
+      __mold_printToStdOutput('for values ')
+      this._printNode('', children[0])
+
+      __mold_printToStdOutput(' in ')
+      this._printNode('', children[1])
+
+      print ''
+
+      this._printNode_codeBlock(prefix, children[2])
+      __mold_printToStdOutput(prefix)
+      __mold_printToStdOutput('endfor')
+
     elif opcode is AST_OPCODE_VARIABLE
+      symbolInfo = node.symbolInfo
+
+      if (typeof(symbolInfo) isnt 'undefined') and (symbolInfo.kind is SYMBOL_KIND_CONST) and (typeof(symbolInfo.value) is 'string')
+        value = "'" + str(symbolInfo.value) + "'"
+      endif
+
       __mold_printToStdOutput(value)
 
     elif opcode is AST_OPCODE_REFERENCE

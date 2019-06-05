@@ -1,7 +1,7 @@
 ################################################################################
 #                                                                              #
 # This file is part of Mold project.                                           #
-# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+# Copyright (c) 2015, 2019 Sylwester Wysocki (sw143@wp.pl).                    #
 #                                                                              #
 # The Mold code and any derived work however based on this software are        #
 # copyright of Sylwester Wysocki. Redistribution and use of the present        #
@@ -12,6 +12,7 @@
 #                                                                              #
 ################################################################################
 
+import 'Utils/SymbolTable.mold'
 import 'MIR/MIR.mold'
 import 'Utils/Stack.mold'
 
@@ -88,11 +89,6 @@ class CodeGeneratorX64
       print '  lea  rcx, [', x, ']'
       print '  call __MOLD_VariantDestroy'
     endif
-  endmethod
-
-  method variantMoveAndDestroy(dst, src)
-    this.variantDestroy(dst)
-    this.variantMove(dst, src)
   endmethod
 
   method pushParametersBeforeCall(params)
@@ -200,15 +196,85 @@ class CodeGeneratorX64
   endmethod
 
   method emitArrayBufferContent(name, items, wantDeepIdx, deepIdx)
-    itemsCnt = len(items)
+    itemsCnt  = len(items)
+
+    # TODO: Optimize it.
+    # TODO: Move innerType check to earliear stage.
+    innerType        = typeof(items[0])
+    innerSize        = 0
+    innerTypeForEmit = '0'
+    innerAsmType     = 'db'
+    innerValueMin    = items[0] # TODO: Use MAX_INTEGER like const?
+    innerValueMax    = items[0] # TODO: Use MIN_INTEGER like const?
+    innerItemIdx     = 1
+
+    goOn = true
+
+    while (goOn is true) and (innerItemIdx < itemsCnt)
+      itemValue = items[innerItemIdx]
+      itemType  = typeof(itemValue)
+
+      if itemType isnt innerType
+        # Various types in one array.
+        # Fall-back to variant storage and don't go anymore.
+        goOn = false
+
+      elif itemType is 'integer'
+        innerTypeForEmit = 'VARIANT_INTEGER'
+
+        # Track max/min values to compact array storage.
+        if (innerSize < 3) and ((itemValue < -2147483648) or (itemValue > 2147483647))
+         # 2^3 bytes = 8 bytes = 64 bit (qword)
+         innerSize    = 3
+         innerAsmType = 'dq'
+
+        elif (innerSize < 2) and ((itemValue < -32768) or (itemValue > 32767))
+         # 2^2 bytes = 4 bytes = 32 bit (dword)
+         innerSize    = 2
+         innerAsmType = 'dd'
+
+        elif (innerSize < 2) and ((itemValue < -128) or (itemValue > 127))
+         # 2^1 bytes = 2 bytes = 16 bit (word)
+         innerSize    = 1
+         innerAsmType = 'dw'
+        endif
+      endif
+
+      # Go to next item.
+      innerItemIdx = innerItemIdx + 1
+    endwhile
+
+    #print '; innerType:'     , innerType
+    #print '; innerValueMin:' , innerValueMin
+    #print '; innerValueMax:' , innerValueMax
 
     if wantDeepIdx is deepIdx
       bufferName      = name + '_buffer'
       bufferNameBytes = name + '_bufferBytes'
 
-      print bufferNameBytes, 'dq', itemsCnt
+      print bufferNameBytes, 'dd', innerTypeForEmit, '; inner type'
+      print 'db', innerSize, ' ; inner size'
+      print 'db ?, ?, ? ; reserved'
+      print 'dq', itemsCnt, '; itemsCnt'
+
+      # Emit items as flat array if possible.
+      if innerTypeForEmit isnt '0'
+        __mold_printToStdOutput(innerAsmType)
+        sep = ' '
+
+        for itemIdx in 0 .. itemsCnt
+          __mold_printToStdOutput(sep)
+          __mold_printToStdOutput(items[itemIdx])
+          sep = ', '
+        endfor
+        print ''
+
+        # Don't go on recursively.
+        itemsCnt = -1
+      endif
     endif
 
+    # Go on recursively for variant arrays.
     for itemIdx in 0 .. itemsCnt
       this.emitConstant(name + '_' + str(itemIdx), items[itemIdx], wantDeepIdx, deepIdx)
     endfor
@@ -216,7 +282,7 @@ class CodeGeneratorX64
 
   method run(codeObj)
     global SYMBOL_KIND_VAR_LOCAL, SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_CONST
-    global SYMBOL_KIND_VAR_PARAM
+    global SYMBOL_KIND_VAR_PARAM, SYMBOL_KIND_JMP_TABLE
 
     #
     # Common headers.
@@ -231,7 +297,7 @@ class CodeGeneratorX64
     print '; ------------------------------------------------------------------------------'
 
     print "section '.text' code readable executable"
-    print "stack 1024*1024*4"
+    print "stack 1024*1024*4, 1024*1024*4"
     print "include 'Variant.asm'"
     print "__rv EQU rdi"
 
@@ -248,6 +314,8 @@ class CodeGeneratorX64
     currentSymbols      = {}
     currentFrameSize    = 0
     currentFrameOffsets = {}
+
+    symbols = {}
 
     # TODO: Remove it.
     arrayOfProcedures = []
@@ -270,7 +338,7 @@ class CodeGeneratorX64
 
       xType = 'variant'
       if (itemCnt > 2) and (typeof(x) is 'string')
-        if (opcode isnt 'call') and (opcode isnt 'vcall') and (opcode isnt 'create_object')
+        if (opcode isnt 'call') and (opcode isnt 'vcall') and (opcode isnt 'create_object') and ((opcode[0] isnt 'c') or (opcode[1] is 'm'))
           xInfo = currentSymbols[x]
           if typeof(xInfo) isnt 'undefined'
             if typeof(xInfo.type) isnt 'undefined'
@@ -278,16 +346,11 @@ class CodeGeneratorX64
             endif
           endif
 
-          #if opcode is 'conv'
-          #  dstType = currentSymbols[dst].type
-          #  opcode  = opcode + '_' + xType + '_to_' + dstType
-          #else
           opcode = opcode + '_' + xType
-          #endif
         endif
       endif
 
-      #print '[x86]', opcode, dst, x, y
+      # print '[x86]', opcode, dst, x, y
 
       # Dispatch opcode.
       if opcode is 'nop'
@@ -407,7 +470,7 @@ class CodeGeneratorX64
         print '  mov dword [', dst, '], 0'
         print '  mov rcx, qword [', x, ']'
         print '  cmp rcx, qword [', y, ']'
-        print '  setge byte [', dst, ']'
+        print '  setg byte [', dst, ']'
 
       elif opcode is 'cmp_ge_int64'
         print '  mov dword [', dst, '], 0'
@@ -443,7 +506,7 @@ class CodeGeneratorX64
         print '  cvtsi2sd  xmm0, dword [', x, ']'   # ; xmm0 = double(x)
         print '  cvtsi2sd  xmm1, dword [', y, ']'   # ; xmm1 = double(y)
         print '  divsd     xmm0, xmm1'              # ; xmm0 = x / y
-        print '  movq      dword [', dst, '], xmm0' # ; dst  = x / y
+        print '  movq      qword [', dst, '], xmm0' # ; dst  = x / y
 
       elif opcode is 'idiv_int32'
         print '  mov  eax, dword [', x, ']' # ; eax     = x
@@ -461,13 +524,13 @@ class CodeGeneratorX64
       elif opcode is 'cmp_ne_int32'
         print '  mov dword [', dst, '], 0'
         print '  mov ecx, dword [', x, ']'
-        print '  cmp rcx, dword [', y, ']'
+        print '  cmp ecx, dword [', y, ']'
         print '  setnz byte [', dst, ']'
 
       elif opcode is 'cmp_lt_int32'
         print '  mov dword [', dst, '], 0'
         print '  mov ecx, dword [', x, ']'
-        print '  cmp rcx, dword [', y, ']'
+        print '  cmp ecx, dword [', y, ']'
         print '  setl byte [', dst, ']'
 
       elif opcode is 'cmp_le_int32'
@@ -480,7 +543,7 @@ class CodeGeneratorX64
         print '  mov dword [', dst, '], 0'
         print '  mov ecx, dword [', x, ']'
         print '  cmp ecx, dword [', y, ']'
-        print '  setge byte [', dst, ']'
+        print '  setg byte [', dst, ']'
 
       elif opcode is 'cmp_ge_int32'
         print '  mov dword [', dst, '], 0'
@@ -602,6 +665,18 @@ class CodeGeneratorX64
 
       elif opcode is 'cmp_ge_variant'
         this.call3AndDestroy('__MOLD_VariantCompareLE', y, x, dst)
+
+      #
+      # indirect jumps
+      #
+
+      elif opcode is 'jmp_by_table_variant'
+        print '  mov rax, [', x, '+ Variant_t.value]'
+        print '  jmp qword [', dst, '+ rax * 8]'
+
+      elif opcode is 'jmp_by_table_int32'
+        print '  mov eax, dword [', x, ']'
+        print '  jmp qword [', dst, '+ rax * 8]'
 
       #
       # jmp_if_xx_variant
@@ -726,8 +801,13 @@ class CodeGeneratorX64
         print '  jne', dst
 
       elif opcode is 'jmp_if_lt_int32'
-        print '  mov eax, dword [', x, ']'
-        print '  cmp eax, dword [', y, ']'
+        if typeof(y) is 'integer'
+          print '  cmp dword [', x, '],', y
+        else
+          print '  mov eax, dword [', x, ']'
+          print '  cmp eax, dword [', y, ']'
+        endif
+
         print '  jl', dst
 
       elif opcode is 'jmp_if_le_int32'
@@ -736,8 +816,13 @@ class CodeGeneratorX64
         print '  jle', dst
 
       elif opcode is 'jmp_if_gt_int32'
-        print '  mov eax, dword [', x, ']'
-        print '  cmp eax, dword [', y, ']'
+        if typeof(y) is 'integer'
+          print '  cmp dword [', x, '],', y
+        else
+          print '  mov eax, dword [', x, ']'
+          print '  cmp eax, dword [', y, ']'
+        endif
+
         print '  jg', dst
 
       elif opcode is 'jmp_if_ge_int32'
@@ -902,7 +987,7 @@ class CodeGeneratorX64
         name      = item[2]
         params    = item[3]
         paramsCnt = len(params)
-        /*
+
         if name is 'bitwiseAnd'
           # TODO: Clean up this hack.
           this.variantDestroy(rv)
@@ -911,32 +996,49 @@ class CodeGeneratorX64
           print '  mov [', rv, '+ Variant_t.type], VARIANT_INTEGER'
           print '  mov [', rv, '+ Variant_t.value], rax'
 
-        elif name is 'ord'
+        elif name is '__mold_parseFloat'
           # TODO: Clean up this hack.
           this.variantDestroy(rv)
-          print '  mov eax, 0'
-          print '  mov al, byte ptr [', params[0], '+ Variant_t.value]'
-          print '  cmp dword ptr [', params[0], '+ Variant_t.type], VARIANT_STRING'
-          print '  cmovz rcx, byte ptr [', params[0], '+ Buffer_t.bytesPtr]'
-          print '  cmovz al, [rcx]'
+          print '  mov rcx, [', params[0], '+ Variant_t.value]' # rcx = text (Buffer_t)
+          print '  mov rcx, [ rcx + Buffer_t.bytesPtr ]'        # rcx = text (String_t)
+          print '  lea rcx, [ rcx + String_t.text ]'            # rcx = text (char*)
+          print '  cinvoke atof'                                # rcx = atof(text)
+          print '  mov [', rv, '+ Variant_t.type], VARIANT_DOUBLE'
+          print '  movq [', rv, '+ Variant_t.value], xmm0'
+
+        elif name is '__mold_parseInteger'
+          # TODO: Clean up this hack.
+          this.variantDestroy(rv)
+          print '  mov rcx, [', params[0], '+ Variant_t.value]' # rcx = text (Buffer_t)
+          print '  mov rcx, [ rcx + Buffer_t.bytesPtr ]'        # rcx = text (String_t)
+          print '  lea rcx, [ rcx + String_t.text ]'            # rcx = text (char*)
+          print '  cinvoke atoi'                                # rcx = int(text)
           print '  mov [', rv, '+ Variant_t.type], VARIANT_INTEGER'
           print '  mov [', rv, '+ Variant_t.value], rax'
 
         else
-        */
           # Generic call.
-          this.variantDestroy(rv)
-          this.push('rdi')
-          this.pushParametersBeforeCall(params)
-          this.lea('rdi', rv)
-          this.mov('[rdi + Variant_t.type]', 'VARIANT_UNDEFINED')
-          this.call(name)
-          this.pop('rdi')
+          if typeof(rv) isnt 'undefined'
+            # Function has return value.
+            # TODO: Clean up this mess.
+            this.variantDestroy(rv)
+            this.push('rdi')
+            this.pushParametersBeforeCall(params)
+            this.lea('rdi', rv)
+            this.mov('[rdi + Variant_t.type]', 'VARIANT_UNDEFINED')
+            this.call(name)
+            this.pop('rdi')
+
+          else
+            # No return value.
+            this.pushParametersBeforeCall(params)
+            this.call(name)
+          endif
 
           if paramsCnt > 4
             print '  add rsp,', paramsCnt * 8 - 32
           endif
-        #endif
+        endif
 
       elif opcode is 'vcall'
         rv        = item[1]
@@ -944,12 +1046,16 @@ class CodeGeneratorX64
         params    = item[3]
         paramsCnt = len(params)
 
-        this.variantDestroy(rv)
-        this.push('rdi')
-        this.pushParametersBeforeCall(params)
+        if typeof(rv) isnt 'undefined'
+          this.variantDestroy(rv)
+          this.push('rdi')
+          this.pushParametersBeforeCall(params)
+          print '  lea  rdi, [', rv, ']'
+          print '  mov [rdi + Variant_t.type], VARIANT_UNDEFINED'
+        else
+          this.pushParametersBeforeCall(params)
+        endif
 
-        print '  lea  rdi, [', rv, ']'
-        print '  mov [rdi + Variant_t.type], VARIANT_UNDEFINED'
         print '  mov  rax, [rcx + Variant_t.value]'
         print '  mov  rax, [rax + Buffer_t.bytesPtr]'
         print '  mov  rax, [rax + Object_t.vtable]'
@@ -959,7 +1065,9 @@ class CodeGeneratorX64
           print '  add rsp,', paramsCnt * 8 - 32
         endif
 
-        this.pop('rdi')
+        if typeof(rv) isnt 'undefined'
+          this.pop('rdi')
+        endif
 
       elif opcode is 'create_object'
         this.variantDestroy(dst)
@@ -982,7 +1090,7 @@ class CodeGeneratorX64
         if typeof(x) is 'integer'
           print '  mov [', dst, '+ Variant_t.value],', x
         else
-          print '  mov eax, dword [', x, ']'
+          print '  movsxd rax, dword [', x, ']'
           print '  mov [', dst, '+ Variant_t.value], rax'
         endif
 
@@ -1043,7 +1151,7 @@ class CodeGeneratorX64
         print '  mov eax, dword [', x, '+ Variant_t.value]'
         print '  mov dword [', dst, '], eax'
 
-      elif (originalOpcode is 'conv_variant_to_int64') or (originalOpcode is 'conv_variant_to_float64')
+      elif (originalOpcode is 'conv_variant_to_int32') or (originalOpcode is 'conv_variant_to_int64') or (originalOpcode is 'conv_variant_to_float64')
         print '  mov rax, qword [', x, '+ Variant_t.value]'
         print '  mov qword [', dst, '], rax'
 
@@ -1063,36 +1171,21 @@ class CodeGeneratorX64
         print '  mov  rcx, 0'
         print '  call __MOLD_Halt'
 
+      elif opcode is 'inner_ret'
+        # TODO: Better handling of nested procedures.
+        print '  ret'
+
       elif opcode is 'ret'
         print ''
         print '  ; clean frame'
         print '  ; -----------'
-/*
-        TODO
 
-        localsCnt  = currentProcProto['localsCnt']
-        tempsCnt   = currentProcProto['tempsCnt']
-
-        for idx in 0 .. localsCnt
-          this.variantDestroy('.loc' + str(idx))
-        endfor
-
-        for idx in 0 .. tempsCnt
-          this.variantDestroy('.tmp' + str(idx))
-        endfor
-
-        if (currentProcName is 'start') and (globalsCnt > 0)
-          for globalIdx in 0 .. globalsCnt
-            this.variantDestroy('global' + str(globalIdx))
-          endfor
-        endif
-*/
         # TODO: Clean up this mess.
         symbols = currentSymbols
 
         for symbolIdx in 0 .. len(symbols._index)
           symbol = symbols._index[symbolIdx]
-          if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')) and (symbol.readHits + symbol.writeHits > 0)
+          if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined'))
             this.variantDestroy(symbol.name)
           endif
         endfor
@@ -1100,7 +1193,7 @@ class CodeGeneratorX64
         if (currentProcName is 'start')
           for symbolIdx in 0 .. len(symbols._index)
             symbol = symbols._index[symbolIdx]
-            if (symbol.kind is SYMBOL_KIND_VAR_GLOBAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')) and (symbol.readHits + symbol.writeHits > 0)
+            if (symbol.kind is SYMBOL_KIND_VAR_GLOBAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined'))
               this.variantDestroy(symbol.name)
             endif
           endfor
@@ -1110,18 +1203,6 @@ class CodeGeneratorX64
         print '  add  rsp,', currentFrameSize
         print '  pop  rbp'
         print '  ret'
-
-        if (typeof(currentProcRv) isnt 'undefined') and (currentProcName isnt 'constructor')
-          print ''
-          print '; return value guard'
-          print '; ------------------'
-          print '.errorUnsetRetVal:'
-          print '  invoke GetStdHandle, -12'
-          print '  invoke WriteFile, rax, .unsetRetValMsg, 53, NumberOfBytesWritten, 0'
-          print '  mov    [rdi + Variant_t.type], VARIANT_UNDEFINED'
-          print '  call   [ExitProcess]'
-          print '  .unsetRetValMsg db "error: unset return variable ' + "'" + currentProcRv + "' in '" + currentProcName + "' function" + '", 13, 10'
-        endif
 
       elif opcode is 'proc'
         proto            = item[1]
@@ -1138,7 +1219,7 @@ class CodeGeneratorX64
         # TODO: Clean up this mess.
         for symbolIdx in 0 .. len(symbols._index)
           symbol = symbols._index[symbolIdx]
-          if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or (symbol.kind is SYMBOL_KIND_VAR_PARAM)) and (symbol.readHits + symbol.writeHits > 0)
+          if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or (symbol.kind is SYMBOL_KIND_VAR_PARAM))
             print '  restore', symbol.name
           endif
         endfor
@@ -1148,9 +1229,6 @@ class CodeGeneratorX64
         symbols      = currentFrame['symbols']
         params       = currentFrame['params']
         paramsCnt    = currentFrame['paramsCnt']
-
-        print '; PARAMS', params
-        print '; PARAMS CNT', paramsCnt
 
         # Clean up this mess.
         this.symbols = symbols
@@ -1163,36 +1241,46 @@ class CodeGeneratorX64
         # Calculate frame size.
         currentFrameSize = 0
         paramsPassedCnt  = 0
+        symbolsCnt       = len(symbols._index)
 
-        for symbolIdx in 0 .. len(symbols._index)
-          symbol = symbols._index[symbolIdx]
+        for symbolIdx in 0 .. symbolsCnt
+          symbol = symbols._index[symbolsCnt - symbolIdx - 1]
 
-          if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) or (symbol.kind is SYMBOL_KIND_VAR_PARAM)#) and (symbol.readHits + symbol.writeHits > 0)
+          if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) or (symbol.kind is SYMBOL_KIND_VAR_PARAM)
             if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
               varSize = 16
+
             elif (symbol.type is 'int64') or (symbol.type is 'float64')
               varSize = 8
+
             elif (symbol.type is 'int32') or (symbol.type is 'bool32')
               varSize = 4
+
             else
+              # TODO: Remove unneded assign.
+              varSize = -1
               die('error: unhandled operand type while setting up frame: ' + str(symbol.type))
             endif
 
             currentFrameSize = currentFrameSize + varSize
 
             print ' ', symbol.name, 'EQU rbp -', 8 + currentFrameSize, ';', varSize, 'bytes'
-
           endif
 
-          # TODO: Dirty fix to handle real number of stack parameters if this
-          # used.
+          # TODO: Dirty fix to handle real number of stack parameters if 'this'
+          # pointer is used.
           if symbol.kind is SYMBOL_KIND_VAR_PARAM
             paramsPassedCnt = paramsPassedCnt + 1
           endif
         endfor
 
-        # Add 32-byte shadow space.
-        currentFrameSize = currentFrameSize + 32
+        # Align to 16-bytes and add 32-byte shadow space.
+        # TODO: Optimize it.
+        if currentFrameSize > 0
+          currentFrameSize = ((currentFrameSize + 32) // 16 + 1) * 16
+        else
+          currentFrameSize = 32
+        endif
 
         print ''
         print '  push rbp'
@@ -1203,29 +1291,33 @@ class CodeGeneratorX64
         paramIdx = 0
 
         for symbolIdx in 0 .. len(symbols._index)
-          symbol        = symbols._index[symbolIdx]
-          symbolUsedCnt = symbol.readHits + symbol.writeHits
+          symbol = symbols._index[symbolIdx]
 
           if symbol.kind is SYMBOL_KIND_VAR_LOCAL
-            if (symbolUsedCnt > 0) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined'))
+            if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
               # Local Variant_t variable - init to undefined.
               print '  mov [' + symbol.name + ' + Variant_t.type], VARIANT_UNDEFINED'
             endif
 
           elif symbol.kind is SYMBOL_KIND_VAR_PARAM
             # Call parameter - copy to local var.
-            # TODO: Skip unused vars.
-            #if symbolUsedCnt > 0
+            if (symbol.readHits > 0) or (symbol.writeHits > 0)
               if paramIdx < 4
                 print '  movdqu xmm0', ', [', regParams[paramIdx], ']'
               else
                 print '  mov    rax, [rbp + 16 + 8 *', paramsPassedCnt - paramIdx - 1, ']'
                 print '  movdqu xmm0', ', [rax]'
               endif
+
               print '  movdqu [', symbol.name, '], xmm0'
-            #else
-            #  print '  ; skipped unused param [', symbol.name, ']'
-            #endif
+
+              if symbol.duplicateOnFirstWrite is true
+                print '  or [', symbol.name, ' + Variant_t.flags ], VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE'
+              endif
+
+            else
+              print '  ; skipped unused param [', symbol.name, ']'
+            endif
 
             paramIdx = paramIdx  + 1
           endif
@@ -1240,25 +1332,16 @@ class CodeGeneratorX64
             if (symbol.name is 'argv') or (symbol.name is 'argc')
               # Do nothing.
 
-            elif (symbol.kind is SYMBOL_KIND_VAR_GLOBAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')) and (symbol.readHits + symbol.writeHits > 0)
+            elif (symbol.kind is SYMBOL_KIND_VAR_GLOBAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined'))
               print '  mov [' + symbol.name + ' + Variant_t.type], VARIANT_UNDEFINED'
             endif
 
           endfor
         endif
 
-        if typeof(currentProcRv) isnt 'undefined'
-          print ''
-          print '  mov [rdi + Variant_t.type], -1'
-        endif
-
         print ''
         print '  ; code'
         print '  ; ----'
-
-      elif opcode is 'rv_guard'
-        print '  cmp  [rdi + Variant_t.type], -1'
-        print '  jz   .errorUnsetRetVal'
 
       elif originalOpcode is 'create_array'
         this.variantDestroy(dst)
@@ -1307,26 +1390,43 @@ class CodeGeneratorX64
 
     for globalIdx in 0 .. len(globals._index)
       symbol = globals._index[globalIdx]
-      if (symbol.kind is SYMBOL_KIND_VAR_GLOBAL) and (symbol.readHits + symbol.writeHits > 0)
+      if symbol.kind is SYMBOL_KIND_VAR_GLOBAL
         if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
           print symbol.name, ' Variant_t 0, 0, 0'
+
         elif symbol.type is 'int64'
           print symbol.name, ' dq 0'
+
         elif symbol.type is 'int32'
           print symbol.name, ' dd 0'
+
         elif symbol.type is 'float64'
           print symbol.name, ' dq 0'
+
         elif symbol.type is 'bool32'
           print symbol.name, ' dd 0'
+
         else
           die('error: unhandled global type: ' + str(symbol.type))
         endif
       endif
     endfor
 
+    #
+    # Dump constant data to another section to catch access
+    # violation on write attemp.
+    #
+
+    print '; ------------------------------------------------------------------------------'
+    print ';                           Constant data section'
+    print '; ------------------------------------------------------------------------------'
+    print "section '.cdata' data readable"
+
     print ''
     print '; Constants'
     print '; ---------'
+
+    print 'db ?'
 
     # TODO: Optimize it.
     for deepIdx in 0 .. 16
@@ -1340,6 +1440,31 @@ class CodeGeneratorX64
           this.emitConstant(name, value, deepIdx, 0)
         endif
       endfor
+    endfor
+
+    # Jump tables
+    print ''
+    print '; Jump tables'
+    print '; -----------'
+
+    for globalIdx in 0 .. len(globals._index)
+      symbolInfo = globals._index[globalIdx]
+      if symbolInfo.kind is SYMBOL_KIND_JMP_TABLE
+        name         = symbolInfo.name
+        labels       = symbolInfo.labels
+        defaultLabel = symbolInfo.defaultLabel
+
+        print name + ':'
+
+        for labelIdx in 0 .. len(labels)
+          nextLabel = labels[labelIdx]
+          if typeof(nextLabel) is 'undefined'
+            nextLabel = defaultLabel
+          endif
+
+          print '  dq ', nextLabel, ';', labelIdx
+        endfor
+      endif
     endfor
 
     # Build vtables.
@@ -1382,7 +1507,7 @@ class CodeGeneratorX64
     #
 
     print '; ------------------------------------------------------------------------------'
-    print ';                                Imports section'
+    print ';                               Imports section'
     print '; ------------------------------------------------------------------------------'
 
     print "section '.idata' import data readable writeable"
@@ -1412,12 +1537,6 @@ class CodeGeneratorX64
       print 'dq ', procName, ',', 'name_' + procName
     endfor
 
-    #for procIdx in 0 .. proceduresCnt
-    #  # Fetch procedure meta.
-    #  procName  = procedures[procIdx]['name']
-    #  print 'dq ', procName, ',', 'name_' + procName
-    #endfor
-
     print 'dq endOfCodeSection, name_endOfCodeSection'
     print 'SymbolTableEnd:'
     print 'dq 0, 0'
@@ -1431,11 +1550,6 @@ class CodeGeneratorX64
       print 'name_' + procName, 'db', "'" + procName + "', 0"
     endfor
 
-    #for procIdx in 0 .. proceduresCnt
-    #  # Fetch procedure meta.
-    #  procName  = procedures[procIdx]['name']
-    #  print 'name_' + procName, 'db', "'" + procName + "', 0"
-    #endfor
     print "name_endOfCodeSection db 'out of code section', 0"
 
   endmethod

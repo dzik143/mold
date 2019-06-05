@@ -1,0 +1,88 @@
+# ------------------------------------------------------------------------------
+# While loop
+# When to use:
+# - we *DONT'T KNOWN* how many steps is needed to do our work.
+# ------------------------------------------------------------------------------
+
+while goOn is true
+endwhile
+
+# ------------------------------------------------------------------------------
+# Iterate over numbers range.
+# When to use:
+# - we *EXACTLY KNOWN* how many steps is needed to do our work.
+# ------------------------------------------------------------------------------
+
+# Iterate over numbers range.
+# 0, 1, 2, 3, ..., 9
+for idx in 0 .. 10
+endfor
+
+# Iterate over numbers range with step 2.
+# 0, 2, 4, 6, 8
+for idx in 0 .. 10 by step 2
+endfor
+
+# Iterate over numbers range in reverse order.
+# 9, 8, 7, 6, ... 0
+for idx in 0 .. 10 reverse
+endfor
+
+# ------------------------------------------------------------------------------
+# Iterate over boxes (containers, which hold another items inside)
+# When to use:
+# - we have some box and need to process *ALL* items to do our work.
+# ------------------------------------------------------------------------------
+
+#
+# Scenario 1.
+# - We need to know *WHERE* items are stored inside the box,
+# - we iterate over *LOCATIONS* (map keys, array indexes, object property ids).
+#
+
+# Iterate over map keys.
+for keys k in mapBox
+  print k
+endfor
+
+# Iterate over flat array indexes.
+for indexes idx in arrayBox
+  print k
+endfor
+
+# Iterate over object properties (class instance).
+for properties p in objectBox
+  print p
+endfor
+
+#
+# Scenario 2.
+# - We need to know *WHAT* is stored in the box,
+# - we process *VALUES* holded by a box.
+#
+
+# Iterate over map values.
+for values v in mapOrArrayBox
+  print v
+endfor
+
+#
+# Scenario 3.
+# - We need to know both *WHAT* is stored inside a box and *WHERE* is it,
+# - we process *PAIRS* containing item *LOCATION* and *VALUE*.
+#
+
+# Iterate over map: we process (key, value) pairs.
+for keys k values v in mapBox
+  print k, '->', v
+endfor
+
+# Iterate over flat array: we process (idx, value) pairs.
+for indexes idx values v in arrayBox
+  print idx, v
+endfor
+
+# Iterate over object: we process (propertyId, value) pairs.
+for properties propertyId values v in object
+  print propertyId, v
+endfor

@@ -36,11 +36,14 @@ class Stack
 
   method pop() -> rv
     if this.size is 0
+      # TODO: Handle terminal node.
+      rv = -1
       die('error: stack is empty')
-    endif
+    else
 
-    this.size = this.size - 1
-    rv = this.data[this.size]
+      this.size = this.size - 1
+      rv = this.data[this.size]
+    endif
   endmethod
 
   method over()
@@ -52,7 +55,7 @@ class Stack
   endmethod
 
   method eat()
-    this.pop()
+    this.size = this.size - 1
   endmethod
 
   method eatN(n)
@@ -71,6 +74,8 @@ class Stack
     if this.size > 0
       rv = this.data[this.size - 1]
     else
+      # TODO: Handle terminal nodes.
+      rv = false
       die('error: peek from empty stack')
     endif
   endmethod
@@ -79,7 +84,9 @@ class Stack
     if this.size >= idx
       rv = this.data[this.size - idx]
     else
-      die('error: peek ' + str(idx) + ' item, but only ' + str(this.size) + ' availble')
+      # TODO: Handle terminal nodes.
+      rv = false
+      die('error: peek ' + str(idx) + ' item, but only ' + str(this.size) + ' available')
     endif
   endmethod
 endclass

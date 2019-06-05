@@ -54,6 +54,9 @@ VARIANT_MAP       EQU 8
 VARIANT_OBJECT    EQU 9
 VARIANT_TYPE_MAX  EQU 9
 
+VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE EQU 1
+VARIANT_FLAG_ONE_CHARACTER            EQU 2
+
 VARIANT_MAP_DEFAULT_BUCKETS_CNT    EQU 16
 VARIANT_OBJECT_DEFAULT_BUCKETS_CNT EQU 16
 VARIANT_ARRAY_DEFAULT_ITEMS_CNT    EQU 16
@@ -80,7 +83,12 @@ struct String_t
 ends
 
 struct Array_t
-  itemsCnt dq ?
+  innerType dd ?
+  itemSize  db ?
+  reserved1 db ?
+  reserved2 db ?
+  reserved3 db ?
+  itemsCnt  dq ?
   items Variant_t ?
 ends
 
@@ -123,6 +131,9 @@ proc __MOLD_VariantCheck
     jmp  .ok
 
 .checkString:
+
+    test  [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jnz   .ok
 
     mov   rax, [rcx + Variant_t.value]
     test  rax, rax
@@ -216,6 +227,7 @@ proc __MOLD_PrintVariant uses r12, v
 .fmtSeparator db ', ', 0
 .fmtEmpty     db '', 0
 .fmtAfterKey  db ': ', 0
+.fmtChar      db '%c', 0
 .jmpTable     dq .boolean, .array, .map, .object
 
 .complexOrBoolean:
@@ -236,18 +248,16 @@ proc __MOLD_PrintVariant uses r12, v
     ret
 
 .string:
+    test    [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jz      .ordinaryString
 
-  ; TODO: Wrong order when redirect to file?
-  ;  cinvoke GetStdHandle, -11
+.oneCharacterString:
+    cinvoke printf, .fmtChar, dl
+    ret
 
-  ;  mov     rcx, rax
-  ;  mov     r8,  [rdx + String_t.length]
+.ordinaryString:
     mov     rdx, [rdx + Buffer_t.bytesPtr]
     lea     rdx, [rdx + String_t.text]
-  ;  lea     r9,  [NumberOfBytesWritten]
-
-  ;  cinvoke WriteFile, rcx, rdx, r8, r9, 0
-
     cinvoke printf, .fmtString, rdx
 
     ret
@@ -268,6 +278,9 @@ proc __MOLD_PrintVariant uses r12, v
     mov     rdx, [rdx + Buffer_t.bytesPtr]
     mov     rbx, [rdx + Array_t.itemsCnt]
     lea     rsi, [rdx + Array_t.items]
+
+    cmp     [rdx + Array_t.innerType], 0
+    jnz     .errorNonVariantItem
 
     or      rbx, rbx
     jz      .arrayEmpty
@@ -364,6 +377,11 @@ proc __MOLD_PrintVariant uses r12, v
 .error:
     cinvoke printf, '__MOLD_VariantPrint: error: invalid type %d', rax
     int 3
+
+.errorNonVariantItem:
+    cinvoke printf, '__MOLD_VariantPrint: error: non-variant inner types not implemented'
+    int 3
+
 endp
 
 proc __MOLD_PrintVariantLn
@@ -487,14 +505,18 @@ __MOLD_VariantConvertToString:
     ; -----------------------------------------------
 
 .string:
-    mov     [rdx + Variant_t.type], VARIANT_STRING ; rv.type  = VARIANT_STRING
-    mov     [rdx + Variant_t.value], r9
+    ; TODO: Clean up this mess.
+    xchg    rcx, rdx
+    jmp     __MOLD_VariantMove
 
-    DEBUG_CHECK_VARIANT rdx
+    ;mov     [rdx + Variant_t.type], VARIANT_STRING ; rv.type  = VARIANT_STRING
+    ;mov     [rdx + Variant_t.value], r9
 
-    mov     rcx, rdx
-    call    __MOLD_VariantAddRef
-    ret
+    ;DEBUG_CHECK_VARIANT rdx
+
+    ;mov     rcx, rdx
+    ;call    __MOLD_VariantAddRef
+    ;ret
 
 .notString:
 
@@ -551,6 +573,7 @@ __MOLD_VariantConvertPrimitiveToString:
 
     mov     [rdx + Variant_t.type], VARIANT_STRING ; rv.type  = VARIANT_STRING
     mov     [rdx + Variant_t.value], rax           ; rv.value = new string buffer
+    mov     [rdx + Variant_t.flags], 0             ; rv.flags = none
     mov     rax, [rax + Buffer_t.bytesPtr]
     push    rax
 
@@ -891,12 +914,36 @@ proc __MOLD_VariantAdd x, y, rv
 
 ; string x string
 .case_ss:
+     cmp       r8, rcx
+     jz        .case_ss_overlapped_source_and_destination
+
+.case_ss_source_and_destination_differ:
+     mov       [r8 + Variant_t.value], 0
+     jmp       .case_ss_do_work
+
+.case_ss_overlapped_source_and_destination:
+
+     ; Accumulate result:
+     ; x = x + y
+
+     push  rcx
+     mov   rcx, [rcx + Variant_t.value]
+     call  __MOLD_MemoryAddRef
+     pop   rcx
+
+.case_ss_do_work:
 
      push      rsi
      push      rdi
 
      mov       r9,  [rcx + Variant_t.value]   ; r9  = x.buffer (Buffer_t)
      mov       r10, [rdx + Variant_t.value]   ; r10 = y.buffer (Buffer_t)
+     push      r9
+
+     mov       [OneCharacterStringTempPeek], r10b
+     lea       rax, [OneCharacterStringTempBufferHolder]
+     test      [rdx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+     cmovnz    r10, rax
 
      mov       r9,  [r9  + Buffer_t.bytesPtr] ; r9  = x.buffer (String_t)
      mov       r10, [r10 + Buffer_t.bytesPtr] ; r10 = y.buffer (String_t)
@@ -906,32 +953,39 @@ proc __MOLD_VariantAdd x, y, rv
      ; it's not really needed
      ; -------------------------------
 
-     mov       rcx, [r9  + String_t.length] ; rcx = len(x)
-     add       rcx, [r10 + String_t.length] ; rcx = len(x) + len(y)
-     mov       r11, rcx                     ; r11 = len(x) + len(y)
-     inc       rcx                          ; rcx = len(x) + len(y) + 1
+     mov       rdx, [r9  + String_t.length] ; rdx = len(x)
+     add       rdx, [r10 + String_t.length] ; rdx = len(x) + len(y)
+     mov       r11, rdx                     ; r11 = len(x) + len(y)
+     add       rdx, 1 + 8                   ; rdx = len(x) + len(y) + 1 + len(int64)
 
      ; -------------------------------
      ; Allocate new buffer
      ; -------------------------------
 
      push      r8 r9 r10 r11
-     call      __MOLD_MemoryAlloc                    ; rax = new buffer (Buffer_t)
+     mov       rcx, 0
+     test      [r8 + Variant_t.flags], VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE
+     cmovz     rcx, [r8 + Variant_t.value]           ; rcx = dst buffer (Buffer_t)
+     and       [r8 + Variant_t.flags], not VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE
+     call      __MOLD_MemoryRealloc                  ; rax = new buffer (Buffer_t)
      pop       r11 r10 r9 r8
 
      mov       rdx, [rax + Buffer_t.bytesPtr]        ; rdx = new String_t
-     mov       [rdx + String_t.length], r11          ; rv.length = len(x) + len(y)
 
      ; -------------------------------
      ; Copy first string.
      ; TODO: Don't copy byte-by-byte
      ; -------------------------------
 
-     ; cld
+     pop       r9
+     mov       r9,  [r9  + Buffer_t.bytesPtr]        ; r9  = dst = x.buffer (String_t)
 
-     lea       rdi, [rdx + String_t.text]   ; rdi = destination = rv.text
-     lea       rsi, [r9  + String_t.text]   ; rsi = source      = x.text
-     mov       rcx, [r9  + String_t.length] ; rcx = x.length
+     cmp       rdx, r9
+     jz        .ss_overlapped_dst
+
+     lea       rdi, [rdx + String_t.text]            ; rdi = dst      = rv.text  (char*)
+     lea       rsi, [r9  + String_t.text]            ; rsi = src      = x.text   (char*)
+     mov       rcx, [r9  + String_t.length]          ; rcx = len(src) = x.length (int64)
      rep       movsb
 
      ; -------------------------------
@@ -939,8 +993,12 @@ proc __MOLD_VariantAdd x, y, rv
      ; TODO: Don't copy byte-by-byte
      ; -------------------------------
 
-     lea       rsi, [r10 + String_t.text]   ; rsi = source = y.text
-     mov       rcx, [r10 + String_t.length] ; rcx = y.length
+.ss_overlapped_dst:
+
+     lea       rdi, [rdx + String_t.text]            ; rdi = dst = rv.text  (char*)
+     lea       rsi, [r10 + String_t.text]            ; rsi = src = y.text   (char*)
+     add       rdi, [r9 + String_t.length]           ; rdi = dst + x.length (char*)
+     mov       rcx, [r10 + String_t.length]          ; rcx = len(src) = y.length
      rep       movsb
 
      ; -------------------------------
@@ -948,8 +1006,10 @@ proc __MOLD_VariantAdd x, y, rv
      ; -------------------------------
 
      mov       byte [rdi], 0
+     mov       [rdx + String_t.length], r11          ; rv.length = len(x) + len(y)
 
-     mov       [r8 + Variant_t.type],  VARIANT_STRING
+     mov       [r8 + Variant_t.type], VARIANT_STRING
+     and       [r8 + Variant_t.flags], NOT VARIANT_FLAG_ONE_CHARACTER
      xchg      [r8 + Variant_t.value], rax
      mov       rsi, r8
 
@@ -1150,23 +1210,23 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
 
   ; string x string
   .case_ss:
-    mov       rcx, [rcx + Variant_t.value] ; rcx = x.value
-    mov       rdx, [rdx + Variant_t.value] ; rdx = y.value
+    ; TODO: Clean up this mess.
+    ; TODO: Is this code used anymore?
+    cinvoke printf, 'error: string order compare not implemented'
+    int 3
 
-    push      r8
-    cinvoke   strcmp
-    pop       r8
+    ;push      r8
+    ;cinvoke   strcmp
+    ;pop       r8
 
-    mov       rdx, rax
-    xor       rax, rax
-    test      rdx, rdx
-    opcode_ii al
+    ;mov       rdx, rax
+    ;xor       rax, rax
+    ;test      rdx, rdx
+    ;opcode_ii al
 
-    mov       [r8 + Variant_t.value], rax
-
-    DEBUG_CHECK_VARIANT r8
-
-    ret
+    ;mov       [r8 + Variant_t.value], rax
+    ;DEBUG_CHECK_VARIANT r8
+    ;ret
 
   .error:
     mov       [r8 + Variant_t.value], 0
@@ -1235,10 +1295,23 @@ proc __MOLD_VariantCompareEQ x, y, rv
 
 .compare_ss:
     ; TODO: Optimize it.
-    mov     rcx, [rcx + Variant_t.value]   ; rcx  = x.value
-    mov     rdx, [rdx + Variant_t.value]   ; rdx = x.value
-    mov     rcx, [rcx + Buffer_t.bytesPtr]
-    mov     rdx, [rdx + Buffer_t.bytesPtr]
+    mov     r9,  [rcx + Variant_t.value]   ; r9  = x.value
+    mov     r10, [rdx + Variant_t.value]   ; r10 = x.value
+
+    ; TODO: Clean up this mess.
+    mov     [OneCharacterStringTempPeek], r9b
+    mov     [OneCharacterStringTempPeek2], r10b
+
+    lea     rax, [OneCharacterStringTempBufferHolder]
+    test    [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    cmovnz  r9, rax
+
+    lea     rax, [OneCharacterStringTempBufferHolder2]
+    test    [rdx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    cmovnz  r10, rax
+
+    mov     rcx, [r9 + Buffer_t.bytesPtr]
+    mov     rdx, [r10 + Buffer_t.bytesPtr]
 
     lea     rcx, [rcx + String_t.text]
     lea     rdx, [rdx + String_t.text]
@@ -1246,6 +1319,7 @@ proc __MOLD_VariantCompareEQ x, y, rv
     push    r8
     cinvoke strcmp
     pop     r8
+
     test    rax, rax
     setz    al
     and     rax, 1
@@ -1803,12 +1877,7 @@ proc __MOLD_VariantLoadFromIndex box, index, rv
 
     cmp    rax, VARIANT_STRING
     je     .string
-
     jmp    .error
-
-;    jmp    [.jmpTable + rax * 8 - VARIANT_ARRAY * 8]
-
-;.jmpTable dq .array, .map, .map
 
     ; ==========================================================================
     ;                                    Array
@@ -1820,47 +1889,63 @@ proc __MOLD_VariantLoadFromIndex box, index, rv
 
     mov   rdx, [rdx + Variant_t.value]              ; rdx = idx          (integer)
     mov   rcx, [rcx + Variant_t.value]              ; rcx = array buffer (Buffer_t)
-    mov   rcx, [rcx + Buffer_t.bytesPtr]            ; rcx = array buffer (Array_t)
+    mov   r9,  [rcx + Buffer_t.bytesPtr]            ; r9  = array buffer (Array_t)
 
-    cmp   rdx, [rcx + Array_t.itemsCnt]
+    mov   eax, 0                                    ; eax = innerType    (undefined)
+    mov   ecx, 0                                    ; ecx = return value (undefined)
+
+    cmp   rdx, [r9 + Array_t.itemsCnt]
     jae   .errorOutOfBounds
 
-    shl   rdx, 1
-    mov   rax, [rcx + Array_t.items + rdx * 8]     ; array[idx] = value
-    mov   rcx, [rcx + Array_t.items + rdx * 8 + 8] ;
+    or    eax, [r9 + Array_t.innerType]             ; eax = innerType (got from box)
+    jz    .arrayLoadVariant
 
-    mov   [r8], rax                                ; rv = array[idx]
-    mov   [r8 + 8], rcx                            ;
+    ; TODO: Handle non-integer primitive.
+.arrayLoadPrimitive:
+    mov    cl, [r9 + Array_t.itemSize]               ; cl  = log2(size(item))
+    jmp    qword [.arrayLoadPrimitiveJumpTable + rcx*8]
+
+.arrayLoadInt8:
+    movsx  rcx, byte [r9 + Array_t.items + rdx]
+    jmp    .arrayDone
+
+.arrayLoadInt16:
+    movsx  rcx, word [r9 + Array_t.items + rdx*2]
+    jmp    .arrayDone
+
+.arrayLoadInt32:
+    movsxd rcx, dword [r9 + Array_t.items + rdx*4]
+    jmp    .arrayDone
+
+.arrayLoadInt64:
+    mov    rcx, qword [r9 + Array_t.items + rdx*8]
+    jmp    .arrayDone
+
+.arrayLoadVariant:
+    shl    rdx, 4
+    mov    rax, [r9 + Array_t.items + rdx]           ; rax = box[idx].type
+    mov    rcx, [r9 + Array_t.items + rdx + 8]       ; rcx = box[idx].value
+
+.errorOutOfBounds:
+.arrayDone:
+    mov   qword [r8 + Variant_t.type], rax         ; rv.type  = box[idx].type
+    mov   qword [r8 + Variant_t.value], rcx        ; rv.value = box[idx].value
 
     ; TODO: Clean up this mess.
-;    push  rcx r8
-;    cinvoke printf, '-> DUPA | '
-;    pop   r8 rcx
-
-;    push  rcx r8
-;    mov   rcx, r8
-;    call  __MOLD_PrintVariant
-;    pop   r8 rcx
-
     push  r8
     mov   rcx, r8
     call  __MOLD_VariantAddRef
     pop   r8
 
-;    push  rcx r8
-;    cinvoke printf, '<- DUPA |'
-;    pop   r8 rcx
-
     DEBUG_CHECK_VARIANT r8
 
     ret
 
-.errorOutOfBounds:
-    mov   [r8 + Variant_t.type], VARIANT_UNDEFINED
-
-    DEBUG_CHECK_VARIANT r8
-
-    ret
+.arrayLoadPrimitiveJumpTable:
+dq .arrayLoadInt8
+dq .arrayLoadInt16
+dq .arrayLoadInt32
+dq .arrayLoadInt64
 
     ; ==========================================================================
     ;                           Hash map or object
@@ -1933,9 +2018,6 @@ proc __MOLD_VariantLoadFromIndex box, index, rv
     ret
 
 .string:
-    ; TODO: Optimize it.
-    ; TODO: Clean up this mess.
-
     mov    [r8 + Variant_t.type], VARIANT_UNDEFINED
 
     cmp    [rdx + Variant_t.type], VARIANT_INTEGER
@@ -1949,38 +2031,14 @@ proc __MOLD_VariantLoadFromIndex box, index, rv
     mov    rcx, [rcx + Buffer_t.bytesPtr]         ; rcx = string buffer (String_t)
     mov    rdx, [rdx + Variant_t.value]           ; rdx = idx           (integer)
 
+    mov    eax, 0                                 ; rax = 0
     cmp    rdx, [rcx + String_t.length]
     jae    .stringOutOfRangePeek
 
-    mov    al,  [rcx + String_t.text + rdx]       ; al  = value[idx]    (char)
-
-    ; --------------------------------------------------------------------------
-    ; Already string target, just copy one char
-    ; --------------------------------------------------------------------------
-
-.reuseExistingString:
-
-    ; TODO
-    ;cmp   [r8 + Variant_t.type], VARIANT_STRING
-    ;jnz   .targetNotAString
-
-    ; --------------------------------------------------------------------------
-    ; Target is not a string, allocate new one.
-    ; --------------------------------------------------------------------------
-
-.allocNewString:
-
-    push   rax r8
-    mov    rcx, 8
-    call   __MOLD_MemoryAlloc
-    pop    r8 rcx
-
-    mov    [r8 + Variant_t.type], VARIANT_STRING
-    mov    [r8 + Variant_t.value], rax
-
-    mov    rax, [rax + Buffer_t.bytesPtr]
-    mov    [rax + String_t.length], 1
-    mov    qword [rax + String_t.text], rcx
+    mov    al, [rcx + String_t.text + rdx]        ; rax = str[idx] (char)
+    mov    [r8 + Variant_t.type], VARIANT_STRING  ; rv.type  = string
+    mov    [r8 + Variant_t.value], rax            ; rv.value = box[idx] (char)
+    or     [r8 + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
 
 .stringOutOfRangePeek:
 
@@ -2004,6 +2062,7 @@ proc __MOLD_VariantLoadFromIndex box, index, rv
     jmp     .errorFinal
 
 .errorFinal:
+;    int 3
     cinvoke ExitProcess, 0
     ret
 endp
@@ -2034,10 +2093,13 @@ proc __MOLD_StringHashDJB2
     lea     rcx, [rcx + String_t.text]
     mov     rax, 5381
 
+    ; Is it empty string?
+    or      r8, r8
+    jz      .done
+
+    ; Process string byte-by-byte
 .goOn:
     movzx   rdx, byte [rcx]  ; rdx = c
-;    test    rdx, rdx
-;    jz      .done
     add     rdx, rax         ; rdx = hash + c
 
     shl     rax, 5           ; rax = hash * 32
@@ -2266,6 +2328,9 @@ proc __MOLD_VariantDestroy
     or     rbx, rbx
     jz     .emptyArray
 
+    cmp    [rcx + Array_t.innerType], 0
+    jnz    .nonVariantArray
+
     lea    rsi, [rcx + Array_t.items]
 
 .freeArrayItem:
@@ -2277,6 +2342,7 @@ proc __MOLD_VariantDestroy
     jnz    .freeArrayItem
 
 .emptyArray:
+.nonVariantArray:
     pop    rsi
     pop    rbx
 
@@ -2362,11 +2428,15 @@ proc __MOLD_VariantDestroy
     ; ##########################################################################
 
 .freeString:
+    test   [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jnz    .oneCharacterString
+
     push   rcx
     mov    rcx, [rcx + Variant_t.value]
     call   __MOLD_MemoryRelease
     pop    rcx
 
+.oneCharacterString:
     mov    [rcx + Variant_t.value], 0
     ret
 endp
@@ -2402,9 +2472,15 @@ proc __MOLD_VariantLength value, rv
     ret
 
 .string:
+    mov     eax, 1
+    test    [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jnz     .oneCharacterString
+
     mov     rcx, [rcx + Variant_t.value]
     mov     rcx, [rcx + Buffer_t.bytesPtr]
     mov     rax, [rcx + String_t.length]
+
+.oneCharacterString:
     mov     [rdx + Variant_t.value], rax
 
     DEBUG_CHECK_VARIANT rdx
@@ -2442,12 +2518,19 @@ endp
 
 proc __MOLD_VariantAddRef
     ; rcx = Variant_t
+    ; TODO: Clean up this mess.
 
     DEBUG_CHECK_VARIANT rcx
 
-    cmp    [rcx + Variant_t.type], VARIANT_STRING
-    je    .addRef
+    cmp   [rcx + Variant_t.type], VARIANT_STRING
+    jnz    .notAString
 
+.string:
+    test  [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jnz   .noRefNeeded
+    jmp   .addRef
+
+.notAString:
     cmp   [rcx + Variant_t.type], VARIANT_ARRAY
     jb    .noRefNeeded
 
@@ -2470,17 +2553,26 @@ proc __MOLD_VariantMove
 
     DEBUG_CHECK_VARIANT rdx
 
-    mov   eax , [rdx + Variant_t.type]
-    mov   rdx , [rdx + Variant_t.value]
+    mov   rax, qword [rdx + Variant_t.type]  ; rax = type:flags (32bit + 32bit)
+    mov   rdx, qword [rdx + Variant_t.value] ; rdx = value      (64bit)
 
-    mov   [rcx + Variant_t.type] , eax
-    mov   [rcx + Variant_t.value] , rdx
+    mov   qword [rcx + Variant_t.type] , rax
+    mov   qword [rcx + Variant_t.value] , rdx
 
     DEBUG_CHECK_VARIANT rcx
 
+    ; TODO: Clean up this mess.
     cmp  eax, VARIANT_STRING
-    je   .addRef
+    jnz  .notAString
 
+.string:
+    test [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jnz  .noRefNeeded
+    mov  rcx, rdx
+    call __MOLD_MemoryAddRef
+    ret
+
+.notAString:
     cmp  eax, VARIANT_ARRAY
     jb   .noRefNeeded
 
@@ -2676,24 +2768,76 @@ __MOLD_LoadExternalFunction:
 
 __MOLD_Peek:
 __mold_peek:
-    ; TODO: Don't alloc new string.
-    mov    r8, rdi
-    call   __MOLD_VariantLoadFromIndex
 
-    mov    rdx, [rdi + Variant_t.value]
-    mov    rdx, [rdx + Buffer_t.bytesPtr]
-    mov    al, [rdx + String_t.text]
-    and    rax, 0xff
+    cmp    [rcx + Variant_t.type], VARIANT_STRING
+    jnz    .errorNotString
 
-    push   rax
-    mov    rcx, rdi
-    call   __MOLD_VariantDestroy
-    pop    rax
+    mov    rax, [rcx + Variant_t.value]    ; rax = string (Buffer_t)
+    test   [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jnz    .oneCharacterString
 
+.ordinaryString:
+
+    mov    rdx, [rdx + Variant_t.value]    ; rdx = index  (int64)
+    mov    rcx, [rax + Buffer_t.bytesPtr]  ; rcx = string (String_t)
+
+    cmp    [rcx + String_t.length], rdx    ; is len(string) <= index?
+    jbe    .errorOutOfRange
+
+    mov    al, [rcx + String_t.text + rdx] ; al  = string[index]
+
+.oneCharacterString:
+    and    rax, 0xff                       ; rax = string[index]
     mov    [rdi + Variant_t.value], rax
     mov    [rdi + Variant_t.type], VARIANT_INTEGER
-
     ret
+
+.errorNotString:
+    cinvoke printf, 'peek: not a string'
+    int 3
+
+.errorOutOfRange:
+    cinvoke printf, 'peek: out of range'
+    int 3
+
+__MOLD_Ord:
+__mold_ord:
+    mov    rax, [rcx + Variant_t.value]    ; rax = string (Buffer_t)
+
+    cmp    [rcx + Variant_t.type], VARIANT_STRING
+    jnz    .notString
+
+    test   [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jnz    .oneCharacterString
+
+.ordinaryString:
+    mov    rcx, [rax + Buffer_t.bytesPtr]  ; rcx = text    (String_t)
+    mov    al,  [rcx + String_t.text]      ; al  = text[0] (char)
+
+.notString:
+.oneCharacterString:
+    and    rax, 0xff                       ; rax = string[index]
+    mov    [rdi + Variant_t.value], rax
+    mov    [rdi + Variant_t.type], VARIANT_INTEGER
+    ret
+
+;__MOLD_ConvertStringToInteger:
+;    mov rcx, [ rcx + Variant_t.value]           ; rcx = text (Buffer_t)
+;    mov rcx, [ rcx + Buffer_t.bytesPtr ]        ; rcx = text (String_t)
+;    lea rcx, [ rcx + String_t.text ]            ; rcx = text (char*)
+;    cinvoke atoi                                ; rcx = atoi(text) (int32)
+;    mov [ rdi + Variant_t.type], VARIANT_INTEGER
+;    mov [ rdi + Variant_t.value], rax
+;    ret
+;
+;__MOLD_ConvertStringToFloat64:
+;    mov rcx, [ rcx + Variant_t.value]           ; rcx = text (Buffer_t)
+;    mov rcx, [ rcx + Buffer_t.bytesPtr ]        ; rcx = text (String_t)
+;    lea rcx, [ rcx + String_t.text ]            ; rcx = text (char*)
+;    cinvoke atof                                ; rcx = atof(text) (double)
+;    mov  [ rdi + Variant_t.type], VARIANT_DOUBLE
+;    movq [ rdi + Variant_t.value], xmm0
+;    ret
 
 ;###############################################################################
 ;
@@ -2766,4 +2910,307 @@ __mold_loadFile:
 
 .stringPathExpectedError:
     cinvoke printf, "error: string path expected"
+    cinvoke ExitProcess, -1
+
+
+;###############################################################################
+;
+; RCX - box                  (IN / VARIANT),
+; RDX - integer index        (IN / VARIANT),
+; R8  - key at given index   (OUT / VARIANT),
+; R9  - value at given index (OUT / VARIANT).
+;
+;###############################################################################
+
+;__MOLD_VariantLoadFromIndex_UnsecureByInteger:
+;;  mov     rcx, [rcx + Variant_t.value]          ; rcx = map (Buffer_t)
+;  mov     rdx, [rdx + Variant_t.value]          ; rdx = idx (int64)
+;  mov     rcx, [rcx + Buffer_t.bytesPtr]        ; rcx = map (Map_t)
+
+;  ; TODO: Optimize it.
+;  mov     rax, [rcx + Map_t.bucketsCnt]         ; rax = map.bucketsCnt
+ ; lea     rcx, [rcx + Map_t.buckets]            ; rcx = map.buckets
+;  shl     rax, 5                                ; rax = map.bucketsCnt * 32
+;  lea     rax, [rax + rdx * 4]                  ; rax = map.bucketsCnt * 32 + idx * 4
+;  mov     eax, [rcx + rax]                      ; rax = map.index[idx]
+;  lea     rcx, [rcx + rax]
+
+;  ; Copy key.
+;  mov     rax, [rcx]
+;  mov     r10, [rcx + 8]
+;  mov     [r8], rax
+;  mov     [r8 + 8], r10
+
+  ; Copy value.
+;  mov     rax, [rcx + 16]
+;  mov     r10, [rcx + 16 + 8]
+;  mov     [r9], rax
+;  mov     [r9 + 8], r10
+;
+;  ret
+
+
+;###############################################################################
+;
+; Process each (key, value) pairs in map.
+;
+; rcx - box (IN / Variant_t)
+; rdx - key iterator (OUT / Variant_t)
+; r8  - value iterator (OUT / Variant_t)
+; r9  - body loop callback (IN / function pointer)
+;
+;###############################################################################
+
+__MOLD_ForDriver_KeysAndValuesInMap:
+
+    push    rbx
+    push    rsi
+    push    rdi
+    push    r9
+
+    mov     rcx, [rcx + Variant_t.value]          ; rcx = map (Buffer_t)
+    mov     rcx, [rcx + Buffer_t.bytesPtr]        ; rcx = map (Map_t)
+    mov     rbx, [rcx + Map_t.bucketsUsedCnt]     ; rbx = map.bucketsUsedCnt (int64)
+
+    or      rbx, rbx
+    jz      .mapEmpty
+
+    mov     rax, [rcx + Map_t.bucketsCnt]         ; rax = map.bucketsCnt
+    lea     rdi, [rcx + Map_t.buckets]            ; rdi = map.buckets
+    shl     rax, 5                                ; rax = map.bucketsCnt * 32
+    lea     rsi, [rdi + rax]                      ; rsi = map.index
+
+.mapNextItem:
+
+    mov     eax, [rsi]                            ; rcx = bucketIdx
+    mov     rcx, rdi                              ; rcx = buckets
+    add     rcx, rax                              ; rcx = buckets[bucketIdx]
+
+    ; --------------------
+    ; Update key iterator
+    ; --------------------
+
+    mov     rax, [rcx]
+    mov     r9,  [rcx + 8]
+
+    mov     [rdx], rax
+    mov     [rdx + 8], r9
+
+    ; ----------------------
+    ; Update value iterator
+    ; ----------------------
+
+    mov     rax, [rcx + 16]
+    mov     r9,  [rcx + 16 + 8]
+
+    mov     [r8], rax
+    mov     [r8 + 8], r9
+
+    ; ------------------------------
+    ; Process next (key:value) pair
+    ; ------------------------------
+
+    push    rcx rdx r8
+    call    qword [rsp + 24]
+    pop     r8 rdx rcx
+
+    ; ----------------
+    ; Go to next pair
+    ; ----------------
+
+    add     rsi, 4
+    dec     rbx
+    jne     .mapNextItem
+
+.mapEmpty:
+.done:
+
+    pop     r9
+    pop     rdi
+    pop     rsi
+    pop     rbx
+
+    ret
+
+;###############################################################################
+;
+; Process each (idx, value) pairs in array.
+;
+; rcx - box (IN / Variant_t)
+; rdx - index iterator (OUT / Variant_t)
+; r8  - value iterator (OUT / Variant_t)
+; r9  - body loop callback (IN / function pointer)
+;
+;###############################################################################
+
+__MOLD_ForDriver_IndexesAndValuesInArray:
+
+    push    rbx
+    push    rsi
+    push    r9
+
+    mov     rcx, [rcx + Variant_t.value]          ; rcx = array (Buffer_t)
+    mov     rcx, [rcx + Buffer_t.bytesPtr]        ; rcx = array (Array_t)
+    mov     rbx, [rcx + Array_t.itemsCnt]         ; rbx = array.itemsCnt (int64)
+
+    or      rbx, rbx
+    jz      .arrayEmpty
+
+    lea     rsi, [rcx + Array_t.items]              ; rsi      = array.items
+    mov     [rdx + Variant_t.type], VARIANT_INTEGER ; idx.type = integer
+
+.arrayNextItem:
+
+    ; ----------------------
+    ; Update index iterator
+    ; ----------------------
+
+    inc     [rdx + Variant_t.value]
+
+    ; ----------------------
+    ; Update value iterator
+    ; ----------------------
+
+    mov     rax, [rsi]
+    mov     rcx, [rsi + 8]
+
+    mov     [r8], rax
+    mov     [r8 + 8], rcx
+
+    ; --------------------------------
+    ; Process next (index:value) pair
+    ; --------------------------------
+
+    push    rdx r8
+    call    qword [rsp + 16]
+    pop     r8 rdx
+
+    ; ----------------
+    ; Go to next pair
+    ; ----------------
+
+    add     rsi, 16
+    dec     rbx
+    jne     .arrayNextItem
+
+.arrayEmpty:
+.done:
+
+    pop     r9
+    pop     rsi
+    pop     rbx
+
+    ret
+
+;###############################################################################
+;
+; Process each (idx, character) pairs in array.
+;
+; rcx - text to process (IN / Variant_t)
+; rdx - index iterator (OUT / Variant_t)
+; r8  - character iterator (OUT / Variant_t)
+; r9  - body loop callback (IN / function address)
+;
+;###############################################################################
+
+__MOLD_ForDriver_IndexesAndValuesInString:
+
+    push    rbx
+    push    rsi
+    push    r9
+
+    mov     [rdx + Variant_t.type], VARIANT_INTEGER ; idx.type   = integer
+    mov     [r8  + Variant_t.type], VARIANT_STRING  ; value.type = string
+    mov     [r8  + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    mov     [r8  + Variant_t.value], 0
+
+    mov     ebx, 1                                ; rbx = 1 = start from one char string
+    mov     rax, [rcx + Variant_t.value]          ; rax = string (Buffer_t)
+
+    test    [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jnz     .stringOneCharacter
+
+    mov     rcx, [rax + Buffer_t.bytesPtr]        ; rax = string (String_t)
+    lea     rsi, [rcx + String_t.text]            ; rsi = string.text (char *)
+    mov     rbx, [rcx + String_t.length]          ; rbx = string.length (int64)
+
+    or      rbx, rbx
+    jz      .stringEmpty
+
+.stringNextItem:
+
+    ; ----------------------
+    ; Update index iterator
+    ; ----------------------
+
+    inc     [rdx + Variant_t.value]
+
+    ; ----------------------
+    ; Update value iterator
+    ; ----------------------
+
+    lodsb
+
+.stringOneCharacter:
+
+    mov     [r8 + 8], al
+
+    ; --------------------------------
+    ; Process next (index:value) pair
+    ; --------------------------------
+
+    push    rdx r8
+    call    qword [rsp + 16]
+    pop     r8 rdx
+
+    ; ----------------
+    ; Go to next pair
+    ; ----------------
+
+    dec     rbx
+    jne     .stringNextItem
+
+.stringEmpty:
+.done:
+
+    pop     r9
+    pop     rsi
+    pop     rbx
+
+    ret
+
+;###############################################################################
+;
+; Process each (key, value) pairs in generic box.
+;
+; rcx - any box container (IN / Variant_t)
+; rdx - index iterator (OUT / Variant_t)
+; r8  - character iterator (OUT / Variant_t)
+; r9  - body loop callback (IN / function address)
+;
+;###############################################################################
+
+__MOLD_ForDriver_Generic:
+    mov     eax, [rcx + Variant_t.type]
+    cmp     eax, VARIANT_TYPE_MAX
+    ja      .errorInvalidType
+    jmp     qword [.jmpTable + rax*8]
+
+.jmpTable:
+    dq .errorInvalidType ; undefined
+    dq .errorInvalidType ; null
+    dq .errorInvalidType ; integer
+    dq .errorInvalidType ; float32
+    dq .errorInvalidType ; float64
+    dq __MOLD_ForDriver_IndexesAndValuesInString
+    dq .errorInvalidType ; boolean
+    dq __MOLD_ForDriver_IndexesAndValuesInArray
+    dq __MOLD_ForDriver_KeysAndValuesInMap
+    dq .errorInvalidType ; object (TODO: Not implemented yet)
+
+.errorMsgArrayStringOrMapExpected db 'error: array, string or map expected', 13, 10
+
+.errorInvalidType:
+    cinvoke GetStdHandle, -12
+    cinvoke WriteFile, rax, .errorMsgArrayStringOrMapExpected, 38, NumberOfBytesWritten, 0
     cinvoke ExitProcess, -1

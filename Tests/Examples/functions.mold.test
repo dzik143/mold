@@ -5,6 +5,15 @@ EXPECTED_ERROR:
 error: 'foo' was not declared in this scope
 -------------------------------------------------------------------------------
 
+TEST "Unused procedure"
+function foo()
+endfunction
+print 'OK!'
+
+EXPECTED_OUTPUT:
+OK!
+-------------------------------------------------------------------------------
+
 TEST "Simple procedure (no parameters, no return value)"
 function foo()
   print "foo() called"
@@ -141,8 +150,6 @@ endfunction
 print foo(1)
 print foo(0)
 
-EXPECTED_OUTPUT:
-output
 EXPECTED_ERROR
 error: unset return variable 'rv' in 'foo' function
 --------------------------------------------------------------------------------
@@ -186,7 +193,7 @@ TEST "Long call list"
 function foo(x1, x2, x3, x4, x5, x6, x7, x8)
   print 'foo(', x1, x2, x3, x4, x5, x6, x7, x8, ')'
 endfunction
-    
+
 foo(1,2,3,4,5,6,7,8)
 
 EXPECTED_OUTPUT:

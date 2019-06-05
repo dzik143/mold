@@ -46,7 +46,7 @@ TEST "Bug: Not verified parameters push before die() call"
 for idx in 0 .. 10
   print idx
 
-  if false
+  if idx is 99999
     die('error: unresolved call at address', idx)
   endif
 endfor
@@ -170,7 +170,7 @@ TEST "Bug: Crash while releasing old array item"
 
 x    = []
 x[0] = {}
-x[0] = 1234 
+x[0] = 1234
 
 y      = {}
 y['a'] = {}
@@ -195,4 +195,123 @@ print node
 
 EXPECTED_OUTPUT:
 {'abcd': 1234}
+-------------------------------------------------------------------------------
+TEST "Bug: CSE fail #1 (insert __cse var in wrong scope)"
+
+box = {}
+buf = []
+
+box['len'] = 8
+bufCnt     = box['len']
+
+for idx in 0 .. bufCnt
+  buf[idx] = box['len']
+endfor
+
+print buf
+
+EXPECTED_OUTPUT:
+[8, 8, 8, 8, 8, 8, 8, 8]
+-------------------------------------------------------------------------------
+TEST "Bug: AST cycle after dead code elimination"
+
+class Parser
+  method parse()
+    _stack = []
+    _idx_  = 0
+
+    this.stackIdx = 1
+
+    if false
+
+    elif _idx_ is 0
+      this.ret = _stack[this.stackIdx - 1]
+
+    elif _idx_ is 1
+      this.ret = _stack[this.stackIdx - 1]
+
+    elif _idx_ is 2
+
+    elif _idx_ is 3
+      this.ret = _stack[this.stackIdx - 1]
+
+    elif _idx_ is 4
+    endif
+
+    print 'OK!'
+  endmethod
+endclass
+
+parser = new Parser()
+parser.parse()
+
+EXPECTED_OUTPUT:
+OK!
+-------------------------------------------------------------------------------
+
+TEST "Bug: Treat unused variable as variant (and crash during destroy)
+x = 1234
+print 'OK!'
+
+EXPECTED_OUTPUT:
+OK!
+-------------------------------------------------------------------------------
+
+TEST "Bug: Broken code after CSE within different blocks"
+
+x     = [{'value': 1234}]
+obj   = {'idx': 0}
+value = -1
+
+for idx in 0 .. 10
+  if typeof(x[obj.idx]) isnt 'undefined'
+    if value is -1
+      value = x[obj.idx].value
+    endif
+  endif
+  obj.idx = obj.idx + 1
+endfor
+
+print obj
+print value
+
+EXPECTED_OUTPUT:
+{'idx': 10}
+1234
+-------------------------------------------------------------------------------
+
+TEST "Bug: Fake useless assign alert (dead code remove)"
+
+function bar(name, idx)
+  print 'bar(', name, idx, ')'
+endfunction
+
+function foo(opcode)
+  paramIdx = 0
+
+  if opcode is 1234
+    bar('first', 0)
+    paramIdx = paramIdx + 1
+  endif
+
+  for idx in 0 .. 10
+    bar('next', paramIdx)
+    paramIdx = paramIdx + 1
+  endfor
+endfunction
+
+foo(1234)
+
+EXPECTED_OUTPUT:
+bar( first 0 )
+bar( next 1 )
+bar( next 2 )
+bar( next 3 )
+bar( next 4 )
+bar( next 5 )
+bar( next 6 )
+bar( next 7 )
+bar( next 8 )
+bar( next 9 )
+bar( next 10 )
 -------------------------------------------------------------------------------

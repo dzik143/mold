@@ -1,3 +1,148 @@
+TEST "Simple: duplicated (x+y) expression one-by-one"
+
+function foo(x, y)
+  # Both nodes are in the same block.
+  print '1-st usage:', (x+y)
+  print '2-nd usage:', (x+y)
+endfunction
+foo(1, 2)
+
+EXPECTED_OUTPUT:
+function foo(x, y)
+  __cse0 = x + y
+  print '1-st usage:', __cse0
+  print '2-nd usage:', __cse0
+endfunction
+foo(1, 2)
+--------------------------------------------------------------------------------
+
+TEST "If: different blocks, the same deep"
+
+function foo(x, y)
+  # Nodes are in different block at the same deep.
+  #      ...
+  #     /   \
+  # (x+y)   (x+y)
+  #  ...     ...
+
+  if x is 1
+    print 'x is 1:', (x+y)
+  else
+    print 'x isnt 1:', (x+y)
+  endif
+endfunction
+
+foo(1, 2)
+
+EXPECTED_OUTPUT:
+function foo(x, y)
+  __cse0 = x + y
+  if x is 1
+    print 'x is 1:', __cse0
+  else
+    print 'x isnt 1:', __cse0
+  endif
+endfunction
+
+foo(1, 2)
+--------------------------------------------------------------------------------
+
+TEST "If: different blocks, the first one is deeper"
+
+function foo(x, y)
+  # Nodes are in different block, the first one is deeper.
+  #      ...
+  #     /   \
+  #  ...    (x+y)
+  # (x+y)    ...
+  #  ...     ...
+
+  if x is 1
+    if y is 2
+      print '(x,y) is (1,2):', (x+y)
+    endif
+  else
+    print 'x isnt 1:', (x+y)
+  endif
+endfunction
+
+foo(1, 2)
+
+EXPECTED_OUTPUT:
+function foo(x, y)
+  __cse0 = x + y
+  if x is 1
+    if y is 2
+      print '(x,y) is (1,2):', __cse0
+    endif
+  else
+    print 'x isnt 1:', __cse0
+  endif
+endfunction
+
+foo(1, 2)
+--------------------------------------------------------------------------------
+
+TEST "If: different blocks, the second one is deeper"
+
+function foo(x, y)
+  # Nodes are in different block, the second one is deeper.
+  #      ...
+  #     /   \
+  # (x+y)    ...
+  #  ...    (x+y)
+  #  ...     ...
+
+  if x is 1
+    print 'x is 1:', (x+y)
+  else
+    if y isnt 2
+      print '(x,y) isnt (1,2):', (x+y)
+    endif
+  endif
+endfunction
+
+foo(1, 2)
+
+EXPECTED_OUTPUT:
+function foo(x, y)
+  __cse0 = x + y
+  if x is 1
+    print 'x is 1:', __cse0
+  else
+    if y isnt 2
+      print '(x,y) isnt (1,2):', __cse0
+    endif
+  endif
+endfunction
+
+foo(1, 2)
+--------------------------------------------------------------------------------
+
+TEST "Reuse already assigned variable"
+
+function foo(x, y)
+  # Expression (x+y) is already assigned to some variable in original code.
+  # We don't need to create extra __csexx one.
+  z = x + y
+  if z is 3
+    print x + y
+  endif
+endfunction
+
+foo(1, 2)
+
+EXPECTED_OUTPUT:
+function foo(x, y)
+  z = x + y
+  if z is 3
+    print z
+  endif
+endfunction
+
+foo(1, 2)
+--------------------------------------------------------------------------------
+
 TEST "Common arithmetic (x o y)"
 x = 1
 y = 2
@@ -9,7 +154,7 @@ a = x * y + z
 b = x * g * y
 c = x * y / z
 
-# Change x, (x o y) also changed from now.
+# Change x, so x*y also changed from now.
 x = x + 1
 a = x * y + z
 b = x * g * y
@@ -70,7 +215,7 @@ __cse1[2] = 12
 __cse1[3] = 13
 
 */
-EXPECTED_OUTPUT:  
+EXPECTED_OUTPUT:
 --------------------------------------------------------------------------------
 
 TEST "Common array index x[i] (read)"
@@ -87,7 +232,7 @@ y  = box.x[1]
 z  = box.x[2]
 rv = x + y + z
 
-EXPECTED_OUTPUT: 
+EXPECTED_OUTPUT:
 box = {}
 __cse0 = box['x']
 x = __cse0[0]
@@ -101,12 +246,25 @@ x = __cse1[0]
 y = __cse1[1]
 z = __cse1[2]
 rv = x + y + z
-
 --------------------------------------------------------------------------------
 
 TEST "Common map index box.x (read #1)"
 
 box = {}
+print box.x
+print box.x
+
+EXPECTED_OUTPUT:
+box = {}
+__cse0 = box['x']
+
+print __cse0
+print __cse0
+--------------------------------------------------------------------------------
+
+TEST "Common map index box.x (read #2)"
+
+box = {}
 x  = box.x * 2
 y  = box.x * 3
 z  = box.x * 4
@@ -118,7 +276,7 @@ y  = box.x * 3
 z  = box.x * 4
 rv = x + y + z
 
-EXPECTED_OUTPUT:  
+EXPECTED_OUTPUT:
 box = {}
 __cse0 = box['x']
 x = __cse0 * 2
@@ -134,7 +292,7 @@ z = __cse1 * 4
 rv = x + y + z
 --------------------------------------------------------------------------------
 
-TEST "Common map index box.x (read #2)"
+TEST "Common map index box.x (read #3)"
 
 box = {}
 
@@ -150,7 +308,7 @@ y  = box.x[1]
 z  = box.x[2]
 rv = x + y + z
 
-EXPECTED_OUTPUT:  
+EXPECTED_OUTPUT:
 box = {}
 
 box['x'] = []
@@ -166,3 +324,126 @@ x = __cse1[0]
 y = __cse1[1]
 z = __cse1[2]
 rv = x + y + z
+--------------------------------------------------------------------------------
+
+TEST "Common map index box.x (read #4)"
+
+box   = {}
+box.x = 'value'
+
+print box.x
+print len(box.x)
+
+EXPECTED_OUTPUT:
+box = {}
+box['x'] = 'value'
+
+__cse0 = box['x']
+print __cse0
+print len(__cse0)
+--------------------------------------------------------------------------------
+
+TEST "Common map index box.x (read #5)"
+
+dst = {}
+src = {}
+
+src.x = 'value'
+
+dst['val'] = src['x']
+dst['len'] = len(src['x'])
+
+EXPECTED_OUTPUT:
+dst = {}
+src = {}
+src['x'] = 'value'
+
+__cse0 = src['x']
+dst['val'] = __cse0
+dst['len'] = len(__cse0)
+--------------------------------------------------------------------------------
+
+TEST "Bug: Cross loop / out-of-loop usage"
+
+function foo(x)
+  for idx in 0 .. 10
+    print x.y
+  endfor
+  print x.y
+endfunction
+foo()
+
+EXPECTED_OUTPUT:
+function foo(x)
+  for idx in 0 .. 10
+    print x['y']
+  endfor
+  print x['y']
+endfunction
+foo()
+--------------------------------------------------------------------------------
+
+TEST "Bug: Treat constant initialized map as imm"
+
+function foo(x)
+  # TODO: Handle maps in --prettyPrinter.
+  newValues1 = {'_index': [], 'parent': x}
+  newValues2 = {'_index': [], 'parent': x}
+
+  foo(newValues1)
+  foo(newValues2)
+endfunction
+
+EXPECTED_OUTPUT:
+
+function foo(x)
+  newValues1 = [map]
+  newValues2 = [map]
+
+  foo(newValues1)
+  foo(newValues2)
+endfunction
+--------------------------------------------------------------------------------
+
+TEST "Bug: Not updated while condition at n-th rotate"
+
+function foo(values, name) -> rv
+  rv = values[name]
+  while typeof(values['parent']) isnt 'undefined'
+    values = values['parent']
+    rv = values[name]
+  endwhile
+endfunction
+
+EXPECTED_OUTPUT:
+function foo(values, name) -> rv
+  rv = values[name]
+  while typeof(values['parent']) isnt 'undefined'
+    values = values['parent']
+    rv = values[name]
+  endwhile
+endfunction
+--------------------------------------------------------------------------------
+
+TEST "Block vs if"
+
+function foo(x, y)
+  print x + y
+  if x is 1
+    print x + y
+  endif
+endfunction
+
+foo(1, 2)
+
+EXPECTED_OUTPUT:
+function foo(x, y)
+  __cse0 = x + y
+  print __cse0
+  if x is 1
+    print __cse0
+  endif
+endfunction
+
+foo(1, 2)
+--------------------------------------------------------------------------------

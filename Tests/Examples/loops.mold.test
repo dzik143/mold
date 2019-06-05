@@ -92,3 +92,59 @@ EXPECTED_OUTPUT:
 Before for
 After for
 -------------------------------------------------------------------------------
+
+TEST "Process array inside while loop"
+
+x   = [1,2,3,4,5,6,7,8,9,10]
+acc = 0
+idx = 0
+
+while idx < 10
+  acc = 5 * acc + x[idx]
+  idx = idx + 1
+endwhile
+
+print acc
+
+EXPECTED_OUTPUT:
+3051755
+-------------------------------------------------------------------------------
+
+TEST "Attemp to use already defined variable as iterator (should fail)"
+
+function foo(idx, n)
+  print 'foo(', idx, n, ')'
+  for idx in 0 .. n
+    print idx
+  endfor
+endfunction
+
+foo(0, 10)
+
+EXPECTED_ERROR:
+error: "idx" is already defined in another context
+-------------------------------------------------------------------------------
+
+TEST "Bug: Crash when iterator used in another branch as non-integer (SKIPPED!)"
+/*
+function foo(x)
+  if x is 1
+   # idx is array in this context.
+   idx    = []
+   idx[0] = 1234
+   print idx
+
+  else
+    # idx is integer in this context.
+    for idx in 0 .. 10
+      print idx
+    endfor
+  endif
+endfunction
+
+foo(1)
+foo(2)
+*/
+
+EXPECTED_OUTPUT:
+-------------------------------------------------------------------------------

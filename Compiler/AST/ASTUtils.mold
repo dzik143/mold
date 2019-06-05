@@ -1,7 +1,7 @@
 ################################################################################
 #                                                                              #
 # This file is part of Mold project.                                           #
-# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+# Copyright (c) 2015, 2019 Sylwester Wysocki (sw143@wp.pl).                    #
 #                                                                              #
 # The Mold code and any derived work however based on this software are        #
 # copyright of Sylwester Wysocki. Redistribution and use of the present        #
@@ -14,13 +14,44 @@
 
 import 'AST/AST.mold'
 
+const AST_DataTypeNames = [
+  '-',         # 0
+  'integer',   # 1
+  'float',     # 2
+  'float',     # 3 double
+  'string',    # 4
+  'boolean',   # 5
+  'object',    # 6
+  'null',      # 7
+  'undefined', # 8
+  'array',     # 9
+  'map'        # 10
+]
+
+const AST_DataTypeForMIR = [
+  '[error]',   # 0
+  'int32',     # integer
+  'float32',   # float
+  'float64',   # double
+  'variant',   # string
+  'bool32',    # boolean
+  'variant',   # object
+  '[error]',   # null
+  '[error]',   # undefined
+  'variant',   # array (TODO)
+  'variant'    # map (TODO)
+]
+
 # TODO: Synchronize id along whole code.
-AST_NextId = 1000
+#AST_NextId = 1000
 
 function AST_GetNextId() -> rv
-  global AST_NextId
-  rv = AST_NextId
-  AST_NextId = AST_NextId + 1
+  global NodeId
+  rv = NodeId
+  NodeId = NodeId + 1
+  #global AST_NextId
+  #rv = AST_NextId
+  #AST_NextId = AST_NextId + 1
 endfunction
 
 function AST_CreateNodeVariable(name) -> rv
@@ -36,7 +67,7 @@ endfunction
 
 function AST_GetOpcodeAsText(opcode) -> rv
   global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
-  global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+  global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_NULL, AST_DATA_UNDEFINED
   global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
   global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
   global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
@@ -49,10 +80,9 @@ function AST_GetOpcodeAsText(opcode) -> rv
   global AST_OPCODE_BLOCK, AST_OPCODE_FUNCTION, AST_OPCODE_CLASS
   global AST_OPCODE_CLASS_METHOD
   global AST_OPCODE_IF
-  global AST_OPCODE_ELIF
   global AST_OPCODE_WHILE
-  global AST_OPCODE_FOR
   global AST_OPCODE_FOR_VALUES_RANGE
+  global AST_OPCODE_TYPE_CAST
 
   global AST_OPCODE_ASSIGN
   global AST_OPCODE_DECLARE
@@ -63,7 +93,7 @@ function AST_GetOpcodeAsText(opcode) -> rv
   global AST_OPCODE_VARIABLE
 
   global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
-  global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+  global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_NULL, AST_DATA_UNDEFINED
   global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
   global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
   global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
@@ -91,9 +121,6 @@ function AST_GetOpcodeAsText(opcode) -> rv
 
   elif opcode is AST_OPCODE_IF
     rv = 'IF'
-
-  elif opcode is AST_OPCODE_FOR
-    rv = 'FOR'
 
   elif opcode is AST_OPCODE_FOR_VALUES_RANGE
     rv = 'FOR'
@@ -182,6 +209,15 @@ function AST_GetOpcodeAsText(opcode) -> rv
   elif opcode is AST_OPCODE_NOP
     rv = 'NOP'
 
+  elif opcode is AST_OPCODE_TYPE_CAST
+    rv = 'TYPE_CAST'
+
+  elif opcode is AST_OPCODE_CALL_NEW
+    rv = 'CALL_NEW'
+
+  elif opcode is AST_OPCODE_INVOKE_METHOD
+    rv = 'VCALL'
+
   else
     rv = '[UNKNOWN: ' + str(opcode) + ']'
   endif
@@ -189,7 +225,7 @@ endfunction
 
 function AST_GetOpcodeAsShortText(opcode) -> rv
   global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
-  global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+  global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_NULL, AST_DATA_UNDEFINED
   global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
   global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
   global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
@@ -202,9 +238,7 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   global AST_OPCODE_BLOCK, AST_OPCODE_FUNCTION, AST_OPCODE_CLASS
   global AST_OPCODE_CLASS_METHOD
   global AST_OPCODE_IF
-  global AST_OPCODE_ELIF
   global AST_OPCODE_WHILE
-  global AST_OPCODE_FOR
   global AST_OPCODE_FOR_VALUES_RANGE
 
   global AST_OPCODE_ASSIGN
@@ -214,9 +248,10 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   global AST_OPCODE_CLASS
   global AST_OPCODE_NOP
   global AST_OPCODE_VARIABLE
+  global AST_OPCODE_BLOCK
 
   global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
-  global AST_DATA_BOOL, AST_DATA_PTR, AST_DATA_NULL, AST_DATA_UNDEFINED
+  global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_NULL, AST_DATA_UNDEFINED
   global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
   global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
   global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
@@ -226,6 +261,12 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
   global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
   global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+  global AST_OPCODE_FOR_VALUES_RANGE, AST_OPCODE_WHILE
+  global AST_OPCODE_FOR_VALUES
+  global AST_OPCODE_FOR_KEYS
+  global AST_OPCODE_FOR_KEYS_VALUES
+  global AST_OPCODE_FOR_INDEXES
+  global AST_OPCODE_FOR_INDEXES_VALUES
 
   if opcode is AST_OPCODE_REFERENCE
     rv = '&'
@@ -252,10 +293,10 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
     rv = 'm'
 
   elif opcode is AST_OPCODE_BOOL_AND
-    rv = '&'
+    rv = 'and'
 
   elif opcode is AST_OPCODE_BOOL_OR
-    rv = '|'
+    rv = 'or'
 
   elif opcode is AST_OPCODE_NEG
     rv = '-'
@@ -296,7 +337,37 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   elif opcode is AST_OPCODE_VARIABLE
     rv = 'v'
 
+  # TODO: Review it.
+  elif opcode is AST_OPCODE_CALL
+    rv = 'call'
+
+  elif opcode is AST_OPCODE_CALL_NEW
+    rv = 'new'
+
+  elif opcode is AST_OPCODE_INVOKE_METHOD
+    rv = 'vcall'
+
+  elif opcode is AST_OPCODE_BLOCK
+    rv = 'block'
+
+  elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
+    rv = '='
+
+  elif opcode is AST_OPCODE_FOR_VALUES_RANGE
+    rv = 'for'
+
+  elif opcode is AST_OPCODE_WHILE
+    rv = 'while'
+
+  elif opcode is AST_OPCODE_IF
+    rv = 'if'
+
+  elif opcode is AST_OPCODE_FOR_VALUES
+    rv = 'for_values'
+
   else
+    # TODO: Handle terminal nodes.
+    rv = 'error'
     die('error: unhandled opcode: ' + str(opcode))
   endif
 endfunction
@@ -306,6 +377,7 @@ function AST_InvertBoolean(node)
   global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
   global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
   global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
+  global AST_OPCODE_TYPE_CAST
 
   opcode = node.opcode
 
@@ -345,6 +417,9 @@ function AST_InvertBoolean(node)
     AST_InvertBoolean(node.children[0])
     AST_InvertBoolean(node.children[1])
     node.opcode = AST_OPCODE_BOOL_AND
+
+  elif opcode is AST_OPCODE_TYPE_CAST
+    AST_InvertBoolean(node.children[0])
 
   else
     die('error: unhandled opcode in AST_InvertBoolean: ' + str(opcode))
@@ -405,9 +480,13 @@ function AST_IsImmOrVar(x) -> rv
   endif
 endfunction
 
-function AST_Hash(node) -> rv
-  #global AST_DATA_ARRAY
-  #global AST_DATA_MAP
+function AST_HashInternal(node, isCodeMode) -> rv
+  global AST_DATA_ARRAY
+  global AST_DATA_MAP
+  global AST_OPCODE_CALL
+  global AST_OPCODE_CALL_NEW
+  global AST_OPCODE_INVOKE_METHOD
+  global AST_OPCODE_TYPE_CAST
 
   opcode      = node.opcode
   children    = node.children
@@ -420,20 +499,27 @@ function AST_Hash(node) -> rv
   else
     # First ask for hash at this node - calculate it from stratch
     # and save for further calls.
+    if (opcode is AST_DATA_MAP) or (opcode is AST_DATA_ARRAY)
+      rv = '@' + str(node.id)
 
-    if AST_IsVar(node)
-      if typeof(node.storedValue) is 'undefined'
-        # TODO: Review it.
+    elif AST_IsVar(node)
+      if isCodeMode is true
         rv = '@' + node.value
 
-      elif typeof(node.storedValue) is 'array'
-        rv = ''
-        for idx in 0 .. len(node.storedValue)
-          rv = rv + '@' + str(node.storedValue[idx].id)
-        endfor
-
       else
-        rv = '@' + str(node.storedValue.id)
+        if typeof(node.storedValue) is 'undefined'
+          # TODO: Review it.
+          rv = '@' + node.value
+
+        elif typeof(node.storedValue) is 'array'
+          rv = ''
+          for idx in 0 .. len(node.storedValue)
+            rv = rv + '@' + str(node.storedValue[idx].id)
+          endfor
+
+        else
+          rv = '@' + str(node.storedValue.id)
+        endif
       endif
 /*
     elif node.opcode is AST_DATA_ARRAY
@@ -454,13 +540,270 @@ function AST_Hash(node) -> rv
     elif AST_IsPrimitiveImm(node)
       rv = AST_GetOpcodeAsShortText(opcode) + str(node.value)
 
+    elif (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_CALL_NEW) or (opcode is AST_OPCODE_INVOKE_METHOD)
+      # TODO: Review it.
+      rv = AST_GetOpcodeAsShortText(opcode) + ':' + node.value + ',' + str(childrenCnt)
+      for idx in 0 .. childrenCnt
+        rv  = rv + ',' + AST_HashInternal(children[idx], isCodeMode)
+      endfor
+
+    elif opcode is AST_OPCODE_TYPE_CAST
+      rv = 'cast,' + str(node.astDataType) + ',' + AST_HashInternal(children[0], isCodeMode)
+
     else
       rv = AST_GetOpcodeAsShortText(opcode) + ',' + str(childrenCnt)
       for idx in 0 .. childrenCnt
-        rv  = rv + ',' + AST_Hash(children[idx])
+        rv  = rv + ',' + AST_HashInternal(children[idx], isCodeMode)
       endfor
     endif
 
-    node.hash = rv
+    if isCodeMode is false
+      node.hash = rv
+    endif
   endif
+endfunction
+
+function AST_Hash(node) -> rv
+  rv = AST_HashInternal(node, false)
+endfunction
+
+function AST_HashForCodeComparison(node) -> rv
+  rv = AST_HashInternal(node, true)
+endfunction
+
+function AST_HasSideEffects(node) -> rv
+  global AST_OPCODE_CALL
+  global AST_OPCODE_CALL_NEW
+  global AST_OPCODE_INVOKE_METHOD
+
+  opcode = node.opcode
+
+  if opcode is AST_OPCODE_CALL
+    # TODO: Check function protos.
+    if (node.value is 'str') or (node.value is 'len')
+      # Built-in function without side effect.
+      rv = false
+    else
+      rv = true
+    endif
+
+  elif (opcode is AST_OPCODE_CALL_NEW) or (opcode is AST_OPCODE_INVOKE_METHOD)
+    # TODO: Check function protos.
+    rv = true
+
+  else
+    rv          = false
+    childIdx    = 0
+    children    = node.children
+    childrenCnt = node.childrenCnt
+
+    while (childIdx < childrenCnt) and (rv is false)
+      rv       = AST_HasSideEffects(children[childIdx])
+      childIdx = childIdx + 1
+    endwhile
+  endif
+endfunction
+
+function AST_IsDataNode(node) -> rv
+  global AST_OPCODE_PROGRAM
+  if node.opcode < AST_OPCODE_PROGRAM
+    rv = true
+  else
+    rv = false
+  endif
+endfunction
+
+function AST_ConvertDataTypeToText(dataType) -> rv
+  global AST_DataTypeNames
+
+  if (typeof(dataType) isnt 'undefined') and (dataType > 0)
+    rv = AST_DataTypeNames[dataType]
+  else
+    rv = 'variant'
+  endif
+endfunction
+
+function AST_ConvertDataTypeToMIR(dataType) -> rv
+  # TODO: Clean up this mess?
+  global AST_DataTypeForMIR
+
+  if (typeof(dataType) isnt 'undefined') and (dataType > 0)
+    rv = AST_DataTypeForMIR[dataType]
+  else
+    rv = 'variant'
+  endif
+endfunction
+
+function AST_GetDataType(node) -> rv
+  global AST_OPCODE_VARIABLE
+  global AST_OPCODE_NEG
+  global AST_OPCODE_ADD
+  global AST_OPCODE_SUB
+  global AST_OPCODE_MUL
+  global AST_OPCODE_DIV
+  global AST_OPCODE_IDIV
+  global AST_OPCODE_COMPARE_EQ, AST_OPCODE_BOOL_OR, AST_OPCODE_BOOL_NOT
+
+  global AST_DATA_UNDEFINED
+  global AST_DATA_INTEGER
+  global AST_DATA_DOUBLE
+  global AST_DATA_STRING
+  global AST_DATA_BOOL
+  global AST_DATA_OBJECT
+  global AST_OPCODE_TYPE_CAST
+  global AST_OPCODE_CALL
+  global AST_OPCODE_CALL_NEW
+  global AST_OPCODE_REFERENCE
+  global SYMBOL_KIND_CONST
+
+  rv = node._cachedAstDataType
+
+  if typeof(rv) is 'undefined'
+    opcode = node.opcode
+    rv     = -1
+
+    if opcode is AST_OPCODE_VARIABLE
+      symbolInfo = node.symbolInfo
+      if (typeof(symbolInfo) isnt 'undefined') and (typeof(symbolInfo.astType) isnt 'undefined')
+        rv = symbolInfo.astType
+      endif
+
+    elif opcode is AST_OPCODE_TYPE_CAST
+      rv = node.astDataType
+
+    elif opcode is AST_OPCODE_REFERENCE
+      # TODO: Handle non-variant array items.
+      # TODO: This is prof-of-concept only.
+      #box = node.children[0]
+      #if box.symbolInfo.kind is SYMBOL_KIND_CONST
+      #  rv = AST_DATA_INTEGER
+      #endif
+
+    elif opcode is AST_OPCODE_CALL
+      # TODO: Handle non-variant return values.
+
+    elif opcode is AST_OPCODE_CALL_NEW
+      rv = AST_DATA_OBJECT
+
+    else
+      children    = node.children
+      childrenCnt = node.childrenCnt
+
+      if AST_IsDataNode(node) is true
+        rv = opcode
+
+      elif childrenCnt is 2
+        x = AST_GetDataType(children[0])
+        y = AST_GetDataType(children[1])
+
+        # TODO: Validate types.
+        if (opcode is AST_OPCODE_ADD) or (opcode is AST_OPCODE_MUL) or (opcode is AST_OPCODE_SUB)
+          if (x is AST_DATA_DOUBLE) or (y is AST_DATA_DOUBLE)
+            rv = AST_DATA_DOUBLE
+          elif (x is -1) or (y is -1)
+            rv = -1
+          else
+            rv = x
+          endif
+
+        elif opcode is AST_OPCODE_DIV
+          if (x is -1) or (y is -1)
+            rv = -1
+          else
+            rv = AST_DATA_DOUBLE
+          endif
+
+        elif opcode is AST_OPCODE_IDIV
+          if (x is -1) or (y is -1)
+            rv = -1
+          else
+            rv = AST_DATA_INTEGER
+          endif
+
+        elif (opcode >= AST_OPCODE_COMPARE_EQ) and (opcode <= AST_OPCODE_BOOL_OR)
+          # TODO: Why need variant result for variant operands?
+          if (x is -1) or (y is -1) or (x is AST_DATA_STRING) or (y is AST_DATA_STRING) or (x > AST_DATA_UNDEFINED) or (y > AST_DATA_UNDEFINED)
+            rv = -1
+          else
+            rv = AST_DATA_BOOL
+          endif
+        endif
+
+      elif childrenCnt is 1
+        x = AST_GetDataType(children[0])
+
+        if opcode is AST_OPCODE_NEG
+          rv = x
+
+        elif opcode is AST_OPCODE_BOOL_NOT
+          rv = AST_DATA_BOOL
+        endif
+      endif
+
+      # Cache result for further use.
+      # TODO: Review it.
+      # node._cachedAstDataType = rv
+    endif
+
+    #print 'Detected ast type [', rv, '] at node #' + str(node.id)
+
+    if typeof(rv) isnt 'integer'
+      die('error: unset AST data type at AST_GetDataType() at node #' + str(node.id))
+    endif
+  endif
+endfunction
+
+function AST_TypeCast(node, dstDataType) -> rv
+  global AST_OPCODE_TYPE_CAST
+  global AST_DATA_STRING
+  global AST_DATA_OBJECT
+
+  #print 'AST_TypeCast', typeof(node), dstDataType
+
+  rv = node
+
+  if node.opcode is AST_OPCODE_TYPE_CAST
+    # Avoid nested convert(convert(...))
+    node.astDataType = dstDataType
+
+  else
+    srcDataType = AST_GetDataType(node)
+
+    if srcDataType is dstDataType
+      # Nothing to do.
+
+    elif (srcDataType is AST_DATA_STRING) and (dstDataType is -1)
+      # String -> Variant : do nothing.
+
+    elif (dstDataType is AST_DATA_STRING) and (srcDataType is -1)
+      # Variant -> String : do nothing.
+
+    elif (srcDataType is AST_DATA_OBJECT) and (dstDataType is -1)
+      # Object -> Variant : do nothing.
+
+    else
+      # Types mismatch - wrap into type cast node.
+      #print '[ ASTUtils ] Type cast node #' + str(node.id), ' from', srcDataType, 'to', dstDataType
+
+      rv = {
+        'id': AST_GetNextId(),
+        'opcode': AST_OPCODE_TYPE_CAST,
+        'astDataType': dstDataType,
+        'childrenCnt': 1,
+        'children': [node]
+       }
+    endif
+  endif
+endfunction
+
+function AST_GetTopNodeInBlock(node) -> rv
+  global AST_OPCODE_BLOCK
+  rv = node
+  while rv.parent.opcode isnt AST_OPCODE_BLOCK
+    rv = rv.parent
+  endwhile
+endfunction
+
+function AST_GetParentBlock(node) -> rv
+  rv = AST_GetTopNodeInBlock(node).parent
 endfunction

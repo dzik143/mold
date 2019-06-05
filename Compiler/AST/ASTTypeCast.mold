@@ -1,0 +1,161 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+import 'AST/AST.mold'
+import 'AST/ASTUtils.mold'
+
+class ASTTypeCast
+  method constructor(app)
+    this.app = app
+  endmethod
+
+  method _debug(msg)
+    global DEBUG_AST_OPTIMIZER
+    if DEBUG_AST_OPTIMIZER is true
+      print '[ ASTTypeCast ]', msg
+    endif
+  endmethod
+
+  method _processNode(node)
+    global AST_OPCODE_PROGRAM
+    global AST_OPCODE_BLOCK
+    global AST_OPCODE_VARIABLE
+    global AST_OPCODE_DECLARE_OR_ASSIGN
+    global AST_OPCODE_CALL
+    global AST_OPCODE_IF
+    global AST_OPCODE_WHILE
+    global AST_OPCODE_FOR_VALUES_RANGE
+    global AST_OPCODE_INVOKE_METHOD
+    global AST_OPCODE_REFERENCE
+    global AST_OPCODE_FUNCTION
+    global AST_OPCODE_CLASS
+    global AST_OPCODE_CLASS_METHOD
+    global AST_OPCODE_NOP
+    global AST_OPCODE_SWITCH
+    global AST_OPCODE_TYPE_CAST
+    global AST_OPCODE_COMPARE_EQ
+    global AST_OPCODE_COMPARE_LE
+    global AST_OPCODE_BOOL_NOT
+    global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
+    global AST_OPCODE_CALL_NEW
+    global AST_DATA_BOOL
+    global SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_VAR_RETVAL
+    global AST_OPCODE_ADD, AST_OPCODE_MUL, AST_OPCODE_SUB, AST_OPCODE_DIV, AST_OPCODE_IDIV
+    global AST_DATA_DOUBLE, AST_DATA_INTEGER
+
+    opcode = node.opcode
+
+    if opcode isnt AST_OPCODE_TYPE_CAST
+      value       = node.value
+      childrenCnt = node.childrenCnt
+      children    = node.children
+
+      # Process child nodes recursively.
+      for idx in 0 .. childrenCnt
+        this._processNode(children[idx])
+      endfor
+
+      # Process current node.
+      if opcode is AST_OPCODE_DECLARE_OR_ASSIGN
+        # x = y
+        x = children[0]
+        y = children[1]
+
+        if x.opcode is AST_OPCODE_VARIABLE
+          # x = y
+          # TODO: Review it?
+          astDataTypeLeft  = AST_GetDataType(x)
+          astDataTypeRight = AST_GetDataType(y)
+
+          if astDataTypeLeft isnt astDataTypeRight
+            children[1] = AST_TypeCast(y, astDataTypeLeft)
+          endif
+
+        elif x.opcode is AST_OPCODE_REFERENCE
+          # x[i] = y
+          # TODO: Handle non-variant array items.
+          children[1] = AST_TypeCast(y, -1)
+        endif
+
+      elif (opcode is AST_OPCODE_ADD) or (opcode is AST_OPCODE_MUL) or (opcode is AST_OPCODE_SUB) or (opcode is AST_OPCODE_DIV) or (opcode is AST_OPCODE_IDIV) or ((opcode >= AST_OPCODE_COMPARE_EQ) and (opcode <= AST_OPCODE_COMPARE_LE))
+        x = children[0]
+        y = children[1]
+        xType = AST_GetDataType(x)
+        yType = AST_GetDataType(y)
+
+        if xType isnt yType
+          this._debug('Type mismatch at arithmetic expression node #' + str(node.id) + ' (' + str(xType) + ' vs ' + str(yType) + ')')
+
+          # Type mismatch in binary arithmetic or compare: x o y
+          if (xType is AST_DATA_DOUBLE) and (yType is AST_DATA_INTEGER)
+            dstType = AST_DATA_DOUBLE
+
+          elif (xType is AST_DATA_INTEGER) and (yType is AST_DATA_DOUBLE)
+            dstType = AST_DATA_DOUBLE
+          else
+            dstType = -1
+          endif
+
+          children[0] = AST_TypeCast(x, dstType)
+          children[1] = AST_TypeCast(y, dstType)
+        endif
+
+      elif (opcode is AST_OPCODE_BOOL_AND) or (opcode is AST_OPCODE_BOOL_OR)
+        # TODO: Review it.
+        children[0] = AST_TypeCast(children[0], AST_DATA_BOOL)
+        children[1] = AST_TypeCast(children[1], AST_DATA_BOOL)
+
+      elif opcode is AST_OPCODE_REFERENCE
+        # TODO: Handle native machine indexes.
+        children[1] = AST_TypeCast(children[1], -1)
+
+      elif opcode is AST_OPCODE_FOR_VALUES_RANGE
+        # TODO: Handle non-integer counter?
+        children[1] = AST_TypeCast(children[1], AST_DATA_INTEGER) # idxBegin
+        children[2] = AST_TypeCast(children[2], AST_DATA_INTEGER) # idxEnd
+        children[3] = AST_TypeCast(children[3], AST_DATA_INTEGER) # idxStep
+
+      elif opcode is AST_OPCODE_SWITCH
+        # TODO: Handle non-integer switch?
+        # switch expr
+        children[0] = AST_TypeCast(children[0], AST_DATA_INTEGER)
+
+      elif (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_INVOKE_METHOD) or (opcode is AST_OPCODE_CALL_NEW)
+        if node.value isnt 'global'
+          for idx in 0 .. childrenCnt
+            # Adjust argument type.
+            # TODO: Handle non-variant params.
+            children[idx] = AST_TypeCast(children[idx], -1)
+          endfor
+        endif
+
+      else
+        # Always cast compare result to machine type.
+        # TODO: Optimize it.
+        for idx in 0 .. childrenCnt
+          childNode   = children[idx]
+          childOpcode = childNode.opcode
+
+          if (childOpcode >= AST_OPCODE_COMPARE_EQ) and (childOpcode <= AST_OPCODE_BOOL_NOT)
+            children[idx] = AST_TypeCast(childNode, AST_DATA_BOOL)
+          endif
+        endfor
+      endif
+    endif
+  endmethod
+
+  method processNode(node)
+    this._processNode(node)
+  endmethod
+endclass

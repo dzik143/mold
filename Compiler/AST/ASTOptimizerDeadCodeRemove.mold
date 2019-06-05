@@ -36,10 +36,39 @@ class ASTOptimizerDeadCodeRemove
   endmethod
 
   method _moveNode(dst, src)
+    global AST_OPCODE_NOP
+    # TODO: Optimize it?
     this._debug('Replacing node #' + str(dst.id) + ' by #' + str(src.id))
+    dst.id          = src.id
     dst.opcode      = src.opcode
     dst.children    = src.children
     dst.childrenCnt = src.childrenCnt
+  endmethod
+
+  method _processChildNodes(symbolTable, node)
+    global AST_OPCODE_NOP
+
+    childrenCnt = node.childrenCnt
+    children    = node.children
+
+    newChildren    = []
+    newChildrenCnt = 0
+
+    for idx in 0 .. childrenCnt
+      newNode = this._processNode(symbolTable, children[idx])
+      if newNode isnt children[idx]
+        # Child was just replaced by another one.
+        this._moveNode(children[idx], newNode)
+      endif
+
+      if newNode.opcode isnt AST_OPCODE_NOP
+        newChildren[newChildrenCnt] = newNode
+        newChildrenCnt = newChildrenCnt + 1
+      endif
+    endfor
+
+    node.children    = newChildren
+    node.childrenCnt = newChildrenCnt
   endmethod
 
   method _processNode(symbolTable, node) -> rv
@@ -62,7 +91,8 @@ class ASTOptimizerDeadCodeRemove
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
     global AST_OPCODE_REFERENCE
     global AST_OPCODE_FUNCTION
-    global SYMBOL_KIND_CONST
+    global AST_OPCODE_TYPE_CAST
+    global SYMBOL_KIND_CONST, SYMBOL_KIND_VAR_RETVAL
 
     # TODO: Use should/assert/etc when ready.
     if typeof(symbolTable) is 'undefined'
@@ -70,32 +100,53 @@ class ASTOptimizerDeadCodeRemove
     endif
 
     if typeof(node) is 'undefined'
-      die('error: unset node table at ASTOptimizerDeadCodeRemove::_processNode()')
+      die('error: unset node at ASTOptimizerDeadCodeRemove::_processNode()')
     endif
 
+    opcode = node.opcode
+
+    # Enter scope if needed.
+    if opcode is AST_OPCODE_BLOCK
+      symbolTable = node.symbolTable
+    endif
+
+    # Process child nodes recursively.
+    this._processChildNodes(symbolTable, node)
+
     opcode      = node.opcode
-    value       = node.value
     childrenCnt = node.childrenCnt
     children    = node.children
     x           = children[0]
-    rv          = node
-    removeNode  = false
 
-    if (opcode is AST_OPCODE_FOR_VALUES_RANGE) and AST_IsEmpty(children[4])
+    value      = node.value
+    rv         = node
+    removeNode = false
+
+    #
+    # Process current one node.
+    #
+
+    if (opcode is AST_OPCODE_FOR_VALUES_RANGE) and (AST_IsEmpty(children[4]) is true)
       # empty for
+      this._debug('Empty for loop at node #' + str(node.id))
       removeNode = true
 
     elif opcode is AST_OPCODE_WHILE
-      if AST_IsEmpty(children[1])
+      if AST_IsEmpty(children[1]) is true
         # empty while
+        this._debug('Empty while loop at node #' + str(node.id))
         removeNode = true
 
-      elif AST_IsImmWithValue(children[0], false)
+      elif AST_IsImmWithValue(children[0], false) is true
         # while false - never executed
+        this._debug('While false {} at node #' + str(node.id))
         removeNode = true
       endif
 
     elif opcode is AST_OPCODE_IF
+      childrenCnt = node.childrenCnt
+      children    = node.children
+
       nodeCond = children[0]
       nodeBody = children[1]
       nodeElse = children[2]
@@ -105,19 +156,19 @@ class ASTOptimizerDeadCodeRemove
       #
 
       if childrenCnt is 3
-        if AST_IsEmpty(nodeElse)
+        if AST_IsEmpty(nodeElse) is true
           # if cond {...} else {} - empty else branch.
           this._debug('Remove empty else node #' + str(nodeElse.id))
           childrenCnt      = 2
           node.childrenCnt = 2
 
-          if AST_IsEmpty(nodeBody)
+          if AST_IsEmpty(nodeBody) is true
             # if cond {} else {} - both branches empty.
             this._debug('Remove empty if body node #' + str(nodeBody.id))
             removeNode = true
           endif
 
-        elif AST_IsEmpty(nodeBody)
+        elif AST_IsEmpty(nodeBody) is true
           # if cond {} else {...} - empty body, but else exists.
           # Invert condition.
           this._debug('Invert condition at if node #' + str(node.id))
@@ -129,8 +180,9 @@ class ASTOptimizerDeadCodeRemove
           childrenCnt = 2
         endif
 
-      elif AST_IsEmpty(nodeBody)
+      elif AST_IsEmpty(nodeBody) is true
         # if cond {}
+        this._debug('Empty if at node #' + str(node.id))
         removeNode = true
       endif
 
@@ -141,27 +193,23 @@ class ASTOptimizerDeadCodeRemove
       if removeNode is true
         # Nothing to do - node is already marked to remove.
 
-      elif AST_IsImmWithValue(nodeCond, true)
+      elif AST_IsImmWithValue(nodeCond, true) is true
         # if true {...}            - always true
         # if true {...} else {...} - always true
+        this._debug('if true {...} at node #' + str(node.id))
         rv = nodeBody
 
-      elif AST_IsImmWithValue(nodeCond, false)
+      elif AST_IsImmWithValue(nodeCond, false) is true
         if childrenCnt is 3
           # if false {...} else {...} - always else branch.
+          this._debug('if false {...} else {...} at node #' + str(node.id))
           rv = nodeElse
         else
           # if false {...} - always false, nothing to do.
+          this._debug('if false {...} at node #' + str(node.id))
           removeNode = true
         endif
-
-      elif (children is 3) and AST_IsEmpty(nodeBody)
-        # if cond {} else {...} - empty body, invert condition.
-        removeNode = true
       endif
-
-    elif opcode is AST_OPCODE_BLOCK
-      symbolTable = node.symbolTable
 
     elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
       if x.opcode is AST_OPCODE_VARIABLE
@@ -169,8 +217,20 @@ class ASTOptimizerDeadCodeRemove
         symbolInfo = symbolTable.lookup(x.value)
         if symbolInfo.readHits is 0
           # Assign to unused variable.
-          removeNode = true
-          #symbolTable.decreaseWriteHits(x.value)
+          rval = children[1]
+
+          if AST_HasSideEffects(rval) is true
+            # Extra side effects on rval. We can't remove whole statement.
+            # x = y -> y
+            node.hasSideEffects = true
+            # TODO
+            # rv = rval
+
+          else
+            this._debug('Useless assign at node #' + str(node.id) + ' (' + x.value + ')')
+            removeNode = true
+            symbolTable.decreaseWriteHits(x.value)
+          endif
         endif
       endif
 
@@ -179,24 +239,27 @@ class ASTOptimizerDeadCodeRemove
       if symbolInfo.readHits is 0
         # Unused function.
         removeNode = true
+        symbolTable.global.remove(node.name)
       endif
+
+    elif (opcode is AST_OPCODE_TYPE_CAST) and (x.opcode is AST_OPCODE_TYPE_CAST)
+      # Nested type cast: convert(convert(...))
+      this._debug('Reduced nested type cast at node #' + str(node.id))
+      node.children[0] = x.children[0]
     endif
 
     if removeNode is true
       this._removeNode(node)
 
-    else
-      for idx in 0 .. node.childrenCnt
-        newNode = this._processNode(symbolTable, children[idx])
-        if newNode isnt children[idx]
-          this._debug('Replacing node #' + str(children[idx].id) + ' by node #' + str(newNode.id))
-          children[idx] = newNode
-        endif
-      endfor
+    elif node.childrenCnt isnt len(node.children)
+      # TODO: Review it?
+      # Process child nodes recursively.
+      this._processChildNodes(symbolTable, node)
+    endif
 
-      #if node.opcode is AST_OPCODE_BLOCK
-      #  symbolTable.vacuum()
-      #endif
+    # Clean up symbol table if needed.
+    if opcode is AST_OPCODE_BLOCK
+      symbolTable.removeUnusedSymbols()
     endif
   endmethod
 
