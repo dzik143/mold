@@ -17,8 +17,7 @@ import 'AST/ASTUtils.mold'
 
 class ASTEvaluator
   method constructor(app)
-    this.app    = app
-    this.values = {}
+    this.app = app
   endmethod
 
   method _debug(msg)
@@ -28,25 +27,20 @@ class ASTEvaluator
     endif
   endmethod
 
-  method _assignValue(values, lval, rval)
+  method _assignValue(valuesMap, lval, rval)
     name     = lval.value
-    oldValue = values[name]
+    oldValue = valuesMap[name]
     newValue = rval
 
-    values[name]     = newValue
+    valuesMap[name]  = newValue
     lval.storedValue = newValue
-
-    # TODO: Remove it when map iteration will be ready.
-    if typeof(oldValue) is 'undefined'
-      values._index[len(values._index)] = name
-    endif
   endmethod
 
-  method _getValue(values, name) -> rv
-    rv = values[name]
-    while (typeof(rv) is 'undefined') and (typeof(values.parent) isnt 'undefined')
-      values = values.parent
-      rv     = values[name]
+  method _getValue(valuesMap, name) -> rv
+    rv = valuesMap[name]
+    while (typeof(rv) is 'undefined') and (typeof(valuesMap.parent) isnt 'undefined')
+      valuesMap = valuesMap.parent
+      rv        = valuesMap[name]
     endwhile
   endmethod
 
@@ -77,56 +71,47 @@ class ASTEvaluator
     endif
   endmethod
 
-  method _processConditionalNode(values, node)
-    newValues     = {'_index': [], 'parent': values}
+  method _processConditionalNode(valuesMap, node)
+    newValuesMap  = {'__parent': valuesMap}
     alreadyMerged = {}
 
-    this._processNode(newValues, node)
+    this._processNode(newValuesMap, node)
 
-    for idx in 0 .. len(newValues._index)
-      varId    = newValues._index[idx]
-      oldValue = this._getValue(values, varId)
-      newValue = newValues[varId]
-
-      if typeof(values[varId]) is 'undefined'
-        values._index[len(values._index)] = varId
+    for keys varId in newValuesMap
+      # TODO: Remove this hack:
+      if varId isnt '__parent'
+        oldValue         = this._getValue(valuesMap, varId)
+        newValue         = newValuesMap[varId]
+        valuesMap[varId] = this._mergeValues(oldValue, newValue)
       endif
-
-      values[varId] = this._mergeValues(oldValue, newValue)
     endfor
   endmethod
 
-  method _processTwoAlternativeNodes(values, node1, node2)
-    newValues1 = {'_index': [], 'parent': values}
-    newValues2 = {'_index': [], 'parent': values}
+  method _processTwoAlternativeNodes(valuesMap, node1, node2)
+    newValuesMap1 = {'__parent': valuesMap}
+    newValuesMap2 = {'__parent': valuesMap}
 
-    this._processNode(newValues1, node1)
-    this._processNode(newValues2, node2)
+    this._processNode(newValuesMap1, node1)
+    this._processNode(newValuesMap2, node2)
 
-    for idx in 0 .. len(newValues1._index)
-      varId    = newValues1._index[idx]
-      oldValue = this._getValue(values, varId)
-      value1   = newValues1[varId]
-      value2   = newValues2[varId]
-
-      if typeof(values[varId]) is 'undefined'
-        values._index[len(values._index)] = varId
+    for keys varId in newValuesMap1
+      # TODO: Remove this hack.
+      if varId isnt '__parent'
+        oldValue         = this._getValue(valuesMap, varId)
+        value1           = newValuesMap1[varId]
+        value2           = newValuesMap2[varId]
+        valuesMap[varId] = this._mergeValues(value1, value2)
       endif
-
-      values[varId] = this._mergeValues(value1, value2)
     endfor
 
-    for idx in 0 .. len(newValues2._index)
-      varId    = newValues2._index[idx]
-      oldValue = this._getValue(values, varId)
-      value1   = newValues1[varId]
-      value2   = newValues2[varId]
-
-      if typeof(values[varId]) is 'undefined'
-        values._index[len(values._index)] = varId
+    for keys varId in newValuesMap2
+      # TODO: Remove this hack.
+      if varId isnt '__parent'
+        oldValue         = this._getValue(valuesMap, varId)
+        value1           = newValuesMap1[varId]
+        value2           = newValuesMap2[varId]
+        valuesMap[varId] = this._mergeValues(value1, value2)
       endif
-
-      values[varId] = this._mergeValues(value1, value2)
     endfor
   endmethod
 
@@ -145,7 +130,7 @@ class ASTEvaluator
     endif
   endmethod
 
-  method _processNode(values, node)
+  method _processNode(valuesMap, node)
     global AST_OPCODE_PROGRAM
     global AST_OPCODE_FUNCTION
     global AST_OPCODE_CLASS_METHOD
@@ -190,7 +175,7 @@ class ASTEvaluator
         node.storedValue = node
 
       else
-        node.storedValue = this._getValue(values, node.value)
+        node.storedValue = this._getValue(valuesMap, node.value)
         # print "GET VALUE at node #" + str(node.id), node.value, this._getArrayOfValueNodes(node)
       endif
 
@@ -198,7 +183,7 @@ class ASTEvaluator
       lval = children[0]
       rval = children[1]
 
-      this._processNode(values, rval)
+      this._processNode(valuesMap, rval)
 
       if rval.opcode is AST_OPCODE_INVOKE_METHOD
         # x = obj.foo()
@@ -238,7 +223,7 @@ class ASTEvaluator
       endif
 
       if lval.opcode is AST_OPCODE_VARIABLE
-        this._assignValue(values, lval, rval)
+        this._assignValue(valuesMap, lval, rval)
 
       elif lval.opcode is AST_OPCODE_REFERENCE
         # TODO: Review it.
@@ -250,17 +235,17 @@ class ASTEvaluator
           die('error: array or map expected')
         endif
 
-        this._assignValue(values, lval, lval)
-        this._processNode(values, lval)
+        this._assignValue(valuesMap, lval, lval)
+        this._processNode(valuesMap, lval)
       endif
 
     elif opcode is AST_OPCODE_IF
-      this._processNode(values, children[0])
+      this._processNode(valuesMap, children[0])
 
       if childrenCnt is 2
-        this._processConditionalNode(values, children[1])
+        this._processConditionalNode(valuesMap, children[1])
       else
-        this._processTwoAlternativeNodes(values, children[1], children[2])
+        this._processTwoAlternativeNodes(valuesMap, children[1], children[2])
       endif
 
     elif opcode is AST_OPCODE_FOR_VALUES_RANGE
@@ -269,43 +254,41 @@ class ASTEvaluator
       iterBeginValue = children[1]
       body           = children[4]
 
-      this._assignValue(values, iter, iter)
+      this._assignValue(valuesMap, iter, iter)
       iter.storedValue = [iterBeginValue, iter]
 
       # First loop rotate.
-      this._processConditionalNode(values, body)
+      this._processConditionalNode(valuesMap, body)
 
       # N-th loop rotate.
-      this._processConditionalNode(values, body)
+      this._processConditionalNode(valuesMap, body)
 
     elif opcode is AST_OPCODE_FOR_VALUES
       # for values v in box
       body = children[2]
       # First loop rotate.
-      this._processConditionalNode(values, body)
+      this._processConditionalNode(valuesMap, body)
       # N-th loop rotate.
-      this._processConditionalNode(values, body)
+      this._processConditionalNode(valuesMap, body)
 
     elif opcode is AST_OPCODE_WHILE
       cond = children[0]
       body = children[1]
 
       # First loop rotate.
-      this._processNode(values, cond)
-      this._processConditionalNode(values, body)
+      this._processNode(valuesMap, cond)
+      this._processConditionalNode(valuesMap, body)
 
       # N-th loop rotate.
-      this._processConditionalNode(values, cond)
-      this._processConditionalNode(values, body)
+      this._processConditionalNode(valuesMap, cond)
+      this._processConditionalNode(valuesMap, body)
 
     elif (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_INVOKE_METHOD)
       # foo(a, b, c, ...)
       # obj.foo(a,b, c, ...)
       # Parameter may be changed inside call.
       # TODO: Track real in/out parameters intent.
-      for idx in 0 .. childrenCnt
-        childNode = children[idx]
-
+      for values childNode in children #idx in 0 .. childrenCnt
         if childNode.opcode is AST_OPCODE_VARIABLE
           symbolInfo = childNode.symbolInfo
 
@@ -317,28 +300,28 @@ class ASTEvaluator
             if (typeof(astType) is 'undefined') or (astType is -1) or (astType is AST_DATA_OBJECT) or (astType is AST_DATA_MAP) or (astType is AST_DATA_ARRAY)
               # Unknown or box like variable is passed as call parameter.
               # We assume that it may be changed inside function.
-              this._assignValue(values, childNode, childNode)
+              this._assignValue(valuesMap, childNode, childNode)
             endif
           endif
         endif
 
-        this._processNode(values, childNode)
+        this._processNode(valuesMap, childNode)
       endfor
 
     else
       if (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
-        values = {'_index': []}
+        valuesMap = {}
       endif
 
       # Process children one-by-one recursively.
-      for idx in 0 .. childrenCnt
-        this._processNode(values, children[idx])
+      for values childNode in children
+        this._processNode(valuesMap, childNode)
       endfor
     endif
   endmethod
 
   method processNode(node)
-    values = {'_index': []}
-    this._processNode(values, node)
+    valuesMap = {}
+    this._processNode(valuesMap, node)
   endmethod
 endclass
