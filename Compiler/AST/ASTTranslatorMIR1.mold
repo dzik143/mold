@@ -590,13 +590,13 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.emitLabel(labelForEnd)
   endmethod
 
-  method _executeNodeForValues(valueIterator, box, bodyAst)
+  method _executeNodeForEach(iteratorKey, iteratorValue, box, bodyAst)
     labelForBegin = this.symbolTable.createLabel()
     labelForEnd   = this.symbolTable.createLabel()
 
     this.emitComment('')
-    this.emitComment('---------------------')
-    this.emitComment('BEGIN: for values ' + valueIterator)
+    this.emitComment('-----------------------------')
+    this.emitComment('BEGIN: for keys ' + str(iteratorKey) + ' values ' + str(iteratorValue))
     this.emitComment('')
 
     # Avoid direct exeution of loop body.
@@ -610,17 +610,25 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     this.emitLabel(labelForEnd)
 
+    # TODO: Clean up this mess.
+    if iteratorKey is -1
+      iteratorKey = '__TrashBin'
+    endif
+
+    if iteratorValue is -1
+      iteratorValue = '__TrashBin'
+    endif
+
     # Emit call to loop handler.
-    #this._emitOneItem(['for_values', labelForBegin, box, valueIterator])
-    params = [box, valueIterator, valueIterator, labelForBegin]
+    params = [box, iteratorKey, iteratorValue, labelForBegin]
     # TODO: Use null
     x = []
     rv = x[0]
     this._emitOneItem(['call', rv, '__MOLD_ForDriver_Generic', params])
 
     this.emitComment('')
-    this.emitComment('END: for values ' + valueIterator)
-    this.emitComment('---------------------')
+    this.emitComment('END: for keys ' + str(iteratorKey) + ' values ' + str(iteratorValue))
+    this.emitComment('-----------------------------')
     this.emitComment('')
   endmethod
 

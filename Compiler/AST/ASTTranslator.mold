@@ -945,13 +945,39 @@ class ASTTranslator
 
     elif opcode is AST_OPCODE_FOR_VALUES
       # for values v in box
-      valueIterator = children[0]['value']
+      iteratorValue = children[0]['value']
       box           = this._evaluateNode(children[1])
       loopBodyNode  = children[2]
 
       # Enter loop scope.
+      # TODO: Use null for unused iterator?
       this._enterScope(loopBodyNode)
-      this._executeNodeForValues(valueIterator, box, loopBodyNode)
+      this._executeNodeForEach(-1, iteratorValue, box, loopBodyNode)
+      this._leaveScope()
+
+    elif opcode is AST_OPCODE_FOR_KEYS
+      # for values v in box
+      iteratorKey  = children[0]['value']
+      box          = this._evaluateNode(children[1])
+      loopBodyNode = children[2]
+
+      # Enter loop scope.
+      # TODO: Use null for unused iterator?
+      this._enterScope(loopBodyNode)
+      this._executeNodeForEach(iteratorKey, -1, box, loopBodyNode)
+      this._leaveScope()
+
+    elif opcode is AST_OPCODE_FOR_KEYS_VALUES
+      # for keys k values v in box
+      iteratorKey   = children[0]['value']
+      iteratorValue = children[1]['value']
+      box           = this._evaluateNode(children[2])
+      loopBodyNode  = children[3]
+
+      # Enter loop scope.
+      # TODO: Use null for unused iterator?
+      this._enterScope(loopBodyNode)
+      this._executeNodeForEach(iteratorKey, iteratorValue, box, loopBodyNode)
       this._leaveScope()
 
     elif opcode is AST_OPCODE_WHILE

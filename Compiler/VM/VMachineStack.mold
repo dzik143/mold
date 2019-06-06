@@ -68,7 +68,7 @@ class VMachineStack
     global MIR_OPCODE_CONV2STR
     global MIR_OPCODE_GETLEN, MIR_OPCODE_LOAD_ARGC, MIR_OPCODE_LOAD_ARGV
     global MIR_OPCODE_LOAD_MOLD_SOURCE, MIR_OPCODE_MOVE_BACK, MIR_OPCODE_PRINT_ERROR
-    global MIR_OPCODE_FOR_VALUES
+    global MIR_OPCODE_FOR_EACH
     global MIR_OPCODE_INNER_RET
     global argc, argv
 
@@ -342,23 +342,26 @@ class VMachineStack
         __mold_warning(stack.pop())
         stack.push('__mold_warning_retval')
 
-      elif opcode is MIR_OPCODE_FOR_VALUES
-        box      = stack.pop()
-        iterId   = item[1]
-        workerIp = item[2]
+      elif opcode is MIR_OPCODE_FOR_EACH
+        box     = stack.pop()
+        keyId   = item[1]
+        valueId = item[2]
+        bodyIp  = item[3]
 
-        # TODO: Why is it needed here?
-        #this.locals         = locals
-        #this.deepIdx        = deepIdx
-        #this.paramBaseStack = paramBaseStack
-        #this.retValStack    = retValStack
+        # TODO: Optimize id.
+        for keys k values v in box
+          # Update key iterator.
+          if keyId isnt -1
+            locals[keyId] = k
+          endif
 
-        for values v in box
-          # Update iterators.
-          locals[iterId] = v
+          # Update value iterator.
+          if valueId isnt -1
+            locals[valueId] = v
+          endif
 
-          # Call loop body.
-          this._call(workerIp)
+          # Call function body.
+          this._call(bodyIp)
         endfor
 
       else
@@ -390,7 +393,7 @@ class VMachineStack
     global MIR_OPCODE_CREATE_OBJECT, MIR_OPCODE_HALT, MIR_OPCODE_CONV2STR
     global MIR_OPCODE_GETLEN, MIR_OPCODE_MOVE_BACK, MIR_OPCODE_PRINT_ERROR
     global MIR_OPCODE_LOAD_MOLD_SOURCE, MIR_OPCODE_LOAD_ARGC, MIR_OPCODE_LOAD_ARGV
-    global MIR_OPCODE_FOR_VALUES
+    global MIR_OPCODE_FOR_EACH
     global MIR_OPCODE_INNER_RET
 
     codeObj     = this.code
@@ -414,6 +417,7 @@ class VMachineStack
 
       arg1 = str(item[1])
       arg2 = str(item[2])
+      arg3 = str(item[3])
       arg  = arg1
 
       # Emit comments if any.
@@ -604,8 +608,8 @@ class VMachineStack
       elif opcode is MIR_OPCODE_LOAD_ARGV
         txt = 'load.argv'
 
-      elif opcode is MIR_OPCODE_FOR_VALUES
-        txt = 'for.values ' + str(arg1) + ', ' + str(arg2)
+      elif opcode is MIR_OPCODE_FOR_EACH
+        txt = 'for.each ' + str(arg1) + ', ' + str(arg2) + ', ' + str(arg3)
 
       else
         # TODO: Remove unneded assign.

@@ -18,15 +18,13 @@ argv Variant_t VARIANT_UNDEFINED
 NumberOfBytesWritten dd ?
 NumberOfBytesReaded  dd ?
 
-CharacterPeekBuffer db '?', 0
-CrashDetected       db 0
+CrashDetected db 0
 
 MemoryAllocCnt   dq 0
 MemoryFreeCnt    dq 0
 MemoryReallocCnt dq 0
 
 PrintBuffer db 0 dup 32
-
 
 ; Static 'true' and 'false' strings.
 StringTrue              Variant_t VARIANT_STRING, 0, StringTrueBufferHolder
@@ -63,3 +61,6 @@ OneCharacterStringTemp2             Variant_t VARIANT_STRING, 0, OneCharacterStr
 OneCharacterStringTempBufferHolder2 Buffer_t  2, -1, 0, OneCharacterStringTempBufferBytes2
 OneCharacterStringTempBufferBytes2  StringHead_t 1
 OneCharacterStringTempPeek2         db 0, 0
+
+; TODO: Clean up this mess.
+__TrashBin Variant_t ?

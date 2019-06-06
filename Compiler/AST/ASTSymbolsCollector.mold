@@ -523,23 +523,34 @@ class ASTSymbolsCollector
       this._collectSymbolsFromRightNode(symbolTable, idxStepNode)
       this._collectSymbolsFromLeftNode(symbolTable, bodyNode)
 
-    elif opcode is AST_OPCODE_FOR_VALUES
+    elif (opcode is AST_OPCODE_FOR_VALUES) or (opcode is AST_OPCODE_FOR_KEYS) or (opcode is AST_OPCODE_FOR_INDEXES) or (opcode is AST_OPCODE_FOR_KEYS_VALUES)
       # for values v in box
-      iterNode     = children[0]
-      boxNode      = children[1]
-      bodyNode     = children[2]
+      # for keys k in box
+      # for indexes idx in box
 
-      if symbolTable.isset(iterNode.value) is true
-        die('error: "' + iterNode.value + '" is already defined in another context')
-      endif
+      # Two last nodes are box and loop body.
+      iteratorsCnt = childrenCnt - 2
+      boxNode      = children[childrenCnt - 2]
+      bodyNode     = children[childrenCnt - 1]
 
       # TODO: Optimize it.
       bodyNode.symbolTable = symbolTable.enterScopeForLoop()
-      bodyNode.symbolTable.insertLocal(iterNode.value)
-      # TODO: Review it.
-      iterNode.symbolInfo = bodyNode.symbolTable.lookupForReadAndWrite(iterNode.value)
-      boxNode.symbolInfo  = bodyNode.symbolTable.lookupForRead(boxNode.value)
-      iterNode.symbolInfo.usedAsIterator = true
+
+      # Process iterators.
+      for idx in 0 .. iteratorsCnt
+        iterNode = children[idx]
+        if symbolTable.isset(iterNode.value) is true
+          die('error: "' + iterNode.value + '" is already defined in another context')
+        endif
+
+        bodyNode.symbolTable.insertLocal(iterNode.value)
+
+        # TODO: Review it.
+        iterNode.symbolInfo = bodyNode.symbolTable.lookupForReadAndWrite(iterNode.value)
+        iterNode.symbolInfo.usedAsIterator = true
+      endfor
+
+      boxNode.symbolInfo = bodyNode.symbolTable.lookupForRead(boxNode.value)
 
       this._collectSymbolsFromRightNode(symbolTable, boxNode)
       this._collectSymbolsFromLeftNode(symbolTable, bodyNode)

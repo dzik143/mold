@@ -363,7 +363,19 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
     rv = 'if'
 
   elif opcode is AST_OPCODE_FOR_VALUES
-    rv = 'for_values'
+    rv = 'for_v'
+
+  elif opcode is AST_OPCODE_FOR_KEYS
+    rv = 'for_k'
+
+  elif opcode is AST_OPCODE_FOR_INDEXES
+    rv = 'for_i'
+
+  elif opcode is AST_OPCODE_FOR_INDEXES_VALUES
+    rv = 'for_iv'
+
+  elif opcode is AST_OPCODE_FOR_KEYS_VALUES
+    rv = 'for_kv'
 
   else
     # TODO: Handle terminal nodes.

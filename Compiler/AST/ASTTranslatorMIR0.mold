@@ -349,20 +349,32 @@ class ASTTranslatorMIR0 extends ASTTranslator
     code.dropN(2)                 # []
   endmethod
 
-  method _executeNodeForValues(iterName, box, bodyAst)
+  method _executeNodeForEach(iteratorKey, iteratorValue, box, bodyAst)
     symbolTable = this.symbolTable
     code        = this.code
     loopLabelId = code.createLabel()
     endLabelId  = code.createLabel()
+
+    keyId   = -1
+    valueId = -1
 
     # Avoid exeuting loop body directly.
     # TODO: Handle inner functions in better way.
     code.jmp(endLabelId)
 
     # TODO: Review it.
-    iterSymbolInfo    = symbolTable.lookup(iterName)
-    iterId            = code.allocateLocalId()
-    iterSymbolInfo.id = iterId
+    if iteratorKey isnt -1
+      keySymbolInfo    = symbolTable.lookup(iteratorKey)
+      keyId            = code.allocateLocalId()
+      keySymbolInfo.id = keyId
+    endif
+
+    # TODO: Review it.
+    if iteratorValue isnt -1
+      valueSymbolInfo    = symbolTable.lookup(iteratorValue)
+      valueId            = code.allocateLocalId()
+      valueSymbolInfo.id = valueId
+    endif
 
     # Translate loop body as inner function.
     code.emitLabel(loopLabelId)
@@ -370,9 +382,8 @@ class ASTTranslatorMIR0 extends ASTTranslator
       code.innerRet()
     code.emitLabel(endLabelId)
 
-    code.forValues(iterId, code.resolveLabel(loopLabelId))
+    code.forEach(keyId, valueId, code.resolveLabel(loopLabelId))
   endmethod
-
 
   method _executeNodeWhile(condAst, bodyAst)
     code        = this.code
@@ -466,7 +477,6 @@ class ASTTranslatorMIR0 extends ASTTranslator
     this.symbolTable = oldSymbolTable
 
     this._debug('Function body emmited')
-
   endmethod
 
   method _dropRetVal()

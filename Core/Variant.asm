@@ -3185,12 +3185,27 @@ __MOLD_ForDriver_IndexesAndValuesInString:
 ;
 ; rcx - any box container (IN / Variant_t)
 ; rdx - index iterator (OUT / Variant_t)
-; r8  - character iterator (OUT / Variant_t)
+; r8  - value iterator (OUT / Variant_t)
 ; r9  - body loop callback (IN / function address)
 ;
 ;###############################################################################
 
 __MOLD_ForDriver_Generic:
+    ; --------------------------------------
+    ; Redirect unused iterators to trash bin
+    ; --------------------------------------
+
+    lea     rax, [__TrashBin]
+    test    rdx, rdx
+    cmovz   rdx, rax
+
+    test    r8, r8
+    cmovz   rdx, rax
+
+    ; -------------
+    ; Dispatch code
+    ; -------------
+
     mov     eax, [rcx + Variant_t.type]
     cmp     eax, VARIANT_TYPE_MAX
     ja      .errorInvalidType

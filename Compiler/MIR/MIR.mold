@@ -70,7 +70,7 @@ MIR_OPCODE_RETVAL_GUARD = 45
 MIR_OPCODE_INIT_FRAME = 46
 MIR_OPCODE_CONV2STR = 47
 
-MIR_OPCODE_FOR_VALUES = 100
+MIR_OPCODE_FOR_EACH = 100
 
 MIR_OPCODE_GETLEN           = 251
 MIR_OPCODE_LOAD_ARGC        = 252
@@ -577,8 +577,8 @@ class MIRCode
     this.push2(MIR_OPCODE_RETVAL_GUARD, rvName, funcName)
   endmethod
 
-  method forValues(valueIterator, cb)
-    global MIR_OPCODE_FOR_VALUES
-    this.push2(MIR_OPCODE_FOR_VALUES, valueIterator, cb)
+  method forEach(keyId, valueId, cb)
+    global MIR_OPCODE_FOR_EACH
+    this.push3(MIR_OPCODE_FOR_EACH, keyId, valueId, cb)
   endmethod
 endclass
