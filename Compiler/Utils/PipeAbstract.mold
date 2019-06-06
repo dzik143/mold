@@ -67,20 +67,18 @@ class PipeAbstract
   method processOneItem(item)
   endmethod
 
-  method processArrayOfItems(items)
-    itemsCnt = len(items)
-    for idx in 0 .. itemsCnt
-      this.processOneItem(items[idx])
+  method processArrayOfItems(arrayOfItems)
+    for values oneItem in arrayOfItems
+      this.processOneItem(oneItem)
     endfor
   endmethod
 
   method flush()
     buffer       = this.buffer
-    bufferCnt    = len(buffer)
     outputObject = this.outputObject
 
-    for idx in 0 .. bufferCnt
-      outputObject.processOneItem(buffer[idx])
+    for values oneItem in buffer
+      outputObject.processOneItem(oneItem)
     endfor
 
     this.buffer = []
