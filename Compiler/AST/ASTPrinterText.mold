@@ -74,18 +74,15 @@ class ASTPrinterText
     global AST_OPCODE_CLASS
     global AST_OPCODE_CLASS_METHOD
 
-    children    = node.children
-    childrenCnt = node.childrenCnt
-
     if (node.opcode isnt AST_OPCODE_CLASS) and (node.opcode isnt AST_OPCODE_FUNCTION) and (node.opcode isnt AST_OPCODE_CLASS_METHOD)
       prefix = prefix + '  '
     endif
 
-    for idx in 0 .. childrenCnt
-      if children[idx].opcode isnt AST_OPCODE_NOP
-        this._printNode(prefix, children[idx])
+    for values childNode in node.children
+      if childNode.opcode isnt AST_OPCODE_NOP
+        this._printNode(prefix, childNode)
 
-        if (children[idx].opcode isnt AST_OPCODE_BLOCK) and (children[idx].opcode isnt AST_OPCODE_IF) and (node.opcode isnt AST_OPCODE_CLASS)
+        if (childNode.opcode isnt AST_OPCODE_BLOCK) and (childNode.opcode isnt AST_OPCODE_IF) and (node.opcode isnt AST_OPCODE_CLASS)
           print ''
         endif
       endif
@@ -184,9 +181,9 @@ class ASTPrinterText
         # Array is build up dynamically from child nodes - go on.
         __mold_printToStdOutput('[')
         sep = ''
-        for idx in 0 .. childrenCnt
+        for values childNode in children
           __mold_printToStdOutput(sep)
-          this._printNode(prefix, children[idx])
+          this._printNode(prefix, childNode)
           sep = ', '
         endfor
         __mold_printToStdOutput(']')
@@ -209,8 +206,8 @@ class ASTPrinterText
       __mold_printToStdOutput(value)
 
     elif opcode is AST_OPCODE_PROGRAM
-      for idx in 0 .. childrenCnt
-        this._printNode(prefix, children[idx])
+      for values childNode in children
+        this._printNode(prefix, childNode)
       endfor
 
     elif opcode is AST_OPCODE_BLOCK
@@ -258,9 +255,9 @@ class ASTPrinterText
 
       sep = ''
 
-      for idx in 0 .. node.paramsCnt
+      for values oneParam in node.params
         __mold_printToStdOutput(sep)
-        __mold_printToStdOutput(node.params[idx])
+        __mold_printToStdOutput(oneParam)
         sep = ', '
       endfor
 
