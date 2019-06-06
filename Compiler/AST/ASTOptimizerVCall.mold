@@ -78,8 +78,8 @@ class ASTOptimizerVCall
 
     else
       # Process child nodes recursively.
-      for idx in 0 .. childrenCnt
-        this._processNode(children[idx])
+      for values oneChild in children
+        this._processNode(oneChild)
       endfor
     endif
   endmethod
