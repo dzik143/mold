@@ -1186,7 +1186,14 @@ class CodeGeneratorX64
         for symbolIdx in 0 .. len(symbols._index)
           symbol = symbols._index[symbolIdx]
           if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined'))
-            this.variantDestroy(symbol.name)
+            if symbol.usedAsIterator is true
+              # Symbol is used as loop iterator.
+              # It's only dump reference for existing box values or keys.
+              print '  ; Skipped loop iterator', symbol.name
+
+            else
+              this.variantDestroy(symbol.name)
+            endif
           endif
         endfor
 
@@ -1296,7 +1303,13 @@ class CodeGeneratorX64
           if symbol.kind is SYMBOL_KIND_VAR_LOCAL
             if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
               # Local Variant_t variable - init to undefined.
-              print '  mov [' + symbol.name + ' + Variant_t.type], VARIANT_UNDEFINED'
+              if symbol.usedAsIterator is true
+                # Symbol is used as loop iterator.
+                # It's only dump reference for existing box values or keys.
+                print '  ; Skipped loop iterator', symbol.name
+              else
+                print '  mov [' + symbol.name + ' + Variant_t.type], VARIANT_UNDEFINED'
+              endif
             endif
 
           elif symbol.kind is SYMBOL_KIND_VAR_PARAM

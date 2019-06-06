@@ -356,18 +356,18 @@ class ASTTranslatorMIR0 extends ASTTranslator
     endLabelId  = code.createLabel()
 
     # Avoid exeuting loop body directly.
-    # TODO: Handle inner function in better way.
+    # TODO: Handle inner functions in better way.
     code.jmp(endLabelId)
 
     # TODO: Review it.
     iterSymbolInfo    = symbolTable.lookup(iterName)
-    iterId            = code.storeLocal(iterSymbolInfo.id)
+    iterId            = code.allocateLocalId()
     iterSymbolInfo.id = iterId
 
     # Translate loop body as inner function.
     code.emitLabel(loopLabelId)
       this._executeNode(bodyAst)
-      code.ret(0)
+      code.innerRet()
     code.emitLabel(endLabelId)
 
     code.forValues(iterId, code.resolveLabel(loopLabelId))

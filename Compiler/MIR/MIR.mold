@@ -65,9 +65,10 @@ MIR_OPCODE_JMP_IF_FALSE = 41
 
 MIR_OPCODE_CALL = 42
 MIR_OPCODE_RET  = 43
-MIR_OPCODE_RETVAL_GUARD = 44
-MIR_OPCODE_INIT_FRAME = 45
-MIR_OPCODE_CONV2STR = 46
+MIR_OPCODE_INNER_RET = 44
+MIR_OPCODE_RETVAL_GUARD = 45
+MIR_OPCODE_INIT_FRAME = 46
+MIR_OPCODE_CONV2STR = 47
 
 MIR_OPCODE_FOR_VALUES = 100
 
@@ -324,6 +325,12 @@ class MIRCode
     this.push0(MIR_OPCODE_LOAD_INDEX)
   endmethod
 
+  method allocateLocalId() -> newId
+    # TODO: Review it.
+    newId = this.localMax + 1
+    this.localMax = newId
+  endmethod
+
   method storeLocal(id) -> newId
     global MIR_OPCODE_STORE_LOCAL
 
@@ -455,6 +462,11 @@ class MIRCode
   method ret(frameSize)
     global MIR_OPCODE_RET
     this.push1(MIR_OPCODE_RET, frameSize)
+  endmethod
+
+  method innerRet()
+    global MIR_OPCODE_INNER_RET
+    this.push0(MIR_OPCODE_INNER_RET)
   endmethod
 
   method call(proto)

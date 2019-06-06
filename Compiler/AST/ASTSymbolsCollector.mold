@@ -539,6 +539,7 @@ class ASTSymbolsCollector
       # TODO: Review it.
       iterNode.symbolInfo = bodyNode.symbolTable.lookupForReadAndWrite(iterNode.value)
       boxNode.symbolInfo  = bodyNode.symbolTable.lookupForRead(boxNode.value)
+      iterNode.symbolInfo.usedAsIterator = true
 
       this._collectSymbolsFromRightNode(symbolTable, boxNode)
       this._collectSymbolsFromLeftNode(symbolTable, bodyNode)

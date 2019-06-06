@@ -594,8 +594,13 @@ class ASTTranslatorMIR1 extends ASTTranslator
     labelForBegin = this.symbolTable.createLabel()
     labelForEnd   = this.symbolTable.createLabel()
 
-    # Avoid execution direct exeution of loop body.
-    # TODO: Handle inner function in better way.
+    this.emitComment('')
+    this.emitComment('---------------------')
+    this.emitComment('BEGIN: for values ' + valueIterator)
+    this.emitComment('')
+
+    # Avoid direct exeution of loop body.
+    # TODO: Handle inner functions in better way.
     this.emitTargetOnlyOpcode('jmp', labelForEnd)
 
       # Translate loop body as inner function.
@@ -612,6 +617,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
     x = []
     rv = x[0]
     this._emitOneItem(['call', rv, '__MOLD_ForDriver_Generic', params])
+
+    this.emitComment('')
+    this.emitComment('END: for values ' + valueIterator)
+    this.emitComment('---------------------')
+    this.emitComment('')
   endmethod
 
   method _executeNodeWhile(condAst, bodyAst)

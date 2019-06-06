@@ -15,6 +15,16 @@
 import 'MIR/MIR.mold'
 import 'Utils/Stack.mold'
 
+# Clean up this mess.
+# Move into class.
+dataStack = [[]]
+locals    = dataStack[0]
+_heap     = []
+
+deepIdx        = 0
+paramBaseStack = []
+retValStack    = []
+
 class VMachineStackObject
   method constructor(classProto)
     this.classProto = classProto
@@ -27,9 +37,13 @@ class VMachineStack
     this.stack   = new Stack()
 
     # TODO: Optimize it.
-    this.dataStack = [[]]
-    this.locals    = this.dataStack[0]
-    this.heap      = []
+#    this.dataStack = [[]]
+#    this.locals    = this.dataStack[0]
+#    this.heap      = []
+
+#    this.deepIdx        = 0
+#    this.paramBaseStack = []
+#    this.retValStack    = []
   endmethod
 
   method loadCode(code)
@@ -55,23 +69,35 @@ class VMachineStack
     global MIR_OPCODE_GETLEN, MIR_OPCODE_LOAD_ARGC, MIR_OPCODE_LOAD_ARGV
     global MIR_OPCODE_LOAD_MOLD_SOURCE, MIR_OPCODE_MOVE_BACK, MIR_OPCODE_PRINT_ERROR
     global MIR_OPCODE_FOR_VALUES
+    global MIR_OPCODE_INNER_RET
     global argc, argv
 
     # TODO: Optimize it.
-    dataStack = this.dataStack
-    locals    = this.locals
-    heap      = this.heap
+#    dataStack = this.dataStack
+#    locals    = this.locals
+#    heap      = this.heap
     codeObj   = this.code
     code      = codeObj.code
     codeCnt   = codeObj.codeCnt
     stack     = this.stack
 
-    # Dirty hack: push main() return address out of code.
-    stack.push(99999999)
+#    deepIdx        = this.deepIdx
+#    paramBaseStack = this.paramBaseStack
+#    retValStack    = this.retValStack
 
-    deepIdx        = 0
-    paramBaseStack = []
-    retValStack    = []
+    # Clean up this mess.
+    global dataStack
+    global locals
+    global _heap
+    global deepIdx
+    global paramBaseStack
+    global retValStack
+    global dataStack
+    global locals
+
+    # Dirty hack: push return address out of code to know when
+    # whole desired code was executed.
+    stack.push(codeCnt)
 
     while ip < codeCnt
       # Fetch instruction
@@ -158,7 +184,7 @@ class VMachineStack
         stack.push(locals[item[1]])
 
       elif opcode is MIR_OPCODE_LOAD_GLOBAL
-        stack.push(heap[item[1]])
+        stack.push(_heap[item[1]])
 
       elif opcode is MIR_OPCODE_CONV2STR
         stack.push(str(stack.pop()))
@@ -181,7 +207,7 @@ class VMachineStack
         locals[item[1]] = stack.pop()
 
       elif opcode is MIR_OPCODE_STORE_GLOBAL
-        heap[item[1]] = stack.pop()
+        _heap[item[1]] = stack.pop()
 
       elif opcode is MIR_OPCODE_STORE_PARAMN
         paramBase  = paramBaseStack[deepIdx]
@@ -243,6 +269,9 @@ class VMachineStack
         stack.push(retValStack[deepIdx])
         deepIdx = deepIdx - 1
         locals  = dataStack[deepIdx]
+
+      elif opcode is MIR_OPCODE_INNER_RET
+        ip = stack.pop()
 
       elif opcode is MIR_OPCODE_LOAD_RETVAL
         stack.push(retValStack[deepIdx])
@@ -314,18 +343,22 @@ class VMachineStack
         stack.push('__mold_warning_retval')
 
       elif opcode is MIR_OPCODE_FOR_VALUES
-        box    = stack.pop()
-        iterId = item[1]
+        box      = stack.pop()
+        iterId   = item[1]
+        workerIp = item[2]
+
+        # TODO: Why is it needed here?
+        #this.locals         = locals
+        #this.deepIdx        = deepIdx
+        #this.paramBaseStack = paramBaseStack
+        #this.retValStack    = retValStack
 
         for values v in box
           # Update iterators.
           locals[iterId] = v
 
           # Call loop body.
-          this._call(item[2])
-
-          # Drop unused retval
-          stack.eat()
+          this._call(workerIp)
         endfor
 
       else
@@ -358,6 +391,7 @@ class VMachineStack
     global MIR_OPCODE_GETLEN, MIR_OPCODE_MOVE_BACK, MIR_OPCODE_PRINT_ERROR
     global MIR_OPCODE_LOAD_MOLD_SOURCE, MIR_OPCODE_LOAD_ARGC, MIR_OPCODE_LOAD_ARGV
     global MIR_OPCODE_FOR_VALUES
+    global MIR_OPCODE_INNER_RET
 
     codeObj     = this.code
     code        = codeObj.code
@@ -521,6 +555,9 @@ class VMachineStack
 
       elif opcode is MIR_OPCODE_RET
         txt = 'ret ' + arg
+
+      elif opcode is MIR_OPCODE_INNER_RET
+        txt = 'inner.ret'
 
       elif opcode is MIR_OPCODE_DROP
         txt = 'drop'

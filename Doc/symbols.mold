@@ -12,7 +12,7 @@ Wykorzystane:
 #   #        komentarz
 $   $x       wyra¾enie symboliczne
 
-()  foo(1)   nawias
+()  foo(1)   nawias, woˆanie funkcji
 _   _foo     prywatna metoda
 
 =   x = 1    przypisanie
