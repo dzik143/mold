@@ -33,7 +33,7 @@ app._debug('Building symbol table...')
 astSymbolsCollector.buildSymbolTable(ast)
 
 # ------------------------------------------------------------------------------
-/*
+
 # TODO: More generic way to apply selected optimizations.
 app._debug('VCall optimization...')
 app.getAstOptimizerVCall().processNode(ast)
@@ -61,7 +61,7 @@ app.getAstOptimizerCSE().processNode(ast)
 
 app._debug('Type cast...')
 app.getAstTypeCast().processNode(ast)
-*/
+
 
 app._debug('Printing source code...')
 astPrinterText.printNode(ast)
