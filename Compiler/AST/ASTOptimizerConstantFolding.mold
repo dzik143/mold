@@ -226,29 +226,29 @@ class ASTOptimizerConstantFolding
           newParams  = []
           lastWasImm = false
 
-          for idx in 0 .. childrenCnt
+          for values oneChild in children
             # Convert imm to strings.
-            if (children[idx].opcode >= AST_OPCODE_PROGRAM) or (children[idx].opcode is AST_DATA_ARRAY) or (children[idx].opcode is AST_DATA_MAP)
+            if (oneChild.opcode >= AST_OPCODE_PROGRAM) or (oneChild.opcode is AST_DATA_ARRAY) or (oneChild.opcode is AST_DATA_MAP)
               # Stay non-imm params as is.
               lastWasImm = false
-              newParams[len(newParams)] = children[idx]
+              newParams[len(newParams)] = oneChild
 
             else
               # Join string imms.
               if lastWasImm is true
                 # Both previous and current params are strings - concatenate them.
-                newParams[len(newParams) - 1].value = newParams[len(newParams) - 1].value + ' ' + str(children[idx].value)
+                newParams[len(newParams) - 1].value = newParams[len(newParams) - 1].value + ' ' + str(oneChild.value)
 
-              elif children[idx].opcode is AST_DATA_STRING
+              elif oneChild.opcode is AST_DATA_STRING
                 # Current param is string, but previous not.
                 # Push new param to list.
-                newParams[len(newParams)] = children[idx]
+                newParams[len(newParams)] = oneChild
 
               else
                 # Both previous and current params are *NOT* strings.
                 # Convert it to string.
-                this._setToImm(children[idx], str(children[idx].value))
-                newParams[len(newParams)] = children[idx]
+                this._setToImm(oneChild, str(oneChild.value))
+                newParams[len(newParams)] = oneChild
               endif
 
               lastWasImm = true
