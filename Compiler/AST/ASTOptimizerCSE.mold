@@ -86,9 +86,9 @@ class ASTOptimizerCSE
     children    = node.children
     rv          = node
 
-    for idx in 0 .. childrenCnt
+    for values oneChild in children
       # TODO: Remove this hack.
-      children[idx].parent = node
+      oneChild.parent = node
     endfor
 
     if opcode is AST_OPCODE_DECLARE_OR_ASSIGN
@@ -120,9 +120,9 @@ class ASTOptimizerCSE
       # TODO: Enable IF branches.
       # IF branch or function/method.
       # Start new expression table from scratch.
-      for idx in 0 .. childrenCnt
+      for values oneChild in children
         mapOfExpressions = {}
-        this._processNode(children[idx], mapOfExpressions, symbolTable)
+        this._processNode(oneChild, mapOfExpressions, symbolTable)
       endfor
 
     elif opcode is AST_OPCODE_WHILE
@@ -133,20 +133,21 @@ class ASTOptimizerCSE
       #  values = values['parent']
       #  rv = values[name]
       # endwhile
-      for idx in 0 .. childrenCnt
+      for values oneChild in children
         mapOfExpressions = {}
-        this._processNode(children[idx], mapOfExpressions, symbolTable)
+        this._processNode(oneChild, mapOfExpressions, symbolTable)
       endfor
 
     elif (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
       # IF branch or function/method.
       # Start new expression table from scratch.
       mapOfExpressions = {}
-      for idx in 0 .. childrenCnt
-        this._processNode(children[idx], mapOfExpressions, symbolTable)
+      for values oneChild in children
+        this._processNode(oneChild, mapOfExpressions, symbolTable)
       endfor
 
     elif (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_INVOKE_METHOD)
+      # TODO: Use for values oneChild indexes childIdx loop.
       for idx in 0 .. childrenCnt
         AST_Hash(children[idx])
         newNode = this._processNode(children[idx], mapOfExpressions, symbolTable)
@@ -262,8 +263,8 @@ class ASTOptimizerCSE
             newCommonBlockChildren = []
             isCseEmited = false
 
-            for idx in 0 .. commonBlock.childrenCnt
-              if (isCseEmited is false) and ((commonBlock.children[idx] is lastInstructionNode1) or (commonBlock.children[idx] is lastInstructionNode2))
+            for values oneChild in commonBlock.children
+              if (isCseEmited is false) and ((oneChild is lastInstructionNode1) or (oneChild is lastInstructionNode2))
                 # Push __csexx = ... before first usage.
                 isCseEmited = true
                 newCommonBlockChildren[len(newCommonBlockChildren)] = {
@@ -274,7 +275,7 @@ class ASTOptimizerCSE
                 }
               endif
 
-              newCommonBlockChildren[len(newCommonBlockChildren)] = commonBlock.children[idx]
+              newCommonBlockChildren[len(newCommonBlockChildren)] = oneChild
             endfor
 
             if isCseEmited is false
@@ -298,6 +299,7 @@ class ASTOptimizerCSE
       endif
 
       if goOn is true
+        # TODO: Use for values oneChild indexes childIdx loop.
         for idx in 0 .. childrenCnt
           newNode = this._processNode(children[idx], mapOfExpressions, symbolTable)
           if newNode isnt children[idx]
