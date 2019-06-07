@@ -1189,25 +1189,23 @@ class CodeGeneratorX64
         # TODO: Clean up this mess.
         symbols = currentSymbols
 
-        for symbolIdx in 0 .. len(symbols._index)
-          symbol = symbols._index[symbolIdx]
-          if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined'))
-            if symbol.usedAsIterator is true
+        for values oneItem in symbols
+          if (oneItem.kind is SYMBOL_KIND_VAR_LOCAL) and ((oneItem.type is 'variant') or (typeof(oneItem.type) is 'undefined'))
+            if oneItem.usedAsIterator is true
               # Symbol is used as loop iterator.
               # It's only dump reference for existing box values or keys.
-              print '  ; Skipped loop iterator', symbol.name
+              print '  ; Skipped loop iterator', oneItem.name
 
             else
-              this.variantDestroy(symbol.name)
+              this.variantDestroy(oneItem.name)
             endif
           endif
         endfor
 
         if (currentProcName is 'start')
-          for symbolIdx in 0 .. len(symbols._index)
-            symbol = symbols._index[symbolIdx]
-            if (symbol.kind is SYMBOL_KIND_VAR_GLOBAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined'))
-              this.variantDestroy(symbol.name)
+          for values oneItem in symbols
+            if (oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and ((oneItem.type is 'variant') or (typeof(oneItem.type) is 'undefined'))
+              this.variantDestroy(oneItem.name)
             endif
           endfor
         endif
@@ -1230,10 +1228,9 @@ class CodeGeneratorX64
       elif opcode is 'endp'
         print ''
         # TODO: Clean up this mess.
-        for symbolIdx in 0 .. len(symbols._index)
-          symbol = symbols._index[symbolIdx]
-          if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or (symbol.kind is SYMBOL_KIND_VAR_PARAM))
-            print '  restore', symbol.name
+        for values oneItem in symbols
+          if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) or (oneItem.kind is SYMBOL_KIND_VAR_PARAM))
+            print '  restore', oneItem.name
           endif
         endfor
 
@@ -1254,10 +1251,19 @@ class CodeGeneratorX64
         # Calculate frame size.
         currentFrameSize = 0
         paramsPassedCnt  = 0
-        symbolsCnt       = len(symbols._index)
+        symbolsCnt       = len(symbols)
 
+        # TODO: Clean up this mess.
+        # TODO: Use reverse.
+        symbolsIndex = []
+        for values v in symbols
+          symbolsIndex[len(symbolsIndex)] = v
+        endfor
+        symbolsCnt = len(symbolsIndex)
+
+        # TODO: Use reverse when ready.
         for symbolIdx in 0 .. symbolsCnt
-          symbol = symbols._index[symbolsCnt - symbolIdx - 1]
+          symbol = symbolsIndex[symbolsCnt - symbolIdx - 1]
 
           if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) or (symbol.kind is SYMBOL_KIND_VAR_PARAM)
             if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
@@ -1303,24 +1309,22 @@ class CodeGeneratorX64
 
         paramIdx = 0
 
-        for symbolIdx in 0 .. len(symbols._index)
-          symbol = symbols._index[symbolIdx]
-
-          if symbol.kind is SYMBOL_KIND_VAR_LOCAL
-            if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
+        for values oneItem in symbols
+          if oneItem.kind is SYMBOL_KIND_VAR_LOCAL
+            if (oneItem.type is 'variant') or (typeof(oneItem.type) is 'undefined')
               # Local Variant_t variable - init to undefined.
-              if symbol.usedAsIterator is true
+              if oneItem.usedAsIterator is true
                 # Symbol is used as loop iterator.
                 # It's only dump reference for existing box values or keys.
-                print '  ; Skipped loop iterator', symbol.name
+                print '  ; Skipped loop iterator', oneItem.item
               else
-                print '  mov [' + symbol.name + ' + Variant_t.type], VARIANT_UNDEFINED'
+                print '  mov [' + oneItem.name + ' + Variant_t.type], VARIANT_UNDEFINED'
               endif
             endif
 
-          elif symbol.kind is SYMBOL_KIND_VAR_PARAM
+          elif oneItem.kind is SYMBOL_KIND_VAR_PARAM
             # Call parameter - copy to local var.
-            if (symbol.readHits > 0) or (symbol.writeHits > 0)
+            if (oneItem.readHits > 0) or (oneItem.writeHits > 0)
               if paramIdx < 4
                 print '  movdqu xmm0', ', [', regParams[paramIdx], ']'
               else
@@ -1328,14 +1332,14 @@ class CodeGeneratorX64
                 print '  movdqu xmm0', ', [rax]'
               endif
 
-              print '  movdqu [', symbol.name, '], xmm0'
+              print '  movdqu [', oneItem.name, '], xmm0'
 
-              if symbol.duplicateOnFirstWrite is true
-                print '  or [', symbol.name, ' + Variant_t.flags ], VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE'
+              if oneItem.duplicateOnFirstWrite is true
+                print '  or [', oneItem.name, ' + Variant_t.flags ], VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE'
               endif
 
             else
-              print '  ; skipped unused param [', symbol.name, ']'
+              print '  ; skipped unused param [', oneItem.name, ']'
             endif
 
             paramIdx = paramIdx  + 1
@@ -1344,15 +1348,13 @@ class CodeGeneratorX64
 
         if (currentProcName is 'start')
           print ''
-          for symbolIdx in 0 .. len(symbols._index)
-            symbol = symbols._index[symbolIdx]
-
+          for values oneItem in symbols
             # TODO: Better way to exclude external vars.
-            if (symbol.name is 'argv') or (symbol.name is 'argc')
+            if (oneItem.name is 'argv') or (oneItem.name is 'argc')
               # Do nothing.
 
-            elif (symbol.kind is SYMBOL_KIND_VAR_GLOBAL) and ((symbol.type is 'variant') or (typeof(symbol.type) is 'undefined'))
-              print '  mov [' + symbol.name + ' + Variant_t.type], VARIANT_UNDEFINED'
+            elif (oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and ((oneItem.type is 'variant') or (typeof(oneItem.type) is 'undefined'))
+              print '  mov [' + oneItem.name + ' + Variant_t.type], VARIANT_UNDEFINED'
             endif
 
           endfor
@@ -1407,26 +1409,25 @@ class CodeGeneratorX64
 
     globals = codeObj.symbolTable.exportSymbols()
 
-    for globalIdx in 0 .. len(globals._index)
-      symbol = globals._index[globalIdx]
-      if symbol.kind is SYMBOL_KIND_VAR_GLOBAL
-        if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
-          print symbol.name, ' Variant_t 0, 0, 0'
+    for values oneItem in globals
+      if oneItem.kind is SYMBOL_KIND_VAR_GLOBAL
+        if (oneItem.type is 'variant') or (typeof(oneItem.type) is 'undefined')
+          print oneItem.name, ' Variant_t 0, 0, 0'
 
-        elif symbol.type is 'int64'
-          print symbol.name, ' dq 0'
+        elif oneItem.type is 'int64'
+          print oneItem.name, ' dq 0'
 
-        elif symbol.type is 'int32'
-          print symbol.name, ' dd 0'
+        elif oneItem.type is 'int32'
+          print oneItem.name, ' dd 0'
 
-        elif symbol.type is 'float64'
-          print symbol.name, ' dq 0'
+        elif oneItem.type is 'float64'
+          print oneItem.name, ' dq 0'
 
-        elif symbol.type is 'bool32'
-          print symbol.name, ' dd 0'
+        elif oneItem.type is 'bool32'
+          print oneItem.name, ' dd 0'
 
         else
-          die('error: unhandled global type: ' + str(symbol.type))
+          die('error: unhandled global type: ' + str(oneItem.type))
         endif
       endif
     endfor
@@ -1451,8 +1452,7 @@ class CodeGeneratorX64
     for deepIdx in 0 .. 16
       print '; iter', deepIdx
 
-      for globalIdx in 0 .. len(globals._index)
-        symbolInfo = globals._index[globalIdx]
+      for values symbolInfo in globals
         if symbolInfo.kind is SYMBOL_KIND_CONST
           name  = symbolInfo.name
           value = symbolInfo.value
@@ -1466,8 +1466,7 @@ class CodeGeneratorX64
     print '; Jump tables'
     print '; -----------'
 
-    for globalIdx in 0 .. len(globals._index)
-      symbolInfo = globals._index[globalIdx]
+    for values symbolInfo in globals
       if symbolInfo.kind is SYMBOL_KIND_JMP_TABLE
         name         = symbolInfo.name
         labels       = symbolInfo.labels
