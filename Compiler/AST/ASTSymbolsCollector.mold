@@ -441,11 +441,7 @@ class ASTSymbolsCollector
         symbols1 = symbolTable1.exportSymbols()
         symbols2 = symbolTable2.exportSymbols()
 
-        symbolsIndex1 = symbols1._index
-        symbolsIndex2 = symbols2._index
-
-        for idx in 0 .. len(symbolsIndex1)
-          symbolInfo1 = symbolsIndex1[idx]
+        for values symbolInfo1 in symbols1
           symbolInfo2 = symbols2[symbolInfo1.name]
 
           if typeof(symbolInfo2) isnt 'undefined'
