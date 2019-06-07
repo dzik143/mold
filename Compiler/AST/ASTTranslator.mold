@@ -917,9 +917,7 @@ class ASTTranslator
       valueStart = this._evaluateNode(children[1])
       bodyAst    = children[4]
 
-      # TODO: Clean up this mess?
-      oldSymbolTable   = this.symbolTable
-      this.symbolTable = bodyAst.symbolTable
+      this._enterScope(bodyAst)
 
       # Is it really needed?
       astDataType = AST_GetDataType(children[0])
@@ -927,7 +925,7 @@ class ASTTranslator
       this.symbolTable.assignMirType(iteratorName, mirDataType)
 
       this._executeNodeFor(iteratorName, valueStart, valueEnd, valueStep, bodyAst)
-      this.symbolTable = oldSymbolTable
+      this._leaveScope()
 
     elif opcode is AST_OPCODE_FOR_VALUES
       # for values v in box

@@ -569,19 +569,13 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     this.emitLabel(labelForBegin)
 
-      # Enter loop scope.
-      this._enterScope(bodyAst)
-
       # Is it the end?
       # if not (idx < idxEnd) goto end
       this.emitTwoArgsOpcode('jmp_if_ge', labelForEnd, iterName, idxEnd)
 
       # Loop body.
-      childrenCnt = bodyAst.childrenCnt
-      children    = bodyAst.children
-
-      for idx in 0 .. childrenCnt
-        this._executeNode(children[idx])
+      for values oneChild in bodyAst.children
+        this._executeNode(oneChild)
       endfor
 
       # Update iterator value and jmp to loop begin.
@@ -589,9 +583,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
       # goto begin
       this.emitTwoArgsOpcode('add', iterName, iterName, idxStep)
       this.emitTargetOnlyOpcode('jmp', labelForBegin)
-
-      # Leave loop scope.
-      this._leaveScope()
 
     this.emitLabel(labelForEnd)
   endmethod
