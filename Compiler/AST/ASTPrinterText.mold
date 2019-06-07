@@ -222,16 +222,13 @@ class ASTPrinterText
 
       if typeof(symbolTable) isnt 'undefined'
         # Declare complex constants if needed.
-        symbols      = symbolTable.exportSymbols()
-        symbolsIndex = symbols._index
-        symbolsCnt   = len(symbolsIndex)
+        symbols = symbolTable.exportSymbols()
 
-        for idx in 0 .. symbolsCnt
-          symbolInfo = symbolsIndex[idx]
-          if (symbolInfo.kind is SYMBOL_KIND_CONST) and (symbolInfo.readHits > 0)
-            value = symbolInfo.value
+        for values item in symbols
+          if (item.kind is SYMBOL_KIND_CONST) and (item.readHits > 0)
+            value = item.value
             if (typeof(value) is 'array') or (typeof(value) is 'map')
-              print prefix, ' const', symbolInfo.name, '=', value
+              print prefix, ' const', item.name, '=', value
             #else
             #  print prefix, ' ', symbolInfo.name, '=', value
             endif
