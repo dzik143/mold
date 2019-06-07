@@ -51,7 +51,7 @@ class ASTTranslator
   # ----------------------------------------------------------------------------
 
   method _debug(msg)
-    if false
+    if true #false
       print '[ ASTTranslator ]', msg
     endif
   endmethod
@@ -292,29 +292,19 @@ class ASTTranslator
 
     # TODO: Remove it. We temporary merge child symbols to keep all proc vars
     # in one flat frame.
-    symbolsCurrent      = this.symbolTable.symbols
-    symbolsCurrentIndex = symbolsCurrent['_index']
-    symbolsCurrentCnt   = len(symbolsCurrentIndex)
+    symbolsCurrent = this.symbolTable.symbols
+    symbolsChild   = childTable.symbols
 
-    symbolsChild      = childTable.symbols
-    symbolsChildIndex = childTable.symbols['_index']
-    symbolsChildCnt   = len(symbolsChildIndex)
-
-    for idx in 0 .. symbolsChildCnt
-      item = symbolsChildIndex[idx]
-      id   = item.name
+    for values item in symbolsChild
+      id = item.name
 
       if typeof(symbolsCurrent[id]) is 'undefined'
-        symbolsCurrent[id]                     = item
-        symbolsCurrentIndex[symbolsCurrentCnt] = item
-        symbolsCurrentCnt                      = symbolsCurrentCnt + 1
-
+        symbolsCurrent[id] = item
       else
         # TODO: Accumulate hits?
+        # TODO: Implement inner frames.
         if symbolsCurrent[id].astType isnt item.astType
           die('error: type conflict for variable "' + item.name + '"')
-          #symbolsCurrent[id].astType = -1
-          #item.astType = -1
         endif
       endif
     endfor
@@ -326,25 +316,6 @@ class ASTTranslator
     endif
   endmethod
 
-/*
-  method _getNextId() -> rv
-    rv          = this.nextId
-    this.nextId = this.nextId + 1
-  endmethod
-
-  method _createTempVar() -> rv
-    rv = '_tmp' + str(this._getNextId())
-  endmethod
-
-  method _createTempLabel() -> rv
-    rv = '_l' + str(this._getNextId())
-  endmethod
-
-  method _createTempVarAndAssign(value) -> rv
-    rv = this._createTempVar()
-    this._declareAndAssign(rv, value)
-  endmethod
-*/
   method _emitFunction(ast)
     global AST_OPCODE_CLASS_METHOD
 
@@ -371,6 +342,8 @@ class ASTTranslator
       this.currentClassProto    = false
 
       this.symbolTable = oldSymbolTable
+
+      this.app._debug('Function emited: ' + funcName)
     endif
   endmethod
 
@@ -382,11 +355,18 @@ class ASTTranslator
     this._debug('Going to emit globals')
 
     symbols = this.symbolTable.exportSymbols()
-    symbolsIndex = symbols._index
-    symbolsCnt   = len(symbolsIndex)
 
-    for idx in 0 .. symbolsCnt
-      symbolInfo = symbolsIndex[idx]
+    # TODO: Clean up this mess.
+    arrayOfSymbols = []
+    for values oneSymbol in symbols
+      arrayOfSymbols[len(arrayOfSymbols)] = oneSymbol
+    endfor
+
+    # TODO: symbolInfo is undefined after function emmited
+    # when compiled with if-to-switch optimization.
+    #for values symbolInfo in symbols
+    for idx in 0 .. len(arrayOfSymbols)
+      symbolInfo = arrayOfSymbols[idx]
       symbolKind = symbolInfo.kind
 
       if symbolKind is SYMBOL_KIND_FUNCTION
