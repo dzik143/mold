@@ -91,14 +91,10 @@ class MIRQuadCollector extends PipeAbstract
   method _dumpFrameInfo(frameInfo)
     global SYMBOL_KIND_AS_TEXT
 
-    symbolsIndex = frameInfo['_index']
-    symbolsCnt   = len(symbolsIndex)
-
     this._printSymbolInfoRow('var', 'W', 'R', 'data type', 'kind')
     this._printSymbolInfoRow('----------', '----', '----', '---------', '--------')
 
-    for idx in 0 .. symbolsCnt
-      item = symbolsIndex[idx]
+    for values item in frameInfo
       this._printSymbolInfoRow(item.name, item.writeHits, item.readHits, item.type, SYMBOL_KIND_AS_TEXT[item.kind])
     endfor
     print ''

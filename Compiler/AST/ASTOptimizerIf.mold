@@ -120,6 +120,7 @@ class ASTOptimizerIf
         # TODO: Use null?
         # Handle otherwise node.
         lastCaseNode = newChildren[len(newChildren) - 1]
+
         if (currentIfNode.opcode isnt AST_OPCODE_IF) or (AST_HashForCodeComparison(currentIfNode.children[1]) isnt AST_HashForCodeComparison(lastCaseNode))
           newChildren[len(newChildren)] = currentIfNode
           this._processNode(currentIfNode)
