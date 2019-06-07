@@ -80,7 +80,7 @@ class SymbolTable
     this.global = this
 
     # TODO: Remove it when map iteration ready.
-    this.symbols = {'_index': []}
+    this.symbols = {}
   endmethod
 
   method _debug(msg)
@@ -104,11 +104,8 @@ class SymbolTable
   method insert(name, entry)
     if typeof(this.symbols[name]) isnt 'undefined'
       die("error: redeclaration of '" + name + "'")
-    else
-      # TODO: Remove it when map iteration ready.
-      cnt = len(this.symbols['_index'])
-      this.symbols['_index'][cnt] = entry
 
+    else
       this.symbols[name] = entry
       entry.writeHits = 0
       entry.readHits  = 0
@@ -124,21 +121,17 @@ class SymbolTable
 
   method remove(name)
     # TODO: Optimize it.
-    x = []
-    entry = this.lookup(name)
-    this.symbols[name] = x[0]
+    # TODO: Use remove() when ready.
+    entry      = this.lookup(name)
+    newSymbols = {}
 
-    symbolsIndex = this.symbols._index
-
-    newIndex = []
-
-    for idx in 0 .. len(symbolsIndex)
-      if symbolsIndex[idx].name isnt entry.name
-        newIndex[len(newIndex)] = symbolsIndex[idx]
+    for keys id values symbolInfo in this.symbols
+      if symbolInfo.name isnt entry.name
+        newSymbols[id] = symbolInfo
       endif
     endfor
 
-    this.symbols._index = newIndex
+    this.symbols = newSymbols
   endmethod
 
   method importExternalVariable(name)
@@ -273,7 +266,8 @@ class SymbolTable
     if this.deepIdx < 1
       die('error: unmatched scope leave')
     endif
-    this.vacuum()
+    # TODO: Review it.
+    #this.vacuum()
     rv = this.parent
   endmethod
 
@@ -540,48 +534,17 @@ class SymbolTable
     symbolInfo.type = type
   endmethod
 
-  method vacuum()
-/*
-    TODO: Review it.
-
-    global SYMBOL_KIND_CONST
-
-    symbolsIndex = this.symbols._index
-
-    # TODO: Use remove() if ready.
-    #this.symbols = {'_index': []}
-
-    for idx in 0 .. len(symbolsIndex)
-      symbolInfo = symbolsIndex[idx]
-      if (symbolInfo.writeHits is 1) and typeof(symbolInfo.value) isnt 'undefined'
-        # Variable written once by imm. Convert to constant.
-        symbolInfo.kind = SYMBOL_KIND_CONST
-      endif
-
-      #if symbolInfo.writeHits > 0
-      #  this.insert(symbolInfo.name, symbolInfo)
-      #endif
-    endfor
-*/
-  endmethod
-
   method removeUnusedSymbols()
     global SYMBOL_KIND_VAR_PARAM
     global SYMBOL_KIND_VAR_RETVAL
 
-    index      = this.symbols._index
-    indexCnt   = len(index)
-    newIndex   = []
-    newSymbols = {'_index': newIndex}
+    newSymbols = {}
 
     # TODO: Use remove() if ready.
-    #this.symbols = {'_index': []}
-
-    for idx in 0 .. indexCnt
-      symbolInfo = index[idx]
+    for keys symbolId values symbolInfo in this.symbols
+      # TODO: Remove this hack.
       if (symbolInfo.writeHits > 0) or (symbolInfo.readHits > 0) or (symbolInfo.kind is SYMBOL_KIND_VAR_PARAM) or (symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL)
         # Variable is used at least once time. Keep it in table.
-        newIndex[len(newIndex)]     = symbolInfo
         newSymbols[symbolInfo.name] = symbolInfo
 
         # TODO: Clean up this mess.

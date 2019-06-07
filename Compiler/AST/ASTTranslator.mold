@@ -51,7 +51,7 @@ class ASTTranslator
   # ----------------------------------------------------------------------------
 
   method _debug(msg)
-    if true #false
+    if false
       print '[ ASTTranslator ]', msg
     endif
   endmethod
