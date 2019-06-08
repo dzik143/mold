@@ -661,7 +661,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     this._executeNode(codeIfTrue)
 
-    if typeof (codeIfFalse) isnt 'undefined'
+    if codeIfFalse is defined
       this.emitJmp(endLabel)
       this.emitLabel(falseLabel)
       this._executeNode(codeIfFalse)
@@ -697,7 +697,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     for idx in 1 .. childrenCnt
       values = children[idx].arrayOfValues
 
-      if typeof(values) isnt 'undefined'
+      if values is defined
         if AST_IsEmpty(children[idx]) is true
           # Nop code. Just jump to done label.
           caseLabel = doneLabel

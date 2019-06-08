@@ -510,7 +510,7 @@ function AST_HashInternal(node, isCodeMode) -> rv
   children    = node.children
   childrenCnt = node.childrenCnt
 
-  if false #typeof(node.hash) isnt 'undefined'
+  if false #typeof(node.hash) is defined
     # Node already hashed - just use it.
     rv = node.hash
 
@@ -634,7 +634,7 @@ endfunction
 function AST_ConvertDataTypeToText(dataType) -> rv
   global AST_DataTypeNames
 
-  if (typeof(dataType) isnt 'undefined') and (dataType > 0)
+  if (dataType is defined) and (dataType > 0)
     rv = AST_DataTypeNames[dataType]
   else
     rv = 'variant'
@@ -645,7 +645,7 @@ function AST_ConvertDataTypeToMIR(dataType) -> rv
   # TODO: Clean up this mess?
   global AST_DataTypeForMIR
 
-  if (typeof(dataType) isnt 'undefined') and (dataType > 0)
+  if (dataType is defined) and (dataType > 0)
     rv = AST_DataTypeForMIR[dataType]
   else
     rv = 'variant'
@@ -682,7 +682,7 @@ function AST_GetDataType(node) -> rv
 
     if opcode is AST_OPCODE_VARIABLE
       symbolInfo = node.symbolInfo
-      if (typeof(symbolInfo) isnt 'undefined') and (typeof(symbolInfo.astType) isnt 'undefined')
+      if (symbolInfo is defined) and (symbolInfo.astType is defined)
         rv = symbolInfo.astType
       endif
 

@@ -416,7 +416,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
     code.jmpIfFalse(falseLabelId)
     this._executeNode(codeIfTrue)
 
-    if typeof (codeIfFalse) isnt 'undefined'
+    if codeIfFalse is defined
       code.jmp(endLabelId)
       code.emitLabel(falseLabelId)
       this._executeNode(codeIfFalse)
@@ -462,7 +462,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
     code.beginProc(funcName, params, paramsCnt, rvName)
 
     # TODO: Clean up this mess.
-    if typeof(funcProto.className) isnt 'undefined'
+    if funcProto.className is defined
       # Add this parameter.
       paramsCnt = paramsCnt + 1
     endif
