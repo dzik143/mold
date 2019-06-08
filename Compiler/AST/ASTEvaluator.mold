@@ -44,7 +44,7 @@ class ASTEvaluator
 
   method _getValue(valuesMap, name) -> rv
     rv = valuesMap[name]
-    while (typeof(rv) is 'undefined') and (typeof(valuesMap.parent) isnt 'undefined')
+    while (typeof(rv) is 'undefined') and (valuesMap.parent is defined)
       valuesMap = valuesMap.parent
       rv        = valuesMap[name]
     endwhile
@@ -55,7 +55,7 @@ class ASTEvaluator
 
     # TODO: Optimize it.
     # Merge in first array if any.
-    if typeof(x) isnt 'undefined'
+    if x is defined
       if typeof(x) is 'array'
         for i in 0 .. len(x)
           rv[len(rv)] = x[i]
@@ -66,7 +66,7 @@ class ASTEvaluator
     endif
 
     # Merge in second array if any.
-    if typeof(y) isnt 'undefined'
+    if y is defined
       if typeof(y) is 'array'
         for i in 0 .. len(y)
           rv[len(rv)] = y[i]
@@ -176,7 +176,7 @@ class ASTEvaluator
 
     if opcode is AST_OPCODE_VARIABLE
       symbolInfo = node.symbolInfo
-      if (typeof(symbolInfo) isnt 'undefined') and (symbolInfo.kind is SYMBOL_KIND_VAR_GLOBAL) and (symbolInfo.writeHits > 1)
+      if (symbolInfo is defined) and (symbolInfo.kind is SYMBOL_KIND_VAR_GLOBAL) and (symbolInfo.writeHits > 1)
         # Non-constant global. Treat as unique.
         node.storedValue = node
 
@@ -195,13 +195,13 @@ class ASTEvaluator
         # x = obj.foo()
         symbolInfo = rval.children[0].symbolInfo
 
-        if typeof(symbolInfo) isnt 'undefined'
+        if symbolInfo is defined
           classProto = symbolInfo.classProto
 
-          if typeof(classProto) isnt 'undefined'
+          if classProto is defined
             methodProto = classProto.vtable[rval.value]
 
-            if typeof(methodProto) isnt 'undefined'
+            if methodProto is defined
               if typeof(methodProto.rv) is 'undefined'
                 die('error: method "' + classProto.name + '.' + methodProto.name + '" has no return value')
               endif
@@ -213,13 +213,13 @@ class ASTEvaluator
         # x = obj.foo()
         symbolInfo = rval.children[0].symbolInfo
 
-        if typeof(symbolInfo) isnt 'undefined'
+        if symbolInfo is defined
           classProto = symbolInfo.classProto
 
-          if typeof(classProto) isnt 'undefined'
+          if classProto is defined
             methodProto = classProto.vtable[rval.value]
 
-            if typeof(methodProto) isnt 'undefined'
+            if methodProto is defined
               if typeof(methodProto.rv) is 'undefined'
                 die('error: method "' + classProto.name + '.' + methodProto.name + '" has no return value')
               endif
@@ -300,7 +300,7 @@ class ASTEvaluator
 
           # TODO: Review it.
           # global(x) gives undefined symbolInfo.
-          if typeof(symbolInfo) isnt 'undefined'
+          if symbolInfo is defined
             astType = symbolInfo.astType
 
             if (typeof(astType) is 'undefined') or (astType is -1) or (astType is AST_DATA_OBJECT) or (astType is AST_DATA_MAP) or (astType is AST_DATA_ARRAY)
