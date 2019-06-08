@@ -95,7 +95,7 @@ class MIRQuadOptimizer extends PipeAbstract
 
       newOpcode = this.cmpXxJmpIfFalseMap[this.lastOpcode]
 
-      if typeof(newOpcode) isnt 'undefined'
+      if newOpcode is defined
         # cmp_xx       tmp, x, y
         # jmp_if_false label
         #this._decreaseReadAndWriteHits(src)
@@ -109,7 +109,7 @@ class MIRQuadOptimizer extends PipeAbstract
 
       newOpcode = this.cmpXxJmpIfTrueMap[this.lastOpcode]
 
-      if typeof(newOpcode) isnt 'undefined'
+      if newOpcode is defined
         # cmp_xx      tmp, x, y
         # jmp_if_true label
         #this._decreaseReadAndWriteHits(src)

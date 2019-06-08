@@ -36,7 +36,7 @@ class MIRQuadCollector extends PipeAbstract
   # ----------------------------------------------------------------------------
 
   method _pad(item, desiredLen) -> rv
-    if typeof(item) is 'undefined'
+    if item is undefined
       # Undefined (probably unused) operand.
       # Show nothing.
       item = '-'
@@ -102,11 +102,11 @@ class MIRQuadCollector extends PipeAbstract
 
 #  method _getType(x) -> rv
 #    xInfo = this.currentFrame.symbols[x]
-#    if typeof(xInfo) is 'undefined'
+#    if xInfo is undefined
 #      die('error: symbol not found: ' + str(x))
 #    else
 #      rv = this.currentFrame.symbols[x].type
-#      if typeof(rv) is 'undefined'
+#      if rv is undefined
 #        rv = 'variant'
 #      endif
 #    endif

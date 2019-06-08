@@ -340,7 +340,7 @@ class MIRCode
   method storeLocal(id) -> newId
     global MIR_OPCODE_STORE_LOCAL
 
-    if typeof(id) is 'undefined'
+    if id is undefined
       newId = this.localMax + 1
       this.localMax = newId
     else
@@ -358,7 +358,7 @@ class MIRCode
   method storeGlobal(id) -> newId
     global MIR_OPCODE_STORE_GLOBAL
 
-    if typeof(id) is 'undefined'
+    if id is undefined
       newId = this.globalMax + 1
       this.globalMax = newId
     else
@@ -429,12 +429,12 @@ class MIRCode
   endmethod
 
   method _jmpInternal(labelId, opcode)
-    if typeof(labelId) is 'undefined'
+    if labelId is undefined
       die("error: jmp to undefined label")
     endif
 
     addr = this.labels[labelId]
-    if typeof(addr) is 'undefined'
+    if addr is undefined
       # Error - jump to invalid label id.
       die("error: invalid label id '" + str(labelId) + "'")
 
@@ -525,7 +525,7 @@ class MIRCode
 
   method emitLabel(labelId)
     targetId = this.labels[labelId]
-    if typeof(targetId) is 'undefined'
+    if targetId is undefined
       die("error: invalid label id '" + str(targetId) + "'")
     elif targetId >= 0
       die("error: label id '" + str(targetId) + "' is already emited")
@@ -547,7 +547,7 @@ class MIRCode
     methodsMap  = this.methodsMap
     methodsList = this.methodsList
 
-    if typeof(methodsMap[name]) is 'undefined'
+    if methodsMap[name] is undefined
       methodsMap[name]    = id
       methodsList[id]     = name
       this.methodsListCnt = id + 1
