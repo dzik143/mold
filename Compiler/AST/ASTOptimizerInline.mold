@@ -125,13 +125,13 @@ class ASTOptimizerInline
       rvName     = functionProto.rv
       rvFullName = rvName
 
-      if typeof(rvName) isnt 'undefined'
+      if rvName is defined
         rvFullName = namePrefix + rvName
         symbolTable.insertLocal(rvFullName)
       endif
 
       # Init this parameter if needed.
-      if typeof(functionProto.classProto) isnt 'undefined'
+      if functionProto.classProto is defined
         thizParamNode  = callNode.children[0]
         thizSymbolInfo = thizParamNode.symbolInfo
         paramName      = namePrefix + 'this'
@@ -142,7 +142,7 @@ class ASTOptimizerInline
         # x = x.foo(x)
         # print x <---- BUG! x has readHits 0 now.
 
-        #if typeof(thizSymbolInfo) isnt 'undefined'
+        #if thizSymbolInfo is defined
         #  #thizSymbolInfo.readHits = thizSymbolInfo.readHits - 1
         #endif
 
@@ -229,7 +229,7 @@ class ASTOptimizerInline
     childrenCnt = node.childrenCnt
 
     # Switch symbolTable if needed.
-    if typeof(node.symbolTable) isnt 'undefined'
+    if node.symbolTable is defined
       symbolTable = node.symbolTable
     endif
 

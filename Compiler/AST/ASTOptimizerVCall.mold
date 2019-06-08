@@ -48,15 +48,15 @@ class ASTOptimizerVCall
       thiz           = children[0]
       symbolInfoThiz = thiz.symbolInfo
 
-      if typeof(symbolInfoThiz) isnt 'undefined'
+      if symbolInfoThiz is defined
         classProto = thiz.symbolInfo.classProto
 
-        if (typeof(classProto) isnt 'undefined') and (typeof(classProto.vtable) isnt 'undefined')
+        if (classProto is defined) and (classProto.vtable is defined)
           # We already know class proto.
           # Convert vcall to ordinary call.
           methodProto = classProto.vtable[node.value]
 
-          if typeof(methodProto) isnt 'undefined'
+          if methodProto is defined
             if methodProto.isOverloaded is true
               # Method is overloaded by another class.
               # Keep virtual call.
