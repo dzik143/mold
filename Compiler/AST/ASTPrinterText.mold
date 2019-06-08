@@ -220,7 +220,7 @@ class ASTPrinterText
       symbolTable  = node.symbolTable
       #this._printSymbolTable(symbolTable)
 
-      if typeof(symbolTable) isnt 'undefined'
+      if symbolTable is defined
         # Declare complex constants if needed.
         symbols = symbolTable.exportSymbols()
 
@@ -266,7 +266,7 @@ class ASTPrinterText
 
       __mold_printToStdOutput(')')
 
-      if typeof(node.rv) isnt 'undefined'
+      if node.rv is defined
         print ' ->', node.rv
       else
         print ''
@@ -328,7 +328,7 @@ class ASTPrinterText
       for idx in 1 .. childrenCnt
         values = children[idx].arrayOfValues
 
-        if typeof(values) isnt 'undefined'
+        if values is defined
           # Render when value1, value2, ..., valueN list
           __mold_printToStdOutput(prefix)
           __mold_printToStdOutput('  when ')
@@ -426,7 +426,7 @@ class ASTPrinterText
     elif opcode is AST_OPCODE_VARIABLE
       symbolInfo = node.symbolInfo
 
-      if (typeof(symbolInfo) isnt 'undefined') and (symbolInfo.kind is SYMBOL_KIND_CONST) and (typeof(symbolInfo.value) is 'string')
+      if (symbolInfo is defined) and (symbolInfo.kind is SYMBOL_KIND_CONST) and (typeof(symbolInfo.value) is 'string')
         value = "'" + str(symbolInfo.value) + "'"
       endif
 

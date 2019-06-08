@@ -41,7 +41,7 @@ class ASTPrinterHtml
       symbolInfo = symbolsIndex[idx]
       value      = '-'
 
-      if typeof(symbolInfo.value) isnt 'undefined'
+      if symbolInfo.value is defined
         value = symbolInfo.value
         if typeof(value) is 'string'
           value = '"' + value + '"'
@@ -57,7 +57,7 @@ class ASTPrinterHtml
       print '<td>', AST_ConvertDataTypeToText(symbolInfo.astType), '</td>'
       print '<td>', symbolInfo.loopLevel, '</td>'
 
-      if typeof(symbolInfo.classProto) isnt 'undefined'
+      if symbolInfo.classProto is defined
         print '<td>' + symbolInfo.classProto.name + '</td>'
       else
         print '<td>-</td>'
@@ -86,7 +86,7 @@ class ASTPrinterHtml
     print '<table style="border: solid 1px">'
     print '<tr><td>#' + str(node.id), '<b>', AST_GetOpcodeAsText(opcode), '</b></td></tr>'
 
-    if typeof(node.hash) isnt 'undefined'
+    if node.hash is defined
       print '<tr><td><small><i>', node.hash, '</i></small></td></tr>'
     endif
 
@@ -99,7 +99,7 @@ class ASTPrinterHtml
     endif
 
     if (opcode is AST_OPCODE_BLOCK) or (opcode is AST_OPCODE_PROGRAM)
-      if typeof(node.symbolTable) isnt 'undefined'
+      if node.symbolTable is defined
         print '<tr><td>'
         this._printSymbolTable(node.symbolTable)
         print '</td></tr>'
