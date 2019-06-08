@@ -409,7 +409,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _call(proto, unusedParams, paramsCnt) -> rv
-    if typeof(proto.rv) is 'undefined'
+    if proto.rv is undefined
       # TODO: Clean up this mess.
       x = []
       rv = x[0]
@@ -420,7 +420,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     params = this.popParametersBeforeCall(paramsCnt)
     name   = proto['fullName']
 
-    if typeof(name) is 'undefined'
+    if name is undefined
       name = proto['name']
     endif
 
@@ -533,12 +533,12 @@ class ASTTranslatorMIR1 extends ASTTranslator
     rv       = this.symbolTable.getTempVarForReadAndWrite('variant')
     methodId = this.code.methodsMap[methodName]
 
-    if typeof(methodId) is 'undefined'
+    if methodId is undefined
       # Forward declaration.
       methodId = this.code.createMethod(methodName)
     endif
 
-    if typeof(this.mapOfCalledMethods[methodName]) is 'undefined'
+    if this.mapOfCalledMethods[methodName] is undefined
       this.arrayOfCalledMethods[len(this.arrayOfCalledMethods)] = methodName
     endif
 

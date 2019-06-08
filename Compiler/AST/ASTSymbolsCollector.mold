@@ -191,7 +191,7 @@ class ASTSymbolsCollector
 
           this.vtable[methodFullName] = methodFullName
 
-          if typeof(vtable[methodName]) is 'undefined'
+          if vtable[methodName] is undefined
             # Method seen first time.
             methodsAsFlatArray[methodsAsFlatArrayCnt] = methodName
             methodsAsFlatArrayCnt = methodsAsFlatArrayCnt + 1
@@ -250,7 +250,7 @@ class ASTSymbolsCollector
 
       symbolTable.insertFunction(funcName, funcProto)
 
-      if typeof(nodeBody.symbolTable) is 'undefined'
+      if nodeBody.symbolTable is undefined
         # Init new symbol table if not existing yet.
         nodeBody.symbolTable = symbolTable.enterScopeForProcedure(funcName)
 
@@ -301,7 +301,7 @@ class ASTSymbolsCollector
       endif
 
     elif opcode is AST_OPCODE_BLOCK
-      if typeof(node.symbolTable) is 'undefined'
+      if node.symbolTable is undefined
         # Init new symbol table if not existing yet.
         node.symbolTable = symbolTable.enterScope()
 
@@ -499,7 +499,7 @@ class ASTSymbolsCollector
       endif
 
       # TODO: Better way to merge symbols from IF branches recursively.
-      if typeof(node.symbolTable) is 'undefined'
+      if node.symbolTable is undefined
         node.symbolTable = symbolTable
       endif
 

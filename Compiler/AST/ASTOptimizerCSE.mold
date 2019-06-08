@@ -175,7 +175,7 @@ class ASTOptimizerCSE
         if matchedNode is node
           # Do nothing - it's the same node.
 
-        elif typeof(matchedNode) is 'undefined'
+        elif matchedNode is undefined
           # Expression seen first time, save it in map and wait for
           # more expressions from different nodes.
           node.symbolTable = symbolTable

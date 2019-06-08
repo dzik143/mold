@@ -43,7 +43,7 @@ class ASTModuleResolver
         # TODO: Verify parameters.
         moduleName = oneChild['children'][0]['value']
 
-        if typeof(this.importedModules[moduleName]) is 'undefined'
+        if this.importedModules[moduleName] is undefined
           # Load only once.
           this.importedModules[moduleName] = true
 

@@ -525,7 +525,7 @@ function AST_HashInternal(node, isCodeMode) -> rv
         rv = '@' + node.value
 
       else
-        if typeof(node.storedValue) is 'undefined'
+        if node.storedValue is undefined
           # TODO: Review it.
           rv = '@' + node.value
 
@@ -676,7 +676,7 @@ function AST_GetDataType(node) -> rv
 
   rv = node._cachedAstDataType
 
-  if typeof(rv) is 'undefined'
+  if rv is undefined
     opcode = node.opcode
     rv     = -1
 

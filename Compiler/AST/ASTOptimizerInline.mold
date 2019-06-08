@@ -103,7 +103,7 @@ class ASTOptimizerInline
     symbolInfo    = callNode.symbolInfo
     functionProto = symbolInfo.proto
 
-    if (typeof(functionProto) is 'undefined') or (functionProto.builtIn is true)
+    if (functionProto is undefined) or (functionProto.builtIn is true)
       # Built-in function. Don't touch.
 
     elif functionProto.isRecursive is true

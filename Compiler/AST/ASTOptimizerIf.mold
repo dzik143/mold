@@ -86,7 +86,7 @@ class ASTOptimizerIf
             reusedNode = caseHashMap[caseNodeHash]
             casesCnt   = casesCnt + 1
 
-            if typeof(reusedNode) is 'undefined'
+            if reusedNode is undefined
               # Case code seen first time. Go on.
               caseHashMap[caseNodeHash] = caseNode
               newChildren[len(newChildren)] = caseNode

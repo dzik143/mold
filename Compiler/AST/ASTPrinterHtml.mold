@@ -150,7 +150,7 @@ class ASTPrinterHtml
           print '@' + str(node.storedValue[idx].id), '<br>'
         endfor
 
-      elif typeof(node.storedValue) is 'undefined'
+      elif node.storedValue is undefined
         print '?'
 
       else

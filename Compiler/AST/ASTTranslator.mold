@@ -298,7 +298,7 @@ class ASTTranslator
     for values item in symbolsChild
       id = item.name
 
-      if typeof(symbolsCurrent[id]) is 'undefined'
+      if symbolsCurrent[id] is undefined
         symbolsCurrent[id] = item
       else
         # TODO: Accumulate hits?
@@ -384,7 +384,7 @@ class ASTTranslator
     methodProto = this.currentFunctionProto
     classProto  = this.currentClassProto
 
-    if (methodProto is false) or (typeof(methodProto['fullName']) is 'undefined')
+    if (methodProto is false) or (methodProto['fullName'] is undefined)
       this._error('super called outside of class')
 
     elif methodProto['name'] isnt 'constructor'
@@ -393,10 +393,10 @@ class ASTTranslator
     elif methodProto['name'] isnt 'constructor'
       this._error('super called outside of constructor')
 
-    elif typeof(classProto['baseName']) is 'undefined'
+    elif classProto['baseName'] is undefined
       this._error('class ' + classProto['name'] + ' has no base class')
 
-    elif typeof(methodProto['baseMethod']) is 'undefined'
+    elif methodProto['baseMethod'] is undefined
       this._error('class ' + classProto['baseName'] + ' has no constructor declared')
 
     elif methodProto['paramsCnt'] isnt paramsCnt

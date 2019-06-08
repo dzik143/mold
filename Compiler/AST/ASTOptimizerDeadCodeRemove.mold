@@ -101,11 +101,11 @@ class ASTOptimizerDeadCodeRemove
     global SYMBOL_KIND_CONST, SYMBOL_KIND_VAR_RETVAL
 
     # TODO: Use should/assert/etc when ready.
-    if typeof(symbolTable) is 'undefined'
+    if symbolTable is undefined
       die('error: unset symbol table at ASTOptimizerDeadCodeRemove::_processNode()')
     endif
 
-    if typeof(node) is 'undefined'
+    if node is undefined
       die('error: unset node at ASTOptimizerDeadCodeRemove::_processNode()')
     endif
 

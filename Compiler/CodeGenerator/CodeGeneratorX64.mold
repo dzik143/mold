@@ -91,7 +91,7 @@ class CodeGeneratorX64
 
     xInfo = this.symbols[x]
 
-    if (typeof(xInfo) is 'undefined') or (xInfo.kind is SYMBOL_KIND_VAR_LOCAL) or (xInfo.kind is SYMBOL_KIND_VAR_GLOBAL)
+    if (xInfo is undefined) or (xInfo.kind is SYMBOL_KIND_VAR_LOCAL) or (xInfo.kind is SYMBOL_KIND_VAR_GLOBAL)
       print '  lea  rcx, [', x, ']'
       print '  call __MOLD_VariantDestroy'
     endif
@@ -346,8 +346,8 @@ class CodeGeneratorX64
       if (itemCnt > 2) and (typeof(x) is 'string')
         if (opcode isnt 'call') and (opcode isnt 'vcall') and (opcode isnt 'create_object') and ((opcode[0] isnt 'c') or (opcode[1] is 'm'))
           xInfo = currentSymbols[x]
-          if typeof(xInfo) isnt 'undefined'
-            if typeof(xInfo.type) isnt 'undefined'
+          if xInfo is defined
+            if xInfo.type is defined
               xType = xInfo.type
             endif
           endif
@@ -1024,7 +1024,7 @@ class CodeGeneratorX64
 
         else
           # Generic call.
-          if typeof(rv) isnt 'undefined'
+          if rv is defined
             # Function has return value.
             # TODO: Clean up this mess.
             this.variantDestroy(rv)
@@ -1052,7 +1052,7 @@ class CodeGeneratorX64
         params    = item[3]
         paramsCnt = len(params)
 
-        if typeof(rv) isnt 'undefined'
+        if rv is defined
           this.variantDestroy(rv)
           this.push('rdi')
           this.pushParametersBeforeCall(params)
@@ -1071,7 +1071,7 @@ class CodeGeneratorX64
           print '  add rsp,', paramsCnt * 8 - 32
         endif
 
-        if typeof(rv) isnt 'undefined'
+        if rv is defined
           this.pop('rdi')
         endif
 
@@ -1190,7 +1190,7 @@ class CodeGeneratorX64
         symbols = currentSymbols
 
         for values oneItem in symbols
-          if (oneItem.kind is SYMBOL_KIND_VAR_LOCAL) and ((oneItem.type is 'variant') or (typeof(oneItem.type) is 'undefined'))
+          if (oneItem.kind is SYMBOL_KIND_VAR_LOCAL) and ((oneItem.type is 'variant') or (oneItem.type is undefined))
             if oneItem.usedAsIterator is true
               # Symbol is used as loop iterator.
               # It's only dump reference for existing box values or keys.
@@ -1204,7 +1204,7 @@ class CodeGeneratorX64
 
         if (currentProcName is 'start')
           for values oneItem in symbols
-            if (oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and ((oneItem.type is 'variant') or (typeof(oneItem.type) is 'undefined'))
+            if (oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and ((oneItem.type is 'variant') or (oneItem.type is undefined))
               this.variantDestroy(oneItem.name)
             endif
           endfor
@@ -1266,7 +1266,7 @@ class CodeGeneratorX64
           symbol = symbolsIndex[symbolsCnt - symbolIdx - 1]
 
           if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) or (symbol.kind is SYMBOL_KIND_VAR_PARAM)
-            if (symbol.type is 'variant') or (typeof(symbol.type) is 'undefined')
+            if (symbol.type is 'variant') or (symbol.type is undefined)
               varSize = 16
 
             elif (symbol.type is 'int64') or (symbol.type is 'float64')
@@ -1311,7 +1311,7 @@ class CodeGeneratorX64
 
         for values oneItem in symbols
           if oneItem.kind is SYMBOL_KIND_VAR_LOCAL
-            if (oneItem.type is 'variant') or (typeof(oneItem.type) is 'undefined')
+            if (oneItem.type is 'variant') or (oneItem.type is undefined)
               # Local Variant_t variable - init to undefined.
               if oneItem.usedAsIterator is true
                 # Symbol is used as loop iterator.
@@ -1353,7 +1353,7 @@ class CodeGeneratorX64
             if (oneItem.name is 'argv') or (oneItem.name is 'argc')
               # Do nothing.
 
-            elif (oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and ((oneItem.type is 'variant') or (typeof(oneItem.type) is 'undefined'))
+            elif (oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and ((oneItem.type is 'variant') or (oneItem.type is undefined))
               print '  mov [' + oneItem.name + ' + Variant_t.type], VARIANT_UNDEFINED'
             endif
 
@@ -1411,7 +1411,7 @@ class CodeGeneratorX64
 
     for values oneItem in globals
       if oneItem.kind is SYMBOL_KIND_VAR_GLOBAL
-        if (oneItem.type is 'variant') or (typeof(oneItem.type) is 'undefined')
+        if (oneItem.type is 'variant') or (oneItem.type is undefined)
           print oneItem.name, ' Variant_t 0, 0, 0'
 
         elif oneItem.type is 'int64'
@@ -1476,7 +1476,7 @@ class CodeGeneratorX64
 
         for labelIdx in 0 .. len(labels)
           nextLabel = labels[labelIdx]
-          if typeof(nextLabel) is 'undefined'
+          if nextLabel is undefined
             nextLabel = defaultLabel
           endif
 
@@ -1508,7 +1508,7 @@ class CodeGeneratorX64
         methodName  = methodsList[methodIdx]
         methodProto = vtable[methodName]
 
-        if typeof(methodProto) is 'undefined'
+        if methodProto is undefined
           methodPtr = '__MOLD_NullMethodCalled'
         else
           methodPtr = methodProto['fullName']
