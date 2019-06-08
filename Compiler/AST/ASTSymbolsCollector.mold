@@ -151,7 +151,7 @@ class ASTSymbolsCollector
       classProto            = {}
 
       # Import base class if any.
-      if typeof(baseName) isnt 'undefined'
+      if baseName is defined
         # Derived class, build class by applying derived over base one.
         baseProto = symbolTable.lookupClass(baseName)['proto']
 
@@ -200,7 +200,7 @@ class ASTSymbolsCollector
           child['className']  = className
           child['classProto'] = classProto
 
-          if typeof(baseMethods[methodName]) isnt 'undefined'
+          if baseMethods[methodName] is defined
             # Save proto of base method if any.
             baseMethodProto     = baseMethods[methodName]
             child['baseMethod'] = baseMethodProto
@@ -240,7 +240,7 @@ class ASTSymbolsCollector
       funcProto['name']      = value['name']
       funcProto['rv']        = value['rv']
 
-      if typeof(node['fullName']) isnt 'undefined'
+      if node['fullName'] is defined
         funcName = node['fullName']
       else
         funcName = value['name']
@@ -278,7 +278,7 @@ class ASTSymbolsCollector
       this._collectSymbolsFromLeftNode(nodeBody.symbolTable, nodeBody)
 
       # Verify is return value set after function end if needed.
-      if typeof(funcProto.rv) isnt 'undefined'
+      if funcProto.rv is defined
         if nodeBody.symbolTable.isset(funcProto.rv) is true
           # Return value is set inside all branches. Go on.
           # Change variable kind to RETVAL and force variant type.
@@ -383,7 +383,7 @@ class ASTSymbolsCollector
             oldClassProto = symbolInfo.classProto
             newClassProto = symbolTable.lookupClass(rval.value).proto
 
-            if (typeof(oldClassProto) isnt 'undefined') and (oldClassProto isnt newClassProto)
+            if (oldClassProto is defined) and (oldClassProto isnt newClassProto)
               # Class mismatch.
               # obj = new A()
               # obj = new B()
@@ -445,7 +445,7 @@ class ASTSymbolsCollector
         for values symbolInfo1 in symbols1
           symbolInfo2 = symbols2[symbolInfo1.name]
 
-          if typeof(symbolInfo2) isnt 'undefined'
+          if symbolInfo2 is defined
             # Symbol defined in both nodes - move into parent node.
             # TODO: Use max(x, y) or x+y?
             readHits  = symbolInfo1.readHits  + symbolInfo2.readHits
