@@ -159,6 +159,11 @@ else
   astModuleResolver = app.getAstModuleResolver()
   astModuleResolver.resolveImports(ast)
 
+  # Preprocess AST to expand built-in constructions.
+  # Example: x is defined => typeof(x) isnt 'undefined'
+  app._debug('Preprocessing AST...')
+  app.getAstPreprocessor().processNode(ast)
+
   # Build symbol table.
   app._debug('Building symbol table...')
   astSymbolsCollector = app.getAstSymbolsCollector()

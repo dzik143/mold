@@ -86,6 +86,7 @@ class ASTSymbolsCollector
     global AST_OPCODE_NOP
     global AST_OPCODE_TYPE_CAST
     global AST_OPCODE_COMPARE_EQ
+    global AST_OPCODE_COMPARE_NEQ
     global AST_OPCODE_COMPARE_LE
     global AST_OPCODE_BOOL_NOT
     global AST_OPCODE_CALL_NEW

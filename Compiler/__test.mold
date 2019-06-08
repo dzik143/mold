@@ -53,6 +53,11 @@ if typeof(astModuleResolver) isnt 'undefined'
   astModuleResolver.resolveImports(ast)
 endif
 
+# Preprocess AST to expand built-in constructions.
+# Example: x is defined => typeof(x) isnt 'undefined'
+app._debug('Preprocessing AST nodes...')
+app.getAstPreprocessor().processNode(ast)
+
 print 'Building symbol table...'
 astSymbolsCollector.buildSymbolTable(ast)
 
@@ -65,7 +70,8 @@ app.getAstOptimizerVCall().processNode(ast)
 app._debug('Inline optimization... (TEMPORARY DISABLED!)')
 #app.getAstOptimizerInline().processNode(ast)
 
-# Common preprocess before go-on with further AST optimization.
+# Evaluate values stored inside nodes before go-on with
+# further AST optimization.
 app._debug('Evaluating AST nodes...')
 app.getAstEvaluator().processNode(ast)
 

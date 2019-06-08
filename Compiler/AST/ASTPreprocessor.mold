@@ -1,0 +1,89 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (C) 2015, 2019 Sylwester Wysocki (sw143@wp.pl)                     #
+#                                                                              #
+# This program is free software: you can redistribute it and/or modify         #
+# it under the terms of the GNU General Public License as published by         #
+# the Free Software Foundation, either version 3 of the License, or            #
+# (at your option) any later version.                                          #
+#                                                                              #
+# This program is distributed in the hope that it will be useful,              #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of               #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                #
+# GNU General Public License for more details.                                 #
+#                                                                              #
+# You should have received a copy of the GNU General Public License            #
+# along with this program. If not, see <http://www.gnu.org/licenses/>          #
+#                                                                              #
+################################################################################
+
+import 'AST/AST.mold'
+import 'AST/ASTUtils.mold'
+
+class ASTPreprocessor
+  method constructor(app)
+    this.app = app
+  endmethod
+
+  method _debug(msg)
+    global DEBUG_AST_OPTIMIZER
+    if DEBUG_AST_OPTIMIZER is true
+      print '[ ASTPreprocessor ]', msg
+    endif
+  endmethod
+
+  method _processNode(node)
+    global AST_OPCODE_VARIABLE
+    global AST_OPCODE_CALL
+    global AST_DATA_STRING
+    global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ
+
+    opcode   = node.opcode
+    children = node.children
+
+    # Process children recursively.
+    for values oneChild in children
+      this._processNode(oneChild)
+    endfor
+
+    # Process current node.
+    if opcode is AST_OPCODE_COMPARE_EQ
+      # TODO: Review it.
+      # x is y
+      x = children[0]
+      y = children[1]
+
+      if y.opcode is AST_OPCODE_VARIABLE
+        # Expand special built-in conditions:
+        # - x is defined,
+        # - x is odd,
+        # - etc.
+        name = y.value
+
+        if name is 'defined'
+          # x is defined => x isnt undefined
+          name = 'undefined'
+          node.opcode = AST_OPCODE_COMPARE_NEQ
+        endif
+
+        if (name is 'undefined')
+          # TODO: Optimize it.
+          children[0] = {
+            'id': AST_GetNextId(),
+            'opcode': AST_OPCODE_CALL,
+            'value': 'typeof',
+            'children': [x],
+            'childrenCnt': 1
+          }
+          y.opcode = AST_DATA_STRING
+          y.value  = 'undefined'
+        endif
+      endif
+    endif
+  endmethod
+
+  method processNode(node)
+    this._processNode(node)
+  endmethod
+endclass
