@@ -48,7 +48,7 @@ class ASTOptimizerConstantFolding
       this._debug('Set node #' + str(dst.id) + ' to imm "' + str(value) + '" (' + type + ')')
 
       if dst.opcode is AST_OPCODE_VARIABLE
-        if typeof(dst.symbolInfo) isnt 'undefined'
+        if dst.symbolInfo is defined
           dst.symbolInfo.readHits = dst.symbolInfo.readHits - 1
         endif
       endif
@@ -206,7 +206,7 @@ class ASTOptimizerConstantFolding
         elif opcode is AST_OPCODE_VARIABLE
           # Convert variable to constant if possible.
           # TODO: Clean up this mess.
-          if (typeof(node.storedValue) isnt 'undefined') and (typeof(node.storedValue) isnt 'array') and AST_IsImm(node.storedValue)
+          if (node.storedValue is defined) and (typeof(node.storedValue) isnt 'array') and AST_IsImm(node.storedValue)
             if typeof(node.storedValue) isnt 'array'
               if (typeof(node.storedValue.value) isnt 'array') and (typeof(node.storedValue.value) isnt 'map')
                 if this.globals.isset(value) is false
@@ -377,7 +377,7 @@ class ASTOptimizerConstantFolding
         endif
 
         # TODO: Clean up this mess.
-        if typeof(newValue) isnt 'undefined'
+        if newValue is defined
           this._setToImm(node, newValue)
           isNodeChanged = true
         else
