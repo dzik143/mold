@@ -44,7 +44,7 @@ class ASTEvaluator
 
   method _getValue(valuesMap, name) -> rv
     rv = valuesMap[name]
-    while (typeof(rv) is 'undefined') and (valuesMap.parent is defined)
+    while (rv is undefined) and (valuesMap.parent is defined)
       valuesMap = valuesMap.parent
       rv        = valuesMap[name]
     endwhile
@@ -125,7 +125,7 @@ class ASTEvaluator
     storedValue = node.storedValue
     rv = []
 
-    if typeof(storedValue) is 'undefined'
+    if storedValue is undefined
 
     elif typeof(storedValue) is 'array'
       for idx in 0 .. len(storedValue)
@@ -202,7 +202,7 @@ class ASTEvaluator
             methodProto = classProto.vtable[rval.value]
 
             if methodProto is defined
-              if typeof(methodProto.rv) is 'undefined'
+              if methodProto.rv is undefined
                 die('error: method "' + classProto.name + '.' + methodProto.name + '" has no return value')
               endif
             endif
@@ -220,7 +220,7 @@ class ASTEvaluator
             methodProto = classProto.vtable[rval.value]
 
             if methodProto is defined
-              if typeof(methodProto.rv) is 'undefined'
+              if methodProto.rv is undefined
                 die('error: method "' + classProto.name + '.' + methodProto.name + '" has no return value')
               endif
             endif
@@ -303,7 +303,7 @@ class ASTEvaluator
           if symbolInfo is defined
             astType = symbolInfo.astType
 
-            if (typeof(astType) is 'undefined') or (astType is -1) or (astType is AST_DATA_OBJECT) or (astType is AST_DATA_MAP) or (astType is AST_DATA_ARRAY)
+            if (astType is undefined) or (astType is -1) or (astType is AST_DATA_OBJECT) or (astType is AST_DATA_MAP) or (astType is AST_DATA_ARRAY)
               # Unknown or box like variable is passed as call parameter.
               # We assume that it may be changed inside function.
               this._assignValue(valuesMap, childNode, childNode)
