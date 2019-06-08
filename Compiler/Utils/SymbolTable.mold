@@ -102,7 +102,7 @@ class SymbolTable
   endmethod
 
   method insert(name, entry)
-    if typeof(this.symbols[name]) isnt 'undefined'
+    if this.symbols[name] is defined
       die("error: redeclaration of '" + name + "'")
 
     else
@@ -113,7 +113,7 @@ class SymbolTable
 
       # Default data type to variant if not set.
       # TODO: Review it?
-      #if typeof(entry.astType) is 'undefined'
+      #if entry.astType is undefined
       #  entry.astType = -1
       #endif
     endif
@@ -153,14 +153,14 @@ class SymbolTable
     rv  = this.symbols[name]
     tab = this
 
-    while (typeof(rv) is 'undefined') and (tab.deepIdx > 0)
+    while (rv is undefined) and (tab.deepIdx > 0)
       tab = tab.parent
       rv  = tab._lookupInternal(name)
     endwhile
 
     # Handle unimported global.
     # TODO: Clean up this mess.
-    if (typeof(rv) isnt 'undefined')
+    if rv is defined
       if (tab.procLevel is 0) and (this.procLevel > 0)
         if (rv.kind is SYMBOL_KIND_VAR_LOCAL) or (rv.kind is SYMBOL_KIND_VAR_GLOBAL)
           x  = []
@@ -173,7 +173,7 @@ class SymbolTable
   method lookup(name) -> rv
     rv = this._lookupInternal(name)
 
-    if typeof(rv) is 'undefined'
+    if rv is undefined
       die("error: '" + name + "' was not declared in this scope")
     endif
 
@@ -227,7 +227,7 @@ class SymbolTable
   endmethod
 
   method isset(name) -> rv
-    rv = typeof(this._lookupInternal(name)) isnt 'undefined'
+    rv = this._lookupInternal(name) is defined
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -295,7 +295,7 @@ class SymbolTable
 
     else
       # TODO: Clean up this mess.
-      if typeof(rv.proto.classProto) isnt 'undefined'
+      if rv.proto.classProto is defined
         # Adjust for this parameter for direct call.
         paramsCnt = paramsCnt - 1
       endif
@@ -337,7 +337,7 @@ class SymbolTable
 
     rv = this.lookupClass(className)['proto']['vtable'][methodName]
 
-    if typeof(rv) is 'undefined'
+    if rv is undefined
       die("error: class '" + className + "' has no method '" + methodName + "'")
 
     elif rv['paramsCnt'] isnt paramsCnt
@@ -462,7 +462,7 @@ class SymbolTable
   method insertLiteral(text) -> literalEntry
     literalEntry = this.global.literals[text]
 
-    if typeof(literalEntry) is 'undefined'
+    if literalEntry is undefined
       # Literal seen first time. Wrap it into new constant.
       name         = '__literal' + str(SymbolTable_GetNextId())
       literalEntry = this.insertConst(name, text)
@@ -499,7 +499,7 @@ class SymbolTable
     if newType isnt oldType
       goOn = false
 
-      if typeof(oldType) is 'undefined'
+      if oldType is undefined
         # First type assign. Go on.
         goOn = true
 
@@ -635,7 +635,7 @@ class SymbolTable
         # Push back to pool of temp variables available to use.
         mirType = symbolInfo.type
 
-        if typeof(mirType) isnt 'undefined'
+        if mirType is defined
           poolObj = this.poolOfTempVars[mirType]
           poolObj.pool[poolObj.cnt] = symbolInfo.name
           poolObj.cnt               = poolObj.cnt + 1

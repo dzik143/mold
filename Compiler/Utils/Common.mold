@@ -19,7 +19,7 @@
 ################################################################################
 
 function UTILS_PadString(item, desiredLen) -> rv
-  if typeof(item) is 'undefined'
+  if item is undefined
     # Undefined (probably unused) operand.
     # Show nothing.
     item = '-'

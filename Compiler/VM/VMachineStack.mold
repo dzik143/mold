@@ -283,7 +283,7 @@ class VMachineStack
         vtable      = thiz['__mold_vtable']
         methodProto = vtable[methodName]
 
-        if typeof(methodProto) is 'undefined'
+        if methodProto is undefined
           die("error: object has no method '" + methodName + "'")
         endif
 
