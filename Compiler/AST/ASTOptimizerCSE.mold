@@ -80,7 +80,7 @@ class ASTOptimizerCSE
     global AST_OPCODE_FOR_INDEXES_VALUES
 
     # Switch symbolTable if needed.
-    if typeof(node.symbolTable) isnt 'undefined'
+    if node.symbolTable is defined
       symbolTable = node.symbolTable
     endif
 
@@ -135,7 +135,7 @@ class ASTOptimizerCSE
       # TODO: Review it.
       # This is fix for:
       #  rv = values[name]
-      #  while typeof(values['parent']) isnt 'undefined'
+      #  while values['parent'] is defined
       #  values = values['parent']
       #  rv = values[name]
       # endwhile
@@ -169,7 +169,7 @@ class ASTOptimizerCSE
         mapOfExpressions = {}
       endif
 
-      if (node.childrenCnt > 0) and (typeof(node.hash) isnt 'undefined')
+      if (node.childrenCnt > 0) and (node.hash is defined)
         matchedNode = mapOfExpressions[node.hash]
 
         if matchedNode is node
@@ -293,7 +293,7 @@ class ASTOptimizerCSE
           endif
 
           # TODO: Handle already assigned variable.
-          if typeof(matchedNode.symbolTable) isnt 'undefined'
+          if matchedNode.symbolTable is defined
             matchedNode.symbolTable.lookupForRead(matchedNode.value)
           endif
 
