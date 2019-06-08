@@ -323,13 +323,13 @@ class ASTTranslator
     funcName  = ast['fullName']
     children  = ast['children']
 
-    if typeof(children) isnt 'undefined'
+    if children is defined
       this.app._debug('Emitting function ' + funcName + '...')
 
       oldSymbolTable   = this.symbolTable
       this.symbolTable = ast.children[0].symbolTable
 
-      if typeof(funcProto.className) isnt 'undefined'
+      if funcProto.className is defined
         this.currentClassProto = oldSymbolTable.lookupClass(funcProto.className)['proto']
       endif
 
@@ -599,7 +599,7 @@ class ASTTranslator
       # Call constructor if any.
       methodProto = classProto['vtable']['constructor']
 
-      if typeof(methodProto) isnt 'undefined'
+      if methodProto is defined
         params      = [rv]
         paramsCnt   = methodProto['paramsCnt'] + 1
         this._verifyNumberOfParameters('constructor', paramsCnt, childrenCnt)
