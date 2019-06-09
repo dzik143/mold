@@ -73,6 +73,30 @@ x >= y   # x is greater or equal to y (e.g. 3 >= 5 gives false)
 (a o b) or  (c o d) # check first condition, if it's false try second one
 (a o b) and (c o d) # check both conditions
 
+# Existent operators:
+x is existent    # variable x is defined (existent)
+x.y is existent  # both variable x and its inner field x.y are existent
+x[i] is existent # variable x is defined and has got item at index i
+
+# Existent operators (negation):
+x isnt existent    # x is undefined (not existent)
+x.y isnt existent  # x is undefined or field x.y does not exist
+x[i] isnt existent # x is undefined or item x[i] does not exist
+
+x is defined 
+x.y is defined
+x[i] is defined
+
+x is undefined 
+x.y is undefined
+x[i] is undefined
+
+x isnt defined 
+x.y isnt defined
+x[i] isnt defined
+
+x,y,z are equal
+
 # Parity operators (even / odd):
 x is odd             # x is odd integer (is NOT divisible by 2)
 x is even            # x is even integer (is divisible by 2)
@@ -84,18 +108,8 @@ x isnt even            # x is NOT even integer (is NOT divisible by 2)
 x isnt divisible by y  # the rest of x per y division is NOT 0
 
 # Range operators (TODO: Review it):
-x in range(10, 20)     # x is 10, 11, 12, 13, 14,... or 20
-x out of range(10, 20) # x is lower than 10 or greater than 20
-
-# Existent operators:
-x is existent    # variable x is defined (existent)
-x.y is existent  # both variable x and its inner field x.y are existent
-x[i] is existent # variable x is defined and has got item at index i
-
-# Existent operators (negation):
-x isnt existent    # x is undefined (not existent)
-x.y isnt existent  # x is undefined or field x.y does not exist
-x[i] isnt existent # x is undefined or item x[i] does not exist
+x is in range(10, 20)     # x is 10, 11, 12, 13, 14,... or 20
+x is out of range(10, 20) # x is lower than 10 or greater than 20
 
 # Bit-mask matching (TODO: Review id)
 x is bitmatch   y # x biwise and y gives non-zero value (in C: x & y != 0)

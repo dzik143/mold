@@ -267,3 +267,11 @@ if indexes x,y,z arent existent in box
 #############################
 
 read from system values @time(t), @cpuinfo(cpuinfo)
+
+#############################
+
+increase x
+decrease y
+
+increase x by 2
+decrease y by 2
