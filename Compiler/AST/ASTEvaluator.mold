@@ -294,7 +294,7 @@ class ASTEvaluator
       # obj.foo(a,b, c, ...)
       # Parameter may be changed inside call.
       # TODO: Track real in/out parameters intent.
-      for values childNode in children #idx in 0 .. childrenCnt
+      for values childNode in children
         if childNode.opcode is AST_OPCODE_VARIABLE
           symbolInfo = childNode.symbolInfo
 

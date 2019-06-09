@@ -114,7 +114,7 @@ class ASTOptimizerConstantFolding
       this.processNode(nodeKey)
       this.processNode(nodeValue)
 
-      if AST_IsImm(nodeKey) and AST_IsImm(nodeValue)
+      if (AST_IsImm(nodeKey) is true) and (AST_IsImm(nodeValue) is true)
         newValue[nodeKey.value] = nodeValue.value
       else
         isImm = false
@@ -206,7 +206,7 @@ class ASTOptimizerConstantFolding
         elif opcode is AST_OPCODE_VARIABLE
           # Convert variable to constant if possible.
           # TODO: Clean up this mess.
-          if (node.storedValue is defined) and (typeof(node.storedValue) isnt 'array') and AST_IsImm(node.storedValue)
+          if (node.storedValue is defined) and (typeof(node.storedValue) isnt 'array') and (AST_IsImm(node.storedValue) is true)
             if typeof(node.storedValue) isnt 'array'
               if (typeof(node.storedValue.value) isnt 'array') and (typeof(node.storedValue.value) isnt 'map')
                 if this.globals.isset(value) is false
@@ -265,7 +265,7 @@ class ASTOptimizerConstantFolding
           node.childrenCnt = len(newParams)
 
         # TODO: Review it.
-        elif (opcode is AST_OPCODE_REFERENCE) and (x.opcode is AST_OPCODE_VARIABLE) and (x.symbolInfo.kind is SYMBOL_KIND_CONST) and AST_IsImm(y)
+        elif (opcode is AST_OPCODE_REFERENCE) and (x.opcode is AST_OPCODE_VARIABLE) and (x.symbolInfo.kind is SYMBOL_KIND_CONST) and (AST_IsImm(y) is true)
           # box[i]
           # Access to constant array with imm index.
           # We can resolve it at compilation time.

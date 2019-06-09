@@ -479,7 +479,7 @@ function AST_IsPrimitiveImm(x) -> rv
 endfunction
 
 function AST_IsImmWithValue(x, value) -> rv
-  if AST_IsImm(x) and (x.value is value)
+  if (AST_IsImm(x) is true) and (x.value is value)
     rv = true
   else
     rv = false
@@ -491,7 +491,7 @@ function AST_IsEmpty(x) -> rv
 endfunction
 
 function AST_IsImmOrVar(x) -> rv
-  if AST_IsImm(x) or AST_IsVar(x)
+  if (AST_IsImm(x) is true) or (AST_IsVar(x) is true)
     rv = true
   else
     rv = false
