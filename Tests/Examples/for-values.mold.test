@@ -1,0 +1,263 @@
+TEST "for values in: empty array"
+x = []
+for values v in x
+  print v
+endfor
+print 'OK'
+
+EXPECTED_OUTPUT:
+OK
+-------------------------------------------------------------------------------
+
+TEST "for values in: small array"
+x = [10, 20, 30, 40, 50]
+
+for values v in x
+  print v
+endfor
+
+EXPECTED_OUTPUT:
+10
+20
+30
+40
+50
+-------------------------------------------------------------------------------
+
+TEST "for values in: empty map"
+x = {}
+for values v in x
+  print v
+endfor
+print 'OK'
+
+EXPECTED_OUTPUT:
+OK
+-------------------------------------------------------------------------------
+
+TEST "for values in: small map"
+x = {'x': 1, 'y': 'two', 'z': 3.14}
+
+for values v in x
+  print v
+endfor
+
+EXPECTED_OUTPUT:
+1
+two
+3.140000
+-------------------------------------------------------------------------------
+
+TEST "for values in: empty string"
+x = ''
+for values v in x
+  print v
+endfor
+print 'OK'
+
+EXPECTED_OUTPUT:
+OK
+-------------------------------------------------------------------------------
+
+TEST "for values in: small string"
+x = 'abcdef'
+for values v in x
+  print v
+endfor
+
+EXPECTED_OUTPUT:
+a
+b
+c
+d
+e
+f
+-------------------------------------------------------------------------------
+
+TEST "for values in: one character string"
+text = 'abcdef'
+x = text[3]
+
+for values v in x
+  print v
+endfor
+
+EXPECTED_OUTPUT:
+d
+-------------------------------------------------------------------------------
+TEST "for values in: sum array items one-by-one"
+
+x = [3,4,5]
+
+acc = 0
+for values v in x
+  acc = acc + v
+endfor  
+print acc
+
+EXPECTED_OUTPUT:
+12
+-------------------------------------------------------------------------------
+
+TEST "for values in: nested array"
+
+A = [[0, 1, 2],
+     [3, 4, 5],
+     [6, 7, 8]]
+
+acc = 0
+for values row in A
+  for values v in row
+    print 'Add', v
+    acc = acc + v
+  endfor  
+endfor
+print acc
+
+EXPECTED_OUTPUT:
+Add 0
+Add 1
+Add 2
+Add 3
+Add 4
+Add 5
+Add 6
+Add 7
+Add 8
+36
+-------------------------------------------------------------------------------
+
+TEST "for values in: wrong type"
+
+x = 3.14
+
+for values v in x
+endfor
+
+EXPECTED_ERROR:
+error: array, string or map expected
+-------------------------------------------------------------------------------
+
+TEST "for values in: iteration inside functionc call"
+
+function foo()
+  locals = [6,5,4]
+  box    = [1,2,3]
+
+  for values v in box
+    print locals
+  endfor
+endfunction
+
+foo()
+
+EXPECTED_OUTPUT:
+[6, 5, 4]
+[6, 5, 4]
+[6, 5, 4]
+-------------------------------------------------------------------------------
+
+TEST "for values in: iteration over function parameter"
+
+function foo(box)
+  for values v in box
+    print v
+  endfor
+endfunction
+
+foo([10,20,30])
+
+EXPECTED_OUTPUT:
+10
+20
+30
+-------------------------------------------------------------------------------
+
+TEST "for values in: process items inside call"
+
+function foo(item)
+  for values v in item
+    print 'foo(', v, ')'
+  endfor  
+endfunction
+
+arrayOfItems = [
+  {'value': 10},
+  {'value': 20},
+  {'value': 30}
+]
+
+for values v in arrayOfItems
+  foo(v)
+endfor
+
+EXPECTED_OUTPUT:
+foo( 10 )
+foo( 20 )
+foo( 30 )
+-------------------------------------------------------------------------------
+
+TEST "for values in: process items inside vcall"
+
+class Base
+  method bar(v)
+    print v
+  endmethod
+  
+  method foo()
+    box = [{'key1': 10}, {'key2': 20}, {'key3': 30}]
+    for values v in box
+      this.bar(v)
+    endfor
+  endmethod
+endclass
+
+obj = new Base()
+obj.foo()
+
+EXPECTED_OUTPUT:
+{'key1': 10}
+{'key2': 20}
+{'key3': 30}
+-------------------------------------------------------------------------------
+
+TEST "for values in: process items inside vcall (recursively)"
+
+class Base
+  method foo(deep, poolOfValues)
+    if deep > 0
+      print '-> foo(', deep, ')'
+      for values v in poolOfValues
+        print deep, v
+        this.foo(deep - 1, poolOfValues)
+      endfor
+      print '<- foo(', deep, ')'
+    endif
+  endmethod
+endclass
+
+obj = new Base()
+obj.foo(2, [10, 11, 12])
+
+EXPECTED_OUTPUT:
+-> foo( 2 )
+2 10
+-> foo( 1 )
+1 10
+1 11
+1 12
+<- foo( 1 )
+2 11
+-> foo( 1 )
+1 10
+1 11
+1 12
+<- foo( 1 )
+2 12
+-> foo( 1 )
+1 10
+1 11
+1 12
+<- foo( 1 )
+<- foo( 2 )
+-------------------------------------------------------------------------------

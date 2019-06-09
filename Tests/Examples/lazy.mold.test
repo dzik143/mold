@@ -15,19 +15,19 @@ endfunction
 #
 
 print 'false or false'
-rv = getFalse() or getFalse()
+rv = (getFalse() is true) or (getFalse() is true)
 print ""
 
 print 'false or true'
-rv = getFalse() or getTrue()
+rv = (getFalse() is true) or (getTrue() is true)
 print ""
 
 print 'true or false'
-rv = getTrue() or getFalse()
+rv = (getTrue() is true) or (getFalse() is true)
 print ""
 
 print 'true or true'
-rv = getTrue() or getTrue()
+rv = (getTrue() is true) or (getTrue() is true)
 print ""
 
 #
@@ -35,19 +35,19 @@ print ""
 #
 
 print 'false and false'
-rv = getFalse() and getFalse()
+rv = (getFalse() is true) and (getFalse() is true)
 print ""
 
 print 'false and true'
-rv = getFalse() and getTrue()
+rv = (getFalse() is true) and (getTrue() is true)
 print ""
 
 print 'true and false'
-rv = getTrue() and getFalse()
+rv = (getTrue() is true) and (getFalse() is true)
 print ""
 
 print 'true and true'
-rv = getTrue() and getTrue()
+rv = (getTrue() is true) and (getTrue() is true)
 
 EXPECTED_OUTPUT:
 false or false
@@ -92,19 +92,19 @@ endfunction
 print 'foo() and inline expression'
 print '==========================='
 
-if foo(true) and (1 is 1)
+if (foo(true) is true) and (1 is 1)
   print 'foo(true) and (1 is 1)'
 endif
 
-if foo(true) and (1 is 2)
+if (foo(true) is true) and (1 is 2)
   print 'foo(true) and (1 is 2)'
 endif
 
-if foo(false) and (1 is 1)
+if (foo(false) is true) and (1 is 1)
   print 'foo(false) and (1 is 1)'
 endif
 
-if foo(false) and (1 is 2)
+if (foo(false) is true) and (1 is 2)
   print 'foo(false) and (1 is 2)'
 endif
 
@@ -116,19 +116,19 @@ print ''
 print 'foo() or inline expression'
 print '=========================='
 
-if foo(true) or (1 is 1)
+if (foo(true) is true) or (1 is 1)
   print 'foo(true) or (1 is 1)'
 endif
 
-if foo(true) or (1 is 2)
+if (foo(true) is true) or (1 is 2)
   print 'foo(true) or (1 is 2)'
 endif
 
-if foo(false) or (1 is 1)
+if (foo(false) is true) or (1 is 1)
   print 'foo(false) or (1 is 1)'
 endif
 
-if foo(false) or (1 is 2)
+if (foo(false) is true) or (1 is 2)
   print 'foo(false) or (1 is 2)'
 endif
 
@@ -140,19 +140,19 @@ print ''
 print 'inline expression and foo()'
 print '==========================='
 
-if (1 is 1) and foo(true)
+if (1 is 1) and (foo(true) is true)
   print '(1 is 1) and foo(true)'
 endif
 
-if (1 is 2) and foo(true)
+if (1 is 2) and (foo(true) is true)
   print '(1 is 2) and foo(true)'
 endif
 
-if (1 is 1) and foo(false)
+if (1 is 1) and (foo(false) is true)
   print '(1 is 1) and foo(false)'
 endif
 
-if (1 is 2) and foo(false)
+if (1 is 2) and (foo(false) is true)
   print '(1 is 2) and foo(false)'
 endif
 
@@ -164,19 +164,19 @@ print ''
 print 'inline expression or foo()'
 print '=========================='
 
-if (1 is 1) or foo(true)
+if (1 is 1) or (foo(true) is true)
   print '(1 is 1) or foo(true)'
 endif
 
-if (1 is 2) or foo(true)
+if (1 is 2) or (foo(true) is true)
   print '(1 is 2) or foo(true)'
 endif
 
-if (1 is 1) or foo(false)
+if (1 is 1) or (foo(false) is true)
   print '(1 is 1) or foo(false)'
 endif
 
-if (1 is 2) or foo(false)
+if (1 is 2) or (foo(false) is true)
   print '(1 is 2) or foo(false)'
 endif
 

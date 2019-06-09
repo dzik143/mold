@@ -443,3 +443,79 @@ default
 default
 default
 -------------------------------------------------------------------------------
+
+TEST "Multiline if #1"
+
+function foo(x)
+  if ((x is 1) or 
+      (x is 2) or
+      (x is 3))
+    print x, 'is in {1, 2, 3}'
+  else
+    print x, 'is NOT in {1, 2, 3}'
+  endif
+endfunction
+
+foo(0)
+foo(1)
+foo(2)
+foo(3)
+foo(4)
+
+EXPECTED_OUTPUT:
+0 is NOT in {1, 2, 3}
+1 is in {1, 2, 3}
+2 is in {1, 2, 3}
+3 is in {1, 2, 3}
+4 is NOT in {1, 2, 3}
+-------------------------------------------------------------------------------
+
+TEST "Multiline if #2"
+
+function foo(x)
+  if ((x is 1) or 
+      (x is 2) or (x is 3))
+    print x, 'is in {1, 2, 3}'
+  else
+    print x, 'is NOT in {1, 2, 3}'
+  endif
+endfunction
+
+foo(0)
+foo(1)
+foo(2)
+foo(3)
+foo(4)
+
+EXPECTED_OUTPUT:
+0 is NOT in {1, 2, 3}
+1 is in {1, 2, 3}
+2 is in {1, 2, 3}
+3 is in {1, 2, 3}
+4 is NOT in {1, 2, 3}
+-------------------------------------------------------------------------------
+
+TEST "Multiline if #3"
+
+function foo(x)
+  if ((x is 1) or (x is 2) or 
+      (x is 3))
+    print x, 'is in {1, 2, 3}'
+  else
+    print x, 'is NOT in {1, 2, 3}'
+  endif
+endfunction
+
+foo(0)
+foo(1)
+foo(2)
+foo(3)
+foo(4)
+
+EXPECTED_OUTPUT:
+0 is NOT in {1, 2, 3}
+1 is in {1, 2, 3}
+2 is in {1, 2, 3}
+3 is in {1, 2, 3}
+4 is NOT in {1, 2, 3}
+-------------------------------------------------------------------------------
