@@ -91,7 +91,10 @@ class CodeGeneratorX64
 
     xInfo = this.symbols[x]
 
-    if (xInfo is undefined) or (xInfo.kind is SYMBOL_KIND_VAR_LOCAL) or (xInfo.kind is SYMBOL_KIND_VAR_GLOBAL)
+    if ((xInfo is undefined) or
+        (xInfo.kind is SYMBOL_KIND_VAR_LOCAL) or
+        (xInfo.kind is SYMBOL_KIND_VAR_GLOBAL))
+
       print '  lea  rcx, [', x, ']'
       print '  call __MOLD_VariantDestroy'
     endif
@@ -1157,7 +1160,10 @@ class CodeGeneratorX64
         print '  mov eax, dword [', x, '+ Variant_t.value]'
         print '  mov dword [', dst, '], eax'
 
-      elif (originalOpcode is 'conv_variant_to_int32') or (originalOpcode is 'conv_variant_to_int64') or (originalOpcode is 'conv_variant_to_float64')
+      elif ((originalOpcode is 'conv_variant_to_int32') or
+            (originalOpcode is 'conv_variant_to_int64') or
+            (originalOpcode is 'conv_variant_to_float64'))
+
         print '  mov rax, qword [', x, '+ Variant_t.value]'
         print '  mov qword [', dst, '], rax'
 
@@ -1190,7 +1196,10 @@ class CodeGeneratorX64
         symbols = currentSymbols
 
         for values oneItem in symbols
-          if (oneItem.kind is SYMBOL_KIND_VAR_LOCAL) and ((oneItem.type is 'variant') or (oneItem.type is undefined))
+
+          if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) and
+              ((oneItem.type is 'variant') or (oneItem.type is undefined)))
+
             if oneItem.usedAsIterator is true
               # Symbol is used as loop iterator.
               # It's only dump reference for existing box values or keys.
@@ -1204,7 +1213,10 @@ class CodeGeneratorX64
 
         if (currentProcName is 'start')
           for values oneItem in symbols
-            if (oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and ((oneItem.type is 'variant') or (oneItem.type is undefined))
+
+            if ((oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and
+                ((oneItem.type is 'variant') or (oneItem.type is undefined)))
+
               this.variantDestroy(oneItem.name)
             endif
           endfor
@@ -1229,7 +1241,10 @@ class CodeGeneratorX64
         print ''
         # TODO: Clean up this mess.
         for values oneItem in symbols
-          if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) or (oneItem.kind is SYMBOL_KIND_VAR_PARAM))
+
+          if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) or
+              (oneItem.kind is SYMBOL_KIND_VAR_PARAM))
+
             print '  restore', oneItem.name
           endif
         endfor
@@ -1265,7 +1280,9 @@ class CodeGeneratorX64
         for symbolIdx in 0 .. symbolsCnt
           symbol = symbolsIndex[symbolsCnt - symbolIdx - 1]
 
-          if (symbol.kind is SYMBOL_KIND_VAR_LOCAL) or (symbol.kind is SYMBOL_KIND_VAR_PARAM)
+          if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or
+              (symbol.kind is SYMBOL_KIND_VAR_PARAM))
+
             if (symbol.type is 'variant') or (symbol.type is undefined)
               varSize = 16
 
@@ -1353,7 +1370,9 @@ class CodeGeneratorX64
             if (oneItem.name is 'argv') or (oneItem.name is 'argc')
               # Do nothing.
 
-            elif (oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and ((oneItem.type is 'variant') or (oneItem.type is undefined))
+            elif ((oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and
+                  ((oneItem.type is 'variant') or (oneItem.type is undefined)))
+
               print '  mov [' + oneItem.name + ' + Variant_t.type], VARIANT_UNDEFINED'
             endif
 

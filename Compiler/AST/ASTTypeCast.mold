@@ -94,7 +94,13 @@ class ASTTypeCast
           children[1] = AST_TypeCast(y, -1)
         endif
 
-      elif (opcode is AST_OPCODE_ADD) or (opcode is AST_OPCODE_MUL) or (opcode is AST_OPCODE_SUB) or (opcode is AST_OPCODE_DIV) or (opcode is AST_OPCODE_IDIV) or ((opcode >= AST_OPCODE_COMPARE_EQ) and (opcode <= AST_OPCODE_COMPARE_LE))
+      elif ((opcode is AST_OPCODE_ADD) or
+            (opcode is AST_OPCODE_MUL) or
+            (opcode is AST_OPCODE_SUB) or
+            (opcode is AST_OPCODE_DIV) or
+            (opcode is AST_OPCODE_IDIV) or
+            ((opcode >= AST_OPCODE_COMPARE_EQ) and (opcode <= AST_OPCODE_COMPARE_LE)))
+
         x = children[0]
         y = children[1]
         xType = AST_GetDataType(x)
@@ -137,7 +143,10 @@ class ASTTypeCast
         # switch expr
         children[0] = AST_TypeCast(children[0], AST_DATA_INTEGER)
 
-      elif (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_INVOKE_METHOD) or (opcode is AST_OPCODE_CALL_NEW)
+      elif ((opcode is AST_OPCODE_CALL) or
+            (opcode is AST_OPCODE_INVOKE_METHOD) or
+            (opcode is AST_OPCODE_CALL_NEW))
+
         if node.value isnt 'global'
           for idx in 0 .. childrenCnt
             # Adjust argument type.
@@ -153,7 +162,9 @@ class ASTTypeCast
           childNode   = children[idx]
           childOpcode = childNode.opcode
 
-          if (childOpcode >= AST_OPCODE_COMPARE_EQ) and (childOpcode <= AST_OPCODE_BOOL_NOT)
+          if ((childOpcode >= AST_OPCODE_COMPARE_EQ) and
+              (childOpcode <= AST_OPCODE_BOOL_NOT))
+
             children[idx] = AST_TypeCast(childNode, AST_DATA_BOOL)
           endif
         endfor

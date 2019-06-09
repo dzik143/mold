@@ -526,7 +526,11 @@ class ASTSymbolsCollector
       this._collectSymbolsFromRightNode(symbolTable, idxStepNode)
       this._collectSymbolsFromLeftNode(symbolTable, bodyNode)
 
-    elif (opcode is AST_OPCODE_FOR_VALUES) or (opcode is AST_OPCODE_FOR_KEYS) or (opcode is AST_OPCODE_FOR_INDEXES) or (opcode is AST_OPCODE_FOR_KEYS_VALUES)
+    elif ((opcode is AST_OPCODE_FOR_VALUES) or
+          (opcode is AST_OPCODE_FOR_KEYS) or
+          (opcode is AST_OPCODE_FOR_INDEXES) or
+          (opcode is AST_OPCODE_FOR_KEYS_VALUES))
+
       # for values v in box
       # for keys k in box
       # for indexes idx in box
@@ -573,7 +577,23 @@ class ASTSymbolsCollector
 
       if opcode is AST_OPCODE_CALL
         funcName = node.value
-        if (funcName is 'typeof') or (funcName is 'print') or (funcName is 'super') or (funcName is 'len') or (funcName is 'str') or (funcName is 'strescape') or (funcName is 'exit') or (funcName is 'die') or (funcName is '__mold_createObject') or (funcName is '__mold_getClassName') or (funcName is '__mold_warning') or (funcName is '__mold_printToStdOutput') or (funcName is '__mold_parseFile') or (funcName is 'moldParseFile') or (funcName is 'global')
+
+        if ((funcName is 'typeof') or
+            (funcName is 'print') or
+            (funcName is 'super') or
+            (funcName is 'len') or
+            (funcName is 'str') or
+            (funcName is 'strescape') or
+            (funcName is 'exit') or
+            (funcName is 'die') or
+            (funcName is '__mold_createObject') or
+            (funcName is '__mold_getClassName') or
+            (funcName is '__mold_warning') or
+            (funcName is '__mold_printToStdOutput') or
+            (funcName is '__mold_parseFile') or
+            (funcName is 'moldParseFile') or
+            (funcName is 'global'))
+
         # or (funcName is '__mold_openExternalModule') or (funcName is '__mold_loadExternalFunction') or (funcName is '__mold_peek') or (funcName is '__mold_loadFile')
           # One of built-in function - declaration is not needed.
           if symbolTable.isset(funcName) is false
@@ -587,7 +607,9 @@ class ASTSymbolsCollector
         isLeftNode      = false
 
         # Mark recursive calls. We use it in further optizations.
-        if (node.symbolInfo.proto.isRecursive isnt true) and (symbolTable.getCurrentFunctionName() is funcName)
+        if ((node.symbolInfo.proto.isRecursive isnt true) and
+            (symbolTable.getCurrentFunctionName() is funcName))
+
           this._debug('Recursive call detected at node #' + str(node.id) + ' (' + funcName + ')')
           node.symbolInfo.proto.isRecursive = true
         endif

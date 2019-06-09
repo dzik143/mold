@@ -176,7 +176,11 @@ class ASTEvaluator
 
     if opcode is AST_OPCODE_VARIABLE
       symbolInfo = node.symbolInfo
-      if (symbolInfo is defined) and (symbolInfo.kind is SYMBOL_KIND_VAR_GLOBAL) and (symbolInfo.writeHits > 1)
+
+      if ((symbolInfo is defined) and
+          (symbolInfo.kind is SYMBOL_KIND_VAR_GLOBAL) and
+          (symbolInfo.writeHits > 1))
+
         # Non-constant global. Treat as unique.
         node.storedValue = node
 
@@ -235,7 +239,9 @@ class ASTEvaluator
         # TODO: Review it.
         boxOpcode = lval.children[0].opcode
 
-        if (boxOpcode isnt AST_OPCODE_VARIABLE) and (boxOpcode isnt AST_OPCODE_REFERENCE)
+        if ((boxOpcode isnt AST_OPCODE_VARIABLE) and
+            (boxOpcode isnt AST_OPCODE_REFERENCE))
+
           # Error - lval should stores variable name.
           # box[i] = ...
           die('error: array or map expected')
@@ -303,7 +309,12 @@ class ASTEvaluator
           if symbolInfo is defined
             astType = symbolInfo.astType
 
-            if (astType is undefined) or (astType is -1) or (astType is AST_DATA_OBJECT) or (astType is AST_DATA_MAP) or (astType is AST_DATA_ARRAY)
+            if ((astType is undefined) or
+                (astType is -1) or
+                (astType is AST_DATA_OBJECT) or
+                (astType is AST_DATA_MAP) or
+                (astType is AST_DATA_ARRAY))
+
               # Unknown or box like variable is passed as call parameter.
               # We assume that it may be changed inside function.
               this._assignValue(valuesMap, childNode, childNode)

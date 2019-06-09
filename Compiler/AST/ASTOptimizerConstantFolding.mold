@@ -206,9 +206,15 @@ class ASTOptimizerConstantFolding
         elif opcode is AST_OPCODE_VARIABLE
           # Convert variable to constant if possible.
           # TODO: Clean up this mess.
-          if (node.storedValue is defined) and (typeof(node.storedValue) isnt 'array') and (AST_IsImm(node.storedValue) is true)
+          if ((node.storedValue is defined) and
+              (typeof(node.storedValue) isnt 'array') and
+              (AST_IsImm(node.storedValue) is true))
+
             if typeof(node.storedValue) isnt 'array'
-              if (typeof(node.storedValue.value) isnt 'array') and (typeof(node.storedValue.value) isnt 'map')
+
+              if ((typeof(node.storedValue.value) isnt 'array') and
+                  (typeof(node.storedValue.value) isnt 'map'))
+
                 if this.globals.isset(value) is false
                   newValue = node.storedValue.value
                 endif
@@ -221,7 +227,10 @@ class ASTOptimizerConstantFolding
             # TODO: Handle imm arrays/maps/objects.
             if symbolInfo.writeHits is 1
 
-              if (typeof(symbolInfo.value) is 'integer') or (typeof(symbolInfo.value) is 'float') or (typeof(symbolInfo.value) is 'boolean')
+              if ((typeof(symbolInfo.value) is 'integer') or
+                  (typeof(symbolInfo.value) is 'float') or
+                  (typeof(symbolInfo.value) is 'boolean'))
+
                 newValue = symbolInfo.value
               endif
             endif
@@ -234,7 +243,10 @@ class ASTOptimizerConstantFolding
 
           for values oneChild in children
             # Convert imm to strings.
-            if (oneChild.opcode >= AST_OPCODE_PROGRAM) or (oneChild.opcode is AST_DATA_ARRAY) or (oneChild.opcode is AST_DATA_MAP)
+            if ((oneChild.opcode >= AST_OPCODE_PROGRAM) or
+                (oneChild.opcode is AST_DATA_ARRAY) or
+                (oneChild.opcode is AST_DATA_MAP))
+
               # Stay non-imm params as is.
               lastWasImm = false
               newParams[len(newParams)] = oneChild
@@ -265,7 +277,11 @@ class ASTOptimizerConstantFolding
           node.childrenCnt = len(newParams)
 
         # TODO: Review it.
-        elif (opcode is AST_OPCODE_REFERENCE) and (x.opcode is AST_OPCODE_VARIABLE) and (x.symbolInfo.kind is SYMBOL_KIND_CONST) and (AST_IsImm(y) is true)
+        elif ((opcode is AST_OPCODE_REFERENCE) and
+              (x.opcode is AST_OPCODE_VARIABLE) and
+              (x.symbolInfo.kind is SYMBOL_KIND_CONST) and
+              (AST_IsImm(y) is true))
+
           # box[i]
           # Access to constant array with imm index.
           # We can resolve it at compilation time.

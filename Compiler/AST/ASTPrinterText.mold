@@ -41,7 +41,12 @@ class ASTPrinterText
     useParentForY = false
 
     # Check is parenthesis
-    if (node.opcode is AST_OPCODE_MUL) or (node.opcode is AST_OPCODE_DIV) or (node.opcode is AST_OPCODE_IDIV) or (node.opcode is AST_OPCODE_BOOL_AND) or (node.opcode is AST_OPCODE_BOOL_OR)
+    if ((node.opcode is AST_OPCODE_MUL) or
+        (node.opcode is AST_OPCODE_DIV) or
+        (node.opcode is AST_OPCODE_IDIV) or
+        (node.opcode is AST_OPCODE_BOOL_AND) or
+        (node.opcode is AST_OPCODE_BOOL_OR))
+
       useParentForX = AST_IsImmOrVar(x) isnt true
       useParentForY = AST_IsImmOrVar(y) isnt true
     endif
@@ -80,7 +85,10 @@ class ASTPrinterText
     global AST_OPCODE_CLASS
     global AST_OPCODE_CLASS_METHOD
 
-    if (node.opcode isnt AST_OPCODE_CLASS) and (node.opcode isnt AST_OPCODE_FUNCTION) and (node.opcode isnt AST_OPCODE_CLASS_METHOD)
+    if ((node.opcode isnt AST_OPCODE_CLASS) and
+        (node.opcode isnt AST_OPCODE_FUNCTION) and
+        (node.opcode isnt AST_OPCODE_CLASS_METHOD))
+
       prefix = prefix + '  '
     endif
 
@@ -88,7 +96,10 @@ class ASTPrinterText
       if childNode.opcode isnt AST_OPCODE_NOP
         this._printNode(prefix, childNode)
 
-        if (childNode.opcode isnt AST_OPCODE_BLOCK) and (childNode.opcode isnt AST_OPCODE_IF) and (node.opcode isnt AST_OPCODE_CLASS)
+        if ((childNode.opcode isnt AST_OPCODE_BLOCK) and
+            (childNode.opcode isnt AST_OPCODE_IF) and
+            (node.opcode isnt AST_OPCODE_CLASS))
+
           print ''
         endif
       endif
@@ -426,7 +437,10 @@ class ASTPrinterText
     elif opcode is AST_OPCODE_VARIABLE
       symbolInfo = node.symbolInfo
 
-      if (symbolInfo is defined) and (symbolInfo.kind is SYMBOL_KIND_CONST) and (typeof(symbolInfo.value) is 'string')
+      if ((symbolInfo is defined) and
+          (symbolInfo.kind is SYMBOL_KIND_CONST) and
+          (typeof(symbolInfo.value) is 'string'))
+
         value = "'" + str(symbolInfo.value) + "'"
       endif
 

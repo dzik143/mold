@@ -162,7 +162,10 @@ class SymbolTable
     # TODO: Clean up this mess.
     if rv is defined
       if (tab.procLevel is 0) and (this.procLevel > 0)
-        if (rv.kind is SYMBOL_KIND_VAR_LOCAL) or (rv.kind is SYMBOL_KIND_VAR_GLOBAL)
+
+        if ((rv.kind is SYMBOL_KIND_VAR_LOCAL) or
+            (rv.kind is SYMBOL_KIND_VAR_GLOBAL))
+
           x  = []
           rv = x[0]
         endif

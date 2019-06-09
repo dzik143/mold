@@ -84,7 +84,10 @@ class MIRQuadOptimizer extends PipeAbstract
       # Temporary fix for x = x.foo().
       this._emitOneItem(item)
 
-    elif (opcode is 'move') and (this.lastOpcode isnt 'move') and (this.lastDst is src)
+    elif ((opcode is 'move') and
+          (this.lastOpcode isnt 'move') and
+          (this.lastDst is src))
+
       # tmp := x + y
       # z   := tmp
       buffer      = this.buffer

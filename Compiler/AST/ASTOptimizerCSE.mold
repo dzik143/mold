@@ -110,7 +110,10 @@ class ASTOptimizerCSE
 
       newRval = this._processNode(rval, mapOfExpressions, symbolTable)
 
-      if (lval.opcode is AST_OPCODE_VARIABLE) and (newRval.opcode is AST_OPCODE_VARIABLE) and (lval.value is newRval.value)
+      if ((lval.opcode is AST_OPCODE_VARIABLE) and
+          (newRval.opcode is AST_OPCODE_VARIABLE) and
+          (lval.value is newRval.value))
+
         # Useless assign: x = x
         this._debug('Useless self-assign at node #' + str(node.id) + ' (' + lval.hash + ')')
         rv.opcode      = AST_OPCODE_NOP
@@ -165,7 +168,9 @@ class ASTOptimizerCSE
     else
 
       # TODO: Review it.
-      if (opcode >= AST_OPCODE_FOR_VALUES_RANGE) and (opcode < AST_OPCODE_FOR_INDEXES_VALUES)
+      if ((opcode >= AST_OPCODE_FOR_VALUES_RANGE) and
+          (opcode < AST_OPCODE_FOR_INDEXES_VALUES))
+
         mapOfExpressions = {}
       endif
 
@@ -191,7 +196,10 @@ class ASTOptimizerCSE
             # Common subexpression is already assigned to variable.
             # Just use it one more time in another place.
 
-          elif (matchedNode.parent.opcode is AST_OPCODE_DECLARE_OR_ASSIGN) and (matchedNode.parent.children[0].opcode is AST_OPCODE_VARIABLE) and (matchedNode.parent.children[1] is matchedNode)
+          elif ((matchedNode.parent.opcode is AST_OPCODE_DECLARE_OR_ASSIGN) and
+                (matchedNode.parent.children[0].opcode is AST_OPCODE_VARIABLE) and
+                (matchedNode.parent.children[1] is matchedNode))
+
             # z = (common subexpression)
             # Common subexpression is already assigned to some variable in
             # original code.
@@ -270,15 +278,19 @@ class ASTOptimizerCSE
             isCseEmited = false
 
             for values oneChild in commonBlock.children
-              if (isCseEmited is false) and ((oneChild is lastInstructionNode1) or (oneChild is lastInstructionNode2))
-                # Push __csexx = ... before first usage.
-                isCseEmited = true
-                newCommonBlockChildren[len(newCommonBlockChildren)] = {
-                  'id': AST_GetNextId(),
-                  'opcode': AST_OPCODE_DECLARE_OR_ASSIGN,
-                  'children': [matchedNode, node],
-                  'childrenCnt': 2
-                }
+              if (isCseEmited is false)
+                if ((oneChild is lastInstructionNode1) or
+                    (oneChild is lastInstructionNode2))
+
+                  # Push __csexx = ... before first usage.
+                  isCseEmited = true
+                  newCommonBlockChildren[len(newCommonBlockChildren)] = {
+                    'id': AST_GetNextId(),
+                    'opcode': AST_OPCODE_DECLARE_OR_ASSIGN,
+                    'children': [matchedNode, node],
+                   'childrenCnt': 2
+                  }
+                endif
               endif
 
               newCommonBlockChildren[len(newCommonBlockChildren)] = oneChild

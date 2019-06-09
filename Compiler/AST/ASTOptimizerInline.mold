@@ -50,7 +50,9 @@ class ASTOptimizerInline
       if symbolTable.isset(node.value)
         symbolInfo = symbolTable.lookup(node.value)
 
-        if (symbolInfo.kind is SYMBOL_KIND_VAR_PARAM) or (symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL)
+        if ((symbolInfo.kind is SYMBOL_KIND_VAR_PARAM) or
+            (symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL))
+
           newValue = namePrefix + node.value
         endif
       endif
@@ -163,7 +165,11 @@ class ASTOptimizerInline
       # Inject function body.
       for idx in 0 .. childrenCnt
         childNode = children[idx]
-        if (childNode.opcode is AST_OPCODE_CALL) and (childNode.value is 'global') and (symbolTable.deepIdx <= 1)
+
+        if ((childNode.opcode is AST_OPCODE_CALL) and
+            (childNode.value is 'global') and
+            (symbolTable.deepIdx <= 1))
+
           # Ignore global directive if we inject function body into global space.
           # It's not needed anymore.
         else

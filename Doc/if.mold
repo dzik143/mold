@@ -50,7 +50,7 @@ if (x is 1) or (y is 2)
 endif
 
 # Multi-line conditions list.
-# We wrap all conditions within parentheses..
+# We wrap all conditions within parentheses.
 if ((x is 11) and (y is 21) or
     (x is 12) and (y is 22) or
     (x is 13) and (y is 23))

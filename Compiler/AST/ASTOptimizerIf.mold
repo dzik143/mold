@@ -45,7 +45,11 @@ class ASTOptimizerIf
     childrenCnt = node.childrenCnt
     cond        = children[0]
 
-    if (opcode is AST_OPCODE_IF) and (childrenCnt is 3) and (cond.opcode is AST_OPCODE_COMPARE_EQ) and (cond.children[1].opcode is AST_DATA_INTEGER)
+    if ((opcode is AST_OPCODE_IF) and
+        (childrenCnt is 3) and
+        (cond.opcode is AST_OPCODE_COMPARE_EQ) and
+        (cond.children[1].opcode is AST_DATA_INTEGER))
+
       # if cond1
       #   ...
       # else
@@ -74,7 +78,10 @@ class ASTOptimizerIf
         goOn = false
 
         if currentIfNode.opcode is AST_OPCODE_IF
-          if (cond.opcode is AST_OPCODE_COMPARE_EQ) and (cond.children[1].opcode is AST_DATA_INTEGER) and (AST_Hash(cond.children[0]) is exprHash)
+
+          if ((cond.opcode is AST_OPCODE_COMPARE_EQ) and
+              (cond.children[1].opcode is AST_DATA_INTEGER) and
+              (AST_Hash(cond.children[0]) is exprHash))
 
             # TODO: Handle values ranges.
             # x is imm
@@ -121,7 +128,9 @@ class ASTOptimizerIf
         # Handle otherwise node.
         lastCaseNode = newChildren[len(newChildren) - 1]
 
-        if (currentIfNode.opcode isnt AST_OPCODE_IF) or (AST_HashForCodeComparison(currentIfNode.children[1]) isnt AST_HashForCodeComparison(lastCaseNode))
+        if ((currentIfNode.opcode isnt AST_OPCODE_IF) or
+            (AST_HashForCodeComparison(currentIfNode.children[1]) isnt AST_HashForCodeComparison(lastCaseNode)))
+
           newChildren[len(newChildren)] = currentIfNode
           this._processNode(currentIfNode)
         endif

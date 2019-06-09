@@ -119,7 +119,11 @@ class ASTPrinterHtml
       endfor
 
     else
-      if (opcode < AST_OPCODE_PROGRAM) or (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_INVOKE_METHOD) or (opcode is AST_OPCODE_VARIABLE)
+      if ((opcode < AST_OPCODE_PROGRAM) or
+          (opcode is AST_OPCODE_CALL) or
+          (opcode is AST_OPCODE_INVOKE_METHOD) or
+          (opcode is AST_OPCODE_VARIABLE))
+
         value = node.value
         if typeof(value) is 'string'
           value = "'" + value + "' <i>(" + AST_ConvertDataTypeToText(AST_GetDataType(node)) + ")</i>"

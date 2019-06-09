@@ -558,7 +558,10 @@ function AST_HashInternal(node, isCodeMode) -> rv
     elif AST_IsPrimitiveImm(node)
       rv = AST_GetOpcodeAsShortText(opcode) + str(node.value)
 
-    elif (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_CALL_NEW) or (opcode is AST_OPCODE_INVOKE_METHOD)
+    elif ((opcode is AST_OPCODE_CALL) or
+          (opcode is AST_OPCODE_CALL_NEW) or
+          (opcode is AST_OPCODE_INVOKE_METHOD))
+
       # TODO: Review it.
       rv = AST_GetOpcodeAsShortText(opcode) + ':' + node.value + ',' + str(childrenCnt)
       for idx in 0 .. childrenCnt
@@ -682,6 +685,7 @@ function AST_GetDataType(node) -> rv
 
     if opcode is AST_OPCODE_VARIABLE
       symbolInfo = node.symbolInfo
+
       if (symbolInfo is defined) and (symbolInfo.astType is defined)
         rv = symbolInfo.astType
       endif
@@ -715,7 +719,10 @@ function AST_GetDataType(node) -> rv
         y = AST_GetDataType(children[1])
 
         # TODO: Validate types.
-        if (opcode is AST_OPCODE_ADD) or (opcode is AST_OPCODE_MUL) or (opcode is AST_OPCODE_SUB)
+        if ((opcode is AST_OPCODE_ADD) or
+            (opcode is AST_OPCODE_MUL) or
+            (opcode is AST_OPCODE_SUB))
+
           if (x is AST_DATA_DOUBLE) or (y is AST_DATA_DOUBLE)
             rv = AST_DATA_DOUBLE
           elif (x is -1) or (y is -1)
@@ -738,9 +745,17 @@ function AST_GetDataType(node) -> rv
             rv = AST_DATA_INTEGER
           endif
 
-        elif (opcode >= AST_OPCODE_COMPARE_EQ) and (opcode <= AST_OPCODE_BOOL_OR)
+        elif ((opcode >= AST_OPCODE_COMPARE_EQ) and
+              (opcode <= AST_OPCODE_BOOL_OR))
+
           # TODO: Why need variant result for variant operands?
-          if (x is -1) or (y is -1) or (x is AST_DATA_STRING) or (y is AST_DATA_STRING) or (x > AST_DATA_UNDEFINED) or (y > AST_DATA_UNDEFINED)
+          if ((x is -1) or
+              (y is -1) or
+              (x is AST_DATA_STRING) or
+              (y is AST_DATA_STRING) or
+              (x > AST_DATA_UNDEFINED) or
+              (y > AST_DATA_UNDEFINED))
+
             rv = -1
           else
             rv = AST_DATA_BOOL
