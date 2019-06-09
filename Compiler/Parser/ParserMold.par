@@ -18,9 +18,9 @@
 /*                                                                            */
 /******************************************************************************/
 
-#!language "mold";                                                      
-#default action [* @@ = @1 *];                                          
-#whitespaces @WHITE;                                                    
+#!language "mold";
+#default action [* @@ = @1 *];
+#whitespaces @WHITE;
 
 @WHITE   ' ' | "/*" .* "*/" | '#' .* '\r\n'+;
 @EOL     '\r\n'+;
@@ -249,40 +249,59 @@ new_begin
 // Expressions.
 //
 
-expr : expr '+' expr     =add
-     | expr '-' expr     =sub
-     | expr '*' expr     =mul
-     | expr '/' expr     =div
-     | expr "//" expr    =idiv
-     | '(' expr ')'
-     | '-' expr          =neg
-     | expr '[' expr ']' =index
-     | expr '.' member   =index
-     | imm
-     | logic
-     | var
-     ;
+expr
+  : expr '+' expr     =add
+  | expr '-' expr     =sub
+  | expr '*' expr     =mul
+  | expr '/' expr     =div
+  | expr "//" expr    =idiv
+  | '(' expr ')'
+  | '-' expr          =neg
+  | expr '[' expr ']' =index
+  | expr '.' member   =index
+  | imm
+  | logic
+  | expr_logic
+  | var
+  ;
 
 //
 // Logical.
 //
 
-logic : logic "and" logic =band
-      | logic "or" logic  =bor
-      | "not" logic       =not
-      | rval "is" rval    =cmpeq
-      | rval "isnt" rval  =cmpne
-      | rval "<" rval     =cmplt
-      | rval "<=" rval    =cmple
-      | rval '>' rval     =cmpgt
-      | rval ">=" rval    =cmpge
-      | '(' logic ')'     [* @@ = @2 *]
-      | function_call
-      | method_call
-      | bool              =bool
-      ;
+// Logical primitive: true, false, x o y
+logic
+  : "not" logic       =not
+  | rval "is" rval    =cmpeq
+  | rval "isnt" rval  =cmpne
+  | rval "<" rval     =cmplt
+  | rval "<=" rval    =cmple
+  | rval '>' rval     =cmpgt
+  | rval ">=" rval    =cmpge
+  | function_call
+  | method_call
+  | bool              =bool
+  ;
 
-condition : logic;
+// Complex logical expression built from primitves.
+expr_logic
+  : bool =bool
+  | '(' logic ')'      [* @@ = @2 *]
+  | '(' expr_logic ')' [* @@ = @2 *]
+  | expr_logic "and" expr_logic =band
+  | expr_logic "or"  expr_logic =bor
+  ;
+
+expr_logic_multiline
+  : expr_logic "and" @EOL (expr_logic | expr_logic_multiline) =band
+  | expr_logic "or"  @EOL (expr_logic | expr_logic_multiline) =bor
+  ;
+
+condition
+  : logic
+  | expr_logic
+  | '(' expr_logic_multiline ')' [* @@ = @2 *]
+  ;
 
 //
 // IF-ELSE-ENDIF
@@ -340,7 +359,7 @@ stmt_for_indexes_values
 //
 
 stmt_while
-  : "while" logic @EOL stmt_list "endwhile";
+  : "while" condition @EOL stmt_list "endwhile";
 
 //
 // Array initializers.
