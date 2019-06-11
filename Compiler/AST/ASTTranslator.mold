@@ -64,18 +64,15 @@ class ASTTranslator
   #                            Built-in functions
   # ----------------------------------------------------------------------------
 
-  method _callLen(x) -> rv
-    rv = false
+  method _callLen(rv, x)
     this._error('_callLen not implemented')
   endmethod
 
-  method _callStr(x) -> rv
-    rv = false
+  method _callStr(rv, x)
     this._error('_callStr not implemented')
   endmethod
 
-  method _callStrEscape(x) -> rv
-    rv = false
+  method _callStrEscape(rv, x)
     this._error('_callStrEscape not implemented')
   endmethod
 
@@ -95,28 +92,23 @@ class ASTTranslator
     this._error('_callDie not implemented')
   endmethod
 
-  method _callMoldCreateObject(classProto) -> rv
-    rv = false
+  method _callMoldCreateObject(rv, classProto)
     this._error('_callMoldCreateObject not implemented')
   endmethod
 
-  method _callMoldGetClassName(thiz) -> rv
-    rv = false
+  method _callMoldGetClassName(rv, thiz)
     this._error('_callMoldGetClassName not implemented')
   endmethod
 
-  method _callMoldParseFile(filePath) -> rv
-    rv = false
+  method _callMoldParseFile(rv, filePath)
     this._error('_callMoldParseFile not implemented')
   endmethod
 
-  method _loadArgsVector() -> rv
-    rv = false
+  method _loadArgsVector(rv)
     this._error('_loadArgsVector not implemented')
   endmethod
 
-  method _loadArgsCount() -> rv
-    rv = false
+  method _loadArgsCount(rv)
     this._error('_callLoadArgsCount not implemented')
   endmethod
 
@@ -124,39 +116,32 @@ class ASTTranslator
   #            Methods, which should be overloaded in derived class
   # ----------------------------------------------------------------------------
 
-  method _loadArray() -> rv
-    rv = false
+  method _loadArray(rv)
     this._error('_loadArray() not implemented')
   endmethod
 
-  method _loadMap() -> rv
-    rv = false
+  method _loadMap(rv)
     this._error('_loadMap() not implemented')
   endmethod
 
-  method _loadImm(value) -> rv
-    rv = false
+  method _loadImm(rv, value)
     this._error('_loadImm() not implemented')
   endmethod
 
-  method _loadImmAsVariant(value) -> rv
+  method _loadImmAsVariant(rv, value)
     # TODO: Review is it really needed?
-    rv = false
     this._error('_loadImmAsVariant() not implemented')
   endmethod
 
-  method _loadVariable(name) -> rv
-    rv = false
+  method _loadVariable(rv, name)
     this._error('_loadVariable() not implemented')
   endmethod
 
-  method _call(funcProto, params, paramsCnt) -> rv
-    rv = false
+  method _call(rv, funcProto, params, paramsCnt)
     this._error('_call() not implemented')
   endmethod
 
-  method _invokeMethod(methodName, params, paramsCnt) -> rv
-    rv = false
+  method _invokeMethod(methodName, params, paramsCnt)
     this._error('_invokeMethod() not implemented')
   endmethod
 
@@ -164,83 +149,67 @@ class ASTTranslator
     this._error('_callPrint() not implemented')
   endmethod
 
-  method _typeof(value) -> rv
-    rv = false
+  method _typeof(rv, value)
     this._error('_typeof() not implemented')
   endmethod
 
-  method _neg(value) -> rv
-    rv = false
+  method _neg(rv, value)
     this._error('_neg() not implemented')
   endmethod
 
-  method _add(x, y) -> rv
-    rv = false
+  method _add(rv, x, y)
     this._error('_add() not implemented')
   endmethod
 
-  method _sub(x, y) -> rv
-    rv = false
+  method _sub(rv, x, y)
     this._error('_sub() not implemented')
   endmethod
 
-  method _mul(x, y) -> rv
-    rv = false
+  method _mul(rv, x, y)
     this._error('_mul() not implemented')
   endmethod
 
-  method _div(x, y) -> rv
-    rv = false
+  method _div(rv, x, y)
     this._error('_div() not implemented')
   endmethod
 
-  method _idiv(x, y) -> rv
-    rv = false
+  method _idiv(rv, x, y)
     this._error('_idiv() not implemented')
   endmethod
 
-  method _compareEQ(x, y) -> rv
-    rv = false
+  method _compareEQ(rv, x, y)
     this._error('_compareEQ() not implemented')
   endmethod
 
-  method _compareNEQ(x, y) -> rv
-    rv = false
+  method _compareNEQ(rv, x, y)
     this._error('_compareNEQ() not implemented')
   endmethod
 
-  method _compareLT(x, y) -> rv
-    rv = false
+  method _compareLT(rv, x, y)
     this._error('_compareLT() not implemented')
   endmethod
 
-  method _compareLE(x, y) -> rv
-    rv = false
+  method _compareLE(rv, x, y)
     this._error('_compareLE() not implemented')
   endmethod
 
-  method _compareGT(x, y) -> rv
-    rv = false
+  method _compareGT(rv, x, y)
     this._error('_compareGT() not implemented')
   endmethod
 
-  method _compareGE(x, y) -> rv
-    rv = false
+  method _compareGE(rv, x, y)
     this._error('_compareGE() not implemented')
   endmethod
 
-  method _boolAnd(x, y) -> rv
-    rv = false
+  method _boolAnd(rv, x, y)
     this._error('_boolAnd() not implemented')
   endmethod
 
-  method _boolOr(x, y) -> rv
-    rv = false
+  method _boolOr(rv, x, y)
     this._error('_boolOr() not implemented')
   endmethod
 
-  method _loadFromIndex(box, idx) -> rv
-    rv = false
+  method _loadFromIndex(rv, box, idx)
     this._error('_loadFromIndex() not implemented')
   endmethod
 
@@ -252,13 +221,11 @@ class ASTTranslator
     this._storeAtIndex(rv, key, value)
   endmethod
 
-  method _createObject(classProto) -> rv
-    rv = false
+  method _createObject(rv, classProto)
     this._error('_createObject() not implemented')
   endmethod
 
-  method _convert(srcNode, srcType, dstType) -> rv
-    rv = false
+  method _convert(dst, src, srcType, dstType)
     this._error('_convert() is not implemented')
   endmethod
 
@@ -380,7 +347,7 @@ class ASTTranslator
     this._debug('Globals emmited')
   endmethod
 
-  method _callSuper(params, paramsCnt)
+  method _callSuper(rv, params, paramsCnt)
     methodProto = this.currentFunctionProto
     classProto  = this.currentClassProto
 
@@ -412,7 +379,7 @@ class ASTTranslator
       # TODO: Remove this fix.
       methodProto['isConstructor'] = true
 
-      this._call(methodProto['baseMethod'], newParams, paramsCnt + 1)
+      this._call(rv, methodProto['baseMethod'], newParams, paramsCnt + 1)
     endif
 
   endmethod
@@ -505,53 +472,64 @@ class ASTTranslator
     #
 
     # TODO: Clean up this mess.
-    # This is temporary hack to get result type before allocating new
-    # temp var.
-    #astDataType         = AST_GetDataType(ast)
-    #this.rvDataTypeHack = AST_ConvertDataTypeToMIR(astDataType)
+    # This code is needed only in MIR1 flow.
+    astDataType = AST_GetDataType(ast)
+    mirDataType = AST_ConvertDataTypeToMIR(astDataType)
+    rv = this.symbolTable.getTempVarForReadAndWrite(mirDataType)
+    this.symbolTable.assignMirType(rv, mirDataType)
 
     if opcode is AST_DATA_ARRAY
       if typeof(value) is 'array'
-        rv = this._loadImm(value)
+        this._loadImm(rv, value)
 
       else
-        rv = this._loadArray()
-        # TODO: Handle non-variant indexes and values.
-        for idx in 0 .. childrenCnt
-          key   = this._loadImmAsVariant(idx)
-          value = this._evaluateNode(children[idx])
-          valueAsVariant = this._convert(value, AST_GetDataType(children[idx]), -1)
+        this._loadArray(rv)
+
+        if childrenCnt > 0
+          # TODO: Handle non-variant indexes and values.
+          key            = this.symbolTable.getTempVarForReadAndWrite('variant')
+          valueAsVariant = this.symbolTable.getTempVarForReadAndWrite('variant')
+
+          for idx in 0 .. childrenCnt
+            this._loadImmAsVariant(key, idx)
+            value = this._evaluateNode(children[idx])
+            this._convert(valueAsVariant, value, AST_GetDataType(children[idx]), -1)
+            this._storeAtIndex(rv, key, valueAsVariant)
+          endfor
+        endif
+      endif
+
+    elif opcode is AST_DATA_MAP
+      this._loadMap(rv)
+
+      if childrenCnt > 0
+        # TODO: Handle non-variant values.
+        valueAsVariant = this.symbolTable.getTempVarForReadAndWrite('variant')
+
+        for idx in 0 .. childrenCnt step 2
+          key   = this._evaluateNode(children[idx])
+          value = this._evaluateNode(children[idx + 1])
+          this._convert(valueAsVariant, value, AST_GetDataType(children[idx + 1]), -1)
           this._storeAtIndex(rv, key, valueAsVariant)
         endfor
       endif
 
-    elif opcode is AST_DATA_MAP
-      rv = this._loadMap()
-
-      for idx in 0 .. childrenCnt step 2
-        # TODO: Handle non-variant values.
-        key   = this._evaluateNode(children[idx])
-        value = this._evaluateNode(children[idx + 1])
-        valueAsVariant = this._convert(value, AST_GetDataType(children[idx + 1]), -1)
-        this._storeAtIndex(rv, key, valueAsVariant)
-      endfor
-
     elif (opcode < AST_OPCODE_PROGRAM)
       # Imm data node, just return value.
-      rv = this._loadImm(value)
+      this._loadImm(rv, value)
 
     elif opcode is AST_OPCODE_CALL
       # foo(x,y,z...).
-      rv = this._evaluateNodeCall(ast)
+      this._evaluateNodeCall(rv, ast)
 
     elif opcode is AST_OPCODE_INVOKE_METHOD
       # obj.foo(x, y, z, ...)
-      rv = this._evaluateNodeInvokeMethod(ast)
+      this._evaluateNodeInvokeMethod(rv, ast)
 
     elif opcode is AST_OPCODE_VARIABLE
       if value is 'argv'
         # Built-in access to command line parametrs.
-        rv = this._loadArgsVector()
+        this._loadArgsVector(rv)
 
         if this.symbolTable.procLevel > 0
           this.symbolTable.importGlobal('argv')
@@ -559,7 +537,7 @@ class ASTTranslator
 
       elif value is 'argc'
         # Built-in access to command line parametrs.
-        rv = this._loadArgsCount()
+        this._loadArgsCount(rv)
 
         if this.symbolTable.procLevel > 0
           this.symbolTable.importGlobal('argc')
@@ -567,7 +545,7 @@ class ASTTranslator
 
       else
         # Treat as ordinary variable.
-        rv = this._loadVariable(value)
+        this._loadVariable(rv, value)
       endif
 
     elif opcode is AST_OPCODE_TYPE_CAST
@@ -575,26 +553,29 @@ class ASTTranslator
       srcType = AST_GetDataType(srcNode)
       dstType = AST_GetDataType(ast)
 
-      rv = this._evaluateNode(srcNode)
+      src = this._evaluateNode(srcNode)
 
-      if srcType isnt dstType
-        rv = this._convert(rv, srcType, dstType)
+      if srcType is dstType
+        # TODO: Avoid move here?
+        this._assign(rv, src)
+      else
+        this._convert(rv, src, srcType, dstType)
       endif
 
     elif opcode is AST_OPCODE_NEG
-      rv = this._neg(this._evaluateNode(children[0]))
+      this._neg(rv, this._evaluateNode(children[0]))
 
     elif opcode is AST_OPCODE_BOOL_AND
       # Lazy 'and' operator.
-      rv = this._evaluateNodeLazyBoolAnd(children[0], children[1])
+      this._evaluateNodeLazyBoolAnd(rv, children[0], children[1])
 
     elif opcode is AST_OPCODE_BOOL_OR
       # Lazy 'or' operator.
-      rv = this._evaluateNodeLazyBoolOr(children[0], children[1])
+      this._evaluateNodeLazyBoolOr(rv, children[0], children[1])
 
     elif opcode is AST_OPCODE_CALL_NEW
       classProto = this._getClassProto(value)
-      rv         = this._createObject(classProto)
+      this._createObject(rv, classProto)
 
       # Call constructor if any.
       methodProto = classProto['vtable']['constructor']
@@ -611,7 +592,9 @@ class ASTTranslator
         # TODO: Remove this fix.
         methodProto['isConstructor'] = true
 
-        this._call(methodProto, params, paramsCnt)
+        unusedRv = this.symbolTable.getTempVar('variant')
+        this._call(unusedRv, methodProto, params, paramsCnt)
+        this.symbolTable.releaseTempVar(unusedRv)
       endif
 
     elif childrenCnt is 2
@@ -621,68 +604,64 @@ class ASTTranslator
 
       if opcode is AST_OPCODE_REFERENCE
         # x[idx]
-        rv = this._loadFromIndex(left, right)
+        this._loadFromIndex(rv, left, right)
 
       elif opcode is AST_OPCODE_COMPARE_EQ
-        rv = this._compareEQ(left, right)
+        this._compareEQ(rv, left, right)
 
       elif opcode is AST_OPCODE_COMPARE_NEQ
-        rv = this._compareNEQ(left, right)
+        this._compareNEQ(rv, left, right)
 
       elif opcode is AST_OPCODE_COMPARE_GT
-        rv = this._compareGT(left, right)
+        this._compareGT(rv, left, right)
 
       elif opcode is AST_OPCODE_COMPARE_GE
-        rv = this._compareGE(left, right)
+        this._compareGE(rv, left, right)
 
       elif opcode is AST_OPCODE_COMPARE_LT
-        rv = this._compareLT(left, right)
+        this._compareLT(rv, left, right)
 
       elif opcode is AST_OPCODE_COMPARE_LE
-        rv = this._compareLE(left, right)
+        this._compareLE(rv, left, right)
 
       elif opcode is AST_OPCODE_ADD
-        rv = this._add(left, right)
+        this._add(rv, left, right)
 
       elif opcode is AST_OPCODE_SUB
-        rv = this._sub(left, right)
+        this._sub(rv, left, right)
 
       elif opcode is AST_OPCODE_MUL
-        rv = this._mul(left, right)
+        this._mul(rv, left, right)
 
       elif opcode is AST_OPCODE_DIV
-        rv = this._div(left, right)
+        this._div(rv, left, right)
 
       elif opcode is AST_OPCODE_IDIV
-        rv = this._idiv(left, right)
-
-      else
-        rv = -1
+        this._idiv(rv, left, right)
       endif
 
     else
-      # TODO: Handle terminal nodes.
-      rv = -1
       die('error: unexpected rvalue node ' + str(opcode) + ' ' + str(value))
     endif
 
+    # TODO: Review it?
     # TODO: Return symbolInfo instead of symbol name?
-    if typeof(rv) is 'string'
-      astDataType = AST_GetDataType(ast)
-      mirDataType = AST_ConvertDataTypeToMIR(astDataType)
-      this.symbolTable.assignMirType(rv, mirDataType)
-    endif
+    #if typeof(rv) is 'string'
+    #  astDataType = AST_GetDataType(ast)
+    #  mirDataType = AST_ConvertDataTypeToMIR(astDataType)
+    #  this.symbolTable.assignMirType(rv, mirDataType)
+    #endif
   endmethod
 
-  method _evaluateNodeCall(ast) -> rv
-    rv          = false
+  method _evaluateNodeCall(rv, ast)
     funcName    = ast['value']
     children    = ast['children']
     childrenCnt = ast['childrenCnt']
 
     # TODO: Handle in parser?
+    # Is it really needed?
     if funcName is 'super'
-      this._loadVariable('this')
+      this._loadVariable(rv, 'this')
     endif
 
     # Evaluate parameters.
@@ -696,26 +675,26 @@ class ASTTranslator
     if funcName is 'typeof'
       # Built-in typeof.
       this._verifyNumberOfParameters('built-in typeof', 1, paramsCnt)
-      rv = this._typeof(params[0])
+      this._typeof(rv, params[0])
 
     elif funcName is 'print'
       # Built-in print function.
       this._callPrint(params, paramsCnt)
 
     elif funcName is 'super'
-      this._callSuper(params, paramsCnt)
+      this._callSuper(rv, params, paramsCnt)
 
     elif funcName is 'len'
       this._verifyNumberOfParameters('built-in len', 1, paramsCnt)
-      rv = this._callLen(params[0])
+      this._callLen(rv, params[0])
 
     elif funcName is 'str'
       this._verifyNumberOfParameters('built-in str', 1, paramsCnt)
-      rv = this._callStr(params[0])
+      this._callStr(rv, params[0])
 
     elif funcName is 'strescape'
       this._verifyNumberOfParameters('built-in strescape', 1, paramsCnt)
-      rv = this._callStrEscape(params[0])
+      this._callStrEscape(rv, params[0])
 
     elif funcName is 'exit'
       this._verifyNumberOfParameters('built-in exit', 0, paramsCnt)
@@ -727,11 +706,11 @@ class ASTTranslator
 
     elif funcName is '__mold_createObject'
       this._verifyNumberOfParameters('built-in __mold_createObject', 1, paramsCnt)
-      rv = this._callMoldCreateObject(params[0])
+      this._callMoldCreateObject(rv, params[0])
 
     elif funcName is '__mold_getClassName'
       this._verifyNumberOfParameters('built-in __mold_getClassName', 1, paramsCnt)
-      rv = this._callMoldGetClassName(params[0])
+      this._callMoldGetClassName(rv, params[0])
 
     elif funcName is '__mold_warning'
       this._verifyNumberOfParameters('built-in __mold_warning', 1, paramsCnt)
@@ -743,17 +722,17 @@ class ASTTranslator
 
     elif (funcName is '__mold_parseFile') or (funcName is 'moldParseFile')
       this._verifyNumberOfParameters('built-in __mold_parseFile', 1, paramsCnt)
-      rv = this._callMoldParseFile(params[0])
+      this._callMoldParseFile(rv, params[0])
 
     else
       # Generic foo(x,y,z...) call.
       funcEntry = this.symbolTable.lookupFunction(funcName, childrenCnt)
       funcProto = funcEntry['proto']
-      rv        = this._call(funcProto, params, paramsCnt)
+      this._call(rv, funcProto, params, paramsCnt)
     endif
   endmethod
 
-  method _evaluateNodeInvokeMethod(ast) -> rv
+  method _evaluateNodeInvokeMethod(rv, ast)
     methodName  = ast['value']
     children    = ast['children']
     childrenCnt = ast['childrenCnt']
@@ -771,18 +750,15 @@ class ASTTranslator
       params[idx] = this._evaluateNode(children[idx])
     endfor
 
-    # Call method.
-    # TODO: Change to static call if possible.
-    rv = this._invokeMethod(methodName, params, paramsCnt)
+    # Virtual method call.
+    this._invokeMethod(rv, methodName, params, paramsCnt)
   endmethod
 
-  method _evaluateNodeLazyBoolAnd(leftAst, rightAst) -> rv
-    rv = false
+  method _evaluateNodeLazyBoolAnd(rv, leftAst, rightAst) -> rv
     this._error('_evaluateNodeBoolAnd() not implemented')
   endmethod
 
-  method _evaluateNodeLazyBoolOr(leftAst, rightAst) -> rv
-    rv = false
+  method _evaluateNodeLazyBoolOr(rv, leftAst, rightAst) -> rv
     this._error('_evaluateNodeBoolOr() not implemented')
   endmethod
 
@@ -1000,8 +976,11 @@ class ASTTranslator
         endfor
 
       else
-        this._evaluateNodeCall(ast)
+        # TODO: Use null?
+        unusedRv = this.symbolTable.getTempVar('variant')
+        this._evaluateNodeCall(unusedRv, ast)
         this._dropRetVal()
+        this.symbolTable.releaseTempVar(unusedRv)
       endif
 
     elif opcode is AST_OPCODE_SWITCH
@@ -1011,8 +990,11 @@ class ASTTranslator
       # Do nothing.
 
     elif opcode is AST_OPCODE_INVOKE_METHOD
-      this._evaluateNodeInvokeMethod(ast)
+      # TODO: Use null?
+      unusedRv = this.symbolTable.getTempVar('variant')
+      this._evaluateNodeInvokeMethod(unusedRv, ast)
       this._dropRetVal()
+      this.symbolTable.releaseTempVar(unusedRv)
 
     elif opcode is AST_OPCODE_NOP
       # Do nothing.

@@ -288,10 +288,10 @@ class ASTSymbolsCollector
           symbolInfo.astType = -1
 
           # TODO: Clean up this mess.
-          symbolInfo.name     = '__rv'
-          symbolInfo.alias    = funcProto.rv
+          #symbolInfo.name     = '__rv'
+          #symbolInfo.alias    = funcProto.rv
           symbolInfo.readHits = symbolInfo.readHits + 1
-          nodeBody.symbolTable.symbols['__rv'] = symbolInfo
+          #nodeBody.symbolTable.symbols['__rv'] = symbolInfo
 
         else
           # Error - there is at least one branch, where return value is

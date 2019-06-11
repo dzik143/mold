@@ -498,6 +498,39 @@ function AST_IsImmOrVar(x) -> rv
   endif
 endfunction
 
+function AST_HasSideEffects(node) -> rv
+  global AST_OPCODE_CALL
+  global AST_OPCODE_CALL_NEW
+  global AST_OPCODE_INVOKE_METHOD
+
+  opcode = node.opcode
+
+  if opcode is AST_OPCODE_CALL
+    # TODO: Check function protos.
+    if (node.value is 'str') or (node.value is 'len')
+      # Built-in function without side effect.
+      rv = false
+    else
+      rv = true
+    endif
+
+  elif (opcode is AST_OPCODE_CALL_NEW) or (opcode is AST_OPCODE_INVOKE_METHOD)
+    # TODO: Check function protos.
+    rv = true
+
+  else
+    rv          = false
+    childIdx    = 0
+    children    = node.children
+    childrenCnt = node.childrenCnt
+
+    while (childIdx < childrenCnt) and (rv is false)
+      rv       = AST_HasSideEffects(children[childIdx])
+      childIdx = childIdx + 1
+    endwhile
+  endif
+endfunction
+
 function AST_HashInternal(node, isCodeMode) -> rv
   global AST_DATA_ARRAY
   global AST_DATA_MAP
@@ -563,7 +596,19 @@ function AST_HashInternal(node, isCodeMode) -> rv
           (opcode is AST_OPCODE_INVOKE_METHOD))
 
       # TODO: Review it.
-      rv = AST_GetOpcodeAsShortText(opcode) + ':' + node.value + ',' + str(childrenCnt)
+
+      if (isCodeMode is false) and (AST_HasSideEffects(node) is true)
+        # Called function has side effect.
+        # Eeach call to function is unique.
+        # Avoid CSE optimization.
+        name = '@' + str(node.id)
+      else
+        # Code comparision or there is no side effect.
+        # The same parameters means the same result.
+        name = node.value
+      endif
+
+      rv = AST_GetOpcodeAsShortText(opcode) + ':' + name + ',' + str(childrenCnt)
       for idx in 0 .. childrenCnt
         rv  = rv + ',' + AST_HashInternal(children[idx], isCodeMode)
       endfor
@@ -590,39 +635,6 @@ endfunction
 
 function AST_HashForCodeComparison(node) -> rv
   rv = AST_HashInternal(node, true)
-endfunction
-
-function AST_HasSideEffects(node) -> rv
-  global AST_OPCODE_CALL
-  global AST_OPCODE_CALL_NEW
-  global AST_OPCODE_INVOKE_METHOD
-
-  opcode = node.opcode
-
-  if opcode is AST_OPCODE_CALL
-    # TODO: Check function protos.
-    if (node.value is 'str') or (node.value is 'len')
-      # Built-in function without side effect.
-      rv = false
-    else
-      rv = true
-    endif
-
-  elif (opcode is AST_OPCODE_CALL_NEW) or (opcode is AST_OPCODE_INVOKE_METHOD)
-    # TODO: Check function protos.
-    rv = true
-
-  else
-    rv          = false
-    childIdx    = 0
-    children    = node.children
-    childrenCnt = node.childrenCnt
-
-    while (childIdx < childrenCnt) and (rv is false)
-      rv       = AST_HasSideEffects(children[childIdx])
-      childIdx = childIdx + 1
-    endwhile
-  endif
 endfunction
 
 function AST_IsDataNode(node) -> rv

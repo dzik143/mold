@@ -439,14 +439,14 @@ class SymbolTable
   method insertRetVal(name) -> newEntry
     global SYMBOL_KIND_VAR_RETVAL
     newEntry = {
-      'name': '__rv',
+      'name': name,
       'kind': SYMBOL_KIND_VAR_RETVAL,
-      'alias': name,
       'astType': -1
     }
-    this.insert('__rv', newEntry)
-    this.symbols[name] = newEntry
-    this.lookupForRead('__rv')
+    this.insert(name, newEntry)
+    #this.symbols[name] = newEntry
+    # TODO: Is it really needed?
+    this.lookupForRead(name)
   endmethod
 
   method insertConst(name, value) -> newEntry
@@ -552,9 +552,9 @@ class SymbolTable
 
         # TODO: Clean up this mess.
         # Always keep return val.
-        if symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
-          newSymbols[symbolInfo.alias] = symbolInfo
-        endif
+        #if symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
+        #  newSymbols[symbolInfo.alias] = symbolInfo
+        #endif
       else
         # Variable was never accesed for read. Remove it from table.
         this._debug('Removed unused symbol [' + symbolInfo.name + ']')

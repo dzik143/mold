@@ -291,7 +291,7 @@ class CodeGeneratorX64
 
   method run(codeObj)
     global SYMBOL_KIND_VAR_LOCAL, SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_CONST
-    global SYMBOL_KIND_VAR_PARAM, SYMBOL_KIND_JMP_TABLE
+    global SYMBOL_KIND_VAR_PARAM, SYMBOL_KIND_JMP_TABLE, SYMBOL_KIND_VAR_RETVAL
 
     #
     # Common headers.
@@ -308,7 +308,7 @@ class CodeGeneratorX64
     print "section '.text' code readable executable"
     print "stack 1024*1024*4, 1024*1024*4"
     print "include 'Variant.asm'"
-    print "__rv EQU rdi"
+    # print "__rv EQU rdi"
 
     #
     # Fetch code and code metas.
@@ -1036,7 +1036,6 @@ class CodeGeneratorX64
             this.lea('rdi', rv)
             this.mov('[rdi + Variant_t.type]', 'VARIANT_UNDEFINED')
             this.call(name)
-            this.pop('rdi')
 
           else
             # No return value.
@@ -1046,6 +1045,10 @@ class CodeGeneratorX64
 
           if paramsCnt > 4
             print '  add rsp,', paramsCnt * 8 - 32
+          endif
+
+          if rv is defined
+            this.pop('rdi')
           endif
         endif
 
@@ -1243,7 +1246,8 @@ class CodeGeneratorX64
         for values oneItem in symbols
 
           if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) or
-              (oneItem.kind is SYMBOL_KIND_VAR_PARAM))
+              (oneItem.kind is SYMBOL_KIND_VAR_PARAM) or
+              (oneItem.kind is SYMBOL_KIND_VAR_RETVAL))
 
             print '  restore', oneItem.name
           endif
@@ -1301,6 +1305,10 @@ class CodeGeneratorX64
             currentFrameSize = currentFrameSize + varSize
 
             print ' ', symbol.name, 'EQU rbp -', 8 + currentFrameSize, ';', varSize, 'bytes'
+
+          elif symbol.kind is SYMBOL_KIND_VAR_RETVAL
+            # TODO: Pass variant return values on stack?
+            print ' ', symbol.name, 'EQU rdi'
           endif
 
           # TODO: Dirty fix to handle real number of stack parameters if 'this'

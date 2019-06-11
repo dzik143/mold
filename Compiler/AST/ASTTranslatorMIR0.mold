@@ -36,34 +36,28 @@ class ASTTranslatorMIR0 extends ASTTranslator
   #                         Implement built-in functions
   # ----------------------------------------------------------------------------
 
-  method _callStr(x) -> rv
+  method _callStr(rv, x)
     this.code.conv2str()
-    rv = false
   endmethod
 
-  method _callStrEscape(x) -> rv
-    rv = false
+  method _callStrEscape(rv, x)
     this._error('_callStrEscape not implemented')
   endmethod
 
-  method _callLen(x) -> rv
+  method _callLen(rv, x)
     this.code.getLen()
-    rv = false
   endmethod
 
-  method _callExit() -> rv
+  method _callExit()
     this.code.halt()
-    rv = false
   endmethod
 
-  method _callMoldWarning(msg) -> rv
+  method _callMoldWarning(msg)
     this.code.callPrintError(msg)
-    rv = false
   endmethod
 
-  method _callMoldPrintToStdOut(msg) -> rv
+  method _callMoldPrintToStdOut(msg)
     this.code.callPrintToStdOut(msg)
-    rv = false
   endmethod
 
   method _callDie(msg)
@@ -72,122 +66,101 @@ class ASTTranslatorMIR0 extends ASTTranslator
     this.code.halt()
   endmethod
 
-  method _callMoldCreateObject(classProto) -> rv
+  method _callMoldCreateObject(rv, classProto)
     this.code.createObject(classProto)
-    rv = false
   endmethod
 
-  method _callMoldGetClassName(thiz) -> rv
+  method _callMoldGetClassName(rv, thiz)
     #this._error('_callMoldGetClassName not implemented')
-    rv = false
   endmethod
 
-  method _callMoldParseFile(filePath) -> rv
+  method _callMoldParseFile(rv, filePath)
     this.code.loadMoldSource()
-    rv = false
   endmethod
 
-  method _loadArgsVector() -> rv
+  method _loadArgsVector(rv)
     this.code.loadArgv()
-    rv = false
   endmethod
 
-  method _loadArgsCount() -> rv
+  method _loadArgsCount(rv)
     this.code.loadArgc()
-    rv = false
   endmethod
 
   # ----------------------------------------------------------------------------
   #                     Implement ASTTranslator interface
   # ----------------------------------------------------------------------------
 
-  method _neg(value) -> rv
+  method _neg(rv, value)
     this.code.neg()
-    rv = false
   endmethod
 
-  method _add(x, y) -> rv
+  method _add(rv, x, y)
     this.code.add()
-    rv = false
   endmethod
 
-  method _sub(x, y) -> rv
+  method _sub(rv, x, y)
     this.code.sub()
-    rv = false
   endmethod
 
-  method _mul(x, y) -> rv
+  method _mul(rv, x, y)
     this.code.mul()
-    rv= false
   endmethod
 
-  method _div(x, y) -> rv
+  method _div(rv, x, y)
     this.code.div()
-    rv = false
   endmethod
 
-  method _idiv(x, y) -> rv
+  method _idiv(rv, x, y)
     this.code.idiv()
-    rv = false
   endmethod
 
-  method _loadArray() -> rv
+  method _loadArray(rv)
     this.code.loadArray()
-    rv = false
   endmethod
 
-  method _loadMap() -> rv
+  method _loadMap(rv)
     this.code.loadMap()
-    rv = false
   endmethod
 
-  method _loadImm(value) -> rv
+  method _loadImm(rv, value)
     this.code.loadImm(value)
-    rv = false
   endmethod
 
-  method _loadImmAsVariant(value) -> rv
+  method _loadImmAsVariant(rv, value)
     # TODO: Is it really needed?
-    rv = this._loadImm(value)
+    this._loadImm(rv, value)
   endmethod
 
-  method _convert(x, srcType, dstType) -> rv
+  method _convert(dst, src, srcType, dstType)
     # TODO: Review it.
     # Do nothing. We always use variant.
-    rv = false
   endmethod
 
-  method _compareEQ(x, y) -> rv
+  method _compareEQ(rv, x, y)
     this.code.cmpEQ()
-    rv = false
   endmethod
 
-  method _compareNEQ(x, y) -> rv
+  method _compareNEQ(rv, x, y)
     this.code.cmpNEQ()
-    rv = false
   endmethod
 
-  method _compareLT(x, y) -> rv
+  method _compareLT(rv, x, y)
     this.code.cmpLT()
-    rv = false
   endmethod
 
-  method _compareLE(x, y) -> rv
+  method _compareLE(rv, x, y)
     this.code.cmpLE()
-    rv = false
   endmethod
 
-  method _compareGT(x, y) -> rv
+  method _compareGT(rv, x, y)
     this.code.cmpGT()
-    rv = false
   endmethod
 
-  method _compareGE(x, y) -> rv
+  method _compareGE(rv, x, y)
     this.code.cmpGE()
-    rv = false
   endmethod
 
-  method _loadVariable(name) -> rv
+  method _loadVariable(rv, name)
     global SYMBOL_KIND_VAR_LOCAL
     global SYMBOL_KIND_VAR_GLOBAL
     global SYMBOL_KIND_VAR_PARAM
@@ -198,7 +171,6 @@ class ASTTranslatorMIR0 extends ASTTranslator
 
     kind = symbolInfo['kind']
     id   = symbolInfo['id']
-    rv   = false
 
     if kind is SYMBOL_KIND_VAR_LOCAL
       # Local variable
@@ -257,24 +229,20 @@ class ASTTranslatorMIR0 extends ASTTranslator
     endif
   endmethod
 
-  method _call(proto, params, paramsCnt) -> rv
+  method _call(rv, proto, params, paramsCnt)
     this.code.call(proto)
-    rv = false
   endmethod
 
   method _callPrint(params, paramsCnt)
     this.code.callPrint(paramsCnt)
-    rv = false
   endmethod
 
-  method _typeof(value) -> rv
+  method _typeof(rv, value)
     this.code.getTypeOf()
-    rv = false
   endmethod
 
-  method _loadFromIndex(unusedBox, unusedIdx) -> rv
+  method _loadFromIndex(rv, unusedBox, unusedIdx)
     this.code.loadIndex()
-    rv = false
   endmethod
 
   method _storeAtIndex(unusedBox, unusedIdx, unusedValue)
@@ -286,14 +254,12 @@ class ASTTranslatorMIR0 extends ASTTranslator
     this.code.drop()
   endmethod
 
-  method _createObject(classProto) -> rv
+  method _createObject(rv, classProto)
     this.code.createObject(classProto)
-    rv = false
   endmethod
 
-  method _evaluateNodeLazyBoolAnd(leftAst, rightAst) -> rv
+  method _evaluateNodeLazyBoolAnd(rv, leftAst, rightAst)
     endLabelId = this.code.createLabel()
-    rv         = false
 
     this.code.loadImm(false)         # [false]
     this._evaluateNode(leftAst)      # [false x]
@@ -305,9 +271,8 @@ class ASTTranslatorMIR0 extends ASTTranslator
     this.code.emitLabel(endLabelId)
   endmethod
 
-  method _evaluateNodeLazyBoolOr(leftAst, rightAst) -> rv
+  method _evaluateNodeLazyBoolOr(rv, leftAst, rightAst)
     endLabelId = this.code.createLabel()
-    rv         = false
 
     this.code.loadImm(true)         # [true]
     this._evaluateNode(leftAst)     # [true x]
@@ -319,10 +284,9 @@ class ASTTranslatorMIR0 extends ASTTranslator
     this.code.emitLabel(endLabelId)
   endmethod
 
-  method _invokeMethod(methodName, params, paramsCnt) -> rv
+  method _invokeMethod(rv, methodName, params, paramsCnt)
     # TODO: Remove paramsCnt
     this.code.vcall(methodName, paramsCnt)
-    rv = false
   endmethod
 
   method _executeNodeFor(iterName, valueStart, valueEnd, valueStep, bodyAst)
