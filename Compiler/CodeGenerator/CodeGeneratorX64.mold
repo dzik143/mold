@@ -1,7 +1,7 @@
 ################################################################################
 #                                                                              #
 # This file is part of Mold project.                                           #
-# Copyright (C) 2015, 2019 Sylwester Wysocki (sw143@wp.pl)                     #
+# Copyright (C) 2015, 2019 Sylwester Wysocki <sw143@wp.pl>                     #
 #                                                                              #
 # This program is free software: you can redistribute it and/or modify         #
 # it under the terms of the GNU General Public License as published by         #
@@ -1163,8 +1163,12 @@ class CodeGeneratorX64
         print '  mov eax, dword [', x, '+ Variant_t.value]'
         print '  mov dword [', dst, '], eax'
 
-      elif ((originalOpcode is 'conv_variant_to_int32') or
-            (originalOpcode is 'conv_variant_to_int64') or
+      elif originalOpcode is 'conv_variant_to_int32'
+        # TODO: Handle very long arrays?
+        print '  mov eax, dword [', x, '+ Variant_t.value]'
+        print '  mov dword [', dst, '], eax'
+
+      elif ((originalOpcode is 'conv_variant_to_int64') or
             (originalOpcode is 'conv_variant_to_float64'))
 
         print '  mov rax, qword [', x, '+ Variant_t.value]'

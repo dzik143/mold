@@ -1,7 +1,7 @@
 ################################################################################
 #                                                                              #
 # This file is part of Mold project.                                           #
-# Copyright (C) 2015, 2019 Sylwester Wysocki (sw143@wp.pl)                     #
+# Copyright (C) 2015, 2019 Sylwester Wysocki <sw143@wp.pl>                     #
 #                                                                              #
 # This program is free software: you can redistribute it and/or modify         #
 # it under the terms of the GNU General Public License as published by         #
@@ -596,14 +596,14 @@ class SymbolTable
 
   method getTempVar(wantedType) -> rv
     # TODO: Review it.
-    if false #(wantedType isnt -1) and (this.poolOfTempVars[wantedType].cnt > 0)
+    if this.poolOfTempVars[wantedType].cnt > 0
       # Get first free temp var from pool
       poolObj = this.poolOfTempVars[wantedType]
       poolCnt = poolObj.cnt - 1
 
       poolObj.cnt = poolCnt
       rv = poolObj.pool[poolCnt]
-      #print 'Get temp var [', rv, '] from pool', poolObj
+      this._debug('Get temp var [' + rv + '] from pool (' + wantedType + ')')
 
     else
       # There is no free temp vars. Allocate new one.
@@ -612,9 +612,11 @@ class SymbolTable
       # TODO: Clean up this mess.
       symbolInfo        = this.lookup(rv)
       symbolInfo.isTemp = true
-      #symbolInfo.refCnt = 1
-      #print 'Allocated new temp var [', rv, ']'
+      symbolInfo.type   = wantedType
+      this._debug('Allocated new temp var [' + rv + '] (' + wantedType + ')')
     endif
+
+    #symbolInfo.refCnt = 1
   endmethod
 
   method getTempVarForWrite(wantedType) -> rv
@@ -633,6 +635,7 @@ class SymbolTable
     # TODO: Clean up this mess.
     if symbolInfo.isTemp is true
       #symbolInfo.refCnt = symbolInfo.refCnt - 1
+
       #if symbolInfo.refCnt is 0
         # Variable is not used anymore.
         # Push back to pool of temp variables available to use.
@@ -644,7 +647,7 @@ class SymbolTable
           poolObj.cnt               = poolObj.cnt + 1
         endif
 
-        #print 'Release temp var [', symbolInfo.name, '] to pool', poolObj
+        this._debug('Release temp var [' + symbolInfo.name + '] to pool (' + str(mirType) + ')')
       #endif
     endif
   endmethod

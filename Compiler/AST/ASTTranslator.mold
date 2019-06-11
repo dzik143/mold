@@ -1,7 +1,7 @@
 ################################################################################
 #                                                                              #
 # This file is part of Mold project.                                           #
-# Copyright (C) 2015, 2019 Sylwester Wysocki (sw143@wp.pl)                     #
+# Copyright (C) 2015, 2019 Sylwester Wysocki <sw143@wp.pl>                     #
 #                                                                              #
 # This program is free software: you can redistribute it and/or modify         #
 # it under the terms of the GNU General Public License as published by         #
@@ -263,17 +263,19 @@ class ASTTranslator
     symbolsChild   = childTable.symbols
 
     for values item in symbolsChild
-      id = item.name
+      #if item.readHits + item.writeHits > 0
+        id = item.name
 
-      if symbolsCurrent[id] is undefined
-        symbolsCurrent[id] = item
-      else
-        # TODO: Accumulate hits?
-        # TODO: Implement inner frames.
-        if symbolsCurrent[id].astType isnt item.astType
-          die('error: type conflict for variable "' + item.name + '"')
+        if symbolsCurrent[id] is undefined
+          symbolsCurrent[id] = item
+        else
+          # TODO: Accumulate hits?
+          # TODO: Implement inner frames.
+          if symbolsCurrent[id].astType isnt item.astType
+            die('error: type conflict for variable "' + item.name + '"')
+          endif
         endif
-      endif
+      #endif
     endfor
   endmethod
 
@@ -478,6 +480,9 @@ class ASTTranslator
     rv = this.symbolTable.getTempVarForReadAndWrite(mirDataType)
     this.symbolTable.assignMirType(rv, mirDataType)
 
+    # Assign temp var to current node ("scratch").
+    ast.tempVar = rv
+
     if opcode is AST_DATA_ARRAY
       if typeof(value) is 'array'
         this._loadImm(rv, value)
@@ -495,7 +500,14 @@ class ASTTranslator
             value = this._evaluateNode(children[idx])
             this._convert(valueAsVariant, value, AST_GetDataType(children[idx]), -1)
             this._storeAtIndex(rv, key, valueAsVariant)
+
+            # TODO: Is it really needed?
+            this.symbolTable.releaseTempVar(value)
           endfor
+
+          # TODO: Is it really needed?
+          this.symbolTable.releaseTempVar(key)
+          this.symbolTable.releaseTempVar(valueAsVariant)
         endif
       endif
 
@@ -511,7 +523,14 @@ class ASTTranslator
           value = this._evaluateNode(children[idx + 1])
           this._convert(valueAsVariant, value, AST_GetDataType(children[idx + 1]), -1)
           this._storeAtIndex(rv, key, valueAsVariant)
+
+          # TODO: Is it really needed?
+          this.symbolTable.releaseTempVar(key)
+          this.symbolTable.releaseTempVar(value)
         endfor
+
+        # TODO: Is it really needed?
+        this.symbolTable.releaseTempVar(valueAsVariant)
       endif
 
     elif (opcode < AST_OPCODE_PROGRAM)
@@ -562,8 +581,14 @@ class ASTTranslator
         this._convert(rv, src, srcType, dstType)
       endif
 
+      # TODO: Simplify it.
+      this.symbolTable.releaseTempVar(src)
+
     elif opcode is AST_OPCODE_NEG
-      this._neg(rv, this._evaluateNode(children[0]))
+      # TODO: Simplify it.
+      x = this._evaluateNode(children[0])
+      this.symbolTable.releaseTempVar(x)
+      this._neg(rv, x)
 
     elif opcode is AST_OPCODE_BOOL_AND
       # Lazy 'and' operator.
@@ -601,6 +626,10 @@ class ASTTranslator
       # x OP y
       left  = this._evaluateNode(children[0])
       right = this._evaluateNode(children[1])
+
+      # Release temp var used to store argument nodes.
+      this.symbolTable.releaseTempVar(left)
+      this.symbolTable.releaseTempVar(right)
 
       if opcode is AST_OPCODE_REFERENCE
         # x[idx]
@@ -670,6 +699,11 @@ class ASTTranslator
 
     for idx in 0 .. childrenCnt
       params[idx] = this._evaluateNode(children[idx])
+    endfor
+
+    # TODO: Simplify it.
+    for values oneParam in params
+      this.symbolTable.releaseTempVar(oneParam)
     endfor
 
     if funcName is 'typeof'
@@ -752,6 +786,11 @@ class ASTTranslator
 
     # Virtual method call.
     this._invokeMethod(rv, methodName, params, paramsCnt)
+
+    # TODO: Simplify it.
+    for values oneParam in params
+      this.symbolTable.releaseTempVar(oneParam)
+    endfor
   endmethod
 
   method _evaluateNodeLazyBoolAnd(rv, leftAst, rightAst) -> rv
@@ -863,6 +902,9 @@ class ASTTranslator
           symbolInfo.duplicateOnFirstWrite = true
         endif
 
+        # Simplify it.
+        this.symbolTable.releaseTempVar(rval)
+
       elif lval['opcode'] is AST_OPCODE_REFERENCE
         # x[i] = y
         boxNode   = lval['children'][0]
@@ -875,6 +917,11 @@ class ASTTranslator
         rval  = this._evaluateNode(valueNode)
 
         this._storeAtIndexAndDrop(box, index, rval)
+
+        # TODO: Simplify it.
+        this.symbolTable.releaseTempVar(box)
+        this.symbolTable.releaseTempVar(index)
+        this.symbolTable.releaseTempVar(rval)
 
       else
         die('error: unexpected lvalue node ' + str(lval['opcode']) + ' ' + str(lval['value']))
@@ -903,6 +950,11 @@ class ASTTranslator
       this._executeNodeFor(iteratorName, valueStart, valueEnd, valueStep, bodyAst)
       this._leaveScope()
 
+      # TODO: Simplify it.
+      this.symbolTable.releaseTempVar(valueStep)
+      this.symbolTable.releaseTempVar(valueEnd)
+      this.symbolTable.releaseTempVar(valueStart)
+
     elif opcode is AST_OPCODE_FOR_VALUES
       # for values v in box
       iteratorValue = children[0]['value']
@@ -914,6 +966,9 @@ class ASTTranslator
       this._enterScope(loopBodyNode)
       this._executeNodeForEach(-1, iteratorValue, box, loopBodyNode)
       this._leaveScope()
+
+      # TODO: Simplify it.
+      this.symbolTable.releaseTempVar(box)
 
     elif opcode is AST_OPCODE_FOR_KEYS
       # for values v in box
@@ -927,6 +982,9 @@ class ASTTranslator
       this._executeNodeForEach(iteratorKey, -1, box, loopBodyNode)
       this._leaveScope()
 
+      # TODO: Simplify it.
+      this.symbolTable.releaseTempVar(box)
+
     elif opcode is AST_OPCODE_FOR_KEYS_VALUES
       # for keys k values v in box
       iteratorKey   = children[0]['value']
@@ -939,6 +997,9 @@ class ASTTranslator
       this._enterScope(loopBodyNode)
       this._executeNodeForEach(iteratorKey, iteratorValue, box, loopBodyNode)
       this._leaveScope()
+
+      # TODO: Simplify it.
+      this.symbolTable.releaseTempVar(box)
 
     elif opcode is AST_OPCODE_WHILE
       # while (cond)
@@ -958,6 +1019,9 @@ class ASTTranslator
       codeIfTrue  = children[1]
       codeIfFalse = children[2]
       this._executeNodeIf(cond, codeIfTrue, codeIfFalse)
+
+      # TODO: Simplify it.
+      this.symbolTable.releaseTempVar(cond)
 
     elif opcode is AST_OPCODE_FUNCTION
       # Do nothing.
