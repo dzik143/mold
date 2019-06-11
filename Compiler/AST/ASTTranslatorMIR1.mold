@@ -223,16 +223,12 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this._error('_callMoldParseFile() is obsolete')
   endmethod
 
-  method _loadArgsVector(rv)
-    # TODO: Avoid move here?
-    this.emitMoveVariantOpcode(rv, 'argv')
-    this.push(rv)
+  method _loadArgsVector()
+    this.push('argv')
   endmethod
 
-  method _loadArgsCount(rv)
-    # TODO: Avoid move here?
-    this.emitMoveVariantOpcode(rv, 'argc')
-    this.push(rv)
+  method _loadArgsCount()
+    this.push('argc')
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -380,20 +376,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.popTwoArgsAndEmitOpcode('cmp_ge', rv)
   endmethod
 
-  method _loadVariable(rv, name)
-    global SYMBOL_KIND_VAR_RETVAL
-    global SYMBOL_KIND_VAR_LOCAL
-    global SYMBOL_KIND_VAR_PARAM
-
-    #symbolInfo = this.symbolTable.lookup(name)
-    #
-    #if symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
-    #  name = '__rv'
-    #endif
-
-    # TODO: Avoid move here?
-    this.emitMoveVariantOpcode(rv, name)
-    this.push(rv)
+  method _loadVariable(name)
+    this.push(name)
   endmethod
 
   method _assign(name, unusedValue)

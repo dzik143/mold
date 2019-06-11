@@ -78,11 +78,11 @@ class ASTTranslatorMIR0 extends ASTTranslator
     this.code.loadMoldSource()
   endmethod
 
-  method _loadArgsVector(rv)
+  method _loadArgsVector()
     this.code.loadArgv()
   endmethod
 
-  method _loadArgsCount(rv)
+  method _loadArgsCount()
     this.code.loadArgc()
   endmethod
 
@@ -160,7 +160,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
     this.code.cmpGE()
   endmethod
 
-  method _loadVariable(rv, name)
+  method _loadVariable(name)
     global SYMBOL_KIND_VAR_LOCAL
     global SYMBOL_KIND_VAR_GLOBAL
     global SYMBOL_KIND_VAR_PARAM

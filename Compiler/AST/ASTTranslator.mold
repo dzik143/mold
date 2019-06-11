@@ -133,7 +133,7 @@ class ASTTranslator
     this._error('_loadImmAsVariant() not implemented')
   endmethod
 
-  method _loadVariable(rv, name)
+  method _loadVariable(name)
     this._error('_loadVariable() not implemented')
   endmethod
 
@@ -473,82 +473,15 @@ class ASTTranslator
     # END OF DEBUG ONLY
     #
 
-    # TODO: Clean up this mess.
-    # This code is needed only in MIR1 flow.
-    astDataType = AST_GetDataType(ast)
-    mirDataType = AST_ConvertDataTypeToMIR(astDataType)
-    rv = this.symbolTable.getTempVarForReadAndWrite(mirDataType)
-    this.symbolTable.assignMirType(rv, mirDataType)
+    if opcode is AST_OPCODE_VARIABLE
+      # Load variable.
+      # We don't need to create extra temp ("scratch") variable.
+      # Just read it directly.
+      rv = value
 
-    # Assign temp var to current node ("scratch").
-    ast.tempVar = rv
-
-    if opcode is AST_DATA_ARRAY
-      if typeof(value) is 'array'
-        this._loadImm(rv, value)
-
-      else
-        this._loadArray(rv)
-
-        if childrenCnt > 0
-          # TODO: Handle non-variant indexes and values.
-          key            = this.symbolTable.getTempVarForReadAndWrite('variant')
-          valueAsVariant = this.symbolTable.getTempVarForReadAndWrite('variant')
-
-          for idx in 0 .. childrenCnt
-            this._loadImmAsVariant(key, idx)
-            value = this._evaluateNode(children[idx])
-            this._convert(valueAsVariant, value, AST_GetDataType(children[idx]), -1)
-            this._storeAtIndex(rv, key, valueAsVariant)
-
-            # TODO: Is it really needed?
-            this.symbolTable.releaseTempVar(value)
-          endfor
-
-          # TODO: Is it really needed?
-          this.symbolTable.releaseTempVar(key)
-          this.symbolTable.releaseTempVar(valueAsVariant)
-        endif
-      endif
-
-    elif opcode is AST_DATA_MAP
-      this._loadMap(rv)
-
-      if childrenCnt > 0
-        # TODO: Handle non-variant values.
-        valueAsVariant = this.symbolTable.getTempVarForReadAndWrite('variant')
-
-        for idx in 0 .. childrenCnt step 2
-          key   = this._evaluateNode(children[idx])
-          value = this._evaluateNode(children[idx + 1])
-          this._convert(valueAsVariant, value, AST_GetDataType(children[idx + 1]), -1)
-          this._storeAtIndex(rv, key, valueAsVariant)
-
-          # TODO: Is it really needed?
-          this.symbolTable.releaseTempVar(key)
-          this.symbolTable.releaseTempVar(value)
-        endfor
-
-        # TODO: Is it really needed?
-        this.symbolTable.releaseTempVar(valueAsVariant)
-      endif
-
-    elif (opcode < AST_OPCODE_PROGRAM)
-      # Imm data node, just return value.
-      this._loadImm(rv, value)
-
-    elif opcode is AST_OPCODE_CALL
-      # foo(x,y,z...).
-      this._evaluateNodeCall(rv, ast)
-
-    elif opcode is AST_OPCODE_INVOKE_METHOD
-      # obj.foo(x, y, z, ...)
-      this._evaluateNodeInvokeMethod(rv, ast)
-
-    elif opcode is AST_OPCODE_VARIABLE
       if value is 'argv'
         # Built-in access to command line parametrs.
-        this._loadArgsVector(rv)
+        this._loadArgsVector()
 
         if this.symbolTable.procLevel > 0
           this.symbolTable.importGlobal('argv')
@@ -556,7 +489,7 @@ class ASTTranslator
 
       elif value is 'argc'
         # Built-in access to command line parametrs.
-        this._loadArgsCount(rv)
+        this._loadArgsCount()
 
         if this.symbolTable.procLevel > 0
           this.symbolTable.importGlobal('argc')
@@ -564,7 +497,7 @@ class ASTTranslator
 
       else
         # Treat as ordinary variable.
-        this._loadVariable(rv, value)
+        this._loadVariable(value)
       endif
 
     elif opcode is AST_OPCODE_TYPE_CAST
@@ -575,102 +508,189 @@ class ASTTranslator
       src = this._evaluateNode(srcNode)
 
       if srcType is dstType
-        # TODO: Avoid move here?
-        this._assign(rv, src)
+        # No conversion needed. Use source value directly.
+        rv = src
       else
-        this._convert(rv, src, srcType, dstType)
-      endif
+        # This code is needed only in MIR1 flow.
+        dstTypeMir = AST_ConvertDataTypeToMIR(dstType)
+        srcTypeMir = AST_ConvertDataTypeToMIR(srcType)
 
-      # TODO: Simplify it.
-      this.symbolTable.releaseTempVar(src)
+        if dstTypeMir is srcTypeMir
+          # Two AST types, which map to the same machine type.
+          # We can reuse the same variable as is.
+          rv = src
 
-    elif opcode is AST_OPCODE_NEG
-      # TODO: Simplify it.
-      x = this._evaluateNode(children[0])
-      this.symbolTable.releaseTempVar(x)
-      this._neg(rv, x)
-
-    elif opcode is AST_OPCODE_BOOL_AND
-      # Lazy 'and' operator.
-      this._evaluateNodeLazyBoolAnd(rv, children[0], children[1])
-
-    elif opcode is AST_OPCODE_BOOL_OR
-      # Lazy 'or' operator.
-      this._evaluateNodeLazyBoolOr(rv, children[0], children[1])
-
-    elif opcode is AST_OPCODE_CALL_NEW
-      classProto = this._getClassProto(value)
-      this._createObject(rv, classProto)
-
-      # Call constructor if any.
-      methodProto = classProto['vtable']['constructor']
-
-      if methodProto is defined
-        params      = [rv]
-        paramsCnt   = methodProto['paramsCnt'] + 1
-        this._verifyNumberOfParameters('constructor', paramsCnt, childrenCnt)
-
-        for idx in 1 .. childrenCnt
-          params[idx] = this._evaluateNode(children[idx])
-        endfor
-
-        # TODO: Remove this fix.
-        methodProto['isConstructor'] = true
-
-        unusedRv = this.symbolTable.getTempVar('variant')
-        this._call(unusedRv, methodProto, params, paramsCnt)
-        this.symbolTable.releaseTempVar(unusedRv)
-      endif
-
-    elif childrenCnt is 2
-      # x OP y
-      left  = this._evaluateNode(children[0])
-      right = this._evaluateNode(children[1])
-
-      # Release temp var used to store argument nodes.
-      this.symbolTable.releaseTempVar(left)
-      this.symbolTable.releaseTempVar(right)
-
-      if opcode is AST_OPCODE_REFERENCE
-        # x[idx]
-        this._loadFromIndex(rv, left, right)
-
-      elif opcode is AST_OPCODE_COMPARE_EQ
-        this._compareEQ(rv, left, right)
-
-      elif opcode is AST_OPCODE_COMPARE_NEQ
-        this._compareNEQ(rv, left, right)
-
-      elif opcode is AST_OPCODE_COMPARE_GT
-        this._compareGT(rv, left, right)
-
-      elif opcode is AST_OPCODE_COMPARE_GE
-        this._compareGE(rv, left, right)
-
-      elif opcode is AST_OPCODE_COMPARE_LT
-        this._compareLT(rv, left, right)
-
-      elif opcode is AST_OPCODE_COMPARE_LE
-        this._compareLE(rv, left, right)
-
-      elif opcode is AST_OPCODE_ADD
-        this._add(rv, left, right)
-
-      elif opcode is AST_OPCODE_SUB
-        this._sub(rv, left, right)
-
-      elif opcode is AST_OPCODE_MUL
-        this._mul(rv, left, right)
-
-      elif opcode is AST_OPCODE_DIV
-        this._div(rv, left, right)
-
-      elif opcode is AST_OPCODE_IDIV
-        this._idiv(rv, left, right)
+        else
+          # Type mismatch. Perform conversion into another variable.
+          # TODO: Clean up this mess.
+          rv = this.symbolTable.getTempVarForReadAndWrite(dstTypeMir)
+          this.symbolTable.assignMirType(rv, dstTypeMir)
+          this.symbolTable.releaseTempVar(src)
+          this._convert(rv, src, srcType, dstType)
+        endif
       endif
 
     else
-      die('error: unexpected rvalue node ' + str(opcode) + ' ' + str(value))
+      # TODO: Clean up this mess.
+      # This code is needed only in MIR1 flow.
+      astDataType = AST_GetDataType(ast)
+      mirDataType = AST_ConvertDataTypeToMIR(astDataType)
+      rv = this.symbolTable.getTempVarForReadAndWrite(mirDataType)
+      this.symbolTable.assignMirType(rv, mirDataType)
+
+      # Assign temp var to current node ("scratch").
+      ast.tempVar = rv
+
+      if opcode is AST_DATA_ARRAY
+        if typeof(value) is 'array'
+          this._loadImm(rv, value)
+
+        else
+          this._loadArray(rv)
+
+          if childrenCnt > 0
+            # TODO: Handle non-variant indexes and values.
+            key            = this.symbolTable.getTempVarForReadAndWrite('variant')
+            valueAsVariant = this.symbolTable.getTempVarForReadAndWrite('variant')
+
+            for idx in 0 .. childrenCnt
+              this._loadImmAsVariant(key, idx)
+              value = this._evaluateNode(children[idx])
+              this._convert(valueAsVariant, value, AST_GetDataType(children[idx]), -1)
+              this._storeAtIndex(rv, key, valueAsVariant)
+
+              # TODO: Is it really needed?
+              this.symbolTable.releaseTempVar(value)
+            endfor
+
+            # TODO: Is it really needed?
+            this.symbolTable.releaseTempVar(key)
+            this.symbolTable.releaseTempVar(valueAsVariant)
+          endif
+        endif
+
+      elif opcode is AST_DATA_MAP
+        this._loadMap(rv)
+
+        if childrenCnt > 0
+          # TODO: Handle non-variant values.
+          valueAsVariant = this.symbolTable.getTempVarForReadAndWrite('variant')
+
+          for idx in 0 .. childrenCnt step 2
+            key   = this._evaluateNode(children[idx])
+            value = this._evaluateNode(children[idx + 1])
+            this._convert(valueAsVariant, value, AST_GetDataType(children[idx + 1]), -1)
+            this._storeAtIndex(rv, key, valueAsVariant)
+
+            # TODO: Is it really needed?
+            this.symbolTable.releaseTempVar(key)
+            this.symbolTable.releaseTempVar(value)
+          endfor
+
+          # TODO: Is it really needed?
+          this.symbolTable.releaseTempVar(valueAsVariant)
+        endif
+
+      elif (opcode < AST_OPCODE_PROGRAM)
+        # Imm data node, just return value.
+        this._loadImm(rv, value)
+
+      elif opcode is AST_OPCODE_CALL
+        # foo(x,y,z...).
+        this._evaluateNodeCall(rv, ast)
+
+      elif opcode is AST_OPCODE_INVOKE_METHOD
+        # obj.foo(x, y, z, ...)
+        this._evaluateNodeInvokeMethod(rv, ast)
+
+      elif opcode is AST_OPCODE_NEG
+        # TODO: Simplify it.
+        x = this._evaluateNode(children[0])
+        this.symbolTable.releaseTempVar(x)
+        this._neg(rv, x)
+
+      elif opcode is AST_OPCODE_BOOL_AND
+        # Lazy 'and' operator.
+        this._evaluateNodeLazyBoolAnd(rv, children[0], children[1])
+
+      elif opcode is AST_OPCODE_BOOL_OR
+        # Lazy 'or' operator.
+        this._evaluateNodeLazyBoolOr(rv, children[0], children[1])
+
+      elif opcode is AST_OPCODE_CALL_NEW
+        classProto = this._getClassProto(value)
+        this._createObject(rv, classProto)
+
+        # Call constructor if any.
+        methodProto = classProto['vtable']['constructor']
+
+        if methodProto is defined
+          params      = [rv]
+          paramsCnt   = methodProto['paramsCnt'] + 1
+          this._verifyNumberOfParameters('constructor', paramsCnt, childrenCnt)
+
+          for idx in 1 .. childrenCnt
+            params[idx] = this._evaluateNode(children[idx])
+          endfor
+
+          # TODO: Remove this fix.
+          methodProto['isConstructor'] = true
+
+          unusedRv = this.symbolTable.getTempVar('variant')
+          this._call(unusedRv, methodProto, params, paramsCnt)
+          this.symbolTable.releaseTempVar(unusedRv)
+        endif
+
+      elif childrenCnt is 2
+        # x OP y
+        left  = this._evaluateNode(children[0])
+        right = this._evaluateNode(children[1])
+
+        # Release temp var used to store argument nodes.
+        this.symbolTable.releaseTempVar(left)
+        this.symbolTable.releaseTempVar(right)
+
+        if opcode is AST_OPCODE_REFERENCE
+          # x[idx]
+          this._loadFromIndex(rv, left, right)
+
+        elif opcode is AST_OPCODE_COMPARE_EQ
+          this._compareEQ(rv, left, right)
+
+        elif opcode is AST_OPCODE_COMPARE_NEQ
+          this._compareNEQ(rv, left, right)
+
+        elif opcode is AST_OPCODE_COMPARE_GT
+          this._compareGT(rv, left, right)
+
+        elif opcode is AST_OPCODE_COMPARE_GE
+          this._compareGE(rv, left, right)
+
+        elif opcode is AST_OPCODE_COMPARE_LT
+          this._compareLT(rv, left, right)
+
+        elif opcode is AST_OPCODE_COMPARE_LE
+          this._compareLE(rv, left, right)
+
+        elif opcode is AST_OPCODE_ADD
+          this._add(rv, left, right)
+
+        elif opcode is AST_OPCODE_SUB
+          this._sub(rv, left, right)
+
+        elif opcode is AST_OPCODE_MUL
+          this._mul(rv, left, right)
+
+        elif opcode is AST_OPCODE_DIV
+          this._div(rv, left, right)
+
+        elif opcode is AST_OPCODE_IDIV
+          this._idiv(rv, left, right)
+        endif
+
+      else
+        die('error: unexpected rvalue node ' + str(opcode) + ' ' + str(value))
+      endif
     endif
 
     # TODO: Review it?
@@ -690,7 +710,7 @@ class ASTTranslator
     # TODO: Handle in parser?
     # Is it really needed?
     if funcName is 'super'
-      this._loadVariable(rv, 'this')
+      this._loadVariable('this')
     endif
 
     # Evaluate parameters.
