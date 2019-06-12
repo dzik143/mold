@@ -39,6 +39,7 @@ class ASTOptimizerInline
     global AST_OPCODE_VARIABLE
     global SYMBOL_KIND_VAR_PARAM
     global SYMBOL_KIND_VAR_RETVAL
+    global SYMBOL_KIND_VAR_LOCAL
 
     newChildren = []
     children    = node.children
@@ -51,10 +52,16 @@ class ASTOptimizerInline
         symbolInfo = symbolTable.lookup(node.value)
 
         if ((symbolInfo.kind is SYMBOL_KIND_VAR_PARAM) or
-            (symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL))
+            (symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL) or
+            (symbolInfo.kind is SYMBOL_KIND_VAR_LOCAL))
 
           newValue = namePrefix + node.value
         endif
+
+      else
+        # TODO: Review it.
+        # We handle loop iterators here.
+        newValue = namePrefix + node.value
       endif
 
     else
@@ -204,17 +211,27 @@ class ASTOptimizerInline
     global AST_OPCODE_CALL
     global AST_OPCODE_BOOL_AND
     global AST_OPCODE_BOOL_OR
+    global AST_OPCODE_IF
+    global AST_OPCODE_WHILE
 
     opcode      = node.opcode
     children    = node.children
     childrenCnt = node.childrenCnt
 
-    if (node.opcode is AST_OPCODE_BOOL_AND) or (node.opcode is AST_OPCODE_BOOL_OR)
+    if (opcode is AST_OPCODE_BOOL_AND) or (opcode is AST_OPCODE_BOOL_OR)
       # Lazy and/or. Don't touch.
 
     else
+      # Don't touch IF/WHILE condition.
+      # TODO: Review it.
+      if (opcode is AST_OPCODE_IF) or (opcode is AST_OPCODE_WHILE)
+        startIdx = 1
+      else
+        startIdx = 0
+      endif
+
       # Process child nodes recursively.
-      for idx in 0 .. childrenCnt
+      for idx in startIdx .. childrenCnt
         childNode = children[idx]
         this._processNode_injectInlineFunctions(dst, symbolTable, childNode)
       endfor
@@ -227,6 +244,8 @@ class ASTOptimizerInline
 
   method _processNode(symbolTable, node)
     global AST_OPCODE_CALL
+    global AST_OPCODE_IF
+    global AST_OPCODE_WHILE
     global AST_OPCODE_DECLARE_OR_ASSIGN
     global AST_OPCODE_INVOKE_METHOD
 
@@ -261,7 +280,9 @@ class ASTOptimizerInline
         rvalNode = childNode.children[1]
         this._processNode_injectInlineFunctions(newChildren, symbolTable, rvalNode)
 
-      elif (childNode.opcode is AST_OPCODE_CALL) or (childNode.opcode is AST_OPCODE_INVOKE_METHOD)
+      elif ((childNode.opcode is AST_OPCODE_CALL) or
+            (childNode.opcode is AST_OPCODE_INVOKE_METHOD))
+
         # foo()
         callParams    = childNode.children
         callParamsCnt = childNode.childrenCnt
@@ -273,6 +294,17 @@ class ASTOptimizerInline
 
         # Resolve function call itself.
         this._processNode_injectInlineFunctions(newChildren, symbolTable, childNode)
+
+      elif (opcode is AST_OPCODE_IF) or (opcode is AST_OPCODE_WHILE)
+        # Resolve condition first.
+        #this._processNode_injectInlineFunctions(newChildren, symbolTable, childNode.children[0])
+
+        # Resolve node itself.
+        #this._processNode_injectInlineFunctions(newChildren, symbolTable, childNode)
+
+        for childIdx in 1 .. childNode.childrenCnt
+          this._processNode(symbolTable, childNode.children[childIdx])
+        endfor
 
       else
         # Process nodes recursively.
