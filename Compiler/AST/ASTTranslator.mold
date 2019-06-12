@@ -41,6 +41,7 @@ class ASTTranslator
     # TODO: Use null?
     this.currentClassProto    = false
     this.currentFunctionProto = false
+    this.symbolTableForTemps  = false
 
     # TODO: Use many deep levels in symbol table.
     this.branchDeepIdx = 0
@@ -249,6 +250,15 @@ class ASTTranslator
   #                         Internal helpers (private)
   # ----------------------------------------------------------------------------
 
+  method _getTempVar(wantedType) -> rv
+    # TODO: Clean up this mess.
+    rv = this.symbolTableForTemps.getTempVarForReadAndWrite(wantedType)
+  endmethod
+
+  method _releaseTempVar(name)
+    this.symbolTableForTemps.releaseTempVar(name)
+  endmethod
+
   method _enterScope(ast)
     this.symbolTable = ast.symbolTable
   endmethod
@@ -297,6 +307,7 @@ class ASTTranslator
 
       oldSymbolTable   = this.symbolTable
       this.symbolTable = ast.children[0].symbolTable
+      this.symbolTableForTemps = this.symbolTable
 
       if funcProto.className is defined
         this.currentClassProto = oldSymbolTable.lookupClass(funcProto.className)['proto']
@@ -311,6 +322,7 @@ class ASTTranslator
       this.currentClassProto    = false
 
       this.symbolTable = oldSymbolTable
+      this.symbolTableForTemps = false
 
       this.app._debug('Function emited: ' + funcName)
     endif
@@ -523,9 +535,9 @@ class ASTTranslator
         else
           # Type mismatch. Perform conversion into another variable.
           # TODO: Clean up this mess.
-          rv = this.symbolTable.getTempVarForReadAndWrite(dstTypeMir)
+          rv = this._getTempVar(dstTypeMir)
           this.symbolTable.assignMirType(rv, dstTypeMir)
-          this.symbolTable.releaseTempVar(src)
+          this._releaseTempVar(src)
           this._convert(rv, src, srcType, dstType)
         endif
       endif
@@ -535,7 +547,7 @@ class ASTTranslator
       # This code is needed only in MIR1 flow.
       astDataType = AST_GetDataType(ast)
       mirDataType = AST_ConvertDataTypeToMIR(astDataType)
-      rv = this.symbolTable.getTempVarForReadAndWrite(mirDataType)
+      rv = this._getTempVar(mirDataType)
       this.symbolTable.assignMirType(rv, mirDataType)
 
       # Assign temp var to current node ("scratch").
@@ -550,8 +562,8 @@ class ASTTranslator
 
           if childrenCnt > 0
             # TODO: Handle non-variant indexes and values.
-            key            = this.symbolTable.getTempVarForReadAndWrite('variant')
-            valueAsVariant = this.symbolTable.getTempVarForReadAndWrite('variant')
+            key            = this._getTempVar('variant')
+            valueAsVariant = this._getTempVar('variant')
 
             for idx in 0 .. childrenCnt
               this._loadImmAsVariant(key, idx)
@@ -560,12 +572,12 @@ class ASTTranslator
               this._storeAtIndex(rv, key, valueAsVariant)
 
               # TODO: Is it really needed?
-              this.symbolTable.releaseTempVar(value)
+              this._releaseTempVar(value)
             endfor
 
             # TODO: Is it really needed?
-            this.symbolTable.releaseTempVar(key)
-            this.symbolTable.releaseTempVar(valueAsVariant)
+            this._releaseTempVar(key)
+            this._releaseTempVar(valueAsVariant)
           endif
         endif
 
@@ -574,7 +586,7 @@ class ASTTranslator
 
         if childrenCnt > 0
           # TODO: Handle non-variant values.
-          valueAsVariant = this.symbolTable.getTempVarForReadAndWrite('variant')
+          valueAsVariant = this._getTempVar('variant')
 
           for idx in 0 .. childrenCnt step 2
             key   = this._evaluateNode(children[idx])
@@ -583,12 +595,12 @@ class ASTTranslator
             this._storeAtIndex(rv, key, valueAsVariant)
 
             # TODO: Is it really needed?
-            this.symbolTable.releaseTempVar(key)
-            this.symbolTable.releaseTempVar(value)
+            this._releaseTempVar(key)
+            this._releaseTempVar(value)
           endfor
 
           # TODO: Is it really needed?
-          this.symbolTable.releaseTempVar(valueAsVariant)
+          this._releaseTempVar(valueAsVariant)
         endif
 
       elif (opcode < AST_OPCODE_PROGRAM)
@@ -606,7 +618,7 @@ class ASTTranslator
       elif opcode is AST_OPCODE_NEG
         # TODO: Simplify it.
         x = this._evaluateNode(children[0])
-        this.symbolTable.releaseTempVar(x)
+        this._releaseTempVar(x)
         this._neg(rv, x)
 
       elif opcode is AST_OPCODE_BOOL_AND
@@ -636,9 +648,9 @@ class ASTTranslator
           # TODO: Remove this fix.
           methodProto['isConstructor'] = true
 
-          unusedRv = this.symbolTable.getTempVar('variant')
+          unusedRv = this._getTempVar('variant')
           this._call(unusedRv, methodProto, params, paramsCnt)
-          this.symbolTable.releaseTempVar(unusedRv)
+          this._releaseTempVar(unusedRv)
         endif
 
       elif childrenCnt is 2
@@ -647,8 +659,8 @@ class ASTTranslator
         right = this._evaluateNode(children[1])
 
         # Release temp var used to store argument nodes.
-        this.symbolTable.releaseTempVar(left)
-        this.symbolTable.releaseTempVar(right)
+        this._releaseTempVar(left)
+        this._releaseTempVar(right)
 
         if opcode is AST_OPCODE_REFERENCE
           # x[idx]
@@ -723,7 +735,7 @@ class ASTTranslator
 
     # TODO: Simplify it.
     for values oneParam in params
-      this.symbolTable.releaseTempVar(oneParam)
+      this._releaseTempVar(oneParam)
     endfor
 
     if funcName is 'typeof'
@@ -809,7 +821,7 @@ class ASTTranslator
 
     # TODO: Simplify it.
     for values oneParam in params
-      this.symbolTable.releaseTempVar(oneParam)
+      this._releaseTempVar(oneParam)
     endfor
   endmethod
 
@@ -890,6 +902,7 @@ class ASTTranslator
       }
       this.symbolTable = ast.symbolTable
       this.currentFunctionProto = funcProto
+      this.symbolTableForTemps = ast.children[0].symbolTable
       this._emitFunctionBody('start', funcProto)
       this.currentFunctionProto = false
 
@@ -923,7 +936,7 @@ class ASTTranslator
         endif
 
         # Simplify it.
-        this.symbolTable.releaseTempVar(rval)
+        this._releaseTempVar(rval)
 
       elif lval['opcode'] is AST_OPCODE_REFERENCE
         # x[i] = y
@@ -939,9 +952,9 @@ class ASTTranslator
         this._storeAtIndexAndDrop(box, index, rval)
 
         # TODO: Simplify it.
-        this.symbolTable.releaseTempVar(box)
-        this.symbolTable.releaseTempVar(index)
-        this.symbolTable.releaseTempVar(rval)
+        this._releaseTempVar(box)
+        this._releaseTempVar(index)
+        this._releaseTempVar(rval)
 
       else
         die('error: unexpected lvalue node ' + str(lval['opcode']) + ' ' + str(lval['value']))
@@ -971,9 +984,9 @@ class ASTTranslator
       this._leaveScope()
 
       # TODO: Simplify it.
-      this.symbolTable.releaseTempVar(valueStep)
-      this.symbolTable.releaseTempVar(valueEnd)
-      this.symbolTable.releaseTempVar(valueStart)
+      this._releaseTempVar(valueStep)
+      this._releaseTempVar(valueEnd)
+      this._releaseTempVar(valueStart)
 
     elif opcode is AST_OPCODE_FOR_VALUES
       # for values v in box
@@ -988,7 +1001,7 @@ class ASTTranslator
       this._leaveScope()
 
       # TODO: Simplify it.
-      this.symbolTable.releaseTempVar(box)
+      this._releaseTempVar(box)
 
     elif opcode is AST_OPCODE_FOR_KEYS
       # for values v in box
@@ -1003,7 +1016,7 @@ class ASTTranslator
       this._leaveScope()
 
       # TODO: Simplify it.
-      this.symbolTable.releaseTempVar(box)
+      this._releaseTempVar(box)
 
     elif opcode is AST_OPCODE_FOR_KEYS_VALUES
       # for keys k values v in box
@@ -1019,7 +1032,7 @@ class ASTTranslator
       this._leaveScope()
 
       # TODO: Simplify it.
-      this.symbolTable.releaseTempVar(box)
+      this._releaseTempVar(box)
 
     elif opcode is AST_OPCODE_WHILE
       # while (cond)
@@ -1041,7 +1054,7 @@ class ASTTranslator
       this._executeNodeIf(cond, codeIfTrue, codeIfFalse)
 
       # TODO: Simplify it.
-      this.symbolTable.releaseTempVar(cond)
+      this._releaseTempVar(cond)
 
     elif opcode is AST_OPCODE_FUNCTION
       # Do nothing.
@@ -1061,10 +1074,10 @@ class ASTTranslator
 
       else
         # TODO: Use null?
-        unusedRv = this.symbolTable.getTempVar('variant')
+        unusedRv = this._getTempVar('variant')
         this._evaluateNodeCall(unusedRv, ast)
         this._dropRetVal()
-        this.symbolTable.releaseTempVar(unusedRv)
+        this._releaseTempVar(unusedRv)
       endif
 
     elif opcode is AST_OPCODE_SWITCH
@@ -1075,10 +1088,10 @@ class ASTTranslator
 
     elif opcode is AST_OPCODE_INVOKE_METHOD
       # TODO: Use null?
-      unusedRv = this.symbolTable.getTempVar('variant')
+      unusedRv = this._getTempVar('variant')
       this._evaluateNodeInvokeMethod(unusedRv, ast)
       this._dropRetVal()
-      this.symbolTable.releaseTempVar(unusedRv)
+      this._releaseTempVar(unusedRv)
 
     elif opcode is AST_OPCODE_NOP
       # Do nothing.

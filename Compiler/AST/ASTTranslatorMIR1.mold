@@ -469,7 +469,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     # TODO: Review it?
     # TODO: Simplify it.
-    this.symbolTable.releaseTempVar(x)
+    this._releaseTempVar(x)
     this.symbolTable.assignMirType(rv, 'bool32')
 
     # Evaluate right node only if left is true.
@@ -478,7 +478,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.emitLabel(endLabel)
 
     # TODO: Simplify it.
-    this.symbolTable.releaseTempVar(y)
+    this._releaseTempVar(y)
   endmethod
 
   method _evaluateNodeLazyBoolOr(rv, leftAst, rightAst)
@@ -493,7 +493,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.emitOneArgOpcode('jmp_if_true', endLabel, this.popForRead()) # [true]
 
     # TODO: Simplify it.
-    this.symbolTable.releaseTempVar(x)
+    this._releaseTempVar(x)
     this.symbolTable.assignMirType(rv, 'bool32')
 
     # Evaluate right node only if left is false.
@@ -502,7 +502,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.emitLabel(endLabel)
 
     # TODO: Simplify it.
-    this.symbolTable.releaseTempVar(y)
+    this._releaseTempVar(y)
   endmethod
 
   method _invokeMethod(rv, methodName, unusedParams, paramsCnt)
