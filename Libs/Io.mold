@@ -1,0 +1,53 @@
+function open(path, mode) -> rv
+  if mode is 'r'
+    # Open existing file for view only.
+    rv = __mold_syscall(1, path)
+
+  elif mode is 'w'
+    # Open existing file for edit.
+    rv = __mold_syscall(2, path)
+
+  elif mode is 'w+'
+    # Create new file from scratch or overwrite existing one.
+    rv = __mold_syscall(3, path)
+
+  else
+    # Error - unsupported open mode.
+    rv = -1
+  endif
+endfunction
+
+function close(f)
+  # Close file handle.
+  __mold_syscall(4, f)
+endfunction
+
+function readByte(f) -> rv
+  # Read one byte from file.
+  rv = __mold_syscall(8, f)
+endfunction
+
+function readChar(f) -> rv
+  # Read one byte from file.
+  rv = __mold_syscall(20, f)
+endfunction
+
+function writeByte(f, data)
+  # Write one byte to file.
+  __mold_syscall(21, f, data)
+endfunction
+
+function writeWord(f, data)
+  # Write one word to file.
+  __mold_syscall(22, f, data)
+endfunction
+
+function writeDword(f, data)
+  # Write one double word to file.
+  __mold_syscall(23, f, data)
+endfunction
+
+function writeQword(f, data)
+  # Write one quad word to file.
+  __mold_syscall(24, f, data)
+endfunction
