@@ -80,6 +80,22 @@ class ASTPreprocessor
           y.value  = 'undefined'
         endif
       endif
+
+    elif opcode is AST_OPCODE_CALL
+      if node.value is '__mold_syscall'
+        # TODO: Clean up this mess.
+        # Treat first parameter as hard-coded integer syscall id.
+        node.sysCallId = children[0].value
+        newChildren    = []
+        childrenCnt    = node.childrenCnt
+
+        for idx in 1 .. childrenCnt
+          newChildren[idx - 1] = children[idx]
+        endfor
+
+        node.children    = newChildren
+        node.childrenCnt = childrenCnt - 1
+      endif
     endif
   endmethod
 

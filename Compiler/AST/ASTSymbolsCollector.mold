@@ -590,8 +590,7 @@ class ASTSymbolsCollector
             (funcName is '__mold_getClassName') or
             (funcName is '__mold_warning') or
             (funcName is '__mold_printToStdOutput') or
-            (funcName is '__mold_parseFile') or
-            (funcName is 'moldParseFile') or
+            (funcName is '__mold_syscall') or
             (funcName is 'global'))
 
         # or (funcName is '__mold_openExternalModule') or (funcName is '__mold_loadExternalFunction') or (funcName is '__mold_peek') or (funcName is '__mold_loadFile')

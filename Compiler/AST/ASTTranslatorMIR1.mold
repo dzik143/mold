@@ -415,6 +415,13 @@ class ASTTranslatorMIR1 extends ASTTranslator
     endif
   endmethod
 
+  method _syscall(rv, id, unusedParams, paramsCnt)
+    params = this.popParametersBeforeCall(paramsCnt)
+    # TODO: Use emitTwoArgsOpcode() after fix.
+    this._emitOneItem(['syscall', rv, id, params])
+    this.push(rv)
+  endmethod
+
   method _callPrint(unusedParams, paramsCnt)
     params = this.popParametersBeforeCall(paramsCnt)
     this.emitTargetOnlyOpcode('print_array_of_variants_ln', params)

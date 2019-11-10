@@ -229,6 +229,10 @@ class ASTTranslatorMIR0 extends ASTTranslator
     endif
   endmethod
 
+  method _syscall(rv, id, params, paramsCnt)
+    this.code.syscall(id, paramsCnt)
+  endmethod
+
   method _call(rv, proto, params, paramsCnt)
     this.code.call(proto)
   endmethod

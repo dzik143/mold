@@ -3235,3 +3235,6 @@ __MOLD_ForDriver_Generic:
     cinvoke GetStdHandle, -12
     cinvoke WriteFile, rax, .errorMsgArrayStringOrMapExpected, 38, NumberOfBytesWritten, 0
     cinvoke ExitProcess, -1
+
+; TODO: Clean up this mess.
+include 'SysCall.asm'

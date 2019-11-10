@@ -113,6 +113,10 @@ class ASTTranslator
     this._error('_callLoadArgsCount not implemented')
   endmethod
 
+  method _syscall(rv, id, params, paramsCnt)
+    this._error('_syscall() not implemented')
+  endmethod
+
   # ----------------------------------------------------------------------------
   #            Methods, which should be overloaded in derived class
   # ----------------------------------------------------------------------------
@@ -715,9 +719,9 @@ class ASTTranslator
   endmethod
 
   method _evaluateNodeCall(rv, ast)
-    funcName    = ast['value']
-    children    = ast['children']
-    childrenCnt = ast['childrenCnt']
+    funcName      = ast['value']
+    children      = ast['children']
+    childrenCnt   = ast['childrenCnt']
 
     # TODO: Handle in parser?
     # Is it really needed?
@@ -789,6 +793,9 @@ class ASTTranslator
     elif (funcName is '__mold_parseFile') or (funcName is 'moldParseFile')
       this._verifyNumberOfParameters('built-in __mold_parseFile', 1, paramsCnt)
       this._callMoldParseFile(rv, params[0])
+
+    elif (funcName is '__mold_syscall')
+      this._syscall(rv, ast.sysCallId, params, paramsCnt)
 
     else
       # Generic foo(x,y,z...) call.

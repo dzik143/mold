@@ -69,12 +69,13 @@ MIR_OPCODE_JMP          = 39
 MIR_OPCODE_JMP_IF_TRUE  = 40
 MIR_OPCODE_JMP_IF_FALSE = 41
 
-MIR_OPCODE_CALL = 42
-MIR_OPCODE_RET  = 43
-MIR_OPCODE_INNER_RET = 44
+MIR_OPCODE_CALL         = 42
+MIR_OPCODE_RET          = 43
+MIR_OPCODE_INNER_RET    = 44
 MIR_OPCODE_RETVAL_GUARD = 45
-MIR_OPCODE_INIT_FRAME = 46
-MIR_OPCODE_CONV2STR = 47
+MIR_OPCODE_INIT_FRAME   = 46
+MIR_OPCODE_CONV2STR     = 47
+MIR_OPCODE_SYSCALL      = 48
 
 MIR_OPCODE_FOR_EACH = 100
 
@@ -586,5 +587,10 @@ class MIRCode
   method forEach(keyId, valueId, cb)
     global MIR_OPCODE_FOR_EACH
     this.push3(MIR_OPCODE_FOR_EACH, keyId, valueId, cb)
+  endmethod
+
+  method syscall(id, paramsCnt)
+    global MIR_OPCODE_SYSCALL
+    this.push2(MIR_OPCODE_SYSCALL, id, paramsCnt)
   endmethod
 endclass

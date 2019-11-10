@@ -127,13 +127,13 @@ endif
 # Load input file and build Abstract Syntax Tree (AST)
 #
 
-app    = new AppMold()
+app = new AppMold()
 
 app._debug('Creating parser object...')
 parser = new Parser()
 
 app._debug('Parsing source...')
-ast    = parser.parseFile(path)
+ast = parser.parseFile(path)
 
 #
 # Dispatch working mode.

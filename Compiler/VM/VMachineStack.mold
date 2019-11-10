@@ -67,6 +67,7 @@ class VMachineStack
     global MIR_OPCODE_LOAD_MOLD_SOURCE, MIR_OPCODE_MOVE_BACK, MIR_OPCODE_PRINT_ERROR
     global MIR_OPCODE_FOR_EACH
     global MIR_OPCODE_INNER_RET
+    global MIR_OPCODE_SYSCALL
     global argc, argv
 
     # TODO: Optimize it.
@@ -314,8 +315,43 @@ class VMachineStack
 
         stack.eatN(paramsCnt - 1)
 
+
       elif opcode is MIR_OPCODE_PRINT_STDOUT
         __mold_printToStdOutput(stack.peek())
+
+      elif opcode is MIR_OPCODE_SYSCALL
+        # TODO: Clean up this mess.
+        # TODO: Optimize it.
+        id        = item[1]
+        paramsCnt = item[2]
+
+        if paramsCnt is 0
+          rv = __mold_syscall(id)
+
+        elif paramsCnt is 1
+          arg1 = stack.peekN(paramsCnt)
+          rv   = __mold_syscall(id, arg1)
+
+        elif paramsCnt is 2
+          arg1 = stack.peekN(paramsCnt)
+          arg2 = stack.peekN(paramsCnt - 1)
+          rv   = __mold_syscall(id, arg1, arg2)
+
+        elif paramsCnt is 3
+          arg1 = stack.peekN(paramsCnt)
+          arg2 = stack.peekN(paramsCnt - 1)
+          arg3 = stack.peekN(paramsCnt - 2)
+          rv   = __mold_syscall(id, arg1, arg2, arg3)
+
+        else
+          # TODO: Remove it after dead code detection.
+          rv = -1
+          die('error: unsupported number of syscall params:' + str(paramsCnt))
+        endif
+
+        stack.eatN(paramsCnt)
+        stack.push(rv)
+        str(id)
 
       elif opcode is MIR_OPCODE_LOAD_ARGC
         stack.push(argc)
@@ -383,6 +419,7 @@ class VMachineStack
     global MIR_OPCODE_LOAD_MOLD_SOURCE, MIR_OPCODE_LOAD_ARGC, MIR_OPCODE_LOAD_ARGV
     global MIR_OPCODE_FOR_EACH
     global MIR_OPCODE_INNER_RET
+    global MIR_OPCODE_SYSCALL
 
     codeObj     = this.code
     code        = codeObj.code
@@ -595,6 +632,9 @@ class VMachineStack
 
       elif opcode is MIR_OPCODE_LOAD_ARGV
         txt = 'load.argv'
+
+      elif opcode is MIR_OPCODE_SYSCALL
+        txt = 'syscall' + str(arg1) + ', ' + str(arg2)
 
       elif opcode is MIR_OPCODE_FOR_EACH
         txt = 'for.each ' + str(arg1) + ', ' + str(arg2) + ', ' + str(arg3)
