@@ -19,7 +19,7 @@
 ;###############################################################################
 
 __MOLD_SysCall:
-  cmp  eax, 25
+  cmp  eax, 32
   ja   .error
 
   jmp  qword [.jmpTable + eax * 8]
@@ -53,6 +53,14 @@ __MOLD_SysCall:
   dq .write_dword   ; 23
   dq .write_qword   ; 24
   dq .write_dqword  ; 25
+  dq .error         ; 26
+  dq .error         ; 27
+  dq .error         ; 28
+  dq .error         ; 29
+  dq .error         ; 30
+
+  dq .ord           ; 31
+  dq .asc           ; 32
 
 ; ------------------------------------------------------------------------------
 ; Open file
@@ -192,6 +200,27 @@ __MOLD_SysCall:
     cinvoke WriteFile
 
     add     rsp, 32
+    ret
+
+; ------------------------------------------------------------------------------
+; Convert byte to char
+; ------------------------------------------------------------------------------
+
+.asc:
+    mov     rax, [rcx + Variant_t.value]
+    mov     [rdi + Variant_t.type], VARIANT_STRING
+    mov     [rdi + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    mov     [rdi + Variant_t.value], rax
+    ret
+
+; ------------------------------------------------------------------------------
+; Convert char to byte
+; ------------------------------------------------------------------------------
+
+.ord:
+    mov     rax, [rcx + Variant_t.value]
+    mov     [rdi + Variant_t.type], VARIANT_INTEGER
+    mov     [rdi + Variant_t.value], rax
     ret
 
 ; ------------------------------------------------------------------------------
