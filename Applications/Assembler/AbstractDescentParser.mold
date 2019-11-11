@@ -1,0 +1,99 @@
+import '../../Libs/Io.mold'
+
+class AbstractDescentParser
+  # ----------------------------------------------------------------------------
+  #                                  Init code
+  # ----------------------------------------------------------------------------
+
+  method constructor()
+    this.lookupBuffer = ' '
+    this.f            = 0
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                Internal implementation: error handling
+  # ----------------------------------------------------------------------------
+
+  method _error(msg) -> rv
+    die('error: ' + this.path + ': ' + str(msg))
+    rv = -1
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #           Internal implementation: lookup one-character buffer
+  # ----------------------------------------------------------------------------
+
+  method _getChar() -> rv
+    rv = this.lookupBuffer
+    this.lookupBuffer = readChar(this.f)
+  endmethod
+
+  method _skipWhites()
+    while this.lookupBuffer is ' '
+      this._getChar()
+    endwhile
+  endmethod
+
+  method _isLetter(x) -> rv
+    v  = ord(this.lookupBuffer)
+    rv = ((v >= 65) and (v <= 90)) or ((v >= 97) and (v <= 122))
+  endmethod
+
+  method _isEndOfLine(x) -> rv
+    v  = ord(this.lookupBuffer)
+    rv = (v is 13) or (v is 10) or (v is 0)
+  endmethod
+
+  method _isDigit(x) -> rv
+    v  = ord(this.lookupBuffer)
+    rv = (v >= 48) and (v <= 57)
+  endmethod
+
+  method _isLetterOrDigit(x) -> rv
+    rv = (this._isLetter(this.lookupBuffer) is true) or (this._isDigit(this.lookupBuffer) is true)
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #             Internal implementation: match common sequences
+  # ----------------------------------------------------------------------------
+
+  method _matchLetter() -> rv
+    if this._isLetter(this.lookupBuffer)
+      # Big (A-Z) or small letter (a-z).
+      rv = this._getChar()
+    else
+      # Error - letter expected.
+      rv = this._error('letter A-Z or a-z expected')
+    endif
+  endmethod
+
+  method _matchLetterOrDigit() -> rv
+    if this._isLetterOrDigit(this.lookupBuffer)
+      # Big (A-Z), small letter (a-z) or digit (0-9).
+      rv = this._getChar()
+    else
+      # Error - letter expected.
+      rv = this._error('letter A-Z, a-z or digit 0-9 expected')
+    endif
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                    Should be overload in derived class
+  # ----------------------------------------------------------------------------
+
+  method _parseSource()
+    this._error('AbstractDescentParser::_parseSource() not implemented')
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                               Public API
+  # ----------------------------------------------------------------------------
+
+  method parseFile(path)
+    this.path         = path
+    this.f            = open(this.path, 'r')
+    this.lookupBuffer = ' '
+
+    this._parseSource()
+  endmethod
+endclass

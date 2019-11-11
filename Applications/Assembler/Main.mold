@@ -1,0 +1,16 @@
+import 'ParserAssemblerX64.mold'
+
+# Parse command line arguments.
+if argc isnt 2
+  print 'Usage:'
+  print ' ', argv[0], '<source.asm>'
+  exit()
+endif
+
+# Open input file.
+path = '1.asm'
+f    = open(path, 'r')
+line = ''
+
+parser = new ParserAssemblerX64()
+parser.parseFile('1.asm')

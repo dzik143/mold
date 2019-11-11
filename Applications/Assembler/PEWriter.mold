@@ -1,0 +1,166 @@
+import '../../Libs/Io.mold'
+
+class PEWriter
+  method constructor()
+    this.path             = ''
+    this.f                = -1
+    this.imageBase        = 4194304 # 0x400000
+    this.ofs              = 0       # current position in file
+    this.numberOfSections = 1
+  endmethod
+
+  method _emitByte(x)
+    writeByte(this.f, x)
+    this.ofs = this.ofs + 1
+  endmethod
+
+  method _emitWord(x)
+    writeWord(this.f, x)
+    this.ofs = this.ofs + 2
+  endmethod
+
+  method _emitDword(x)
+    writeDword(this.f, x)
+    this.ofs = this.ofs + 4
+  endmethod
+
+  method _emitQword(x)
+    writeQword(this.f, x)
+    this.ofs = this.ofs + 8
+  endmethod
+
+  method _emit_HeaderDOS()
+    this._emitQword(23117) # 0  8 MZ
+    this._emitQword(0)     # 8  8 Zero pad
+    this._emitQword(0)     # 16 8 Zero pad
+    this._emitQword(0)     # 24 8 Zero pad
+    this._emitQword(0)     # 32 8 Zero pad
+    this._emitQword(0)     # 40 8 Zero pad
+    this._emitQword(0)     # 48 8 Zero pad
+    this._emitDword(0)     # 56 4 Zero pad
+    this._emitDword(64)    # 60 4 File position of PE header
+  endmethod
+
+  method _emit_HeaderPE()
+    this._emitDword(17744)                # 0 4 'PE\0\0' Magic
+    this._emitWord(34404)                 # 4 2 x64 machine
+    this._emitWord(this.numberOfSections) # 6 2 Number of sections
+
+    this._emitDword(0)     # 8  4 TimeDateStamp
+    this._emitDword(0)     # 12 4 PointerToSymbolTable
+    this._emitDword(0)     # 16 4 NumberOfSymbols
+
+    this._emitWord(240)    # 20 2 Size of optional header
+    this._emitWord(34)     # 22 2 Characteristics: executable, large address aware
+  endmethod
+
+  method _emit_HeaderOptional()
+    this._emitWord(523)      # 0  2 Magic: 0x20b (PE32+)
+    this._emitByte(14)       # 2  1 Linker major version: 0e
+    this._emitByte(00)       # 3  1 Linker minor version: 00
+
+    this._emitDword(0)       # 4  4 SizeOfCode
+    this._emitDword(0)       # 8  4 SizeOfInitializedData
+    this._emitDword(0)       # 12 4 SizeOfUninitializedData
+    this._emitDword(4096)    # 16 4 RVA of code entry point,
+                             #      should point within .text section
+
+    this._emitDword(0)       # 20 4 BaseOfCode
+
+    this._emitQword(this.imageBase) # 24 8 ImageBase
+
+    this._emitDword(4096)    # 32 4 Section aligment in memory (4KB)
+    this._emitDword(512)     # 36 4 File alignment of sections (512B)
+
+    this._emitWord(6)        # 40 2 OS major version
+    this._emitWord(0)        # 42 2 OS minor version
+    this._emitWord(0)        # 44 2 Major image version
+    this._emitWord(0)        # 46 2 Minor image version
+    this._emitWord(6)        # 48 2 Major subsystem version
+    this._emitWord(0)        # 50 2 Minor subsystem version
+
+    this._emitDword(0)       # 52 4 Win32VersionValue (reserved)
+
+    this._emitDword(8192)    # 56 4 Size of image in memory, including headers,
+                             #      rounded up to Section Alignment
+
+    this._emitDword(368)     # 60 4 Size of all headers, rounded up to file-alignment
+
+    this._emitDword(0)       # 64 4 CheckSum
+
+    this._emitWord(3)        # 68 2 Subsystem (2 = Windows GUI, 3 = Windows console)
+    this._emitWord(0)        # 70 2 DllCharacteristics: high entropy ASLR,
+                             #      relocatable, NX compatible, Terminal Server Aware
+
+    this._emitQword(1048576) # 72 8 Stack memory reserved (1 MB)
+    this._emitQword(4096)    # 80 8 Stack memory commited (4KB)
+
+    this._emitQword(1048576) # 88 8 Heap memory reserved (1 MB)
+    this._emitQword(4096)    # 96 8 Heap memory commited (4KB)
+
+    this._emitDword(0)       # 104 4 LoaderFlags (reserved, must be zero)
+    this._emitDword(16)      # 108 4 Number of Data Directory entries
+
+    # Data Directories
+    this._emitQword(0) # 112 8 Export Table
+    this._emitQword(0) # 120 8 Import Table
+    this._emitQword(0) # 128 8 Resource Table
+    this._emitQword(0) # 136 8 Exception Table
+    this._emitQword(0) # 144 8 Certificate Table
+    this._emitQword(0) # 152 8 Base Relocation Table
+    this._emitQword(0) # 160 8 Debug
+    this._emitQword(0) # 168 8 Architecture
+    this._emitQword(0) # 176 8 Global Ptr
+    this._emitQword(0) # 184 8 TLS Table
+    this._emitQword(0) # 192 8 Load Config Table
+    this._emitQword(0) # 200 8 Bound Import
+    this._emitQword(0) # 208 8 IAT
+    this._emitQword(0) # 216 8 Delay Import Descriptor
+    this._emitQword(0) # 224 8 CLR Runtime Header
+    this._emitQword(0) # 232 8 Reserved, must be zero
+  endmethod
+
+  method _emit_HeaderSections()
+    # TODO
+    this._emitQword(500236121134) # 0  8 Name
+    this._emitDword(4096)         # 8  4 VirtualSize
+    this._emitDword(4096)         # 12 4 VirtualAddress
+    this._emitDword(1)            # 16 4 SizeOfRawData
+    this._emitDword(512)          # 20 4 PointerToRawData
+    this._emitDword(0)            # 24 4 PointerToRelocations
+    this._emitDword(0)            # 28 4 PointerToLinenumbers (obsolete)
+    this._emitWord(0)             # 32 2 NumberOfRelocations (obsolete)
+    this._emitWord(0)             # 34 2 NumberOfLinenumbers (obsolete)
+    this._emitDword(2684354560)   # 36 4 Characteristics
+    #endfor
+  endmethod
+
+  method create(path)
+    this.path = path
+    this.f    = open(path, 'w+')
+
+    this._emit_HeaderDOS()
+    this._emit_HeaderPE()
+    this._emit_HeaderOptional()
+    this._emit_HeaderSections()
+
+    # Code section.
+    for idx in 0 .. 144
+      this._emitByte(0)
+    endfor
+
+    this._emitByte(195) # RET
+
+    for idx in 0 .. 511
+      this._emitByte(0)
+    endfor
+
+  endmethod
+
+  method close()
+  endmethod
+endclass
+
+peWriter = new PEWriter()
+peWriter.create('test.exe')
+peWriter.close()

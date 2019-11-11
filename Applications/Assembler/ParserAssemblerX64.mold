@@ -1,0 +1,72 @@
+import 'AbstractDescentParser.mold'
+
+class ParserAssemblerX64 extends AbstractDescentParser
+  method _emitLabel(name)
+    print '[label:', name, ']'
+  endmethod
+
+  method _matchIdent() -> rv
+    this._skipWhites()
+
+    # TODO: Crash without concatenation.
+    rv = '' + this._matchLetterOrDigit()
+
+    while this._isLetterOrDigit(this.lookupBuffer) is true
+      rv = rv + this._getChar()
+    endwhile
+  endmethod
+
+  method _matchCodeLine(opcode)
+    this._skipWhites()
+
+    print '[opcode:', opcode, ']'
+    c = this.lookupBuffer
+    while this._isEndOfLine(c) is false
+      c = this._getChar()
+    endwhile
+  endmethod
+
+  method _parseLine()
+    this._skipWhites()
+
+    c = this.lookupBuffer
+
+    if this._isEndOfLine(c) is true
+      # Empty line.
+      # Do nothing.
+      while this._isEndOfLine(c) is true
+        c = this._getChar()
+      endwhile
+
+    elif c is ';'
+      # Comment.
+      # Eat all input until end of line.
+      print '[comment]'
+      while this._isEndOfLine(c) is false
+        c = this._getChar()
+      endwhile
+
+    else
+      # Non-empty line.
+      # Get one token first to check what to do next.
+      token = this._matchIdent()
+
+      if this.lookupBuffer is ':'
+        # Label line.
+        this._getChar()
+        this._emitLabel(token)
+        this._parseLine()
+      else
+
+        # Code line.
+        this._matchCodeLine(token)
+      endif
+    endif
+  endmethod
+
+  method _parseSource()
+    while ord(this.lookupBuffer) isnt 0
+      this._parseLine()
+    endwhile
+  endmethod
+endclass
