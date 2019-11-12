@@ -60,11 +60,14 @@ stmt
   | stmt_if @EOL                  =if
   | stmt_for @EOL                 =for
   | stmt_while @EOL               =while
+// TODO:  | stmt_switch @EOL              =switch
   | stmt_for_values @EOL          =for_values
   | stmt_for_keys @EOL            =for_keys
   | stmt_for_keys_values @EOL     =for_keys_values
   | stmt_for_indexes @EOL         =for_indexes
   | stmt_for_indexes_values @EOL  =for_indexes_values
+//  | stmt_read @EOL
+//  | stmt_write @EOL
   | @EOL
   ;
 
@@ -189,6 +192,21 @@ imm_list
 ident_list
   : ident_list ',' @IDENT
   | @IDENT
+  ;
+
+
+//
+// I/O
+// write to stdout values x,y,z
+// read from stdin values x,y,z
+//
+
+stmt_read
+  : "read" "from" rval "values" call_list_line [* @@ = 'read' *] =call
+  ;
+
+stmt_write
+  : "write" "to" rval "values" call_list_line  [* @@ = 'write' *] =call
   ;
 
 //
@@ -318,6 +336,32 @@ stmt_elif
   | "elif" condition @EOL stmt_list "else" stmt_list "endif"  =elif
   | "elif" condition @EOL stmt_list stmt_elif                 =elif
   ;
+
+//
+// switch x
+//   case 1
+//     ...
+//   case 2, 3, 4
+//     ...
+//   othwerwise
+//     ..
+// endswitch
+//
+
+/*
+TODO
+stmt_switch
+  : "switch" rval @EOL stmt_switch_case* stmt_switch_case? "endswitch" =stmt_switch
+  ;
+
+stmt_switch_case
+  : "case" imm_list @EOL stmt_list =switch_case
+  ;
+
+stmt_switch_otherwise
+  : "otherwise" @EOL stmt_list =switch_otherwise
+  ;
+*/
 
 //
 // For loop.
