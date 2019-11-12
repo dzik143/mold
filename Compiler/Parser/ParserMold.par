@@ -30,7 +30,7 @@
 @UNTERMINATED_STRING '"' !'"'*     '\r\n' | '\'' !'\''*     '\r\n' ;
 
 @FLOAT   '0-9'+ '.' '0-9'+;
-@INTEGER '0-9'+;
+@INTEGER '0-9'+ | "0x" '0-9a-fA-F'+;
 @TRUE    "true";
 @FALSE   "false";
 

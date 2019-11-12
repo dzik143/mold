@@ -50,4 +50,5 @@ import msvcrt,\
   snprintf, '_snprintf', \
   atof, 'atof', \
   atoi, 'atoi', \
+  strtol, 'strtol', \
   __getmainargs, '__getmainargs'

@@ -1021,7 +1021,9 @@ class CodeGeneratorX64
           print '  mov rcx, [', params[0], '+ Variant_t.value]' # rcx = text (Buffer_t)
           print '  mov rcx, [ rcx + Buffer_t.bytesPtr ]'        # rcx = text (String_t)
           print '  lea rcx, [ rcx + String_t.text ]'            # rcx = text (char*)
-          print '  cinvoke atoi'                                # rcx = int(text)
+          print '  mov rdx, 0'                                  # rdx = temp buf = NULL
+          print '  mov r8, rdx'                                 # rdx = base = 0 = auto
+          print '  cinvoke strtol'                              # rcx = int(text)
           print '  mov [', rv, '+ Variant_t.type], VARIANT_INTEGER'
           print '  mov [', rv, '+ Variant_t.value], rax'
 
