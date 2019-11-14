@@ -1,4 +1,968 @@
+import 'x86.mold'
 import 'AbstractDescentParser.mold'
+
+const ParserAssemblerX86_PoolOfRegisters = [
+  'al'  , 'cl'  , 'dl'   , 'bl'   , 'ah'   , 'ch'   , 'dh'   , 'bh',
+  'r8l' , 'r9l' , 'r10l' , 'r11l' , 'r12l' , 'r13l' , 'r14l' , 'r15l',
+  'ax'  , 'cx'  , 'dx'   , 'bx'   , 'sp'   , 'bp'   , 'si'   , 'di',
+  'r8w' , 'r9w' , 'r10w' , 'r11w' , 'r12w' , 'r13w' , 'r14w' , 'r15w',
+  'eax' , 'ecx' , 'edx'  , 'ebx'  , 'esp'  , 'ebp'  , 'esi'  , 'edi',
+  'r8d' , 'r9d' , 'r10d' , 'r11d' , 'r12d' , 'r13d' , 'r14d' , 'r15d',
+  'rax' , 'rcx' , 'rdx'  , 'rbx'  , 'rsp'  , 'rbp'  , 'rsi'  , 'rdi',
+  'r8'  , 'r9'  , 'r10'  , 'r11'  , 'r12'  , 'r13'  , 'r14'  , 'r15'
+]
+
+const ParserAssemblerX86_PoolOfMnemonics = [
+  'aad',
+  'aam',
+  'aas',
+  'adc',
+  'add',
+  'and',
+  'arpl',
+  'bound',
+  'call',
+  'callf',
+  'cbw',
+  'clc',
+  'cld',
+  'cli',
+  'cmc',
+  'cmp',
+  'cmpsb',
+  'cmpsd',
+  'cmpsq',
+  'cmpsw',
+  'cwd',
+  'das',
+  'dec',
+  'div',
+  'enter',
+  'far',
+  'fwait',
+  'hlt',
+  'idiv',
+  'imul',
+  'in',
+  'inc',
+  'insb',
+  'insd',
+  'insq',
+  'insw',
+  'int',
+  'int1',
+  'int3',
+  'into',
+  'iret',
+  'jmp',
+  'jrcxz',
+  'jxx',
+  'lahf',
+  'lds',
+  'lea',
+  'leave',
+  'les',
+  'lock',
+  'lodsb',
+  'lodsd',
+  'lodsq',
+  'lodsw',
+  'loop',
+  'loopnz',
+  'loopz',
+  'mov',
+  'movsb',
+  'movsd',
+  'movsq',
+  'movsw',
+  'movsxd',
+  'mul',
+  'neg',
+  'nop',
+  'not',
+  'or',
+  'out',
+  'outsb',
+  'outsd',
+  'outsq',
+  'outsw',
+  'pop',
+  'popa',
+  'popad',
+  'popf',
+  'push',
+  'pusha',
+  'pushad',
+  'pushf',
+  'rcl',
+  'rcr',
+  'repe',
+  'repne',
+  'ret',
+  'retn',
+  'rhr',
+  'rol',
+  'ror',
+  'sahf',
+  'sar',
+  'sbb',
+  'scasb',
+  'scasd',
+  'scasq',
+  'scasw',
+  'shl',
+  'stc',
+  'std',
+  'sti',
+  'stosb',
+  'stosd',
+  'stosq',
+  'stosw',
+  'sub',
+  'test',
+  'xchg',
+  'xlat',
+  'xor'
+]
+
+ParserAssemblerX86_PoolOfInstructions = {
+  'add r8,r8'           : '00 mm',
+  'add m8,r8'           : '00 mm',
+  'add r16,r16'         : '66 01 mm',
+  'add r32,r32'         : '01 mm',
+  'add r64,r64'         : '48 01 mm',
+  'add m16,r16'         : '66 01 mm',
+  'add m32,r32'         : '01 mm',
+  'add m64,r64'         : '48 01 mm',
+  'add r8,m8'           : '02 mm',
+  'add r16,m16'         : '66 03 mm',
+  'add r32,m32'         : '03 mm',
+  'add r64,m64'         : '48 03 mm',
+  'add al,imm8'         : '04',
+  'add ax,imm16'        : '66 05',
+  'add eax,imm32'       : '05',
+  'add rax,imm32'       : '48 05',
+  'or r8,r8'            : '08 mm',
+  'or m8,r8'            : '08 mm',
+  'or r16,r16'          : '66 09 mm',
+  'or r32,r32'          : '09 mm',
+  'or r64,r64'          : '48 09 mm',
+  'or m16,r16'          : '66 09 mm',
+  'or m32,r32'          : '09 mm',
+  'or m64,r64'          : '48 09 mm',
+  'or r8,m8'            : '0a mm',
+  'or r16,m16'          : '66 0b mm',
+  'or r32,m32'          : '0b mm',
+  'or r64,m64'          : '48 0b mm',
+  'or al,imm8'          : '0c',
+  'or ax,imm16'         : '66 0d',
+  'or eax,imm32'        : '0d',
+  'or rax,imm32'        : '48 0d',
+  'adc r8,r8'           : '10 mm',
+  'adc m8,r8'           : '10 mm',
+  'adc r16,r16'         : '66 11 mm',
+  'adc r32,r32'         : '11 mm',
+  'adc r64,r64'         : '48 11 mm',
+  'adc m16,r16'         : '66 11 mm',
+  'adc m32,r32'         : '11 mm',
+  'adc m64,r64'         : '48 11 mm',
+  'adc r8,m8'           : '12 mm',
+  'adc r16,m16'         : '66 13 mm',
+  'adc r32,m32'         : '13 mm',
+  'adc r64,m64'         : '48 13 mm',
+  'adc al,imm8'         : '14',
+  'adc ax,imm16'        : '66 15',
+  'adc eax,imm32'       : '15',
+  'adc rax,imm32'       : '48 15',
+  'sbb r8,r8'           : '18 mm',
+  'sbb m8,r8'           : '18 mm',
+  'sbb r16,r16'         : '66 19 mm',
+  'sbb r32,r32'         : '19 mm',
+  'sbb r64,r64'         : '48 19 mm',
+  'sbb m16,r16'         : '66 19 mm',
+  'sbb m32,r32'         : '19 mm',
+  'sbb m64,r64'         : '48 19 mm',
+  'sbb r8,m8'           : '1a mm',
+  'sbb r16,m16'         : '66 1b mm',
+  'sbb r32,m32'         : '1b mm',
+  'sbb r64,m64'         : '48 1b mm',
+  'sbb al,imm8'         : '1c',
+  'sbb ax,imm16'        : '66 1d',
+  'sbb eax,imm32'       : '1d',
+  'sbb rax,imm32'       : '48 1d',
+  'and r8,r8'           : '20 mm',
+  'and m8,r8'           : '20 mm',
+  'and r16,r16'         : '66 21 mm',
+  'and r32,r32'         : '21 mm',
+  'and r64,r64'         : '48 21 mm',
+  'and m16,r16'         : '66 21 mm',
+  'and m32,r32'         : '21 mm',
+  'and m64,r64'         : '48 21 mm',
+  'and r8,m8'           : '22 mm',
+  'and r16,m16'         : '66 23 mm',
+  'and r32,m32'         : '23 mm',
+  'and r64,m64'         : '48 23 mm',
+  'and al,imm8'         : '24',
+  'and ax,imm16'        : '66 25',
+  'and eax,imm32'       : '25',
+  'and rax,imm32'       : '48 25',
+  'sub r8,r8'           : '28 mm',
+  'sub m8,r8'           : '28 mm',
+  'sub r16,r16'         : '66 29 mm',
+  'sub r32,r32'         : '29 mm',
+  'sub r64,r64'         : '48 29 mm',
+  'sub m16,r16'         : '66 29 mm',
+  'sub m32,r32'         : '29 mm',
+  'sub m64,r64'         : '48 29 mm',
+  'sub r8,m8'           : '2a mm',
+  'sub r16,m16'         : '66 2b mm',
+  'sub r32,m32'         : '2b mm',
+  'sub r64,m64'         : '48 2b mm',
+  'sub al,imm8'         : '2c',
+  'sub ax,imm16'        : '66 2d',
+  'sub eax,imm32'       : '2d',
+  'sub rax,imm32'       : '48 2d',
+  'xor r8,r8'           : '30 mm',
+  'xor m8,r8'           : '30 mm',
+  'xor r16,r16'         : '66 31 mm',
+  'xor r32,r32'         : '31 mm',
+  'xor r64,r64'         : '48 31 mm',
+  'xor m16,r16'         : '66 31 mm',
+  'xor m32,r32'         : '31 mm',
+  'xor m64,r64'         : '48 31 mm',
+  'xor r8,m8'           : '32 mm',
+  'xor r16,m16'         : '66 33 mm',
+  'xor r32,m32'         : '33 mm',
+  'xor r64,m64'         : '48 33 mm',
+  'xor al,imm8'         : '34',
+  'xor ax,imm16'        : '66 35',
+  'xor eax,imm32'       : '35',
+  'xor rax,imm32'       : '48 35',
+  'cmp r8,r8'           : '38 mm',
+  'cmp m8,r8'           : '38 mm',
+  'cmp r16,r16'         : '66 39 mm',
+  'cmp r32,r32'         : '39 mm',
+  'cmp r64,r64'         : '48 39 mm',
+  'cmp m16,r16'         : '66 39 mm',
+  'cmp m32,r32'         : '39 mm',
+  'cmp m64,r64'         : '48 39 mm',
+  'cmp r8,m8'           : '3a mm',
+  'cmp r16,m16'         : '66 3b mm',
+  'cmp r32,m32'         : '3b mm',
+  'cmp r64,m64'         : '48 3b mm',
+  'cmp al,imm8'         : '3c',
+  'cmp ax,imm16'        : '66 3d',
+  'cmp eax,imm32'       : '3d',
+  'cmp rax,imm32'       : '48 3d',
+  'push r16'            : '66 50+r',
+  'push r64'            : '50+r',
+  'pop r16'             : '66 58+r',
+  'pop r64'             : '58+r',
+  'movsxd r64,r32'      : '48 63 mm',
+  'movsxd r64,m32'      : '48 63 mm',
+  'push imm32'          : '68',
+  'imul r16,r16'        : '66 69 mm',
+  'imul r32,r32'        : '69 mm',
+  'imul r64,r64'        : '48 69 mm',
+  'imul r16,m16'        : '66 69 mm',
+  'imul r32,m32'        : '69 mm',
+  'imul r64,m64'        : '48 69 mm',
+  'push imm8'           : '6a',
+  'ins m8,dx'           : '6c',
+  'ins m16,dx'          : '66 6d',
+  'ins m32,dx'          : '6d',
+  'outs dx,m8'          : '6e',
+  'outs dx,m16'         : '66 6f',
+  'outs dx,m32'         : '6f',
+  'jo rel8'             : '70',
+  'jno rel8'            : '71',
+  'jb rel8'             : '72',
+  'jnb rel8'            : '73',
+  'jz rel8'             : '74',
+  'jnz rel8'            : '75',
+  'jbe rel8'            : '76',
+  'jnbe rel8'           : '77',
+  'js rel8'             : '78',
+  'jns rel8'            : '79',
+  'jp rel8'             : '7a',
+  'jnp rel8'            : '7b',
+  'jl rel8'             : '7c',
+  'jnl rel8'            : '7d',
+  'jle rel8'            : '7e',
+  'jnle rel8'           : '7f',
+  'add r8,imm8'         : '80 c0',
+  'add m8,imm8'         : '80 c0',
+  'or r8,imm8'          : '80 c8',
+  'or m8,imm8'          : '80 c8',
+  'adc r8,imm8'         : '80 d0',
+  'adc m8,imm8'         : '80 d0',
+  'sbb r8,imm8'         : '80 d8',
+  'sbb m8,imm8'         : '80 d8',
+  'and r8,imm8'         : '80 e0',
+  'and m8,imm8'         : '80 e0',
+  'sub r8,imm8'         : '80 e8',
+  'sub m8,imm8'         : '80 e8',
+  'xor r8,imm8'         : '80 f0',
+  'xor m8,imm8'         : '80 f0',
+  'cmp r8,imm8'         : '80 f8',
+  'cmp m8,imm8'         : '80 f8',
+  'add r16,imm16'       : '66 81 c0',
+  'add r32,imm32'       : '81 c0',
+  'add r64,imm32'       : '48 81 c0',
+  'add m16,imm16'       : '66 81 c0',
+  'add m32,imm32'       : '81 c0',
+  'add m64,imm32'       : '48 81 c0',
+  'or r16,imm16'        : '66 81 c8',
+  'or r32,imm32'        : '81 c8',
+  'or r64,imm32'        : '48 81 c8',
+  'or m16,imm16'        : '66 81 c8',
+  'or m32,imm32'        : '81 c8',
+  'or m64,imm32'        : '48 81 c8',
+  'adc r16,imm16'       : '66 81 d0',
+  'adc r32,imm32'       : '81 d0',
+  'adc r64,imm32'       : '48 81 d0',
+  'adc m16,imm16'       : '66 81 d0',
+  'adc m32,imm32'       : '81 d0',
+  'adc m64,imm32'       : '48 81 d0',
+  'sbb r16,imm16'       : '66 81 d8',
+  'sbb r32,imm32'       : '81 d8',
+  'sbb r64,imm32'       : '48 81 d8',
+  'sbb m16,imm16'       : '66 81 d8',
+  'sbb m32,imm32'       : '81 d8',
+  'sbb m64,imm32'       : '48 81 d8',
+  'and r16,imm16'       : '66 81 e0',
+  'and r32,imm32'       : '81 e0',
+  'and r64,imm32'       : '48 81 e0',
+  'and m16,imm16'       : '66 81 e0',
+  'and m32,imm32'       : '81 e0',
+  'and m64,imm32'       : '48 81 e0',
+  'sub r16,imm16'       : '66 81 e8',
+  'sub r32,imm32'       : '81 e8',
+  'sub r64,imm32'       : '48 81 e8',
+  'sub m16,imm16'       : '66 81 e8',
+  'sub m32,imm32'       : '81 e8',
+  'sub m64,imm32'       : '48 81 e8',
+  'xor r16,imm16'       : '66 81 f0',
+  'xor r32,imm32'       : '81 f0',
+  'xor r64,imm32'       : '48 81 f0',
+  'xor m16,imm16'       : '66 81 f0',
+  'xor m32,imm32'       : '81 f0',
+  'xor m64,imm32'       : '48 81 f0',
+  'cmp r16,imm16'       : '66 81 f8',
+  'cmp r32,imm32'       : '81 f8',
+  'cmp r64,imm32'       : '48 81 f8',
+  'cmp m16,imm16'       : '66 81 f8',
+  'cmp m32,imm32'       : '81 f8',
+  'cmp m64,imm32'       : '48 81 f8',
+  'add r16,imm8'        : '66 83 c0',
+  'add r32,imm8'        : '83 c0',
+  'add r64,imm8'        : '48 83 c0',
+  'add m16,imm8'        : '66 83 c0',
+  'add m32,imm8'        : '83 c0',
+  'add m64,imm8'        : '48 83 c0',
+  'or r16,imm8'         : '66 83 c8',
+  'or r32,imm8'         : '83 c8',
+  'or r64,imm8'         : '48 83 c8',
+  'or m16,imm8'         : '66 83 c8',
+  'or m32,imm8'         : '83 c8',
+  'or m64,imm8'         : '48 83 c8',
+  'adc r16,imm8'        : '66 83 d0',
+  'adc r32,imm8'        : '83 d0',
+  'adc r64,imm8'        : '48 83 d0',
+  'adc m16,imm8'        : '66 83 d0',
+  'adc m32,imm8'        : '83 d0',
+  'adc m64,imm8'        : '48 83 d0',
+  'sbb r16,imm8'        : '66 83 d8',
+  'sbb r32,imm8'        : '83 d8',
+  'sbb r64,imm8'        : '48 83 d8',
+  'sbb m16,imm8'        : '66 83 d8',
+  'sbb m32,imm8'        : '83 d8',
+  'sbb m64,imm8'        : '48 83 d8',
+  'and r16,imm8'        : '66 83 e0',
+  'and r32,imm8'        : '83 e0',
+  'and r64,imm8'        : '48 83 e0',
+  'and m16,imm8'        : '66 83 e0',
+  'and m32,imm8'        : '83 e0',
+  'and m64,imm8'        : '48 83 e0',
+  'sub r16,imm8'        : '66 83 e8',
+  'sub r32,imm8'        : '83 e8',
+  'sub r64,imm8'        : '48 83 e8',
+  'sub m16,imm8'        : '66 83 e8',
+  'sub m32,imm8'        : '83 e8',
+  'sub m64,imm8'        : '48 83 e8',
+  'xor r16,imm8'        : '66 83 f0',
+  'xor r32,imm8'        : '83 f0',
+  'xor r64,imm8'        : '48 83 f0',
+  'xor m16,imm8'        : '66 83 f0',
+  'xor m32,imm8'        : '83 f0',
+  'xor m64,imm8'        : '48 83 f0',
+  'cmp r16,imm8'        : '66 83 f8',
+  'cmp r32,imm8'        : '83 f8',
+  'cmp r64,imm8'        : '48 83 f8',
+  'cmp m16,imm8'        : '66 83 f8',
+  'cmp m32,imm8'        : '83 f8',
+  'cmp m64,imm8'        : '48 83 f8',
+  'test r8,r8'          : '84 mm',
+  'test m8,r8'          : '84 mm',
+  'test r16,r16'        : '66 85 mm',
+  'test r32,r32'        : '85 mm',
+  'test r64,r64'        : '48 85 mm',
+  'test m16,r16'        : '66 85 mm',
+  'test m32,r32'        : '85 mm',
+  'test m64,r64'        : '48 85 mm',
+  'xchg r8,r8'          : '86 mm',
+  'xchg r8,m8'          : '86 mm',
+  'xchg r16,r16'        : '66 87 mm',
+  'xchg r32,r32'        : '87 mm',
+  'xchg r64,r64'        : '48 87 mm',
+  'xchg r16,m16'        : '66 87 mm',
+  'xchg r32,m32'        : '87 mm',
+  'xchg r64,m64'        : '48 87 mm',
+  'mov r8,r8'           : '88 mm',
+  'mov m8,r8'           : '88 mm',
+  'mov r16,r16'         : '66 89 mm',
+  'mov r32,r32'         : '89 mm',
+  'mov r64,r64'         : '48 89 mm',
+  'mov m16,r16'         : '66 89 mm',
+  'mov m32,r32'         : '89 mm',
+  'mov m64,r64'         : '48 89 mm',
+  'mov r8,m8'           : '8a mm',
+  'mov r16,m16'         : '66 8b mm',
+  'mov r32,m32'         : '8b mm',
+  'mov r64,m64'         : '48 8b mm',
+  'mov m16,sreg'        : '8c mm',
+  'lea r16,m8'          : '66 8d mm',
+  'lea r16,m16'         : '66 8d mm',
+  'lea r16,m32'         : '66 8d mm',
+  'lea r16,m64'         : '66 8d mm',
+  'lea r32,m8'          : '8d mm',
+  'lea r32,m16'         : '8d mm',
+  'lea r32,m32'         : '8d mm',
+  'lea r32,m64'         : '8d mm',
+  'lea r64,m8'          : '48 8d mm',
+  'lea r64,m16'         : '48 8d mm',
+  'lea r64,m32'         : '48 8d mm',
+  'lea r64,m64'         : '48 8d mm',
+  'mov sreg,r16'        : '8e mm',
+  'mov sreg,m16'        : '8e mm',
+  'pop r/m16/32'        : '8f c0',
+  'pop r/m64/16'        : '8f c0',
+  'xchg r16,ax'         : '66 90+r',
+  'xchg r32,eax'        : '90+r',
+  'xchg r64,rax'        : '48 90+r',
+  'nop'                 : '90',
+  'pause'               : '90',
+  'cbw ax,al'           : '98',
+  'cwd dx,ax'           : '99',
+  'fwait'               : '9b',
+  'pushf flags'         : '9c',
+  'popf flags'          : '9d',
+  'sahf ah'             : '9e',
+  'lahf ah'             : '9f',
+  'mov al,moffs8'       : 'a0',
+  'mov ax,moffs16'      : '66 a1',
+  'mov eax,moffs32'     : 'a1',
+  'mov rax,moffs64'     : '48 a1',
+  'mov moffs8,al'       : 'a2',
+  'mov moffs16,ax'      : '66 a3',
+  'mov moffs32,eax'     : 'a3',
+  'mov moffs64,rax'     : '48 a3',
+  'movs'                : 'a4',
+  'cmps'                : 'a6',
+  'test al,imm8'        : 'a8',
+  'test ax,imm16'       : '66 a9',
+  'test eax,imm32'      : 'a9',
+  'test rax,imm32'      : '48 a9',
+  'stos'                : 'aa',
+  'lods'                : 'ac',
+  'scas'                : 'ae',
+  'mov r8,imm8'         : 'b0+r',
+  'mov r16,imm16'       : '66 b8+r',
+  'mov r32,imm32'       : 'b8+r',
+  'mov r64,imm64'       : '48 b8+r',
+  'rol r8,imm8'         : 'c0 c0',
+  'rol m8,imm8'         : 'c0 c0',
+  'ror r8,imm8'         : 'c0 c8',
+  'ror m8,imm8'         : 'c0 c8',
+  'rcl r8,imm8'         : 'c0 d0',
+  'rcl m8,imm8'         : 'c0 d0',
+  'rcr r8,imm8'         : 'c0 d8',
+  'rcr m8,imm8'         : 'c0 d8',
+  'shl r8,imm8'         : 'c0 e0',
+  'shl m8,imm8'         : 'c0 e0',
+  'shr r8,imm8'         : 'c0 e8',
+  'shr m8,imm8'         : 'c0 e8',
+  'sal r8,imm8'         : 'c0 f0',
+  'sal m8,imm8'         : 'c0 f0',
+  'sar r8,imm8'         : 'c0 f8',
+  'sar m8,imm8'         : 'c0 f8',
+  'rol r16,imm8'        : '66 c1 c0',
+  'rol r32,imm8'        : 'c1 c0',
+  'rol r64,imm8'        : '48 c1 c0',
+  'rol m16,imm8'        : '66 c1 c0',
+  'rol m32,imm8'        : 'c1 c0',
+  'rol m64,imm8'        : '48 c1 c0',
+  'ror r16,imm8'        : '66 c1 c8',
+  'ror r32,imm8'        : 'c1 c8',
+  'ror r64,imm8'        : '48 c1 c8',
+  'ror m16,imm8'        : '66 c1 c8',
+  'ror m32,imm8'        : 'c1 c8',
+  'ror m64,imm8'        : '48 c1 c8',
+  'rcl r16,imm8'        : '66 c1 d0',
+  'rcl r32,imm8'        : 'c1 d0',
+  'rcl r64,imm8'        : '48 c1 d0',
+  'rcl m16,imm8'        : '66 c1 d0',
+  'rcl m32,imm8'        : 'c1 d0',
+  'rcl m64,imm8'        : '48 c1 d0',
+  'rcr r16,imm8'        : '66 c1 d8',
+  'rcr r32,imm8'        : 'c1 d8',
+  'rcr r64,imm8'        : '48 c1 d8',
+  'rcr m16,imm8'        : '66 c1 d8',
+  'rcr m32,imm8'        : 'c1 d8',
+  'rcr m64,imm8'        : '48 c1 d8',
+  'shl r16,imm8'        : '66 c1 e0',
+  'shl r32,imm8'        : 'c1 e0',
+  'shl r64,imm8'        : '48 c1 e0',
+  'shl m16,imm8'        : '66 c1 e0',
+  'shl m32,imm8'        : 'c1 e0',
+  'shl m64,imm8'        : '48 c1 e0',
+  'shr r16,imm8'        : '66 c1 e8',
+  'shr r32,imm8'        : 'c1 e8',
+  'shr r64,imm8'        : '48 c1 e8',
+  'shr m16,imm8'        : '66 c1 e8',
+  'shr m32,imm8'        : 'c1 e8',
+  'shr m64,imm8'        : '48 c1 e8',
+  'sal r16,imm8'        : '66 c1 f0',
+  'sal r32,imm8'        : 'c1 f0',
+  'sal r64,imm8'        : '48 c1 f0',
+  'sal m16,imm8'        : '66 c1 f0',
+  'sal m32,imm8'        : 'c1 f0',
+  'sal m64,imm8'        : '48 c1 f0',
+  'sar r16,imm8'        : '66 c1 f8',
+  'sar r32,imm8'        : 'c1 f8',
+  'sar r64,imm8'        : '48 c1 f8',
+  'sar m16,imm8'        : '66 c1 f8',
+  'sar m32,imm8'        : 'c1 f8',
+  'sar m64,imm8'        : '48 c1 f8',
+  'retn imm16'          : 'c2',
+  'ret'                 : 'c3',
+  'mov m8,imm8'         : 'c6 c0',
+  'mov r64,imm32'       : '48 c7 c0',
+  'mov m16,imm16'       : '66 c7 c0',
+  'mov m32,imm32'       : 'c7 c0',
+  'mov m64,imm32'       : '48 c7 c0',
+  'enter rbp,imm16'     : 'c8',
+  'leave rbp'           : 'c9',
+  'retf imm16'          : 'ca',
+  'retf'                : 'cb',
+  'int 3,eflags'        : 'cc',
+  'int imm8,eflags'     : 'cd',
+  'into eflags'         : 'ce',
+  'iret flags'          : 'cf',
+  'rol r8,1'            : 'd0 c0',
+  'rol m8,1'            : 'd0 c0',
+  'ror r8,1'            : 'd0 c8',
+  'ror m8,1'            : 'd0 c8',
+  'rcl r8,1'            : 'd0 d0',
+  'rcl m8,1'            : 'd0 d0',
+  'rcr r8,1'            : 'd0 d8',
+  'rcr m8,1'            : 'd0 d8',
+  'shl r8,1'            : 'd0 e0',
+  'shl m8,1'            : 'd0 e0',
+  'shr r8,1'            : 'd0 e8',
+  'shr m8,1'            : 'd0 e8',
+  'sal r8,1'            : 'd0 f0',
+  'sal m8,1'            : 'd0 f0',
+  'sar r8,1'            : 'd0 f8',
+  'sar m8,1'            : 'd0 f8',
+  'rol r16,1'           : '66 d1 c0',
+  'rol r32,1'           : 'd1 c0',
+  'rol r64,1'           : '48 d1 c0',
+  'rol m16,1'           : '66 d1 c0',
+  'rol m32,1'           : 'd1 c0',
+  'rol m64,1'           : '48 d1 c0',
+  'ror r16,1'           : '66 d1 c8',
+  'ror r32,1'           : 'd1 c8',
+  'ror r64,1'           : '48 d1 c8',
+  'ror m16,1'           : '66 d1 c8',
+  'ror m32,1'           : 'd1 c8',
+  'ror m64,1'           : '48 d1 c8',
+  'rcl r16,1'           : '66 d1 d0',
+  'rcl r32,1'           : 'd1 d0',
+  'rcl r64,1'           : '48 d1 d0',
+  'rcl m16,1'           : '66 d1 d0',
+  'rcl m32,1'           : 'd1 d0',
+  'rcl m64,1'           : '48 d1 d0',
+  'rcr r16,1'           : '66 d1 d8',
+  'rcr r32,1'           : 'd1 d8',
+  'rcr r64,1'           : '48 d1 d8',
+  'rcr m16,1'           : '66 d1 d8',
+  'rcr m32,1'           : 'd1 d8',
+  'rcr m64,1'           : '48 d1 d8',
+  'shl r16,1'           : '66 d1 e0',
+  'shl r32,1'           : 'd1 e0',
+  'shl r64,1'           : '48 d1 e0',
+  'shl m16,1'           : '66 d1 e0',
+  'shl m32,1'           : 'd1 e0',
+  'shl m64,1'           : '48 d1 e0',
+  'shr r16,1'           : '66 d1 e8',
+  'shr r32,1'           : 'd1 e8',
+  'shr r64,1'           : '48 d1 e8',
+  'shr m16,1'           : '66 d1 e8',
+  'shr m32,1'           : 'd1 e8',
+  'shr m64,1'           : '48 d1 e8',
+  'sal r16,1'           : '66 d1 f0',
+  'sal r32,1'           : 'd1 f0',
+  'sal r64,1'           : '48 d1 f0',
+  'sal m16,1'           : '66 d1 f0',
+  'sal m32,1'           : 'd1 f0',
+  'sal m64,1'           : '48 d1 f0',
+  'sar r16,1'           : '66 d1 f8',
+  'sar r32,1'           : 'd1 f8',
+  'sar r64,1'           : '48 d1 f8',
+  'sar m16,1'           : '66 d1 f8',
+  'sar m32,1'           : 'd1 f8',
+  'sar m64,1'           : '48 d1 f8',
+  'rol r8,cl'           : 'd2 c0',
+  'rol m8,cl'           : 'd2 c0',
+  'ror r8,cl'           : 'd2 c8',
+  'ror m8,cl'           : 'd2 c8',
+  'rcl r8,cl'           : 'd2 d0',
+  'rcl m8,cl'           : 'd2 d0',
+  'rcr r8,cl'           : 'd2 d8',
+  'rcr m8,cl'           : 'd2 d8',
+  'shl r8,cl'           : 'd2 e0',
+  'shl m8,cl'           : 'd2 e0',
+  'shr r8,cl'           : 'd2 e8',
+  'shr m8,cl'           : 'd2 e8',
+  'sal r8,cl'           : 'd2 f0',
+  'sal m8,cl'           : 'd2 f0',
+  'sar r8,cl'           : 'd2 f8',
+  'sar m8,cl'           : 'd2 f8',
+  'rol r16,cl'          : '66 d3 c0',
+  'rol r32,cl'          : 'd3 c0',
+  'rol r64,cl'          : '48 d3 c0',
+  'rol m16,cl'          : '66 d3 c0',
+  'rol m32,cl'          : 'd3 c0',
+  'rol m64,cl'          : '48 d3 c0',
+  'ror r16,cl'          : '66 d3 c8',
+  'ror r32,cl'          : 'd3 c8',
+  'ror r64,cl'          : '48 d3 c8',
+  'ror m16,cl'          : '66 d3 c8',
+  'ror m32,cl'          : 'd3 c8',
+  'ror m64,cl'          : '48 d3 c8',
+  'rcl r16,cl'          : '66 d3 d0',
+  'rcl r32,cl'          : 'd3 d0',
+  'rcl r64,cl'          : '48 d3 d0',
+  'rcl m16,cl'          : '66 d3 d0',
+  'rcl m32,cl'          : 'd3 d0',
+  'rcl m64,cl'          : '48 d3 d0',
+  'rcr r16,cl'          : '66 d3 d8',
+  'rcr r32,cl'          : 'd3 d8',
+  'rcr r64,cl'          : '48 d3 d8',
+  'rcr m16,cl'          : '66 d3 d8',
+  'rcr m32,cl'          : 'd3 d8',
+  'rcr m64,cl'          : '48 d3 d8',
+  'shl r16,cl'          : '66 d3 e0',
+  'shl r32,cl'          : 'd3 e0',
+  'shl r64,cl'          : '48 d3 e0',
+  'shl m16,cl'          : '66 d3 e0',
+  'shl m32,cl'          : 'd3 e0',
+  'shl m64,cl'          : '48 d3 e0',
+  'shr r16,cl'          : '66 d3 e8',
+  'shr r32,cl'          : 'd3 e8',
+  'shr r64,cl'          : '48 d3 e8',
+  'shr m16,cl'          : '66 d3 e8',
+  'shr m32,cl'          : 'd3 e8',
+  'shr m64,cl'          : '48 d3 e8',
+  'sal r16,cl'          : '66 d3 f0',
+  'sal r32,cl'          : 'd3 f0',
+  'sal r64,cl'          : '48 d3 f0',
+  'sal m16,cl'          : '66 d3 f0',
+  'sal m32,cl'          : 'd3 f0',
+  'sal m64,cl'          : '48 d3 f0',
+  'sar r16,cl'          : '66 d3 f8',
+  'sar r32,cl'          : 'd3 f8',
+  'sar r64,cl'          : '48 d3 f8',
+  'sar m16,cl'          : '66 d3 f8',
+  'sar m32,cl'          : 'd3 f8',
+  'sar m64,cl'          : '48 d3 f8',
+  'xlat al,m8'          : 'd7',
+  'fadd st,m32real'     : 'd8 c0',
+  'fmul st,m32real'     : 'd8 c8',
+  'fcom st,sti'         : 'd8 d0',
+  'fcom st,m32real'     : 'd8 d0',
+  'fcom st,st1'         : 'd8 d0',
+  'fcomp st,sti'        : 'd8 d8',
+  'fcomp st,m32real'    : 'd8 d8',
+  'fcomp st,st1'        : 'd8 d8',
+  'fsub st,m32real'     : 'd8 e0',
+  'fsubr st,m32real'    : 'd8 e8',
+  'fdiv st,m32real'     : 'd8 f0',
+  'fdivr st,m32real'    : 'd8 f8',
+  'fld st,sti'          : 'd9 c0',
+  'fld st,m32real'      : 'd9 c0',
+  'fxch st,sti'         : 'd9 c8',
+  'fxch st,st1'         : 'd9 c8',
+  'fst m32real,st'      : 'd9 d0',
+  'fnop'                : 'd9 d0',
+  'fstp m32real,st'     : 'd9 d8',
+  'fstp1 sti,st'        : 'd9 d8',
+  'fldenv m14'          : 'd9 e0',
+  'fldenv m28'          : 'd9 e0',
+  'fchs st'             : 'd9 e0',
+  'fabs st'             : 'd9 e0',
+  'ftst st'             : 'd9 e0',
+  'fxam st'             : 'd9 e0',
+  'fldcw m16'           : 'd9 e8',
+  'fld1 st'             : 'd9 e8',
+  'fldl2t st'           : 'd9 e8',
+  'fldl2e st'           : 'd9 e8',
+  'fldpi st'            : 'd9 e8',
+  'fldlg2 st'           : 'd9 e8',
+  'fldln2 st'           : 'd9 e8',
+  'fldz st'             : 'd9 e8',
+  'fnstenv m14'         : 'd9 f0',
+  'fnstenv m28'         : 'd9 f0',
+  'fstenv m14'          : 'd9 f0',
+  'fstenv m28'          : 'd9 f0',
+  'f2xm1 st'            : 'd9 f0',
+  'fyl2x st1,st'        : 'd9 f0',
+  'fptan st'            : 'd9 f0',
+  'fpatan st1,st'       : 'd9 f0',
+  'fxtract st'          : 'd9 f0',
+  'fprem1 st,st1'       : 'd9 f0',
+  'fdecstp'             : 'd9 f0',
+  'fincstp'             : 'd9 f0',
+  'fnstcw m16'          : 'd9 f8',
+  'fstcw m16'           : 'd9 f8',
+  'fprem st,st1'        : 'd9 f8',
+  'fyl2xp1 st1,st'      : 'd9 f8',
+  'fsqrt st'            : 'd9 f8',
+  'fsincos st'          : 'd9 f8',
+  'frndint st'          : 'd9 f8',
+  'fscale st,st1'       : 'd9 f8',
+  'fsin st'             : 'd9 f8',
+  'fcos st'             : 'd9 f8',
+  'fiadd st,m32int'     : 'da c0',
+  'fcmovb st,sti'       : 'da c0',
+  'fimul st,m32int'     : 'da c8',
+  'fcmove st,sti'       : 'da c8',
+  'ficom st,m32int'     : 'da d0',
+  'fcmovbe st,sti'      : 'da d0',
+  'ficomp st,m32int'    : 'da d8',
+  'fcmovu st,sti'       : 'da d8',
+  'fisub st,m32int'     : 'da e0',
+  'fisubr st,m32int'    : 'da e8',
+  'fucompp st,st1'      : 'da e8',
+  'fidiv st,m32int'     : 'da f0',
+  'fidivr st,m32int'    : 'da f8',
+  'fild st,m32int'      : 'db c0',
+  'fcmovnb st,sti'      : 'db c0',
+  'fisttp m32int,st'    : 'db c8',
+  'fcmovne st,sti'      : 'db c8',
+  'fist m32int,st'      : 'db d0',
+  'fcmovnbe st,sti'     : 'db d0',
+  'fistp m32int,st'     : 'db d8',
+  'fcmovnu st,sti'      : 'db d8',
+  'fneni nop'           : 'db e0',
+  'fndisi nop'          : 'db e0',
+  'fnclex'              : 'db e0',
+  'fclex'               : 'db e0',
+  'fninit'              : 'db e0',
+  'finit'               : 'db e0',
+  'fnsetpm nop'         : 'db e0',
+  'fld st,m80real'      : 'db e8',
+  'fucomi st,sti'       : 'db e8',
+  'fcomi st,sti'        : 'db f0',
+  'fstp m80real,st'     : 'db f8',
+  'fadd st,m64real'     : 'dc c0',
+  'fadd sti,st'         : 'dc c0',
+  'fmul st,m64real'     : 'dc c8',
+  'fmul sti,st'         : 'dc c8',
+  'fcom st,m64real'     : 'dc d0',
+  'fcom2 st,sti'        : 'dc d0',
+  'fcomp st,m64real'    : 'dc d8',
+  'fcomp3 st,sti'       : 'dc d8',
+  'fsub st,m64real'     : 'dc e0',
+  'fsubr sti,st'        : 'dc e0',
+  'fsubr st,m64real'    : 'dc e8',
+  'fsub sti,st'         : 'dc e8',
+  'fdiv st,m64real'     : 'dc f0',
+  'fdivr sti,st'        : 'dc f0',
+  'fdivr st,m64real'    : 'dc f8',
+  'fdiv sti,st'         : 'dc f8',
+  'fld st,m64real'      : 'dd c0',
+  'ffree sti'           : 'dd c0',
+  'fisttp m64int,st'    : 'dd c8',
+  'fxch4 st,sti'        : 'dd c8',
+  'fst m64real,st'      : 'dd d0',
+  'fst st,sti'          : 'dd d0',
+  'fstp m64real,st'     : 'dd d8',
+  'fstp st,sti'         : 'dd d8',
+  'frstor st,st1'       : 'dd e0',
+  'fucom st,sti'        : 'dd e0',
+  'fucom st,st1'        : 'dd e0',
+  'fucomp st,sti'       : 'dd e8',
+  'fucomp st,st1'       : 'dd e8',
+  'fnsave m94,st'       : 'dd f0',
+  'fnsave m108,st'      : 'dd f0',
+  'fsave m94,st'        : 'dd f0',
+  'fsave m108,st'       : 'dd f0',
+  'fnstsw m16'          : 'dd f8',
+  'fstsw m16'           : 'dd f8',
+  'fiadd st,m16int'     : 'de c0',
+  'faddp sti,st'        : 'de c0',
+  'faddp st1,st'        : 'de c0',
+  'fimul st,m16int'     : 'de c8',
+  'fmulp sti,st'        : 'de c8',
+  'fmulp st1,st'        : 'de c8',
+  'ficom st,m16int'     : 'de d0',
+  'fcomp5 st,sti'       : 'de d0',
+  'ficomp st,m16int'    : 'de d8',
+  'fcompp st,st1'       : 'de d8',
+  'fisub st,m16int'     : 'de e0',
+  'fsubrp sti,st'       : 'de e0',
+  'fsubrp st1,st'       : 'de e0',
+  'fisubr st,m16int'    : 'de e8',
+  'fsubp sti,st'        : 'de e8',
+  'fsubp st1,st'        : 'de e8',
+  'fidiv st,m16int'     : 'de f0',
+  'fdivrp sti,st'       : 'de f0',
+  'fdivrp st1,st'       : 'de f0',
+  'fidivr st,m16int'    : 'de f8',
+  'fdivp sti,st'        : 'de f8',
+  'fdivp st1,st'        : 'de f8',
+  'fild st,m16int'      : 'df c0',
+  'ffreep sti'          : 'df c0',
+  'fisttp m16int,st'    : 'df c8',
+  'fxch7 st,sti'        : 'df c8',
+  'fist m16int,st'      : 'df d0',
+  'fstp8 sti,st'        : 'df d0',
+  'fistp m16int,st'     : 'df d8',
+  'fstp9 sti,st'        : 'df d8',
+  'fbld st,m80dec'      : 'df e0',
+  'fnstsw ax'           : 'df e0',
+  'fstsw ax'            : 'df e0',
+  'fild st,m64int'      : 'df e8',
+  'fucomip st,sti'      : 'df e8',
+  'fbstp m80dec,st'     : 'df f0',
+  'fcomip st,sti'       : 'df f0',
+  'fistp m64int,st'     : 'df f8',
+  'loopnz rcx,rel8'     : 'e0',
+  'loopz rcx,rel8'      : 'e1',
+  'loop rcx,rel8'       : 'e2',
+  'jecxz rel8,ecx'      : 'e3',
+  'in al,imm8'          : 'e4',
+  'in eax,imm8'         : 'e5',
+  'out imm8,al'         : 'e6',
+  'out imm8,eax'        : 'e7',
+  'call rel16'          : '66 e8',
+  'call rel32'          : 'e8',
+  'jmp rel16'           : '66 e9',
+  'jmp rel32'           : 'e9',
+  'jmp rel8'            : 'eb',
+  'in al,dx'            : 'ec',
+  'in eax,dx'           : 'ed',
+  'out dx,al'           : 'ee',
+  'out dx,eax'          : 'ef',
+  'undefined'           : 'f1',
+  'int1 eflags'         : 'f1',
+  'hlt'                 : 'f4',
+  'cmc'                 : 'f5',
+  'test r8,imm8'        : 'f6 c0',
+  'test m8,imm8'        : 'f6 c0',
+  'not r8'              : 'f6 d0',
+  'not m8'              : 'f6 d0',
+  'neg r8'              : 'f6 d8',
+  'neg m8'              : 'f6 d8',
+  'mul ax,al'           : 'f6 e0',
+  'imul ax,al'          : 'f6 e8',
+  'div al,ah'           : 'f6 f0',
+  'idiv al,ah'          : 'f6 f8',
+  'test r16,imm16'      : '66 f7 c0',
+  'test r32,imm32'      : 'f7 c0',
+  'test r64,imm32'      : '48 f7 c0',
+  'test m16,imm16'      : '66 f7 c0',
+  'test m32,imm32'      : 'f7 c0',
+  'test m64,imm32'      : '48 f7 c0',
+  'not r16'             : '66 f7 d0',
+  'not r32'             : 'f7 d0',
+  'not r64'             : '48 f7 d0',
+  'not m16'             : '66 f7 d0',
+  'not m32'             : 'f7 d0',
+  'not m64'             : '48 f7 d0',
+  'neg r16'             : '66 f7 d8',
+  'neg r32'             : 'f7 d8',
+  'neg r64'             : '48 f7 d8',
+  'neg m16'             : '66 f7 d8',
+  'neg m32'             : 'f7 d8',
+  'neg m64'             : '48 f7 d8',
+  'mul rdx,rax'         : 'f7 e0',
+  'imul rdx,rax'        : 'f7 e8',
+  'div rdx,rax'         : 'f7 f0',
+  'idiv rdx,rax'        : 'f7 f8',
+  'clc'                 : 'f8',
+  'stc'                 : 'f9',
+  'cli'                 : 'fa',
+  'sti'                 : 'fb',
+  'cld'                 : 'fc',
+  'std'                 : 'fd',
+  'inc r8'              : 'fe c0',
+  'inc m8'              : 'fe c0',
+  'dec r8'              : 'fe c8',
+  'dec m8'              : 'fe c8',
+  'inc r16'             : '66 ff c0',
+  'inc r32'             : 'ff c0',
+  'inc r64'             : '48 ff c0',
+  'inc m16'             : '66 ff c0',
+  'inc m32'             : 'ff c0',
+  'inc m64'             : '48 ff c0',
+  'dec r16'             : '66 ff c8',
+  'dec r32'             : 'ff c8',
+  'dec r64'             : '48 ff c8',
+  'dec m16'             : '66 ff c8',
+  'dec m32'             : 'ff c8',
+  'dec m64'             : '48 ff c8',
+  'call r16'            : '66 ff d0',
+  'call m16'            : '66 ff d0',
+  'call r64'            : 'ff d0',
+  'call m64'            : 'ff d0',
+  'callf m16:16'        : '66 ff d8',
+  'callf m16:64'        : '48 ff d8',
+  'jmp r16'             : '66 ff e0',
+  'jmp m16'             : '66 ff e0',
+  'jmp r64'             : 'ff e0',
+  'jmp m64'             : 'ff e0',
+  'jmpf m16:16'         : '66 ff e8',
+  'jmpf m16:64'         : '48 ff e8',
+  'push m16'            : '66 ff f0',
+  'push m64'            : 'ff f0'
+}
+
+# Build tokens map for fast tokens recognize.
+ParserAssemblerX86_RegistersMap = {}
+ParserAssemblerX86_MnemonicsMap = {}
+
+regId   = 0
+regType = 'r8'
+
+for values regName in ParserAssemblerX86_PoolOfRegisters
+  if regId >= 16*3
+    regType = 'r64'
+  elif regId >= 16*2
+    regType = 'r32'
+  elif regId >= 16
+    regType = 'r16'
+  endif
+
+  ParserAssemblerX86_RegistersMap[regName] = regType
+  regId = regId + 1
+endfor
+
+for values mnemonic in ParserAssemblerX86_PoolOfMnemonics
+  ParserAssemblerX86_MnemonicsMap[mnemonic] = mnemonic
+endfor
 
 class ParserAssemblerX64 extends AbstractDescentParser
   method _emitLabel(name)
@@ -14,16 +978,201 @@ class ParserAssemblerX64 extends AbstractDescentParser
     while this._isLetterOrDigit(this.lookupBuffer) is true
       rv = rv + this._getChar()
     endwhile
+
+    this._skipWhites()
+  endmethod
+
+  method _matchMemory()
+    this._skipWhites()
+
+    disp  = 0
+    scale = 0
+    index = 0
+    base  = -1
+
+    this._matchChar('[')
+    token = this._matchIdent()
+
+    if this._isDigit(token[0]) is true
+      # [ disp ]
+      disp = token
+
+    elif this.lookupBuffer is ']'
+      # [ base ]
+      base = token
+
+    elif this.lookupBuffer is '-'
+      # [ base - disp ]
+      this._getChar()
+      base = token
+      disp = '-' + this._matchIdent()
+
+    elif this.lookupBuffer is '+'
+      # [ base + ... ]
+      this._getChar()
+      base  = token
+      token = this._matchIdent()
+
+      if this.lookupBuffer is '*'
+        # [ base + scale * index ]
+        this._getChar()
+        scale = token
+        index = this._matchIdent()
+
+        if this.lookupBuffer is '+'
+          # [ base + scale * index + disp ]
+          this._getChar()
+          disp = this._matchIdent()
+
+        elif this.lookupBuffer is '-'
+          # [ base + scale * index - disp ]
+          this._getChar()
+          disp = '-' + this._matchIdent()
+        endif
+
+      elif this._isDigit(token[0]) is true
+        # [ base + disp ]
+        disp = token
+
+      else
+        # [ base + index ]
+        index = token
+
+        if this.lookupBuffer is '+'
+          # [ base + index + disp ]
+          this._getChar()
+          disp = this._matchIdent()
+
+        elif this.lookupBuffer is '-'
+          # [ base + index - disp ]
+          this._getChar()
+          disp = '-' + this._matchIdent()
+        endif
+      endif
+    endif
+
+    this._skipWhites()
+    this._matchChar(']')
+    this._skipWhites()
+
+    #print [base, scale, index, disp]
+  endmethod
+
+  method _matchOperand() -> rv
+    global ParserAssemblerX86_RegistersMap
+
+    # TODO: Handle float numbers.
+    rv = {}
+
+    token = this._matchIdent()
+
+    if this._isDigit(token[0]) is true
+      # Immediate value.
+      rv = 'imm32'
+
+    elif token is 'qword'
+      rv = 'm64'
+      this._matchMemory()
+
+    elif token is 'dword'
+      rv = 'm32'
+      this._matchMemory()
+
+    elif token is 'word'
+      rv = 'm16'
+      this._matchMemory()
+
+    elif token is 'byte'
+      rv = 'm8'
+      this._matchMemory()
+
+    else
+      # Try register.
+      regId = ParserAssemblerX86_RegistersMap[token]
+
+      if regId is defined
+        # Register operand detected.
+        rv = regId
+      else
+        # Give up.
+        this._error("unrecognized operand type for '" + token + "'")
+      endif
+    endif
+  endmethod
+
+  method _matchEndOfLine()
+    this._skipWhites()
+
+    # Eat comment if any.
+    if this._isEndOfLine(this.lookupBuffer) is true
+      # Eat end of line.
+      this._getChar()
+    else
+      # Error - new line expected, but something different found.
+      this._error('unexpected content')
+    endif
   endmethod
 
   method _matchCodeLine(opcode)
+    global ParserAssemblerX86_RegistersMap
+    global ParserAssemblerX86_MnemonicsMap
+    global ParserAssemblerX86_PoolOfInstructions
+
     this._skipWhites()
 
-    print '[opcode:', opcode, ']'
-    c = this.lookupBuffer
-    while this._isEndOfLine(c) is false
-      c = this._getChar()
-    endwhile
+    opcodeInfo = ParserAssemblerX86_MnemonicsMap[opcode]
+    key        = opcode
+
+    if opcodeInfo is undefined
+      this._error("unknown opcode: '" + str(opcode) + "'")
+
+    else
+      # Opcode recognized.
+      # Dispatch expected encoding mode.
+      if this._isEndOfLine(this.lookupBuffer) is true
+        # No operands.
+        #print opcode
+
+      else
+        # Match first operand.
+        op1 = this._matchOperand()
+        this._skipWhites()
+        key = opcode + ' ' + op1
+
+        if this.lookupBuffer is ','
+          # Two operand opcode.
+          this._getChar()
+          op2 = this._matchOperand()
+          #print opcode, op1, op2
+          key = key + ',' + op2
+
+        else
+          # One operand opcode.
+          #print opcode, op1
+        endif
+      endif
+
+      instructionScheme = ParserAssemblerX86_PoolOfInstructions[key]
+
+      print key, ';', instructionScheme
+
+      this._matchEndOfLine()
+    endif
+  endmethod
+
+  method _skipWhitesAndCommentIfAny()
+    this._skipWhites()
+
+    #c = this.lookupBuffer
+    #
+    #if c is ';'
+    #  # Comment.
+    #  # Eat all input until end of line.
+    #  print '[comment]'
+    #  while this._isEndOfLine(c) is false
+    #    c = this._getChar()
+    #  endwhile
+    #endif
   endmethod
 
   method _parseLine()
@@ -35,14 +1184,6 @@ class ParserAssemblerX64 extends AbstractDescentParser
       # Empty line.
       # Do nothing.
       while this._isEndOfLine(c) is true
-        c = this._getChar()
-      endwhile
-
-    elif c is ';'
-      # Comment.
-      # Eat all input until end of line.
-      print '[comment]'
-      while this._isEndOfLine(c) is false
         c = this._getChar()
       endwhile
 

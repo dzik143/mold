@@ -37,7 +37,7 @@ function open(path, mode) -> rv
   endif
 
   if rv is -1
-    die("error: could not open file: '" + str(path) + "'")
+    die("error: could not open file: '" + str(path) + "' (" + str(mode) + ")")
   endif
 endfunction
 
@@ -82,4 +82,32 @@ endfunction
 
 function asc(x) -> rv
   rv = __mold_syscall(32, x)
+endfunction
+
+function readLine(f) -> rv
+  rv   = ''
+  goOn = true
+
+  while goOn is true
+    c = readChar(f)
+
+    if c is ''
+      # End of file.
+      goOn = false
+
+      if rv is ''
+        rv = -1
+      endif
+
+    elif (ord(c) is 13) or (ord(c) is 10)
+      # TODO: Avoid generating empty line on windows.
+      # End of line.
+      goOn = false
+
+    else
+      # We're in the middle of the line.
+      # Go on.
+      rv = rv + c
+    endif
+  endwhile
 endfunction

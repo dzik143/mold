@@ -1,0 +1,1182 @@
+import 'x86.mold'
+import '../../Libs/BitwiseHack.mold'
+
+class MachineEncoderX64
+  method emitByte(x)
+    print 'db', hex(x)
+  endmethod
+
+  method emitWord(x)
+    print 'dw', hex(x)
+  endmethod
+
+  method emitDword(x)
+    print 'dd', hex(x)
+  endmethod
+
+  method emitQword(x)
+    print 'dq', hex(x)
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                             Common helpers
+  # ----------------------------------------------------------------------------
+
+  method emitModRegRM(addressMode, reg, rm)
+    # 7 6 | 5 4 3 | 2 1 0
+    # mod | reg   | r/m
+    reg = bitand(reg, 0x7)
+    rm  = bitand(rm,  0x7)
+    this.emitByte(addressMode * 64 + reg * 8 + rm)
+  endmethod
+
+  method emitPrimaryOpcode(opcodeMask, direct, size)
+    # 7 6 5 4 3 2 | 1 0
+    # opcode      | d s
+    this.emitByte(opcodeMask + direct * 2 + size)
+  endmethod
+
+  method emitPrefix16()
+    this.emitByte(0x66)
+  endmethod
+
+  method emitPrefix64()
+    this.emitByte(0x48)
+  endmethod
+
+  method isReg8(x) -> rv
+    rv = (x // 16) is 0
+  endmethod
+
+  method isReg16(x) -> rv
+    rv = (x // 16) is 1
+  endmethod
+
+  method isReg32(x) -> rv
+    rv = (x // 16) is 2
+  endmethod
+
+  method isReg64(x) -> rv
+    rv = (x // 16) is 3
+  endmethod
+
+  method emitSizePrefixIfNeeded(reg)
+    if this.isReg16(reg) is true
+      # 16-bit: Emit operand size prefix.
+      this.emitPrefix16()
+
+    elif this.isReg64(reg) is true
+      # 64-bit: Emit REX.W prefix.
+      this.emitPrefix64()
+    endif
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                        Core encoding patterns
+  # ----------------------------------------------------------------------------
+
+  method emitCore(opcode, mode, reg, rm)
+    # opcode | mod-reg-rm | SIB    | displacement | immediate
+    # 1-2B   | 0 or 1     | 0 or 1 | 0, 1, 2 or 4 | 0, 1, 2 or 4
+    # bytes  | byte       | byte   | bytes        | bytes
+
+    global X86_SIZE16_32_64
+
+    # Emit prefixes if needed.
+    if this.isReg8(reg) is false
+      # 16, 32 or 64-bit operand(s)
+      # 32-bit is default (no prefix needed)
+      # Set size bit in primary operand byte.
+      opcode = bitor(opcode, X86_SIZE16_32_64)
+      this.emitSizePrefixIfNeeded(reg)
+    endif
+
+    # Primary opcode.
+    this.emitByte(opcode)
+
+    # Mod-R/M byte.
+    this.emitModRegRM(mode, reg, rm)
+  endmethod
+
+  method emitCore_r_r(opcode, regDst, regSrc)
+    global X86_MOD_REGISTER
+    this.emitCore(opcode, X86_MOD_REGISTER, regSrc, regDst)
+  endmethod
+
+  method emitCore_m_r(opcode, regBase, scale, regIndex, disp, regSrc)
+    global X86_MOD_INDIRECT
+    global X86_MOD_DISP8
+    global X86_MOD_DISP32
+    global X86_RM_SIB_MODE
+
+    if disp is 0
+      # r, [r]
+      mode = X86_MOD_INDIRECT
+
+    elif (disp >= -127) and (disp <= 128)
+      # r, [disp8]
+      # r, [r + disp8]
+      mode = X86_MOD_DISP8
+
+    else
+      # r, [disp32]
+      # r, [r + disp32]
+      mode = X86_MOD_DISP32
+    endif
+
+    # Enable Scaled Index Base (SIB) mode.
+    if scale is 0
+      rm = regBase
+    else
+      rm = X86_RM_SIB_MODE
+    endif
+
+    # Primary opcode and Mod-Reg-R/M byte.
+    this.emitCore(opcode, mode, regSrc, rm)
+
+    # Emit SIB byte if needed.
+    if scale isnt 0
+      if scale is 1
+        # [base + index + disp]
+        scaleMask = 0x00
+
+      elif scale is 2
+        # [base + 2*index + disp]
+        scaleMask = 0x40
+
+      elif scale is 4
+        # [base + 4*index + disp]
+        scaleMask = 0x80
+
+      elif scale is 8
+        # [base + 8*index + disp]
+        scaleMask = 0xc0
+
+      else
+        # Error - unexpected scale.
+        scaleMask = -1
+        die('error: only 1, 2, 4 or 8 scale is available')
+      endif
+
+      regBaseMask  = bitand(regBase, 0x7)
+      regIndexMask = bitand(regIndex, 0x7) * 8
+
+      this.emitByte(scaleMask + regIndexMask + regBaseMask)
+    endif
+
+    # Emit displacement if needed.
+    if mode is X86_MOD_DISP8
+      # 8-bit displacemnt.
+      this.emitByte(disp)
+
+    elif mode is X86_MOD_DISP32
+      # 32-bit displacement
+      this.emitDword(disp)
+    endif
+  endmethod
+
+  method emitCore_r_m(opcode, regDst, regBase, scale, regIndex, disp)
+    # Set direction flag in primary opcode byte to swap r<->m direction.
+    opcode = bitor(opcode, 2)
+    this.emitCore_m_r(opcode, regBase, scale, regIndex, disp, regDst)
+  endmethod
+
+  method emitCore_r_imm(opcode, regDst, imm)
+    global X86_MOD_REGISTER
+    global X86_ALU_RM8_IMM8_GROUP
+    global X86_ALU_RM32_IMM32_GROUP
+    global X86_ALU_RM32_IMM8_GROUP
+    global X86_AL
+
+    # Sub-opcode to encode inside Reg-Mod-RM byte.
+    operationId = opcode // 8
+
+    if regDst is X86_AL
+      # Special case for AL register.
+      this.emitByte(opcode + 4)
+      this.emitByte(imm)
+
+    elif this.isReg8(regDst) is true
+      # General 8-bit destination.
+      this.emitByte(X86_ALU_RM8_IMM8_GROUP)
+      this.emitModRegRM(X86_MOD_REGISTER, operationId, regDst)
+      this.emitByte(imm)
+
+    else
+      # 16-bit, 32-bit or 64-bit destination.
+      # 32-bit is default (no prefix needed).
+      this.emitSizePrefixIfNeeded(regDst)
+
+      if (imm >= -127) and (imm <= 128)
+        # r16, imm8
+        # r32, imm8
+        # r64, imm8
+        this.emitByte(X86_ALU_RM32_IMM8_GROUP)
+        this.emitModRegRM(X86_MOD_REGISTER, operationId, regDst)
+        this.emitByte(imm)
+
+      else
+        # r16, imm32
+        # r32, imm32
+        # r64, imm32
+        if bitand(regDst, 0x7) is X86_AL
+          # Special case for ax, eax, rax.
+          this.emitByte(opcode + 5)
+          this.emitDword(imm)
+
+        else
+          this.emitByte(X86_ALU_RM32_IMM32_GROUP)
+          this.emitModRegRM(X86_MOD_REGISTER, operationId, regDst)
+          this.emitDword(imm)
+        endif
+      endif
+    endif
+  endmethod
+
+  method emitCore_group_r(opcodeBase, operationId, reg)
+    global X86_MOD_REGISTER
+    if this.isReg8(reg) is true
+      # neg r8 like.
+      this.emitByte(opcodeBase)
+    else
+      # neg r16/32/64 like.
+      # 32-bit is default.
+      this.emitSizePrefixIfNeeded(reg)
+      this.emitByte(opcodeBase + 1)
+    endif
+
+    # Emit Mod-Reg-R/M byte.
+    # Reg field stores operation id (sub-opcode).
+    this.emitModRegRM(X86_MOD_REGISTER, operationId, reg)
+  endmethod
+
+  method emitCore_unaryGroup_r(operationId, reg)
+    global X86_UNARY8_GROUP
+    this.emitCore_group_r(X86_UNARY8_GROUP, operationId, reg)
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                       Public API: 64 instruction set
+  # ----------------------------------------------------------------------------
+
+  #
+  # Core ALU: add, or, adc, sbb, and, sub, xor, cmp, neg, not
+  #
+
+  # alu r, r
+  method add_r_r(regDst, regSrc)
+    global X86_ADD
+    this.emitCore_r_r(X86_ADD, regDst, regSrc)
+  endmethod
+
+  method or_r_r(regDst, regSrc)
+    global X86_OR
+    this.emitCore_r_r(X86_OR, regDst, regSrc)
+  endmethod
+
+  method adc_r_r(regDst, regSrc)
+    global X86_ADC
+    this.emitCore_r_r(X86_ADC, regDst, regSrc)
+  endmethod
+
+  method sbb_r_r(regDst, regSrc)
+    global X86_SBB
+    this.emitCore_r_r(X86_SBB, regDst, regSrc)
+  endmethod
+
+  method and_r_r(regDst, regSrc)
+    global X86_AND
+    this.emitCore_r_r(X86_AND, regDst, regSrc)
+  endmethod
+
+  method sub_r_r(regDst, regSrc)
+    global X86_SUB
+    this.emitCore_r_r(X86_SUB, regDst, regSrc)
+  endmethod
+
+  method xor_r_r(regDst, regSrc)
+    global X86_XOR
+    this.emitCore_r_r(X86_XOR, regDst, regSrc)
+  endmethod
+
+  method cmp_r_r(regDst, regSrc)
+    global X86_CMP
+    this.emitCore_r_r(X86_CMP, regDst, regSrc)
+  endmethod
+
+  # alu r, imm
+  method add_r_imm(regDst, imm)
+    global X86_ADD
+    this.emitCore_r_imm(X86_ADD, regDst, imm)
+  endmethod
+
+  method or_r_imm(regDst, imm)
+    global X86_OR
+    this.emitCore_r_imm(X86_OR, regDst, imm)
+  endmethod
+
+  method adc_r_imm(regDst, imm)
+    global X86_ADC
+    this.emitCore_r_imm(X86_ADC, regDst, imm)
+  endmethod
+
+  method sbb_r_imm(regDst, imm)
+    global X86_SBB
+    this.emitCore_r_imm(X86_SBB, regDst, imm)
+  endmethod
+
+  method and_r_imm(regDst, imm)
+    global X86_AND
+    this.emitCore_r_imm(X86_AND, regDst, imm)
+  endmethod
+
+  method sub_r_imm(regDst, imm)
+    global X86_SUB
+    this.emitCore_r_imm(X86_SUB, regDst, imm)
+  endmethod
+
+  method xor_r_imm(regDst, imm)
+    global X86_XOR
+    this.emitCore_r_imm(X86_XOR, regDst, imm)
+  endmethod
+
+  method cmp_r_imm(regDst, imm)
+    global X86_CMP
+    this.emitCore_r_imm(X86_CMP, regDst, imm)
+  endmethod
+
+  # alu r, m
+  method add_r_m(regDst, regBase, scale, regIndex, disp)
+    global X86_ADD
+    this.emitCore_r_m(X86_ADD, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method or_r_m(regDst, regBase, scale, regIndex, disp)
+    global X86_OR
+    this.emitCore_r_m(X86_OR, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method adc_r_m(regDst, regBase, scale, regIndex, disp)
+    global X86_ADC
+    this.emitCore_r_m(X86_ADC, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method sbb_r_m(regDst, regBase, scale, regIndex, disp)
+    global X86_SBB
+    this.emitCore_r_m(X86_SBB, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method and_r_m(regDst, regBase, scale, regIndex, disp)
+    global X86_AND
+    this.emitCore_r_m(X86_AND, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method sub_r_m(regDst, regBase, scale, regIndex, disp)
+    global X86_SUB
+    this.emitCore_r_m(X86_SUB, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method xor_r_m(regDst, regBase, scale, regIndex, disp)
+    global X86_XOR
+    this.emitCore_r_m(X86_XOR, regBase, scale, regIndex, disp)
+  endmethod
+
+  method cmp_r_m(regDst, regBase, scale, regIndex, disp)
+    global X86_CMP
+    this.emitCore_r_m(X86_CMP, regBase, scale, regIndex, disp)
+  endmethod
+
+  # alu m, r
+  method add_m_r(regBase, scale, regIndex, disp, regSrc)
+    global X86_ADD
+    this.emitCore_r_m(X86_ADD, regBase, scale, regIndex, disp, regSrc)
+  endmethod
+
+  method or_m_r(regBase, scale, regIndex, disp, regSrc)
+    global X86_OR
+    this.emitCore_r_m(X86_OR, regBase, scale, regIndex, disp, regSrc)
+  endmethod
+
+  method adc_m_r(regBase, scale, regIndex, disp, regSrc)
+    global X86_ADC
+    this.emitCore_r_m(X86_ADC, regBase, scale, regIndex, disp, regSrc)
+  endmethod
+
+  method sbb_m_r(regBase, scale, regIndex, disp, regSrc)
+    global X86_SBB
+    this.emitCore_r_m(X86_SBB, regBase, scale, regIndex, disp, regSrc)
+  endmethod
+
+  method and_m_r(regBase, scale, regIndex, disp, regSrc)
+    global X86_AND
+    this.emitCore_r_m(X86_AND, regBase, scale, regIndex, disp, regSrc)
+  endmethod
+
+  method sub_m_r(regBase, scale, regIndex, disp, regSrc)
+    global X86_SUB
+    this.emitCore_r_m(X86_SUB, regBase, scale, regIndex, disp, regSrc)
+  endmethod
+
+  method xor_m_r(regDst, regBase, scale, regIndex, disp)
+    global X86_XOR
+    this.emitCore_r_m(X86_XOR, regBase, scale, regIndex, disp)
+  endmethod
+
+  method cmp_m_r(regBase, scale, regIndex, disp, regSrc)
+    global X86_CMP
+    this.emitCore_r_m(X86_CMP, regBase, scale, regIndex, disp, regSrc)
+  endmethod
+
+  #
+  # Core ALU: inc, dec
+  #
+
+  method inc_r(reg)
+    global X86_INC_DEC_RM8_GROUP
+    this.emitCore_group_r(X86_INC_DEC_RM8_GROUP, 0, reg)
+  endmethod
+
+  method inc_m(regBase, scale, regIndex, disp)
+    die('not implemented: inc m')
+  endmethod
+
+  method dec_r(reg)
+    global X86_INC_DEC_RM8_GROUP
+    this.emitCore_group_r(X86_INC_DEC_RM8_GROUP, 1, reg)
+  endmethod
+
+  method dec_m(regBase, scale, regIndex, disp)
+    die('not implemented: dec m')
+  endmethod
+
+  #
+  # Bit test: test
+  #
+
+  method test_r_r(reg1, reg2)
+    global X86_TEST_RM8_R8
+    this.emitCore_r_r(X86_TEST_RM8_R8, reg1, reg2)
+  endmethod
+
+  method test_m_r(regBase, scale, regIndex, disp, reg2)
+    global X86_TEST_RM8_R8
+    this.emitCore_m_r(X86_TEST_RM8_R8, regBase, scale, regIndex, disp, reg2)
+  endmethod
+
+  method test_r_imm(reg, imm)
+    global X86_TEST_AL_IMM8
+    global X86_TEST_EAX_IMM32
+    global X86_AL, X86_AX
+    global X86_MOD_REGISTER
+
+    if bitand(reg, 0xf) is X86_AL
+      # Special case:
+      # - test al, imm8
+      # - test ax, imm16  (16-bit prefix)
+      # - test eax, imm32 (default)
+      # - test rax, imm32 (REX.w prefix)
+      if reg is X86_AL
+        # test al, imm8
+        this.emitByte(X86_TEST_AL_IMM8)
+
+      else
+        # Test ax, eax or rax register.
+        this.emitSizePrefixIfNeeded(reg)
+        this.emitByte(X86_TEST_EAX_IMM32)
+      endif
+
+    else
+      # General case:
+      # - test r8, imm8
+      # - test r16, imm16 (16-bit prefix)
+      # - test r32, imm32 (default)
+      # - test r64, imm32 (REX.w prefix)
+      this.emitCore_unaryGroup_r(0, reg)
+    endif
+
+    # Emit immediate.
+    if this.isReg8(reg) is true
+      # Test 8-bit register.
+      this.emitByte(imm)
+
+    elif this.isReg16(reg) is true
+      # Test 16-bit register.
+      this.emitWord(imm)
+
+    else
+      # Test 32 or 64-bit register.
+      # Immediate is always 32-bit.
+      this.emitDword(imm)
+    endif
+  endmethod
+
+  #
+  # Integer multiplication and division: mul, imul, div, idiv
+  #
+
+  method mul_r(reg)
+    this.emitCore_unaryGroup_r(4, reg)
+  endmethod
+
+  method imul_r(reg)
+    this.emitCore_unaryGroup_r(5, reg)
+  endmethod
+
+  method div_r(reg)
+    this.emitCore_unaryGroup_r(6, reg)
+  endmethod
+
+  method idiv_r(reg)
+    this.emitCore_unaryGroup_r(7, reg)
+  endmethod
+
+  #
+  # Stack: push, pusha, pushad, pushf, pop, popa, popad, popf
+  #
+
+  method emitCore_pushPop_r(opcode, reg)
+    if this.isReg16(reg)
+      # push r16
+      this.emitPrefix16()
+
+    elif this.isReg64(reg)
+      # push r64
+      # Default scenario - nothing to do.
+
+    else
+      die('error: push/pop r8/32 are unavailable in 64-bit mode')
+    endif
+
+    this.emitByte(opcode + bitand(reg, 0x7))
+  endmethod
+
+  method push_r(reg)
+    global X86_PUSH_R64
+    this.emitCore_pushPop_r(X86_PUSH_R64, reg)
+  endmethod
+
+  method pop_r(reg)
+    global X86_POP_R64
+    this.emitCore_pushPop_r(X86_POP_R64, reg)
+  endmethod
+
+  method push_imm8(imm)
+    global X86_PUSH_IMM8
+    this.emitByte(X86_PUSH_IMM8)
+    this.emitByte(imm)
+  endmethod
+
+  method push_imm32(imm)
+    global X86_PUSH_IMM32
+    this.emitByte(X86_PUSH_IMM32)
+    this.emitDword(imm)
+  endmethod
+
+  #
+  # Bit shifts and rotations: rol, ror, rcl, rcr, shl, rhr, sar
+  #
+
+  #
+  # Ports: in, out,
+  #        insb, insw, insd, insq,
+  #        outsb, outsw, outsd, outsq.
+  #
+
+  method insb()
+    global X86_INSB
+    this.emitByte(X86_INSB)
+  endmethod
+
+  method insw()
+    this.emitPrefix16()
+    this.insd()
+  endmethod
+
+  method insd()
+    global X86_INSD
+    this.emitByte(X86_INSD)
+  endmethod
+
+  method insq()
+    this.emitPrefix64()
+    this.insd()
+  endmethod
+
+  method outsb()
+    global X86_OUTSB
+    this.emitByte(X86_OUTSB)
+  endmethod
+
+  method outsw()
+    this.emitPrefix16()
+    this.outsd()
+  endmethod
+
+  method outsd()
+    global X86_OUTSD
+    this.emitByte(X86_OUTSD)
+  endmethod
+
+  method outsq()
+    this.emitPrefix64()
+    this.outsd()
+  endmethod
+
+  # Strings: movsb, movsw, movsd, movsq,
+  #          cmpsb, cmpsw, cmpsd, cmpsq,
+  #          stosb, stosw, stosd, stosq,
+  #          lodsb, lodsw, lodsd, lodsq,
+  #          scasb, scasw, scasd, scasq,
+  #          repne, repe.
+
+  method movsb()
+    global X86_MOVSB
+    this.emitByte(X86_MOVSB)
+  endmethod
+
+  method movsw()
+    this.emitPrefix16()
+    this.movsd()
+  endmethod
+
+  method movsd()
+    global X86_MOVSD
+    this.emitByte(X86_MOVSD)
+  endmethod
+
+  method movsq()
+    this.emitPrefix64()
+    this.movsd()
+  endmethod
+
+  method cmpsb()
+    global X86_CMPSB
+    this.emitByte(X86_CMPSB)
+  endmethod
+
+  method cmpsw()
+    this.emitPrefix16()
+    this.cmpsd()
+  endmethod
+
+  method cmpsd()
+    global X86_CMPSD
+    this.emitByte(X86_CMPSD)
+  endmethod
+
+  method cmpsq()
+    this.emitPrefix64()
+    this.cmpsd()
+  endmethod
+
+  method stosb()
+    global X86_STOSB
+    this.emitByte(X86_STOSB)
+  endmethod
+
+  method stosw()
+    this.emitPrefix16()
+    this.stosd()
+  endmethod
+
+  method stosd()
+    global X86_STOSD
+    this.emitByte(X86_STOSD)
+  endmethod
+
+  method stosq()
+    this.emitPrefix64()
+    this.stosd()
+  endmethod
+
+  method loadsb()
+    global X86_LODSB
+    this.emitByte(X86_LODSB)
+  endmethod
+
+  method loadsw()
+    this.emitPrefix16()
+    this.lodsd()
+  endmethod
+
+  method loadsd()
+    global X86_LODSD
+    this.emitByte(X86_LODSD)
+  endmethod
+
+  method loadsq()
+    this.emitPrefix64()
+    this.lodsd()
+  endmethod
+
+  method scasb()
+    global X86_SCASB
+    this.emitByte(X86_SCASB)
+  endmethod
+
+  method scasw()
+    this.emitPrefix16()
+    this.scasd()
+  endmethod
+
+  method scasd()
+    global X86_SCASD
+    this.emitByte(X86_SCASD)
+  endmethod
+
+  method scasq()
+    this.emitPrefix64()
+    this.scasd()
+  endmethod
+
+  method repne()
+    global X86_PREFIX_REPNE
+    this.emitByte(X86_PREFIX_REPNE)
+  endmethod
+
+  method repe()
+    global X86_PREFIX_REPE
+    this.emitByte(X86_PREFIX_REPE)
+  endmethod
+
+  #
+  # Unconditional jumps.
+  #
+
+  method emitCore_jump_rel8(opcode, rel)
+    this.emitByte(opcode)
+    this.emitByte(rel)
+  endmethod
+
+  method emitCore_jump_rel32(opcode, rel)
+    this.emitByte(opcode)
+    this.emitDword(rel)
+  endmethod
+
+  method jmp_rel(rel)
+    global X86_JMP_REL8
+    global X86_JMP_REL32
+
+    if (rel >= -127) and (rel <= 128)
+      # jmp rel8
+      this.emitCore_jmp_rel32(X86_JMP_REL8, rel)
+    else
+      # jmp rel32
+      this.emitCore_jmp_rel32(X86_JMP_REL32, rel)
+    endif
+  endmethod
+
+  #
+  # Conditional jumps: jxx, loopnz, loopz, loop, jrcxz, jecxz
+  #
+
+  method jo_rel(rel)
+    global X86_JO
+    this.emitCore_jump_rel8(X86_JO, rel)
+  endmethod
+
+  method jno_rel(rel)
+    global X86_JNO
+    this.emitCore_jump_rel8(X86_JNO, rel)
+  endmethod
+
+  method jb_rel(rel)
+    global X86_JB
+    this.emitCore_jump_rel8(X86_JB, rel)
+  endmethod
+
+  method jae_rel(rel)
+    global X86_JAE
+    this.emitCore_jump_rel8(X86_JAE, rel)
+  endmethod
+
+  method jz_rel(rel)
+    global X86_JZ
+    this.emitCore_jump_rel8(X86_JZ, rel)
+  endmethod
+
+  method jnz_rel(rel)
+    global X86_JNZ
+    this.emitCore_jump_rel8(X86_JNZ, rel)
+  endmethod
+
+  method jbe_rel(rel)
+    global X86_JBE
+    this.emitCore_jump_rel8(X86_JBE, rel)
+  endmethod
+
+  method ja_rel(rel)
+    global X86_JA
+    this.emitCore_jump_rel8(X86_JA, rel)
+  endmethod
+
+  method js_rel(rel)
+    global X86_JS
+    this.emitCore_jump_rel8(X86_JS, rel)
+  endmethod
+
+  method jns_rel(rel)
+    global X86_JNS
+    this.emitCore_jump_rel8(X86_JNS, rel)
+  endmethod
+
+  method jp_rel(rel)
+    global X86_JP
+    this.emitCore_jump_rel8(X86_JP, rel)
+  endmethod
+
+  method jnp_rel(rel)
+    global X86_JNP
+    this.emitCore_jump_rel8(X86_JNP, rel)
+  endmethod
+
+  method jl_rel(rel)
+    global X86_JL
+    this.emitCore_jump_rel8(X86_JL, rel)
+  endmethod
+
+  method jge_rel(rel)
+    global X86_JGE
+    this.emitCore_jump_rel8(X86_JGE, rel)
+  endmethod
+
+  method jle_rel(rel)
+    global X86_JLE
+    this.emitCore_jump_rel8(X86_JLE, rel)
+  endmethod
+
+  method jg_rel(rel)
+    global X86_JG
+    this.emitCore_jump_rel8(X86_JG, rel)
+  endmethod
+
+  method loopz_rel(rel)
+    global X86_LOOPZ_REL8
+    this.emitCore_jump_rel8(X86_LOOPZ_REL8, rel)
+  endmethod
+
+  method loopnz_rel(rel)
+    global X86_LOOPNZ_REL8
+    this.emitCore_jump_rel8(X86_LOOPNZ_REL8, rel)
+  endmethod
+
+  method loop_rel(rel)
+    global X86_LOOP_REL8
+    this.emitCore_jump_rel8(X86_LOOP_REL8, rel)
+  endmethod
+
+  method jecxz_rel(rel)
+    global X86_JRCXZ_REL8
+    this.emitByte(0x67)
+    this.emitCore_jump_rel8(X86_JRCXZ_REL8, rel)
+  endmethod
+
+  method jrcxz_rel(rel)
+    global X86_JRCXZ_REL8
+    this.emitCore_jump_rel8(X86_JRCXZ_REL8, rel)
+  endmethod
+
+  #
+  # Procedures: call, ret, retn, enter, leave
+  #
+
+  method call_rel(rel)
+    global X86_CALL_REL32
+    this.emitCore_jump_rel32(X86_CALL_REL32, rel)
+  endmethod
+
+  method call_r(reg)
+    die('not implemented: call r')
+  endmethod
+
+  method call_m(regBase, scale, regIndex, disp)
+    die('not implemented: call m')
+  endmethod
+
+  method ret()
+    global X86_RET
+    this.emitByte(X86_RET)
+  endmethod
+
+  method retn_imm8(imm)
+    global X86_RETN
+    this.emitByte(X86_RETN)
+    this.emitByte(imm)
+  endmethod
+
+  method enter_imm16_imm8(disp, level)
+    global X86_ENTER_IMM16_IMM8
+    this.emitByte(X86_ENTER_IMM16_IMM8)
+    this.emitWord(disp)
+    this.emitByte(level)
+  endmethod
+
+  method leave()
+    global X86_LEAVE
+    this.emitByte(X86_LEAVE)
+  endmethod
+
+  #
+  # Data move: mov, xchg
+  #
+
+  method mov_r_r(regDst, regSrc)
+    global X86_MOV
+    this.emitCore_r_r(X86_MOV, regDst, regSrc)
+  endmethod
+
+  method mov_r_m(regDst, regBase, scale, regIndex, disp)
+    global X86_MOV
+    this.emitCore_r_m(X86_MOV, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method mov_m_r(regBase, scale, regIndex, disp, regSrc)
+    global X86_MOV
+    this.emitCore_m_r(X86_MOV, regBase, scale, regIndex, disp, regSrc)
+  endmethod
+
+  method mov_r_imm(regDst, imm)
+    global X86_MOV_R8_IMM8
+    global X86_MOV_R32_IMM32
+
+    regDstId = bitand(regDst, 0x7)
+
+    if this.isReg8(regDst) is true
+      # mov r8, imm8
+      this.emitByte(X86_MOV_R8_IMM8 + regDstId)
+      this.emitByte(imm)
+
+    else
+      # Move 16, 32 or 64 bits.
+      # 32-bit is default (no prefix needed).
+      if this.isReg16(regDst) is true
+        # mov r16, imm16
+        this.emitPrefix16()
+        this.emitByte(X86_MOV_R32_IMM32 + regDstId)
+        this.emitWord(imm)
+
+      elif this.isReg32(regDst) is true
+        # mov r32, imm32
+        this.emitByte(X86_MOV_R32_IMM32 + regDstId)
+        this.emitDword(imm)
+
+      else
+        # mov r64, imm64
+        this.emitPrefix64()
+        this.emitByte(X86_MOV_R32_IMM32 + regDstId)
+        this.emitQword(imm)
+      endif
+    endif
+  endmethod
+
+  # Conversion: cbw, cwd, cdq, movsxd
+  method movsxd_r_r(regDst, regSrc)
+    global X86_MOVSXD_R32_RM32
+    this.emitCore_r_r(X86_MOVSXD_R32_RM32, regDst, regSrc)
+  endmethod
+
+  method movsxd_r_m(regDst, regBase, scale, regIndex, disp)
+    global X86_MOVSXD_R32_RM32
+    this.emitCore_r_m(X86_MOVSXD_R32_RM32, regBase, scale, regIndex, disp)
+  endmethod
+
+  method cwde()
+    global X86_CWDE
+    this.emitByte(X86_CWDE)
+  endmethod
+
+  method cbw()
+    this.prefix16()
+    this.cwde()
+  endmethod
+
+  method cdqe()
+    this.prefix64()
+    this.cwde()
+  endmethod
+
+  #
+  # Interrupts: int, int0, int1, int3, iret
+  #
+
+  method int(imm8)
+    global X86_INT_IMM8
+    global X86_INT0, X86_INT1, X86_INT3
+
+    if imm8 is 0
+      this.emitByte(X86_INT0)
+
+    elif imm8 is 1
+      this.emitByte(X86_INT1)
+
+    elif imm8 is 3
+      this.emitByte(X86_INT3)
+
+    else
+      this.emitByte(X86_INT_IMM8)
+      this.emitByte(imm8)
+    endif
+  endmethod
+
+  method iret()
+    global X86_IRET
+    this.emitByte(X86_IRET)
+  endmethod
+
+  #
+  # Flags: clc, stc, cli, sti, cld, std
+  #
+
+  method clc()
+    global X86_CLC
+    this.emitByte(X86_CLC)
+  endmethod
+
+  method stc()
+    global X86_STC
+    this.emitByte(X86_STC)
+  endmethod
+
+  method cli()
+    global X86_CLI
+    this.emitByte(X86_CLI)
+  endmethod
+
+  method sti()
+    global X86_STI
+    this.emitByte(X86_STI)
+  endmethod
+
+  method cld()
+    global X86_CLD
+    this.emitByte(X86_CLD)
+  endmethod
+
+  method std()
+    global X86_STD
+    this.emitByte(X86_STD)
+  endmethod
+
+  #
+  # Core other: lea, nop, xlat, hlt, cmc
+  #
+
+  method lea_r_m(regDst, regBase, scale, regIndex, disp)
+    global X86_LEA_R32_M64
+    this.emitCore_r_m(regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  #
+  #  lock
+  #
+
+  method lock()
+    global X86_PREFIX_LOCK
+    this.emitByte(X86_PREFIX_LOCK)
+  endmethod
+/*
+  # ----------------------------------------------------------------------------
+  #                       Public API: Generic dispatcher
+  # ----------------------------------------------------------------------------
+
+  method emit_r(opcode, reg)
+    global X86_NOT, X86_NEG, X86_INC, X86_DEC, X86_PUSH, X86_POP
+
+    # TODO: Use function pointers.
+    if opcode is X86_NOT
+      this.not_r(reg)
+
+    elif opcode is X86_NEG
+      this.neg_r(reg)
+
+    elif opcode is X86_INC
+      this.inc_r(reg)
+
+    elif opcode is X86_DEC
+      this.dec_r(reg)
+
+    elif opcode is X86_PUSH
+      this.push_r(reg)
+
+    elif opcode is X86_POP
+      this.pop_r(reg)
+
+    else
+      die('error: invalid opcode (r): ' + hex(opcode))
+    endif
+  endmethod
+
+  method emit_r_r(opcode, reg1, reg2)
+    global X86_ADD, X86_OR, X86_ADC, X86_SBB, X86_AND, X86_SUB, X86_XOR, X86_CMP
+    global X86_TEST, X86_XCHG, X86_MOV
+
+    # TODO: Use function pointers.
+    if ((opcode is X86_ADD) or
+        (opcode is X86_OR) or
+        (opcode is X86_ADC) or
+        (opcode is X86_SBB) or
+        (opcode is X86_AND) or
+        (opcode is X86_SUB) or
+        (opcode is X86_XOR) or
+        (opcode is X86_CMP))
+
+      # Generic ALU.
+      this.emitCore_r_r(opcode, reg1, reg2)
+
+    elif opcode is X86_MOV
+      this.mov_r_r(reg1, reg2)
+
+    elif opcode is X86_TEST
+      this.test_r_r(reg1, reg2)
+
+    elif opcode is X86_XCHG
+      this.xchg_r_r(reg1, reg2)
+
+    else
+      die('error: invalid opcode (r,r): ' + hex(opcode))
+    endif
+  endmethod
+
+  method emit_m_r(opcode, regBase, scale, regIndex, disp, regSrc)
+    global X86_ADD, X86_OR, X86_ADC, X86_SBB, X86_AND, X86_SUB, X86_XOR, X86_CMP
+    global X86_TEST, X86_XCHG, X86_MOV
+
+    # TODO: Use function pointers.
+    if ((opcode is X86_ADD) or
+        (opcode is X86_OR) or
+        (opcode is X86_ADC) or
+        (opcode is X86_SBB) or
+        (opcode is X86_AND) or
+        (opcode is X86_SUB) or
+        (opcode is X86_XOR) or
+        (opcode is X86_CMP))
+
+      # Generic ALU.
+      this.emitCore_m_r(opcode, regBase, scale, regIndex, disp, regSrc)
+
+    elif opcode is X86_MOV
+      this.mov_m_r(regBase, scale, regIndex, disp, regSrc)
+
+    elif opcode is X86_TEST
+      this.test_m_r(regBase, scale, regIndex, disp, regSrc)
+
+    elif opcode is X86_XCHG
+      this.xchg_m_r(regBase, scale, regIndex, disp, regSrc)
+
+    else
+      die('error: invalid opcode (r,m): ' + hex(opcode))
+    endif
+  endmethod
+
+  method emit_r_m(opcode, regDst, regBase, scale, regIndex, disp)
+    # TODO: Review does it work for general case.
+    # Set direction flag in primary opcode byte to swap r<->m direction.
+    opcode = bitor(opcode, 2)
+    this.emit_m_r(opcode, regBase, scale, regIndex, disp, regDst)
+  endmethod
+*/
+endclass
+
+machineEncoder = new MachineEncoderX64()
+
+machineEncoder.test_r_r(X86_CL, X86_DL)

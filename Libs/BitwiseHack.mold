@@ -1,0 +1,44 @@
+# https://stackoverflow.com/questions/2982729/is-it-possible-to-implement-bitwise-operators-using-integer-arithmetic
+function bitand(a, b) -> c
+  c = 0
+  for x in 0 .. 64
+    c = c + c
+    if a < 0
+      if b < 0
+        c = c + 1
+      endif
+    endif
+
+    a = a + a
+    b = b + b
+  endfor
+endfunction
+
+function bitor(a, b) -> c
+  c = 0
+  for x in 0 .. 64
+    c = c + c
+
+    if a < 0
+      c = c + 1
+    elif b < 0
+      c = c + 1
+    endif
+
+    a = a + a
+    b = b + b
+  endfor
+endfunction
+
+function hex(x) -> rv
+  digits = '0123456789abcdef'
+  rv     = ''
+
+  while x > 0
+    d = x // 16
+    r = x - d * 16
+    # TODO: Fix crash when '' concatenation is missing.
+    rv = '' + digits[r] + rv
+    x  = d
+  endwhile
+endfunction

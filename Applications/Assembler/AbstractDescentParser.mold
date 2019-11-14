@@ -35,27 +35,35 @@ class AbstractDescentParser
   endmethod
 
   method _isLetter(x) -> rv
-    v  = ord(this.lookupBuffer)
+    v  = ord(x)
     rv = ((v >= 65) and (v <= 90)) or ((v >= 97) and (v <= 122))
   endmethod
 
   method _isEndOfLine(x) -> rv
-    v  = ord(this.lookupBuffer)
+    v  = ord(x)
     rv = (v is 13) or (v is 10) or (v is 0)
   endmethod
 
   method _isDigit(x) -> rv
-    v  = ord(this.lookupBuffer)
+    v  = ord(x)
     rv = (v >= 48) and (v <= 57)
   endmethod
 
   method _isLetterOrDigit(x) -> rv
-    rv = (this._isLetter(this.lookupBuffer) is true) or (this._isDigit(this.lookupBuffer) is true)
+    rv = (this._isLetter(x) is true) or (this._isDigit(x) is true)
   endmethod
 
   # ----------------------------------------------------------------------------
   #             Internal implementation: match common sequences
   # ----------------------------------------------------------------------------
+
+  method _matchChar(x)
+    if this.lookupBuffer is x
+      this._getChar()
+    else
+      this._error("'" + x + "' expected, but '" + str(this.lookupBuffer) + '" found')
+    endif
+  endmethod
 
   method _matchLetter() -> rv
     if this._isLetter(this.lookupBuffer)

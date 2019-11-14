@@ -4,8 +4,8 @@ class PEWriter
   method constructor()
     this.path             = ''
     this.f                = -1
-    this.imageBase        = 4194304 # 0x400000
-    this.ofs              = 0       # current position in file
+    this.imageBase        = 0x400000 # 0x400000
+    this.ofs              = 0        # current position in file
     this.numberOfSections = 1
   endmethod
 
@@ -30,20 +30,20 @@ class PEWriter
   endmethod
 
   method _emit_HeaderDOS()
-    this._emitQword(23117) # 0  8 MZ
-    this._emitQword(0)     # 8  8 Zero pad
-    this._emitQword(0)     # 16 8 Zero pad
-    this._emitQword(0)     # 24 8 Zero pad
-    this._emitQword(0)     # 32 8 Zero pad
-    this._emitQword(0)     # 40 8 Zero pad
-    this._emitQword(0)     # 48 8 Zero pad
-    this._emitDword(0)     # 56 4 Zero pad
-    this._emitDword(64)    # 60 4 File position of PE header
+    this._emitQword(0x5a4d) # 0  8 MZ
+    this._emitQword(0)      # 8  8 Zero pad
+    this._emitQword(0)      # 16 8 Zero pad
+    this._emitQword(0)      # 24 8 Zero pad
+    this._emitQword(0)      # 32 8 Zero pad
+    this._emitQword(0)      # 40 8 Zero pad
+    this._emitQword(0)      # 48 8 Zero pad
+    this._emitDword(0)      # 56 4 Zero pad
+    this._emitDword(64)     # 60 4 File position of PE header
   endmethod
 
   method _emit_HeaderPE()
-    this._emitDword(17744)                # 0 4 'PE\0\0' Magic
-    this._emitWord(34404)                 # 4 2 x64 machine
+    this._emitDword(0x4550)               # 0 4 'PE\0\0' Magic
+    this._emitWord(0x8664)                # 4 2 x64 machine
     this._emitWord(this.numberOfSections) # 6 2 Number of sections
 
     this._emitDword(0)     # 8  4 TimeDateStamp
@@ -55,7 +55,7 @@ class PEWriter
   endmethod
 
   method _emit_HeaderOptional()
-    this._emitWord(523)      # 0  2 Magic: 0x20b (PE32+)
+    this._emitWord(0x20b)    # 0  2 Magic (PE32+)
     this._emitByte(14)       # 2  1 Linker major version: 0e
     this._emitByte(00)       # 3  1 Linker minor version: 00
 
@@ -131,7 +131,7 @@ class PEWriter
     this._emitDword(0)            # 28 4 PointerToLinenumbers (obsolete)
     this._emitWord(0)             # 32 2 NumberOfRelocations (obsolete)
     this._emitWord(0)             # 34 2 NumberOfLinenumbers (obsolete)
-    this._emitDword(2684354560)   # 36 4 Characteristics
+    this._emitDword(0xa0000000)   # 36 4 Characteristics
     #endfor
   endmethod
 
