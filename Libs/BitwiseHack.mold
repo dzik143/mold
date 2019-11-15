@@ -34,11 +34,26 @@ function hex(x) -> rv
   digits = '0123456789abcdef'
   rv     = ''
 
-  while x > 0
-    d = x // 16
-    r = x - d * 16
-    # TODO: Fix crash when '' concatenation is missing.
-    rv = '' + digits[r] + rv
-    x  = d
-  endwhile
+  if x < 0
+    if x > -127
+      x = 256 + x
+    elif x > -32767
+      x = 65536 + x
+    elif x > -2147483647
+      x = 4294967296 + x
+    endif
+  endif
+
+  if x is 0
+    rv = '0'
+
+  else
+    while x > 0
+      d = x // 16
+      r = x - d * 16
+      # TODO: Fix crash when '' concatenation is missing.
+      rv = '' + digits[r] + rv
+      x  = d
+    endwhile
+  endif
 endfunction
