@@ -1,0 +1,86 @@
+use64
+
+; immediate to each register: 8-bit
+test al, 0x12
+test cl, 0x13
+test dl, 0x14
+test bl, 0x15
+test ah, 0x16
+test ch, 0x17
+test dh, 0x18
+test bh, 0x19
+
+; immediate to each register: 16-bit
+test ax, 0x12
+test cx, 0x13
+test dx, 0x14
+test bx, 0x15
+test sp, 0x16
+test bp, 0x17
+test si, 0x18
+test di, 0x19
+
+test ax, 0x1234
+test cx, 0x1235
+test dx, 0x1236
+test bx, 0x1237
+test sp, 0x1238
+test bp, 0x1239
+test si, 0x123a
+test di, 0x123b
+
+; immediate to each register: 32-bit
+test eax, 0x12
+test ecx, 0x13
+test edx, 0x14
+test ebx, 0x15
+test esp, 0x16
+test ebp, 0x17
+test esi, 0x18
+test edi, 0x19
+
+test eax, 0x1234
+test ecx, 0x1235
+test edx, 0x1236
+test ebx, 0x1237
+test esp, 0x1238
+test ebp, 0x1239
+test esi, 0x123a
+test edi, 0x123b
+
+test eax, 0x12345678
+test ecx, 0x12345679
+test edx, 0x1234567a
+test ebx, 0x1234567b
+test esp, 0x1234567c
+test ebp, 0x1234567d
+test esi, 0x1234567e
+test edi, 0x1234567f
+
+; immediate to each register: 64-bit
+test rax, 0x12
+test rcx, 0x13
+test rdx, 0x14
+test rbx, 0x15
+test rsp, 0x16
+test rbp, 0x17
+test rsi, 0x18
+test rdi, 0x19
+
+test rax, 0x1234
+test rcx, 0x1235
+test rdx, 0x1236
+test rbx, 0x1237
+test rsp, 0x1238
+test rbp, 0x1239
+test rsi, 0x123a
+test rdi, 0x123b
+
+test rax, 0x12345678
+test rcx, 0x12345679
+test rdx, 0x1234567a
+test rbx, 0x1234567b
+test rsp, 0x1234567c
+test rbp, 0x1234567d
+test rsi, 0x1234567e
+test rdi, 0x1234567f
