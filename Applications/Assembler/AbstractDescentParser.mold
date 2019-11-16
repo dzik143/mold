@@ -1,3 +1,23 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (C) 2015, 2019 Sylwester Wysocki <sw143@wp.pl>                     #
+#                                                                              #
+# This program is free software: you can redistribute it and/or modify         #
+# it under the terms of the GNU General Public License as published by         #
+# the Free Software Foundation, either version 3 of the License, or            #
+# (at your option) any later version.                                          #
+#                                                                              #
+# This program is distributed in the hope that it will be useful,              #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of               #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                #
+# GNU General Public License for more details.                                 #
+#                                                                              #
+# You should have received a copy of the GNU General Public License            #
+# along with this program. If not, see <http://www.gnu.org/licenses/>          #
+#                                                                              #
+################################################################################
+
 import '../../Libs/Io.mold'
 
 class AbstractDescentParser
@@ -6,6 +26,7 @@ class AbstractDescentParser
   # ----------------------------------------------------------------------------
 
   method constructor()
+    this.outputObject = false
     this.lookupBuffer = ' '
     this.f            = 0
   endmethod
@@ -86,7 +107,15 @@ class AbstractDescentParser
   endmethod
 
   # ----------------------------------------------------------------------------
-  #                    Should be overload in derived class
+  #             Internal implementation: emit result tokens
+  # ----------------------------------------------------------------------------
+
+  method _emitOneItem(token)
+    this.outputObject.processOneItem(token)
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                Should be overloaded in derived class
   # ----------------------------------------------------------------------------
 
   method _parseSource()
@@ -103,5 +132,10 @@ class AbstractDescentParser
     this.lookupBuffer = ' '
 
     this._parseSource()
+  endmethod
+
+  method connectTo(outputObject) -> rv
+    this.outputObject = outputObject
+    rv = outputObject
   endmethod
 endclass

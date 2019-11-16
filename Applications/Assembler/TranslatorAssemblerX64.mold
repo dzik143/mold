@@ -1,0 +1,320 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (C) 2015, 2019 Sylwester Wysocki <sw143@wp.pl>                     #
+#                                                                              #
+# This program is free software: you can redistribute it and/or modify         #
+# it under the terms of the GNU General Public License as published by         #
+# the Free Software Foundation, either version 3 of the License, or            #
+# (at your option) any later version.                                          #
+#                                                                              #
+# This program is distributed in the hope that it will be useful,              #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of               #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                #
+# GNU General Public License for more details.                                 #
+#                                                                              #
+# You should have received a copy of the GNU General Public License            #
+# along with this program. If not, see <http://www.gnu.org/licenses/>          #
+#                                                                              #
+################################################################################
+
+import 'x86.mold'
+import '../../Compiler/Utils/PipeAbstract.mold'
+
+const X86_REGISTER_NAMES = [
+  'al'  , 'cl'  , 'dl'   , 'bl'   , 'ah'   , 'ch'   , 'dh'   , 'bh',
+  'r8l' , 'r9l' , 'r10l' , 'r11l' , 'r12l' , 'r13l' , 'r14l' , 'r15l',
+  'ax'  , 'cx'  , 'dx'   , 'bx'   , 'sp'   , 'bp'   , 'si'   , 'di',
+  'r8w' , 'r9w' , 'r10w' , 'r11w' , 'r12w' , 'r13w' , 'r14w' , 'r15w',
+  'eax' , 'ecx' , 'edx'  , 'ebx'  , 'esp'  , 'ebp'  , 'esi'  , 'edi',
+  'r8d' , 'r9d' , 'r10d' , 'r11d' , 'r12d' , 'r13d' , 'r14d' , 'r15d',
+  'rax' , 'rcx' , 'rdx'  , 'rbx'  , 'rsp'  , 'rbp'  , 'rsi'  , 'rdi',
+  'r8'  , 'r9'  , 'r10'  , 'r11'  , 'r12'  , 'r13'  , 'r14'  , 'r15'
+]
+
+# Opcodes, that exists, but are invalid in 64-bit mode.
+X86_POOL_OF_MNEMONICS_INVALID64 = [
+  'das'   , 'aas'  , 'bound'  , 'sahf'  , 'lahf',
+  'les'   , 'lds'  , 'aam'    , 'aad'   , 'arpl',
+  'pusha' , 'popa' , 'pushad' , 'popad' , 'pushfd' , 'popfd'
+]
+
+# Opcodes, that does not require any operands.
+# We can emit them as is.
+X86_OPCODES_MAP0 = {
+  'cbw':  X86_CWDE * 256 + X86_PREFIX_OPERAND_SIZE,
+  'cwde': X86_CWDE,
+  'cdqe': X86_CWDE * 256 + X86_PREFIX_REX_W,
+
+  'cwd': X86_CDQ * 256 + X86_PREFIX_OPERAND_SIZE,
+  'cdq': X86_CDQ,
+  'cqo': X86_CDQ * 256 + X86_PREFIX_REX_W,
+
+  'clc': X86_CLC,
+  'cld': X86_CLD,
+  'cli': X86_CLI,
+  'stc': X86_STC,
+  'std': X86_STD,
+  'sti': X86_STI,
+  'cmc': X86_CMC,
+
+  'cmpsb': X86_CMPSB,
+  'cmpsw': X86_CMPSD * 256 + X86_PREFIX_OPERAND_SIZE,
+  'cmpsd': X86_CMPSD,
+  'cmpsq': X86_CMPSD * 256 + X86_PREFIX_REX_W,
+
+  'movsb': X86_MOVSB,
+  'movsw': X86_MOVSD * 256 + X86_PREFIX_OPERAND_SIZE,
+  'movsd': X86_MOVSD,
+  'movsq': X86_MOVSD * 256 + X86_PREFIX_REX_W,
+
+  'lodsb': X86_LODSB,
+  'lodsw': X86_LODSD * 256 + X86_PREFIX_OPERAND_SIZE,
+  'lodsd': X86_LODSD,
+  'lodsq': X86_LODSD * 256 + X86_PREFIX_REX_W,
+
+  'stosb': X86_STOSB,
+  'stosw': X86_STOSD * 256 + X86_PREFIX_OPERAND_SIZE,
+  'stosd': X86_STOSD,
+  'stosq': X86_STOSD * 256 + X86_PREFIX_REX_W,
+
+  'scasb': X86_SCASB,
+  'scasw': X86_SCASD * 256 + X86_PREFIX_OPERAND_SIZE,
+  'scasd': X86_SCASD,
+  'scasq': X86_SCASD * 256 + X86_PREFIX_REX_W,
+
+  'rep':   X86_PREFIX_REPE,
+  'repe':  X86_PREFIX_REPE,
+  'repz':  X86_PREFIX_REPE,
+  'repne': X86_PREFIX_REPNE,
+  'repnz': X86_PREFIX_REPNE,
+
+  'hlt':  X86_HLT,
+  'lock': X86_PREFIX_LOCK,
+  'nop':  X86_NOP,
+  'xlatb': X86_XLAT,
+
+  'int1': X86_INT1,
+  'int3': X86_INT3,
+  'into': X86_INT0,
+  'iret': X86_IRET,
+
+  'pushf':  X86_PUSHF,
+  'pushfw': X86_PUSHF * 256 + X86_PREFIX_OPERAND_SIZE,
+  'pushfq': X86_PUSHF,
+
+  'popf':   X86_POPF,
+  'popfw':  X86_POPF  * 256 + X86_PREFIX_OPERAND_SIZE,
+  'popfq':  X86_POPF
+}
+
+X86_OPCODES_MAP_CORE_ALU2 = {
+  'adc':  X86_ADC,
+  'add':  X86_ADD,
+  'and':  X86_AND,
+  'cmp':  X86_CMP,
+  'sbb':  X86_SBB,
+  'sub':  X86_SUB,
+  'or':   X86_OR,
+  'xor':  X86_XOR,
+  'mov':  X86_MOV_RM8_R8,
+  'test': X86_TEST_RM8_R8,
+  'xchg': X86_XCHG_RM8_R8
+}
+
+X86_OPCODES_MAP_UNARY_GROUP = {
+  'not': 2,
+  'neg': 3,
+  'mul': 4,
+  'imul': 5,
+  'div': 6,
+  'idiv': 7
+}
+
+X86_REGISTER_NAMES_MAP = {}
+regId = 0
+for values regName in X86_REGISTER_NAMES
+  X86_REGISTER_NAMES_MAP[regName] = regId
+  regId = regId + 1
+endfor
+
+X86_REGISTER_NAMES_MAP['rip'] = X86_RIP
+
+class TranslatorAssemblerX64 extends PipeAbstract
+  method parseRegisterOptional(regName) -> regId
+    global X86_REGISTER_NAMES_MAP
+    regId = -1
+    if typeof(regName) is 'string'
+      regId = X86_REGISTER_NAMES_MAP[regName]
+
+      if regId is undefined
+        regId = -1
+      endif
+    endif
+  endmethod
+
+  method parseRegister(regName) -> regId
+    regId = this.parseRegisterOptional(regName)
+    if regId is -1
+      die('error: invalid register: ' + str(regName))
+    endif
+  endmethod
+
+  method emitCore_x_y(opcode, item)
+    emiter   = this.outputObject
+    reg      = this.parseRegisterOptional(item.reg)
+    regBase  = this.parseRegisterOptional(item.base)
+    regIndex = this.parseRegisterOptional(item.index)
+    disp     = item.disp
+    scale    = item.scale
+
+    if item.imm is defined
+      if reg isnt -1
+        # opcode r, imm
+        emiter.emitCore_r_imm(opcode, reg, item.imm)
+      else
+        # opcode m, imm
+        emiter.emitCore_m_imm(opcode, regBase, scale, regIndex, disp, item.imm, item.dataSize)
+      endif
+
+    elif reg isnt -1
+      if item.rm is defined
+        # opcode r, r
+        regSrc = this.parseRegister(item.rm)
+        emiter.emitCore_r_r(opcode, reg, regSrc)
+
+      elif item.scale is defined
+        # opcode r, m
+        # opcode m, r
+        # opcode m, imm
+        if item.imm is defined
+          emiter.emitCore_m_imm(opcode, regBase, scale, regIndex, disp, item.imm)
+
+        elif item.isWriteToMemory is true
+          emiter.emitCore_m_r(opcode, regBase, scale, regIndex, disp, reg)
+
+        else
+          emiter.emitCore_r_m(opcode, reg, regBase, scale, regIndex, disp)
+        endif
+      endif
+    endif
+  endmethod
+
+  method processOneItem(item)
+    global X86_OPCODES_MAP0
+    global X86_OPCODES_MAP_CORE_ALU2
+    global X86_OPCODES_MAP_UNARY_GROUP
+    global X86_TEST_RM8_R8
+
+    encoder = this.outputObject
+
+    if item.type is 'label'
+      # Collect label positions.
+      this.labelsMap[item.name] = encoder.getCurrentPosition()
+
+    elif item.type is 'instruction'
+      # Parse one code line.
+      mnemonic = item.mnemonic
+      opcode   = X86_OPCODES_MAP0[mnemonic]
+
+      reg      = this.parseRegisterOptional(item.reg)
+      rm       = this.parseRegisterOptional(item.rm)
+      regBase  = this.parseRegisterOptional(item.base)
+      regIndex = this.parseRegisterOptional(item.index)
+      disp     = item.disp
+      scale    = item.scale
+      imm      = item.imm
+
+      #print ';', item #'[', mnemonic, item.reg, item.rm, item.imm, ']'
+
+      if opcode is defined
+        # Recognized no-operands opcode.
+        # Just emit opcode as is.
+        if opcode < 256
+          encoder.emitByte(opcode)
+        else
+          encoder.emitWord(opcode)
+        endif
+
+      elif (imm is defined) and (mnemonic is 'mov')
+        if item.reg is defined
+          # mov r, imm
+          encoder.mov_r_imm(reg, imm)
+        else
+          # mov m, imm
+          encoder.mov_m_imm(regBase, scale, regIndex, disp, imm, item.dataSize)
+        endif
+
+      elif (imm is defined) and (mnemonic is 'test')
+        if item.reg is defined
+          # test r, imm
+          encoder.test_r_imm(reg, imm)
+        else
+          # test m, imm
+          encoder.test_m_imm(regBase, scale, regIndex, disp, imm, item.dataSize)
+        endif
+
+      elif mnemonic is 'push'
+        if reg isnt -1
+          encoder.push_r(reg)
+        elif imm is defined
+          # TODO: Handle 8-bit push.
+          encoder.push_imm32(imm)
+        else
+          encoder.push_m(regBase, scale, regIndex, disp)
+        endif
+
+      elif mnemonic is 'pop'
+        if reg isnt -1
+          encoder.pop_r(reg)
+        else
+          encoder.pop_m(regBase, scale, regIndex, disp)
+        endif
+
+      elif (mnemonic is 'xchg') and (reg isnt -1) and (rm isnt -1)
+        # xchg r, r
+        encoder.xchg_r_r(reg, rm)
+
+      else
+        opcode = X86_OPCODES_MAP_CORE_ALU2[mnemonic]
+
+        if opcode is defined
+          # Recognized common two-operands opcode.
+
+          # Special case for test and xchg.
+          # These opcodes have fixed diretion flag, but other assemblers accept both and
+          # swap operands silently if needed.
+          if mnemonic is 'test'
+            # Only test r/m, r/imm exists.
+            item.isWriteToMemory = true
+
+          elif mnemonic is 'xchg'
+            # Only xchg r, r/m exists.
+            item.isWriteToMemory = false
+          endif
+
+          # Generic two operands handler.
+          this.emitCore_x_y(opcode, item)
+
+        else
+          operationId = X86_OPCODES_MAP_UNARY_GROUP[mnemonic]
+          if operationId is defined
+            if reg is -1
+              # not/neg/mul/div/imul/idiv m
+              encoder.emitCore_unaryGroup_m(
+                operationId, regBase, scale, regIndex, disp, item.dataSize)
+            else
+              # not/neg/mul/div/imul/idiv r
+              encoder.emitCore_unaryGroup_r(operationId, reg)
+            endif
+          endif
+        endif
+      endif
+    endif
+  endmethod
+
+  method getCurrentPosition() -> rv
+    # TODO: Clean up this mess.
+    rv = this.outputObject.getCurrentPosition()
+  endmethod
+endclass

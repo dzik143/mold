@@ -19,18 +19,66 @@
 ################################################################################
 
 import 'ParserAssemblerX64.mold'
-import 'MachineEncoderX64.mold'
 import 'TranslatorAssemblerX64.mold'
-import 'PEWriter.mold'
+import 'MachineEncoderX64.mold'
 
-# Parse command line arguments.
-if argc isnt 2
-  print 'Usage:'
-  print ' ', argv[0], '<source.asm>'
-  exit()
-endif
+arrayOfTests = [
+  'core/add_r_r',
+  'core/or_r_r',
+  'core/adc_r_r',
+  'core/sbb_r_r',
+  'core/and_r_r',
+  'core/sub_r_r',
+  'core/xor_r_r',
+  'core/cmp_r_r',
+  'core/test_r_r',
+  'core/mov_r_r',
+  'core/add_r_m',
+  'core/or_r_m',
+  'core/adc_r_m',
+  'core/sbb_r_m',
+  'core/and_r_m',
+  'core/sub_r_m',
+  'core/xor_r_m',
+  'core/cmp_r_m',
+  'core/test_r_m',
+  'core/mov_r_m',
+  'core/add_m_r',
+  'core/or_m_r',
+  'core/adc_m_r',
+  'core/sbb_m_r',
+  'core/and_m_r',
+  'core/sub_m_r',
+  'core/xor_m_r',
+  'core/cmp_m_r',
+  'core/test_m_r',
+  'core/mov_m_r',
+  'core/add_r_imm',
+  'core/or_r_imm',
+  'core/adc_r_imm',
+  'core/sbb_r_imm',
+  'core/and_r_imm',
+  'core/sub_r_imm',
+  'core/xor_r_imm',
+  'core/cmp_r_imm',
+  'core/test_r_imm',
+  'core/mov_r_imm',
+  'core/add_m_imm',
+  'core/or_m_imm',
+  'core/adc_m_imm',
+  'core/sbb_m_imm',
+  'core/and_m_imm',
+  'core/sub_m_imm',
+  'core/xor_m_imm',
+  'core/cmp_m_imm',
+  'core/test_m_imm',
+  'core/mov_m_imm',
+  'core/xchg_r_r',
+  'core/xchg_r_m',
+  'core/xchg_m_r'
+]
 
-class PrinterAssemblerX64
+class TesterAssemblerX64
   method constructor()
     this.f              = false
     this.parser         = new ParserAssemblerX64()
@@ -42,41 +90,49 @@ class PrinterAssemblerX64
     this.parser.connectTo(this.translator).connectTo(this.machineEncoder).connectTo(this)
   endmethod
 
-  method emitByte(x)
-    if x < 0
-      x = 0x100 + x
+  method compare(x, y)
+    if x isnt y
+      die(' FAIL! (data mismatch, got: ' + hex(x) + ', expected: ' + hex(y) + ')')
     endif
-    print 'db', hex(x)
+  endmethod
+
+  method emitByte(x)
+    this.compare(x, readByte(this.f))
   endmethod
 
   method emitWord(x)
-    if x < 0
-      x = 0x10000 + x
-    endif
-    print 'dw', hex(x)
+    this.compare(x, readWord(this.f))
   endmethod
 
   method emitDword(x)
-    if x < 0
-      x = 0x100000000 + x
-    endif
-    print 'dd', hex(x)
+    this.compare(x, readDword(this.f))
   endmethod
 
   method emitQword(x)
-    print 'dq', hex(x)
+    this.compare(x, readQword(this.f))
   endmethod
 
-  method compileSourceFile(pathAsm)
+  method compileSourceFile(pathAsm, pathBin)
     # Open binary file to compare result.
-    this.parser.parseFile(pathAsm)
-  endmethod
+    __mold_printToStdOutput(pathAsm + '...')
+    this.f = open('tests/' + pathBin, 'r')
+    this.parser.parseFile('tests/' + pathAsm)
+
+    # TODO: Compare number of bytes emited.
+    if ord(readChar(this.f)) isnt 0
+      die('FAIL! (too less data)')
+    endif
+
+    close(this.f)
+
+    print ' OK'
+    endmethod
 endclass
 
-parser         = new ParserAssemblerX64()
-translator     = new TranslatorAssemblerX64()
-machineEncoder = new MachineEncoderX64()
-printer        = new PrinterAssemblerX64()
-#peWriter       = new PEWriter()
+tester = new TesterAssemblerX64()
 
-printer.compileSourceFile('1.asm')
+for values testName in arrayOfTests
+  pathAsm = testName + '.asm'
+  pathBin = testName + '.bin'
+  tester.compileSourceFile(pathAsm, pathBin)
+endfor

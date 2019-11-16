@@ -1,3 +1,23 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (C) 2015, 2019 Sylwester Wysocki <sw143@wp.pl>                     #
+#                                                                              #
+# This program is free software: you can redistribute it and/or modify         #
+# it under the terms of the GNU General Public License as published by         #
+# the Free Software Foundation, either version 3 of the License, or            #
+# (at your option) any later version.                                          #
+#                                                                              #
+# This program is distributed in the hope that it will be useful,              #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of               #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                #
+# GNU General Public License for more details.                                 #
+#                                                                              #
+# You should have received a copy of the GNU General Public License            #
+# along with this program. If not, see <http://www.gnu.org/licenses/>          #
+#                                                                              #
+################################################################################
+
 # ------------------------------------------------------------------------------
 #                                 One byte opcodes
 # ------------------------------------------------------------------------------
@@ -23,6 +43,7 @@ X86_CMP                     = 0x38 # 38-3d cmp
 X86_PREFIX_SEG_DS           = 0x3e # 3e    seg=ds prefix
 X86_AAS                     = 0x3f # 3f    aas (invalid in 64-bit)
 X86_INC_R32                 = 0x40 # 40-47 inc r32 (invalid in 64-bit)
+X86_PREFIX_REX_W            = 0x48 # 48    prefix for 64-bit operand(s)
 X86_DEC_R32                 = 0x48 # 48-4f dec r32 (invalid in 64-bit)
 X86_PUSH_R64                = 0x50 # 50-57 push r64
 X86_POP_R64                 = 0x58 # 58-5f pop r64
@@ -167,15 +188,15 @@ X86_CALL_GROUP              = 0xff # ff    call
 # Example:
 #   emit_r_r(X86_MOV, X86_RAX, X86_RCX)
 
-X86_MOV  = 1000
-X86_TEST = 1001
-X86_NOT  = 1002
-X86_NEG  = 1003
-X86_INC  = 1004
-X86_DEC  = 1005
-X86_PUSH = 1006
-X86_POP  = 1007
-X86_XCHG = 1008
+#X86_MOV  = 1000
+#X86_TEST = 1001
+#X86_NOT  = 1002
+#X86_NEG  = 1003
+#X86_INC  = 1004
+#X86_DEC  = 1005
+#X86_PUSH = 1006
+#X86_POP  = 1007
+#X86_XCHG = 1008
 
 # ------------------------------------------------------------------------------
 #                                  Registers
@@ -253,6 +274,8 @@ X86_R13 = 16 * 3 + 13
 X86_R14 = 16 * 3 + 14
 X86_R15 = 16 * 3 + 15
 
+X86_RIP = 0x1000
+
 # ------------------------------------------------------------------------------
 #                              Mod-Reg-R/M byte
 # ------------------------------------------------------------------------------
@@ -271,8 +294,11 @@ X86_DIRECTION_READ_MEMORY  = 1
 X86_SIZE8        = 0
 X86_SIZE16_32_64 = 1
 
-# R/M = RSP = Scaled Index Base (SIB) Mode
-X86_RM_SIB_MODE = 4
+# R/M = RSP = 100 = Scaled Index Base (SIB) mode
+# R/M = RBP = 101 = [rip + disp32]
+X86_RM_SIB_MODE      = 4
+X86_RM_RIP_DISP_MODE = 5
+X86_SIB_BASE_NONE    = 5
 
 # ------------------------------------------------------------------------------
 #                          Scaled Index Byte (SIB)

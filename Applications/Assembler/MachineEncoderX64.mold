@@ -1,21 +1,66 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (C) 2015, 2019 Sylwester Wysocki <sw143@wp.pl>                     #
+#                                                                              #
+# This program is free software: you can redistribute it and/or modify         #
+# it under the terms of the GNU General Public License as published by         #
+# the Free Software Foundation, either version 3 of the License, or            #
+# (at your option) any later version.                                          #
+#                                                                              #
+# This program is distributed in the hope that it will be useful,              #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of               #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                #
+# GNU General Public License for more details.                                 #
+#                                                                              #
+# You should have received a copy of the GNU General Public License            #
+# along with this program. If not, see <http://www.gnu.org/licenses/>          #
+#                                                                              #
+################################################################################
+
 import 'x86.mold'
 import '../../Libs/BitwiseHack.mold'
 
+/*
+TODO
+marco DEFINE_OPCODE_CORE_R_R(mnemonic, opcode)
+  method ${mnemonic}_r_r(regDst, regSrc)
+    this.emitCore_r_r(opcode, regDst, regSrc)
+  endmethod
+endmacro
+
+DEFINE_OPCODE_CORE_R_R(add, X86_ADD)
+DEFINE_OPCODE_CORE_R_R(sub, X86_SUB)
+DEFINE_OPCODE_CORE_R_R(xor, X86_XOR)
+DEFINE_OPCODE_CORE_R_R(or,  X86_OR)
+DEFINE_OPCODE_CORE_R_R(and, X86_AND)
+...
+*/
+
 class MachineEncoderX64
+  method constructor()
+    this.outputObject = false
+    this.pos = 0
+  endmethod
+
   method emitByte(x)
-    print 'db', hex(x)
+    this.outputObject.emitByte(x)
+    this.pos = this.pos + 1
   endmethod
 
   method emitWord(x)
-    print 'dw', hex(x)
+    this.outputObject.emitWord(x)
+    this.pos = this.pos + 2
   endmethod
 
   method emitDword(x)
-    print 'dd', hex(x)
+    this.outputObject.emitDword(x)
+    this.pos = this.pos + 4
   endmethod
 
   method emitQword(x)
-    print 'dq', hex(x)
+    this.outputObject.emitQword(x)
+    this.pos = this.pos + 8
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -104,74 +149,129 @@ class MachineEncoderX64
   endmethod
 
   method emitCore_m_r(opcode, regBase, scale, regIndex, disp, regSrc)
-    global X86_MOD_INDIRECT
-    global X86_MOD_DISP8
-    global X86_MOD_DISP32
-    global X86_RM_SIB_MODE
+    global X86_MOD_INDIRECT, X86_MOD_DISP8, X86_MOD_DISP32
+    global X86_RM_SIB_MODE, X86_RM_RIP_DISP_MODE
+    global X86_SIB_BASE_NONE
+    global X86_RIP, X86_EBP, X86_RBP, X86_RSP
 
-    if disp is 0
-      # r, [r]
-      mode = X86_MOD_INDIRECT
-
-    elif (disp >= -127) and (disp <= 128)
-      # r, [disp8]
-      # r, [r + disp8]
-      mode = X86_MOD_DISP8
-
-    else
-      # r, [disp32]
-      # r, [r + disp32]
-      mode = X86_MOD_DISP32
+    if regIndex is X86_RSP
+      die('error: rsp register cannot be used as index')
     endif
 
-    # Enable Scaled Index Base (SIB) mode.
-    if scale is 0
-      rm = regBase
-    else
-      rm = X86_RM_SIB_MODE
+    if (scale is 2) and (regBase is -1)
+      # Fasm like optimization.
+      # [2*rsi] -> [rsi + 1*rsi]
+      regBase = regIndex
+      scale   = 1
     endif
 
-    # Primary opcode and Mod-Reg-R/M byte.
-    this.emitCore(opcode, mode, regSrc, rm)
+    if (regBase is X86_RSP) and (scale is -1)
+      # Special case: [ rsp ]
+      regIndex = X86_RSP
+      scale    = 1
+    endif
 
-    # Emit SIB byte if needed.
-    if scale isnt 0
-      if scale is 1
-        # [base + index + disp]
-        scaleMask = 0x00
+    if regBase is X86_RIP
+      # Code independent address: [rip + disp32]
+      # In this mode displacement is always 32-bit.
+      # MOD = 00  = INDIRECT,
+      # R/M = RBP = displacement only.
+      this.emitCore(opcode, X86_MOD_INDIRECT, regSrc, X86_RM_RIP_DISP_MODE)
+      this.emitDword(disp)
 
-      elif scale is 2
-        # [base + 2*index + disp]
-        scaleMask = 0x40
+    elif (regBase is -1) and (scale is -1) and (regIndex is -1)
+      # Absolute ds:[disp32] address.
+      # In this mode displacement is always 32-bit.
+      #
+      # https://wiki.osdev.org/X86-64_Instruction_Encoding#32.2F64-bit_addressing_2
+      # http://www.c-jump.com/CIS77/CPU/x86/lecture.html#X77_0100_sib_byte_layout
+      #
+      # MOD       = INDIRECT
+      # SIB.scale = 1
+      # SIB.index = 100 = ILLEGAL
+      # SIB.base  = 101 = displacement only.
+      this.emitCore(opcode, X86_MOD_INDIRECT, regSrc, X86_RM_SIB_MODE)
+      this.emitByte(0x25)
+      this.emitDword(disp)
 
-      elif scale is 4
-        # [base + 4*index + disp]
-        scaleMask = 0x80
+    else
+      # General case.
+      if (regBase isnt X86_RBP) and ((disp is 0) or (regBase is -1))
+        # [r], r
+        # [disp], r
+        mode = X86_MOD_INDIRECT
 
-      elif scale is 8
-        # [base + 8*index + disp]
-        scaleMask = 0xc0
+      elif (disp >= -127) and (disp <= 128)
+        # [disp8], r
+        # [r + disp8], r
+        mode = X86_MOD_DISP8
 
       else
-        # Error - unexpected scale.
-        scaleMask = -1
-        die('error: only 1, 2, 4 or 8 scale is available')
+        # [disp32], r
+        # [r + disp32], r
+        mode = X86_MOD_DISP32
       endif
 
-      regBaseMask  = bitand(regBase, 0x7)
-      regIndexMask = bitand(regIndex, 0x7) * 8
+      # Enable Scaled Index Base (SIB) mode.
+      if scale > 0
+        # Full SIB: [base + scale * index + disp]
+        rm = X86_RM_SIB_MODE
+      else
+        # Base and displacement: [base + disp]
+        rm = regBase
+      endif
 
-      this.emitByte(scaleMask + regIndexMask + regBaseMask)
-    endif
+      # Primary opcode and Mod-Reg-R/M byte.
+      this.emitCore(opcode, mode, regSrc, rm)
 
-    # Emit displacement if needed.
-    if mode is X86_MOD_DISP8
-      # 8-bit displacemnt.
-      this.emitByte(disp)
+      # Emit SIB byte if needed.
+      if scale > 0
+        if scale is 1
+          # [base + index + disp]
+          scaleMask = 0x00
 
-    elif mode is X86_MOD_DISP32
-      # 32-bit displacement
-      this.emitDword(disp)
+        elif scale is 2
+          # [base + 2*index + disp]
+          scaleMask = 0x40
+
+        elif scale is 4
+          # [base + 4*index + disp]
+          scaleMask = 0x80
+
+        elif scale is 8
+          # [base + 8*index + disp]
+          scaleMask = 0xc0
+
+        else
+          # Error - unexpected scale.
+          scaleMask = -1
+          die('error: only 1, 2, 4 or 8 scale is available')
+        endif
+
+        if regBase is -1
+          # [scale * index + disp32]
+          # Displacement is always 32-bit and is emited even if zero.
+          regBaseMask = X86_SIB_BASE_NONE
+          mode        = X86_MOD_DISP32
+        else
+          # [base + scale * index + disp8/32]
+          regBaseMask = bitand(regBase, 0x7)
+        endif
+
+        regIndexMask = bitand(regIndex, 0x7) * 8
+
+        this.emitByte(scaleMask + regIndexMask + regBaseMask)
+      endif
+
+      # Emit displacement if needed.
+      if mode is X86_MOD_DISP8
+        # 8-bit displacemnt.
+        this.emitByte(disp)
+
+      elif mode is X86_MOD_DISP32
+        # 32-bit displacement
+        this.emitDword(disp)
+      endif
     endif
   endmethod
 
@@ -222,14 +322,67 @@ class MachineEncoderX64
         if bitand(regDst, 0x7) is X86_AL
           # Special case for ax, eax, rax.
           this.emitByte(opcode + 5)
-          this.emitDword(imm)
 
         else
           this.emitByte(X86_ALU_RM32_IMM32_GROUP)
           this.emitModRegRM(X86_MOD_REGISTER, operationId, regDst)
+        endif
+
+        # Emit immediate.
+        if this.isReg16(regDst) is true
+          this.emitWord(imm)
+        else
           this.emitDword(imm)
         endif
       endif
+    endif
+  endmethod
+
+  method emitCore_m_imm(opcode, regBase, scale, regIndex, disp, imm, dataSize)
+    global X86_ALU_RM8_IMM8_GROUP
+    global X86_ADC, X86_ADD, X86_AND, X86_CMP, X86_SBB, X86_SUB, X86_OR, X86_XOR
+
+    # TODO: Clean up this mess.
+    if dataSize is 2
+      this.emitPrefix16()
+    elif dataSize is 8
+      this.emitPrefix64()
+    endif
+
+    if ((opcode is X86_ADC) or
+        (opcode is X86_ADD) or
+        (opcode is X86_AND) or
+        (opcode is X86_CMP) or
+        (opcode is X86_SBB) or
+        (opcode is X86_SUB) or
+        (opcode is X86_OR) or
+        (opcode is X86_XOR))
+
+      # Sub-opcode to encode inside Reg-Mod-RM byte.
+      operationId = opcode // 8
+      opcode      = X86_ALU_RM8_IMM8_GROUP
+    else
+      operationId = 0
+    endif
+
+    if dataSize > 1
+      # Non 8-bit mode.
+      opcode = opcode + 1
+    endif
+
+    this.emitCore_m_r(opcode, regBase, scale, regIndex, disp, operationId)
+
+    if dataSize is 1
+      # 8-bit immediate.
+      this.emitByte(imm)
+    elif dataSize is 2
+      # 16-bit immediate.
+      this.emitWord(imm)
+    else
+      # 32-bit immediate.
+      # There is no 64-bit immediates even if qword
+      # is accessed in memory.
+      this.emitDword(imm)
     endif
   endmethod
 
@@ -250,9 +403,31 @@ class MachineEncoderX64
     this.emitModRegRM(X86_MOD_REGISTER, operationId, reg)
   endmethod
 
+  method emitCore_group_m(opcodeBase, operationId, base, scale, index, disp)
+    this.emitCore_m_r(opcodeBase, base, scale, index, disp, operationId)
+  endmethod
+
   method emitCore_unaryGroup_r(operationId, reg)
     global X86_UNARY8_GROUP
     this.emitCore_group_r(X86_UNARY8_GROUP, operationId, reg)
+  endmethod
+
+  method emitCore_unaryGroup_m(operationId, base, scale, index, disp, dataSize)
+    global X86_UNARY8_GROUP
+    if dataSize is 2
+      # access word (2-bytes)
+      operationId = operationId + 16
+
+    elif dataSize is 4
+      # access word (2-bytes)
+      operationId = operationId + 32
+
+    elif dataSize is 8
+      # access qword (8-bytes)
+      operationId = operationId + 48
+    endif
+
+    this.emitCore_group_m(X86_UNARY8_GROUP, operationId, base, scale, index, disp)
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -463,6 +638,24 @@ class MachineEncoderX64
     this.emitCore_m_r(X86_TEST_RM8_R8, regBase, scale, regIndex, disp, reg2)
   endmethod
 
+  method test_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
+    this.emitCore_unaryGroup_m(0, regBase, scale, regIndex, disp, dataSize)
+
+    # TODO: Clean up this mess.
+    if dataSize is 1
+      # 8-bit immediate.
+      this.emitByte(imm)
+    elif dataSize is 2
+      # 16-bit immediate.
+      this.emitWord(imm)
+    else
+      # 32-bit immediate.
+      # There is no 64-bit immediates even if qword
+      # is accessed in memory.
+      this.emitDword(imm)
+    endif
+  endmethod
+
   method test_r_imm(reg, imm)
     global X86_TEST_AL_IMM8
     global X86_TEST_EAX_IMM32
@@ -514,6 +707,15 @@ class MachineEncoderX64
   # Integer multiplication and division: mul, imul, div, idiv
   #
 
+  # opcode r
+  method not_r(reg)
+    this.emitCore_unaryGroup_r(2, reg)
+  endmethod
+
+  method neg_r(reg)
+    this.emitCore_unaryGroup_r(3, reg)
+  endmethod
+
   method mul_r(reg)
     this.emitCore_unaryGroup_r(4, reg)
   endmethod
@@ -528,6 +730,31 @@ class MachineEncoderX64
 
   method idiv_r(reg)
     this.emitCore_unaryGroup_r(7, reg)
+  endmethod
+
+  # opcode m
+  method not_m(base, scale, index, disp)
+    this.emitCore_unaryGroup_m(2, base, scale, index, disp)
+  endmethod
+
+  method neg_m(base, scale, index, disp)
+    this.emitCore_unaryGroup_m(3, base, scale, index, disp)
+  endmethod
+
+  method mul_m(base, scale, index, disp)
+    this.emitCore_unaryGroup_m(4, base, scale, index, disp)
+  endmethod
+
+  method imul_m(base, scale, index, disp)
+    this.emitCore_unaryGroup_m(5, base, scale, index, disp)
+  endmethod
+
+  method div_m(base, scale, index, disp)
+    this.emitCore_unaryGroup_m(6, base, scale, index, disp)
+  endmethod
+
+  method idiv_m(base, scale, index, disp)
+    this.emitCore_unaryGroup_m(7, base, scale, index, disp)
   endmethod
 
   #
@@ -689,22 +916,22 @@ class MachineEncoderX64
     this.stosd()
   endmethod
 
-  method loadsb()
+  method lodsb()
     global X86_LODSB
     this.emitByte(X86_LODSB)
   endmethod
 
-  method loadsw()
+  method lodsw()
     this.emitPrefix16()
     this.lodsd()
   endmethod
 
-  method loadsd()
+  method lodsd()
     global X86_LODSD
     this.emitByte(X86_LODSD)
   endmethod
 
-  method loadsq()
+  method lodsq()
     this.emitPrefix64()
     this.lodsd()
   endmethod
@@ -759,10 +986,10 @@ class MachineEncoderX64
 
     if (rel >= -127) and (rel <= 128)
       # jmp rel8
-      this.emitCore_jmp_rel32(X86_JMP_REL8, rel)
+      this.emitCore_jump_rel32(X86_JMP_REL8, rel)
     else
       # jmp rel32
-      this.emitCore_jmp_rel32(X86_JMP_REL32, rel)
+      this.emitCore_jump_rel32(X86_JMP_REL32, rel)
     endif
   endmethod
 
@@ -921,23 +1148,25 @@ class MachineEncoderX64
   #
 
   method mov_r_r(regDst, regSrc)
-    global X86_MOV
-    this.emitCore_r_r(X86_MOV, regDst, regSrc)
+    global X86_MOV_RM8_R8
+    this.emitCore_r_r(X86_MOV_RM8_R8, regDst, regSrc)
   endmethod
 
   method mov_r_m(regDst, regBase, scale, regIndex, disp)
-    global X86_MOV
-    this.emitCore_r_m(X86_MOV, regDst, regBase, scale, regIndex, disp)
+    global X86_MOV_RM8_R8
+    this.emitCore_r_m(X86_MOV_RM8_R8, regDst, regBase, scale, regIndex, disp)
   endmethod
 
   method mov_m_r(regBase, scale, regIndex, disp, regSrc)
-    global X86_MOV
-    this.emitCore_m_r(X86_MOV, regBase, scale, regIndex, disp, regSrc)
+    global X86_MOV_RM8_R8
+    this.emitCore_m_r(X86_MOV_RM8_R8, regBase, scale, regIndex, disp, regSrc)
   endmethod
 
   method mov_r_imm(regDst, imm)
     global X86_MOV_R8_IMM8
     global X86_MOV_R32_IMM32
+    global X86_MOV_RM32_IMM32
+    global X86_MOD_REGISTER
 
     regDstId = bitand(regDst, 0x7)
 
@@ -961,10 +1190,57 @@ class MachineEncoderX64
         this.emitDword(imm)
 
       else
-        # mov r64, imm64
+        # mov r64, imm32
         this.emitPrefix64()
-        this.emitByte(X86_MOV_R32_IMM32 + regDstId)
-        this.emitQword(imm)
+        this.emitCore(X86_MOV_RM32_IMM32, X86_MOD_REGISTER, 0, regDst)
+        this.emitDword(imm)
+      endif
+    endif
+  endmethod
+
+  method mov_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
+    global X86_MOV_RM8_IMM8
+    this.emitCore_m_imm(X86_MOV_RM8_IMM8, regBase, scale, regIndex, disp, imm, dataSize)
+  endmethod
+
+  method xchg_r_r(reg1, reg2)
+    global X86_XCHG_RM8_R8, X86_XCHG_EAX_R32, X86_NOP
+    global X86_AL, X86_EAX, X86_RAX
+
+    if this.isReg8(reg1) is true
+      # xchg r8, r8
+      this.emitCore_r_r(X86_XCHG_RM8_R8, reg2, reg1)
+
+    elif (reg1 is X86_EAX) and (reg2 is X86_EAX)
+      # Avoid emitting optimized one byte version for
+      # xchg eax, eax
+      # to distinguish from explicit nop opcode.
+      this.emitWord(0xc087)
+
+#    elif (reg1 is X86_RAX) and (reg2 is X86_RAX)
+      # xchg rax, rax
+      # Emit one byte nop without rex.w prefix.
+#      this.emitByte(X86_NOP)
+
+    else
+      regMask1 = bitand(reg1, 0x7)
+      regMask2 = bitand(reg2, 0x7)
+
+      if regMask1 is X86_AL
+        # Use optimized one-byte version if first operand is rax.
+        # xchg ax/eax/rax, r
+        this.emitSizePrefixIfNeeded(reg1)
+        this.emitByte(X86_XCHG_EAX_R32 + regMask2)
+
+      elif regMask2 is X86_AL
+        # xchg r, ax/eax/rax
+        # Swap arguments and use optimized rax version.
+        this.emitSizePrefixIfNeeded(reg1)
+        this.emitByte(X86_XCHG_EAX_R32 + regMask1)
+
+      else
+        # General case: xchg r, r
+        this.emitCore_r_r(X86_XCHG_RM8_R8, reg2, reg1)
       endif
     endif
   endmethod
@@ -986,12 +1262,12 @@ class MachineEncoderX64
   endmethod
 
   method cbw()
-    this.prefix16()
+    this.emitPrefix16()
     this.cwde()
   endmethod
 
   method cdqe()
-    this.prefix64()
+    this.emitPrefix64()
     this.cwde()
   endmethod
 
@@ -1074,109 +1350,20 @@ class MachineEncoderX64
     global X86_PREFIX_LOCK
     this.emitByte(X86_PREFIX_LOCK)
   endmethod
-/*
-  # ----------------------------------------------------------------------------
-  #                       Public API: Generic dispatcher
-  # ----------------------------------------------------------------------------
 
-  method emit_r(opcode, reg)
-    global X86_NOT, X86_NEG, X86_INC, X86_DEC, X86_PUSH, X86_POP
-
-    # TODO: Use function pointers.
-    if opcode is X86_NOT
-      this.not_r(reg)
-
-    elif opcode is X86_NEG
-      this.neg_r(reg)
-
-    elif opcode is X86_INC
-      this.inc_r(reg)
-
-    elif opcode is X86_DEC
-      this.dec_r(reg)
-
-    elif opcode is X86_PUSH
-      this.push_r(reg)
-
-    elif opcode is X86_POP
-      this.pop_r(reg)
-
-    else
-      die('error: invalid opcode (r): ' + hex(opcode))
-    endif
+  method connectTo(outputObject) -> rv
+    this.outputObject = outputObject
+    rv = outputObject
   endmethod
 
-  method emit_r_r(opcode, reg1, reg2)
-    global X86_ADD, X86_OR, X86_ADC, X86_SBB, X86_AND, X86_SUB, X86_XOR, X86_CMP
-    global X86_TEST, X86_XCHG, X86_MOV
+  #
+  # Other
+  #
 
-    # TODO: Use function pointers.
-    if ((opcode is X86_ADD) or
-        (opcode is X86_OR) or
-        (opcode is X86_ADC) or
-        (opcode is X86_SBB) or
-        (opcode is X86_AND) or
-        (opcode is X86_SUB) or
-        (opcode is X86_XOR) or
-        (opcode is X86_CMP))
-
-      # Generic ALU.
-      this.emitCore_r_r(opcode, reg1, reg2)
-
-    elif opcode is X86_MOV
-      this.mov_r_r(reg1, reg2)
-
-    elif opcode is X86_TEST
-      this.test_r_r(reg1, reg2)
-
-    elif opcode is X86_XCHG
-      this.xchg_r_r(reg1, reg2)
-
-    else
-      die('error: invalid opcode (r,r): ' + hex(opcode))
-    endif
+  method getCurrentPosition() -> rv
+    rv = this.pos
   endmethod
-
-  method emit_m_r(opcode, regBase, scale, regIndex, disp, regSrc)
-    global X86_ADD, X86_OR, X86_ADC, X86_SBB, X86_AND, X86_SUB, X86_XOR, X86_CMP
-    global X86_TEST, X86_XCHG, X86_MOV
-
-    # TODO: Use function pointers.
-    if ((opcode is X86_ADD) or
-        (opcode is X86_OR) or
-        (opcode is X86_ADC) or
-        (opcode is X86_SBB) or
-        (opcode is X86_AND) or
-        (opcode is X86_SUB) or
-        (opcode is X86_XOR) or
-        (opcode is X86_CMP))
-
-      # Generic ALU.
-      this.emitCore_m_r(opcode, regBase, scale, regIndex, disp, regSrc)
-
-    elif opcode is X86_MOV
-      this.mov_m_r(regBase, scale, regIndex, disp, regSrc)
-
-    elif opcode is X86_TEST
-      this.test_m_r(regBase, scale, regIndex, disp, regSrc)
-
-    elif opcode is X86_XCHG
-      this.xchg_m_r(regBase, scale, regIndex, disp, regSrc)
-
-    else
-      die('error: invalid opcode (r,m): ' + hex(opcode))
-    endif
-  endmethod
-
-  method emit_r_m(opcode, regDst, regBase, scale, regIndex, disp)
-    # TODO: Review does it work for general case.
-    # Set direction flag in primary opcode byte to swap r<->m direction.
-    opcode = bitor(opcode, 2)
-    this.emit_m_r(opcode, regBase, scale, regIndex, disp, regDst)
-  endmethod
-*/
 endclass
 
-machineEncoder = new MachineEncoderX64()
-
-machineEncoder.test_r_r(X86_CL, X86_DL)
+#machineEncoder = new MachineEncoderX64()
+#machineEncoder.mov_r_m(X86_BL, X86_RAX, 1, X86_RBX, 0)
