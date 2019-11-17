@@ -70,8 +70,8 @@ class ParserAssemblerX64 extends AbstractDescentParser
   endmethod
 
   method _emitLabel(name)
-    this.labelsMap[name] = str(this.outputObject.getCurrentPosition())
-    print 'Collected label [', name, ']'
+    #this.labelsMap[name] = str(this.outputObject.getCurrentPosition())
+    #print 'Collected label [', name, ']'
     #this._emitOneItem({
     #  'type': 'label',
     #  'name': name
@@ -90,10 +90,10 @@ class ParserAssemblerX64 extends AbstractDescentParser
 
     # TODO: Clean up this mess.
     # Resolve label if any.
-    resolvedLabel = this.labelsMap[rv]
-    if resolvedLabel is defined
-      rv = resolvedLabel
-    endif
+    #resolvedLabel = this.labelsMap[rv]
+    #if resolvedLabel is defined
+    #  rv = resolvedLabel
+    #endif
 
     this._skipWhites()
   endmethod
@@ -115,7 +115,7 @@ class ParserAssemblerX64 extends AbstractDescentParser
         # [ scale * index ]
         this._getChar()
         scale = parseInteger(token)
-        index = this._getToken()
+        index = X86_ParseRegisterName(this._getToken())
 
         if this.lookupBuffer is '+'
           # [ scale * index + ... ]
@@ -126,7 +126,7 @@ class ParserAssemblerX64 extends AbstractDescentParser
             # [ scale * index + disp ]
             disp = parseInteger(token)
           else
-            base = token
+            base = X86_ParseRegisterName(token)
           endif
         endif
       else
@@ -136,25 +136,25 @@ class ParserAssemblerX64 extends AbstractDescentParser
 
     elif this.lookupBuffer is ']'
       # [ base ]
-      base = token
+      base = X86_ParseRegisterName(token)
 
     elif this.lookupBuffer is '-'
       # [ base - disp ]
       this._getChar()
-      base = token
+      base = X86_ParseRegisterName(token)
       disp = - parseInteger(this._getToken())
 
     elif this.lookupBuffer is '+'
       # [ base + ... ]
       this._getChar()
-      base  = token
+      base  = X86_ParseRegisterName(token)
       token = this._getToken()
 
       if this.lookupBuffer is '*'
         # [ base + scale * index ]
         this._getChar()
         scale = parseInteger(token)
-        index = this._getToken()
+        index = X86_ParseRegisterName(this._getToken())
 
         if this.lookupBuffer is '+'
           # [ base + scale * index + disp ]
@@ -173,7 +173,7 @@ class ParserAssemblerX64 extends AbstractDescentParser
 
       else
         # [ base + index ]
-        index = token
+        index = X86_ParseRegisterName(token)
         scale = 1
 
         if this.lookupBuffer is '+'
@@ -198,7 +198,7 @@ class ParserAssemblerX64 extends AbstractDescentParser
     instruction.index = index
     instruction.disp  = disp
 
-    if instruction.reg is undefined
+    if instruction.reg is -1
       # This is the first operand, so we write to memory.
       instruction.isWriteToMemory = true
     endif
@@ -225,13 +225,17 @@ class ParserAssemblerX64 extends AbstractDescentParser
         this._matchMemory(instruction)
 
       else
-        # Treat as register.
-        if instruction.reg is defined
-          # Second operand.
-          instruction.rm = token
-        else
-          # First operand.
-          instruction.reg = token
+        regId = X86_ParseRegisterName(token)
+
+        if regId isnt -1
+          # Token recognized as register.
+          if instruction.reg is -1
+            # First operand.
+            instruction.reg = regId
+          else
+            # Second operand.
+            instruction.rm = regId
+          endif
         endif
       endif
     endif
@@ -266,7 +270,9 @@ class ParserAssemblerX64 extends AbstractDescentParser
   method _matchCodeLine(mnemonic)
     newItem = {
       'type': 'instruction',
-      'mnemonic': mnemonic
+      'mnemonic': mnemonic,
+      'reg': -1,
+      'rm': -1
     }
 
     this._parseFirstOperand(newItem)

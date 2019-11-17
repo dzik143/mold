@@ -139,7 +139,7 @@ class MachineEncoderX64
     # Primary opcode.
     this.emitByte(opcode)
 
-    # Mod-R/M byte.
+    # Mod-Reg-R/M byte.
     this.emitModRegRM(mode, reg, rm)
   endmethod
 
@@ -1216,11 +1216,6 @@ class MachineEncoderX64
       # xchg eax, eax
       # to distinguish from explicit nop opcode.
       this.emitWord(0xc087)
-
-#    elif (reg1 is X86_RAX) and (reg2 is X86_RAX)
-      # xchg rax, rax
-      # Emit one byte nop without rex.w prefix.
-#      this.emitByte(X86_NOP)
 
     else
       regMask1 = bitand(reg1, 0x7)

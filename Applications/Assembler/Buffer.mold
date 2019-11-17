@@ -1,0 +1,52 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (C) 2015, 2019 Sylwester Wysocki <sw143@wp.pl>                     #
+#                                                                              #
+# This program is free software: you can redistribute it and/or modify         #
+# it under the terms of the GNU General Public License as published by         #
+# the Free Software Foundation, either version 3 of the License, or            #
+# (at your option) any later version.                                          #
+#                                                                              #
+# This program is distributed in the hope that it will be useful,              #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of               #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                #
+# GNU General Public License for more details.                                 #
+#                                                                              #
+# You should have received a copy of the GNU General Public License            #
+# along with this program. If not, see <http://www.gnu.org/licenses/>          #
+#                                                                              #
+################################################################################
+
+import '../../Libs/BitwiseHack.mold'
+
+# TODO: Optimize it.
+class Buffer
+  method constructor()
+    this.data = []
+  endmethod
+
+  method emitByte(x)
+    size = len(this.data)
+    this.data[size] = bitand(x, 0xff)
+  endmethod
+
+  method emitWord(x)
+    this.emitByte(x)
+    this.emitByte(x // 0x100)
+  endmethod
+
+  method emitDword(x)
+    this.emitWord(x)
+    this.emitWord(x // 0x10000)
+  endmethod
+
+  method emitQword(x)
+    this.emitDword(x)
+    this.emitDword(x // 0x100000000)
+  endmethod
+
+  method getSize() -> rv
+    rv = len(this.data)
+  endmethod
+endclass

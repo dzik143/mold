@@ -183,21 +183,6 @@ X86_INC_DEC_RM8_GROUP       = 0xfe # fe    inc/dec r/m8
 X86_INC_DEC_RM32_GROUP      = 0xff # ff    inc/dec r/m32
 X86_CALL_GROUP              = 0xff # ff    call
 
-# Not a real opcodes, but aliases for generic
-# emit_r_r() like dispatchers.
-# Example:
-#   emit_r_r(X86_MOV, X86_RAX, X86_RCX)
-
-#X86_MOV  = 1000
-#X86_TEST = 1001
-#X86_NOT  = 1002
-#X86_NEG  = 1003
-#X86_INC  = 1004
-#X86_DEC  = 1005
-#X86_PUSH = 1006
-#X86_POP  = 1007
-#X86_XCHG = 1008
-
 # ------------------------------------------------------------------------------
 #                                  Registers
 # ------------------------------------------------------------------------------
@@ -308,3 +293,43 @@ X86_SCALE1 = 0
 X86_SCALE2 = 1
 X86_SCALE4 = 2
 X86_SCALE8 = 3
+
+# ------------------------------------------------------------------------------
+#                            Names of registers
+# ------------------------------------------------------------------------------
+
+const X86_REGISTER_NAMES = [
+  'al'  , 'cl'  , 'dl'   , 'bl'   , 'ah'   , 'ch'   , 'dh'   , 'bh',
+  'r8l' , 'r9l' , 'r10l' , 'r11l' , 'r12l' , 'r13l' , 'r14l' , 'r15l',
+  'ax'  , 'cx'  , 'dx'   , 'bx'   , 'sp'   , 'bp'   , 'si'   , 'di',
+  'r8w' , 'r9w' , 'r10w' , 'r11w' , 'r12w' , 'r13w' , 'r14w' , 'r15w',
+  'eax' , 'ecx' , 'edx'  , 'ebx'  , 'esp'  , 'ebp'  , 'esi'  , 'edi',
+  'r8d' , 'r9d' , 'r10d' , 'r11d' , 'r12d' , 'r13d' , 'r14d' , 'r15d',
+  'rax' , 'rcx' , 'rdx'  , 'rbx'  , 'rsp'  , 'rbp'  , 'rsi'  , 'rdi',
+  'r8'  , 'r9'  , 'r10'  , 'r11'  , 'r12'  , 'r13'  , 'r14'  , 'r15'
+]
+
+# TODO: Don't build this map at runtime.
+# TODO: Use for indexes.
+X86_REGISTER_NAMES_MAP = {}
+regId = 0
+for values regName in X86_REGISTER_NAMES
+  X86_REGISTER_NAMES_MAP[regName] = regId
+  regId = regId + 1
+endfor
+X86_REGISTER_NAMES_MAP['rip'] = X86_RIP
+
+# ------------------------------------------------------------------------------
+#                             Helper functions
+# ------------------------------------------------------------------------------
+
+function X86_ParseRegisterName(name) -> regId
+  global X86_REGISTER_NAMES_MAP
+  regId = -1
+  if typeof(name) is 'string'
+    regId = X86_REGISTER_NAMES_MAP[name]
+    if regId is undefined
+      regId = -1
+    endif
+  endif
+endfunction

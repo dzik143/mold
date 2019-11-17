@@ -21,17 +21,6 @@
 import 'x86.mold'
 import '../../Compiler/Utils/PipeAbstract.mold'
 
-const X86_REGISTER_NAMES = [
-  'al'  , 'cl'  , 'dl'   , 'bl'   , 'ah'   , 'ch'   , 'dh'   , 'bh',
-  'r8l' , 'r9l' , 'r10l' , 'r11l' , 'r12l' , 'r13l' , 'r14l' , 'r15l',
-  'ax'  , 'cx'  , 'dx'   , 'bx'   , 'sp'   , 'bp'   , 'si'   , 'di',
-  'r8w' , 'r9w' , 'r10w' , 'r11w' , 'r12w' , 'r13w' , 'r14w' , 'r15w',
-  'eax' , 'ecx' , 'edx'  , 'ebx'  , 'esp'  , 'ebp'  , 'esi'  , 'edi',
-  'r8d' , 'r9d' , 'r10d' , 'r11d' , 'r12d' , 'r13d' , 'r14d' , 'r15d',
-  'rax' , 'rcx' , 'rdx'  , 'rbx'  , 'rsp'  , 'rbp'  , 'rsi'  , 'rdi',
-  'r8'  , 'r9'  , 'r10'  , 'r11'  , 'r12'  , 'r13'  , 'r14'  , 'r15'
-]
-
 # Opcodes, that exists, but are invalid in 64-bit mode.
 X86_POOL_OF_MNEMONICS_INVALID64 = [
   'das'   , 'aas'  , 'bound'  , 'sahf'  , 'lahf',
@@ -131,40 +120,12 @@ X86_OPCODES_MAP_UNARY_GROUP = {
   'idiv': 7
 }
 
-X86_REGISTER_NAMES_MAP = {}
-regId = 0
-for values regName in X86_REGISTER_NAMES
-  X86_REGISTER_NAMES_MAP[regName] = regId
-  regId = regId + 1
-endfor
-
-X86_REGISTER_NAMES_MAP['rip'] = X86_RIP
-
 class TranslatorAssemblerX64 extends PipeAbstract
-  method parseRegisterOptional(regName) -> regId
-    global X86_REGISTER_NAMES_MAP
-    regId = -1
-    if typeof(regName) is 'string'
-      regId = X86_REGISTER_NAMES_MAP[regName]
-
-      if regId is undefined
-        regId = -1
-      endif
-    endif
-  endmethod
-
-  method parseRegister(regName) -> regId
-    regId = this.parseRegisterOptional(regName)
-    if regId is -1
-      die('error: invalid register: ' + str(regName))
-    endif
-  endmethod
-
   method emitCore_x_y(opcode, item)
     emiter   = this.outputObject
-    reg      = this.parseRegisterOptional(item.reg)
-    regBase  = this.parseRegisterOptional(item.base)
-    regIndex = this.parseRegisterOptional(item.index)
+    reg      = item.reg
+    regBase  = item.base
+    regIndex = item.index
     disp     = item.disp
     scale    = item.scale
 
@@ -178,9 +139,9 @@ class TranslatorAssemblerX64 extends PipeAbstract
       endif
 
     elif reg isnt -1
-      if item.rm is defined
+      if item.rm isnt -1
         # opcode r, r
-        regSrc = this.parseRegister(item.rm)
+        regSrc = item.rm
         emiter.emitCore_r_r(opcode, reg, regSrc)
 
       elif item.scale is defined
@@ -200,11 +161,17 @@ class TranslatorAssemblerX64 extends PipeAbstract
     endif
   endmethod
 
+  method calculateInstructionSize(item)
+
+  endmethod
+
   method processOneItem(item)
     global X86_OPCODES_MAP0
     global X86_OPCODES_MAP_CORE_ALU2
     global X86_OPCODES_MAP_UNARY_GROUP
     global X86_TEST_RM8_R8
+
+    #print item
 
     encoder = this.outputObject
 
@@ -217,13 +184,22 @@ class TranslatorAssemblerX64 extends PipeAbstract
       mnemonic = item.mnemonic
       opcode   = X86_OPCODES_MAP0[mnemonic]
 
-      reg      = this.parseRegisterOptional(item.reg)
-      rm       = this.parseRegisterOptional(item.rm)
-      regBase  = this.parseRegisterOptional(item.base)
-      regIndex = this.parseRegisterOptional(item.index)
+      reg      = item.reg
+      rm       = item.rm
+      regBase  = item.base
+      regIndex = item.index
       disp     = item.disp
       scale    = item.scale
       imm      = item.imm
+
+      #instructionSize = 1
+      #regGroupId      = reg // 16
+
+      #if (regGroupId is 2) or (regGroupId is 4)
+        # 16-bit or 64-bit operand.
+        # Extra prefix is needed.
+      #  instructionSize = instructionSize + 1
+      #endif
 
       #print ';', item #'[', mnemonic, item.reg, item.rm, item.imm, ']'
 
@@ -237,7 +213,7 @@ class TranslatorAssemblerX64 extends PipeAbstract
         endif
 
       elif (imm is defined) and (mnemonic is 'mov')
-        if item.reg is defined
+        if reg isnt -1
           # mov r, imm
           encoder.mov_r_imm(reg, imm)
         else
@@ -246,7 +222,7 @@ class TranslatorAssemblerX64 extends PipeAbstract
         endif
 
       elif (imm is defined) and (mnemonic is 'test')
-        if item.reg is defined
+        if reg isnt -1
           # test r, imm
           encoder.test_r_imm(reg, imm)
         else
