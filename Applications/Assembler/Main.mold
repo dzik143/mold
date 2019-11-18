@@ -18,10 +18,7 @@
 #                                                                              #
 ################################################################################
 
-import 'ParserAssemblerX64.mold'
-import 'MachineEncoderX64.mold'
-import 'TranslatorAssemblerX64.mold'
-import 'PEWriter.mold'
+import 'X64Compiler.mold'
 
 # Parse command line arguments.
 if argc isnt 2
@@ -30,53 +27,7 @@ if argc isnt 2
   exit()
 endif
 
-class PrinterAssemblerX64
-  method constructor()
-    this.f              = false
-    this.parser         = new ParserAssemblerX64()
-    this.translator     = new TranslatorAssemblerX64()
-    this.machineEncoder = new MachineEncoderX64()
 
-    # Set up toolchain.
-    # We want to catch generated code by this object.
-    this.parser.connectTo(this.translator).connectTo(this.machineEncoder).connectTo(this)
-  endmethod
-
-  method emitByte(x)
-    if x < 0
-      x = 0x100 + x
-    endif
-    print 'db', hex(x)
-  endmethod
-
-  method emitWord(x)
-    if x < 0
-      x = 0x10000 + x
-    endif
-    print 'dw', hex(x)
-  endmethod
-
-  method emitDword(x)
-    if x < 0
-      x = 0x100000000 + x
-    endif
-    print 'dd', hex(x)
-  endmethod
-
-  method emitQword(x)
-    print 'dq', hex(x)
-  endmethod
-
-  method compileSourceFile(pathAsm)
-    # Open binary file to compare result.
-    this.parser.parseFile(pathAsm)
-  endmethod
-endclass
-
-parser         = new ParserAssemblerX64()
-translator     = new TranslatorAssemblerX64()
-machineEncoder = new MachineEncoderX64()
-printer        = new PrinterAssemblerX64()
-#peWriter       = new PEWriter()
-
-printer.compileSourceFile('1.asm')
+path     = '1.asm'
+compiler = new X64Compiler()
+compiler.compileSourceFile(path)

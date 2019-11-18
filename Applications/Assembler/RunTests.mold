@@ -18,9 +18,9 @@
 #                                                                              #
 ################################################################################
 
-import 'ParserAssemblerX64.mold'
-import 'TranslatorAssemblerX64.mold'
-import 'MachineEncoderX64.mold'
+import 'X64Parser.mold'
+import 'X64Translator.mold'
+import 'X64Encoder.mold'
 
 arrayOfTests = [
   'core/add_r_r',

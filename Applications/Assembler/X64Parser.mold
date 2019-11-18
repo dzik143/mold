@@ -18,11 +18,11 @@
 #                                                                              #
 ################################################################################
 
-import 'x86.mold'
+import 'X64.mold'
 import 'AbstractDescentParser.mold'
 import '../../Libs/BitwiseHack.mold'
 
-const ParserAssemblerX86_PoolOfMnemonics = [
+const ParserAssemblerX64_PoolOfMnemonics = [
   'call',
   'callf',
   'enter',
@@ -62,16 +62,25 @@ PARSER_X64_DATA_SIZE_MAP = {
   'qword': 8
 }
 
-class ParserAssemblerX64 extends AbstractDescentParser
+PARSER_X64_DEFINE_DATA_MAP = {
+  'db': 1,
+  'dw': 2,
+  'dd': 4,
+  'dq': 8
+}
+
+class X64Parser extends AbstractDescentParser
   method constructor()
     super()
-    this.labelsMap = {}
-    this.numberOfUnresolvedLabels = 0
+    this.labelsMap    = {}
+    this.constantsMap = {}
+    this.arrayOfRefs  = []
   endmethod
 
   method _emitLabel(name)
-    #this.labelsMap[name] = str(this.outputObject.getCurrentPosition())
-    #print 'Collected label [', name, ']'
+    offset = this.outputObject.getCurrentPosition()
+    this.labelsMap[name] = offset
+    print 'Collected label [', name, '] at [', offset, ']'
     #this._emitOneItem({
     #  'type': 'label',
     #  'name': name
@@ -115,7 +124,7 @@ class ParserAssemblerX64 extends AbstractDescentParser
         # [ scale * index ]
         this._getChar()
         scale = parseInteger(token)
-        index = X86_ParseRegisterName(this._getToken())
+        index = X64_ParseRegisterName(this._getToken())
 
         if this.lookupBuffer is '+'
           # [ scale * index + ... ]
@@ -126,7 +135,7 @@ class ParserAssemblerX64 extends AbstractDescentParser
             # [ scale * index + disp ]
             disp = parseInteger(token)
           else
-            base = X86_ParseRegisterName(token)
+            base = X64_ParseRegisterName(token)
           endif
         endif
       else
@@ -136,25 +145,25 @@ class ParserAssemblerX64 extends AbstractDescentParser
 
     elif this.lookupBuffer is ']'
       # [ base ]
-      base = X86_ParseRegisterName(token)
+      base = X64_ParseRegisterName(token)
 
     elif this.lookupBuffer is '-'
       # [ base - disp ]
       this._getChar()
-      base = X86_ParseRegisterName(token)
+      base = X64_ParseRegisterName(token)
       disp = - parseInteger(this._getToken())
 
     elif this.lookupBuffer is '+'
       # [ base + ... ]
       this._getChar()
-      base  = X86_ParseRegisterName(token)
+      base  = X64_ParseRegisterName(token)
       token = this._getToken()
 
       if this.lookupBuffer is '*'
         # [ base + scale * index ]
         this._getChar()
         scale = parseInteger(token)
-        index = X86_ParseRegisterName(this._getToken())
+        index = X64_ParseRegisterName(this._getToken())
 
         if this.lookupBuffer is '+'
           # [ base + scale * index + disp ]
@@ -173,7 +182,7 @@ class ParserAssemblerX64 extends AbstractDescentParser
 
       else
         # [ base + index ]
-        index = X86_ParseRegisterName(token)
+        index = X64_ParseRegisterName(token)
         scale = 1
 
         if this.lookupBuffer is '+'
@@ -225,7 +234,7 @@ class ParserAssemblerX64 extends AbstractDescentParser
         this._matchMemory(instruction)
 
       else
-        regId = X86_ParseRegisterName(token)
+        regId = X64_ParseRegisterName(token)
 
         if regId isnt -1
           # Token recognized as register.
@@ -235,6 +244,25 @@ class ParserAssemblerX64 extends AbstractDescentParser
           else
             # Second operand.
             instruction.rm = regId
+          endif
+
+        else
+          # Neither immediate nor register.
+          # Treat as label.
+          labelOffset = this.labelsMap[token]
+          this.arrayOfRefs[len(this.arrayOfRefs)] = instruction
+          instruction.label = token
+
+          if labelOffset is defined
+            # Token recognized as label.
+            # Change to immediate.
+            instruction.imm = labelOffset
+
+          else
+            # Give up, treat as unresolved symbol and wait for
+            # further content.
+            print 'unresolved reference [', token, '] at [', this.outputObject.getCurrentPosition(), ']'
+            instruction.imm = 0xdeadbeef
           endif
         endif
       endif
@@ -268,16 +296,21 @@ class ParserAssemblerX64 extends AbstractDescentParser
   endmethod
 
   method _matchCodeLine(mnemonic)
+    global X64_RIP, X64_RBP, X64_RSP, X64_AL, X64_AX, X64_EAX
+
     newItem = {
       'type': 'instruction',
       'mnemonic': mnemonic,
       'reg': -1,
-      'rm': -1
+      'rm': -1,
+      'offset': this.outputObject.getCurrentPosition()
     }
 
     this._parseFirstOperand(newItem)
     this._parseSecondOperand(newItem)
     this._emitOneItem(newItem)
+
+    newItem.codeSize = this.outputObject.getCurrentPosition() - newItem.offset
   endmethod
 
   method _skipComment()
@@ -296,7 +329,39 @@ class ParserAssemblerX64 extends AbstractDescentParser
     endif
   endmethod
 
+  method _matchNumber() -> rv
+    token = this._getToken()
+    if this._isDigit(token[0]) is false
+      this._error('number expected')
+    endif
+    rv = parseInteger(token)
+  endmethod
+
+  method _matchData(size)
+    goOn = true
+    # TODO: Don't send data byte-by-byte.
+    while goOn is true
+      this._emitOneItem({
+        'type': 'data',
+        'dataSize': size,
+        'value': this._matchNumber()
+      })
+
+      if this.lookupBuffer is ','
+        this._matchChar(',')
+      else
+        goOn = false
+      endif
+    endwhile
+
+    this._skipWhites()
+    this._skipComment()
+    this._matchEndOfLine()
+  endmethod
+
   method _parseLine()
+    global PARSER_X64_DEFINE_DATA_MAP
+
     this._skipWhites()
     this._skipComment()
 
@@ -307,9 +372,13 @@ class ParserAssemblerX64 extends AbstractDescentParser
     else
       # Non-empty line.
       # Get one token first to check what to do next.
-      token = this._getToken()
+      token          = this._getToken()
+      defineDataSize = PARSER_X64_DEFINE_DATA_MAP[token]
 
-      if this.lookupBuffer is ':'
+      if defineDataSize is defined
+        this._matchData(defineDataSize)
+
+      elif this.lookupBuffer is ':'
         # Label line.
         this._getChar()
         this._emitLabel(token)
@@ -330,5 +399,21 @@ class ParserAssemblerX64 extends AbstractDescentParser
     while ord(this.lookupBuffer) isnt 0
       this._parseLine()
     endwhile
+
+    #print 'REFERENCES:'
+    #for values item in this.arrayOfRefs
+    #  print item
+    #endfor
+  endmethod
+
+  method getArrayOfRefs() -> rv
+    rv = this.arrayOfRefs
+  endmethod
+
+  method resolveLabel(name) -> rv
+    rv = this.labelsMap[name]
+    if rv is undefined
+      die("unresolved reference: '" + name + "'")
+    endif
   endmethod
 endclass

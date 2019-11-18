@@ -24,11 +24,13 @@ import '../../Libs/BitwiseHack.mold'
 class Buffer
   method constructor()
     this.data = []
+    this.pos  = 0
   endmethod
 
   method emitByte(x)
-    size = len(this.data)
-    this.data[size] = bitand(x, 0xff)
+    pos = this.pos
+    this.data[pos] = bitand(x, 0xff)
+    this.pos = pos + 1
   endmethod
 
   method emitWord(x)
@@ -46,7 +48,22 @@ class Buffer
     this.emitDword(x // 0x100000000)
   endmethod
 
+  method copyBytes(fromOffset, toOffset, size)
+    for idx in 0 .. size
+      this.data[toOffset + idx] = this.data[fromOffset + idx]
+    endfor
+  endmethod
+
   method getSize() -> rv
     rv = len(this.data)
+  endmethod
+
+  method getCurrentPosition() -> rv
+    rv = this.pos
+  endmethod
+
+  method setCurrentPosition(newPos, mode)
+    # TODO: Handle mode.
+    this.pos = newPos
   endmethod
 endclass

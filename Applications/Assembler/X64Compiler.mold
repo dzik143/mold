@@ -1,0 +1,146 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (C) 2015, 2019 Sylwester Wysocki <sw143@wp.pl>                     #
+#                                                                              #
+# This program is free software: you can redistribute it and/or modify         #
+# it under the terms of the GNU General Public License as published by         #
+# the Free Software Foundation, either version 3 of the License, or            #
+# (at your option) any later version.                                          #
+#                                                                              #
+# This program is distributed in the hope that it will be useful,              #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of               #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                #
+# GNU General Public License for more details.                                 #
+#                                                                              #
+# You should have received a copy of the GNU General Public License            #
+# along with this program. If not, see <http://www.gnu.org/licenses/>          #
+#                                                                              #
+################################################################################
+
+import 'X64Parser.mold'
+import 'X64Translator.mold'
+import 'X64Encoder.mold'
+import 'PEWriter.mold'
+import 'Buffer.mold'
+
+class X64Compiler
+  method constructor()
+    this.f              = -1
+    this.parser         = new X64Parser()
+    this.translator     = new X64Translator()
+    this.machineEncoder = new X64Encoder()
+    this.buffer         = new Buffer()
+    this.peWriter       = new PEWriter()
+
+    # Set up toolchain.
+    # We want to catch generated code by this object.
+    this.parser.connectTo(this.translator).connectTo(this.machineEncoder).connectTo(this.buffer)
+  endmethod
+
+  method emitByte(x)
+    if x < 0
+      x = 0x100 + x
+    endif
+    print 'db', hex(x)
+  endmethod
+
+  method emitWord(x)
+    if x < 0
+      x = 0x10000 + x
+    endif
+    print 'dw', hex(x)
+  endmethod
+
+  method emitDword(x)
+    if x < 0
+      x = 0x100000000 + x
+    endif
+    print 'dd', hex(x)
+  endmethod
+
+  method emitQword(x)
+    print 'dq', hex(x)
+  endmethod
+
+  method compileSourceFile(pathAsm)
+    global X64_NOP
+
+    # Compile source.
+    this.parser.parseFile(pathAsm)
+
+    # Patch source for unresolved references.
+    parser     = this.parser
+    refs       = parser.getArrayOfRefs()
+    encoder    = this.machineEncoder
+    buffer     = this.buffer
+    translator = this.translator
+    peWriter   = this.peWriter
+    newBuffer  = new Buffer()
+
+    print ''
+    print 'Buffer before patches:'
+    for values v in buffer.data
+      __mold_printToStdOutput(hex(v))
+      __mold_printToStdOutput(' ')
+      peWriter.emitByte(v)
+    endfor
+    print ''
+
+    # Possible improvement: Avoid memory copy.
+    codeSizeDiffTotal = 0
+    readPos           = 0
+
+    for values item in refs
+      buffer.setCurrentPosition(item.offset, 0)
+
+      oldCodeSize = item.codeSize
+      labelOffset = parser.resolveLabel(item.label)
+      item.imm    = labelOffset - item.offset - oldCodeSize
+      posBefore   = buffer.getCurrentPosition()
+
+      if labelOffset < posBefore
+        item.imm = item.imm + codeSizeDiffTotal
+      endif
+
+      print 'Patching... [', item.label, '] to [', item.imm, '] at [', item.offset, ']'
+
+      translator.processOneItem(item)
+
+      newCodeSize  = buffer.getCurrentPosition() - posBefore
+      codeSizeDiff = item.codeSize - newCodeSize
+
+      for pos in readPos .. item.offset + newCodeSize
+        newBuffer.emitByte(buffer.data[pos])
+      endfor
+      readPos  = item.offset + oldCodeSize
+
+      if codeSizeDiff < 0
+        die('error: code overwrite after patch')
+      else
+        codeSizeDiffTotal = codeSizeDiffTotal + codeSizeDiff
+
+        for idx in 0 .. codeSizeDiff
+          buffer.emitByte(0xff)
+        endfor
+      endif
+    endfor
+
+    for pos in readPos .. buffer.getSize()
+      newBuffer.emitByte(buffer.data[pos])
+    endfor
+
+    peWriter.create(pathAsm + '.exe')
+
+    print ''
+    print 'Buffer after patches:'
+    for values v in newBuffer.data
+      __mold_printToStdOutput(hex(v))
+      __mold_printToStdOutput(' ')
+      peWriter.emitByte(v)
+    endfor
+    print ''
+
+    peWriter.close()
+  endmethod
+endclass

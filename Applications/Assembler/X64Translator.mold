@@ -18,11 +18,11 @@
 #                                                                              #
 ################################################################################
 
-import 'x86.mold'
+import 'X64.mold'
 import '../../Compiler/Utils/PipeAbstract.mold'
 
 # Opcodes, that exists, but are invalid in 64-bit mode.
-X86_POOL_OF_MNEMONICS_INVALID64 = [
+X64_POOL_OF_MNEMONICS_INVALID64 = [
   'das'   , 'aas'  , 'bound'  , 'sahf'  , 'lahf',
   'les'   , 'lds'  , 'aam'    , 'aad'   , 'arpl',
   'pusha' , 'popa' , 'pushad' , 'popad' , 'pushfd' , 'popfd'
@@ -30,88 +30,88 @@ X86_POOL_OF_MNEMONICS_INVALID64 = [
 
 # Opcodes, that does not require any operands.
 # We can emit them as is.
-X86_OPCODES_MAP0 = {
-  'cbw':  X86_CWDE * 256 + X86_PREFIX_OPERAND_SIZE,
-  'cwde': X86_CWDE,
-  'cdqe': X86_CWDE * 256 + X86_PREFIX_REX_W,
+X64_OPCODES_MAP0 = {
+  'cbw':  X64_CWDE * 256 + X64_PREFIX_OPERAND_SIZE,
+  'cwde': X64_CWDE,
+  'cdqe': X64_CWDE * 256 + X64_PREFIX_REX_W,
 
-  'cwd': X86_CDQ * 256 + X86_PREFIX_OPERAND_SIZE,
-  'cdq': X86_CDQ,
-  'cqo': X86_CDQ * 256 + X86_PREFIX_REX_W,
+  'cwd': X64_CDQ * 256 + X64_PREFIX_OPERAND_SIZE,
+  'cdq': X64_CDQ,
+  'cqo': X64_CDQ * 256 + X64_PREFIX_REX_W,
 
-  'clc': X86_CLC,
-  'cld': X86_CLD,
-  'cli': X86_CLI,
-  'stc': X86_STC,
-  'std': X86_STD,
-  'sti': X86_STI,
-  'cmc': X86_CMC,
+  'clc': X64_CLC,
+  'cld': X64_CLD,
+  'cli': X64_CLI,
+  'stc': X64_STC,
+  'std': X64_STD,
+  'sti': X64_STI,
+  'cmc': X64_CMC,
 
-  'cmpsb': X86_CMPSB,
-  'cmpsw': X86_CMPSD * 256 + X86_PREFIX_OPERAND_SIZE,
-  'cmpsd': X86_CMPSD,
-  'cmpsq': X86_CMPSD * 256 + X86_PREFIX_REX_W,
+  'cmpsb': X64_CMPSB,
+  'cmpsw': X64_CMPSD * 256 + X64_PREFIX_OPERAND_SIZE,
+  'cmpsd': X64_CMPSD,
+  'cmpsq': X64_CMPSD * 256 + X64_PREFIX_REX_W,
 
-  'movsb': X86_MOVSB,
-  'movsw': X86_MOVSD * 256 + X86_PREFIX_OPERAND_SIZE,
-  'movsd': X86_MOVSD,
-  'movsq': X86_MOVSD * 256 + X86_PREFIX_REX_W,
+  'movsb': X64_MOVSB,
+  'movsw': X64_MOVSD * 256 + X64_PREFIX_OPERAND_SIZE,
+  'movsd': X64_MOVSD,
+  'movsq': X64_MOVSD * 256 + X64_PREFIX_REX_W,
 
-  'lodsb': X86_LODSB,
-  'lodsw': X86_LODSD * 256 + X86_PREFIX_OPERAND_SIZE,
-  'lodsd': X86_LODSD,
-  'lodsq': X86_LODSD * 256 + X86_PREFIX_REX_W,
+  'lodsb': X64_LODSB,
+  'lodsw': X64_LODSD * 256 + X64_PREFIX_OPERAND_SIZE,
+  'lodsd': X64_LODSD,
+  'lodsq': X64_LODSD * 256 + X64_PREFIX_REX_W,
 
-  'stosb': X86_STOSB,
-  'stosw': X86_STOSD * 256 + X86_PREFIX_OPERAND_SIZE,
-  'stosd': X86_STOSD,
-  'stosq': X86_STOSD * 256 + X86_PREFIX_REX_W,
+  'stosb': X64_STOSB,
+  'stosw': X64_STOSD * 256 + X64_PREFIX_OPERAND_SIZE,
+  'stosd': X64_STOSD,
+  'stosq': X64_STOSD * 256 + X64_PREFIX_REX_W,
 
-  'scasb': X86_SCASB,
-  'scasw': X86_SCASD * 256 + X86_PREFIX_OPERAND_SIZE,
-  'scasd': X86_SCASD,
-  'scasq': X86_SCASD * 256 + X86_PREFIX_REX_W,
+  'scasb': X64_SCASB,
+  'scasw': X64_SCASD * 256 + X64_PREFIX_OPERAND_SIZE,
+  'scasd': X64_SCASD,
+  'scasq': X64_SCASD * 256 + X64_PREFIX_REX_W,
 
-  'rep':   X86_PREFIX_REPE,
-  'repe':  X86_PREFIX_REPE,
-  'repz':  X86_PREFIX_REPE,
-  'repne': X86_PREFIX_REPNE,
-  'repnz': X86_PREFIX_REPNE,
+  'rep':   X64_PREFIX_REPE,
+  'repe':  X64_PREFIX_REPE,
+  'repz':  X64_PREFIX_REPE,
+  'repne': X64_PREFIX_REPNE,
+  'repnz': X64_PREFIX_REPNE,
 
-  'hlt':  X86_HLT,
-  'lock': X86_PREFIX_LOCK,
-  'nop':  X86_NOP,
-  'xlatb': X86_XLAT,
+  'hlt':  X64_HLT,
+  'lock': X64_PREFIX_LOCK,
+  'nop':  X64_NOP,
+  'xlatb': X64_XLAT,
 
-  'int1': X86_INT1,
-  'int3': X86_INT3,
-  'into': X86_INT0,
-  'iret': X86_IRET,
+  'int1': X64_INT1,
+  'int3': X64_INT3,
+  'into': X64_INT0,
+  'iret': X64_IRET,
 
-  'pushf':  X86_PUSHF,
-  'pushfw': X86_PUSHF * 256 + X86_PREFIX_OPERAND_SIZE,
-  'pushfq': X86_PUSHF,
+  'pushf':  X64_PUSHF,
+  'pushfw': X64_PUSHF * 256 + X64_PREFIX_OPERAND_SIZE,
+  'pushfq': X64_PUSHF,
 
-  'popf':   X86_POPF,
-  'popfw':  X86_POPF  * 256 + X86_PREFIX_OPERAND_SIZE,
-  'popfq':  X86_POPF
+  'popf':   X64_POPF,
+  'popfw':  X64_POPF  * 256 + X64_PREFIX_OPERAND_SIZE,
+  'popfq':  X64_POPF
 }
 
-X86_OPCODES_MAP_CORE_ALU2 = {
-  'adc':  X86_ADC,
-  'add':  X86_ADD,
-  'and':  X86_AND,
-  'cmp':  X86_CMP,
-  'sbb':  X86_SBB,
-  'sub':  X86_SUB,
-  'or':   X86_OR,
-  'xor':  X86_XOR,
-  'mov':  X86_MOV_RM8_R8,
-  'test': X86_TEST_RM8_R8,
-  'xchg': X86_XCHG_RM8_R8
+X64_OPCODES_MAP_CORE_ALU2 = {
+  'adc':  X64_ADC,
+  'add':  X64_ADD,
+  'and':  X64_AND,
+  'cmp':  X64_CMP,
+  'sbb':  X64_SBB,
+  'sub':  X64_SUB,
+  'or':   X64_OR,
+  'xor':  X64_XOR,
+  'mov':  X64_MOV_RM8_R8,
+  'test': X64_TEST_RM8_R8,
+  'xchg': X64_XCHG_RM8_R8
 }
 
-X86_OPCODES_MAP_UNARY_GROUP = {
+X64_OPCODES_MAP_UNARY_GROUP = {
   'not': 2,
   'neg': 3,
   'mul': 4,
@@ -120,7 +120,30 @@ X86_OPCODES_MAP_UNARY_GROUP = {
   'idiv': 7
 }
 
-class TranslatorAssemblerX64 extends PipeAbstract
+X64_OPCODES_JUMPS = {
+  'call': X64_CALL_REL32,
+  'jo':   X64_JO,
+  'jno':  X64_JNO,
+  'jb':   X64_JB,
+  'jae':  X64_JAE,
+  'jz':   X64_JZ,
+  'je':   X64_JZ,
+  'jnz':  X64_JNZ,
+  'jne':  X64_JNZ,
+  'jbe':  X64_JBE,
+  'ja':   X64_JA,
+  'js':   X64_JS,
+  'jns':  X64_JNS,
+  'jp':   X64_JP,
+  'jnp':  X64_JNP,
+  'jl':   X64_JL,
+  'jge':  X64_JGE,
+  'jle':  X64_JLE,
+  'jg':   X64_JG,
+  'jmp':  X64_JMP_REL32
+}
+
+class X64Translator extends PipeAbstract
   method emitCore_x_y(opcode, item)
     emiter   = this.outputObject
     reg      = item.reg
@@ -166,10 +189,11 @@ class TranslatorAssemblerX64 extends PipeAbstract
   endmethod
 
   method processOneItem(item)
-    global X86_OPCODES_MAP0
-    global X86_OPCODES_MAP_CORE_ALU2
-    global X86_OPCODES_MAP_UNARY_GROUP
-    global X86_TEST_RM8_R8
+    global X64_OPCODES_MAP0
+    global X64_OPCODES_MAP_CORE_ALU2
+    global X64_OPCODES_MAP_UNARY_GROUP
+    global X64_TEST_RM8_R8
+    global X64_OPCODES_JUMPS
 
     #print item
 
@@ -182,7 +206,7 @@ class TranslatorAssemblerX64 extends PipeAbstract
     elif item.type is 'instruction'
       # Parse one code line.
       mnemonic = item.mnemonic
-      opcode   = X86_OPCODES_MAP0[mnemonic]
+      opcode   = X64_OPCODES_MAP0[mnemonic]
 
       reg      = item.reg
       rm       = item.rm
@@ -237,22 +261,38 @@ class TranslatorAssemblerX64 extends PipeAbstract
           # TODO: Handle 8-bit push.
           encoder.push_imm32(imm)
         else
-          encoder.push_m(regBase, scale, regIndex, disp)
+          # TODO
+          #encoder.push_m(regBase, scale, regIndex, disp)
+          die('not implemented: push m')
         endif
 
       elif mnemonic is 'pop'
         if reg isnt -1
           encoder.pop_r(reg)
         else
-          encoder.pop_m(regBase, scale, regIndex, disp)
+          die('not implemented: pop m')
+          #encoder.pop_m(regBase, scale, regIndex, disp)
         endif
 
       elif (mnemonic is 'xchg') and (reg isnt -1) and (rm isnt -1)
         # xchg r, r
         encoder.xchg_r_r(reg, rm)
 
+      elif mnemonic is 'call'
+        encoder.call_rel(imm)
+
+      elif mnemonic is 'jmp'
+        encoder.jmp_rel(imm)
+
+      elif mnemonic is 'ret'
+        if imm is defined
+          encoder.ret_imm8(imm)
+        else
+          encoder.ret()
+        endif
+
       else
-        opcode = X86_OPCODES_MAP_CORE_ALU2[mnemonic]
+        opcode = X64_OPCODES_MAP_CORE_ALU2[mnemonic]
 
         if opcode is defined
           # Recognized common two-operands opcode.
@@ -273,7 +313,8 @@ class TranslatorAssemblerX64 extends PipeAbstract
           this.emitCore_x_y(opcode, item)
 
         else
-          operationId = X86_OPCODES_MAP_UNARY_GROUP[mnemonic]
+          operationId = X64_OPCODES_MAP_UNARY_GROUP[mnemonic]
+
           if operationId is defined
             if reg is -1
               # not/neg/mul/div/imul/idiv m
@@ -283,8 +324,26 @@ class TranslatorAssemblerX64 extends PipeAbstract
               # not/neg/mul/div/imul/idiv r
               encoder.emitCore_unaryGroup_r(operationId, reg)
             endif
+          else
+            opcode = X64_OPCODES_JUMPS[mnemonic]
+
+            if opcode is defined
+              # jxx rel8
+              encoder.emitCore_jump_rel8(opcode, imm)
+            endif
           endif
         endif
+      endif
+
+    elif item.type is 'data'
+      if item.dataSize is 1
+        encoder.emitByte(item.value)
+      elif item.dataSize is 2
+        encoder.emitWord(item.value)
+      elif item.dataSize is 4
+        encoder.emitDword(item.value)
+      elif item.dataSize is 8
+        encoder.emitQword(item.value)
       endif
     endif
   endmethod
