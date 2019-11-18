@@ -18,9 +18,7 @@
 #                                                                              #
 ################################################################################
 
-import 'X64Parser.mold'
-import 'X64Translator.mold'
-import 'X64Encoder.mold'
+import 'X64Compiler.mold'
 
 arrayOfTests = [
   'core/add_r_r',
@@ -78,16 +76,9 @@ arrayOfTests = [
   'core/xchg_m_r'
 ]
 
-class TesterAssemblerX64
+class X64Tester
   method constructor()
-    this.f              = false
-    this.parser         = new ParserAssemblerX64()
-    this.translator     = new TranslatorAssemblerX64()
-    this.machineEncoder = new MachineEncoderX64()
-
-    # Set up toolchain.
-    # We want to catch generated code by this object.
-    this.parser.connectTo(this.translator).connectTo(this.machineEncoder).connectTo(this)
+    this.compiler = new X64Compiler()
   endmethod
 
   method compare(x, y)
@@ -113,10 +104,13 @@ class TesterAssemblerX64
   endmethod
 
   method compileSourceFile(pathAsm, pathBin)
-    # Open binary file to compare result.
+    # Open reference file to compare result.
     __mold_printToStdOutput(pathAsm + '...')
     this.f = open('tests/' + pathBin, 'r')
-    this.parser.parseFile('tests/' + pathAsm)
+
+    # Redirect compiler result to this object and
+    # compare content byte-by-byte with reference file.
+    this.compiler.compile(this, 'tests/' + pathAsm)
 
     # TODO: Compare number of bytes emited.
     if ord(readChar(this.f)) isnt 0
@@ -129,7 +123,7 @@ class TesterAssemblerX64
     endmethod
 endclass
 
-tester = new TesterAssemblerX64()
+tester = new X64Tester()
 
 for values testName in arrayOfTests
   pathAsm = testName + '.asm'

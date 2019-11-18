@@ -27,7 +27,6 @@ if argc isnt 2
   exit()
 endif
 
-
-path     = '1.asm'
+path     = argv[1]
 compiler = new X64Compiler()
-compiler.compileSourceFile(path)
+compiler.compileToFile(path + '.exe', path)

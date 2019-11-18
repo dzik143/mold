@@ -27,6 +27,11 @@ class Buffer
     this.pos  = 0
   endmethod
 
+  method clear()
+    this.data = []
+    this.pos  = 0
+  endmethod
+
   method emitByte(x)
     pos = this.pos
     this.data[pos] = bitand(x, 0xff)
@@ -63,7 +68,7 @@ class Buffer
   endmethod
 
   method setCurrentPosition(newPos, mode)
-    # TODO: Handle mode.
+    # TODO: Handle mode parameter.
     this.pos = newPos
   endmethod
 endclass

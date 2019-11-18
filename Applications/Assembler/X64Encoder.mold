@@ -1109,9 +1109,9 @@ class X64Encoder
     this.emitByte(X64_RET)
   endmethod
 
-  method retn_imm8(imm)
-    global X64_RETN
-    this.emitByte(X64_RETN)
+  method ret_imm8(imm)
+    global X64_RET_IMM8
+    this.emitByte(X64_RET_IMM8)
     this.emitByte(imm)
   endmethod
 
@@ -1251,15 +1251,15 @@ class X64Encoder
   endmethod
 
   #
-  # Interrupts: int, int0, int1, int3, iret
+  # Interrupts: int, into, int1, int3, iret
   #
 
   method int(imm8)
     global X64_INT_IMM8
-    global X64_INT0, X64_INT1, X64_INT3
+    global X64_INTO, X64_INT1, X64_INT3
 
     if imm8 is 0
-      this.emitByte(X64_INT0)
+      this.emitByte(X64_INTO)
 
     elif imm8 is 1
       this.emitByte(X64_INT1)

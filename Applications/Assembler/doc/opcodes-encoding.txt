@@ -1,0 +1,1668 @@
+add r8,r8               00 mm
+add m8,r8               00 mm
+add r16,r16             66 01 mm
+add r32,r32             01 mm
+add r64,r64             48 01 mm
+add m16,r16             66 01 mm
+add m32,r32             01 mm
+add m64,r64             48 01 mm
+add r8,m8               02 mm
+add r16,m16             66 03 mm
+add r32,m32             03 mm
+add r64,m64             48 03 mm
+add al,imm8             04 ii
+add ax,imm16            66 05 ii ii
+add eax,imm32           05 ii ii ii ii
+add rax,imm32           48 05 ii ii ii ii
+or r8,r8                08 mm
+or m8,r8                08 mm
+or r16,r16              66 09 mm
+or r32,r32              09 mm
+or r64,r64              48 09 mm
+or m16,r16              66 09 mm
+or m32,r32              09 mm
+or m64,r64              48 09 mm
+or r8,m8                0a mm
+or r16,m16              66 0b mm
+or r32,m32              0b mm
+or r64,m64              48 0b mm
+or al,imm8              0c ii
+or ax,imm16             66 0d ii ii
+or eax,imm32            0d ii ii ii ii
+or rax,imm32            48 0d ii ii ii ii
+adc r8,r8               10 mm
+adc m8,r8               10 mm
+adc r16,r16             66 11 mm
+adc r32,r32             11 mm
+adc r64,r64             48 11 mm
+adc m16,r16             66 11 mm
+adc m32,r32             11 mm
+adc m64,r64             48 11 mm
+adc r8,m8               12 mm
+adc r16,m16             66 13 mm
+adc r32,m32             13 mm
+adc r64,m64             48 13 mm
+adc al,imm8             14 ii
+adc ax,imm16            66 15 ii ii
+adc eax,imm32           15 ii ii ii ii
+adc rax,imm32           48 15 ii ii ii ii
+sbb r8,r8               18 mm
+sbb m8,r8               18 mm
+sbb r16,r16             66 19 mm
+sbb r32,r32             19 mm
+sbb r64,r64             48 19 mm
+sbb m16,r16             66 19 mm
+sbb m32,r32             19 mm
+sbb m64,r64             48 19 mm
+sbb r8,m8               1a mm
+sbb r16,m16             66 1b mm
+sbb r32,m32             1b mm
+sbb r64,m64             48 1b mm
+sbb al,imm8             1c ii
+sbb ax,imm16            66 1d ii ii
+sbb eax,imm32           1d ii ii ii ii
+sbb rax,imm32           48 1d ii ii ii ii
+and r8,r8               20 mm
+and m8,r8               20 mm
+and r16,r16             66 21 mm
+and r32,r32             21 mm
+and r64,r64             48 21 mm
+and m16,r16             66 21 mm
+and m32,r32             21 mm
+and m64,r64             48 21 mm
+and r8,m8               22 mm
+and r16,m16             66 23 mm
+and r32,m32             23 mm
+and r64,m64             48 23 mm
+and al,imm8             24 ii
+and ax,imm16            66 25 ii ii
+and eax,imm32           25 ii ii ii ii
+and rax,imm32           48 25 ii ii ii ii
+sub r8,r8               28 mm
+sub m8,r8               28 mm
+sub r16,r16             66 29 mm
+sub r32,r32             29 mm
+sub r64,r64             48 29 mm
+sub m16,r16             66 29 mm
+sub m32,r32             29 mm
+sub m64,r64             48 29 mm
+sub r8,m8               2a mm
+sub r16,m16             66 2b mm
+sub r32,m32             2b mm
+sub r64,m64             48 2b mm
+sub al,imm8             2c ii
+sub ax,imm16            66 2d ii ii
+sub eax,imm32           2d ii ii ii ii
+sub rax,imm32           48 2d ii ii ii ii
+xor r8,r8               30 mm
+xor m8,r8               30 mm
+xor r16,r16             66 31 mm
+xor r32,r32             31 mm
+xor r64,r64             48 31 mm
+xor m16,r16             66 31 mm
+xor m32,r32             31 mm
+xor m64,r64             48 31 mm
+xor r8,m8               32 mm
+xor r16,m16             66 33 mm
+xor r32,m32             33 mm
+xor r64,m64             48 33 mm
+xor al,imm8             34 ii
+xor ax,imm16            66 35 ii ii
+xor eax,imm32           35 ii ii ii ii
+xor rax,imm32           48 35 ii ii ii ii
+cmp r8,r8               38 mm
+cmp m8,r8               38 mm
+cmp r16,r16             66 39 mm
+cmp r32,r32             39 mm
+cmp r64,r64             48 39 mm
+cmp m16,r16             66 39 mm
+cmp m32,r32             39 mm
+cmp m64,r64             48 39 mm
+cmp r8,m8               3a mm
+cmp r16,m16             66 3b mm
+cmp r32,m32             3b mm
+cmp r64,m64             48 3b mm
+cmp al,imm8             3c ii
+cmp ax,imm16            66 3d ii ii
+cmp eax,imm32           3d ii ii ii ii
+cmp rax,imm32           48 3d ii ii ii ii
+push r16                66 50+r
+push r64                50+r
+pop r16                 66 58+r
+pop r64                 58+r
+movsxd r64,r32          48 63 mm
+movsxd r64,m32          48 63 mm
+push imm32              68 ii ii ii ii
+imul r16,r16            66 69 mm
+imul r32,r32            69 mm
+imul r64,r64            48 69 mm
+imul r16,m16            66 69 mm
+imul r32,m32            69 mm
+imul r64,m64            48 69 mm
+push imm8               6a ii
+ins m8,dx               6c
+ins m16,dx              66 6d
+ins m32,dx              6d
+outs dx,m8              6e
+outs dx,m16             66 6f
+outs dx,m32             6f
+jo rel8                 70 pp
+jno rel8                71 pp
+jb rel8                 72 pp
+jnb rel8                73 pp
+jz rel8                 74 pp
+jnz rel8                75 pp
+jbe rel8                76 pp
+jnbe rel8               77 pp
+js rel8                 78 pp
+jns rel8                79 pp
+jp rel8                 7a pp
+jnp rel8                7b pp
+jl rel8                 7c pp
+jnl rel8                7d pp
+jle rel8                7e pp
+jnle rel8               7f pp
+add r8,imm8             80 c0 ii
+add m8,imm8             80 c0 ii
+or r8,imm8              80 c8 ii
+or m8,imm8              80 c8 ii
+adc r8,imm8             80 d0 ii
+adc m8,imm8             80 d0 ii
+sbb r8,imm8             80 d8 ii
+sbb m8,imm8             80 d8 ii
+and r8,imm8             80 e0 ii
+and m8,imm8             80 e0 ii
+sub r8,imm8             80 e8 ii
+sub m8,imm8             80 e8 ii
+xor r8,imm8             80 f0 ii
+xor m8,imm8             80 f0 ii
+cmp r8,imm8             80 f8 ii
+cmp m8,imm8             80 f8 ii
+add r16,imm16           66 81 c0 ii ii
+add r32,imm32           81 c0 ii ii ii ii
+add r64,imm32           48 81 c0 ii ii ii ii
+add m16,imm16           66 81 c0 ii ii
+add m32,imm32           81 c0 ii ii ii ii
+add m64,imm32           48 81 c0 ii ii ii ii
+or r16,imm16            66 81 c8 ii ii
+or r32,imm32            81 c8 ii ii ii ii
+or r64,imm32            48 81 c8 ii ii ii ii
+or m16,imm16            66 81 c8 ii ii
+or m32,imm32            81 c8 ii ii ii ii
+or m64,imm32            48 81 c8 ii ii ii ii
+adc r16,imm16           66 81 d0 ii ii
+adc r32,imm32           81 d0 ii ii ii ii
+adc r64,imm32           48 81 d0 ii ii ii ii
+adc m16,imm16           66 81 d0 ii ii
+adc m32,imm32           81 d0 ii ii ii ii
+adc m64,imm32           48 81 d0 ii ii ii ii
+sbb r16,imm16           66 81 d8 ii ii
+sbb r32,imm32           81 d8 ii ii ii ii
+sbb r64,imm32           48 81 d8 ii ii ii ii
+sbb m16,imm16           66 81 d8 ii ii
+sbb m32,imm32           81 d8 ii ii ii ii
+sbb m64,imm32           48 81 d8 ii ii ii ii
+and r16,imm16           66 81 e0 ii ii
+and r32,imm32           81 e0 ii ii ii ii
+and r64,imm32           48 81 e0 ii ii ii ii
+and m16,imm16           66 81 e0 ii ii
+and m32,imm32           81 e0 ii ii ii ii
+and m64,imm32           48 81 e0 ii ii ii ii
+sub r16,imm16           66 81 e8 ii ii
+sub r32,imm32           81 e8 ii ii ii ii
+sub r64,imm32           48 81 e8 ii ii ii ii
+sub m16,imm16           66 81 e8 ii ii
+sub m32,imm32           81 e8 ii ii ii ii
+sub m64,imm32           48 81 e8 ii ii ii ii
+xor r16,imm16           66 81 f0 ii ii
+xor r32,imm32           81 f0 ii ii ii ii
+xor r64,imm32           48 81 f0 ii ii ii ii
+xor m16,imm16           66 81 f0 ii ii
+xor m32,imm32           81 f0 ii ii ii ii
+xor m64,imm32           48 81 f0 ii ii ii ii
+cmp r16,imm16           66 81 f8 ii ii
+cmp r32,imm32           81 f8 ii ii ii ii
+cmp r64,imm32           48 81 f8 ii ii ii ii
+cmp m16,imm16           66 81 f8 ii ii
+cmp m32,imm32           81 f8 ii ii ii ii
+cmp m64,imm32           48 81 f8 ii ii ii ii
+add r16,imm8            66 83 c0 ii
+add r32,imm8            83 c0 ii
+add r64,imm8            48 83 c0 ii
+add m16,imm8            66 83 c0 ii
+add m32,imm8            83 c0 ii
+add m64,imm8            48 83 c0 ii
+or r16,imm8             66 83 c8 ii
+or r32,imm8             83 c8 ii
+or r64,imm8             48 83 c8 ii
+or m16,imm8             66 83 c8 ii
+or m32,imm8             83 c8 ii
+or m64,imm8             48 83 c8 ii
+adc r16,imm8            66 83 d0 ii
+adc r32,imm8            83 d0 ii
+adc r64,imm8            48 83 d0 ii
+adc m16,imm8            66 83 d0 ii
+adc m32,imm8            83 d0 ii
+adc m64,imm8            48 83 d0 ii
+sbb r16,imm8            66 83 d8 ii
+sbb r32,imm8            83 d8 ii
+sbb r64,imm8            48 83 d8 ii
+sbb m16,imm8            66 83 d8 ii
+sbb m32,imm8            83 d8 ii
+sbb m64,imm8            48 83 d8 ii
+and r16,imm8            66 83 e0 ii
+and r32,imm8            83 e0 ii
+and r64,imm8            48 83 e0 ii
+and m16,imm8            66 83 e0 ii
+and m32,imm8            83 e0 ii
+and m64,imm8            48 83 e0 ii
+sub r16,imm8            66 83 e8 ii
+sub r32,imm8            83 e8 ii
+sub r64,imm8            48 83 e8 ii
+sub m16,imm8            66 83 e8 ii
+sub m32,imm8            83 e8 ii
+sub m64,imm8            48 83 e8 ii
+xor r16,imm8            66 83 f0 ii
+xor r32,imm8            83 f0 ii
+xor r64,imm8            48 83 f0 ii
+xor m16,imm8            66 83 f0 ii
+xor m32,imm8            83 f0 ii
+xor m64,imm8            48 83 f0 ii
+cmp r16,imm8            66 83 f8 ii
+cmp r32,imm8            83 f8 ii
+cmp r64,imm8            48 83 f8 ii
+cmp m16,imm8            66 83 f8 ii
+cmp m32,imm8            83 f8 ii
+cmp m64,imm8            48 83 f8 ii
+test r8,r8              84 mm
+test m8,r8              84 mm
+test r16,r16            66 85 mm
+test r32,r32            85 mm
+test r64,r64            48 85 mm
+test m16,r16            66 85 mm
+test m32,r32            85 mm
+test m64,r64            48 85 mm
+xchg r8,r8              86 mm
+xchg r8,m8              86 mm
+xchg r16,r16            66 87 mm
+xchg r32,r32            87 mm
+xchg r64,r64            48 87 mm
+xchg r16,m16            66 87 mm
+xchg r32,m32            87 mm
+xchg r64,m64            48 87 mm
+mov r8,r8               88 mm
+mov m8,r8               88 mm
+mov r16,r16             66 89 mm
+mov r32,r32             89 mm
+mov r64,r64             48 89 mm
+mov m16,r16             66 89 mm
+mov m32,r32             89 mm
+mov m64,r64             48 89 mm
+mov r8,m8               8a mm
+mov r16,m16             66 8b mm
+mov r32,m32             8b mm
+mov r64,m64             48 8b mm
+mov m16,sreg            8c mm
+lea r16,m8              66 8d mm
+lea r16,m16             66 8d mm
+lea r16,m32             66 8d mm
+lea r16,m64             66 8d mm
+lea r32,m8              8d mm
+lea r32,m16             8d mm
+lea r32,m32             8d mm
+lea r32,m64             8d mm
+lea r64,m8              48 8d mm
+lea r64,m16             48 8d mm
+lea r64,m32             48 8d mm
+lea r64,m64             48 8d mm
+mov sreg,r16            8e mm
+mov sreg,m16            8e mm
+pop r/m16/32            8f c0
+pop r/m64/16            8f c0
+xchg r16,ax             66 90+r
+xchg r32,eax            90+r
+xchg r64,rax            48 90+r
+nop                     90
+pause                   90
+cbw ax,al               98
+cwd dx,ax               99
+fwait                   9b
+pushf                   9c
+popf                    9d
+sahf ah                 9e
+lahf ah                 9f
+mov al,moffs8           a0
+mov ax,moffs16          66 a1
+mov eax,moffs32         a1
+mov rax,moffs64         48 a1
+mov moffs8,al           a2
+mov moffs16,ax          66 a3
+mov moffs32,eax         a3
+mov moffs64,rax         48 a3
+movs                    a4
+cmps                    a6
+test al,imm8            a8 ii
+test ax,imm16           66 a9 ii ii
+test eax,imm32          a9 ii ii ii ii
+test rax,imm32          48 a9 ii ii ii ii
+stos                    aa
+lods                    ac
+scas                    ae
+mov r8,imm8             b0+r ii
+mov r16,imm16           66 b8+r ii ii
+mov r32,imm32           b8+r ii ii ii ii
+mov r64,imm64           48 b8+r
+rol r8,imm8             c0 c0 ii
+rol m8,imm8             c0 c0 ii
+ror r8,imm8             c0 c8 ii
+ror m8,imm8             c0 c8 ii
+rcl r8,imm8             c0 d0 ii
+rcl m8,imm8             c0 d0 ii
+rcr r8,imm8             c0 d8 ii
+rcr m8,imm8             c0 d8 ii
+shl r8,imm8             c0 e0 ii
+shl m8,imm8             c0 e0 ii
+shr r8,imm8             c0 e8 ii
+shr m8,imm8             c0 e8 ii
+sal r8,imm8             c0 f0 ii
+sal m8,imm8             c0 f0 ii
+sar r8,imm8             c0 f8 ii
+sar m8,imm8             c0 f8 ii
+rol r16,imm8            66 c1 c0 ii
+rol r32,imm8            c1 c0 ii
+rol r64,imm8            48 c1 c0 ii
+rol m16,imm8            66 c1 c0 ii
+rol m32,imm8            c1 c0 ii
+rol m64,imm8            48 c1 c0 ii
+ror r16,imm8            66 c1 c8 ii
+ror r32,imm8            c1 c8 ii
+ror r64,imm8            48 c1 c8 ii
+ror m16,imm8            66 c1 c8 ii
+ror m32,imm8            c1 c8 ii
+ror m64,imm8            48 c1 c8 ii
+rcl r16,imm8            66 c1 d0 ii
+rcl r32,imm8            c1 d0 ii
+rcl r64,imm8            48 c1 d0 ii
+rcl m16,imm8            66 c1 d0 ii
+rcl m32,imm8            c1 d0 ii
+rcl m64,imm8            48 c1 d0 ii
+rcr r16,imm8            66 c1 d8 ii
+rcr r32,imm8            c1 d8 ii
+rcr r64,imm8            48 c1 d8 ii
+rcr m16,imm8            66 c1 d8 ii
+rcr m32,imm8            c1 d8 ii
+rcr m64,imm8            48 c1 d8 ii
+shl r16,imm8            66 c1 e0 ii
+shl r32,imm8            c1 e0 ii
+shl r64,imm8            48 c1 e0 ii
+shl m16,imm8            66 c1 e0 ii
+shl m32,imm8            c1 e0 ii
+shl m64,imm8            48 c1 e0 ii
+shr r16,imm8            66 c1 e8 ii
+shr r32,imm8            c1 e8 ii
+shr r64,imm8            48 c1 e8 ii
+shr m16,imm8            66 c1 e8 ii
+shr m32,imm8            c1 e8 ii
+shr m64,imm8            48 c1 e8 ii
+sal r16,imm8            66 c1 f0 ii
+sal r32,imm8            c1 f0 ii
+sal r64,imm8            48 c1 f0 ii
+sal m16,imm8            66 c1 f0 ii
+sal m32,imm8            c1 f0 ii
+sal m64,imm8            48 c1 f0 ii
+sar r16,imm8            66 c1 f8 ii
+sar r32,imm8            c1 f8 ii
+sar r64,imm8            48 c1 f8 ii
+sar m16,imm8            66 c1 f8 ii
+sar m32,imm8            c1 f8 ii
+sar m64,imm8            48 c1 f8 ii
+retn imm16              c2 ii ii
+retn                    c3
+mov m8,imm8             c6 c0 ii
+mov r64,imm32           48 c7 c0 ii ii ii ii
+mov m16,imm16           66 c7 c0 ii ii
+mov m32,imm32           c7 c0 ii ii ii ii
+mov m64,imm32           48 c7 c0 ii ii ii ii
+enter rbp,imm16         c8 ii ii
+leave rbp               c9
+retf imm16              ca ii ii
+retf                    cb
+int 3                   cc
+int imm8                cd ii
+into                    ce
+iret                    cf
+rol r8,1                d0 c0
+rol m8,1                d0 c0
+ror r8,1                d0 c8
+ror m8,1                d0 c8
+rcl r8,1                d0 d0
+rcl m8,1                d0 d0
+rcr r8,1                d0 d8
+rcr m8,1                d0 d8
+shl r8,1                d0 e0
+shl m8,1                d0 e0
+shr r8,1                d0 e8
+shr m8,1                d0 e8
+sal r8,1                d0 f0
+sal m8,1                d0 f0
+sar r8,1                d0 f8
+sar m8,1                d0 f8
+rol r16,1               66 d1 c0
+rol r32,1               d1 c0
+rol r64,1               48 d1 c0
+rol m16,1               66 d1 c0
+rol m32,1               d1 c0
+rol m64,1               48 d1 c0
+ror r16,1               66 d1 c8
+ror r32,1               d1 c8
+ror r64,1               48 d1 c8
+ror m16,1               66 d1 c8
+ror m32,1               d1 c8
+ror m64,1               48 d1 c8
+rcl r16,1               66 d1 d0
+rcl r32,1               d1 d0
+rcl r64,1               48 d1 d0
+rcl m16,1               66 d1 d0
+rcl m32,1               d1 d0
+rcl m64,1               48 d1 d0
+rcr r16,1               66 d1 d8
+rcr r32,1               d1 d8
+rcr r64,1               48 d1 d8
+rcr m16,1               66 d1 d8
+rcr m32,1               d1 d8
+rcr m64,1               48 d1 d8
+shl r16,1               66 d1 e0
+shl r32,1               d1 e0
+shl r64,1               48 d1 e0
+shl m16,1               66 d1 e0
+shl m32,1               d1 e0
+shl m64,1               48 d1 e0
+shr r16,1               66 d1 e8
+shr r32,1               d1 e8
+shr r64,1               48 d1 e8
+shr m16,1               66 d1 e8
+shr m32,1               d1 e8
+shr m64,1               48 d1 e8
+sal r16,1               66 d1 f0
+sal r32,1               d1 f0
+sal r64,1               48 d1 f0
+sal m16,1               66 d1 f0
+sal m32,1               d1 f0
+sal m64,1               48 d1 f0
+sar r16,1               66 d1 f8
+sar r32,1               d1 f8
+sar r64,1               48 d1 f8
+sar m16,1               66 d1 f8
+sar m32,1               d1 f8
+sar m64,1               48 d1 f8
+rol r8,cl               d2 c0
+rol m8,cl               d2 c0
+ror r8,cl               d2 c8
+ror m8,cl               d2 c8
+rcl r8,cl               d2 d0
+rcl m8,cl               d2 d0
+rcr r8,cl               d2 d8
+rcr m8,cl               d2 d8
+shl r8,cl               d2 e0
+shl m8,cl               d2 e0
+shr r8,cl               d2 e8
+shr m8,cl               d2 e8
+sal r8,cl               d2 f0
+sal m8,cl               d2 f0
+sar r8,cl               d2 f8
+sar m8,cl               d2 f8
+rol r16,cl              66 d3 c0
+rol r32,cl              d3 c0
+rol r64,cl              48 d3 c0
+rol m16,cl              66 d3 c0
+rol m32,cl              d3 c0
+rol m64,cl              48 d3 c0
+ror r16,cl              66 d3 c8
+ror r32,cl              d3 c8
+ror r64,cl              48 d3 c8
+ror m16,cl              66 d3 c8
+ror m32,cl              d3 c8
+ror m64,cl              48 d3 c8
+rcl r16,cl              66 d3 d0
+rcl r32,cl              d3 d0
+rcl r64,cl              48 d3 d0
+rcl m16,cl              66 d3 d0
+rcl m32,cl              d3 d0
+rcl m64,cl              48 d3 d0
+rcr r16,cl              66 d3 d8
+rcr r32,cl              d3 d8
+rcr r64,cl              48 d3 d8
+rcr m16,cl              66 d3 d8
+rcr m32,cl              d3 d8
+rcr m64,cl              48 d3 d8
+shl r16,cl              66 d3 e0
+shl r32,cl              d3 e0
+shl r64,cl              48 d3 e0
+shl m16,cl              66 d3 e0
+shl m32,cl              d3 e0
+shl m64,cl              48 d3 e0
+shr r16,cl              66 d3 e8
+shr r32,cl              d3 e8
+shr r64,cl              48 d3 e8
+shr m16,cl              66 d3 e8
+shr m32,cl              d3 e8
+shr m64,cl              48 d3 e8
+sal r16,cl              66 d3 f0
+sal r32,cl              d3 f0
+sal r64,cl              48 d3 f0
+sal m16,cl              66 d3 f0
+sal m32,cl              d3 f0
+sal m64,cl              48 d3 f0
+sar r16,cl              66 d3 f8
+sar r32,cl              d3 f8
+sar r64,cl              48 d3 f8
+sar m16,cl              66 d3 f8
+sar m32,cl              d3 f8
+sar m64,cl              48 d3 f8
+xlat al,m8              d7
+fadd st,m32             d8 c0
+fmul st,m32             d8 c8
+fcom st,sti/m32         d8 d0
+fcom st,st1             d8 d0
+fcomp st,sti/m32        d8 d8
+fcomp st,st1            d8 d8
+fsub st,m32             d8 e0
+fsubr st,m32            d8 e8
+fdiv st,m32             d8 f0
+fdivr st,m32            d8 f8
+fld st,sti/m32          d9 c0
+fxch st,sti             d9 c8
+fxch st,st1             d9 c8
+fst m32,st              d9 d0
+fnop                    d9 d0
+fstp m32,st             d9 d8
+fstp1 sti,st            d9 d8
+fldenv m14              d9 e0
+fldenv m28              d9 e0
+fchs st                 d9 e0
+fabs st                 d9 e0
+ftst st                 d9 e0
+fxam st                 d9 e0
+fldcw m16               d9 e8
+fld1 st                 d9 e8
+fldl2t st               d9 e8
+fldl2e st               d9 e8
+fldpi st                d9 e8
+fldlg2 st               d9 e8
+fldln2 st               d9 e8
+fldz st                 d9 e8
+fnstenv m14             d9 f0
+fnstenv m28             d9 f0
+fstenv m14              d9 f0
+fstenv m28              d9 f0
+f2xm1 st                d9 f0
+fyl2x st1,st            d9 f0
+fptan st                d9 f0
+fpatan st1,st           d9 f0
+fxtract st              d9 f0
+fprem1 st,st1           d9 f0
+fdecstp                 d9 f0
+fincstp                 d9 f0
+fnstcw m16              d9 f8
+fstcw m16               d9 f8
+fprem st,st1            d9 f8
+fyl2xp1 st1,st          d9 f8
+fsqrt st                d9 f8
+fsincos st              d9 f8
+frndint st              d9 f8
+fscale st,st1           d9 f8
+fsin st                 d9 f8
+fcos st                 d9 f8
+fiadd st,m32            da c0
+fcmovb st,sti           da c0
+fimul st,m32            da c8
+fcmove st,sti           da c8
+ficom st,m32            da d0
+fcmovbe st,sti          da d0
+ficomp st,m32           da d8
+fcmovu st,sti           da d8
+fisub st,m32            da e0
+fisubr st,m32           da e8
+fucompp st,st1          da e8
+fidiv st,m32            da f0
+fidivr st,m32           da f8
+fild st,m32             db c0
+fcmovnb st,sti          db c0
+fisttp m32,st           db c8
+fcmovne st,sti          db c8
+fist m32,st             db d0
+fcmovnbe st,sti         db d0
+fistp m32,st            db d8
+fcmovnu st,sti          db d8
+fneni nop               db e0
+fndisi nop              db e0
+fnclex                  db e0
+fclex                   db e0
+fninit                  db e0
+finit                   db e0
+fnsetpm nop             db e0
+fld st,m80real          db e8
+fucomi st,sti           db e8
+fcomi st,sti            db f0
+fstp m80real,st         db f8
+fadd st,m64             dc c0
+fadd sti,st             dc c0
+fmul st,m64             dc c8
+fmul sti,st             dc c8
+fcom st,m64             dc d0
+fcom2 st,sti            dc d0
+fcomp st,m64            dc d8
+fcomp3 st,sti           dc d8
+fsub st,m64             dc e0
+fsubr sti,st            dc e0
+fsubr st,m64            dc e8
+fsub sti,st             dc e8
+fdiv st,m64             dc f0
+fdivr sti,st            dc f0
+fdivr st,m64            dc f8
+fdiv sti,st             dc f8
+fld st,m64              dd c0
+ffree sti               dd c0
+fisttp m64int,st        dd c8
+fxch4 st,sti            dd c8
+fst m64,st              dd d0
+fst st,sti              dd d0
+fstp m64,st             dd d8
+fstp st,sti             dd d8
+frstor st,st1           dd e0
+fucom st,sti            dd e0
+fucom st,st1            dd e0
+fucomp st,sti           dd e8
+fucomp st,st1           dd e8
+fnsave m94,st           dd f0
+fnsave m108,st          dd f0
+fsave m94,st            dd f0
+fsave m108,st           dd f0
+fnstsw m16              dd f8
+fstsw m16               dd f8
+fiadd st,m16            de c0
+faddp sti,st            de c0
+faddp st1,st            de c0
+fimul st,m16            de c8
+fmulp sti,st            de c8
+fmulp st1,st            de c8
+ficom st,m16            de d0
+fcomp5 st,sti           de d0
+ficomp st,m16           de d8
+fcompp st,st1           de d8
+fisub st,m16            de e0
+fsubrp sti,st           de e0
+fsubrp st1,st           de e0
+fisubr st,m16           de e8
+fsubp sti,st            de e8
+fsubp st1,st            de e8
+fidiv st,m16            de f0
+fdivrp sti,st           de f0
+fdivrp st1,st           de f0
+fidivr st,m16           de f8
+fdivp sti,st            de f8
+fdivp st1,st            de f8
+fild st,m16             df c0
+ffreep sti              df c0
+fisttp m16,st           df c8
+fxch7 st,sti            df c8
+fist m16,st             df d0
+fstp8 sti,st            df d0
+fistp m16,st            df d8
+fstp9 sti,st            df d8
+fbld st,m80dec          df e0
+fnstsw ax               df e0
+fstsw ax                df e0
+fild st,m64int          df e8
+fucomip st,sti          df e8
+fbstp m80dec,st         df f0
+fcomip st,sti           df f0
+fistp m64int,st         df f8
+loopnz rcx,rel8         e0 pp
+loopz rcx,rel8          e1 pp
+loop rcx,rel8           e2 pp
+jecxz rel8,ecx          e3 pp
+in al,imm8              e4 ii
+in eax,imm8             e5 ii
+out imm8,al             e6 ii
+out imm8,eax            e7 ii
+call rel16              66 e8 pp pp
+call rel32              e8 pp pp pp pp
+jmp rel16               66 e9 pp pp
+jmp rel32               e9 pp pp pp pp
+jmp rel8                eb pp
+in al,dx                ec
+in eax,dx               ed
+out dx,al               ee
+out dx,eax              ef
+undefined               f1
+int1                    f1
+hlt                     f4
+cmc                     f5
+test r8,imm8            f6 c0 ii
+test m8,imm8            f6 c0 ii
+not r8                  f6 d0
+not m8                  f6 d0
+neg r8                  f6 d8
+neg m8                  f6 d8
+mul ax,al               f6 e0
+imul ax,al              f6 e8
+div al,ah               f6 f0
+idiv al,ah              f6 f8
+test r16,imm16          66 f7 c0 ii ii
+test r32,imm32          f7 c0 ii ii ii ii
+test r64,imm32          48 f7 c0 ii ii ii ii
+test m16,imm16          66 f7 c0 ii ii
+test m32,imm32          f7 c0 ii ii ii ii
+test m64,imm32          48 f7 c0 ii ii ii ii
+not r16                 66 f7 d0
+not r32                 f7 d0
+not r64                 48 f7 d0
+not m16                 66 f7 d0
+not m32                 f7 d0
+not m64                 48 f7 d0
+neg r16                 66 f7 d8
+neg r32                 f7 d8
+neg r64                 48 f7 d8
+neg m16                 66 f7 d8
+neg m32                 f7 d8
+neg m64                 48 f7 d8
+mul rdx,rax             f7 e0
+imul rdx,rax            f7 e8
+div rdx,rax             f7 f0
+idiv rdx,rax            f7 f8
+clc                     f8
+stc                     f9
+cli                     fa
+sti                     fb
+cld                     fc
+std                     fd
+inc r8                  fe c0
+inc m8                  fe c0
+dec r8                  fe c8
+dec m8                  fe c8
+inc r16                 66 ff c0
+inc r32                 ff c0
+inc r64                 48 ff c0
+inc m16                 66 ff c0
+inc m32                 ff c0
+inc m64                 48 ff c0
+dec r16                 66 ff c8
+dec r32                 ff c8
+dec r64                 48 ff c8
+dec m16                 66 ff c8
+dec m32                 ff c8
+dec m64                 48 ff c8
+call r16                66 ff d0
+call m16                66 ff d0
+call r64                ff d0
+call m64                ff d0
+callf m16:16            66 ff d8
+callf m16:64            48 ff d8
+jmp r16                 66 ff e0
+jmp m16                 66 ff e0
+jmp r64                 ff e0
+jmp m64                 ff e0
+jmpf m16:16             66 ff e8
+jmpf m16:64             48 ff e8
+push m16                66 ff f0
+push m64                ff f0
+sldt m16,ldtr           0f 00 c0
+str m16,tr              0f 00 c8
+lldt ldtr,r/m16         0f 00 d0
+ltr tr,r/m16            0f 00 d8
+verr r/m16              0f 00 e0
+verw r/m16              0f 00 e8
+sgdt m,gdtr             0f 01 c0
+vmcall                  0f 01 c0
+vmlaunch                0f 01 c0
+vmresume                0f 01 c0
+vmxoff                  0f 01 c0
+sidt m,idtr             0f 01 c8
+monitor m8,ecx          0f 01 c8
+mwait eax,ecx           0f 01 c8
+lgdt gdtr,m             0f 01 d0
+xgetbv edx,eax          0f 01 d0
+xsetbv xcr,ecx          0f 01 d0
+lidt idtr,m             0f 01 d8
+smsw m16,msw            0f 01 e0
+lmsw msw,r/m16          0f 01 f0
+invlpg m                0f 01 f8
+swapgs gs,ia32_kernel_ 0f 01 f8
+rdtscp eax,edx          0f 01 f8
+lar r16/32/64,m16       0f 02 mm
+lsl r16/32/64,m16       0f 03 mm
+syscall rcx,r11         0f 05
+clts cr0                0f 06
+sysret ss               0f 07
+invd                    0f 08
+wbinvd                  0f 09
+ud2                     0f 0b
+nop r/m16/32            0f 0d
+movups xmm,xmm          0f 10 mm
+movups xmm,m128         0f 10 mm
+movss xmm,xmm           0f 10 mm
+movss xmm,m32           0f 10 mm
+movupd xmm,xmm          0f 10 mm
+movupd xmm,m128         0f 10 mm
+movsd xmm,xmm           0f 10 mm
+movsd xmm,m64           0f 10 mm
+movups m128,xmm         0f 11 mm
+movss m32,xmm           0f 11 mm
+movupd m128,xmm         0f 11 mm
+movsd m64,xmm           0f 11 mm
+movhlps xmm,xmm         0f 12 mm
+movlps xmm,m64          0f 12 mm
+movlpd xmm,m64          0f 12 mm
+movddup xmm,xmm         0f 12 mm
+movddup xmm,m64         0f 12 mm
+movsldup xmm,xmm        0f 12 mm
+movsldup xmm,m64        0f 12 mm
+movlps m64,xmm          0f 13 mm
+movlpd m64,xmm          0f 13 mm
+unpcklps xmm,xmm        0f 14 mm
+unpcklps xmm,m64        0f 14 mm
+unpcklpd xmm,xmm        0f 14 mm
+unpcklpd xmm,m128       0f 14 mm
+unpckhps xmm,xmm        0f 15 mm
+unpckhps xmm,m64        0f 15 mm
+unpckhpd xmm,xmm        0f 15 mm
+unpckhpd xmm,m128       0f 15 mm
+movlhps xmm,xmm         0f 16 mm
+movhps xmm,m64          0f 16 mm
+movhpd xmm,m64          0f 16 mm
+movshdup xmm,xmm        0f 16 mm
+movshdup xmm,m64        0f 16 mm
+movhps m64,xmm          0f 17 mm
+movhpd m64,xmm          0f 17 mm
+prefetchnta m8          0f 18 c0
+prefetcht0 m8           0f 18 c8
+prefetcht1 m8           0f 18 d0
+prefetcht2 m8           0f 18 d8
+hint_nop r/m16/32       0f 18 e0
+mov r64,crn             0f 20 mm
+mov r64,drn             0f 21 mm
+mov crn,r64             0f 22 mm
+mov drn,r64             0f 23 mm
+movaps xmm,xmm          0f 28 mm
+movaps xmm,m128         0f 28 mm
+movapd xmm,xmm          0f 28 mm
+movapd xmm,m128         0f 28 mm
+movaps m128,xmm         0f 29 mm
+movapd m128,xmm         0f 29 mm
+cvtpi2ps xmm,mm/m64     0f 2a mm
+cvtsi2ss xmm,r/m32/64   0f 2a mm
+cvtpi2pd xmm,mm/m64     0f 2a mm
+cvtsi2sd xmm,r/m32/64   0f 2a mm
+movntps m128,xmm        0f 2b mm
+movntpd m128,xmm        0f 2b mm
+cvttps2pi mm,xmm/m64    0f 2c mm
+cvttss2si r32,xmm       0f 2c mm
+cvttss2si r32,m32       0f 2c mm
+cvttss2si r64,xmm       0f 2c mm
+cvttss2si r64,m32       0f 2c mm
+cvttpd2pi mm,xmm/m128   0f 2c mm
+cvttsd2si r32/64,xmm/m640f 2c mm
+cvtps2pi mm,xmm/m64     0f 2d mm
+cvtss2si r32,xmm        0f 2d mm
+cvtss2si r32,m32        0f 2d mm
+cvtss2si r64,xmm        0f 2d mm
+cvtss2si r64,m32        0f 2d mm
+cvtpd2pi mm,xmm/m128    0f 2d mm
+cvtsd2si r32/64,xmm/m64 0f 2d mm
+ucomiss xmm,xmm         0f 2e mm
+ucomiss xmm,m32         0f 2e mm
+ucomisd xmm,xmm         0f 2e mm
+ucomisd xmm,m64         0f 2e mm
+comiss xmm,xmm          0f 2f mm
+comiss xmm,m32          0f 2f mm
+comisd xmm,xmm          0f 2f mm
+comisd xmm,m64          0f 2f mm
+wrmsr msr,rcx           0f 30
+rdtsc eax,edx           0f 31
+rdmsr rax,rdx           0f 32
+rdpmc eax,edx           0f 33
+sysenter ss,rsp         0f 34
+sysexit ss,esp          0f 35
+getsec eax              0f 37
+invept r64,m128         0f 38 mm
+invvpid r64,m128        0f 38 mm
+movbe r16,m16           66 0f 38 mm
+movbe r32,m32           0f 38 mm
+movbe r64,m64           48 0f 38 mm
+crc32 r32,r8            0f 38 mm
+crc32 r32,m8            0f 38 mm
+crc32 r64,r8            48 0f 38 mm
+crc32 r64,m8            48 0f 38 mm
+movbe m16,r16           66 0f 38 mm
+movbe m32,r32           0f 38 mm
+movbe m64,r64           48 0f 38 mm
+crc32 r32/64,r/m16/32/640f 38 mm
+roundps xmm,xmm         0f 3a mm
+roundps xmm,m128        0f 3a mm
+roundpd xmm,xmm         0f 3a mm
+roundpd xmm,m128        0f 3a mm
+roundss xmm,xmm         0f 3a mm
+roundss xmm,m32         0f 3a mm
+roundsd xmm,xmm         0f 3a mm
+roundsd xmm,m64         0f 3a mm
+blendps xmm,xmm         0f 3a mm
+blendps xmm,m128        0f 3a mm
+blendpd xmm,xmm         0f 3a mm
+blendpd xmm,m128        0f 3a mm
+pblendw xmm,xmm         0f 3a mm
+pblendw xmm,m128        0f 3a mm
+palignr mm,mm           0f 3a mm
+palignr mm,m64          0f 3a mm
+palignr xmm,xmm         0f 3a mm
+palignr xmm,m128        0f 3a mm
+pextrb m8,xmm           0f 3a mm
+pextrw m16,xmm          0f 3a mm
+pextrd r/m32,xmm        0f 3a mm
+extractps r/m32,xmm     0f 3a mm
+pinsrb xmm,m8           0f 3a mm
+insertps xmm,m32        0f 3a mm
+pinsrd xmm,r/m32        0f 3a mm
+dpps xmm,xmm            0f 3a mm
+dpps xmm,m128           0f 3a mm
+dppd xmm,xmm            0f 3a mm
+dppd xmm,m128           0f 3a mm
+mpsadbw xmm,xmm         0f 3a mm
+mpsadbw xmm,m128        0f 3a mm
+pcmpestrm xmm0,xmm      0f 3a mm
+pcmpestri rcx,xmm       0f 3a mm
+pcmpistrm xmm0,xmm      0f 3a mm
+pcmpistri rcx,xmm       0f 3a mm
+cmovo r16,r16           66 0f 40 mm
+cmovo r32,r32           0f 40 mm
+cmovo r64,r64           48 0f 40 mm
+cmovo r16,m16           66 0f 40 mm
+cmovo r32,m32           0f 40 mm
+cmovo r64,m64           48 0f 40 mm
+cmovno r16,r16          66 0f 41 mm
+cmovno r32,r32          0f 41 mm
+cmovno r64,r64          48 0f 41 mm
+cmovno r16,m16          66 0f 41 mm
+cmovno r32,m32          0f 41 mm
+cmovno r64,m64          48 0f 41 mm
+cmovb r16,r16           66 0f 42 mm
+cmovb r32,r32           0f 42 mm
+cmovb r64,r64           48 0f 42 mm
+cmovb r16,m16           66 0f 42 mm
+cmovb r32,m32           0f 42 mm
+cmovb r64,m64           48 0f 42 mm
+cmovnb r16,r16          66 0f 43 mm
+cmovnb r32,r32          0f 43 mm
+cmovnb r64,r64          48 0f 43 mm
+cmovnb r16,m16          66 0f 43 mm
+cmovnb r32,m32          0f 43 mm
+cmovnb r64,m64          48 0f 43 mm
+cmovz r16,r16           66 0f 44 mm
+cmovz r32,r32           0f 44 mm
+cmovz r64,r64           48 0f 44 mm
+cmovz r16,m16           66 0f 44 mm
+cmovz r32,m32           0f 44 mm
+cmovz r64,m64           48 0f 44 mm
+cmovnz r16,r16          66 0f 45 mm
+cmovnz r32,r32          0f 45 mm
+cmovnz r64,r64          48 0f 45 mm
+cmovnz r16,m16          66 0f 45 mm
+cmovnz r32,m32          0f 45 mm
+cmovnz r64,m64          48 0f 45 mm
+cmovbe r16,r16          66 0f 46 mm
+cmovbe r32,r32          0f 46 mm
+cmovbe r64,r64          48 0f 46 mm
+cmovbe r16,m16          66 0f 46 mm
+cmovbe r32,m32          0f 46 mm
+cmovbe r64,m64          48 0f 46 mm
+cmovnbe r16,r16         66 0f 47 mm
+cmovnbe r32,r32         0f 47 mm
+cmovnbe r64,r64         48 0f 47 mm
+cmovnbe r16,m16         66 0f 47 mm
+cmovnbe r32,m32         0f 47 mm
+cmovnbe r64,m64         48 0f 47 mm
+cmovs r16,r16           66 0f 48 mm
+cmovs r32,r32           0f 48 mm
+cmovs r64,r64           48 0f 48 mm
+cmovs r16,m16           66 0f 48 mm
+cmovs r32,m32           0f 48 mm
+cmovs r64,m64           48 0f 48 mm
+cmovns r16,r16          66 0f 49 mm
+cmovns r32,r32          0f 49 mm
+cmovns r64,r64          48 0f 49 mm
+cmovns r16,m16          66 0f 49 mm
+cmovns r32,m32          0f 49 mm
+cmovns r64,m64          48 0f 49 mm
+cmovp r16,r16           66 0f 4a mm
+cmovp r32,r32           0f 4a mm
+cmovp r64,r64           48 0f 4a mm
+cmovp r16,m16           66 0f 4a mm
+cmovp r32,m32           0f 4a mm
+cmovp r64,m64           48 0f 4a mm
+cmovnp r16,r16          66 0f 4b mm
+cmovnp r32,r32          0f 4b mm
+cmovnp r64,r64          48 0f 4b mm
+cmovnp r16,m16          66 0f 4b mm
+cmovnp r32,m32          0f 4b mm
+cmovnp r64,m64          48 0f 4b mm
+cmovl r16,r16           66 0f 4c mm
+cmovl r32,r32           0f 4c mm
+cmovl r64,r64           48 0f 4c mm
+cmovl r16,m16           66 0f 4c mm
+cmovl r32,m32           0f 4c mm
+cmovl r64,m64           48 0f 4c mm
+cmovnl r16,r16          66 0f 4d mm
+cmovnl r32,r32          0f 4d mm
+cmovnl r64,r64          48 0f 4d mm
+cmovnl r16,m16          66 0f 4d mm
+cmovnl r32,m32          0f 4d mm
+cmovnl r64,m64          48 0f 4d mm
+cmovle r16,r16          66 0f 4e mm
+cmovle r32,r32          0f 4e mm
+cmovle r64,r64          48 0f 4e mm
+cmovle r16,m16          66 0f 4e mm
+cmovle r32,m32          0f 4e mm
+cmovle r64,m64          48 0f 4e mm
+cmovnle r16,r16         66 0f 4f mm
+cmovnle r32,r32         0f 4f mm
+cmovnle r64,r64         48 0f 4f mm
+cmovnle r16,m16         66 0f 4f mm
+cmovnle r32,m32         0f 4f mm
+cmovnle r64,m64         48 0f 4f mm
+movmskps m32,xmm        0f 50 mm
+movmskps r64,xmm        0f 50 mm
+movmskpd m32,xmm        0f 50 mm
+movmskpd r64,xmm        0f 50 mm
+sqrtps xmm,xmm          0f 51 mm
+sqrtps xmm,m128         0f 51 mm
+sqrtss xmm,xmm          0f 51 mm
+sqrtss xmm,m32          0f 51 mm
+sqrtpd xmm,xmm          0f 51 mm
+sqrtpd xmm,m128         0f 51 mm
+sqrtsd xmm,xmm          0f 51 mm
+sqrtsd xmm,m64          0f 51 mm
+rsqrtps xmm,xmm         0f 52 mm
+rsqrtps xmm,m128        0f 52 mm
+rsqrtss xmm,xmm         0f 52 mm
+rsqrtss xmm,m32         0f 52 mm
+rcpps xmm,xmm           0f 53 mm
+rcpps xmm,m128          0f 53 mm
+rcpss xmm,xmm           0f 53 mm
+rcpss xmm,m32           0f 53 mm
+andps xmm,xmm           0f 54 mm
+andps xmm,m128          0f 54 mm
+andpd xmm,xmm           0f 54 mm
+andpd xmm,m128          0f 54 mm
+andnps xmm,xmm          0f 55 mm
+andnps xmm,m128         0f 55 mm
+andnpd xmm,xmm          0f 55 mm
+andnpd xmm,m128         0f 55 mm
+orps xmm,xmm            0f 56 mm
+orps xmm,m128           0f 56 mm
+orpd xmm,xmm            0f 56 mm
+orpd xmm,m128           0f 56 mm
+xorps xmm,xmm           0f 57 mm
+xorps xmm,m128          0f 57 mm
+xorpd xmm,xmm           0f 57 mm
+xorpd xmm,m128          0f 57 mm
+addps xmm,xmm           0f 58 mm
+addps xmm,m128          0f 58 mm
+addss xmm,xmm           0f 58 mm
+addss xmm,m32           0f 58 mm
+addpd xmm,xmm           0f 58 mm
+addpd xmm,m128          0f 58 mm
+addsd xmm,xmm           0f 58 mm
+addsd xmm,m64           0f 58 mm
+mulps xmm,xmm           0f 59 mm
+mulps xmm,m128          0f 59 mm
+mulss xmm,xmm           0f 59 mm
+mulss xmm,m32           0f 59 mm
+mulpd xmm,xmm           0f 59 mm
+mulpd xmm,m128          0f 59 mm
+mulsd xmm,xmm           0f 59 mm
+mulsd xmm,m64           0f 59 mm
+cvtps2pd xmm,xmm        0f 5a mm
+cvtps2pd xmm,m128       0f 5a mm
+cvtpd2ps xmm,xmm        0f 5a mm
+cvtpd2ps xmm,m128       0f 5a mm
+cvtss2sd xmm,xmm        0f 5a mm
+cvtss2sd xmm,m32        0f 5a mm
+cvtsd2ss xmm,xmm        0f 5a mm
+cvtsd2ss xmm,m64        0f 5a mm
+cvtdq2ps xmm,xmm        0f 5b mm
+cvtdq2ps xmm,m128       0f 5b mm
+cvtps2dq xmm,xmm        0f 5b mm
+cvtps2dq xmm,m128       0f 5b mm
+cvttps2dq xmm,xmm       0f 5b mm
+cvttps2dq xmm,m128      0f 5b mm
+subps xmm,xmm           0f 5c mm
+subps xmm,m128          0f 5c mm
+subss xmm,xmm           0f 5c mm
+subss xmm,m32           0f 5c mm
+subpd xmm,xmm           0f 5c mm
+subpd xmm,m128          0f 5c mm
+subsd xmm,xmm           0f 5c mm
+subsd xmm,m64           0f 5c mm
+minps xmm,xmm           0f 5d mm
+minps xmm,m128          0f 5d mm
+minss xmm,xmm           0f 5d mm
+minss xmm,m32           0f 5d mm
+minpd xmm,xmm           0f 5d mm
+minpd xmm,m128          0f 5d mm
+minsd xmm,xmm           0f 5d mm
+minsd xmm,m64           0f 5d mm
+divps xmm,xmm           0f 5e mm
+divps xmm,m128          0f 5e mm
+divss xmm,xmm           0f 5e mm
+divss xmm,m32           0f 5e mm
+divpd xmm,xmm           0f 5e mm
+divpd xmm,m128          0f 5e mm
+divsd xmm,xmm           0f 5e mm
+divsd xmm,m64           0f 5e mm
+maxps xmm,xmm           0f 5f mm
+maxps xmm,m128          0f 5f mm
+maxss xmm,xmm           0f 5f mm
+maxss xmm,m32           0f 5f mm
+maxpd xmm,xmm           0f 5f mm
+maxpd xmm,m128          0f 5f mm
+maxsd xmm,xmm           0f 5f mm
+maxsd xmm,m64           0f 5f mm
+punpcklbw mm,mm         0f 60 mm
+punpcklbw mm,m64        0f 60 mm
+punpcklbw xmm,xmm       0f 60 mm
+punpcklbw xmm,m128      0f 60 mm
+punpcklwd mm,mm         0f 61 mm
+punpcklwd mm,m64        0f 61 mm
+punpcklwd xmm,xmm       0f 61 mm
+punpcklwd xmm,m128      0f 61 mm
+punpckldq mm,mm         0f 62 mm
+punpckldq mm,m64        0f 62 mm
+punpckldq xmm,xmm       0f 62 mm
+punpckldq xmm,m128      0f 62 mm
+packsswb mm,mm          0f 63 mm
+packsswb mm,m64         0f 63 mm
+packsswb xmm,xmm        0f 63 mm
+packsswb xmm,m128       0f 63 mm
+pcmpgtb mm,mm           0f 64 mm
+pcmpgtb mm,m64          0f 64 mm
+pcmpgtb xmm,xmm         0f 64 mm
+pcmpgtb xmm,m128        0f 64 mm
+pcmpgtw mm,mm           0f 65 mm
+pcmpgtw mm,m64          0f 65 mm
+pcmpgtw xmm,xmm         0f 65 mm
+pcmpgtw xmm,m128        0f 65 mm
+pcmpgtd mm,mm           0f 66 mm
+pcmpgtd mm,m64          0f 66 mm
+pcmpgtd xmm,xmm         0f 66 mm
+pcmpgtd xmm,m128        0f 66 mm
+packuswb mm,mm          0f 67 mm
+packuswb mm,m64         0f 67 mm
+packuswb xmm,xmm        0f 67 mm
+packuswb xmm,m128       0f 67 mm
+punpckhbw mm,mm         0f 68 mm
+punpckhbw mm,m64        0f 68 mm
+punpckhbw xmm,xmm       0f 68 mm
+punpckhbw xmm,m128      0f 68 mm
+punpckhwd mm,mm         0f 69 mm
+punpckhwd mm,m64        0f 69 mm
+punpckhwd xmm,xmm       0f 69 mm
+punpckhwd xmm,m128      0f 69 mm
+punpckhdq mm,mm         0f 6a mm
+punpckhdq mm,m64        0f 6a mm
+punpckhdq xmm,xmm       0f 6a mm
+punpckhdq xmm,m128      0f 6a mm
+packssdw mm,mm          0f 6b mm
+packssdw mm,m64         0f 6b mm
+packssdw xmm,xmm        0f 6b mm
+packssdw xmm,m128       0f 6b mm
+punpcklqdq xmm,xmm      0f 6c mm
+punpcklqdq xmm,m128     0f 6c mm
+punpckhqdq xmm,xmm      0f 6d mm
+punpckhqdq xmm,m128     0f 6d mm
+movd mm,r/m32           0f 6e mm
+movd xmm,r/m32          0f 6e mm
+movq mm,mm              0f 6f mm
+movq mm,m64             0f 6f mm
+movdqa xmm,xmm          0f 6f mm
+movdqa xmm,m128         0f 6f mm
+movdqu xmm,xmm          0f 6f mm
+movdqu xmm,m128         0f 6f mm
+pshufw mm,mm            0f 70 mm
+pshufw mm,m64           0f 70 mm
+pshuflw xmm,xmm         0f 70 mm
+pshuflw xmm,m128        0f 70 mm
+pshufhw xmm,xmm         0f 70 mm
+pshufhw xmm,m128        0f 70 mm
+pshufd xmm,xmm          0f 70 mm
+pshufd xmm,m128         0f 70 mm
+psrlw mm,imm8           0f 71 d0 ii
+psrlw xmm,imm8          0f 71 d0 ii
+psraw mm,imm8           0f 71 e0 ii
+psraw xmm,imm8          0f 71 e0 ii
+psllw mm,imm8           0f 71 f0 ii
+psllw xmm,imm8          0f 71 f0 ii
+psrld mm,imm8           0f 72 d0 ii
+psrld xmm,imm8          0f 72 d0 ii
+psrad mm,imm8           0f 72 e0 ii
+psrad xmm,imm8          0f 72 e0 ii
+pslld mm,imm8           0f 72 f0 ii
+pslld xmm,imm8          0f 72 f0 ii
+psrlq mm,imm8           0f 73 d0 ii
+psrlq xmm,imm8          0f 73 d0 ii
+psrldq xmm,imm8         0f 73 d8 ii
+psllq mm,imm8           0f 73 f0 ii
+psllq xmm,imm8          0f 73 f0 ii
+pslldq xmm,imm8         0f 73 f8 ii
+pcmpeqb mm,mm           0f 74 mm
+pcmpeqb mm,m64          0f 74 mm
+pcmpeqb xmm,xmm         0f 74 mm
+pcmpeqb xmm,m128        0f 74 mm
+pcmpeqw mm,mm           0f 75 mm
+pcmpeqw mm,m64          0f 75 mm
+pcmpeqw xmm,xmm         0f 75 mm
+pcmpeqw xmm,m128        0f 75 mm
+pcmpeqd mm,mm           0f 76 mm
+pcmpeqd mm,m64          0f 76 mm
+pcmpeqd xmm,xmm         0f 76 mm
+pcmpeqd xmm,m128        0f 76 mm
+emms                    0f 77
+vmread r/m64,r64        0f 78 mm
+vmwrite r64,r/m64       0f 79 mm
+haddpd xmm,xmm          0f 7c mm
+haddpd xmm,m128         0f 7c mm
+haddps xmm,xmm          0f 7c mm
+haddps xmm,m128         0f 7c mm
+hsubpd xmm,xmm          0f 7d mm
+hsubpd xmm,m128         0f 7d mm
+hsubps xmm,xmm          0f 7d mm
+hsubps xmm,m128         0f 7d mm
+movd r/m32,mm           0f 7e mm
+movd r/m32,xmm          0f 7e mm
+movq xmm,xmm            0f 7e mm
+movq xmm,m64            0f 7e mm
+movq m64,mm             0f 7f mm
+movdqa m128,xmm         0f 7f mm
+movdqu m128,xmm         0f 7f mm
+jo rel16                66 0f 80 pp pp
+jo rel32                0f 80 pp pp pp pp
+jno rel16               66 0f 81 pp pp
+jno rel32               0f 81 pp pp pp pp
+jb rel16                66 0f 82 pp pp
+jb rel32                0f 82 pp pp pp pp
+jnb rel16               66 0f 83 pp pp
+jnb rel32               0f 83 pp pp pp pp
+jz rel16                66 0f 84 pp pp
+jz rel32                0f 84 pp pp pp pp
+jnz rel16               66 0f 85 pp pp
+jnz rel32               0f 85 pp pp pp pp
+jbe rel16               66 0f 86 pp pp
+jbe rel32               0f 86 pp pp pp pp
+jnbe rel16              66 0f 87 pp pp
+jnbe rel32              0f 87 pp pp pp pp
+js rel16                66 0f 88 pp pp
+js rel32                0f 88 pp pp pp pp
+jns rel16               66 0f 89 pp pp
+jns rel32               0f 89 pp pp pp pp
+jp rel16                66 0f 8a pp pp
+jp rel32                0f 8a pp pp pp pp
+jnp rel16               66 0f 8b pp pp
+jnp rel32               0f 8b pp pp pp pp
+jl rel16                66 0f 8c pp pp
+jl rel32                0f 8c pp pp pp pp
+jnl rel16               66 0f 8d pp pp
+jnl rel32               0f 8d pp pp pp pp
+jle rel16               66 0f 8e pp pp
+jle rel32               0f 8e pp pp pp pp
+jnle rel16              66 0f 8f pp pp
+jnle rel32              0f 8f pp pp pp pp
+seto r8                 0f 90 c0
+seto m8                 0f 90 c0
+setno r8                0f 91 c0
+setno m8                0f 91 c0
+setb r8                 0f 92 c0
+setb m8                 0f 92 c0
+setnb r8                0f 93 c0
+setnb m8                0f 93 c0
+setz r8                 0f 94 c0
+setz m8                 0f 94 c0
+setnz r8                0f 95 c0
+setnz m8                0f 95 c0
+setbe r8                0f 96 c0
+setbe m8                0f 96 c0
+setnbe r8               0f 97 c0
+setnbe m8               0f 97 c0
+sets r8                 0f 98 c0
+sets m8                 0f 98 c0
+setns r8                0f 99 c0
+setns m8                0f 99 c0
+setp r8                 0f 9a c0
+setp m8                 0f 9a c0
+setnp r8                0f 9b c0
+setnp m8                0f 9b c0
+setl r8                 0f 9c c0
+setl m8                 0f 9c c0
+setnl r8                0f 9d c0
+setnl m8                0f 9d c0
+setle r8                0f 9e c0
+setle m8                0f 9e c0
+setnle r8               0f 9f c0
+setnle m8               0f 9f c0
+push fs                 0f a0
+pop fs                  0f a1
+cpuid ia32_bios_sig,eax0f a2
+bt r16,r16              66 0f a3 mm
+bt r32,r32              0f a3 mm
+bt r64,r64              48 0f a3 mm
+bt m16,r16              66 0f a3 mm
+bt m32,r32              0f a3 mm
+bt m64,r64              48 0f a3 mm
+shld r16,r16            66 0f a4 mm
+shld r32,r32            0f a4 mm
+shld r64,r64            48 0f a4 mm
+shld m16,r16            66 0f a4 mm
+shld m32,r32            0f a4 mm
+shld m64,r64            48 0f a4 mm
+push gs                 0f a8
+pop gs                  0f a9
+rsm                     0f aa
+bts r16,r16             66 0f ab mm
+bts r32,r32             0f ab mm
+bts r64,r64             48 0f ab mm
+bts m16,r16             66 0f ab mm
+bts m32,r32             0f ab mm
+bts m64,r64             48 0f ab mm
+shrd r16,r16            66 0f ac mm
+shrd r32,r32            0f ac mm
+shrd r64,r64            48 0f ac mm
+shrd m16,r16            66 0f ac mm
+shrd m32,r32            0f ac mm
+shrd m64,r64            48 0f ac mm
+fxsave m512,st          0f ae c0
+fxrstor st,st1          0f ae c8
+ldmxcsr m32             0f ae d0
+stmxcsr m32             0f ae d8
+xsave m,edx             0f ae e0
+lfence                  0f ae e8
+xrstor st,st1           0f ae e8
+mfence                  0f ae f0
+sfence                  0f ae f8
+clflush m8              0f ae f8
+cmpxchg r/m8,al         0f b0 mm
+cmpxchg r/m16/32/64,rax 0f b1 mm
+lss ss,r16/32/64        0f b2 mm
+btr r16,r16             66 0f b3 mm
+btr r32,r32             0f b3 mm
+btr r64,r64             48 0f b3 mm
+btr m16,r16             66 0f b3 mm
+btr m32,r32             0f b3 mm
+btr m64,r64             48 0f b3 mm
+lfs fs,r16/32/64        0f b4 mm
+lgs gs,r16/32/64        0f b5 mm
+movzx r16/32/64,r/m8    0f b6 mm
+movzx r16/32/64,r/m16   0f b7 mm
+popcnt r16,r16          66 0f b8 mm
+popcnt r32,r32          0f b8 mm
+popcnt r64,r64          48 0f b8 mm
+popcnt r16,m16          66 0f b8 mm
+popcnt r32,m32          0f b8 mm
+popcnt r64,m64          48 0f b8 mm
+ud r,r/m                0f b9 mm
+bt r16,imm8             66 0f ba e0 ii
+bt r32,imm8             0f ba e0 ii
+bt r64,imm8             48 0f ba e0 ii
+bt m16,imm8             66 0f ba e0 ii
+bt m32,imm8             0f ba e0 ii
+bt m64,imm8             48 0f ba e0 ii
+bts r16,imm8            66 0f ba e8 ii
+bts r32,imm8            0f ba e8 ii
+bts r64,imm8            48 0f ba e8 ii
+bts m16,imm8            66 0f ba e8 ii
+bts m32,imm8            0f ba e8 ii
+bts m64,imm8            48 0f ba e8 ii
+btr r16,imm8            66 0f ba f0 ii
+btr r32,imm8            0f ba f0 ii
+btr r64,imm8            48 0f ba f0 ii
+btr m16,imm8            66 0f ba f0 ii
+btr m32,imm8            0f ba f0 ii
+btr m64,imm8            48 0f ba f0 ii
+btc r16,imm8            66 0f ba f8 ii
+btc r32,imm8            0f ba f8 ii
+btc r64,imm8            48 0f ba f8 ii
+btc m16,imm8            66 0f ba f8 ii
+btc m32,imm8            0f ba f8 ii
+btc m64,imm8            48 0f ba f8 ii
+btc r16,r16             66 0f bb mm
+btc r32,r32             0f bb mm
+btc r64,r64             48 0f bb mm
+btc m16,r16             66 0f bb mm
+btc m32,r32             0f bb mm
+btc m64,r64             48 0f bb mm
+bsf r16,r16             66 0f bc mm
+bsf r32,r32             0f bc mm
+bsf r64,r64             48 0f bc mm
+bsf r16,m16             66 0f bc mm
+bsf r32,m32             0f bc mm
+bsf r64,m64             48 0f bc mm
+bsr r16,r16             66 0f bd mm
+bsr r32,r32             0f bd mm
+bsr r64,r64             48 0f bd mm
+bsr r16,m16             66 0f bd mm
+bsr r32,m32             0f bd mm
+bsr r64,m64             48 0f bd mm
+movsx r16/32/64,r/m8    0f be mm
+movsx r16/32/64,r/m16   0f bf mm
+xadd r8,r8              0f c0 mm
+xadd m8,r8              0f c0 mm
+xadd r16,r16            66 0f c1 mm
+xadd r32,r32            0f c1 mm
+xadd r64,r64            48 0f c1 mm
+xadd m16,r16            66 0f c1 mm
+xadd m32,r32            0f c1 mm
+xadd m64,r64            48 0f c1 mm
+cmpps xmm,xmm           0f c2 mm
+cmpps xmm,m128          0f c2 mm
+cmpss xmm,xmm           0f c2 mm
+cmpss xmm,m32           0f c2 mm
+cmppd xmm,xmm           0f c2 mm
+cmppd xmm,m128          0f c2 mm
+cmpsd xmm,xmm           0f c2 mm
+cmpsd xmm,m64           0f c2 mm
+movnti m32/64,r32/64    0f c3 mm
+pinsrw mm,r32/64        0f c4 mm
+pinsrw xmm,r32/64       0f c4 mm
+pextrw m32,mm           0f c5 mm
+pextrw r64,mm           0f c5 mm
+pextrw m32,xmm          0f c5 mm
+pextrw r64,xmm          0f c5 mm
+shufps xmm,xmm          0f c6 mm
+shufps xmm,m128         0f c6 mm
+shufpd xmm,xmm          0f c6 mm
+shufpd xmm,m128         0f c6 mm
+cmpxchg8b m64,eax       0f c7 c8
+vmptrld m64             0f c7 f0
+vmclear m64             0f c7 f0
+vmxon m64               0f c7 f0
+vmptrst m64             0f c7 f8
+bswap r16/32/64         0f c8+r
+addsubpd xmm,xmm        0f d0 mm
+addsubpd xmm,m128       0f d0 mm
+addsubps xmm,xmm        0f d0 mm
+addsubps xmm,m128       0f d0 mm
+psrlw mm,mm             0f d1 mm
+psrlw mm,m64            0f d1 mm
+psrlw xmm,xmm           0f d1 mm
+psrlw xmm,m128          0f d1 mm
+psrld mm,mm             0f d2 mm
+psrld mm,m64            0f d2 mm
+psrld xmm,xmm           0f d2 mm
+psrld xmm,m128          0f d2 mm
+psrlq mm,mm             0f d3 mm
+psrlq mm,m64            0f d3 mm
+psrlq xmm,xmm           0f d3 mm
+psrlq xmm,m128          0f d3 mm
+paddq mm,mm             0f d4 mm
+paddq mm,m64            0f d4 mm
+paddq xmm,xmm           0f d4 mm
+paddq xmm,m128          0f d4 mm
+pmullw mm,mm            0f d5 mm
+pmullw mm,m64           0f d5 mm
+pmullw xmm,xmm          0f d5 mm
+pmullw xmm,m128         0f d5 mm
+movq m64,xmm            0f d6 mm
+movq2dq xmm,mm          0f d6 mm
+movdq2q mm,xmm          0f d6 mm
+pmovmskb m32,mm         0f d7 mm
+pmovmskb r64,mm         0f d7 mm
+pmovmskb m32,xmm        0f d7 mm
+pmovmskb r64,xmm        0f d7 mm
+psubusb mm,mm           0f d8 mm
+psubusb mm,m64          0f d8 mm
+psubusb xmm,xmm         0f d8 mm
+psubusb xmm,m128        0f d8 mm
+psubusw mm,mm           0f d9 mm
+psubusw mm,m64          0f d9 mm
+psubusw xmm,xmm         0f d9 mm
+psubusw xmm,m128        0f d9 mm
+pminub mm,mm            0f da mm
+pminub mm,m64           0f da mm
+pminub xmm,xmm          0f da mm
+pminub xmm,m128         0f da mm
+pand mm,mm              0f db mm
+pand mm,m64             0f db mm
+pand xmm,xmm            0f db mm
+pand xmm,m128           0f db mm
+paddusb mm,mm           0f dc mm
+paddusb mm,m64          0f dc mm
+paddusb xmm,xmm         0f dc mm
+paddusb xmm,m128        0f dc mm
+paddusw mm,mm           0f dd mm
+paddusw mm,m64          0f dd mm
+paddusw xmm,xmm         0f dd mm
+paddusw xmm,m128        0f dd mm
+pmaxub mm,mm            0f de mm
+pmaxub mm,m64           0f de mm
+pmaxub xmm,xmm          0f de mm
+pmaxub xmm,m128         0f de mm
+pandn mm,mm             0f df mm
+pandn mm,m64            0f df mm
+pandn xmm,xmm           0f df mm
+pandn xmm,m128          0f df mm
+pavgb mm,mm             0f e0 mm
+pavgb mm,m64            0f e0 mm
+pavgb xmm,xmm           0f e0 mm
+pavgb xmm,m128          0f e0 mm
+psraw mm,mm             0f e1 mm
+psraw mm,m64            0f e1 mm
+psraw xmm,xmm           0f e1 mm
+psraw xmm,m128          0f e1 mm
+psrad mm,mm             0f e2 mm
+psrad mm,m64            0f e2 mm
+psrad xmm,xmm           0f e2 mm
+psrad xmm,m128          0f e2 mm
+pavgw mm,mm             0f e3 mm
+pavgw mm,m64            0f e3 mm
+pavgw xmm,xmm           0f e3 mm
+pavgw xmm,m128          0f e3 mm
+pmulhuw mm,mm           0f e4 mm
+pmulhuw mm,m64          0f e4 mm
+pmulhuw xmm,xmm         0f e4 mm
+pmulhuw xmm,m128        0f e4 mm
+pmulhw mm,mm            0f e5 mm
+pmulhw mm,m64           0f e5 mm
+pmulhw xmm,xmm          0f e5 mm
+pmulhw xmm,m128         0f e5 mm
+cvtpd2dq xmm,xmm        0f e6 mm
+cvtpd2dq xmm,m128       0f e6 mm
+cvttpd2dq xmm,xmm       0f e6 mm
+cvttpd2dq xmm,m128      0f e6 mm
+cvtdq2pd xmm,xmm        0f e6 mm
+cvtdq2pd xmm,m128       0f e6 mm
+movntq m64,mm           0f e7 mm
+movntdq m128,xmm        0f e7 mm
+psubsb mm,mm            0f e8 mm
+psubsb mm,m64           0f e8 mm
+psubsb xmm,xmm          0f e8 mm
+psubsb xmm,m128         0f e8 mm
+psubsw mm,mm            0f e9 mm
+psubsw mm,m64           0f e9 mm
+psubsw xmm,xmm          0f e9 mm
+psubsw xmm,m128         0f e9 mm
+pminsw mm,mm            0f ea mm
+pminsw mm,m64           0f ea mm
+pminsw xmm,xmm          0f ea mm
+pminsw xmm,m128         0f ea mm
+por mm,mm               0f eb mm
+por mm,m64              0f eb mm
+por xmm,xmm             0f eb mm
+por xmm,m128            0f eb mm
+paddsb mm,mm            0f ec mm
+paddsb mm,m64           0f ec mm
+paddsb xmm,xmm          0f ec mm
+paddsb xmm,m128         0f ec mm
+paddsw mm,mm            0f ed mm
+paddsw mm,m64           0f ed mm
+paddsw xmm,xmm          0f ed mm
+paddsw xmm,m128         0f ed mm
+pmaxsw mm,mm            0f ee mm
+pmaxsw mm,m64           0f ee mm
+pmaxsw xmm,xmm          0f ee mm
+pmaxsw xmm,m128         0f ee mm
+pxor mm,mm              0f ef mm
+pxor mm,m64             0f ef mm
+pxor xmm,xmm            0f ef mm
+pxor xmm,m128           0f ef mm
+lddqu xmm,m128          0f f0 mm
+psllw mm,mm             0f f1 mm
+psllw mm,m64            0f f1 mm
+psllw xmm,xmm           0f f1 mm
+psllw xmm,m128          0f f1 mm
+pslld mm,mm             0f f2 mm
+pslld mm,m64            0f f2 mm
+pslld xmm,xmm           0f f2 mm
+pslld xmm,m128          0f f2 mm
+psllq mm,mm             0f f3 mm
+psllq mm,m64            0f f3 mm
+psllq xmm,xmm           0f f3 mm
+psllq xmm,m128          0f f3 mm
+pmuludq mm,mm           0f f4 mm
+pmuludq mm,m64          0f f4 mm
+pmuludq xmm,xmm         0f f4 mm
+pmuludq xmm,m128        0f f4 mm
+pmaddwd mm,mm           0f f5 mm
+pmaddwd mm,m64          0f f5 mm
+pmaddwd xmm,xmm         0f f5 mm
+pmaddwd xmm,m128        0f f5 mm
+psadbw mm,mm            0f f6 mm
+psadbw mm,m64           0f f6 mm
+psadbw xmm,xmm          0f f6 mm
+psadbw xmm,m128         0f f6 mm
+maskmovq m64,mm         0f f7 mm
+maskmovdqu m128,xmm     0f f7 mm
+psubb mm,mm             0f f8 mm
+psubb mm,m64            0f f8 mm
+psubb xmm,xmm           0f f8 mm
+psubb xmm,m128          0f f8 mm
+psubw mm,mm             0f f9 mm
+psubw mm,m64            0f f9 mm
+psubw xmm,xmm           0f f9 mm
+psubw xmm,m128          0f f9 mm
+psubd mm,mm             0f fa mm
+psubd mm,m64            0f fa mm
+psubd xmm,xmm           0f fa mm
+psubd xmm,m128          0f fa mm
+psubq mm,mm             0f fb mm
+psubq mm,m64            0f fb mm
+psubq xmm,xmm           0f fb mm
+psubq xmm,m128          0f fb mm
+paddb mm,mm             0f fc mm
+paddb mm,m64            0f fc mm
+paddb xmm,xmm           0f fc mm
+paddb xmm,m128          0f fc mm
+paddw mm,mm             0f fd mm
+paddw mm,m64            0f fd mm
+paddw xmm,xmm           0f fd mm
+paddw xmm,m128          0f fd mm
+paddd mm,mm             0f fe mm
+paddd mm,m64            0f fe mm
+paddd xmm,xmm           0f fe mm
+paddd xmm,m128          0f fe mm

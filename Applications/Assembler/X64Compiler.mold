@@ -26,58 +26,35 @@ import 'Buffer.mold'
 
 class X64Compiler
   method constructor()
-    this.f              = -1
-    this.parser         = new X64Parser()
-    this.translator     = new X64Translator()
-    this.machineEncoder = new X64Encoder()
-    this.buffer         = new Buffer()
-    this.peWriter       = new PEWriter()
+    this.parser     = new X64Parser()
+    this.translator = new X64Translator()
+    this.encoder    = new X64Encoder()
+    this.tempBuffer = new Buffer()
+    this.peWriter   = new PEWriter()
 
     # Set up toolchain.
-    # We want to catch generated code by this object.
-    this.parser.connectTo(this.translator).connectTo(this.machineEncoder).connectTo(this.buffer)
+    # We want to catch generated code to temporary buffer before
+    # emit to caller.
+    this.parser.connectTo(this.translator).connectTo(this.encoder).connectTo(this.tempBuffer)
   endmethod
 
-  method emitByte(x)
-    if x < 0
-      x = 0x100 + x
-    endif
-    print 'db', hex(x)
+  method compileToFile(targetBinPath, sourceAsmPath)
+    this.peWriter.create(targetBinPath)
+    this.compile(this.peWriter, sourceAsmPath)
+    this.peWriter.close()
   endmethod
 
-  method emitWord(x)
-    if x < 0
-      x = 0x10000 + x
-    endif
-    print 'dw', hex(x)
-  endmethod
-
-  method emitDword(x)
-    if x < 0
-      x = 0x100000000 + x
-    endif
-    print 'dd', hex(x)
-  endmethod
-
-  method emitQword(x)
-    print 'dq', hex(x)
-  endmethod
-
-  method compileSourceFile(pathAsm)
-    global X64_NOP
-
-    # Compile source.
-    this.parser.parseFile(pathAsm)
-
-    # Patch source for unresolved references.
+  method compile(outputObject, pathAsm)
     parser     = this.parser
-    refs       = parser.getArrayOfRefs()
-    encoder    = this.machineEncoder
-    buffer     = this.buffer
+    tempBuffer = this.tempBuffer
     translator = this.translator
-    peWriter   = this.peWriter
-    newBuffer  = new Buffer()
+    parser     = this.parser
 
+    # Compile source into temporary buffer.
+    tempBuffer.clear()
+    parser.parseFile(pathAsm)
+
+/*
     print ''
     print 'Buffer before patches:'
     for values v in buffer.data
@@ -86,61 +63,74 @@ class X64Compiler
       peWriter.emitByte(v)
     endfor
     print ''
+*/
 
+    # Patch generated code to handle unresolved references
+    # and changed related to various jmp length (rel8 vs rel32).
     # Possible improvement: Avoid memory copy.
     codeSizeDiffTotal = 0
     readPos           = 0
+    refs              = parser.getArrayOfRefs()
 
+    # Check all instructions, which reference to another place.
     for values item in refs
-      buffer.setCurrentPosition(item.offset, 0)
-
+      # Resolve label.
       oldCodeSize = item.codeSize
       labelOffset = parser.resolveLabel(item.label)
-      item.imm    = labelOffset - item.offset - oldCodeSize
-      posBefore   = buffer.getCurrentPosition()
+      posBefore   = item.offset
+      item.imm    = labelOffset - posBefore - oldCodeSize
 
+      print 'Patching... [', item.label, '] to [', item.imm, '] at [', item.offset, ']'
+
+      # Go to next referencing instruction.
+      tempBuffer.setCurrentPosition(posBefore, 0)
+
+      # If there were any moved code before, we must apply this offset
+      # to all following instructions.
       if labelOffset < posBefore
         item.imm = item.imm + codeSizeDiffTotal
       endif
 
-      print 'Patching... [', item.label, '] to [', item.imm, '] at [', item.offset, ']'
-
+      # Translate the same instruction once again, but using updated
+      # label offset.
       translator.processOneItem(item)
 
-      newCodeSize  = buffer.getCurrentPosition() - posBefore
+      # Calculate new instruction size after patch.
+      newCodeSize  = tempBuffer.getCurrentPosition() - posBefore
       codeSizeDiff = item.codeSize - newCodeSize
 
+      # Pass all code from last patched code to current one.
+      # We know there are no any references to patch in the middle.
       for pos in readPos .. item.offset + newCodeSize
-        newBuffer.emitByte(buffer.data[pos])
+        outputObject.emitByte(tempBuffer.data[pos])
       endfor
-      readPos  = item.offset + oldCodeSize
+
+      # Skip current instruction in orginal read buffer i.e.
+      # before patches.
+      readPos = posBefore + oldCodeSize
 
       if codeSizeDiff < 0
+        # Fatal - instruction is longer after patch.
+        # Should never happen on production.
         die('error: code overwrite after patch')
-      else
-        codeSizeDiffTotal = codeSizeDiffTotal + codeSizeDiff
 
-        for idx in 0 .. codeSizeDiff
-          buffer.emitByte(0xff)
-        endfor
+      else
+        # Track total code moves at current offset for further
+        # instructions.
+        codeSizeDiffTotal = codeSizeDiffTotal + codeSizeDiff
       endif
     endfor
 
-    for pos in readPos .. buffer.getSize()
-      newBuffer.emitByte(buffer.data[pos])
+    # Copy code to the final buffer taking into account new
+    # instruction size after patch.
+    # Before: cc cc cc xx xx xx ...
+    # After:  cc cc cc ...
+    # Where xx is bytes, which remain unused after code patch applied.
+    for pos in readPos .. tempBuffer.getSize()
+      outputObject.emitByte(tempBuffer.data[pos])
     endfor
 
-    peWriter.create(pathAsm + '.exe')
-
-    print ''
-    print 'Buffer after patches:'
-    for values v in newBuffer.data
-      __mold_printToStdOutput(hex(v))
-      __mold_printToStdOutput(' ')
-      peWriter.emitByte(v)
-    endfor
-    print ''
-
-    peWriter.close()
+    # Clean up temporary buffer.
+    tempBuffer.clear()
   endmethod
 endclass
