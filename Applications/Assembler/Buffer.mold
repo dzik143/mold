@@ -39,16 +39,25 @@ class Buffer
   endmethod
 
   method emitWord(x)
+    # TODO: Clean up this mess.
+    if x < 0
+      x = 0x10000 + x
+    endif
     this.emitByte(x)
     this.emitByte(x // 0x100)
   endmethod
 
   method emitDword(x)
+    # TODO: Clean up this mess.
+    if x < 0
+      x = 0x100000000 + x
+    endif
     this.emitWord(x)
     this.emitWord(x // 0x10000)
   endmethod
 
   method emitQword(x)
+    # TODO: Fix negative numbers.
     this.emitDword(x)
     this.emitDword(x // 0x100000000)
   endmethod

@@ -24,7 +24,7 @@ class PEWriter
   method constructor()
     this.path             = ''
     this.f                = -1
-    this.imageBase        = 0x400000 # 0x400000
+    this.imageBase        = 0x400000
     this.ofs              = 0        # current position in file
     this.numberOfSections = 1
   endmethod
@@ -168,13 +168,6 @@ class PEWriter
     for idx in 0 .. 144
       this.emitByte(0)
     endfor
-
-#    this.emitByte(195) # RET
-#
-#    for idx in 0 .. 511
-#      this.emitByte(0)
-#    endfor
-
   endmethod
 
   method close()

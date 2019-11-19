@@ -1,0 +1,48 @@
+arrayOfLabels = [
+  {'type': 'label', 'offset': 10},
+  {'type': 'label', 'offset': 30},
+  {'type': 'label', 'offset': 50},
+  {'type': 'label', 'offset': 70} 
+]
+
+arrayOfLabelAndRefs = [
+  arrayOfLabels[0],
+  {'type': 'instruction', 'offset': 20, 'label': arrayOfLabels[0]},
+  {'type': 'instruction', 'offset': 20, 'label': arrayOfLabels[1]},
+  {'type': 'instruction', 'offset': 20, 'label': arrayOfLabels[2]},
+  {'type': 'instruction', 'offset': 20, 'label': arrayOfLabels[3]},
+  arrayOfLabels[1],  
+  {'type': 'instruction', 'offset': 40, 'label': arrayOfLabels[0]},
+  {'type': 'instruction', 'offset': 40, 'label': arrayOfLabels[1]},
+  {'type': 'instruction', 'offset': 40, 'label': arrayOfLabels[2]},
+  {'type': 'instruction', 'offset': 40, 'label': arrayOfLabels[3]},
+  arrayOfLabels[2],  
+  {'type': 'instruction', 'offset': 60, 'label': arrayOfLabels[0]},
+  {'type': 'instruction', 'offset': 60, 'label': arrayOfLabels[1]},
+  {'type': 'instruction', 'offset': 60, 'label': arrayOfLabels[2]},
+  {'type': 'instruction', 'offset': 60, 'label': arrayOfLabels[3]},
+  arrayOfLabels[3]
+]
+
+function onePass(arrayOfLabelAndRefs, changedOffset)
+  totalSizeDiff = 0
+  for values item in arrayOfLabelAndRefs
+    if item.offset is changedOffset
+      totalSizeDiff = totalSizeDiff - 3
+    endif
+  
+    item.offset = item.offset + totalSizeDiff
+
+    if item.type is 'instruction'
+      item.imm = item.label.offset - item.offset
+    endif
+  endfor
+endfunction
+
+onePass(arrayOfLabelAndRefs, 50)
+onePass(arrayOfLabelAndRefs, -1)
+onePass(arrayOfLabelAndRefs, -1)
+
+for values item in arrayOfLabelAndRefs
+  print item
+endfor

@@ -143,6 +143,15 @@ X64_OPCODES_JUMPS = {
   'jmp':  X64_JMP_REL32
 }
 
+X64_OPCODES_1BYTE_JUMPS_REL8 = {
+  'loop':   X64_LOOP_REL8,
+  'loopz':  X64_LOOPZ_REL8,
+  'loopnz': X64_LOOPNZ_REL8,
+  'loope':  X64_LOOPZ_REL8,
+  'loopne': X64_LOOPNZ_REL8,
+  'jrcxz':  X64_JRCXZ_REL8
+}
+
 class X64Translator extends PipeAbstract
   method emitCore_x_y(opcode, item)
     emiter   = this.outputObject
@@ -194,6 +203,7 @@ class X64Translator extends PipeAbstract
     global X64_OPCODES_MAP_UNARY_GROUP
     global X64_TEST_RM8_R8
     global X64_OPCODES_JUMPS
+    global X64_OPCODES_1BYTE_JUMPS_REL8
 
     #print item
 
@@ -215,15 +225,6 @@ class X64Translator extends PipeAbstract
       disp     = item.disp
       scale    = item.scale
       imm      = item.imm
-
-      #instructionSize = 1
-      #regGroupId      = reg // 16
-
-      #if (regGroupId is 2) or (regGroupId is 4)
-        # 16-bit or 64-bit operand.
-        # Extra prefix is needed.
-      #  instructionSize = instructionSize + 1
-      #endif
 
       #print ';', item #'[', mnemonic, item.reg, item.rm, item.imm, ']'
 
@@ -279,10 +280,13 @@ class X64Translator extends PipeAbstract
         encoder.xchg_r_r(reg, rm)
 
       elif mnemonic is 'call'
-        encoder.call_rel(imm)
+        encoder.call_rel(imm - item.offset)
 
       elif mnemonic is 'jmp'
-        encoder.jmp_rel(imm)
+        encoder.jmp_rel(imm - item.offset)
+
+      elif mnemonic is 'jecxz'
+        encoder.jecxz_rel(imm - item.offset)
 
       elif mnemonic is 'ret'
         if imm is defined
@@ -328,8 +332,17 @@ class X64Translator extends PipeAbstract
             opcode = X64_OPCODES_JUMPS[mnemonic]
 
             if opcode is defined
-              # jxx rel8
-              encoder.emitCore_jump_rel8(opcode, imm)
+              # jxx rel8/32
+              encoder.emitCore_jxx_rel(opcode, imm - item.offset)
+
+            else
+              opcode = X64_OPCODES_1BYTE_JUMPS_REL8[mnemonic]
+
+              if opcode is defined
+                # One byte jump with rel8 always.
+                # loopz rel8 like.
+                encoder.emitCore_jmp_rel8(opcode, imm - item.offset - 2)
+              endif
             endif
           endif
         endif

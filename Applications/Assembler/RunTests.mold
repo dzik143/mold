@@ -21,6 +21,7 @@
 import 'X64Compiler.mold'
 
 arrayOfTests = [
+/*
   'core/add_r_r',
   'core/or_r_r',
   'core/adc_r_r',
@@ -74,6 +75,8 @@ arrayOfTests = [
   'core/xchg_r_r',
   'core/xchg_r_m',
   'core/xchg_m_r'
+*/
+  'core/common_jumps'
 ]
 
 class X64Tester

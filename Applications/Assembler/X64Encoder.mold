@@ -954,26 +954,44 @@ class X64Encoder
   # Unconditional jumps.
   #
 
-  method emitCore_jump_rel8(opcode, rel)
+  method emitCore_jmp_rel8(opcode, rel)
     this.emitByte(opcode)
     this.emitByte(rel)
   endmethod
 
-  method emitCore_jump_rel32(opcode, rel)
+  method emitCore_jmp_rel32(opcode, rel)
     this.emitByte(opcode)
     this.emitDword(rel)
+  endmethod
+
+  method emitCore_jxx_rel(opcode, rel)
+    # TODO: Review it.
+    if (rel >= -126) and (rel <= 128)
+      # jxx rel8
+      this.emitByte(opcode)
+      this.emitByte(rel - 2)
+
+    else
+      # jxx rel32
+      # 0f 8x = two bytes jxx jump
+      # TODO: Avoid hardcoded opcode.
+      this.emitByte(0x0f)
+      this.emitByte(opcode + 0x10)
+      this.emitDword(rel - 6)
+    endif
   endmethod
 
   method jmp_rel(rel)
     global X64_JMP_REL8
     global X64_JMP_REL32
 
-    if (rel >= -127) and (rel <= 128)
+    # TODO: Review it.
+    if (rel >= -126) and (rel <= 128 + 5)
       # jmp rel8
-      this.emitCore_jump_rel8(X64_JMP_REL8, rel)
+      this.emitCore_jmp_rel8(X64_JMP_REL8, rel - 2)
     else
       # jmp rel32
-      this.emitCore_jump_rel32(X64_JMP_REL32, rel)
+      this.emitCore_jmp_rel32(X64_JMP_REL32, rel - 5)
     endif
   endmethod
 
@@ -983,108 +1001,108 @@ class X64Encoder
 
   method jo_rel(rel)
     global X64_JO
-    this.emitCore_jump_rel8(X64_JO, rel)
+    this.emitCore_jxx_rel(X64_JO, rel)
   endmethod
 
   method jno_rel(rel)
     global X64_JNO
-    this.emitCore_jump_rel8(X64_JNO, rel)
+    this.emitCore_jxx_rel(X64_JNO, rel)
   endmethod
 
   method jb_rel(rel)
     global X64_JB
-    this.emitCore_jump_rel8(X64_JB, rel)
+    this.emitCore_jxx_rel(X64_JB, rel)
   endmethod
 
   method jae_rel(rel)
     global X64_JAE
-    this.emitCore_jump_rel8(X64_JAE, rel)
+    this.emitCore_jxx_rel(X64_JAE, rel)
   endmethod
 
   method jz_rel(rel)
     global X64_JZ
-    this.emitCore_jump_rel8(X64_JZ, rel)
+    this.emitCore_jxx_rel(X64_JZ, rel)
   endmethod
 
   method jnz_rel(rel)
     global X64_JNZ
-    this.emitCore_jump_rel8(X64_JNZ, rel)
+    this.emitCore_jxx_rel(X64_JNZ, rel)
   endmethod
 
   method jbe_rel(rel)
     global X64_JBE
-    this.emitCore_jump_rel8(X64_JBE, rel)
+    this.emitCore_jxx_rel(X64_JBE, rel)
   endmethod
 
   method ja_rel(rel)
     global X64_JA
-    this.emitCore_jump_rel8(X64_JA, rel)
+    this.emitCore_jxx_rel(X64_JA, rel)
   endmethod
 
   method js_rel(rel)
     global X64_JS
-    this.emitCore_jump_rel8(X64_JS, rel)
+    this.emitCore_jxx_rel(X64_JS, rel)
   endmethod
 
   method jns_rel(rel)
     global X64_JNS
-    this.emitCore_jump_rel8(X64_JNS, rel)
+    this.emitCore_jxx_rel(X64_JNS, rel)
   endmethod
 
   method jp_rel(rel)
     global X64_JP
-    this.emitCore_jump_rel8(X64_JP, rel)
+    this.emitCore_jxx_rel(X64_JP, rel)
   endmethod
 
   method jnp_rel(rel)
     global X64_JNP
-    this.emitCore_jump_rel8(X64_JNP, rel)
+    this.emitCore_jxx_rel(X64_JNP, rel)
   endmethod
 
   method jl_rel(rel)
     global X64_JL
-    this.emitCore_jump_rel8(X64_JL, rel)
+    this.emitCore_jxx_rel(X64_JL, rel)
   endmethod
 
   method jge_rel(rel)
     global X64_JGE
-    this.emitCore_jump_rel8(X64_JGE, rel)
+    this.emitCore_jxx_rel(X64_JGE, rel)
   endmethod
 
   method jle_rel(rel)
     global X64_JLE
-    this.emitCore_jump_rel8(X64_JLE, rel)
+    this.emitCore_jxx_rel(X64_JLE, rel)
   endmethod
 
   method jg_rel(rel)
     global X64_JG
-    this.emitCore_jump_rel8(X64_JG, rel)
+    this.emitCore_jxx_rel(X64_JG, rel)
   endmethod
 
   method loopz_rel(rel)
     global X64_LOOPZ_REL8
-    this.emitCore_jump_rel8(X64_LOOPZ_REL8, rel)
+    this.emitCore_jmp_rel8(X64_LOOPZ_REL8, rel - 2)
   endmethod
 
   method loopnz_rel(rel)
     global X64_LOOPNZ_REL8
-    this.emitCore_jump_rel8(X64_LOOPNZ_REL8, rel)
+    this.emitCore_jmp_rel8(X64_LOOPNZ_REL8, rel - 2)
   endmethod
 
   method loop_rel(rel)
     global X64_LOOP_REL8
-    this.emitCore_jump_rel8(X64_LOOP_REL8, rel)
+    this.emitCore_jmp_rel8(X64_LOOP_REL8, rel - 2)
   endmethod
 
   method jecxz_rel(rel)
     global X64_JRCXZ_REL8
     this.emitByte(0x67)
-    this.emitCore_jump_rel8(X64_JRCXZ_REL8, rel)
+    this.emitCore_jmp_rel8(X64_JRCXZ_REL8, rel - 3)
   endmethod
 
   method jrcxz_rel(rel)
     global X64_JRCXZ_REL8
-    this.emitCore_jump_rel8(X64_JRCXZ_REL8, rel)
+    this.emitCore_jmp_rel8(X64_JRCXZ_REL8, rel - 2)
   endmethod
 
   #
@@ -1093,7 +1111,7 @@ class X64Encoder
 
   method call_rel(rel)
     global X64_CALL_REL32
-    this.emitCore_jump_rel32(X64_CALL_REL32, rel)
+    this.emitCore_jmp_rel32(X64_CALL_REL32, rel)
   endmethod
 
   method call_r(reg)

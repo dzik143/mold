@@ -22,7 +22,7 @@ import 'X64.mold'
 import 'AbstractDescentParser.mold'
 import '../../Libs/BitwiseHack.mold'
 
-PARSER_X64_DATA_SIZE_MAP = {
+PARSER_X64_ADDRESS_SIZE_MAP = {
   'byte': 1,
   'word': 2,
   'dword': 4,
@@ -39,26 +39,44 @@ PARSER_X64_DEFINE_DATA_MAP = {
 class X64Parser extends AbstractDescentParser
   method constructor()
     super()
-    this.labelsMap    = {}
-    this.constantsMap = {}
-    this.arrayOfRefs  = []
+    this.labelsMap            = {}
+    this.constantsMap         = {}
+    this.arrayOfLabelsAndRefs = []
   endmethod
 
   method _emitLabel(name)
-    offset = this.outputObject.getCurrentPosition()
-    this.labelsMap[name] = offset
-    print 'Collected label [', name, '] at [', offset, ']'
+    offset   = this.outputObject.getCurrentPosition()
+    labelObj = this.labelsMap[name]
+
+    if labelObj is undefined
+      labelObj = {
+        'type': 'label',
+        'name': name
+      }
+      this.labelsMap[name] = labelObj
+    endif
+
+    labelObj.offset = offset
+    this.arrayOfLabelsAndRefs[len(this.arrayOfLabelsAndRefs)] = labelObj
+    print 'Emited label [', name, '] at [', offset, ']'
   endmethod
 
   method _getToken() -> rv
     this._skipWhites()
 
-    # TODO: Crash without concatenation.
-    rv = '' + this._matchLetterOrDigit()
+    if (this.lookupBuffer is ',') or (this.lookupBuffer is '-')
+      rv = this._getChar()
 
-    while this._isLetterOrDigit(this.lookupBuffer) is true
-      rv = rv + this._getChar()
-    endwhile
+    else
+      # TODO: Crash without concatenation.
+      rv = '' + this._matchLetterOrDigit()
+
+      while (this._isLetterOrDigit(this.lookupBuffer) is true) or (this.lookupBuffer is '_')
+        rv = rv + this._getChar()
+      endwhile
+    endif
+
+    #print 'pop token [', rv, ']'
 
     this._skipWhites()
   endmethod
@@ -170,23 +188,20 @@ class X64Parser extends AbstractDescentParser
   endmethod
 
   method _matchOperand(instruction)
-    global PARSER_X64_DATA_SIZE_MAP
+    global PARSER_X64_ADDRESS_SIZE_MAP
 
-    # TODO: Handle float numbers.
-    rv = {}
-
-    token = this._getToken()
-
-    if this._isDigit(token[0]) is true
+    if (this.lookupBuffer is '-') or (this._isDigit(this.lookupBuffer))
       # Immediate value.
-      instruction.imm = parseInteger(token)
+      # TODO: Handle float numbers.
+      instruction.imm = this._matchNumber()
 
     else
-      dataSize = PARSER_X64_DATA_SIZE_MAP[token]
+      token       = this._getToken()
+      addressSize = PARSER_X64_ADDRESS_SIZE_MAP[token]
 
-      if dataSize is defined
+      if addressSize is defined
         # Memory access.
-        instruction.dataSize = dataSize
+        instruction.dataSize = addressSize
         this._matchMemory(instruction)
 
       else
@@ -205,21 +220,23 @@ class X64Parser extends AbstractDescentParser
         else
           # Neither immediate nor register.
           # Treat as label.
-          labelOffset = this.labelsMap[token]
-          this.arrayOfRefs[len(this.arrayOfRefs)] = instruction
-          instruction.label = token
+          # TODO: Optimize it.
+          labelObj = this.labelsMap[token]
 
-          if labelOffset is defined
-            # Token recognized as label.
-            # Change to immediate.
-            instruction.imm = labelOffset
-
-          else
-            # Give up, treat as unresolved symbol and wait for
-            # further content.
-            print 'unresolved reference [', token, '] at [', this.outputObject.getCurrentPosition(), ']'
-            instruction.imm = 0xdeadbeef
+          if labelObj is undefined
+            labelObj = {
+              'type': 'label',
+              'name': token,
+              'offset': -1
+            }
+            this.labelsMap[token] = labelObj
           endif
+
+          print 'reference [', token, '] at [', this.outputObject.getCurrentPosition(), ']'
+          instruction.imm            = 0xefbeadde
+          instruction.labelObj       = labelObj
+          instruction.originalOffset = instruction.offset
+          this.arrayOfLabelsAndRefs[len(this.arrayOfLabelsAndRefs)] = instruction
         endif
       endif
     endif
@@ -262,6 +279,11 @@ class X64Parser extends AbstractDescentParser
       'offset': this.outputObject.getCurrentPosition()
     }
 
+    # TODO: Clean up this mess.
+    #if mnemonic[0] is 'j'
+    #  this.jmpsCnt = this.jmpsCnt + 1
+    #endif
+
     this._parseFirstOperand(newItem)
     this._parseSecondOperand(newItem)
     this._emitOneItem(newItem)
@@ -273,41 +295,64 @@ class X64Parser extends AbstractDescentParser
     c = this.lookupBuffer
     if c is ';'
       this._getChar()
-      #comment = ''
-      #c       = ''
       # Eat all input until end of line.
       while this._isEndOfLine(c) is false
-        #comment = comment + c
         c = this._getChar()
       endwhile
-
-      #print '[COMMENT:', comment, ']'
     endif
   endmethod
 
   method _matchNumber() -> rv
+    this._skipWhites()
+
+    if this.lookupBuffer is '-'
+      this._getChar()
+      sign = -1
+    else
+      sign = 1
+    endif
+
     token = this._getToken()
     if this._isDigit(token[0]) is false
       this._error('number expected')
     endif
-    rv = parseInteger(token)
+    rv = sign * parseInteger(token)
   endmethod
 
   method _matchData(size)
     goOn = true
     # TODO: Don't send data byte-by-byte.
     while goOn is true
-      this._emitOneItem({
-        'type': 'data',
-        'dataSize': size,
-        'value': this._matchNumber()
-      })
+      value = this._matchNumber()
+      cnt   = 1
 
       if this.lookupBuffer is ','
         this._matchChar(',')
+
+      elif this.lookupBuffer is 'd'
+        token = this._getToken()
+
+        if token is 'dup'
+          cnt  = value
+          value = this._matchNumber()
+        endif
+
+        if this.lookupBuffer is ','
+          this._matchChar(',')
+        else
+          goOn = false
+        endif
       else
         goOn = false
       endif
+
+      for idx in 0 .. cnt
+        this._emitOneItem({
+          'type': 'data',
+          'dataSize': size,
+          'value': value
+        })
+      endfor
     endwhile
 
     this._skipWhites()
@@ -355,21 +400,9 @@ class X64Parser extends AbstractDescentParser
     while ord(this.lookupBuffer) isnt 0
       this._parseLine()
     endwhile
-
-    #print 'REFERENCES:'
-    #for values item in this.arrayOfRefs
-    #  print item
-    #endfor
   endmethod
 
-  method getArrayOfRefs() -> rv
-    rv = this.arrayOfRefs
-  endmethod
-
-  method resolveLabel(name) -> rv
-    rv = this.labelsMap[name]
-    if rv is undefined
-      die("unresolved reference: '" + name + "'")
-    endif
+  method getArrayOfLabelsAndRefs() -> rv
+    rv = this.arrayOfLabelsAndRefs
   endmethod
 endclass

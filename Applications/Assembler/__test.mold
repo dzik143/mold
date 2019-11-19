@@ -27,6 +27,14 @@ if argc isnt 2
   exit()
 endif
 
-path     = '1.asm' #argv[1]
+class Printer
+  method emitByte(x)
+    __mold_printToStdOutput(hex(x) + ' ')
+  endmethod
+endclass
+
+printer = new Printer()
+
+path     = '1.asm'
 compiler = new X64Compiler()
-compiler.compileToFile(path + '.exe', path)
+compiler.compile(printer, path)

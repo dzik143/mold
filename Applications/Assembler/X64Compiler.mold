@@ -66,66 +66,70 @@ class X64Compiler
 */
 
     # Patch generated code to handle unresolved references
-    # and changed related to various jmp length (rel8 vs rel32).
-    # Possible improvement: Avoid memory copy.
-    codeSizeDiffTotal = 0
-    readPos           = 0
-    refs              = parser.getArrayOfRefs()
+    # and changes related to various jmp length (rel8 vs rel32).
+    codeSizeDiffTotal = -1
+    refs              = parser.getArrayOfLabelsAndRefs()
+    passIdx           = 1
 
-    # Check all instructions, which reference to another place.
+    # TODO: Clean up this mess.
     for values item in refs
-      # Resolve label.
-      oldCodeSize = item.codeSize
-      labelOffset = parser.resolveLabel(item.label)
-      posBefore   = item.offset
-      item.imm    = labelOffset - posBefore - oldCodeSize
+      item.originalCodeSize = item.codeSize
+    endfor
 
-      print 'Patching... [', item.label, '] to [', item.imm, '] at [', item.offset, ']'
+    while codeSizeDiffTotal isnt 0
+      #print 'pass', passIdx
 
-      # Go to next referencing instruction.
-      tempBuffer.setCurrentPosition(posBefore, 0)
+      codeSizeDiffTotal = 0
+      readOffsets       = [0]
+      readSizes         = []
+      lastReadOffset    = 0
 
-      # If there were any moved code before, we must apply this offset
-      # to all following instructions.
-      if labelOffset < posBefore
-        item.imm = item.imm + codeSizeDiffTotal
-      endif
+      for values item in refs
+        item.offset = item.offset + codeSizeDiffTotal
 
-      # Translate the same instruction once again, but using updated
-      # label offset.
-      translator.processOneItem(item)
+        if item.type is 'instruction'
+          codeSizeBefore = item.codeSize
+          item.imm       = item.labelObj.offset
 
-      # Calculate new instruction size after patch.
-      newCodeSize  = tempBuffer.getCurrentPosition() - posBefore
-      codeSizeDiff = item.codeSize - newCodeSize
+          # Go to current referencing instruction.
+          tempBuffer.setCurrentPosition(item.originalOffset, 0)
 
-      # Pass all code from last patched code to current one.
-      # We know there are no any references to patch in the middle.
-      for pos in readPos .. item.offset + newCodeSize
-        outputObject.emitByte(tempBuffer.data[pos])
+          # Translate the same instruction once again, but using updated
+          # label offset.
+          translator.processOneItem(item)
+
+          codeSizeAfter     = tempBuffer.getCurrentPosition() - item.originalOffset
+          codeSizeDiff      = codeSizeAfter - codeSizeBefore
+          codeSizeDiffTotal = codeSizeDiffTotal + codeSizeDiff
+
+          if codeSizeDiff > 0
+            # Fatal - instruction is longer after patch.
+            # Should never happen on production.
+            die('error: code overwrite after patch')
+
+          elif codeSizeDiff < 0
+            item.codeSize = codeSizeAfter
+          endif
+        endif
       endfor
 
-      # Skip current instruction in orginal read buffer i.e.
-      # before patches.
-      readPos = posBefore + oldCodeSize
+      passIdx = passIdx + 1
+    endwhile
 
-      if codeSizeDiff < 0
-        # Fatal - instruction is longer after patch.
-        # Should never happen on production.
-        die('error: code overwrite after patch')
-
-      else
-        # Track total code moves at current offset for further
-        # instructions.
-        codeSizeDiffTotal = codeSizeDiffTotal + codeSizeDiff
+    # Emit final code taking into account new instruction sizes after patch.
+    # We skip cutted out bytes if some instructions are shorter after patch.
+    # Example (jmp): eb ii ii ii ii => e9 ii
+    # TODO: Optimize it.
+    readPos = 0
+    for values item in refs
+      if item.type is 'instruction'
+        for pos in readPos .. item.originalOffset + item.codeSize
+          outputObject.emitByte(tempBuffer.data[pos])
+        endfor
+        readPos = item.originalOffset + item.originalCodeSize
       endif
     endfor
 
-    # Copy code to the final buffer taking into account new
-    # instruction size after patch.
-    # Before: cc cc cc xx xx xx ...
-    # After:  cc cc cc ...
-    # Where xx is bytes, which remain unused after code patch applied.
     for pos in readPos .. tempBuffer.getSize()
       outputObject.emitByte(tempBuffer.data[pos])
     endfor
