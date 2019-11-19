@@ -793,6 +793,53 @@ class X64Encoder
   #        outsb, outsw, outsd, outsq.
   #
 
+  method emitCore_inOut(opcode, regData, portNumber)
+    global X64_AL, X64_AX, X64_EAX
+    global X64_DX
+
+    if regData is X64_AL
+      this.emitByte(opcode)
+
+    elif regData is X64_AX
+      this.emitPrefix16()
+      this.emitByte(opcode + 1)
+
+    elif regData is X64_EAX
+      this.emitByte(opcode + 1)
+
+    else
+      die('error: only al, ax or eax can be used with in/out opcodes')
+    endif
+
+    if portNumber >= 0
+      # Emit port number as 8-bit immediate.
+      this.emitByte(portNumber)
+
+    elif portNumber isnt -X64_DX
+      die('error: port must be imm8 or dx register for in/out opcodes')
+    endif
+  endmethod
+
+  method in_r_imm(regDst, imm)
+    global X64_IN_AL_IMM8
+    this.emitCore_inOut(X64_IN_AL_IMM8, regDst, imm)
+  endmethod
+
+  method out_imm_r(imm, regSrc)
+    global X64_OUT_IMM8_AL
+    this.emitCore_inOut(X64_OUT_IMM8_AL, regSrc, imm)
+  endmethod
+
+  method in_r_r(regDst, regDX)
+    global X64_IN_AL_DX
+    this.emitCore_inOut(X64_IN_AL_DX, regDst, -regDX)
+  endmethod
+
+  method out_r_r(regDX, regSrc)
+    global X64_OUT_DX_AL
+    this.emitCore_inOut(X64_OUT_DX_AL, regSrc, -regDX)
+  endmethod
+
   method insb()
     global X64_INSB
     this.emitByte(X64_INSB)
@@ -808,11 +855,6 @@ class X64Encoder
     this.emitByte(X64_INSD)
   endmethod
 
-  method insq()
-    this.emitPrefix64()
-    this.insd()
-  endmethod
-
   method outsb()
     global X64_OUTSB
     this.emitByte(X64_OUTSB)
@@ -826,11 +868,6 @@ class X64Encoder
   method outsd()
     global X64_OUTSD
     this.emitByte(X64_OUTSD)
-  endmethod
-
-  method outsq()
-    this.emitPrefix64()
-    this.outsd()
   endmethod
 
   # Strings: movsb, movsw, movsd, movsq,

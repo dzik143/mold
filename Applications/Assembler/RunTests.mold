@@ -26,6 +26,7 @@ arrayOfTests = [
   'core/common_jumps',
   'core/common_no_operands',
   'core/common_proc',
+  'core/common_ports',
   'core/adc_m_imm',
   'core/adc_m_r',
   'core/adc_r_imm',
@@ -56,6 +57,8 @@ arrayOfTests = [
   'core/mov_r_m',
   'core/mov_r_r',
   'core/mul_r',
+  'core/movsxd_r64_r32',
+  'core/movsxd_r64_m32',
   'core/neg_r',
   'core/not_r',
   'core/or_m_imm',
@@ -90,8 +93,6 @@ arrayOfTests = [
   'core/xor_r_r',
   'core/lea_r_m'
 */
-  'core/movsxd_r64_r32',
-  'core/movsxd_r64_m32'
 ]
 
 class X64Tester

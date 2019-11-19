@@ -72,6 +72,14 @@ X64_OPCODES_MAP0 = {
   'scasd': X64_SCASD,
   'scasq': X64_SCASD * 256 + X64_PREFIX_REX_W,
 
+  'insb' : X64_INSB,
+  'insw' : X64_INSD * 256 + X64_PREFIX_OPERAND_SIZE,
+  'insd' : X64_INSD,
+
+  'outsb': X64_OUTSB,
+  'outsw': X64_OUTSD * 256 + X64_PREFIX_OPERAND_SIZE,
+  'outsd': X64_OUTSD,
+
   'rep':   X64_PREFIX_REPE,
   'repe':  X64_PREFIX_REPE,
   'repz':  X64_PREFIX_REPE,
@@ -195,10 +203,6 @@ class X64Translator extends PipeAbstract
     endif
   endmethod
 
-  method calculateInstructionSize(item)
-
-  endmethod
-
   method processOneItem(item)
     global X64_OPCODES_MAP0
     global X64_OPCODES_MAP_CORE_ALU2
@@ -313,6 +317,20 @@ class X64Translator extends PipeAbstract
           encoder.movsxd_r64_m32(reg, regBase, scale, regIndex, disp)
         endif
 
+      elif mnemonic is 'out'
+        if imm is defined
+          encoder.out_imm_r(imm, reg)
+        else
+          encoder.out_r_r(reg, rm)
+        endif
+
+      elif mnemonic is 'in'
+        if imm is defined
+          encoder.in_r_imm(reg, imm)
+        else
+          encoder.in_r_r(reg, rm)
+        endif
+
       else
         opcode = X64_OPCODES_MAP_CORE_ALU2[mnemonic]
 
@@ -360,6 +378,12 @@ class X64Translator extends PipeAbstract
                 # One byte jump with rel8 always.
                 # loopz rel8 like.
                 encoder.emitCore_jmp_rel8(opcode, imm - item.offset - 2)
+
+              elif mnemonic is 'use64'
+                # Nothing to do.
+
+              else
+                die("error: invalid instruction: '" + mnemonic + "'")
               endif
             endif
           endif
