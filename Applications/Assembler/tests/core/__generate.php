@@ -45,3 +45,7 @@
   createTests(['xchg'], 'r_r');
   createTests(['xchg'], 'r_m');
   createTests(['xchg'], 'm_r');
+  
+  // lea r, m16/32/64
+  // createTests(['lea'], 'r_m');
+  

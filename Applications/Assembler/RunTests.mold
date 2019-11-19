@@ -87,9 +87,11 @@ arrayOfTests = [
   'core/xor_m_r',
   'core/xor_r_imm',
   'core/xor_r_m',
-  'core/xor_r_r'
-*/
+  'core/xor_r_r',
   'core/lea_r_m'
+*/
+  'core/movsxd_r64_r32',
+  'core/movsxd_r64_m32'
 ]
 
 class X64Tester

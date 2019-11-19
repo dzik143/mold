@@ -304,6 +304,15 @@ class X64Translator extends PipeAbstract
         # Handle two immediates at one opcode.
         die('not implemented: leave imm16, imm8')
 
+      elif mnemonic is 'movsxd'
+        if (reg isnt -1) and (rm isnt -1)
+          # movsxd r64, r32
+          encoder.movsxd_r64_r32(reg, rm)
+        else
+          # movsxd r64, m32
+          encoder.movsxd_r64_m32(reg, regBase, scale, regIndex, disp)
+        endif
+
       else
         opcode = X64_OPCODES_MAP_CORE_ALU2[mnemonic]
 

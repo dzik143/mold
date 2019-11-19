@@ -1243,14 +1243,14 @@ class X64Encoder
   endmethod
 
   # Conversion: cbw, cwd, cdq, movsxd
-  method movsxd_r_r(regDst, regSrc)
+  method movsxd_r64_r32(regDst, regSrc)
     global X64_MOVSXD_R32_RM32
-    this.emitCore_r_r(X64_MOVSXD_R32_RM32, regDst, regSrc)
+    this.emitCore_r_r(X64_MOVSXD_R32_RM32, regSrc, regDst)
   endmethod
 
-  method movsxd_r_m(regDst, regBase, scale, regIndex, disp)
+  method movsxd_r64_m32(regDst, regBase, scale, regIndex, disp)
     global X64_MOVSXD_R32_RM32
-    this.emitCore_r_m(X64_MOVSXD_R32_RM32, regBase, scale, regIndex, disp)
+    this.emitCore_r_m(X64_MOVSXD_R32_RM32, regDst, regBase, scale, regIndex, disp)
   endmethod
 
   method cwde()
