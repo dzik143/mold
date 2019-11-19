@@ -1111,7 +1111,7 @@ class X64Encoder
 
   method call_rel(rel)
     global X64_CALL_REL32
-    this.emitCore_jmp_rel32(X64_CALL_REL32, rel)
+    this.emitCore_jmp_rel32(X64_CALL_REL32, rel - 5)
   endmethod
 
   method call_r(reg)
@@ -1127,10 +1127,10 @@ class X64Encoder
     this.emitByte(X64_RET)
   endmethod
 
-  method ret_imm8(imm)
-    global X64_RET_IMM8
-    this.emitByte(X64_RET_IMM8)
-    this.emitByte(imm)
+  method ret_imm(imm)
+    global X64_RET_IMM16
+    this.emitByte(X64_RET_IMM16)
+    this.emitWord(imm)
   endmethod
 
   method enter_imm16_imm8(disp, level)
@@ -1336,7 +1336,7 @@ class X64Encoder
 
   method lea_r_m(regDst, regBase, scale, regIndex, disp)
     global X64_LEA_R32_M64
-    this.emitCore_r_m(regDst, regBase, scale, regIndex, disp)
+    this.emitCore_m_r(X64_LEA_R32_M64, regBase, scale, regIndex, disp, regDst)
   endmethod
 
   #

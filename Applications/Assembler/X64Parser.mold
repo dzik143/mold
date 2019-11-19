@@ -39,6 +39,10 @@ PARSER_X64_DEFINE_DATA_MAP = {
 class X64Parser extends AbstractDescentParser
   method constructor()
     super()
+    this.reset()
+  endmethod
+
+  method reset()
     this.labelsMap            = {}
     this.constantsMap         = {}
     this.arrayOfLabelsAndRefs = []
@@ -58,7 +62,7 @@ class X64Parser extends AbstractDescentParser
 
     labelObj.offset = offset
     this.arrayOfLabelsAndRefs[len(this.arrayOfLabelsAndRefs)] = labelObj
-    print 'Emited label [', name, '] at [', offset, ']'
+    #print 'Emited label [', name, '] at [', offset, ']'
   endmethod
 
   method _getToken() -> rv
@@ -190,6 +194,8 @@ class X64Parser extends AbstractDescentParser
   method _matchOperand(instruction)
     global PARSER_X64_ADDRESS_SIZE_MAP
 
+    this._skipWhites()
+
     if (this.lookupBuffer is '-') or (this._isDigit(this.lookupBuffer))
       # Immediate value.
       # TODO: Handle float numbers.
@@ -232,7 +238,7 @@ class X64Parser extends AbstractDescentParser
             this.labelsMap[token] = labelObj
           endif
 
-          print 'reference [', token, '] at [', this.outputObject.getCurrentPosition(), ']'
+          #print 'reference [', token, '] at [', this.outputObject.getCurrentPosition(), ']'
           instruction.imm            = 0xefbeadde
           instruction.labelObj       = labelObj
           instruction.originalOffset = instruction.offset
@@ -240,6 +246,8 @@ class X64Parser extends AbstractDescentParser
         endif
       endif
     endif
+
+    this._skipWhites()
   endmethod
 
   method _matchEndOfLine()
@@ -397,6 +405,7 @@ class X64Parser extends AbstractDescentParser
   endmethod
 
   method _parseSource()
+    this.reset()
     while ord(this.lookupBuffer) isnt 0
       this._parseLine()
     endwhile

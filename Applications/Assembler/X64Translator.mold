@@ -94,7 +94,9 @@ X64_OPCODES_MAP0 = {
 
   'popf':   X64_POPF,
   'popfw':  X64_POPF  * 256 + X64_PREFIX_OPERAND_SIZE,
-  'popfq':  X64_POPF
+  'popfq':  X64_POPF,
+
+  'leave': X64_LEAVE
 }
 
 X64_OPCODES_MAP_CORE_ALU2 = {
@@ -226,7 +228,7 @@ class X64Translator extends PipeAbstract
       scale    = item.scale
       imm      = item.imm
 
-      #print ';', item #'[', mnemonic, item.reg, item.rm, item.imm, ']'
+      #print item #'[', mnemonic, item.reg, item.rm, item.imm, ']'
 
       if opcode is defined
         # Recognized no-operands opcode.
@@ -245,6 +247,9 @@ class X64Translator extends PipeAbstract
           # mov m, imm
           encoder.mov_m_imm(regBase, scale, regIndex, disp, imm, item.dataSize)
         endif
+
+      elif mnemonic is 'lea'
+        encoder.lea_r_m(reg, regBase, scale, regIndex, disp)
 
       elif (imm is defined) and (mnemonic is 'test')
         if reg isnt -1
@@ -290,10 +295,14 @@ class X64Translator extends PipeAbstract
 
       elif mnemonic is 'ret'
         if imm is defined
-          encoder.ret_imm8(imm)
+          encoder.ret_imm(imm)
         else
           encoder.ret()
         endif
+
+      elif mnemonic is 'leave'
+        # Handle two immediates at one opcode.
+        die('not implemented: leave imm16, imm8')
 
       else
         opcode = X64_OPCODES_MAP_CORE_ALU2[mnemonic]
