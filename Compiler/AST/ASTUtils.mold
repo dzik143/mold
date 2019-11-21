@@ -704,7 +704,15 @@ function AST_GetDataType(node) -> rv
     opcode = node.opcode
     rv     = -1
 
-    if opcode is AST_OPCODE_VARIABLE
+    if ((opcode is AST_DATA_INTEGER) and
+        (typeof(node.value) is 'integer') and
+        (node.value < -2147483648) or (node.value > 2147483647))
+
+      # TODO: Review it.
+      # We always keep 64-bit integers as variants.
+      # Do nothing - we want to keep variant type (-1).
+
+    elif opcode is AST_OPCODE_VARIABLE
       symbolInfo = node.symbolInfo
 
       if (symbolInfo is defined) and (symbolInfo.astType is defined)

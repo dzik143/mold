@@ -279,8 +279,10 @@ class ASTTranslatorMIR1 extends ASTTranslator
         this.emitOneArgOpcode('load_int32', rv, value)
       else
         # 64-bit integer
-        # TODO: Review it: this.emitOneArgOpcode('conv_int64_to_variant', rv, value)
-        this.emitOneArgOpcode('load_int64', rv, value)
+        # TODO: Review it.
+        # TODO: Int64 is always mapped to variant.
+        this.emitOneArgOpcode('conv_int64_to_variant', rv, value)
+        # this.emitOneArgOpcode('load_int64', rv, value)
       endif
 
     elif type is 'float'

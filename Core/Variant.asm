@@ -224,7 +224,7 @@ proc __MOLD_PrintVariant uses r12, v
 .fmtTable     dq .fmtUndefined, .fmtNull, .fmtInteger, .fmtFloat, .fmtDouble, .fmtString
 .fmtNull      db 'null', 0
 .fmtUndefined db 'undefined', 0
-.fmtInteger   db '%d', 0
+.fmtInteger   db '%lld', 0
 .fmtFloat     db '%f', 0
 .fmtDouble    db '%lf', 0
 .fmtString    db '%s', 0
@@ -602,7 +602,7 @@ __MOLD_VariantConvertPrimitiveToString:
 
 .fmtUndefined db 'undefined', 0
 .fmtNull      db 'null', 0
-.fmtInteger   db '%d', 0
+.fmtInteger   db '%lld', 0
 .fmtFloat     db '%f', 0
 .fmtDouble    db '%lf', 0
 .fmtString    db '%s', 0

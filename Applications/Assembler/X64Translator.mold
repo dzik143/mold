@@ -177,7 +177,8 @@ class X64Translator extends PipeAbstract
         emiter.emitCore_r_imm(opcode, reg, item.imm)
       else
         # opcode m, imm
-        emiter.emitCore_m_imm(opcode, regBase, scale, regIndex, disp, item.imm, item.dataSize)
+        emiter.emitCore_m_imm(
+          opcode, regBase, scale, regIndex, disp, item.imm, item.dataSize)
       endif
 
     elif reg isnt -1
@@ -392,13 +393,13 @@ class X64Translator extends PipeAbstract
 
     elif item.type is 'data'
       if item.dataSize is 1
-        encoder.emitByte(item.value)
+        encoder.emitByte(item.imm)
       elif item.dataSize is 2
-        encoder.emitWord(item.value)
+        encoder.emitWord(item.imm)
       elif item.dataSize is 4
-        encoder.emitDword(item.value)
+        encoder.emitDword(item.imm)
       elif item.dataSize is 8
-        encoder.emitQword(item.value)
+        encoder.emitQword(item.imm)
       endif
     endif
   endmethod

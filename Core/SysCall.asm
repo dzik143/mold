@@ -19,7 +19,7 @@
 ;###############################################################################
 
 __MOLD_SysCall:
-  cmp  eax, 32
+  cmp  eax, 34
   ja   .error
 
   jmp  qword [.jmpTable + eax * 8]
@@ -61,6 +61,8 @@ __MOLD_SysCall:
 
   dq .ord           ; 31
   dq .asc           ; 32
+  dq .parse_integer ; 33
+  dq .parse_float   ; 34
 
 ; ------------------------------------------------------------------------------
 ; Open file
@@ -86,7 +88,7 @@ __MOLD_SysCall:
     mov     rcx, [rcx + Buffer_t.bytesPtr]
     lea     rcx, [rcx + String_t.text]
 
-    cinvoke CreateFileA, rcx, rdx, 0, 0, rax, 0, 0
+    cinvoke CreateFileA, rcx, rdx, FILE_SHARE_READ, 0, rax, 0, 0
 
     mov     [rdi + Variant_t.value], rax
     mov     [rdi + Variant_t.type], VARIANT_INTEGER
@@ -221,6 +223,31 @@ __MOLD_SysCall:
     mov     rax, [rcx + Variant_t.value]
     mov     [rdi + Variant_t.type], VARIANT_INTEGER
     mov     [rdi + Variant_t.value], rax
+    ret
+
+; ------------------------------------------------------------------------------
+; Convert string to integer
+; ------------------------------------------------------------------------------
+
+.parse_integer:
+    mov     rcx, [ rcx + Variant_t.value ]           ; rcx = text (Buffer_t)
+    mov     rcx, [ rcx + Buffer_t.bytesPtr ]         ; rcx = text (String_t)
+    lea     rcx, [ rcx + String_t.text ]             ; rcx = text (char*)
+    mov     rdx, 0                                   ; rdx = temp buf = NULL
+    mov     r8, rdx                                  ; rdx = base = 0 = auto
+    cinvoke strtol                                   ; rcx = int(text)
+
+    mov     [rdi + Variant_t.type], VARIANT_INTEGER
+    mov     [rdi + Variant_t.value], rax
+
+    ret
+
+; ------------------------------------------------------------------------------
+; Convert string to float
+; ------------------------------------------------------------------------------
+
+.parse_float:
+    jmp .error
     ret
 
 ; ------------------------------------------------------------------------------

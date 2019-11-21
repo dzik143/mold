@@ -30,7 +30,7 @@ MemoryAllocCnt   dq 0
 MemoryFreeCnt    dq 0
 MemoryReallocCnt dq 0
 
-PrintBuffer db 0 dup 32
+PrintBuffer db 32 dup 0
 
 ; Static 'true' and 'false' strings.
 StringTrue              Variant_t VARIANT_STRING, 0, StringTrueBufferHolder

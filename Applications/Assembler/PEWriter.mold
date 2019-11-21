@@ -159,22 +159,22 @@ class PEWriter
     this.path = path
     this.f    = open(path, 'w+')
 
-    this._emit_HeaderDOS()
-    this._emit_HeaderPE()
-    this._emit_HeaderOptional()
-    this._emit_HeaderSections()
+    #this._emit_HeaderDOS()
+    #this._emit_HeaderPE()
+    #this._emit_HeaderOptional()
+    #this._emit_HeaderSections()
 
     # Code section.
-    for idx in 0 .. 144
-      this.emitByte(0)
-    endfor
+    #for idx in 0 .. 144
+    #  this.emitByte(0)
+    #endfor
   endmethod
 
   method close()
-    missingBytes = 1024 - this.ofs
-    for idx in 0 .. missingBytes
-      this.emitByte(0)
-    endfor
+    #missingBytes = 1024 - this.ofs
+    #for idx in 0 .. missingBytes
+    #  this.emitByte(0)
+    #endfor
   endmethod
 endclass
 

@@ -21,12 +21,12 @@
 import 'X64Compiler.mold'
 
 arrayOfTests = [
-/*
-  'core/common_data',
   'core/common_jumps',
   'core/common_no_operands',
   'core/common_proc',
   'core/common_ports',
+  'core/common_data',
+  'core/common_equ',
   'core/adc_m_imm',
   'core/adc_m_r',
   'core/adc_r_imm',
@@ -51,6 +51,7 @@ arrayOfTests = [
   'core/idiv_r',
   'core/imul_m',
   'core/imul_r',
+  'core/lea_r_m',
   'core/mov_m_imm',
   'core/mov_m_r',
   'core/mov_r_imm',
@@ -90,9 +91,7 @@ arrayOfTests = [
   'core/xor_m_r',
   'core/xor_r_imm',
   'core/xor_r_m',
-  'core/xor_r_r',
-  'core/lea_r_m'
-*/
+  'core/xor_r_r'
 ]
 
 class X64Tester

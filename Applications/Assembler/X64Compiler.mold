@@ -78,16 +78,13 @@ class X64Compiler
 
     while codeSizeDiffTotal isnt 0
       #print 'pass', passIdx
-
+      #print '----------------------'
       codeSizeDiffTotal = 0
-      readOffsets       = [0]
-      readSizes         = []
-      lastReadOffset    = 0
 
       for values item in refs
         item.offset = item.offset + codeSizeDiffTotal
 
-        if item.type is 'instruction'
+        if (item.type is 'instruction') or (item.type is 'data')
           codeSizeBefore = item.codeSize
           item.imm       = item.labelObj.offset
 
@@ -110,6 +107,12 @@ class X64Compiler
           elif codeSizeDiff < 0
             item.codeSize = codeSizeAfter
           endif
+
+        elif (item.type is 'label') and (item.alignTo is defined)
+          codeSizeAfter = (item.offset // item.alignTo + 1) * item.alignTo - item.offset
+          codeSizeDiff  = codeSizeAfter - item.codeSize
+          item.codeSize  = codeSizeAfter
+          codeSizeDiffTotal = codeSizeDiffTotal + codeSizeDiff
         endif
       endfor
 
@@ -122,11 +125,21 @@ class X64Compiler
     # TODO: Optimize it.
     readPos = 0
     for values item in refs
-      if item.type is 'instruction'
+      if (item.type is 'instruction') or (item.type is 'data')
         for pos in readPos .. item.originalOffset + item.codeSize
           outputObject.emitByte(tempBuffer.data[pos])
         endfor
         readPos = item.originalOffset + item.originalCodeSize
+
+      elif (item.type is 'label') and (item.alignTo is defined)
+        for pos in readPos .. item.originalOffset
+          outputObject.emitByte(tempBuffer.data[pos])
+        endfor
+
+        readPos = item.originalOffset + item.originalCodeSize
+        for idx in 0 .. item.codeSize
+          outputObject.emitByte(0)
+        endfor
       endif
     endfor
 
