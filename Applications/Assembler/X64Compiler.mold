@@ -86,7 +86,17 @@ class X64Compiler
 
         if (item.type is 'instruction') or (item.type is 'data')
           codeSizeBefore = item.codeSize
-          item.imm       = item.labelObj.offset
+
+          # TODO: Clean up this mess.
+          if item.labelObjForDisp is defined
+            # [rip + disp]
+            item.disp = item.labelObjForDisp.offset - item.offset - item.codeSize
+          endif
+
+          if item.labelObj is defined
+            # jxx rel
+            item.imm = item.labelObj.offset
+          endif
 
           # Go to current referencing instruction.
           tempBuffer.setCurrentPosition(item.originalOffset, 0)

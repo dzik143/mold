@@ -73,7 +73,7 @@ class X64Parser extends AbstractDescentParser
     labelObj.originalOffset = offset
 
     this.arrayOfLabelsAndRefs[len(this.arrayOfLabelsAndRefs)] = labelObj
-    print 'Emited label [', name, '] at [', offset, ']'
+    #print 'Emited label [', name, '] at [', offset, ']'
   endmethod
 
   method _getToken() -> rv
@@ -98,7 +98,7 @@ class X64Parser extends AbstractDescentParser
     # Is it constant?
     constantValue = this.constantsMap[rv]
     if constantValue is defined
-      print 'resolved constant [', rv, '] to [', constantValue, ']'
+      #print 'resolved constant [', rv, '] to [', constantValue, ']'
       rv = constantValue
     endif
 
@@ -108,6 +108,8 @@ class X64Parser extends AbstractDescentParser
   endmethod
 
   method _matchMemory(instruction)
+    global X64_RIP
+
     this._skipWhites()
 
     disp  = 0
@@ -146,6 +148,32 @@ class X64Parser extends AbstractDescentParser
     elif this.lookupBuffer is ']'
       # [ base ]
       base = X64_ParseRegisterName(token)
+
+      if base is -1
+        # Treat as RIP relative label.
+        # Convert to [rip + label - $]
+        # TODO: Clean up this mess.
+        labelObj = this.labelsMap[token]
+
+        if labelObj is undefined
+          labelObj = {
+            'type': 'label',
+            'name': token,
+            'offset': -1
+          }
+          this.labelsMap[token] = labelObj
+        endif
+
+        #print 'reference [', token, '] at [', this.outputObject.getCurrentPosition(), ']'
+        # TODO: Clean up this mess.
+        # TODO: Fix int64 mess.
+        base = X64_RIP
+        disp = instruction.offset + 1000
+
+        instruction.labelObjForDisp = labelObj
+        instruction.originalOffset  = instruction.offset
+        this.arrayOfLabelsAndRefs[len(this.arrayOfLabelsAndRefs)] = instruction
+      endif
 
     elif this.lookupBuffer is '-'
       # [ base - disp ]
@@ -237,7 +265,7 @@ class X64Parser extends AbstractDescentParser
 
       if defineDataSize is defined
         # name db ...
-        this._emitLabel(instruction.mnemonic)
+        labelObj = this._emitLabel(instruction.mnemonic)
         this._matchData(defineDataSize)
         instruction.type = 'none'
 
@@ -278,7 +306,9 @@ class X64Parser extends AbstractDescentParser
             endif
 
             #print 'reference [', token, '] at [', this.outputObject.getCurrentPosition(), ']'
-            instruction.imm            = 0xefbeadde
+            # TODO: Clean up this mess.
+            # TODO: Fix int64 mess.
+            instruction.imm            = instruction.offset + 1000
             instruction.labelObj       = labelObj
             instruction.originalOffset = instruction.offset
             this.arrayOfLabelsAndRefs[len(this.arrayOfLabelsAndRefs)] = instruction
@@ -485,7 +515,7 @@ class X64Parser extends AbstractDescentParser
       elif this.lookupBuffer is ':'
         # Label line.
         this._getChar()
-        this._emitLabel(token)
+        labelObj = this._emitLabel(token)
 
       else
         # Code line.

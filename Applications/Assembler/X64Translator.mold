@@ -290,7 +290,11 @@ class X64Translator extends PipeAbstract
         encoder.xchg_r_r(reg, rm)
 
       elif mnemonic is 'call'
-        encoder.call_rel(imm - item.offset)
+        if item.scale is defined
+          encoder.call_m(regBase, scale, regIndex, disp)
+        else
+          encoder.call_rel(imm - item.offset)
+        endif
 
       elif mnemonic is 'jmp'
         encoder.jmp_rel(imm - item.offset)

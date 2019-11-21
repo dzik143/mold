@@ -2,6 +2,7 @@
 db 0
 db 0x12
 db -127, -1, 0, 1, 128, 255, 0xff
+db 'this is a text', 0
 
 ; Words
 dw 0

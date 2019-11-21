@@ -1156,7 +1156,8 @@ class X64Encoder
   endmethod
 
   method call_m(regBase, scale, regIndex, disp)
-    die('not implemented: call m')
+    global X64_CALL_GROUP
+    this.emitCore_group_m(X64_CALL_GROUP, 2, regBase, scale, regIndex, disp)
   endmethod
 
   method ret()

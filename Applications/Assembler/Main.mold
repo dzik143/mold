@@ -20,13 +20,18 @@
 
 import 'X64Compiler.mold'
 
+VERSION_STRING = '0.1.191121'
+
 # Parse command line arguments.
 if argc isnt 2
+  print 'Mold assembler version', VERSION_STRING
+  print 'Copyright (C) 2019, Sylwester Wysocki <sw143@wp.pl>'
+  print ''
   print 'Usage:'
   print ' ', argv[0], '<source.asm>'
   exit()
 endif
 
-path     = '1.asm' #argv[1]
+path     = argv[1]
 compiler = new X64Compiler()
 compiler.compileToFile(path + '.exe', path)
