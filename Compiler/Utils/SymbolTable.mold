@@ -631,9 +631,9 @@ class SymbolTable
   endmethod
 
   method releaseTempVar(name)
-    symbolInfo = this.lookup(name)
+    symbolInfo = this._lookupInternal(name)
     # TODO: Clean up this mess.
-    if symbolInfo.isTemp is true
+    if (symbolInfo is defined) and (symbolInfo.isTemp is true)
       #symbolInfo.refCnt = symbolInfo.refCnt - 1
 
       #if symbolInfo.refCnt is 0
