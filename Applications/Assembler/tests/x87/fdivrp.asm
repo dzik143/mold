@@ -1,0 +1,2 @@
+use64
+fdivrp
