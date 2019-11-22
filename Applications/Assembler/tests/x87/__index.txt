@@ -1,0 +1,161 @@
+;###############################################################################
+;#                                                                             #
+;# This file is part of Mold project.                                          #
+;# Copyright (C) 2015, 2019 Sylwester Wysocki <sw143@wp.pl>                    #
+;#                                                                             #
+;# This program is free software: you can redistribute it and/or modify        #
+;# it under the terms of the GNU General Public License as published by        #
+;# the Free Software Foundation, either version 3 of the License, or           #
+;# (at your option) any later version.                                         #
+;#                                                                             #
+;# This program is distributed in the hope that it will be useful,             #
+;# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+;# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+;# GNU General Public License for more details.                                #
+;#                                                                             #
+;# You should have received a copy of the GNU General Public License           #
+;# along with this program. If not, see <http://www.gnu.org/licenses/>         #
+;#                                                                             #
+;###############################################################################
+
+; ------------------------------------------------------------------------------
+; Original mnemonics from 8087 coprocessor:
+; ------------------------------------------------------------------------------
+
+f2xm1
+fabs
+fadd
+faddp
+fbld
+fbstp
+fchs
+fclex
+fcom
+fcomp
+fcompp
+fdecstp
+fdisi
+fdiv
+fdivp
+fdivr
+fdivrp
+feni
+ffree
+fiadd
+ficom
+ficomp
+fidiv
+fidivr
+fild
+fimul
+fincstp
+finit
+fist
+fistp
+fisub
+fisubr
+fld
+fld1
+fldcw
+fldenv
+fldenvw
+fldl2e
+fldl2t
+fldlg2
+fldln2
+fldpi
+fldz
+fmul
+fmulp
+fnclex
+fndisi
+fneni
+fninit
+fnop
+fnsave
+fnsavew
+fnstcw
+fnstenv
+fnstenvw
+fnstsw
+fpatan
+fprem
+fptan
+frndint
+frstor
+frstorw
+fsave
+fsavew
+fscale
+fsqrt
+fst
+fstcw
+fstenv
+fstenvw
+fstp
+fstsw
+fsub
+fsubp
+fsubr
+fsubrp
+ftst
+fwait
+fxam
+fxch
+fxtract
+fyl2x
+fyl2xp1
+
+; ------------------------------------------------------------------------------
+; Mnemonics added with 80287:               
+; ------------------------------------------------------------------------------
+
+fsetpm
+
+; ------------------------------------------------------------------------------
+; Mnemonics added with 80387:
+; ------------------------------------------------------------------------------
+
+fcos
+fldenvd
+fsaved
+fstenvd
+fprem1
+frstord
+fsin
+fsincos
+fstenvd
+fucom
+fucomp
+fucompp
+
+; ------------------------------------------------------------------------------
+; Mnemonics added with Penium Pro:
+; ------------------------------------------------------------------------------
+
+fcmovb
+fcmovbe
+fcmove
+fcmovnb
+fcmovnbe
+fcmovne
+fcmovnu
+fcmovu
+fcomi
+fcomip
+fucomi
+fucomip
+
+
+; ------------------------------------------------------------------------------
+; Mnemonics added with SSE extension:
+; ------------------------------------------------------------------------------
+
+fxrstor
+fxsave 
+
+; ------------------------------------------------------------------------------
+; Mnemonics added with SSE3 extension:
+; ------------------------------------------------------------------------------
+
+fisttp

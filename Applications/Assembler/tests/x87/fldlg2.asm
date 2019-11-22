@@ -1,2 +1,0 @@
-use64
-fldlg2

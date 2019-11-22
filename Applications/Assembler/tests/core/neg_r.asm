@@ -1,6 +1,6 @@
 use64
 
-; 8-bit registers
+; neg r8
 neg al
 neg cl
 neg dl
@@ -10,7 +10,7 @@ neg ch
 neg dh
 neg bh
 
-; 16-bit registers
+; neg r16
 neg ax
 neg cx
 neg dx
@@ -20,7 +20,7 @@ neg bp
 neg si
 neg di
 
-; 32-bit registers
+; neg r32
 neg eax
 neg ecx
 neg edx
@@ -30,7 +30,7 @@ neg ebp
 neg esi
 neg edi
 
-; 64-bit registers
+; neg r64
 neg rax
 neg rcx
 neg rdx

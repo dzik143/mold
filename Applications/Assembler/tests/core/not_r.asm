@@ -1,6 +1,6 @@
 use64
 
-; 8-bit registers
+; not r8
 not al
 not cl
 not dl
@@ -10,7 +10,7 @@ not ch
 not dh
 not bh
 
-; 16-bit registers
+; not r16
 not ax
 not cx
 not dx
@@ -20,7 +20,7 @@ not bp
 not si
 not di
 
-; 32-bit registers
+; not r32
 not eax
 not ecx
 not edx
@@ -30,7 +30,7 @@ not ebp
 not esi
 not edi
 
-; 64-bit registers
+; not r64
 not rax
 not rcx
 not rdx

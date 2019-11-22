@@ -1,0 +1,80 @@
+;###############################################################################
+;#                                                                             #
+;# This file is part of Mold project.                                          #
+;# Copyright (C) 2015, 2019 Sylwester Wysocki <sw143@wp.pl>                    #
+;#                                                                             #
+;# This program is free software: you can redistribute it and/or modify        #
+;# it under the terms of the GNU General Public License as published by        #
+;# the Free Software Foundation, either version 3 of the License, or           #
+;# (at your option) any later version.                                         #
+;#                                                                             #
+;# This program is distributed in the hope that it will be useful,             #
+;# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+;# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+;# GNU General Public License for more details.                                #
+;#                                                                             #
+;# You should have received a copy of the GNU General Public License           #
+;# along with this program. If not, see <http://www.gnu.org/licenses/>         #
+;#                                                                             #
+;###############################################################################
+
+; ------------------------------------------------------------------------------
+; Original instruction set instroduced with Pentum MMX:
+; ------------------------------------------------------------------------------
+
+;
+; Patterns:
+;   mm, r/m32/64
+;   r/m32/64, mm
+;   mm, mm
+;   mm, imm8
+
+emms
+movd 
+movq 
+packssdw 
+packsswb 
+packuswb 
+paddb 
+paddw 
+paddd 
+paddq 
+paddsb
+paddsw
+paddusb
+paddusw
+pand  
+pandn 
+por  
+pxor 
+pcmpeqb 
+pcmpeqw 
+pcmpeqd 
+pcmpgtb 
+pcmpgtw 
+pcmpgtd 
+pmaddwd 
+pmulhw 
+pmullw 
+psllw 
+pslld 
+psllq 
+psrad
+psraw
+psrlw 
+psrld
+psrlq 
+psubb 
+psubw 
+psubd 
+psubsb    
+psubsw    
+psubusb   
+psubusw   
+punpckhbw
+punpckhwd 
+punpckhdq
+punpcklbw 
+punpcklwd 
+punpckldq 
+rdpmc

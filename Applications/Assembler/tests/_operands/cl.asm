@@ -1,0 +1,2 @@
+; cl register
+cl
