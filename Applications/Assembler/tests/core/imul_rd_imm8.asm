@@ -1,0 +1,31 @@
+use64
+
+; immediate to each register: 16-bit
+imul ax, 0x50
+imul cx, 0x51
+imul dx, 0x52
+imul bx, 0x53
+imul sp, 0x54
+imul bp, 0x55
+imul si, 0x56
+imul di, 0x57
+
+; immediate to each register: 32-bit
+imul eax, 0xa0
+imul ecx, 0xa1
+imul edx, 0xa2
+imul ebx, 0xa3
+imul esp, 0xa4
+imul ebp, 0xa5
+imul esi, 0xa6
+imul edi, 0xa7
+
+; immediate to each register: 64-bit
+imul rax, 0x88
+imul rcx, 0x99
+imul rdx, 0xaa
+imul rbx, 0xbb
+imul rsp, 0xcc
+imul rbp, 0xdd
+imul rsi, 0xee
+imul rdi, 0xff

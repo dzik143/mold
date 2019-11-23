@@ -1,5 +1,5 @@
 use64
-imul rax, 0x1234
+imul rax, 0x1234     
 imul rax, 65535
 imul rax, -32767
 imul rax, 0xffff

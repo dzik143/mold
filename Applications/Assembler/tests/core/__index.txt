@@ -36,89 +36,86 @@
 ;lds     invalid in 64-bit mode
 ;les     invalid in 64-bit mode
 ;daa     invalid in 64-bit mode
-;loopw   unavailable in 64-bit mode
-;loopew  unavailable in 64-bit mode
-;loopnew unavailable in 64-bit mode
+           
+adc        r,r | r,m | m,r | r,imm | m,imm
+add        r,r | r,m | m,r | r,imm | m,imm
+and        r,r | r,m | m,r | r,imm | m,imm
+cmp        r,r | r,m | m,r | r,imm | m,imm
+or         r,r | r,m | m,r | r,imm | m,imm
+sbb        r,r | r,m | m,r | r,imm | m,imm
+sub        r,r | r,m | m,r | r,imm | m,imm
+test       r,r | r,m | m,r | r,imm | m,imm
+xor        r,r | r,m | m,r | r,imm | m,imm
 
-adc
-add
-and
-cbw
-clc
-cld
-cli
-cmc
-cmp
-cmpsb
-cmpsw
-cwd
-dec
-div
-hlt
-idiv
-imul
-in
-inc
-int
-into
-iret
-lea
-lock
-lodsb
-lodsw
-loop
-loope
-loopne
-mov
-movsb
-movsw
-mul
-neg
-nop
-not
-or
-out
-pop
-popf
-push
-pushf
-rcl
-rcr
-rep
-repe
-repne
-ret
-retn
-retf
-rol
-ror
-sal
-sar
-sbb
-scasb
-scasw
-shl
-shr
-stc
-std
-sti
-stosb
-stosw
-sub
-test
-wait
-xchg
-xlat
-xor
+rcl        r,cl | r,imm8 | m,cl | m,imm8
+rcr        r,cl | r,imm8 | m,cl | m,imm8
+rol        r,cl | r,imm8 | m,cl | m,imm8
+ror        r,cl | r,imm8 | m,cl | m,imm8
+sal        r,cl | r,imm8 | m,cl | m,imm8
+sar        r,cl | r,imm8 | m,cl | m,imm8
+shl        r,cl | r,imm8 | m,cl | m,imm8
+shr        r,cl | r,imm8 | m,cl | m,imm8
+
+dec        r | m
+inc        r | m
+div        r | m
+idiv       r | m
+neg        r | m
+not        r | m
+
+push       r16 | m16 | r64 | m64 | imm8 | imm16
+pop        r16 | m16 | r64 | m64
+
+mov        r,r | r,m | m,r | r,imm | m,imm | r64,imm64
+xchg       r,r | r,m | m,r
+
+mul        r | m | rd,rd | rd,md | rd,md,imm
+imul       r | m | rd,rd | rd,md | rd,md,imm
+
+in         al,imm8 | ax,imm8 | eax,imm8 | al,dx | ax,dx | eax,dx
+out        imm8,al | imm8,ax | imm8,eax | dx,al | dx,ax | dx,eax
+
+lea        rd,m8 | rd,m16 | rd,m32 | rd,m64
+int        imm8
+
+nop        - | rd | md
+ret        - | imm16
+retf       - | imm16
+             
+cbw        -
+cwd        - 
+clc        -
+cld        -
+cli        -                 
+cmc        -
+cmpsb      -
+cmpsw      -
+hlt        -
+into       -
+iret       -
+lock       -
+lodsb      -
+lodsw      -
+movsb      -
+movsw      -
+popf       -
+pushf      -
+rep        -
+repe       -
+repne      -
+scasb      -
+scasw      -
+stc        -
+std        -
+sti        -
+stosb      -
+stosw      -
+wait       -
+xlatb      -
 
 ; ------------------------------------------------------------------------------
 ; Mnemonics added with 80186 processor:
 ; ------------------------------------------------------------------------------
-
-enter
-ins
-leave
-outs
 
 ;bound invalid in 64-bit mode
 ;popa  invalid in 64-bit mode
@@ -134,181 +131,204 @@ outs
 ;rcl  imm (already handled)
 ;rcr  imm (already handled)
 
+enter      imm16,imm8
+ins        m8,dx | m16,dx | m32,dx
+outs       dx,m8 | dx,m16 | dx,m32
+leave      -
+
 ; ------------------------------------------------------------------------------
 ; Mnemonics added with 80286 processor:
 ; ------------------------------------------------------------------------------
 
-;arpl invalid in 64-bit mode
-clts
-lar
-lgdt
-lidt
-lldt
-lmsw
-loadall
-lsl
-ltr
-sgdt
-sidt
-sldt
-smsw
-str
-verr
-verw
+;arpl    invalid in 64-bit mode
+;loadall 80286 only
+
+sldt       rd | m16 | r64,m16
+
+lar        rd,r16 | rd,m16
+lsl        rd,r16 | rd,m16
+
+smsw       rd | m16
+str        rd | m16
+
+lldt       r16 | m16
+lmsw       r16 | m16
+ltr        r16 | m16
+verr       r16 | m16
+verw       r16 | m16
+
+lgdt       m48
+lidt       m48
+sgdt       m80
+sidt       m80
+
+clts       -
 
 ; ------------------------------------------------------------------------------
 ; Mnemonics added with 80386 processor:
 ; ------------------------------------------------------------------------------
 
-;pushad invalid in 64-bit mode
-;popad  invalid in 64-bit mode
-;pushfd invalid in 64-bit mode
-;popfd  invalid in 64-bit mode
+;pushad   invalid in 64-bit mode
+;popad    invalid in 64-bit mode
+;pushfd   invalid in 64-bit mode
+;popfd    invalid in 64-bit mode
+;loadalld 80386 only
+;ibts     80386 before B1 step only
+;xbts     80386 before B1 step only
 ;mov to/from CR/DR/TR (already handled)
-bsf
-bsr
-bt
-btc
-btr
-bts
-cdq
-cmpsd
-cwde
-ibts
-insd
-iretd
-lfs
-lgs
-lss
-lodsd
-looped
-loopned
-movsd
-movsx
-movzx
-outsd
-scasd
-seta
-setae
-setb 
-setbe
-setc
-sete
-setg
-setge
-setl
-setle
-setna
-setnae
-setnb
-setnbe
-setnc
-setne
-setng
-setnge
-setnl
-setnle
-setno
-setnp
-setns
-setnz
-seto
-setp
-setpe
-setpo
-sets
-setz
-shld
-shrd
-stosd
-xbts
+
+bsf        rd,rd | rd,md 
+bsr        rd,rd | rd,md 
+cdq        rd,rd | rd,md
+
+bt         rd,rd | md,rd 
+btc        rd,rd | md,rd 
+btr        rd,rd | md,rd 
+bts        rd,rd | md,rd 
+
+lfs        rd,md
+lgs        rd,md
+lss        rd,md
+
+movsx      rd,r8 | rd,m8 | r32,r16 | r32,m16 | r64,r16 | r64,m16
+movzx      rd,r8 | rd,m8 | r32,r16 | r32,m16 | r64,r16 | r64,m16
+
+shld       rd,cl | rd,imm8 | md,cl | md,imm8
+shrd       rd,cl | rd,imm8 | md,cl | md,imm8
+
+seta       r8 | m8
+setae      r8 | m8
+setb       r8 | m8
+setbe      r8 | m8
+setc       r8 | m8
+sete       r8 | m8
+setg       r8 | m8
+setge      r8 | m8
+setl       r8 | m8
+setle      r8 | m8
+setna      r8 | m8
+setnae     r8 | m8
+setnb      r8 | m8
+setnbe     r8 | m8
+setnc      r8 | m8
+setne      r8 | m8
+setng      r8 | m8
+setnge     r8 | m8
+setnl      r8 | m8
+setnle     r8 | m8
+setno      r8 | m8
+setnp      r8 | m8
+setns      r8 | m8
+setnz      r8 | m8
+seto       r8 | m8
+setp       r8 | m8
+setpe      r8 | m8
+setpo      r8 | m8
+sets       r8 | m8
+setz       r8 | m8
+
+cwde       -
+iretd      -
+lodsd      -
+stosd      -
+cmpsd      -
+movsd      - 
+scasd      -
+insd       -
+outsd      -
 
 ; ------------------------------------------------------------------------------
 ; Mnemonics added with 80486 processor:
 ; ------------------------------------------------------------------------------
-
-bswap
-cmpxchg
-invd
-invlpg
-wbinvd
-xadd
+           
+bswap      r32 | r64
+cmpxchg    r,r | m,r
+xadd       r,r | m,r
+invlpg     m
+invd       -
+wbinvd     -
 
 ; ------------------------------------------------------------------------------
-; Mnemonics added with Penitum processor: 
+; Mnemonics added with Pentium processor: 
 ; ------------------------------------------------------------------------------
 
-cpuid
-cmpxchg8b
-rdmsr
-rdtsc
-wrmsr
-rsm
+cmpxchg8b  m64 | m128
+cpuid      -
+rdmsr      -
+rdtsc      -
+wrmsr      -
+rsm        -
 
 ; ------------------------------------------------------------------------------
 ; Mnemonics added with Penitum Pro processor:
 ; ------------------------------------------------------------------------------
 
-cmova
-cmovae
-cmovb
-cmovbe
-cmovc
-cmove
-cmovg
-cmovge
-cmovl
-cmovle
-cmovna
-cmovnae
-cmovnb
-cmovnbe
-cmovnc
-cmovne
-cmovng
-cmovnge
-cmovnl
-cmovnle
-cmovno
-cmovnp
-cmovns
-cmovnz
-cmovo
-cmovp
-cmovpe
-cmovpo
-cmovs
-cmovz
-ud2
+cmova      rd,rd | rd,md
+cmovae     rd,rd | rd,md
+cmovb      rd,rd | rd,md
+cmovbe     rd,rd | rd,md
+cmovc      rd,rd | rd,md
+cmove      rd,rd | rd,md
+cmovg      rd,rd | rd,md
+cmovge     rd,rd | rd,md
+cmovl      rd,rd | rd,md
+cmovle     rd,rd | rd,md
+cmovna     rd,rd | rd,md
+cmovnae    rd,rd | rd,md
+cmovnb     rd,rd | rd,md
+cmovnbe    rd,rd | rd,md
+cmovnc     rd,rd | rd,md
+cmovne     rd,rd | rd,md
+cmovng     rd,rd | rd,md
+cmovnge    rd,rd | rd,md
+cmovnl     rd,rd | rd,md
+cmovnle    rd,rd | rd,md
+cmovno     rd,rd | rd,md
+cmovnp     rd,rd | rd,md
+cmovns     rd,rd | rd,md
+cmovnz     rd,rd | rd,md
+cmovo      rd,rd | rd,md
+cmovp      rd,rd | rd,md
+cmovpe     rd,rd | rd,md
+cmovpo     rd,rd | rd,md
+cmovs      rd,rd | rd,md
+cmovz      rd,rd | rd,md
+ud2        -
+
+; ------------------------------------------------------------------------------
+; Mnemonics added with Penium MMX processor:
+; ------------------------------------------------------------------------------
+
+rdpmc     -
 
 ; ------------------------------------------------------------------------------
 ; Mnemonics added with AMD K6 processor:
 ; ------------------------------------------------------------------------------
 
-syscall
-sysret
+syscall    -
+sysret     -
 
 ; ------------------------------------------------------------------------------
 ; Mnemonics added with Penitum II:
 ; ------------------------------------------------------------------------------
 
-sysenter
-sysexit
+sysenter   -
+sysexit    -
 
 ; ------------------------------------------------------------------------------
 ; Mnemonics added with Amd64:
 ; ------------------------------------------------------------------------------
 
-cdqe
-cqo
-cmpsq
-cmpxchg16b
-iretq
-lodsq
-movsxd
-popfq
-pushfq
-rdtscp
-scasq
-stosq
-swapgs
+movsxd     r64,r32 | r64,m32
+cmpxchg16b m64 | m128
+cdqe       -
+cqo        -
+cmpsq      -
+iretq      -
+lodsq      -
+popfq      -
+pushfq     -
+rdtscp     -
+scasq      -
+stosq      -
+swapgs     -

@@ -1,0 +1,25 @@
+use64
+sldt ax
+sldt cx
+sldt dx
+sldt bx
+sldt sp
+sldt bp
+sldt si
+sldt di
+sldt eax
+sldt ecx
+sldt edx
+sldt ebx
+sldt esp
+sldt ebp
+sldt esi
+sldt edi
+sldt rax
+sldt rcx
+sldt rdx
+sldt rbx
+sldt rsp
+sldt rbp
+sldt rsi
+sldt rdi

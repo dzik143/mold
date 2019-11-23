@@ -1,0 +1,25 @@
+use64
+nop ax
+nop cx
+nop dx
+nop bx
+nop sp
+nop bp
+nop si
+nop di
+nop eax
+nop ecx
+nop edx
+nop ebx
+nop esp
+nop ebp
+nop esi
+nop edi
+nop rax
+nop rcx
+nop rdx
+nop rbx
+nop rsp
+nop rbp
+nop rsi
+nop rdi

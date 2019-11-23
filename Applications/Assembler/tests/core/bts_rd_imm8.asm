@@ -1,0 +1,31 @@
+use64
+
+; immediate to each register: 16-bit
+bts ax, 0x50
+bts cx, 0x51
+bts dx, 0x52
+bts bx, 0x53
+bts sp, 0x54
+bts bp, 0x55
+bts si, 0x56
+bts di, 0x57
+
+; immediate to each register: 32-bit
+bts eax, 0xa0
+bts ecx, 0xa1
+bts edx, 0xa2
+bts ebx, 0xa3
+bts esp, 0xa4
+bts ebp, 0xa5
+bts esi, 0xa6
+bts edi, 0xa7
+
+; immediate to each register: 64-bit
+bts rax, 0x88
+bts rcx, 0x99
+bts rdx, 0xaa
+bts rbx, 0xbb
+bts rsp, 0xcc
+bts rbp, 0xdd
+bts rsi, 0xee
+bts rdi, 0xff

@@ -22,59 +22,60 @@
 ; Original instruction set instroduced with Pentum MMX:
 ; ------------------------------------------------------------------------------
 
-;
-; Patterns:
-;   mm, r/m32/64
-;   r/m32/64, mm
-;   mm, mm
-;   mm, imm8
+movd              mm,r32 | mm,m32 | r32,mm | m32,mm 
+movq      mm,mm | mm,r64 | mm,m64 | r64,mm | m64,mm 
 
-emms
-movd 
-movq 
-packssdw 
-packsswb 
-packuswb 
-paddb 
-paddw 
-paddd 
-paddq 
-paddsb
-paddsw
-paddusb
-paddusw
-pand  
-pandn 
-por  
-pxor 
-pcmpeqb 
-pcmpeqw 
-pcmpeqd 
-pcmpgtb 
-pcmpgtw 
-pcmpgtd 
-pmaddwd 
-pmulhw 
-pmullw 
-psllw 
-pslld 
-psllq 
-psrad
-psraw
-psrlw 
-psrld
-psrlq 
-psubb 
-psubw 
-psubd 
-psubsb    
-psubsw    
-psubusb   
-psubusw   
-punpckhbw
-punpckhwd 
-punpckhdq
-punpcklbw 
-punpcklwd 
-punpckldq 
-rdpmc
+packssdw  mm,mm | mm,m64
+packsswb  mm,mm | mm,m64
+packuswb  mm,mm | mm,m64
+
+paddb     mm,mm | mm,m64
+paddw     mm,mm | mm,m64
+paddd     mm,mm | mm,m64
+paddq     mm,mm | mm,m64
+paddsb    mm,mm | mm,m64
+paddsw    mm,mm | mm,m64
+paddusb   mm,mm | mm,m64
+paddusw   mm,mm | mm,m64
+pmaddwd   mm,mm | mm,m64
+
+pand      mm,mm | mm,m64
+pandn     mm,mm | mm,m64
+por       mm,mm | mm,m64
+pxor      mm,mm | mm,m64
+
+pcmpeqb   mm,mm | mm,m64
+pcmpeqw   mm,mm | mm,m64
+pcmpeqd   mm,mm | mm,m64
+pcmpgtb   mm,mm | mm,m64
+pcmpgtw   mm,mm | mm,m64
+pcmpgtd   mm,mm | mm,m64
+
+pmulhw    mm,mm | mm,m64
+pmullw    mm,mm | mm,m64
+
+psubb     mm,mm | mm,m64
+psubw     mm,mm | mm,m64
+psubd     mm,mm | mm,m64
+psubsb    mm,mm | mm,m64
+psubsw    mm,mm | mm,m64
+psubusb   mm,mm | mm,m64
+psubusw   mm,mm | mm,m64
+
+punpckhbw mm,mm | mm,m64
+punpckhwd mm,mm | mm,m64
+punpckhdq mm,mm | mm,m64
+punpcklbw mm,mm | mm,m32
+punpcklwd mm,mm | mm,m32
+punpckldq mm,mm | mm,m32
+
+psllw     mm,mm | mm,m64 | mm,imm8
+pslld     mm,mm | mm,m64 | mm,imm8
+psllq     mm,mm | mm,m64 | mm,imm8
+psrad     mm,mm | mm,m64 | mm,imm8
+psraw     mm,mm | mm,m64 | mm,imm8
+psrlw     mm,mm | mm,m64 | mm,imm8
+psrld     mm,mm | mm,m64 | mm,imm8
+psrlq     mm,mm | mm,m64 | mm,imm8
+
+emms      -

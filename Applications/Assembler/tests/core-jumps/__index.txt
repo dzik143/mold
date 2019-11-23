@@ -22,34 +22,45 @@
 ; Original mnemonics from 8086 processor:
 ; ------------------------------------------------------------------------------
 
-call
-jo 
-jno
-jb 
-jae
-jz 
-jnz
-jbe
-ja 
-js 
-jns
-jp 
-jnp
-jl 
-jge
-jle
-jg 
-jcxz
-jmp
+;jcxz invalid in 64-bit mode
+;loopw   unavailable in 64-bit mode
+;loopew  unavailable in 64-bit mode
+;loopnew unavailable in 64-bit mode
+
+call           rel16 | rel32 | rd | md | ptr16-32 | ptr16-32 | ptr16-64
+jmp     rel8 | rel16 | rel32 | rd | md | ptr16-32 | ptr16-32 | ptr16-64
+
+jo      rel8 | rel32
+jno     rel8 | rel32
+jb      rel8 | rel32
+jae     rel8 | rel32
+jz      rel8 | rel32
+jnz     rel8 | rel32
+jbe     rel8 | rel32
+ja      rel8 | rel32
+js      rel8 | rel32
+jns     rel8 | rel32
+jp      rel8 | rel32
+jnp     rel8 | rel32
+jl      rel8 | rel32
+jge     rel8 | rel32
+jle     rel8 | rel32
+jg      rel8 | rel32
+
+loop    rel8
+loope   rel8
+loopne  rel8
 
 ; ------------------------------------------------------------------------------
 ; Mnemonics added with 80386 processor:
 ; ------------------------------------------------------------------------------
 
-jecxz
+jecxz   rel8
+looped  rel8
+loopned rel8
 
 ; ------------------------------------------------------------------------------
 ; Mnemonics added with Amd64:
 ; ------------------------------------------------------------------------------
 
-jrcxz
+jrcxz   rel8

@@ -1,0 +1,25 @@
+use64
+str ax
+str cx
+str dx
+str bx
+str sp
+str bp
+str si
+str di
+str eax
+str ecx
+str edx
+str ebx
+str esp
+str ebp
+str esi
+str edi
+str rax
+str rcx
+str rdx
+str rbx
+str rsp
+str rbp
+str rsi
+str rdi

@@ -22,140 +22,152 @@
 ; Original mnemonics from 8087 coprocessor:
 ; ------------------------------------------------------------------------------
 
-f2xm1
-fabs
-fadd
-faddp
-fbld
-fbstp
-fchs
-fclex
-fcom
-fcomp
-fcompp
-fdecstp
-fdisi
-fdiv
-fdivp
-fdivr
-fdivrp
-feni
-ffree
-fiadd
-ficom
-ficomp
-fidiv
-fidivr
-fild
-fimul
-fincstp
-finit
-fist
-fistp
-fisub
-fisubr
-fld
-fld1
-fldcw
-fldenv
-fldenvw
-fldl2e
-fldl2t
-fldlg2
-fldln2
-fldpi
-fldz
-fmul
-fmulp
-fnclex
-fndisi
-fneni
-fninit
-fnop
-fnsave
-fnsavew
-fnstcw
-fnstenv
-fnstenvw
-fnstsw
-fpatan
-fprem
-fptan
-frndint
-frstor
-frstorw
-fsave
-fsavew
-fscale
-fsqrt
-fst
-fstcw
-fstenv
-fstenvw
-fstp
-fstsw
-fsub
-fsubp
-fsubr
-fsubrp
-ftst
-fwait
-fxam
-fxch
-fxtract
-fyl2x
-fyl2xp1
+;fdisi  8087 only
+;feni   8087 only
+;fndisi 8087 only
+;fneni  8087 only
+
+fadd       m32 | m64 | st0,sti | sti,st0
+fdiv       m32 | m64 | st0,sti | sti,st0
+fdivr      m32 | m64 | st0,sti | sti,st0
+fmul       m32 | m64 | st0,sti | sti,st0
+fsub       m32 | m64 | st0,sti | sti,st0
+fsubr      m32 | m64 | st0,sti | sti,st0
+
+faddp      - | sti,st0
+fdivp      - | sti,st0
+fdivrp     - | sti,st0
+fmulp      - | sti,st0
+fsubp      - | sti,st0
+fsubrp     - | sti,st0
+
+fcom       - | m32 | m64 | sti
+fcomp      - | m32 | m64 | sti
+fxch       - |             sti
+
+fild       md
+fistp      md
+
+fiadd      m16 | m32
+fidiv      m16 | m32
+fidivr     m16 | m32
+fimul      m16 | m32
+fisub      m16 | m32
+fisubr     m16 | m32
+fist       m16 | m32
+ficom      m16 | m32
+ficomp     m16 | m32
+
+ffree      sti
+
+fld        m32 | m64 | m80 | sti
+fstp       m32 | m64 | m80 | sti
+fst        m32 | m64 |       sti
+
+fnstsw     ax | m16
+fstsw      ax | m16
+
+frstor     m94  | m108
+fsave      m94  | m108
+fnsave     m94  | m108
+fnstenv    m112 | m224
+fnstenvw   m112 | m224
+fstenv     m112 | m224
+
+fnstcw     m16
+fldcw      m16
+fstcw      m16
+fbld       m80
+fbstp      m80
+fldenv     m224
+fldenvw    m112
+fnsavew    m?
+frstorw    m?
+fsavew     m?
+fstenvw    m?
+
+f2xm1      -
+fabs       -
+fchs       -
+fclex      -
+fcompp     -
+fdecstp    -
+fincstp    -
+finit      -
+fld1       -
+fldl2e     -
+fldl2t     -
+fldlg2     -
+fldln2     -
+fldpi      -
+fldz       -
+fnclex     -
+fninit     -
+fnop       -
+fpatan     -
+fprem      -
+fptan      -
+frndint    -
+fscale     -
+fsqrt      -
+ftst       -
+fwait      -
+fxam       -
+fxtract    -
+fyl2x      -
+fyl2xp1    -
 
 ; ------------------------------------------------------------------------------
 ; Mnemonics added with 80287:               
 ; ------------------------------------------------------------------------------
 
-fsetpm
+;fsetpm 80287 only
 
 ; ------------------------------------------------------------------------------
 ; Mnemonics added with 80387:
 ; ------------------------------------------------------------------------------
 
-fcos
-fldenvd
-fsaved
-fstenvd
-fprem1
-frstord
-fsin
-fsincos
-fstenvd
-fucom
-fucomp
-fucompp
+fucom    - | sti
+fucomp   - | sti
+
+fldenvd  m?
+fsaved   m?
+fstenvd  m?
+frstord  m?
+fstenvd  m?
+
+fsin     -
+fcos     -
+fsincos  -
+fprem1   -
+fucompp  -
 
 ; ------------------------------------------------------------------------------
 ; Mnemonics added with Penium Pro:
 ; ------------------------------------------------------------------------------
 
-fcmovb
-fcmovbe
-fcmove
-fcmovnb
-fcmovnbe
-fcmovne
-fcmovnu
-fcmovu
-fcomi
-fcomip
-fucomi
-fucomip
-
+fcmovb   st0,sti
+fcmovbe  st0,sti
+fcmove   st0,sti
+fcmovnb  st0,sti
+fcmovnbe st0,sti
+fcmovne  st0,sti
+fcmovnu  st0,sti
+fcmovu   st0,sti
+fcomi    st0,sti
+fcomip   st0,sti
+fucomi   st0,sti
+fucomip  st0,sti
 
 ; ------------------------------------------------------------------------------
 ; Mnemonics added with SSE extension:
 ; ------------------------------------------------------------------------------
 
-fxrstor
-fxsave 
+fxrstor  m512
+fxsave   m512
 
 ; ------------------------------------------------------------------------------
 ; Mnemonics added with SSE3 extension:
 ; ------------------------------------------------------------------------------
 
-fisttp
+fisttp   md
