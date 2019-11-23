@@ -1,5 +1,3 @@
-use64
-
 ; immediate to each register: 16-bit
 ${mnemonic} ax, 0x50
 ${mnemonic} cx, 0x51

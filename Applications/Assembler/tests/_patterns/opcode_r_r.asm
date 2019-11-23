@@ -1,5 +1,3 @@
-use64
-
 ; 8-bit registers
 ${mnemonic} al, al
 ${mnemonic} al, cl

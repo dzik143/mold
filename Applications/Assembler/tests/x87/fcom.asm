@@ -1,0 +1,138 @@
+use64
+; ------------------------------------------------------------------------------
+; opcode -
+; ------------------------------------------------------------------------------
+fcom
+; ------------------------------------------------------------------------------
+; opcode m32
+; ------------------------------------------------------------------------------
+fcom dword [rip + 0x13]
+fcom dword [rip + 0x1235]
+fcom dword [rip + 0x12345679]
+fcom dword [rbx]
+fcom dword [rcx + 0x14]
+fcom dword [rdx + 0x15]
+fcom dword [rbx + 0x1235]
+fcom dword [rbx + 0x12345679]
+fcom dword [rbx + rcx]
+fcom dword [rbx + 4 * rcx]
+fcom dword [rbx + rcx + 0x13]
+fcom dword [rbx + rcx + 0x1235]
+fcom dword [rbx + rcx + 0x12345679]
+fcom dword [rbx + 4 * rcx + 0x13]
+fcom dword [rbx + 4 * rcx + 0x1235]
+fcom dword [rbx + 8 * rcx + 0x12345679]
+fcom dword [4 * rcx]
+fcom dword [4 * rcx + 0x13]
+fcom dword [4 * rcx + 0x1235]
+fcom dword [4 * rcx + 0x12345679]
+fcom dword [rbp]
+fcom dword [rbp + 0x12]
+fcom dword [rbp + 0x1234]
+fcom dword [rbp + 0x12345678]
+fcom dword [4 * rbp]
+fcom dword [4 * rbp + 0x12]
+fcom dword [4 * rbp + 0x1234]
+fcom dword [4 * rbp + 0x12345678]
+fcom dword [rbx + 4 * rbp]
+fcom dword [rbx + 4 * rbp + 0x12]
+fcom dword [rbx + 4 * rbp + 0x1234]
+fcom dword [rbx + 4 * rbp + 0x12345678]
+fcom dword [rsp]
+fcom dword [rsp + 0x12]
+fcom dword [rsp + 0x1234]
+fcom dword [rsp + 0x12345678]
+fcom dword [rsp + rax]
+fcom dword [rsp + rbp]
+fcom dword [rsp + 2*rbp]
+fcom dword [rsp + 4*rbp]
+fcom dword [rsp + 8*rbp]
+fcom dword [rax]
+fcom dword [rcx]
+fcom dword [rdx]
+fcom dword [rbx]
+fcom dword [rsp]
+fcom dword [rbp]
+fcom dword [rsi]
+fcom dword [rdi]
+fcom dword [rax + 2*rax]
+fcom dword [rcx + 2*rcx]
+fcom dword [rdx + 2*rdx]
+fcom dword [rbx + 2*rbx]
+fcom dword [rbp + 2*rbp]
+fcom dword [rsi + 2*rsi]
+fcom dword [rdi + 2*rdi]
+
+; ------------------------------------------------------------------------------
+; opcode m64
+; ------------------------------------------------------------------------------
+fcom qword [rip + 0x13]
+fcom qword [rip + 0x1235]
+fcom qword [rip + 0x12345679]
+fcom qword [rbx]
+fcom qword [rcx + 0x14]
+fcom qword [rdx + 0x15]
+fcom qword [rbx + 0x1235]
+fcom qword [rbx + 0x12345679]
+fcom qword [rbx + rcx]
+fcom qword [rbx + 4 * rcx]
+fcom qword [rbx + rcx + 0x13]
+fcom qword [rbx + rcx + 0x1235]
+fcom qword [rbx + rcx + 0x12345679]
+fcom qword [rbx + 4 * rcx + 0x13]
+fcom qword [rbx + 4 * rcx + 0x1235]
+fcom qword [rbx + 8 * rcx + 0x12345679]
+fcom qword [4 * rcx]
+fcom qword [4 * rcx + 0x13]
+fcom qword [4 * rcx + 0x1235]
+fcom qword [4 * rcx + 0x12345679]
+fcom qword [rbp]
+fcom qword [rbp + 0x12]
+fcom qword [rbp + 0x1234]
+fcom qword [rbp + 0x12345678]
+fcom qword [4 * rbp]
+fcom qword [4 * rbp + 0x12]
+fcom qword [4 * rbp + 0x1234]
+fcom qword [4 * rbp + 0x12345678]
+fcom qword [rbx + 4 * rbp]
+fcom qword [rbx + 4 * rbp + 0x12]
+fcom qword [rbx + 4 * rbp + 0x1234]
+fcom qword [rbx + 4 * rbp + 0x12345678]
+fcom qword [rsp]
+fcom qword [rsp + 0x12]
+fcom qword [rsp + 0x1234]
+fcom qword [rsp + 0x12345678]
+fcom qword [rsp + rax]
+fcom qword [rsp + rbp]
+fcom qword [rsp + 2*rbp]
+fcom qword [rsp + 4*rbp]
+fcom qword [rsp + 8*rbp]
+fcom qword [rax]
+fcom qword [rcx]
+fcom qword [rdx]
+fcom qword [rbx]
+fcom qword [rsp]
+fcom qword [rbp]
+fcom qword [rsi]
+fcom qword [rdi]
+fcom qword [rax + 2*rax]
+fcom qword [rcx + 2*rcx]
+fcom qword [rdx + 2*rdx]
+fcom qword [rbx + 2*rbx]
+fcom qword [rbp + 2*rbp]
+fcom qword [rsi + 2*rsi]
+fcom qword [rdi + 2*rdi]
+
+; ------------------------------------------------------------------------------
+; opcode sti
+; ------------------------------------------------------------------------------
+fcom st
+fcom st0
+fcom st1
+fcom st2
+fcom st3
+fcom st4
+fcom st5
+fcom st6
+fcom st7
+

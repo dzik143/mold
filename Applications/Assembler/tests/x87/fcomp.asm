@@ -1,0 +1,138 @@
+use64
+; ------------------------------------------------------------------------------
+; opcode -
+; ------------------------------------------------------------------------------
+fcomp
+; ------------------------------------------------------------------------------
+; opcode m32
+; ------------------------------------------------------------------------------
+fcomp dword [rip + 0x13]
+fcomp dword [rip + 0x1235]
+fcomp dword [rip + 0x12345679]
+fcomp dword [rbx]
+fcomp dword [rcx + 0x14]
+fcomp dword [rdx + 0x15]
+fcomp dword [rbx + 0x1235]
+fcomp dword [rbx + 0x12345679]
+fcomp dword [rbx + rcx]
+fcomp dword [rbx + 4 * rcx]
+fcomp dword [rbx + rcx + 0x13]
+fcomp dword [rbx + rcx + 0x1235]
+fcomp dword [rbx + rcx + 0x12345679]
+fcomp dword [rbx + 4 * rcx + 0x13]
+fcomp dword [rbx + 4 * rcx + 0x1235]
+fcomp dword [rbx + 8 * rcx + 0x12345679]
+fcomp dword [4 * rcx]
+fcomp dword [4 * rcx + 0x13]
+fcomp dword [4 * rcx + 0x1235]
+fcomp dword [4 * rcx + 0x12345679]
+fcomp dword [rbp]
+fcomp dword [rbp + 0x12]
+fcomp dword [rbp + 0x1234]
+fcomp dword [rbp + 0x12345678]
+fcomp dword [4 * rbp]
+fcomp dword [4 * rbp + 0x12]
+fcomp dword [4 * rbp + 0x1234]
+fcomp dword [4 * rbp + 0x12345678]
+fcomp dword [rbx + 4 * rbp]
+fcomp dword [rbx + 4 * rbp + 0x12]
+fcomp dword [rbx + 4 * rbp + 0x1234]
+fcomp dword [rbx + 4 * rbp + 0x12345678]
+fcomp dword [rsp]
+fcomp dword [rsp + 0x12]
+fcomp dword [rsp + 0x1234]
+fcomp dword [rsp + 0x12345678]
+fcomp dword [rsp + rax]
+fcomp dword [rsp + rbp]
+fcomp dword [rsp + 2*rbp]
+fcomp dword [rsp + 4*rbp]
+fcomp dword [rsp + 8*rbp]
+fcomp dword [rax]
+fcomp dword [rcx]
+fcomp dword [rdx]
+fcomp dword [rbx]
+fcomp dword [rsp]
+fcomp dword [rbp]
+fcomp dword [rsi]
+fcomp dword [rdi]
+fcomp dword [rax + 2*rax]
+fcomp dword [rcx + 2*rcx]
+fcomp dword [rdx + 2*rdx]
+fcomp dword [rbx + 2*rbx]
+fcomp dword [rbp + 2*rbp]
+fcomp dword [rsi + 2*rsi]
+fcomp dword [rdi + 2*rdi]
+
+; ------------------------------------------------------------------------------
+; opcode m64
+; ------------------------------------------------------------------------------
+fcomp qword [rip + 0x13]
+fcomp qword [rip + 0x1235]
+fcomp qword [rip + 0x12345679]
+fcomp qword [rbx]
+fcomp qword [rcx + 0x14]
+fcomp qword [rdx + 0x15]
+fcomp qword [rbx + 0x1235]
+fcomp qword [rbx + 0x12345679]
+fcomp qword [rbx + rcx]
+fcomp qword [rbx + 4 * rcx]
+fcomp qword [rbx + rcx + 0x13]
+fcomp qword [rbx + rcx + 0x1235]
+fcomp qword [rbx + rcx + 0x12345679]
+fcomp qword [rbx + 4 * rcx + 0x13]
+fcomp qword [rbx + 4 * rcx + 0x1235]
+fcomp qword [rbx + 8 * rcx + 0x12345679]
+fcomp qword [4 * rcx]
+fcomp qword [4 * rcx + 0x13]
+fcomp qword [4 * rcx + 0x1235]
+fcomp qword [4 * rcx + 0x12345679]
+fcomp qword [rbp]
+fcomp qword [rbp + 0x12]
+fcomp qword [rbp + 0x1234]
+fcomp qword [rbp + 0x12345678]
+fcomp qword [4 * rbp]
+fcomp qword [4 * rbp + 0x12]
+fcomp qword [4 * rbp + 0x1234]
+fcomp qword [4 * rbp + 0x12345678]
+fcomp qword [rbx + 4 * rbp]
+fcomp qword [rbx + 4 * rbp + 0x12]
+fcomp qword [rbx + 4 * rbp + 0x1234]
+fcomp qword [rbx + 4 * rbp + 0x12345678]
+fcomp qword [rsp]
+fcomp qword [rsp + 0x12]
+fcomp qword [rsp + 0x1234]
+fcomp qword [rsp + 0x12345678]
+fcomp qword [rsp + rax]
+fcomp qword [rsp + rbp]
+fcomp qword [rsp + 2*rbp]
+fcomp qword [rsp + 4*rbp]
+fcomp qword [rsp + 8*rbp]
+fcomp qword [rax]
+fcomp qword [rcx]
+fcomp qword [rdx]
+fcomp qword [rbx]
+fcomp qword [rsp]
+fcomp qword [rbp]
+fcomp qword [rsi]
+fcomp qword [rdi]
+fcomp qword [rax + 2*rax]
+fcomp qword [rcx + 2*rcx]
+fcomp qword [rdx + 2*rdx]
+fcomp qword [rbx + 2*rbx]
+fcomp qword [rbp + 2*rbp]
+fcomp qword [rsi + 2*rsi]
+fcomp qword [rdi + 2*rdi]
+
+; ------------------------------------------------------------------------------
+; opcode sti
+; ------------------------------------------------------------------------------
+fcomp st
+fcomp st0
+fcomp st1
+fcomp st2
+fcomp st3
+fcomp st4
+fcomp st5
+fcomp st6
+fcomp st7
+

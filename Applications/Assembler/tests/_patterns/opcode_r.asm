@@ -1,5 +1,3 @@
-use64
-
 ; ${mnemonic} r8
 ${mnemonic} al
 ${mnemonic} cl

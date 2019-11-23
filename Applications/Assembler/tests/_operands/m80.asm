@@ -4,7 +4,7 @@ tword [rip + 0x1235]
 tword [rip + 0x12345679]
 
 ; [rip + base]
-tword  [rbx]
+tword [rbx]
 
 ; [rip + base + disp8]
 tword [rcx + 0x14]

@@ -1,4 +1,3 @@
-use64
 ; r,r without 8-bit combinations:
 ; r16, r16
 ; r32, r32

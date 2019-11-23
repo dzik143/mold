@@ -1,0 +1,82 @@
+;###############################################################################
+;#                                                                             #
+;# This file is part of Mold project.                                          #
+;# Copyright (C) 2015, 2019 Sylwester Wysocki <sw143@wp.pl>                    #
+;#                                                                             #
+;# This program is free software: you can redistribute it and/or modify        #
+;# it under the terms of the GNU General Public License as published by        #
+;# the Free Software Foundation, either version 3 of the License, or           #
+;# (at your option) any later version.                                         #
+;#                                                                             #
+;# This program is distributed in the hope that it will be useful,             #
+;# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+;# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+;# GNU General Public License for more details.                                #
+;#                                                                             #
+;# You should have received a copy of the GNU General Public License           #
+;# along with this program. If not, see <http://www.gnu.org/licenses/>         #
+;#                                                                             #
+;###############################################################################
+
+; ------------------------------------------------------------------------------
+; Instructions added with Pentium III:
+; ------------------------------------------------------------------------------
+                         
+andps     xmm,xmm | xmm,m128
+andnps    xmm,xmm | xmm,m128
+orps      xmm,xmm | xmm,m128
+xorps     xmm,xmm | xmm,m128
+unpcklps  xmm,xmm | xmm,m128
+unpckhps  xmm,xmm | xmm,m128
+
+movups    xmm,xmm | xmm,m128 | m128,xmm
+movaps    xmm,xmm | xmm,m128 | m128,xmm
+movss     xmm,xmm | xmm,m32  | m32,xmm
+
+movlps    xmm,m64 | m64,xmm
+movhps    xmm,m64 | m64,xmm
+
+cvttss2si r32,xmm | r32,m32 | r64,xmm | r64,m32
+cvtss2si  r32,xmm | r32,m32 | r64,xmm | r64,m32
+
+cvtsi2ss  xmm,r32 | xmm,m32 | xmm,r64 | xmm,m64
+
+cvttps2pi mm,xmm | mm,m64
+cvtps2pi  mm,xmm | mm,m64
+cvtpi2ps  xmm,mm | xmm,m64
+
+movmskps  r32,xmm | r64,xmm
+
+movhlps   xmm,xmm
+movlhps   xmm,xmm
+
+movntps   m128,xmm
+
+ucomiss   xmm,xmm | xmm,m32
+comiss    xmm,xmm | xmm,m32
+sqrtss    xmm,xmm | xmm,m32
+rsqrtss   xmm,xmm | xmm,m32
+rcpss     xmm,xmm | xmm,m32
+addss     xmm,xmm | xmm,m32
+mulss     xmm,xmm | xmm,m32
+subss     xmm,xmm | xmm,m32
+minss     xmm,xmm | xmm,m32
+divss     xmm,xmm | xmm,m32
+maxss     xmm,xmm | xmm,m32
+
+sqrtps    xmm,xmm | xmm,m128
+rsqrtps   xmm,xmm | xmm,m128
+rcpps     xmm,xmm | xmm,m128
+addps     xmm,xmm | xmm,m128
+mulps     xmm,xmm | xmm,m128
+subps     xmm,xmm | xmm,m128
+minps     xmm,xmm | xmm,m128
+divps     xmm,xmm | xmm,m128
+maxps     xmm,xmm | xmm,m128
+
+cmpps     xmm,xmm,imm8 | xmm,m128,imm8
+shufps    xmm,xmm,imm8 | xmm,m128,imm8
+cmpss     xmm,xmm,imm8 | xmm,m32,imm8
+
+ldmxcsr   m32
+stmxcsr   m32

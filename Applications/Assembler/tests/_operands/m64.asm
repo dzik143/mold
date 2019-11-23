@@ -4,7 +4,7 @@ qword [rip + 0x1235]
 qword [rip + 0x12345679]
 
 ; [rip + base]
-qword  [rbx]
+qword [rbx]
 
 ; [rip + base + disp8]
 qword [rcx + 0x14]

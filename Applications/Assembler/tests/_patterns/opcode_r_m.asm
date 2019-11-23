@@ -1,5 +1,3 @@
-use64
-
 ; [rip + disp32]
 ${mnemonic} bl,  byte  [rip + 0x12]
 ${mnemonic} cx,  word  [rip + 0x13]

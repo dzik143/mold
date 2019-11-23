@@ -1,5 +1,3 @@
-use64
-
 ; immediate to each register: 8-bit
 ${mnemonic} al, 0x12
 ${mnemonic} cl, 0x13

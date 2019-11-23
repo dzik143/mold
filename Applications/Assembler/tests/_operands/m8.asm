@@ -4,7 +4,7 @@ byte [rip + 0x1235]
 byte [rip + 0x12345679]
 
 ; [rip + base]
-byte  [rbx]
+byte [rbx]
 
 ; [rip + base + disp8]
 byte [rcx + 0x14]

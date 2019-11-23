@@ -1,5 +1,3 @@
-use64
-
 ; 8-bit
 ${mnemonic} 0
 ${mnemonic} 1

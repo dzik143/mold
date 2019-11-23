@@ -4,7 +4,7 @@ dword [rip + 0x1235]
 dword [rip + 0x12345679]
 
 ; [rip + base]
-dword  [rbx]
+dword [rbx]
 
 ; [rip + base + disp8]
 dword [rcx + 0x14]

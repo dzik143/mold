@@ -1,5 +1,3 @@
-use64
-
 ; [rip + disp32]
 ${mnemonic} word  [rip + 0x12], 0x12
 ${mnemonic} word  [rip + 0x13], 0x13

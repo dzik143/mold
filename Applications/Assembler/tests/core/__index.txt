@@ -36,7 +36,8 @@
 ;lds     invalid in 64-bit mode
 ;les     invalid in 64-bit mode
 ;daa     invalid in 64-bit mode
-           
+;into    invalid in 64-bit mode
+
 adc        r,r | r,m | m,r | r,imm | m,imm
 add        r,r | r,m | m,r | r,imm | m,imm
 and        r,r | r,m | m,r | r,imm | m,imm
@@ -69,14 +70,14 @@ pop        r16 | m16 | r64 | m64
 mov        r,r | r,m | m,r | r,imm | m,imm | r64,imm64
 xchg       r,r | r,m | m,r
 
-mul        r | m | rd,rd | rd,md | rd,md,imm
-imul       r | m | rd,rd | rd,md | rd,md,imm
+;mul        r | m | rd,rd | rd,md | rd,md,imm
+;imul       r | m | rd,rd | rd,md | rd,md,imm
 
 in         al,imm8 | ax,imm8 | eax,imm8 | al,dx | ax,dx | eax,dx
 out        imm8,al | imm8,ax | imm8,eax | dx,al | dx,ax | dx,eax
 
 lea        rd,m8 | rd,m16 | rd,m32 | rd,m64
-int        imm8
+int        imm8 
 
 nop        - | rd | md
 ret        - | imm16
@@ -91,7 +92,6 @@ cmc        -
 cmpsb      -
 cmpsw      -
 hlt        -
-into       -
 iret       -
 lock       -
 lodsb      -
@@ -131,9 +131,12 @@ xlatb      -
 ;rcl  imm (already handled)
 ;rcr  imm (already handled)
 
+; Only [edi/rdi] or [esi/rsi] addresses are available.
+; Tests are handled manually.
+;ins        m8,dx | m32,dx | m32,dx
+;outs       dx,m8 | dx,m16 | dx,m32
+
 enter      imm16,imm8
-ins        m8,dx | m16,dx | m32,dx
-outs       dx,m8 | dx,m16 | dx,m32
 leave      -
 
 ; ------------------------------------------------------------------------------
@@ -143,7 +146,7 @@ leave      -
 ;arpl    invalid in 64-bit mode
 ;loadall 80286 only
 
-sldt       rd | m16 | r64,m16
+sldt       r16 | r64 | m16
 
 lar        rd,r16 | rd,m16
 lsl        rd,r16 | rd,m16
@@ -179,22 +182,21 @@ clts       -
 
 bsf        rd,rd | rd,md 
 bsr        rd,rd | rd,md 
-cdq        rd,rd | rd,md
 
 bt         rd,rd | md,rd 
 btc        rd,rd | md,rd 
 btr        rd,rd | md,rd 
 bts        rd,rd | md,rd 
 
-lfs        rd,md
-lgs        rd,md
-lss        rd,md
+lfs        rd,md-far
+lgs        rd,md-far
+lss        rd,md-far
 
 movsx      rd,r8 | rd,m8 | r32,r16 | r32,m16 | r64,r16 | r64,m16
 movzx      rd,r8 | rd,m8 | r32,r16 | r32,m16 | r64,r16 | r64,m16
 
-shld       rd,cl | rd,imm8 | md,cl | md,imm8
-shrd       rd,cl | rd,imm8 | md,cl | md,imm8
+shld       rd,rd,cl | rd,rd,imm8 | md,rd,cl | md,rd,imm8
+shrd       rd,rd,cl | rd,rd,imm8 | md,rd,cl | md,rd,imm8
 
 seta       r8 | m8
 setae      r8 | m8
@@ -228,6 +230,7 @@ sets       r8 | m8
 setz       r8 | m8
 
 cwde       -
+cdq        -
 iretd      -
 lodsd      -
 stosd      -
@@ -252,7 +255,7 @@ wbinvd     -
 ; Mnemonics added with Pentium processor: 
 ; ------------------------------------------------------------------------------
 
-cmpxchg8b  m64 | m128
+cmpxchg8b  m64
 cpuid      -
 rdmsr      -
 rdtsc      -
@@ -320,7 +323,7 @@ sysexit    -
 ; ------------------------------------------------------------------------------
 
 movsxd     r64,r32 | r64,m32
-cmpxchg16b m64 | m128
+cmpxchg16b m128
 cdqe       -
 cqo        -
 cmpsq      -

@@ -4,7 +4,7 @@ word [rip + 0x1235]
 word [rip + 0x12345679]
 
 ; [rip + base]
-word  [rbx]
+word [rbx]
 
 ; [rip + base + disp8]
 word [rcx + 0x14]

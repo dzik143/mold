@@ -1,5 +1,3 @@
-use64
-
 ; sti
 ${mnemonic} st
 ${mnemonic} st0

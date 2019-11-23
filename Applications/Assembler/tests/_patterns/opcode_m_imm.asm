@@ -1,5 +1,3 @@
-use64
-
 ; [rip + disp32]
 ${mnemonic} byte  [rip + 0x12], 0x13
 ${mnemonic} word  [rip + 0x13], 0x1234
@@ -155,4 +153,3 @@ ${mnemonic} byte [rbx + 2*rbx], 0x15
 ${mnemonic} byte [rbp + 2*rbp], 0x16
 ${mnemonic} byte [rsi + 2*rsi], 0x17
 ${mnemonic} byte [rdi + 2*rdi], 0x18
-

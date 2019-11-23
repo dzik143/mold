@@ -65,9 +65,14 @@ psubusw   mm,mm | mm,m64
 punpckhbw mm,mm | mm,m64
 punpckhwd mm,mm | mm,m64
 punpckhdq mm,mm | mm,m64
-punpcklbw mm,mm | mm,m32
-punpcklwd mm,mm | mm,m32
-punpckldq mm,mm | mm,m32
+
+; TODO: Fasm gives invalid operands for mm,m32
+;punpcklbw mm,mm | mm,m32
+;punpcklwd mm,mm | mm,m32
+;punpckldq mm,mm | mm,m32
+punpcklbw mm,mm
+punpcklwd mm,mm
+punpckldq mm,mm
 
 psllw     mm,mm | mm,m64 | mm,imm8
 pslld     mm,mm | mm,m64 | mm,imm8
@@ -79,3 +84,51 @@ psrld     mm,mm | mm,m64 | mm,imm8
 psrlq     mm,mm | mm,m64 | mm,imm8
 
 emms      -
+
+; ------------------------------------------------------------------------------
+; Instructions added with SSE:
+; ------------------------------------------------------------------------------
+
+pshufw   mm,mm,imm8  | mm,m64,imm8
+pinsrw   mm,r32,imm8 | mm,m16,imm8
+pextrw   r32,mm,imm8 | r64,mm,imm8
+
+pmovmskb r32,mm | r64,mm
+
+pminub   mm,mm | mm,m64
+pmaxub   mm,mm | mm,m64
+pavgb    mm,mm | mm,m64
+pavgw    mm,mm | mm,m64
+pmulhuw  mm,mm | mm,m64
+pminsw   mm,mm | mm,m64
+pmaxsw   mm,mm | mm,m64
+psadbw   mm,mm | mm,m64
+
+; ------------------------------------------------------------------------------
+; Instructions added with SSE2:
+; ------------------------------------------------------------------------------
+
+psubq    mm,mm | mm,m64
+pmuludq  mm,mm | mm,m64
+
+; ------------------------------------------------------------------------------
+; Instructions added with SSE3:
+; ------------------------------------------------------------------------------
+
+psignb    mm,mm | mm,m64
+psignw    mm,mm | mm,m64
+psignd    mm,mm | mm,m64
+pshufb    mm,mm | mm,m64
+pmulhrsw  mm,mm | mm,m64
+pmaddubsw mm,mm | mm,m64
+phsubw    mm,mm | mm,m64
+phsubsw   mm,mm | mm,m64
+phsubd    mm,mm | mm,m64
+phaddsw   mm,mm | mm,m64
+phaddw    mm,mm | mm,m64
+phaddd    mm,mm | mm,m64
+pabsb     mm,mm | mm,m64
+pabsw     mm,mm | mm,m64
+pabsd     mm,mm | mm,m64
+
+palignr   mm,mm,imm8 | mm,m64,imm8

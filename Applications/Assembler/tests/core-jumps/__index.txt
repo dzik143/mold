@@ -27,8 +27,8 @@
 ;loopew  unavailable in 64-bit mode
 ;loopnew unavailable in 64-bit mode
 
-call           rel16 | rel32 | rd | md | ptr16-32 | ptr16-32 | ptr16-64
-jmp     rel8 | rel16 | rel32 | rd | md | ptr16-32 | ptr16-32 | ptr16-64
+call           rel16 | rel32 | r16 | r64 | m16 | m64
+jmp     rel8 | rel16 | rel32 | r16 | r64 | m16 | m64
 
 jo      rel8 | rel32
 jno     rel8 | rel32
