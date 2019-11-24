@@ -121,7 +121,11 @@ class X64Encoder
     endif
 
     # Primary opcode.
-    this.emitByte(opcode)
+    if opcode > 255
+      this.emitWord(opcode)
+    else
+      this.emitByte(opcode)
+    endif
 
     # Mod-Reg-R/M byte.
     this.emitModRegRM(mode, reg, rm)
@@ -783,9 +787,13 @@ class X64Encoder
     this.emitDword(imm)
   endmethod
 
-  #
-  # Bit shifts and rotations: rol, ror, rcl, rcr, shl, rhr, sar
-  #
+  method pushf()
+    die('not implemented: pushf')
+  endmethod
+
+  method popf()
+    die('not implemented: popf')
+  endmethod
 
   #
   # Ports: in, out,
@@ -850,11 +858,6 @@ class X64Encoder
     this.insd()
   endmethod
 
-  method insd()
-    global X64_INSD
-    this.emitByte(X64_INSD)
-  endmethod
-
   method outsb()
     global X64_OUTSB
     this.emitByte(X64_OUTSB)
@@ -863,11 +866,6 @@ class X64Encoder
   method outsw()
     this.emitPrefix16()
     this.outsd()
-  endmethod
-
-  method outsd()
-    global X64_OUTSD
-    this.emitByte(X64_OUTSD)
   endmethod
 
   # Strings: movsb, movsw, movsd, movsq,
@@ -887,11 +885,6 @@ class X64Encoder
     this.movsd()
   endmethod
 
-  method movsd()
-    global X64_MOVSD
-    this.emitByte(X64_MOVSD)
-  endmethod
-
   method movsq()
     this.emitPrefix64()
     this.movsd()
@@ -907,16 +900,6 @@ class X64Encoder
     this.cmpsd()
   endmethod
 
-  method cmpsd()
-    global X64_CMPSD
-    this.emitByte(X64_CMPSD)
-  endmethod
-
-  method cmpsq()
-    this.emitPrefix64()
-    this.cmpsd()
-  endmethod
-
   method stosb()
     global X64_STOSB
     this.emitByte(X64_STOSB)
@@ -924,16 +907,6 @@ class X64Encoder
 
   method stosw()
     this.emitPrefix16()
-    this.stosd()
-  endmethod
-
-  method stosd()
-    global X64_STOSD
-    this.emitByte(X64_STOSD)
-  endmethod
-
-  method stosq()
-    this.emitPrefix64()
     this.stosd()
   endmethod
 
@@ -947,16 +920,6 @@ class X64Encoder
     this.lodsd()
   endmethod
 
-  method lodsd()
-    global X64_LODSD
-    this.emitByte(X64_LODSD)
-  endmethod
-
-  method lodsq()
-    this.emitPrefix64()
-    this.lodsd()
-  endmethod
-
   method scasb()
     global X64_SCASB
     this.emitByte(X64_SCASB)
@@ -964,16 +927,6 @@ class X64Encoder
 
   method scasw()
     this.emitPrefix16()
-    this.scasd()
-  endmethod
-
-  method scasd()
-    global X64_SCASD
-    this.emitByte(X64_SCASD)
-  endmethod
-
-  method scasq()
-    this.emitPrefix64()
     this.scasd()
   endmethod
 
@@ -1143,7 +1096,7 @@ class X64Encoder
   endmethod
 
   #
-  # Procedures: call, ret, retn, enter, leave
+  # Procedures: call, ret
   #
 
   method call_rel(rel)
@@ -1169,18 +1122,6 @@ class X64Encoder
     global X64_RET_IMM16
     this.emitByte(X64_RET_IMM16)
     this.emitWord(imm)
-  endmethod
-
-  method enter_imm16_imm8(disp, level)
-    global X64_ENTER_IMM16_IMM8
-    this.emitByte(X64_ENTER_IMM16_IMM8)
-    this.emitWord(disp)
-    this.emitByte(level)
-  endmethod
-
-  method leave()
-    global X64_LEAVE
-    this.emitByte(X64_LEAVE)
   endmethod
 
   #
@@ -1280,30 +1221,15 @@ class X64Encoder
     endif
   endmethod
 
-  # Conversion: cbw, cwd, cdq, movsxd
-  method movsxd_r64_r32(regDst, regSrc)
-    global X64_MOVSXD_R32_RM32
-    this.emitCore_r_r(X64_MOVSXD_R32_RM32, regSrc, regDst)
-  endmethod
-
-  method movsxd_r64_m32(regDst, regBase, scale, regIndex, disp)
-    global X64_MOVSXD_R32_RM32
-    this.emitCore_r_m(X64_MOVSXD_R32_RM32, regDst, regBase, scale, regIndex, disp)
-  endmethod
-
-  method cwde()
-    global X64_CWDE
-    this.emitByte(X64_CWDE)
-  endmethod
-
+  # Conversion: cbw, cwd
   method cbw()
     this.emitPrefix16()
     this.cwde()
   endmethod
 
-  method cdqe()
-    this.emitPrefix64()
-    this.cwde()
+  method cwd()
+    this.emitPrefix16()
+    this.cdqe()
   endmethod
 
   #
@@ -1369,7 +1295,7 @@ class X64Encoder
   endmethod
 
   #
-  # Core other: lea, nop, xlat, hlt, cmc
+  # Core other: lea, nop, xlatb, hlt, cmc
   #
 
   method lea_r_m(regDst, regBase, scale, regIndex, disp)
@@ -1389,6 +1315,1149 @@ class X64Encoder
   method connectTo(outputObject) -> rv
     this.outputObject = outputObject
     rv = outputObject
+  endmethod
+
+  # aaa     invalid in 64-bit mode
+  # aad     invalid in 64-bit mode
+  # aam     invalid in 64-bit mode
+  # lahf    invalid in 64-bit mode
+  # aas     invalid in 64-bit mode
+  # das     invalid in 64-bit mode
+  # sahf    invalid in 64-bit mode
+  # lds     invalid in 64-bit mode
+  # les     invalid in 64-bit mode
+  # daa     invalid in 64-bit mode
+  # into    invalid in 64-bit mode
+
+  #
+  # Bit shifts and rotations: rol, ror, rcl, rcr, shl, rhr, sar
+  #
+
+  method rcl_r_cl(regDst)
+    die('not implemented: rcl r,cl')
+  endmethod
+
+  method rcl_r_imm(regDst, imm)
+    die('not implemented: rcl r,imm')
+  endmethod
+
+  method rcl_m_cl(regBase, scale, regIndex, disp)
+    die('not implemented: rcl m,cl')
+  endmethod
+
+  method rcl_m_imm(regBase, scale, regIndex, disp, imm)
+    die('not implemented: rcl m,imm')
+  endmethod
+
+  method rcr_r_cl(regDst)
+    die('not implemented: rcr r,cl')
+  endmethod
+
+  method rcr_r_imm(regDst, imm)
+    die('not implemented: rcr r,imm')
+  endmethod
+
+  method rcr_m_cl(regBase, scale, regIndex, disp)
+    die('not implemented: rcr m,cl')
+  endmethod
+
+  method rcr_m_imm(regBase, scale, regIndex, disp, imm)
+    die('not implemented: rcr m,imm')
+  endmethod
+
+  method rol_r_cl(regDst)
+    die('not implemented: rol r,cl')
+  endmethod
+
+  method rol_r_imm(regDst, imm)
+    die('not implemented: rol r,imm')
+  endmethod
+
+  method rol_m_cl(regBase, scale, regIndex, disp)
+    die('not implemented: rol m,cl')
+  endmethod
+
+  method rol_m_imm(regBase, scale, regIndex, disp, imm)
+    die('not implemented: rol m,imm')
+  endmethod
+
+  method ror_r_cl(regDst)
+    die('not implemented: ror r,cl')
+  endmethod
+
+  method ror_r_imm(regDst, imm)
+    die('not implemented: ror r,imm')
+  endmethod
+
+  method ror_m_cl(regBase, scale, regIndex, disp)
+    die('not implemented: ror m,cl')
+  endmethod
+
+  method ror_m_imm(regBase, scale, regIndex, disp, imm)
+    die('not implemented: ror m,imm')
+  endmethod
+
+  method sal_r_cl(regDst)
+    die('not implemented: sal r,cl')
+  endmethod
+
+  method sal_r_imm(regDst, imm)
+    die('not implemented: sal r,imm')
+  endmethod
+
+  method sal_m_cl(regBase, scale, regIndex, disp)
+    die('not implemented: sal m,cl')
+  endmethod
+
+  method sal_m_imm(regBase, scale, regIndex, disp, imm)
+    die('not implemented: sal m,imm')
+  endmethod
+
+  method sar_r_cl(regDst)
+    die('not implemented: sar r,cl')
+  endmethod
+
+  method sar_r_imm(regDst, imm)
+    die('not implemented: sar r,imm')
+  endmethod
+
+  method sar_m_cl(regBase, scale, regIndex, disp)
+    die('not implemented: sar m,cl')
+  endmethod
+
+  method sar_m_imm(regBase, scale, regIndex, disp, imm)
+    die('not implemented: sar m,imm')
+  endmethod
+
+  method shl_r_cl(regDst)
+    die('not implemented: shl r,cl')
+  endmethod
+
+  method shl_r_imm(regDst, imm)
+    die('not implemented: shl r,imm')
+  endmethod
+
+  method shl_m_cl(regBase, scale, regIndex, disp)
+    die('not implemented: shl m,cl')
+  endmethod
+
+  method shl_m_imm(regBase, scale, regIndex, disp, imm)
+    die('not implemented: shl m,imm')
+  endmethod
+
+  method shr_r_cl(regDst)
+    die('not implemented: shr r,cl')
+  endmethod
+
+  method shr_r_imm(regDst, imm)
+    die('not implemented: shr r,imm')
+  endmethod
+
+  method shr_m_cl(regBase, scale, regIndex, disp)
+    die('not implemented: shr m,cl')
+  endmethod
+
+  method shr_m_imm(regBase, scale, regIndex, disp, imm)
+    die('not implemented: shr m,imm')
+  endmethod
+
+  #
+  # No operation (nop).
+  #
+
+  method nop()
+    die('not implemented: nop')
+  endmethod
+
+  method nop_r(regDst)
+    die('not implemented: nop r')
+  endmethod
+
+  method nop_m(regBase, scale, regIndex, disp)
+    die('not implemented: nop m')
+  endmethod
+
+  method cmc()
+    die('not implemented: cmc')
+  endmethod
+
+  method hlt()
+    die('not implemented: hlt')
+  endmethod
+
+  method wait()
+    die('not implemented: wait')
+  endmethod
+
+  method xlatb()
+    die('not implemented: xlatb')
+  endmethod
+
+  #-----------------------------------------------------------------------------
+  # Mnemonics added with 80186 processor.
+  #
+  # Skipped mnemonics:
+  #   bound    - invalid in 64-bit mode
+  #   popa     - invalid in 64-bit mode
+  #   pusha    - invalid in 64-bit mode
+  #   push imm - already handled
+  #   imul imm - already handled
+  #   shl  imm - already handled
+  #   shr  imm - already handled
+  #   sal  imm - already handled
+  #   sar  imm - already handled
+  #   rol  imm - already handled
+  #   ror  imm - already handled
+  #   rcl  imm - already handled
+  #   rcr  imm - already handled
+  #-----------------------------------------------------------------------------
+
+  # Only [edi/rdi] or [esi/rsi] addresses are available.
+  # TODO:
+  # ins  m8,dx | m32,dx | m32,dx
+  # outs dx,m8 | dx,m16 | dx,m32
+
+  method enter_imm16_imm8(disp, level)
+    global X64_ENTER_IMM16_IMM8
+    this.emitByte(X64_ENTER_IMM16_IMM8)
+    this.emitWord(disp)
+    this.emitByte(level)
+  endmethod
+
+  method leave()
+    global X64_LEAVE
+    this.emitByte(X64_LEAVE)
+  endmethod
+
+  #-----------------------------------------------------------------------------
+  # Mnemonics added with 80286 processor.
+  #
+  # Skipped mnemonics:
+  #   arpl    - invalid in 64-bit mode
+  #   loadall - 80286 only
+  #-----------------------------------------------------------------------------
+
+  method sldt_r(regDst)
+    die('not implemented: sldt r')
+  endmethod
+
+  method sldt_m(regBase, scale, regIndex, disp)
+    die('not implemented: sldt m')
+  endmethod
+
+  method lar_r_r(regDst, regSrc)
+    die('not implemented: lar r,r')
+  endmethod
+
+  method lar_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: lar r,m')
+  endmethod
+
+  method lsl_r_r(regDst, regSrc)
+    die('not implemented: lsl r,r')
+  endmethod
+
+  method lsl_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: lsl r,m')
+  endmethod
+
+  method smsw_r(regDst)
+    die('not implemented: smsw r')
+  endmethod
+
+  method smsw_m(regBase, scale, regIndex, disp)
+    die('not implemented: smsw m')
+  endmethod
+
+  method str_r(regDst)
+    die('not implemented: str r')
+  endmethod
+
+  method str_m(regBase, scale, regIndex, disp)
+    die('not implemented: str m')
+  endmethod
+
+  method lldt_r(regDst)
+    die('not implemented: lldt r')
+  endmethod
+
+  method lldt_m(regBase, scale, regIndex, disp)
+    die('not implemented: lldt m')
+  endmethod
+
+  method lmsw_r(regDst)
+    die('not implemented: lmsw r')
+  endmethod
+
+  method lmsw_m(regBase, scale, regIndex, disp)
+    die('not implemented: lmsw m')
+  endmethod
+
+  method ltr_r(regDst)
+    die('not implemented: ltr r')
+  endmethod
+
+  method ltr_m(regBase, scale, regIndex, disp)
+    die('not implemented: ltr m')
+  endmethod
+
+  method verr_r(regDst)
+    die('not implemented: verr r')
+  endmethod
+
+  method verr_m(regBase, scale, regIndex, disp)
+    die('not implemented: verr m')
+  endmethod
+
+  method verw_r(regDst)
+    die('not implemented: verw r')
+  endmethod
+
+  method verw_m(regBase, scale, regIndex, disp)
+    die('not implemented: verw m')
+  endmethod
+
+  method lgdt_m(regBase, scale, regIndex, disp)
+    die('not implemented: lgdt m')
+  endmethod
+
+  method lidt_m(regBase, scale, regIndex, disp)
+    die('not implemented: lidt m')
+  endmethod
+
+  method sgdt_m(regBase, scale, regIndex, disp)
+    die('not implemented: sgdt m')
+  endmethod
+
+  method sidt_m(regBase, scale, regIndex, disp)
+    die('not implemented: sidt m')
+  endmethod
+
+  method clts()
+    die('not implemented: clts')
+  endmethod
+
+  #-----------------------------------------------------------------------------
+  # Mnemonics added with 80386 processor.
+  #
+  # Skipped mnemonics:
+  #   pushad   - invalid in 64-bit mode
+  #   popad    - invalid in 64-bit mode
+  #   pushfd   - invalid in 64-bit mode
+  #   popfd    - invalid in 64-bit mode
+  #   loadalld - 80386 only
+  #   ibts     - 80386 before B1 step only
+  #   xbts     - 80386 before B1 step only
+  #-----------------------------------------------------------------------------
+
+  # TODO: mov to/from CR/DR/TR (already handled)
+
+  method bsf_r_r(regDst, regSrc)
+    die('not implemented: bsf r,r')
+  endmethod
+
+  method bsf_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: bsf r,m')
+  endmethod
+
+  method bsr_r_r(regDst, regSrc)
+    die('not implemented: bsr r,r')
+  endmethod
+
+  method bsr_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: bsr r,m')
+  endmethod
+
+  method bt_r_r(regDst, regSrc)
+    die('not implemented: bt r,r')
+  endmethod
+
+  method bt_m_r(regBase, scale, regIndex, disp, regSrc)
+    die('not implemented: bt m,r')
+  endmethod
+
+  method btc_r_r(regDst, regSrc)
+    die('not implemented: btc r,r')
+  endmethod
+
+  method btc_m_r(regBase, scale, regIndex, disp, regSrc)
+    die('not implemented: btc m,r')
+  endmethod
+
+  method btr_r_r(regDst, regSrc)
+    die('not implemented: btr r,r')
+  endmethod
+
+  method btr_m_r(regBase, scale, regIndex, disp, regSrc)
+    die('not implemented: btr m,r')
+  endmethod
+
+  method bts_r_r(regDst, regSrc)
+    die('not implemented: bts r,r')
+  endmethod
+
+  method bts_m_r(regBase, scale, regIndex, disp, regSrc)
+    die('not implemented: bts m,r')
+  endmethod
+
+  method lfs_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: lfs r,m')
+  endmethod
+
+  method lgs_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: lgs r,m')
+  endmethod
+
+  method lss_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: lss r,m')
+  endmethod
+
+  method movsxd_r64_r32(regDst, regSrc)
+    global X64_MOVSXD_R32_RM32
+    this.emitCore_r_r(X64_MOVSXD_R32_RM32, regSrc, regDst)
+  endmethod
+
+  method movsxd_r64_m32(regDst, regBase, scale, regIndex, disp)
+    global X64_MOVSXD_R32_RM32
+    this.emitCore_r_m(X64_MOVSXD_R32_RM32, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method movzx_r_r(regDst, regSrc)
+    die('not implemented: movzx r,r')
+  endmethod
+
+  method movzx_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: movzx r,m')
+  endmethod
+
+  method shld_r_r_cl(regDst, regSrc)
+    die('not implemented: shld r,r,cl')
+  endmethod
+
+  method shld_r_r_imm(regDst, regSrc, imm)
+    die('not implemented: shld r,r,imm')
+  endmethod
+
+  method shld_r_r_cl(regBase, scale, regIndex, disp, regSrc)
+    die('not implemented: shld m,r,cl')
+  endmethod
+
+  method shld_m_r_imm(regBase, scale, regIndex, disp, imm)
+    die('not implemented: shld m,r,imm')
+  endmethod
+
+  method shrd_r_r_cl(regDst, regSrc)
+    die('not implemented: shrd r,r,cl')
+  endmethod
+
+  method shrd_r_r_imm(regDst, regSrc, imm)
+    die('not implemented: shrd r,r,imm')
+  endmethod
+
+  method shrd_r_r_cl(regBase, scale, regIndex, disp, regSrc)
+    die('not implemented: shrd m,r,cl')
+  endmethod
+
+  method shrd_m_r_imm(regBase, scale, regIndex, disp, imm)
+    die('not implemented: shrd m,r,imm')
+  endmethod
+
+  method seta_r(regDst)
+    die('not implemented: seta r')
+  endmethod
+
+  method seta_m(regBase, scale, regIndex, disp)
+    die('not implemented: seta m')
+  endmethod
+
+  method setae_r(regDst)
+    die('not implemented: setae r')
+  endmethod
+
+  method setae_m(regBase, scale, regIndex, disp)
+    die('not implemented: setae m')
+  endmethod
+
+  method setb_r(regDst)
+    die('not implemented: setb r')
+  endmethod
+
+  method setb_m(regBase, scale, regIndex, disp)
+    die('not implemented: setb m')
+  endmethod
+
+  method setbe_r(regDst)
+    die('not implemented: setbe r')
+  endmethod
+
+  method setbe_m(regBase, scale, regIndex, disp)
+    die('not implemented: setbe m')
+  endmethod
+
+  method setc_r(regDst)
+    die('not implemented: setc r')
+  endmethod
+
+  method setc_m(regBase, scale, regIndex, disp)
+    die('not implemented: setc m')
+  endmethod
+
+  method sete_r(regDst)
+    die('not implemented: sete r')
+  endmethod
+
+  method sete_m(regBase, scale, regIndex, disp)
+    die('not implemented: sete m')
+  endmethod
+
+  method setg_r(regDst)
+    die('not implemented: setg r')
+  endmethod
+
+  method setg_m(regBase, scale, regIndex, disp)
+    die('not implemented: setg m')
+  endmethod
+
+  method setge_r(regDst)
+    die('not implemented: setge r')
+  endmethod
+
+  method setge_m(regBase, scale, regIndex, disp)
+    die('not implemented: setge m')
+  endmethod
+
+  method setl_r(regDst)
+    die('not implemented: setl r')
+  endmethod
+
+  method setl_m(regBase, scale, regIndex, disp)
+    die('not implemented: setl m')
+  endmethod
+
+  method setle_r(regDst)
+    die('not implemented: setle r')
+  endmethod
+
+  method setle_m(regBase, scale, regIndex, disp)
+    die('not implemented: setle m')
+  endmethod
+
+  method setna_r(regDst)
+    die('not implemented: setna r')
+  endmethod
+
+  method setna_m(regBase, scale, regIndex, disp)
+    die('not implemented: setna m')
+  endmethod
+
+  method setnae_r(regDst)
+    die('not implemented: setnae r')
+  endmethod
+
+  method setnae_m(regBase, scale, regIndex, disp)
+    die('not implemented: setnae m')
+  endmethod
+
+  method setnb_r(regDst)
+    die('not implemented: setnb r')
+  endmethod
+
+  method setnb_m(regBase, scale, regIndex, disp)
+    die('not implemented: setnb m')
+  endmethod
+
+  method setnbe_r(regDst)
+    die('not implemented: setnbe r')
+  endmethod
+
+  method setnbe_m(regBase, scale, regIndex, disp)
+    die('not implemented: setnbe m')
+  endmethod
+
+  method setnc_r(regDst)
+    die('not implemented: setnc r')
+  endmethod
+
+  method setnc_m(regBase, scale, regIndex, disp)
+    die('not implemented: setnc m')
+  endmethod
+
+  method setne_r(regDst)
+    die('not implemented: setne r')
+  endmethod
+
+  method setne_m(regBase, scale, regIndex, disp)
+    die('not implemented: setne m')
+  endmethod
+
+  method setng_r(regDst)
+    die('not implemented: setng r')
+  endmethod
+
+  method setng_m(regBase, scale, regIndex, disp)
+    die('not implemented: setng m')
+  endmethod
+
+  method setnge_r(regDst)
+    die('not implemented: setnge r')
+  endmethod
+
+  method setnge_m(regBase, scale, regIndex, disp)
+    die('not implemented: setnge m')
+  endmethod
+
+  method setnl_r(regDst)
+    die('not implemented: setnl r')
+  endmethod
+
+  method setnl_m(regBase, scale, regIndex, disp)
+    die('not implemented: setnl m')
+  endmethod
+
+  method setnle_r(regDst)
+    die('not implemented: setnle r')
+  endmethod
+
+  method setnle_m(regBase, scale, regIndex, disp)
+    die('not implemented: setnle m')
+  endmethod
+
+  method setno_r(regDst)
+    die('not implemented: setno r')
+  endmethod
+
+  method setno_m(regBase, scale, regIndex, disp)
+    die('not implemented: setno m')
+  endmethod
+
+  method setnp_r(regDst)
+    die('not implemented: setnp r')
+  endmethod
+
+  method setnp_m(regBase, scale, regIndex, disp)
+    die('not implemented: setnp m')
+  endmethod
+
+  method setns_r(regDst)
+    die('not implemented: setns r')
+  endmethod
+
+  method setns_m(regBase, scale, regIndex, disp)
+    die('not implemented: setns m')
+  endmethod
+
+  method setnz_r(regDst)
+    die('not implemented: setnz r')
+  endmethod
+
+  method setnz_m(regBase, scale, regIndex, disp)
+    die('not implemented: setnz m')
+  endmethod
+
+  method seto_r(regDst)
+    die('not implemented: seto r')
+  endmethod
+
+  method seto_m(regBase, scale, regIndex, disp)
+    die('not implemented: seto m')
+  endmethod
+
+  method setp_r(regDst)
+    die('not implemented: setp r')
+  endmethod
+
+  method setp_m(regBase, scale, regIndex, disp)
+    die('not implemented: setp m')
+  endmethod
+
+  method setpe_r(regDst)
+    die('not implemented: setpe r')
+  endmethod
+
+  method setpe_m(regBase, scale, regIndex, disp)
+    die('not implemented: setpe m')
+  endmethod
+
+  method setpo_r(regDst)
+    die('not implemented: setpo r')
+  endmethod
+
+  method setpo_m(regBase, scale, regIndex, disp)
+    die('not implemented: setpo m')
+  endmethod
+
+  method sets_r(regDst)
+    die('not implemented: sets r')
+  endmethod
+
+  method sets_m(regBase, scale, regIndex, disp)
+    die('not implemented: sets m')
+  endmethod
+
+  method setz_r(regDst)
+    die('not implemented: setz r')
+  endmethod
+
+  method setz_m(regBase, scale, regIndex, disp)
+    die('not implemented: setz m')
+  endmethod
+
+  method cwde()
+    global X64_CWDE
+    this.emitByte(X64_CWDE)
+  endmethod
+
+  method cdq()
+    die('not implemented: cdq')
+  endmethod
+
+  method iretd()
+    die('not implemented: iretd')
+  endmethod
+
+  method movsd()
+    global X64_MOVSD
+    this.emitByte(X64_MOVSD)
+  endmethod
+
+  method cmpsd()
+    global X64_CMPSD
+    this.emitByte(X64_CMPSD)
+  endmethod
+
+  method lodsd()
+    global X64_LODSD
+    this.emitByte(X64_LODSD)
+  endmethod
+
+  method stosd()
+    global X64_STOSD
+    this.emitByte(X64_STOSD)
+  endmethod
+
+  method scasd()
+    global X64_SCASD
+    this.emitByte(X64_SCASD)
+  endmethod
+
+  method insd()
+    global X64_INSD
+    this.emitByte(X64_INSD)
+  endmethod
+
+  method outsd()
+    global X64_OUTSD
+    this.emitByte(X64_OUTSD)
+  endmethod
+
+  #-----------------------------------------------------------------------------
+  # Mnemonics added with 80486 processor:
+  #-----------------------------------------------------------------------------
+
+  method bswap_r(reg)
+    global X64_BSWAP
+    this.emitSizePrefixIfNeeded(reg)
+    this.emitWord(X64_BSWAP + 256 * bitand(reg, 0x7))
+  endmethod
+
+  method cmpxchg_r_r(regDst, regSrc)
+    die('not implemented: cmpxchg r,r')
+  endmethod
+
+  method cmpxchg_m_r(regBase, scale, regIndex, disp, regSrc)
+    die('not implemented: cmpxchg m,r')
+  endmethod
+
+  method xadd_r_r(regDst, regSrc)
+    die('not implemented: xadd r,r')
+  endmethod
+
+  method xadd_m_r(regBase, scale, regIndex, disp, regSrc)
+    die('not implemented: xadd m,r')
+  endmethod
+
+  method invlpg_m(regBase, scale, regIndex, disp)
+    die('not implemented: invlpg m')
+  endmethod
+
+  method invd()
+    die('not implemented: invd')
+  endmethod
+
+  method wbinvd()
+    die('not implemented: wbinvd')
+  endmethod
+
+  #-----------------------------------------------------------------------------
+  # Mnemonics added with Pentium processor:
+  #-----------------------------------------------------------------------------
+
+  method cmpxchg8b_m(regBase, scale, regIndex, disp)
+    die('not implemented: cmpxchg8b m')
+  endmethod
+
+  method cpuid()
+    die('not implemented: cpuid')
+  endmethod
+
+  method rdmsr()
+    die('not implemented: rdmsr')
+  endmethod
+
+  method rdtsc()
+    die('not implemented: rdtsc')
+  endmethod
+
+  method wrmsr()
+    die('not implemented: wrmsr')
+  endmethod
+
+  method rsm()
+    die('not implemented: rsm')
+  endmethod
+
+  #-----------------------------------------------------------------------------
+  # Mnemonics added with Penitum Pro processor:
+  #-----------------------------------------------------------------------------
+  method cmova_r_r(regDst, regSrc)
+    die('not implemented: cmova r,r')
+  endmethod
+
+  method cmova_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmova r,m')
+  endmethod
+
+  method cmovae_r_r(regDst, regSrc)
+    die('not implemented: cmovae r,r')
+  endmethod
+
+  method cmovae_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovae r,m')
+  endmethod
+
+  method cmovb_r_r(regDst, regSrc)
+    die('not implemented: cmovb r,r')
+  endmethod
+
+  method cmovb_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovb r,m')
+  endmethod
+
+  method cmovbe_r_r(regDst, regSrc)
+    die('not implemented: cmovbe r,r')
+  endmethod
+
+  method cmovbe_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovbe r,m')
+  endmethod
+
+  method cmovc_r_r(regDst, regSrc)
+    die('not implemented: cmovc r,r')
+  endmethod
+
+  method cmovc_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovc r,m')
+  endmethod
+
+  method cmove_r_r(regDst, regSrc)
+    die('not implemented: cmove r,r')
+  endmethod
+
+  method cmove_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmove r,m')
+  endmethod
+
+  method cmovg_r_r(regDst, regSrc)
+    die('not implemented: cmovg r,r')
+  endmethod
+
+  method cmovg_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovg r,m')
+  endmethod
+
+  method cmovge_r_r(regDst, regSrc)
+    die('not implemented: cmovge r,r')
+  endmethod
+
+  method cmovge_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovge r,m')
+  endmethod
+
+  method cmovl_r_r(regDst, regSrc)
+    die('not implemented: cmovl r,r')
+  endmethod
+
+  method cmovl_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovl r,m')
+  endmethod
+
+  method cmovle_r_r(regDst, regSrc)
+    die('not implemented: cmovle r,r')
+  endmethod
+
+  method cmovle_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovle r,m')
+  endmethod
+
+  method cmovna_r_r(regDst, regSrc)
+    die('not implemented: cmovna r,r')
+  endmethod
+
+  method cmovna_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovna r,m')
+  endmethod
+
+  method cmovnae_r_r(regDst, regSrc)
+    die('not implemented: cmovnae r,r')
+  endmethod
+
+  method cmovnae_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovnae r,m')
+  endmethod
+
+  method cmovnb_r_r(regDst, regSrc)
+    die('not implemented: cmovnb r,r')
+  endmethod
+
+  method cmovnb_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovnb r,m')
+  endmethod
+
+  method cmovnbe_r_r(regDst, regSrc)
+    die('not implemented: cmovnbe r,r')
+  endmethod
+
+  method cmovnbe_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovnbe r,m')
+  endmethod
+
+  method cmovnc_r_r(regDst, regSrc)
+    die('not implemented: cmovnc r,r')
+  endmethod
+
+  method cmovnc_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovnc r,m')
+  endmethod
+
+  method cmovne_r_r(regDst, regSrc)
+    die('not implemented: cmovne r,r')
+  endmethod
+
+  method cmovne_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovne r,m')
+  endmethod
+
+  method cmovng_r_r(regDst, regSrc)
+    die('not implemented: cmovng r,r')
+  endmethod
+
+  method cmovng_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovng r,m')
+  endmethod
+
+  method cmovnge_r_r(regDst, regSrc)
+    die('not implemented: cmovnge r,r')
+  endmethod
+
+  method cmovnge_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovnge r,m')
+  endmethod
+
+  method cmovnl_r_r(regDst, regSrc)
+    die('not implemented: cmovnl r,r')
+  endmethod
+
+  method cmovnl_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovnl r,m')
+  endmethod
+
+  method cmovnle_r_r(regDst, regSrc)
+    die('not implemented: cmovnle r,r')
+  endmethod
+
+  method cmovnle_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovnle r,m')
+  endmethod
+
+  method cmovno_r_r(regDst, regSrc)
+    die('not implemented: cmovno r,r')
+  endmethod
+
+  method cmovno_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovno r,m')
+  endmethod
+
+  method cmovnp_r_r(regDst, regSrc)
+    die('not implemented: cmovnp r,r')
+  endmethod
+
+  method cmovnp_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovnp r,m')
+  endmethod
+
+  method cmovns_r_r(regDst, regSrc)
+    die('not implemented: cmovns r,r')
+  endmethod
+
+  method cmovns_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovns r,m')
+  endmethod
+
+  method cmovnz_r_r(regDst, regSrc)
+    die('not implemented: cmovnz r,r')
+  endmethod
+
+  method cmovnz_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovnz r,m')
+  endmethod
+
+  method cmovo_r_r(regDst, regSrc)
+    die('not implemented: cmovo r,r')
+  endmethod
+
+  method cmovo_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovo r,m')
+  endmethod
+
+  method cmovp_r_r(regDst, regSrc)
+    die('not implemented: cmovp r,r')
+  endmethod
+
+  method cmovp_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovp r,m')
+  endmethod
+
+  method cmovpe_r_r(regDst, regSrc)
+    die('not implemented: cmovpe r,r')
+  endmethod
+
+  method cmovpe_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovpe r,m')
+  endmethod
+
+  method cmovpo_r_r(regDst, regSrc)
+    die('not implemented: cmovpo r,r')
+  endmethod
+
+  method cmovpo_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovpo r,m')
+  endmethod
+
+  method cmovs_r_r(regDst, regSrc)
+    die('not implemented: cmovs r,r')
+  endmethod
+
+  method cmovs_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovs r,m')
+  endmethod
+
+  method cmovz_r_r(regDst, regSrc)
+    die('not implemented: cmovz r,r')
+  endmethod
+
+  method cmovz_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: cmovz r,m')
+  endmethod
+
+  method ud2()
+    die('not implemented: ud2')
+  endmethod
+
+  #-----------------------------------------------------------------------------
+  # Mnemonics added with Penium MMX processor:
+  #-----------------------------------------------------------------------------
+
+  method rdpmc()
+    die('not implemented: rdpmc')
+  endmethod
+
+  #-----------------------------------------------------------------------------
+  # Mnemonics added with AMD K6 processor:
+  #-----------------------------------------------------------------------------
+
+  method syscall()
+    die('not implemented: syscall')
+  endmethod
+
+  method sysret()
+    die('not implemented: sysret')
+  endmethod
+
+  #-----------------------------------------------------------------------------
+  # Mnemonics added with Penitum II:
+  #-----------------------------------------------------------------------------
+
+  method sysenter()
+    die('not implemented: sysenter')
+  endmethod
+
+  method sysexit()
+    die('not implemented: sysexit')
+  endmethod
+
+  #-----------------------------------------------------------------------------
+  # Mnemonics added with Amd64:
+  #-----------------------------------------------------------------------------
+
+  method movsxd_r_r(regDst, regSrc)
+    die('not implemented: movsxd r,r')
+  endmethod
+
+  method movsxd_r_m(regDst, regBase, scale, regIndex, disp)
+    die('not implemented: movsxd r,m')
+  endmethod
+
+  method cmpxchg16b_m(regBase, scale, regIndex, disp)
+    die('not implemented: cmpxchg16b m')
+  endmethod
+
+  method cdqe()
+    this.emitPrefix64()
+    this.cwde()
+  endmethod
+
+  method cqo()
+    die('not implemented: cqo')
+  endmethod
+
+  method cmpsq()
+    this.emitPrefix64()
+    this.cmpsd()
+  endmethod
+
+  method stosq()
+    this.emitPrefix64()
+    this.stosd()
+  endmethod
+
+  method lodsq()
+    this.emitPrefix64()
+    this.lodsd()
+  endmethod
+
+  method scasq()
+    this.emitPrefix64()
+    this.scasd()
+  endmethod
+
+  method iretq()
+    die('not implemented: iretq')
+  endmethod
+
+  method popfq()
+    die('not implemented: popfq')
+  endmethod
+
+  method pushfq()
+    die('not implemented: pushfq')
+  endmethod
+
+  method rdtscp()
+    die('not implemented: rdtscp')
+  endmethod
+
+  method swapgs()
+    die('not implemented: swapgs')
   endmethod
 
   #
