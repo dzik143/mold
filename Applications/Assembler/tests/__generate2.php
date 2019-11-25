@@ -35,8 +35,8 @@
       if (isset($OPERANDS_REPLACE_MAP[$operandType]))
       {
         $operandType = $OPERANDS_REPLACE_MAP[$operandType];
-      }      
-      
+      }
+
       if (isset($POOL_OF_OPERANDS[$operandType]))
       {
         $rv = $POOL_OF_OPERANDS[$operandType];
@@ -76,7 +76,7 @@
     if ($typeY)
     {
       $patternId .= '_'.$typeY;
-    
+
       if ($typeZ)
       {
         $patternId .= '_'.$typeZ;
@@ -94,7 +94,7 @@
       $poolX = loadPoolOfOperands($typeX);
       $poolY = loadPoolOfOperands($typeY);
       $poolZ = loadPoolOfOperands($typeZ);
-      
+
       if (isset($typeX) && isset($typeY) && isset($typeZ))
       {
         // opcode x, y, z
@@ -133,7 +133,7 @@
         $src .= '${mnemonic}';
       }
     }
-    
+
     return array(
       'id'  => $patternId,
       'src' => $src
@@ -147,7 +147,7 @@
     {
       // Open list of mnemonics inside given group.
       $indexPath = $subdir . '/__index.txt';
-      
+
       if (file_exists($indexPath))
       {
         // Process all mnemonics within group one-by-one.
@@ -155,15 +155,15 @@
         echo "-------------------------------------------------------------------\n";
         echo "  $subdir:\n";
         echo "-------------------------------------------------------------------\n";
-        
+
         foreach (file($indexPath) as $line)
         {
           // Remove end of line.
           $line = trim(preg_replace("/\r\n|\r|\n/", '', $line));
-          
+
           if (!empty($line) && ($line[0] !== ';'))
           {
-            // Get mnemonic and pool of syntaxes e.g. r,r for 
+            // Get mnemonic and pool of syntaxes e.g. r,r for
             // register-register operands.
             $spaceIdx       = strpos($line, ' ');
             $mnemonic       = substr($line, 0, $spaceIdx);
@@ -172,12 +172,12 @@
             $source         = "use64\r\n";
 
             echo $mnemonic, '...';
-            
+
             // Process each operands patterns matching to given mnemonic.
             foreach ($poolOfPatterns as $pattern)
             {
               $pattern = trim($pattern);
-              
+
               $source .= "; ------------------------------------------------------------------------------\r\n";
               $source .= '; opcode '.$pattern."\r\n";
               $source .= "; ------------------------------------------------------------------------------\r\n";
@@ -185,7 +185,7 @@
               if ($pattern === '-')
               {
                 // No operands (opcode only).
-                $source .= $mnemonic;                
+                $source .= $mnemonic;
               }
               else
               {
@@ -196,7 +196,7 @@
                 $op1      = isset($operands[0]) ? $operands[0] : null;
                 $op2      = isset($operands[1]) ? $operands[1] : null;
                 $op3      = isset($operands[2]) ? $operands[2] : null;
-                
+
                 // Get pattern source matching given operands combination.
                 $patternObj    = getPattern($op1, $op2, $op3);
                 $patternSource = $patternObj['src'];
@@ -206,22 +206,22 @@
                 $source .= str_replace('${mnemonic}', $mnemonic, $patternSource);
               }
 
-              $source .= "\r\n";              
+              $source .= "\r\n";
             }
-            
+
             // Save created test suite into new asm file.
             $asmPath = $subdir.'/'.$mnemonic.'.asm';
 
             file_put_contents($asmPath, $source);
-            
+
             // Assemble test source to make binary file for comparison.
             exec("fasm $asmPath", $fasmOutput, $fasmStatus);
-            
+
             if ($fasmStatus !== 0)
             {
               die("error: could not assemble file: '".$asmPath."'");
             }
-            
+
             echo "OK\n";
           }
         }

@@ -55,7 +55,7 @@
     if ($typeY)
     {
       $patternId .= '_'.$typeY;
-    
+
       if ($typeZ)
       {
         $patternId .= '_'.$typeZ;
@@ -113,7 +113,7 @@
         $src .= '${mnemonic}';
       }
     }
-    
+
     return array(
       'id'  => $patternId,
       'src' => $src
@@ -239,8 +239,8 @@
       echo 'Grouped ', $cnt, ' opcodes without operands', "\n";
 
       _createOneTest(
-        $dir, 
-        array('id' => 'no_operands', 'src' => $asmSource), 
+        $dir,
+        array('id' => 'no_operands', 'src' => $asmSource),
         'common'
       );
     }
@@ -249,33 +249,33 @@
   function groupTests($dir, $poolOfMnemonics)
   {
     groupOpcodeOnlyTests($dir, $poolOfMnemonics);
-    
+
     $groups = array(
       'r' => ['r8', 'r16', 'r32', 'r64'],
       'm' => ['m8', 'm16', 'm32', 'm64'],
 
       'rd' => ['r16', 'r32', 'r64'],
       'md' => ['m16', 'm32', 'm64'],
-      
+
       'r_r'    => ['r8_r8'  , 'r16_r16' , 'r32_r32' , 'r64_r64'],
       'r_m'    => ['r8_m8'  , 'r16_m16' , 'r32_m32' , 'r64_m64'],
       'm_r'    => ['m8_r8'  , 'm16_r16' , 'm32_r32' , 'm64_r64'],
       'm_imm8' => ['m8_imm8', 'm16_imm8', 'm32_imm8', 'm64_imm8'],
-      'r_imm8' => ['r8_imm8', 'r16_imm8', 'r32_imm8', 'r64_imm8'],      
-      
+      'r_imm8' => ['r8_imm8', 'r16_imm8', 'r32_imm8', 'r64_imm8'],
+
       'rd_rd'   => ['r16_r16'  , 'r32_r32'  , 'r64_r64'],
       'rd_md'   => ['r16_m16'  , 'r32_m32'  , 'r64_m64'],
-      'md_rd'   => ['m16_r16'  , 'm32_r32'  , 'm64_r64'],      
+      'md_rd'   => ['m16_r16'  , 'm32_r32'  , 'm64_r64'],
       'rd_imm8' => ['r16_imm8' , 'r32_imm8' , 'r64_imm8'],
       'md_imm8' => ['m16_imm8' , 'm32_imm8' , 'm64_imm8'],
     );
-    
+
     foreach ($poolOfMnemonics as $mnemonic)
     {
       foreach ($groups as $groupId => $arrayOfItems)
       {
         $areAllItemsExist = true;
-        
+
         foreach ($arrayOfItems as $item)
         {
           if (!file_exists($dir.'/'.$mnemonic.'_'.$item.'.bin'))
@@ -283,7 +283,7 @@
             // At least one pattern does not exist.
             // Give up and don't go on anymore.
             $areAllItemsExist = false;
-          
+
             break;
           }
         }
@@ -297,14 +297,14 @@
             if (_createOneTest($dir, getPattern($groupId), $mnemonic))
             {
               unlink($dir.'/'.$mnemonic.'_'.$item.'.asm');
-              unlink($dir.'/'.$mnemonic.'_'.$item.'.bin');            
+              unlink($dir.'/'.$mnemonic.'_'.$item.'.bin');
             }
           }
-        }        
-      }    
+        }
+      }
     }
   }
-  
+
   // ---------------------------------------------------------------------------
   //                              Entry point
   // ---------------------------------------------------------------------------
@@ -322,7 +322,7 @@
   // ---------------------------------------------------------------------------
   //                        Common operands patterns
   // ---------------------------------------------------------------------------
-  
+
   $opcodeOnlyPattern = array(
     'id'  => '',
     'src' => "use64\n"
@@ -334,12 +334,12 @@
   $poolOfPatterns_core = array(
     // No operands (opcode only)
     $opcodeOnlyPattern,
-    
+
     // One operand.
     getPattern('r'),
     getPattern('m'),
     getPattern('imm'),
-    
+
     // Two operands.
     getPattern('r', 'r'),
     getPattern('r', 'm'),
@@ -478,15 +478,15 @@
 
   $poolOfMnemonics_core = loadIndex('core');
 
-  $patternsDecisionTree_core = [    
+  $patternsDecisionTree_core = [
     // No operands (opcode only).
     [$opcodeOnlyPattern],
-    
+
     // One operand.
 //    [getPattern('r')   , $poolOfPatterns_core_r  ],
 //    [getPattern('m')   , $poolOfPatterns_core_m  ],
 //    [getPattern('imm') , $poolOfPatterns_core_imm],
-    
+
     // Two operands.
 //    [getPattern('r', 'r'),   $poolOfPatterns_core_r_r,   $poolOfPatterns_core_r_cl  ],
 //    [getPattern('r', 'm'),   $poolOfPatterns_core_r_m                               ],
@@ -515,7 +515,7 @@
   groupTests('core', $poolOfMnemonics_core);
 
   exit(0);
-  
+
   // ---------------------------------------------------------------------------
   //                             x87 instructions
   // ---------------------------------------------------------------------------
