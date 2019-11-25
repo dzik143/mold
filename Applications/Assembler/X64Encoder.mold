@@ -900,11 +900,13 @@ class X64Encoder
   endmethod
 
   method pushf()
-    die('not implemented: pushf')
+    global X64_PUSHF
+    this.emitByte(X64_PUSHF)
   endmethod
 
   method popf()
-    die('not implemented: popf')
+    global X64_POPF
+    this.emitByte(X64_POPF)
   endmethod
 
   #
@@ -966,8 +968,8 @@ class X64Encoder
   endmethod
 
   method insw()
-    this.emitPrefix16()
-    this.insd()
+    global X64_INSW
+    this.emitWord(X64_INSW)
   endmethod
 
   method outsb()
@@ -976,8 +978,8 @@ class X64Encoder
   endmethod
 
   method outsw()
-    this.emitPrefix16()
-    this.outsd()
+    global X64_OUTSW
+    this.emitWord(X64_OUTSW)
   endmethod
 
   # Strings: movsb, movsw, movsd, movsq,
@@ -993,13 +995,13 @@ class X64Encoder
   endmethod
 
   method movsw()
-    this.emitPrefix16()
-    this.movsd()
+    global X64_MOVSW
+    this.emitWord(X64_MOVSW)
   endmethod
 
   method movsq()
-    this.emitPrefix64()
-    this.movsd()
+    global X64_MOVSQ
+    this.emitWord(X64_MOVSQ)
   endmethod
 
   method cmpsb()
@@ -1008,8 +1010,8 @@ class X64Encoder
   endmethod
 
   method cmpsw()
-    this.emitPrefix16()
-    this.cmpsd()
+    global X64_CMPSW
+    this.emitWord(X64_CMPSW)
   endmethod
 
   method stosb()
@@ -1018,8 +1020,8 @@ class X64Encoder
   endmethod
 
   method stosw()
-    this.emitPrefix16()
-    this.stosd()
+    global X64_STOSW
+    this.emitWord(X64_STOSW)
   endmethod
 
   method lodsb()
@@ -1028,8 +1030,8 @@ class X64Encoder
   endmethod
 
   method lodsw()
-    this.emitPrefix16()
-    this.lodsd()
+    global X64_LODSW
+    this.emitWord(X64_LODSW)
   endmethod
 
   method scasb()
@@ -1038,8 +1040,8 @@ class X64Encoder
   endmethod
 
   method scasw()
-    this.emitPrefix16()
-    this.scasd()
+    global X64_SCASW
+    this.emitWord(X64_SCASW)
   endmethod
 
   method repne()
@@ -1217,7 +1219,11 @@ class X64Encoder
   endmethod
 
   method call_r(reg)
-    die('not implemented: call r')
+    global X64_CALL_GROUP
+    if X64_IsReg16(reg) is true
+      this.emitPrefix16()
+    endif
+    this.emitCore_group_r(X64_CALL_GROUP, 6, bitand(reg, 0x7))
   endmethod
 
   method call_m(regBase, scale, regIndex, disp)
@@ -1237,9 +1243,8 @@ class X64Encoder
   endmethod
 
   method retf()
-    global X64_RETF
-    this.emitPrefix64()
-    this.emitByte(X64_RETF)
+    global X64_RETFQ
+    this.emitWord(X64_RETFQ)
   endmethod
 
   method retf_imm(imm)
@@ -1356,13 +1361,13 @@ class X64Encoder
 
   # Conversion: cbw, cwd
   method cbw()
-    this.emitPrefix16()
-    this.cwde()
+    global X64_CBW
+    this.emitWord(X64_CBW)
   endmethod
 
   method cwd()
-    this.emitPrefix16()
-    this.cdqe()
+    global X64_CWD
+    this.emitWord(X64_CWD)
   endmethod
 
   #
@@ -1590,19 +1595,23 @@ class X64Encoder
   endmethod
 
   method cmc()
-    die('not implemented: cmc')
+    global X64_CMC
+    this.emitByte(X64_CMC)
   endmethod
 
   method hlt()
-    die('not implemented: hlt')
+    global X64_HLT
+    this.emitByte(X64_HLT)
   endmethod
 
   method wait()
-    die('not implemented: wait')
+    global X64_FWAIT
+    this.emitByte(X64_FWAIT)
   endmethod
 
   method xlatb()
-    die('not implemented: xlatb')
+    global X64_XLATB
+    this.emitByte(X64_XLATB)
   endmethod
 
   #-----------------------------------------------------------------------------
@@ -2146,7 +2155,8 @@ class X64Encoder
   endmethod
 
   method cdq()
-    die('not implemented: cdq')
+    global X64_CDQ
+    this.emitWord(X64_CDQ)
   endmethod
 
   method iretd()
@@ -2526,8 +2536,8 @@ class X64Encoder
   endmethod
 
   method cdqe()
-    this.emitPrefix64()
-    this.cwde()
+    global X64_CDQE
+    this.emitWord(X64_CDQE)
   endmethod
 
   method cqo()
@@ -2536,36 +2546,38 @@ class X64Encoder
   endmethod
 
   method cmpsq()
-    this.emitPrefix64()
-    this.cmpsd()
+    global X64_CMPSQ
+    this.emitWord(X64_CMPSQ)
   endmethod
 
   method stosq()
-    this.emitPrefix64()
-    this.stosd()
+    global X64_STOSQ
+    this.emitWord(X64_STOSQ)
   endmethod
 
   method lodsq()
-    this.emitPrefix64()
-    this.lodsd()
+    global X64_LODSQ
+    this.emitWord(X64_LODSQ)
   endmethod
 
   method scasq()
-    this.emitPrefix64()
-    this.scasd()
+    global X64_SCASQ
+    this.emitWord(X64_SCASQ)
   endmethod
 
   method iretq()
-    this.emitPrefix64()
-    this.iret()
+    global X64_IRETQ
+    this.emitWord(X64_IRETQ)
   endmethod
 
   method popfq()
-    this.popf()
+    global X64_POPFQ
+    this.emitWord(X64_POPFQ)
   endmethod
 
   method pushfq()
-    this.pushf()
+    global X64_PUSHFQ
+    this.emitWord(X64_PUSHFQ)
   endmethod
 
   method rdtscp()
