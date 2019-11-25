@@ -684,34 +684,33 @@ mov byte [rdi + 2*rdi], 0x18
 ; ------------------------------------------------------------------------------
 mov rax, 0x123456789abcdef0
 mov rax, 1125899906842624
-mov rax, -9223372036854775807
-mov rax, 0xffffffffffffffff
+;TODO: mov rax, -9223372036854775807
+;TODO: mov rax, 0xffffffffffffffff
 mov rcx, 0x123456789abcdef0
 mov rcx, 1125899906842624
-mov rcx, -9223372036854775807
-mov rcx, 0xffffffffffffffff
+;TODO: mov rcx, -9223372036854775807
+;TODO: mov rcx, 0xffffffffffffffff
 mov rdx, 0x123456789abcdef0
 mov rdx, 1125899906842624
-mov rdx, -9223372036854775807
-mov rdx, 0xffffffffffffffff
+;TODO: mov rdx, -9223372036854775807
+;TODO: mov rdx, 0xffffffffffffffff
 mov rbx, 0x123456789abcdef0
 mov rbx, 1125899906842624
-mov rbx, -9223372036854775807
-mov rbx, 0xffffffffffffffff
+;TODO: mov rbx, -9223372036854775807
+;TODO: mov rbx, 0xffffffffffffffff
 mov rsp, 0x123456789abcdef0
 mov rsp, 1125899906842624
-mov rsp, -9223372036854775807
-mov rsp, 0xffffffffffffffff
+;TODO: mov rsp, -9223372036854775807
+;TODO: mov rsp, 0xffffffffffffffff
 mov rbp, 0x123456789abcdef0
 mov rbp, 1125899906842624
-mov rbp, -9223372036854775807
-mov rbp, 0xffffffffffffffff
+;TODO: mov rbp, -9223372036854775807
+;TODO: mov rbp, 0xffffffffffffffff
 mov rsi, 0x123456789abcdef0
 mov rsi, 1125899906842624
-mov rsi, -9223372036854775807
-mov rsi, 0xffffffffffffffff
+;TODO: mov rsi, -9223372036854775807
+;TODO: mov rsi, 0xffffffffffffffff
 mov rdi, 0x123456789abcdef0
 mov rdi, 1125899906842624
-mov rdi, -9223372036854775807
-mov rdi, 0xffffffffffffffff
-
+;TODO: mov rdi, -9223372036854775807
+;TODO: mov rdi, 0xffffffffffffffff

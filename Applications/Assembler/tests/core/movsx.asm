@@ -11,10 +11,10 @@ movsx ax, al
 movsx ax, cl
 movsx ax, dl
 movsx ax, bl
-movsx ax, sil
-movsx ax, dil
-movsx ax, spl
-movsx ax, bpl
+; TODO: movsx ax, sil
+; TODO: movsx ax, dil
+; TODO: movsx ax, spl
+; TODO: movsx ax, bpl
 
 movsx ax, al
 movsx cx, al
@@ -25,10 +25,10 @@ movsx bp, al
 movsx si, al
 movsx di, al
 
-movsx ax, bpl
-movsx cx, spl
-movsx dx, dil
-movsx bx, sil
+; TODO: movsx ax, bpl
+; TODO: movsx cx, spl
+; TODO: movsx dx, dil
+; TODO: movsx bx, sil
 movsx sp, bl
 movsx bp, dl
 movsx si, cl
@@ -39,10 +39,10 @@ movsx eax, al
 movsx eax, cl
 movsx eax, dl
 movsx eax, bl
-movsx eax, sil
-movsx eax, dil
-movsx eax, spl
-movsx eax, bpl
+; TODO: movsx eax, sil
+; TODO: movsx eax, dil
+; TODO: movsx eax, spl
+; TODO: movsx eax, bpl
 
 movsx eax, al
 movsx ecx, al
@@ -53,10 +53,10 @@ movsx ebp, al
 movsx esi, al
 movsx edi, al
 
-movsx eax, bpl
-movsx ecx, spl
-movsx edx, dil
-movsx ebx, sil
+; TODO: movsx eax, bpl
+; TODO: movsx ecx, spl
+; TODO: movsx edx, dil
+; TODO: movsx ebx, sil
 movsx esp, bl
 movsx ebp, dl
 movsx esi, cl
@@ -67,10 +67,10 @@ movsx rax, al
 movsx rax, cl
 movsx rax, dl
 movsx rax, bl
-movsx rax, sil
-movsx rax, dil
-movsx rax, spl
-movsx rax, bpl
+; TODO: movsx rax, sil
+; TODO: movsx rax, dil
+; TODO: movsx rax, spl
+; TODO: movsx rax, bpl
 
 movsx rax, al
 movsx rcx, al
@@ -81,10 +81,10 @@ movsx rbp, al
 movsx rsi, al
 movsx rdi, al
 
-movsx rax, bpl
-movsx rcx, spl
-movsx rdx, dil
-movsx rbx, sil
+; TODO: movsx rax, bpl
+; TODO: movsx rcx, spl
+; TODO: movsx rdx, dil
+; TODO: movsx rbx, sil
 movsx rsp, bl
 movsx rbp, dl
 movsx rsi, cl
@@ -2477,4 +2477,3 @@ movsx rdi, word [rbx + 2*rbx]
 movsx rdi, word [rbp + 2*rbp]
 movsx rdi, word [rsi + 2*rsi]
 movsx rdi, word [rdi + 2*rdi]
-
