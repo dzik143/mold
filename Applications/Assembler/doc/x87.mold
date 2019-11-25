@@ -1,0 +1,182 @@
+#fadd  m32real   d8 /0
+#fadd  m64real   dc /0
+#fadd  st0, sti  d8 c0+i
+#fadd  sti, st0  dc c0+i
+#faddp sti, st0  de c0+i
+#faddp           de c1
+#fiadd m32int    da /0
+#fiadd m16int    da /0
+
+# opcode m32
+# opcode m64
+# opcode sti_sti
+
+function emitCoreX87_m(opcode, operationId, regBase, scale, regIndex, disp)
+endfunction
+
+function emitCoreX87_sti_sti(opcode, operationId, stDst, stSrc)
+endfunction
+
+
+X87_CORE_GROUP = 0xd8 # fmul/fcom/fcomp/fsub/fsubr/fdiv/dfivr (32-bit)
+
+#d8 /0       fadd  st, sti/m32real
+#d8 /1       fmul  st, sti/m32real
+#d8 /2       fcom  st, sti/m32real
+#d8 d1 /2    fcom  st, st1    
+#d8 /3       fcomp st, sti/m32real
+#d8 d9 /3    fcomp st, st1    
+#d8 /4       fsub  st, sti/m32real
+#d8 /5       fsubr st, sti/m32real
+#d8 /6       fdiv  st, sti/m32real
+#d8 /7       fdivr st, sti/m32real
+              
+d9 /0       fld  st, sti/m32real
+d9 /1       fxch st, sti
+d9 c9 /1    fxch st, st1    
+d9    /2    fst  m32real, st
+d9 d0 /2    fnop    
+d9 /3       fstp m32real, st
+d9 /3       fstp1 sti, st
+d9 /4       fldenv m14/28    
+d9 e0 /4    fchs st
+d9 e1 /4    fabs st
+d9 e4 /4    ftst st
+d9 e5 /4    fxam st
+d9    /5    fldcw m16
+d9 e8 /5    fld1 st
+d9 e9 /5    fldl2t st
+d9 ea /5    fldl2e st
+d9 eb /5    fldpi st
+d9 ec /5    fldlg2 st
+d9 ed /5    fldln2 st
+d9 ee /5    fldz st
+d9    /6    fnstenv m14/28
+9b d9 /6    fstenv m14/28
+d9 f0 /6    f2xm1 st
+d9 f1 /6    fyl2x st1, st
+d9 f2 /6    fptan st
+d9 f3 /6    fpatan st1, st
+d9 f4 /6    fxtract st
+d9 f5 /6    fprem1 st, st1
+d9 f6 /6    fdecstp
+d9 f7 /6    fincstp
+d9    /7    fnstcw m16
+9b d9 /7    fstcw m16
+d9 f8 /7    fprem st, st1
+d9 f9 /7    fyl2xp1 st1, st
+d9 fa /7    fsqrt st
+d9 fb /7    fsincos st
+d9 fc /7    frndint st
+d9 fd /7    fscale st, st1
+d9 fe /7    fsin st
+d9 ff /7    fcos st
+
+da    /0    fiadd st, m32int
+da    /0    fcmovb st, sti
+da    /1    fimul st, m32int
+da    /1    fcmove st, sti
+da    /2    ficom st, m32int
+da    /2    fcmovbe  st, sti
+da    /3    ficomp st, m32int
+da    /3    fcmovu st, sti
+da    /4    fisub st, m32int
+da    /5    fisubr st, m32int
+da e9 /5    fucompp st, st1
+da    /6    fidiv st, m32int
+da    /7    fidivr st, m32int
+
+db    /0    fild  st, m32int
+db    /0    fcmovnb  st, sti
+db    /1    fisttp  m32int, st
+db    /1    fcmovne  st, sti
+db    /2    fist  m32int, st
+db    /2    fcmovnbe  st, sti
+db    /3    fistp m32int, st
+db    /3    fcmovnu st, sti
+db e0 /4 d6 fneni 
+db e1 /4 d6 fndisi
+db e2 /4    fnclex
+9b db e2 /4 fclex
+db e3 /4    fninit
+9b db e3 /4 finit
+db e4 /4 d7 fnsetpm
+db /5       fld st, m80real
+db /5       fucomi st. sti
+db /6       fcomi  st. sti
+db /7       fstp m80real, st
+
+dc /0       fadd st, m64real
+dc /0       fadd sti, st
+dc /1       fmul st, m64real
+dc /1       fmul sti, st
+dc /2       fcom st, m64real
+dc /2       fcom2 st, sti
+dc /3       fcomp st, m64real
+dc /3       fcomp3 st, sti
+dc /4       fsub st, m64real
+dc /4       fsubr sti, st
+dc /5       fsubr st, m64real
+dc /5       fsub sti, st
+dc /6       fdiv st, m64real
+dc /6       fdivr sti, st
+dc /7       fdivr st, m64real
+dc /7       fdiv sti, st
+
+dd /0       fld st, m64real
+dd /0       ffree, sti
+dd /1       fisttp m64int, st
+dd /1       fxch4 st, sti
+dd /2       fst m64real, st
+dd /2       fst st, sti
+dd /3       fstp m64real, st
+dd /3       fstp st, sti
+dd /4       frstor  st, st1, st2
+dd /4       fucom st, sti
+dd e1 /4    fucom st, st1
+dd    /5    fucomp st, sti
+dd e9 /5    fucomp st, st1
+dd    /6    fnsave m94/108, st, st1
+9b dd /6    fsave  m94/108, st, st1
+dd    /7    fnstsw m16
+9b dd /7    fstsw m16
+
+de    /0    fiadd st, m16int
+de    /0    faddp sti, st
+de c1 /0    faddp st1, st
+de    /1    fimul st, m16int
+de    /1    fmulp sti, st
+de c9 /1    fmulp st1, st
+de    /2    ficom st, m16int
+de    /2    fcomp5 st, sti
+de    /3    ficomp st, m16int
+de d9 /3    fcompp st, st1
+de    /4    fisub  st  m16int
+de    /4    fsubrp sti, st
+de e1 /4    fsubrp st1, st
+de    /5    fisubr st, m16int
+de    /5    fsubp sti, st
+de e9 /5    fsubp st1, st
+de    /6    fidiv st, m16int
+de    /6    fdivrp sti, st
+de f1 /6    fdivrp st1, st
+de    /7    fidivr  st, m16int
+de    /7    fdivp sti, st
+de f9 /7    fdivp st1, st
+
+df /0       fild  st, m16int
+df /0 d8    ffreep sti
+df /1       fisttp m16int, st
+df /1       fxch7 st, sti
+df /2       fist m16int, st
+df /2       fstp8 sti, st
+df /3       fistp m16int, st
+df /3       fstp9 sti, st
+df /4       fbld st, m80dec
+df e0 /4    fnstsw ax
+9b df e0 /4 fstsw ax
+df /5       fild st, m64int
+df /5       fucomip st, sti
+df /6       fbstp m80dec, st
+df /6       fcomip st, sti
+df /7       fistp m64int, st

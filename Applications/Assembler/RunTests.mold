@@ -22,6 +22,9 @@ import 'X64Compiler.mold'
 
 arrayOfTests = [
 /*
+ TODO: 'core/shld',
+ TODO: 'core/shrd',
+
   'common/common_align',
   'common/common_data',
   'common/common_equ',
@@ -29,10 +32,10 @@ arrayOfTests = [
   'common/common_no_operands',
   'common/common_ports',
   'common/common_proc',
-*/
   'core/adc',
   'core/add',
   'core/and',
+*/
   'core/bsf',
   'core/bsr',
   'core/bswap',
@@ -193,9 +196,7 @@ arrayOfTests = [
   'core/setz',
   'core/sgdt',
   'core/shl',
-  'core/shld',
   'core/shr',
-  'core/shrd',
   'core/sidt',
   'core/sldt',
   'core/smsw',
@@ -224,7 +225,6 @@ arrayOfTests = [
   'core/xchg',
   'core/xlatb',
   'core/xor'
-
 ]
 
 class X64Tester

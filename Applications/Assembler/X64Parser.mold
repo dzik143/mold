@@ -26,7 +26,8 @@ PARSER_X64_ADDRESS_SIZE_MAP = {
   'byte': 1,
   'word': 2,
   'dword': 4,
-  'qword': 8
+  'qword': 8,
+  'tword': 10
 }
 
 PARSER_X64_DEFINE_DATA_MAP = {
@@ -241,77 +242,93 @@ class X64Parser extends AbstractDescentParser
     endif
   endmethod
 
+  method _setImmediate(instruction, value)
+    # TODO: Clean up this mess.
+    if instruction.imm is undefined
+      instruction.imm = value
+    else
+      instruction.imm2 = value
+    endif
+  endmethod
+
   method _matchOperand(instruction)
     global PARSER_X64_ADDRESS_SIZE_MAP
     global PARSER_X64_DEFINE_DATA_MAP
 
-    token = this._getToken()
+    this._skipWhites()
 
-    if token is '-'
-      # Immediate value.
-      # TODO: Handle float numbers.
-      instruction.imm = this._matchNumber()
-
-    elif this._isDigit(token[0]) is true
-      instruction.imm = parseInteger(token)
-
-    elif token is 'EQU'
-      # Constant definition: name EQU value
-      this.constantsMap[instruction.mnemonic] = this._getToken()
-      instruction.type = 'constant'
+    if this.lookupBuffer is '['
+      # Just memory address without size specification.
+      # Example: cmpxchg16b [rax]
+      this._matchMemory(instruction)
 
     else
-      defineDataSize = PARSER_X64_DEFINE_DATA_MAP[token]
+      token = this._getToken()
 
-      if defineDataSize is defined
-        # name db ...
-        labelObj = this._emitLabel(instruction.mnemonic)
-        this._matchData(defineDataSize)
-        instruction.type = 'none'
+      if (token[0] is '-') or (this._isDigit(token[0]) is true)
+        # Immediate value.
+        # TODO: Handle float numbers.
+        this._setImmediate(instruction, parseInteger(token))
+
+      elif token is 'EQU'
+        # Constant definition: name EQU value
+        this.constantsMap[instruction.mnemonic] = this._getToken()
+        instruction.type = 'constant'
 
       else
-        addressSize = PARSER_X64_ADDRESS_SIZE_MAP[token]
+        defineDataSize = PARSER_X64_DEFINE_DATA_MAP[token]
 
-        if addressSize is defined
-          # Memory access.
-          instruction.dataSize = addressSize
-          this._matchMemory(instruction)
+        if defineDataSize is defined
+          # name db ...
+          labelObj = this._emitLabel(instruction.mnemonic)
+          this._matchData(defineDataSize)
+          instruction.type = 'none'
 
         else
-          regId = X64_ParseRegisterName(token)
+          addressSize = PARSER_X64_ADDRESS_SIZE_MAP[token]
 
-          if regId isnt -1
-            # Token recognized as register.
-            if instruction.reg is -1
-              # First operand.
-              instruction.reg = regId
-            else
-              # Second operand.
-              instruction.rm = regId
-            endif
+          if addressSize is defined
+            # Memory address with size prefix.
+            # Example: inc dword [rax]
+            instruction.dataSize = addressSize
+            this._matchMemory(instruction)
 
           else
-            # Neither immediate nor register.
-            # Treat as label.
-            # TODO: Optimize it.
-            labelObj = this.labelsMap[token]
+            regId = X64_ParseRegisterName(token)
 
-            if labelObj is undefined
-              labelObj = {
-                'type': 'label',
-                'name': token,
-                'offset': -1
-              }
-              this.labelsMap[token] = labelObj
+            if regId isnt -1
+              # Token recognized as register.
+              if instruction.reg is -1
+                # First operand.
+                instruction.reg = regId
+              else
+                # Second operand.
+                instruction.rm = regId
+              endif
+
+            else
+              # Neither immediate nor register.
+              # Treat as label.
+              # TODO: Optimize it.
+              labelObj = this.labelsMap[token]
+
+              if labelObj is undefined
+                labelObj = {
+                  'type': 'label',
+                  'name': token,
+                  'offset': -1
+                }
+                this.labelsMap[token] = labelObj
+              endif
+
+              #print 'reference [', token, '] at [', this.outputObject.getCurrentPosition(), ']'
+              # TODO: Clean up this mess.
+              # TODO: Fix int64 mess.
+              instruction.imm            = instruction.offset + 1000
+              instruction.labelObj       = labelObj
+              instruction.originalOffset = instruction.offset
+              this.arrayOfLabelsAndRefs[len(this.arrayOfLabelsAndRefs)] = instruction
             endif
-
-            #print 'reference [', token, '] at [', this.outputObject.getCurrentPosition(), ']'
-            # TODO: Clean up this mess.
-            # TODO: Fix int64 mess.
-            instruction.imm            = instruction.offset + 1000
-            instruction.labelObj       = labelObj
-            instruction.originalOffset = instruction.offset
-            this.arrayOfLabelsAndRefs[len(this.arrayOfLabelsAndRefs)] = instruction
           endif
         endif
       endif
@@ -380,17 +397,16 @@ class X64Parser extends AbstractDescentParser
     this._skipWhites()
 
     if this.lookupBuffer is '-'
-      this._getChar()
-      sign = -1
+      sign = this._getChar()
     else
-      sign = 1
+      sign = ''
     endif
 
     token = this._getToken()
     if this._isDigit(token[0]) is false
       this._error('number expected')
     endif
-    rv = sign * parseInteger(token)
+    rv = parseInteger(sign + token)
   endmethod
 
   method _matchData(size)

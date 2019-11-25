@@ -40,27 +40,22 @@ DEFINE_OPCODE_CORE_R_R(and, X64_AND)
 class X64Encoder
   method constructor()
     this.outputObject = false
-#    this.pos = 0
   endmethod
 
   method emitByte(x)
     this.outputObject.emitByte(x)
-#    this.pos = this.pos + 1
   endmethod
 
   method emitWord(x)
     this.outputObject.emitWord(x)
-#    this.pos = this.pos + 2
   endmethod
 
   method emitDword(x)
     this.outputObject.emitDword(x)
-#    this.pos = this.pos + 4
   endmethod
 
   method emitQword(x)
     this.outputObject.emitQword(x)
-#    this.pos = this.pos + 8
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -116,13 +111,23 @@ class X64Encoder
       # 16, 32 or 64-bit operand(s)
       # 32-bit is default (no prefix needed)
       # Set size bit in primary operand byte.
-      opcode = bitor(opcode, X64_SIZE16_32_64)
+
+      # TODO: Clean up this mess.
+      if opcode > 255
+        opcode = bitor(opcode, X64_SIZE16_32_64 * 256)
+      else
+        opcode = bitor(opcode, X64_SIZE16_32_64)
+      endif
+
       this.emitSizePrefixIfNeeded(reg)
     endif
 
     # Primary opcode.
     if opcode > 255
-      this.emitWord(opcode)
+      # TODO: Clean up this mess.
+      # We set extra mask in unused part to avoid treating 0xf
+      # as one byte opcode.
+      this.emitWord(bitand(opcode, 0xffff))
     else
       this.emitByte(opcode)
     endif
@@ -268,6 +273,15 @@ class X64Encoder
     opcode = bitor(opcode, 2)
     this.emitCore_m_r(opcode, regBase, scale, regIndex, disp, regDst)
   endmethod
+
+  method emitCore_r(opcode, reg)
+    this.emitCore_r_r(opcode, reg, 0)
+  endmethod
+
+  method emitCore_m(opcode, regBase, scale, regIndex, disp)
+    this.emitCore_m_r(opcode, regBase, scale, regIndex, disp, 0)
+  endmethod
+
 
   method emitCore_r_imm(opcode, regDst, imm)
     global X64_MOD_REGISTER
@@ -416,6 +430,74 @@ class X64Encoder
     endif
 
     this.emitCore_group_m(X64_UNARY8_GROUP, operationId, base, scale, index, disp)
+  endmethod
+
+  method emitCore_shiftGroup_r_imm8(operationId, regDst, imm8)
+    global X64_SHIFT_RM8_IMM8_GROUP
+    global X64_SHIFT_RM8_1_GROUP
+
+    if imm8 is 1
+      # Example: rol eax, 1
+      this.emitCore_group_r(X64_SHIFT_RM8_1_GROUP, operationId, regDst)
+    else
+      # Example: shr eax, 14
+      this.emitCore_group_r(X64_SHIFT_RM8_IMM8_GROUP, operationId, regDst)
+      this.emitByte(imm8)
+    endif
+  endmethod
+
+  method emitCore_shiftGroup_r_cl(operationId, regDst)
+    global X64_SHIFT_RM8_CL_GROUP
+    this.emitCore_group_r(X64_SHIFT_RM8_CL_GROUP, operationId, regDst)
+  endmethod
+
+  method emitCore_shiftGroup_m_imm8(operationId, regBase, scale, regIndex, disp, imm8, dataSize)
+    global X64_SHIFT_RM8_IMM8_GROUP
+    global X64_SHIFT_RM8_1_GROUP
+
+    # TODO: Clean up this mess.
+    if dataSize is 1
+      opcodeShift = 0
+    else
+      opcodeShift = 1
+      if dataSize is 2
+        this.emitPrefix16()
+      elif dataSize is 8
+        this.emitPrefix64()
+      endif
+    endif
+
+    if imm8 is 1
+      # Example: rol dword [rdi], 1
+      this.emitCore_group_m(
+        X64_SHIFT_RM8_1_GROUP + opcodeShift,
+        operationId, regBase, scale, regIndex, disp)
+    else
+      # Example: shr dword [rdi], 14
+      this.emitCore_group_m(X64_SHIFT_RM8_IMM8_GROUP + opcodeShift,
+        operationId, regBase, scale, regIndex, disp)
+
+      this.emitByte(imm8)
+    endif
+  endmethod
+
+  method emitCore_shiftGroup_m_cl(operationId, regBase, scale, regIndex, disp, dataSize)
+    global X64_SHIFT_RM8_CL_GROUP
+    global X64_SHIFT_RM32_CL_GROUP
+
+    # TODO: Clean up this mess.
+    if dataSize is 1
+      opcode = X64_SHIFT_RM8_CL_GROUP
+    else
+      opcode = X64_SHIFT_RM32_CL_GROUP
+      if dataSize is 2
+        this.emitPrefix16()
+      elif dataSize is 8
+        this.emitPrefix64()
+      endif
+    endif
+
+    this.emitCore_group_m(opcode, operationId, regBase, scale, regIndex, disp)
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -594,13 +676,33 @@ class X64Encoder
   # Core ALU: inc, dec
   #
 
+  method emitCore_incDec_m(operationId, regBase, scale, regIndex, disp, dataSize)
+    global X64_INC_DEC_RM8_GROUP
+    global X64_INC_DEC_RM32_GROUP
+
+    # TODO: Clean up this mess.
+    if dataSize is 1
+      opcode = X64_INC_DEC_RM8_GROUP
+    else
+      opcode = X64_INC_DEC_RM32_GROUP
+
+      if dataSize is 2
+        this.emitPrefix16()
+      elif dataSize is 8
+        this.emitPrefix64()
+      endif
+    endif
+
+    this.emitCore_group_m(opcode, operationId, regBase, scale, regIndex, disp)
+  endmethod
+
   method inc_r(reg)
     global X64_INC_DEC_RM8_GROUP
     this.emitCore_group_r(X64_INC_DEC_RM8_GROUP, 0, reg)
   endmethod
 
-  method inc_m(regBase, scale, regIndex, disp)
-    die('not implemented: inc m')
+  method inc_m(regBase, scale, regIndex, disp, dataSize)
+    this.emitCore_incDec_m(0, regBase, scale, regIndex, disp, dataSize)
   endmethod
 
   method dec_r(reg)
@@ -608,8 +710,8 @@ class X64Encoder
     this.emitCore_group_r(X64_INC_DEC_RM8_GROUP, 1, reg)
   endmethod
 
-  method dec_m(regBase, scale, regIndex, disp)
-    die('not implemented: dec m')
+  method dec_m(regBase, scale, regIndex, disp, dataSize)
+    this.emitCore_incDec_m(1, regBase, scale, regIndex, disp, dataSize)
   endmethod
 
   #
@@ -757,7 +859,6 @@ class X64Encoder
     elif X64_IsReg64(reg)
       # push r64
       # Default scenario - nothing to do.
-
     else
       die('error: push/pop r8/32 are unavailable in 64-bit mode')
     endif
@@ -775,16 +876,20 @@ class X64Encoder
     this.emitCore_pushPop_r(X64_POP_R64, reg)
   endmethod
 
-  method push_imm8(imm)
-    global X64_PUSH_IMM8
-    this.emitByte(X64_PUSH_IMM8)
-    this.emitByte(imm)
+  method pop_m(regBase, scale, regIndex, disp, dataSize)
+    global X64_POP_RM64
+    if dataSize is 2
+      this.emitPrefix16()
+    endif
+    this.emitCore_group_m(X64_POP_RM64, 0, regBase, scale, regIndex, disp)
   endmethod
 
-  method push_imm32(imm)
-    global X64_PUSH_IMM32
-    this.emitByte(X64_PUSH_IMM32)
-    this.emitDword(imm)
+  method push_m(regBase, scale, regIndex, disp, dataSize)
+    global X64_CALL_GROUP
+    if dataSize is 2
+      this.emitPrefix16()
+    endif
+    this.emitCore_group_m(X64_CALL_GROUP, 6, regBase, scale, regIndex, disp)
   endmethod
 
   method pushf()
@@ -1124,6 +1229,19 @@ class X64Encoder
     this.emitWord(imm)
   endmethod
 
+  method retf()
+    global X64_RETF
+    this.emitPrefix64()
+    this.emitByte(X64_RETF)
+  endmethod
+
+  method retf_imm(imm)
+    global X64_RETFN
+    this.emitPrefix64()
+    this.emitByte(X64_RETFN)
+    this.emitWord(imm)
+  endmethod
+
   #
   # Data move: mov, xchg
   #
@@ -1171,10 +1289,18 @@ class X64Encoder
         this.emitDword(imm)
 
       else
-        # mov r64, imm32
+        # mov r64, imm32/64
         this.emitPrefix64()
-        this.emitCore(X64_MOV_RM32_IMM32, X64_MOD_REGISTER, 0, regDst)
-        this.emitDword(imm)
+
+        if (imm >= -2147483649) and (imm <= 2147483648)
+          # mov r64, imm32
+          this.emitCore(X64_MOV_RM32_IMM32, X64_MOD_REGISTER, 0, regDst)
+          this.emitDword(imm)
+        else
+          # mov r64, imm64
+          this.emitByte(X64_MOV_R32_IMM32 + regDstId)
+          this.emitQword(imm)
+        endif
       endif
     endif
   endmethod
@@ -1236,17 +1362,11 @@ class X64Encoder
   # Interrupts: int, into, int1, int3, iret
   #
 
-  method int(imm8)
+  method int_imm(imm8)
     global X64_INT_IMM8
-    global X64_INTO, X64_INT1, X64_INT3
+    global X64_INT3
 
-    if imm8 is 0
-      this.emitByte(X64_INTO)
-
-    elif imm8 is 1
-      this.emitByte(X64_INT1)
-
-    elif imm8 is 3
+    if imm8 is 3
       this.emitByte(X64_INT3)
 
     else
@@ -1333,132 +1453,103 @@ class X64Encoder
   # Bit shifts and rotations: rol, ror, rcl, rcr, shl, rhr, sar
   #
 
-  method rcl_r_cl(regDst)
-    die('not implemented: rcl r,cl')
-  endmethod
-
-  method rcl_r_imm(regDst, imm)
-    die('not implemented: rcl r,imm')
-  endmethod
-
-  method rcl_m_cl(regBase, scale, regIndex, disp)
-    die('not implemented: rcl m,cl')
-  endmethod
-
-  method rcl_m_imm(regBase, scale, regIndex, disp, imm)
-    die('not implemented: rcl m,imm')
-  endmethod
-
-  method rcr_r_cl(regDst)
-    die('not implemented: rcr r,cl')
-  endmethod
-
-  method rcr_r_imm(regDst, imm)
-    die('not implemented: rcr r,imm')
-  endmethod
-
-  method rcr_m_cl(regBase, scale, regIndex, disp)
-    die('not implemented: rcr m,cl')
-  endmethod
-
-  method rcr_m_imm(regBase, scale, regIndex, disp, imm)
-    die('not implemented: rcr m,imm')
-  endmethod
-
+  # r, cl
   method rol_r_cl(regDst)
-    die('not implemented: rol r,cl')
-  endmethod
-
-  method rol_r_imm(regDst, imm)
-    die('not implemented: rol r,imm')
-  endmethod
-
-  method rol_m_cl(regBase, scale, regIndex, disp)
-    die('not implemented: rol m,cl')
-  endmethod
-
-  method rol_m_imm(regBase, scale, regIndex, disp, imm)
-    die('not implemented: rol m,imm')
+    this.emitCore_shiftGroup_r_cl(0, regDst)
   endmethod
 
   method ror_r_cl(regDst)
-    die('not implemented: ror r,cl')
+    this.emitCore_shiftGroup_r_cl(1, regDst)
   endmethod
 
-  method ror_r_imm(regDst, imm)
-    die('not implemented: ror r,imm')
+  method rcl_r_cl(regDst)
+    this.emitCore_shiftGroup_r_cl(2, regDst)
   endmethod
 
-  method ror_m_cl(regBase, scale, regIndex, disp)
-    die('not implemented: ror m,cl')
-  endmethod
-
-  method ror_m_imm(regBase, scale, regIndex, disp, imm)
-    die('not implemented: ror m,imm')
-  endmethod
-
-  method sal_r_cl(regDst)
-    die('not implemented: sal r,cl')
-  endmethod
-
-  method sal_r_imm(regDst, imm)
-    die('not implemented: sal r,imm')
-  endmethod
-
-  method sal_m_cl(regBase, scale, regIndex, disp)
-    die('not implemented: sal m,cl')
-  endmethod
-
-  method sal_m_imm(regBase, scale, regIndex, disp, imm)
-    die('not implemented: sal m,imm')
-  endmethod
-
-  method sar_r_cl(regDst)
-    die('not implemented: sar r,cl')
-  endmethod
-
-  method sar_r_imm(regDst, imm)
-    die('not implemented: sar r,imm')
-  endmethod
-
-  method sar_m_cl(regBase, scale, regIndex, disp)
-    die('not implemented: sar m,cl')
-  endmethod
-
-  method sar_m_imm(regBase, scale, regIndex, disp, imm)
-    die('not implemented: sar m,imm')
+  method rcr_r_cl(regDst)
+    this.emitCore_shiftGroup_r_cl(3, regDst)
   endmethod
 
   method shl_r_cl(regDst)
-    die('not implemented: shl r,cl')
+    this.emitCore_shiftGroup_r_cl(4, regDst)
   endmethod
 
-  method shl_r_imm(regDst, imm)
-    die('not implemented: shl r,imm')
-  endmethod
-
-  method shl_m_cl(regBase, scale, regIndex, disp)
-    die('not implemented: shl m,cl')
-  endmethod
-
-  method shl_m_imm(regBase, scale, regIndex, disp, imm)
-    die('not implemented: shl m,imm')
+  method sal_r_cl(regDst)
+    this.shl_r_cl(regDst)
   endmethod
 
   method shr_r_cl(regDst)
-    die('not implemented: shr r,cl')
+    this.emitCore_shiftGroup_r_cl(5, regDst)
   endmethod
 
-  method shr_r_imm(regDst, imm)
-    die('not implemented: shr r,imm')
+  method sar_r_cl(regDst)
+    this.emitCore_shiftGroup_r_cl(7, regDst)
   endmethod
 
-  method shr_m_cl(regBase, scale, regIndex, disp)
-    die('not implemented: shr m,cl')
+  # m, imm8
+  method rol_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
+    this.emitCore_shiftGroup_m_imm8(0, regBase, scale, regIndex, disp, imm, dataSize)
   endmethod
 
-  method shr_m_imm(regBase, scale, regIndex, disp, imm)
-    die('not implemented: shr m,imm')
+  method ror_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
+    this.emitCore_shiftGroup_m_imm8(1, regBase, scale, regIndex, disp, imm, dataSize)
+  endmethod
+
+  method rcl_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
+    this.emitCore_shiftGroup_m_imm8(2, regBase, scale, regIndex, disp, imm, dataSize)
+  endmethod
+
+  method rcr_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
+    this.emitCore_shiftGroup_m_imm8(3, regBase, scale, regIndex, disp, imm, dataSize)
+  endmethod
+
+  method shl_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
+    this.emitCore_shiftGroup_m_imm8(4, regBase, scale, regIndex, disp, imm, dataSize)
+  endmethod
+
+  method sal_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
+    this.shl_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
+  endmethod
+
+  method shr_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
+    this.emitCore_shiftGroup_m_imm8(5, regBase, scale, regIndex, disp, imm, dataSize)
+  endmethod
+
+  method sar_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
+    this.emitCore_shiftGroup_m_imm8(7, regBase, scale, regIndex, disp, imm, dataSize)
+  endmethod
+
+  # m, cl
+  method rol_m_cl(regBase, scale, regIndex, disp, dataSize)
+    this.emitCore_shiftGroup_m_cl(0, regBase, scale, regIndex, disp, dataSize)
+  endmethod
+
+  method ror_m_cl(regBase, scale, regIndex, disp, dataSize)
+    this.emitCore_shiftGroup_m_cl(1, regBase, scale, regIndex, disp, dataSize)
+  endmethod
+
+  method rcl_m_cl(regBase, scale, regIndex, disp, dataSize)
+    this.emitCore_shiftGroup_m_cl(2, regBase, scale, regIndex, disp, dataSize)
+  endmethod
+
+  method rcr_m_cl(regBase, scale, regIndex, disp, dataSize)
+    this.emitCore_shiftGroup_m_cl(3, regBase, scale, regIndex, disp, dataSize)
+  endmethod
+
+  method shl_m_cl(regBase, scale, regIndex, disp, dataSize)
+    this.emitCore_shiftGroup_m_cl(4, regBase, scale, regIndex, disp, dataSize)
+  endmethod
+
+  method sal_m_cl(regBase, scale, regIndex, disp, dataSize)
+    this.shl_m_cl(regBase, scale, regIndex, disp, dataSize)
+  endmethod
+
+  method shr_m_cl(regBase, scale, regIndex, disp, dataSize)
+    this.emitCore_shiftGroup_m_cl(5, regBase, scale, regIndex, disp, dataSize)
+  endmethod
+
+  method sar_m_cl(regBase, scale, regIndex, disp, dataSize)
+    this.emitCore_shiftGroup_m_cl(7, regBase, scale, regIndex, disp, dataSize)
   endmethod
 
   #
@@ -1466,15 +1557,29 @@ class X64Encoder
   #
 
   method nop()
-    die('not implemented: nop')
+    global X64_NOP
+    this.emitByte(X64_NOP)
   endmethod
 
   method nop_r(regDst)
-    die('not implemented: nop r')
+    global X64_NOP_RM
+    global X64_MOD_REGISTER
+    this.emitSizePrefixIfNeeded(regDst)
+    this.emitWord(X64_NOP_RM)
+    this.emitModRegRM(X64_MOD_REGISTER, 0, regDst)
   endmethod
 
-  method nop_m(regBase, scale, regIndex, disp)
-    die('not implemented: nop m')
+  method nop_m(regBase, scale, regIndex, disp, dataSize)
+    global X64_NOP_RM
+
+    # TODO: Clean up this mess.
+    if dataSize is 2
+      this.emitPrefix16()
+    elif dataSize is 8
+      this.emitPrefix64()
+    endif
+
+    this.emitCore_group_m(X64_NOP_RM, 0, regBase, scale, regIndex, disp)
   endmethod
 
   method cmc()
@@ -1500,22 +1605,7 @@ class X64Encoder
   #   bound    - invalid in 64-bit mode
   #   popa     - invalid in 64-bit mode
   #   pusha    - invalid in 64-bit mode
-  #   push imm - already handled
-  #   imul imm - already handled
-  #   shl  imm - already handled
-  #   shr  imm - already handled
-  #   sal  imm - already handled
-  #   sar  imm - already handled
-  #   rol  imm - already handled
-  #   ror  imm - already handled
-  #   rcl  imm - already handled
-  #   rcr  imm - already handled
   #-----------------------------------------------------------------------------
-
-  # Only [edi/rdi] or [esi/rsi] addresses are available.
-  # TODO:
-  # ins  m8,dx | m32,dx | m32,dx
-  # outs dx,m8 | dx,m16 | dx,m32
 
   method enter_imm16_imm8(disp, level)
     global X64_ENTER_IMM16_IMM8
@@ -1529,6 +1619,51 @@ class X64Encoder
     this.emitByte(X64_LEAVE)
   endmethod
 
+  method push_imm8(imm)
+    global X64_PUSH_IMM8
+    this.emitByte(X64_PUSH_IMM8)
+    this.emitByte(imm)
+  endmethod
+
+  method push_imm32(imm)
+    global X64_PUSH_IMM32
+    this.emitByte(X64_PUSH_IMM32)
+    this.emitDword(imm)
+  endmethod
+
+  # r, imm8
+  method rol_r_imm(regDst, imm)
+    this.emitCore_shiftGroup_r_imm8(0, regDst, imm)
+  endmethod
+
+  method ror_r_imm(regDst, imm)
+    this.emitCore_shiftGroup_r_imm8(1, regDst, imm)
+  endmethod
+
+  method rcl_r_imm(regDst, imm)
+    this.emitCore_shiftGroup_r_imm8(2, regDst, imm)
+  endmethod
+
+  method rcr_r_imm(regDst, imm)
+    this.emitCore_shiftGroup_r_imm8(3, regDst, imm)
+  endmethod
+
+  method shl_r_imm(regDst, imm)
+    this.emitCore_shiftGroup_r_imm8(4, regDst, imm)
+  endmethod
+
+  method sal_r_imm(regDst, imm)
+    this.shl_r_imm(regDst, imm)
+  endmethod
+
+  method shr_r_imm(regDst, imm)
+    this.emitCore_shiftGroup_r_imm8(5, regDst, imm)
+  endmethod
+
+  method sar_r_imm(regDst, imm)
+    this.emitCore_shiftGroup_r_imm8(7, regDst, imm)
+  endmethod
+
   #-----------------------------------------------------------------------------
   # Mnemonics added with 80286 processor.
   #
@@ -1537,104 +1672,168 @@ class X64Encoder
   #   loadall - 80286 only
   #-----------------------------------------------------------------------------
 
-  method sldt_r(regDst)
-    die('not implemented: sldt r')
+  method emitCore286_r_r(opcode, regDst, regSrc)
+    # TODO: Clean up this mess.
+    # We avoid setting up size bit in primary opcode.
+    # TODO: Why we need to swap operands?
+    this.emitSizePrefixIfNeeded(regDst)
+    regDst = bitand(regDst, 0x7)
+    this.emitCore_r_r(opcode, regSrc, regDst)
   endmethod
 
+  method emitCore286_r_m(opcode, regDst, regBase, scale, regIndex, disp)
+    # TODO: Clean up this mess.
+    # We avoid setting up size bit in primary opcode.
+    this.emitSizePrefixIfNeeded(regDst)
+    regDst = bitand(regDst, 0x7)
+    this.emitCore_r_m(opcode, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method emitCore_group0f_00_m(operationId, regBase, scale, regIndex, disp)
+    # TODO: Clean up this mess.
+    # We set extra mask in unused part to avoid treating 0xf
+    # as one byte opcode.
+    this.emitCore_group_m(0x1000000f, operationId, regBase, scale, regIndex, disp)
+  endmethod
+
+  method emitCore_group0f_00_r(operationId, reg)
+    global X64_GROUP_0F_00
+    global X64_MOD_REGISTER
+
+    # TODO: Clean up this mess.
+    if operationId <= 1
+      this.emitSizePrefixIfNeeded(reg)
+    endif
+
+    this.emitWord(X64_GROUP_0F_00)
+    this.emitModRegRM(X64_MOD_REGISTER, operationId, reg)
+  endmethod
+
+  method emitCore_group0f_01_m(operationId, regBase, scale, regIndex, disp)
+    this.emitCore_group_m(0x010f, operationId, regBase, scale, regIndex, disp)
+  endmethod
+
+  method emitCore_group0f_01_r(operationId, reg)
+    global X64_GROUP_0F_01
+    global X64_MOD_REGISTER
+
+    # TODO: Clean up this mess.
+    if operationId is 4
+      this.emitSizePrefixIfNeeded(reg)
+    endif
+
+    this.emitWord(X64_GROUP_0F_01)
+    this.emitModRegRM(X64_MOD_REGISTER, operationId, reg)
+  endmethod
+
+  # Group 0f 00 /x: memory operand
   method sldt_m(regBase, scale, regIndex, disp)
-    die('not implemented: sldt m')
-  endmethod
-
-  method lar_r_r(regDst, regSrc)
-    die('not implemented: lar r,r')
-  endmethod
-
-  method lar_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: lar r,m')
-  endmethod
-
-  method lsl_r_r(regDst, regSrc)
-    die('not implemented: lsl r,r')
-  endmethod
-
-  method lsl_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: lsl r,m')
-  endmethod
-
-  method smsw_r(regDst)
-    die('not implemented: smsw r')
-  endmethod
-
-  method smsw_m(regBase, scale, regIndex, disp)
-    die('not implemented: smsw m')
-  endmethod
-
-  method str_r(regDst)
-    die('not implemented: str r')
+    this.emitCore_group0f_00_m(0, regBase, scale, regIndex, disp)
   endmethod
 
   method str_m(regBase, scale, regIndex, disp)
-    die('not implemented: str m')
-  endmethod
-
-  method lldt_r(regDst)
-    die('not implemented: lldt r')
+    this.emitCore_group0f_00_m(1, regBase, scale, regIndex, disp)
   endmethod
 
   method lldt_m(regBase, scale, regIndex, disp)
-    die('not implemented: lldt m')
-  endmethod
-
-  method lmsw_r(regDst)
-    die('not implemented: lmsw r')
-  endmethod
-
-  method lmsw_m(regBase, scale, regIndex, disp)
-    die('not implemented: lmsw m')
-  endmethod
-
-  method ltr_r(regDst)
-    die('not implemented: ltr r')
+    this.emitCore_group0f_00_m(2, regBase, scale, regIndex, disp)
   endmethod
 
   method ltr_m(regBase, scale, regIndex, disp)
-    die('not implemented: ltr m')
-  endmethod
-
-  method verr_r(regDst)
-    die('not implemented: verr r')
+    this.emitCore_group0f_00_m(3, regBase, scale, regIndex, disp)
   endmethod
 
   method verr_m(regBase, scale, regIndex, disp)
-    die('not implemented: verr m')
-  endmethod
-
-  method verw_r(regDst)
-    die('not implemented: verw r')
+    this.emitCore_group0f_00_m(4, regBase, scale, regIndex, disp)
   endmethod
 
   method verw_m(regBase, scale, regIndex, disp)
-    die('not implemented: verw m')
+    this.emitCore_group0f_00_m(5, regBase, scale, regIndex, disp)
   endmethod
 
-  method lgdt_m(regBase, scale, regIndex, disp)
-    die('not implemented: lgdt m')
+  # Group 0f 00 /x: register operand
+  method sldt_r(regSrc)
+    this.emitCore_group0f_00_r(0, regSrc)
   endmethod
 
-  method lidt_m(regBase, scale, regIndex, disp)
-    die('not implemented: lidt m')
+  method str_r(regSrc)
+    this.emitCore_group0f_00_r(1, regSrc)
   endmethod
 
+  method lldt_r(regDst)
+    this.emitCore_group0f_00_r(2, regDst)
+  endmethod
+
+  method ltr_r(regDst)
+    this.emitCore_group0f_00_r(3, regDst)
+  endmethod
+
+  method verr_r(regDst)
+    this.emitCore_group0f_00_r(4, regDst)
+  endmethod
+
+  method verw_r(regSrc)
+    this.emitCore_group0f_00_r(5, regSrc)
+  endmethod
+
+  # Group 0f 01 /x: memory operand
   method sgdt_m(regBase, scale, regIndex, disp)
-    die('not implemented: sgdt m')
+    this.emitCore_group0f_01_m(0, regBase, scale, regIndex, disp)
   endmethod
 
   method sidt_m(regBase, scale, regIndex, disp)
-    die('not implemented: sidt m')
+    this.emitCore_group0f_01_m(1, regBase, scale, regIndex, disp)
+  endmethod
+
+  method lgdt_m(regBase, scale, regIndex, disp)
+    this.emitCore_group0f_01_m(2, regBase, scale, regIndex, disp)
+  endmethod
+
+  method lidt_m(regBase, scale, regIndex, disp)
+    this.emitCore_group0f_01_m(3, regBase, scale, regIndex, disp)
+  endmethod
+
+  method smsw_m(regBase, scale, regIndex, disp)
+    this.emitCore_group0f_01_m(4, regBase, scale, regIndex, disp)
+  endmethod
+
+  method lmsw_m(regBase, scale, regIndex, disp)
+    this.emitCore_group0f_01_m(6, regBase, scale, regIndex, disp)
+  endmethod
+
+  # Group 0f 01 /x: register operand
+  method smsw_r(regSrc)
+    this.emitCore_group0f_01_m(4, regSrc)
+  endmethod
+
+  method lmsw_r(regDst)
+    this.emitCore_group0f_01_m(6, regDst)
+  endmethod
+
+  # 286: Other
+  method lar_r_r(regDst, regSrc)
+    global X64_LAR
+    this.emitCore286_r_r(regDst, regSrc)
+  endmethod
+
+  method lar_r_m16(regDst, regBase, scale, regIndex, disp)
+    global X64_LAR
+    this.emitCore286_r_m(X64_LAR, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method lsl_r_r(regDst, regSrc)
+    global X64_LSL
+    this.emitCore_r_r(X64_LSL, regDst, regSrc)
+  endmethod
+
+  method lsl_r_m(regDst, regBase, scale, regIndex, disp)
+    global X64_LSL
+    this.emitCore_m_r(X64_LSL, regBase, scale, regIndex, disp, regDst)
   endmethod
 
   method clts()
-    die('not implemented: clts')
+    global X64_CLTS
+    this.emitWord(X64_CLTS)
   endmethod
 
   #-----------------------------------------------------------------------------
@@ -1651,83 +1850,93 @@ class X64Encoder
   #-----------------------------------------------------------------------------
 
   # TODO: mov to/from CR/DR/TR (already handled)
+  # TODO: btx r,i8
+  # TODO: btx m,i8
 
+  method emitCore_bitTest_r_imm8(opcode, reg1, reg2)
+    die('error: not implemented: btx r,imm8')
+  endmethod
+
+  method emitCore_bitTest_m_imm8(opcode, regBase, scale, regIndex, disp, reg, dataSize)
+    die('error: not implemented: btx m,imm8')
+  endmethod
+
+  # Bit scan forward/reverse
   method bsf_r_r(regDst, regSrc)
-    die('not implemented: bsf r,r')
+    global X64_BSF
+    this.emitCore_r_r(X64_BSF, regDst, regSrc)
   endmethod
 
   method bsf_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: bsf r,m')
+    global X64_BSF
+    this.emitCore_r_m(X64_BSF, regDst, regBase, scale, regIndex, disp)
   endmethod
 
   method bsr_r_r(regDst, regSrc)
-    die('not implemented: bsr r,r')
+    global X64_BSR
+    this.emitCore_r_r(X64_BSR, regDst, regSrc)
   endmethod
 
   method bsr_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: bsr r,m')
+    global X64_BSR
+    this.emitCore_r_m(X64_BSR, regDst, regBase, scale, regIndex, disp)
   endmethod
 
+  # btx r,r
   method bt_r_r(regDst, regSrc)
-    die('not implemented: bt r,r')
-  endmethod
-
-  method bt_m_r(regBase, scale, regIndex, disp, regSrc)
-    die('not implemented: bt m,r')
+    global X64_BT_RM_R
+    this.emitCore_r_r(X64_BT_RM_R, regDst, regSrc)
   endmethod
 
   method btc_r_r(regDst, regSrc)
-    die('not implemented: btc r,r')
-  endmethod
-
-  method btc_m_r(regBase, scale, regIndex, disp, regSrc)
-    die('not implemented: btc m,r')
+    global X64_BTC_RM_R
+    this.emitCore_r_r(X64_BTC_RM_R, regDst, regSrc)
   endmethod
 
   method btr_r_r(regDst, regSrc)
-    die('not implemented: btr r,r')
-  endmethod
-
-  method btr_m_r(regBase, scale, regIndex, disp, regSrc)
-    die('not implemented: btr m,r')
+    global X64_BTR_RM_R
+    this.emitCore_r_r(X64_BTR_RM_R, regDst, regSrc)
   endmethod
 
   method bts_r_r(regDst, regSrc)
-    die('not implemented: bts r,r')
+    global X64_BTS_RM_R
+    this.emitCore_r_r(X64_BTS_RM_R, regDst, regSrc)
+  endmethod
+
+  # btx r,m
+  method bt_m_r(regBase, scale, regIndex, disp, regSrc)
+    global X64_BT_RM_R
+    this.emitCore_m_r(X64_BT_RM_R, regBase, scale, regIndex, disp, regSrc)
+  endmethod
+
+  method btc_m_r(regBase, scale, regIndex, disp, regSrc)
+    global X64_BTC_RM_R
+    this.emitCore_m_r(X64_BTC_RM_R, regBase, scale, regIndex, disp, regSrc)
+  endmethod
+
+  method btr_m_r(regBase, scale, regIndex, disp, regSrc)
+    global X64_BTR_RM_R
+    this.emitCore_m_r(X64_BTR_RM_R, regBase, scale, regIndex, disp, regSrc)
   endmethod
 
   method bts_m_r(regBase, scale, regIndex, disp, regSrc)
-    die('not implemented: bts m,r')
+    global X64_BTS_RM_R
+    this.emitCore_m_r(X64_BTS_RM_R, regBase, scale, regIndex, disp, regSrc)
   endmethod
 
   method lfs_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: lfs r,m')
+    global X64_LFS
+    this.emitCore286_r_m(X64_LFS, regDst, regBase,scale, regIndex, disp)
   endmethod
 
   method lgs_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: lgs r,m')
+    global X64_LGS
+    this.emitCore286_r_m(X64_LGS, regDst, regBase,scale, regIndex, disp)
   endmethod
 
   method lss_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: lss r,m')
-  endmethod
-
-  method movsxd_r64_r32(regDst, regSrc)
-    global X64_MOVSXD_R32_RM32
-    this.emitCore_r_r(X64_MOVSXD_R32_RM32, regSrc, regDst)
-  endmethod
-
-  method movsxd_r64_m32(regDst, regBase, scale, regIndex, disp)
-    global X64_MOVSXD_R32_RM32
-    this.emitCore_r_m(X64_MOVSXD_R32_RM32, regDst, regBase, scale, regIndex, disp)
-  endmethod
-
-  method movzx_r_r(regDst, regSrc)
-    die('not implemented: movzx r,r')
-  endmethod
-
-  method movzx_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: movzx r,m')
+    global X64_LSS
+    this.emitCore286_r_m(X64_LSS, regDst, regBase,scale, regIndex, disp)
   endmethod
 
   method shld_r_r_cl(regDst, regSrc)
@@ -1762,244 +1971,166 @@ class X64Encoder
     die('not implemented: shrd m,r,imm')
   endmethod
 
-  method seta_r(regDst)
-    die('not implemented: seta r')
+  # setcc r8
+  method seto_r8(regDst)
+    global X64_SETO
+    this.emitCore_r(X64_SETO, regDst)
   endmethod
 
-  method seta_m(regBase, scale, regIndex, disp)
-    die('not implemented: seta m')
+  method setno_r8(regDst)
+    global X64_SETNO
+    this.emitCore_r(X64_SETNO, regDst)
   endmethod
 
-  method setae_r(regDst)
-    die('not implemented: setae r')
+  method setb_r8(regDst)
+    global X64_SETB
+    this.emitCore_r(X64_SETB, regDst)
   endmethod
 
-  method setae_m(regBase, scale, regIndex, disp)
-    die('not implemented: setae m')
+  method setae_r8(regDst)
+    global X64_SETAE
+    this.emitCore_r(X64_SETAE, regDst)
   endmethod
 
-  method setb_r(regDst)
-    die('not implemented: setb r')
+  method sete_r8(regDst)
+    global X64_SETE
+    this.emitCore_r(X64_SETE, regDst)
   endmethod
 
-  method setb_m(regBase, scale, regIndex, disp)
-    die('not implemented: setb m')
+  method setne_r8(regDst)
+    global X64_SETNE
+    this.emitCore_r(X64_SETNE, regDst)
   endmethod
 
-  method setbe_r(regDst)
-    die('not implemented: setbe r')
+  method setbe_r8(regDst)
+    global X64_SETBE
+    this.emitCore_r(X64_SETBE, regDst)
   endmethod
 
-  method setbe_m(regBase, scale, regIndex, disp)
-    die('not implemented: setbe m')
+  method seta_r8(regDst)
+    global X64_SETA
+    this.emitCore_r(X64_SETA, regDst)
   endmethod
 
-  method setc_r(regDst)
-    die('not implemented: setc r')
+  method sets_r8(regDst)
+    global X64_SETS
+    this.emitCore_r(X64_SETS, regDst)
   endmethod
 
-  method setc_m(regBase, scale, regIndex, disp)
-    die('not implemented: setc m')
+  method setns_r8(regDst)
+    global X64_SETNS
+    this.emitCore_r(X64_SETNS, regDst)
   endmethod
 
-  method sete_r(regDst)
-    die('not implemented: sete r')
+  method setp_r8(regDst)
+    global X64_SETP
+    this.emitCore_r(X64_SETP, regDst)
   endmethod
 
-  method sete_m(regBase, scale, regIndex, disp)
-    die('not implemented: sete m')
+  method setnp_r8(regDst)
+    global X64_SETNP
+    this.emitCore_r(X64_SETNP, regDst)
   endmethod
 
-  method setg_r(regDst)
-    die('not implemented: setg r')
+  method setl_r8(regDst)
+    global X64_SETL
+    this.emitCore_r(X64_SETL, regDst)
   endmethod
 
-  method setg_m(regBase, scale, regIndex, disp)
-    die('not implemented: setg m')
+  method setge_r8(regDst)
+    global X64_SETGE
+    this.emitCore_r(X64_SETGE, regDst)
   endmethod
 
-  method setge_r(regDst)
-    die('not implemented: setge r')
+  method setle_r8(regDst)
+    global X64_SETLE
+    this.emitCore_r(X64_SETLE, regDst)
   endmethod
 
-  method setge_m(regBase, scale, regIndex, disp)
-    die('not implemented: setge m')
+  method setg_r8(regDst)
+    global X64_SETG
+    this.emitCore_r(X64_SETG, regDst)
   endmethod
 
-  method setl_r(regDst)
-    die('not implemented: setl r')
+  # setcc m8
+  method seto_m8(regBase, scale, regIndex, disp)
+    global X64_SETO
+    this.emitCore_m(X64_SETO, regBase, scale, regIndex, disp)
   endmethod
 
-  method setl_m(regBase, scale, regIndex, disp)
-    die('not implemented: setl m')
+  method setno_m8(regBase, scale, regIndex, disp)
+    global X64_SETNO
+    this.emitCore_m(X64_SETNO, regBase, scale, regIndex, disp)
   endmethod
 
-  method setle_r(regDst)
-    die('not implemented: setle r')
+  method setb_m8(regBase, scale, regIndex, disp)
+    global X64_SETB
+    this.emitCore_m(X64_SETB, regBase, scale, regIndex, disp)
   endmethod
 
-  method setle_m(regBase, scale, regIndex, disp)
-    die('not implemented: setle m')
+  method setae_m8(regBase, scale, regIndex, disp)
+    global X64_SETAE
+    this.emitCore_m(X64_SETAE, regBase, scale, regIndex, disp)
   endmethod
 
-  method setna_r(regDst)
-    die('not implemented: setna r')
+  method sete_rm(regBase, scale, regIndex, disp)
+    global X64_SETE
+    this.emitCore_m(X64_SETE, regBase, scale, regIndex, disp)
   endmethod
 
-  method setna_m(regBase, scale, regIndex, disp)
-    die('not implemented: setna m')
+  method setne_m8(regBase, scale, regIndex, disp)
+    global X64_SETNE
+    this.emitCore_m(X64_SETNE, regBase, scale, regIndex, disp)
   endmethod
 
-  method setnae_r(regDst)
-    die('not implemented: setnae r')
+  method setbe_m8(regBase, scale, regIndex, disp)
+    global X64_SETBE
+    this.emitCore_m(X64_SETBE, regBase, scale, regIndex, disp)
   endmethod
 
-  method setnae_m(regBase, scale, regIndex, disp)
-    die('not implemented: setnae m')
+  method seta_m8(regBase, scale, regIndex, disp)
+    global X64_SETA
+    this.emitCore_m(X64_SETA, regBase, scale, regIndex, disp)
   endmethod
 
-  method setnb_r(regDst)
-    die('not implemented: setnb r')
+  method sets_m8(regBase, scale, regIndex, disp)
+    global X64_SETS
+    this.emitCore_m(X64_SETS, regBase, scale, regIndex, disp)
   endmethod
 
-  method setnb_m(regBase, scale, regIndex, disp)
-    die('not implemented: setnb m')
+  method setns_m8(regBase, scale, regIndex, disp)
+    global X64_SETNS
+    this.emitCore_m(X64_SETNS, regBase, scale, regIndex, disp)
   endmethod
 
-  method setnbe_r(regDst)
-    die('not implemented: setnbe r')
+  method setp_m8(regBase, scale, regIndex, disp)
+    global X64_SETP
+    this.emitCore_m(X64_SETP, regBase, scale, regIndex, disp)
   endmethod
 
-  method setnbe_m(regBase, scale, regIndex, disp)
-    die('not implemented: setnbe m')
+  method setnp_m8(regBase, scale, regIndex, disp)
+    global X64_SETNP
+    this.emitCore_m(X64_SETNP, regBase, scale, regIndex, disp)
   endmethod
 
-  method setnc_r(regDst)
-    die('not implemented: setnc r')
+  method setl_m8(regBase, scale, regIndex, disp)
+    global X64_SETL
+    this.emitCore_m(X64_SETL, regBase, scale, regIndex, disp)
   endmethod
 
-  method setnc_m(regBase, scale, regIndex, disp)
-    die('not implemented: setnc m')
+  method setge_m8(regBase, scale, regIndex, disp)
+    global X64_SETGE
+    this.emitCore_m(X64_SETGE, regBase, scale, regIndex, disp)
   endmethod
 
-  method setne_r(regDst)
-    die('not implemented: setne r')
+  method setle_m8(regBase, scale, regIndex, disp)
+    global X64_SETLE
+    this.emitCore_m(X64_SETLE, regBase, scale, regIndex, disp)
   endmethod
 
-  method setne_m(regBase, scale, regIndex, disp)
-    die('not implemented: setne m')
-  endmethod
-
-  method setng_r(regDst)
-    die('not implemented: setng r')
-  endmethod
-
-  method setng_m(regBase, scale, regIndex, disp)
-    die('not implemented: setng m')
-  endmethod
-
-  method setnge_r(regDst)
-    die('not implemented: setnge r')
-  endmethod
-
-  method setnge_m(regBase, scale, regIndex, disp)
-    die('not implemented: setnge m')
-  endmethod
-
-  method setnl_r(regDst)
-    die('not implemented: setnl r')
-  endmethod
-
-  method setnl_m(regBase, scale, regIndex, disp)
-    die('not implemented: setnl m')
-  endmethod
-
-  method setnle_r(regDst)
-    die('not implemented: setnle r')
-  endmethod
-
-  method setnle_m(regBase, scale, regIndex, disp)
-    die('not implemented: setnle m')
-  endmethod
-
-  method setno_r(regDst)
-    die('not implemented: setno r')
-  endmethod
-
-  method setno_m(regBase, scale, regIndex, disp)
-    die('not implemented: setno m')
-  endmethod
-
-  method setnp_r(regDst)
-    die('not implemented: setnp r')
-  endmethod
-
-  method setnp_m(regBase, scale, regIndex, disp)
-    die('not implemented: setnp m')
-  endmethod
-
-  method setns_r(regDst)
-    die('not implemented: setns r')
-  endmethod
-
-  method setns_m(regBase, scale, regIndex, disp)
-    die('not implemented: setns m')
-  endmethod
-
-  method setnz_r(regDst)
-    die('not implemented: setnz r')
-  endmethod
-
-  method setnz_m(regBase, scale, regIndex, disp)
-    die('not implemented: setnz m')
-  endmethod
-
-  method seto_r(regDst)
-    die('not implemented: seto r')
-  endmethod
-
-  method seto_m(regBase, scale, regIndex, disp)
-    die('not implemented: seto m')
-  endmethod
-
-  method setp_r(regDst)
-    die('not implemented: setp r')
-  endmethod
-
-  method setp_m(regBase, scale, regIndex, disp)
-    die('not implemented: setp m')
-  endmethod
-
-  method setpe_r(regDst)
-    die('not implemented: setpe r')
-  endmethod
-
-  method setpe_m(regBase, scale, regIndex, disp)
-    die('not implemented: setpe m')
-  endmethod
-
-  method setpo_r(regDst)
-    die('not implemented: setpo r')
-  endmethod
-
-  method setpo_m(regBase, scale, regIndex, disp)
-    die('not implemented: setpo m')
-  endmethod
-
-  method sets_r(regDst)
-    die('not implemented: sets r')
-  endmethod
-
-  method sets_m(regBase, scale, regIndex, disp)
-    die('not implemented: sets m')
-  endmethod
-
-  method setz_r(regDst)
-    die('not implemented: setz r')
-  endmethod
-
-  method setz_m(regBase, scale, regIndex, disp)
-    die('not implemented: setz m')
+  method setg_m8(regBase, scale, regIndex, disp)
+    global X64_SETG
+    this.emitCore_m(X64_SETG, regBase, scale, regIndex, disp)
   endmethod
 
   method cwde()
@@ -2012,7 +2143,7 @@ class X64Encoder
   endmethod
 
   method iretd()
-    die('not implemented: iretd')
+    this.iret()
   endmethod
 
   method movsd()
@@ -2050,6 +2181,58 @@ class X64Encoder
     this.emitByte(X64_OUTSD)
   endmethod
 
+  method emitCore_movExtend_r_r(opcode, regDst, regSrc)
+    global X64_MOD_REGISTER
+    # TODO: Clean up this mess.
+    this.emitSizePrefixIfNeeded(regDst)
+    if X64_IsReg8(regSrc) is false
+      opcode = bitor(opcode, 256)
+    endif
+
+    this.emitWord(opcode)
+    this.emitModRegRM(X64_MOD_REGISTER, regDst, regSrc)
+  endmethod
+
+  method emitCore_movExtend_r_m(opcode, regDst, regBase, scale, regIndex, disp)
+    # TODO: Clean up this mess.
+    # We Avoid to set up size bit in primary opcode.
+    this.emitSizePrefixIfNeeded(regDst)
+    regDstId = bitand(regDst, 0x7)
+    this.emitCore_r_m(opcode, regDstId, regBase, scale, regIndex, disp)
+  endmethod
+
+  # movsx r,r/m
+  method movsx_r_r(regDst, regSrc)
+    global X64_MOVSX_R_RM8
+    this.emitCore_movExtend_r_r(X64_MOVSX_R_RM8, regDst, regSrc)
+  endmethod
+
+  method movsx_r_m8(regDst, regBase, scale, regIndex, disp)
+    global X64_MOVSX_R_RM8
+    this.emitCore_movExtend_r_m(X64_MOVSX_R_RM8, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method movsx_r_m16(regDst, regBase, scale, regIndex, disp)
+    global X64_MOVSX_R_RM16
+    this.emitCore_movExtend_r_m(X64_MOVSX_R_RM16, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  # movzx r,r/m
+  method movzx_r_r(regDst, regSrc)
+    global X64_MOVZX_R_RM8
+    this.emitCore_movExtend_r_r(X64_MOVZX_R_RM8, regDst, regSrc)
+  endmethod
+
+  method movzx_r_m8(regDst, regBase, scale, regIndex, disp)
+    global X64_MOVZX_R_RM8
+    this.emitCore_movExtend_r_m(X64_MOVZX_R_RM8, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method movzx_r_m16(regDst, regBase, scale, regIndex, disp)
+    global X64_MOVZX_R_RM16
+    this.emitCore_movExtend_r_m(X64_MOVZX_R_RM16, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
   #-----------------------------------------------------------------------------
   # Mnemonics added with 80486 processor:
   #-----------------------------------------------------------------------------
@@ -2061,31 +2244,37 @@ class X64Encoder
   endmethod
 
   method cmpxchg_r_r(regDst, regSrc)
-    die('not implemented: cmpxchg r,r')
+    global X64_CMPXCHG_RM8_R8
+    this.emitCore_r_r(X64_CMPXCHG_RM8_R8, regDst, regSrc)
   endmethod
 
   method cmpxchg_m_r(regBase, scale, regIndex, disp, regSrc)
-    die('not implemented: cmpxchg m,r')
+    global X64_CMPXCHG_RM8_R8
+    this.emitCore_m_r(X64_CMPXCHG_RM8_R8, regBase, scale, regIndex, disp, regSrc)
   endmethod
 
   method xadd_r_r(regDst, regSrc)
-    die('not implemented: xadd r,r')
+    global X64_XADD_RM8_R8
+    this.emitCore_r_r(X64_XADD_RM8_R8, regDst, regSrc)
   endmethod
 
   method xadd_m_r(regBase, scale, regIndex, disp, regSrc)
-    die('not implemented: xadd m,r')
+    global X64_XADD_RM8_R8
+    this.emitCore_m_r(X64_XADD_RM8_R8, regBase, scale, regIndex, disp, regSrc)
   endmethod
 
   method invlpg_m(regBase, scale, regIndex, disp)
-    die('not implemented: invlpg m')
+    this.emitCore_group0f_01_m(6, regBase, scale, regIndex, disp)
   endmethod
 
   method invd()
-    die('not implemented: invd')
+    global X64_INVD
+    this.emitWord(X64_INVD)
   endmethod
 
   method wbinvd()
-    die('not implemented: wbinvd')
+    global X64_WBINVD
+    this.emitWord(X64_WBINVD)
   endmethod
 
   #-----------------------------------------------------------------------------
@@ -2093,274 +2282,184 @@ class X64Encoder
   #-----------------------------------------------------------------------------
 
   method cmpxchg8b_m(regBase, scale, regIndex, disp)
-    die('not implemented: cmpxchg8b m')
+    global X64_CMPXCHG8B
+    this.emitCore_group_m(X64_CMPXCHG8B, 1, regBase, scale, regIndex, disp)
   endmethod
 
   method cpuid()
-    die('not implemented: cpuid')
+    global X64_CPUID
+    this.emitWord(X64_CPUID)
   endmethod
 
   method rdmsr()
-    die('not implemented: rdmsr')
+    global X64_RDMSR
+    this.emitWord(X64_RDMSR)
   endmethod
 
   method rdtsc()
-    die('not implemented: rdtsc')
+    global X64_RDTSC
+    this.emitWord(X64_RDTSC)
   endmethod
 
   method wrmsr()
-    die('not implemented: wrmsr')
+    global X64_WRMSR
+    this.emitWord(X64_WRMSR)
   endmethod
 
   method rsm()
-    die('not implemented: rsm')
+    global X64_RSM
+    this.emitWord(X64_RSM)
   endmethod
 
   #-----------------------------------------------------------------------------
   # Mnemonics added with Penitum Pro processor:
   #-----------------------------------------------------------------------------
-  method cmova_r_r(regDst, regSrc)
-    die('not implemented: cmova r,r')
-  endmethod
 
-  method cmova_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmova r,m')
-  endmethod
-
-  method cmovae_r_r(regDst, regSrc)
-    die('not implemented: cmovae r,r')
-  endmethod
-
-  method cmovae_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovae r,m')
-  endmethod
-
-  method cmovb_r_r(regDst, regSrc)
-    die('not implemented: cmovb r,r')
-  endmethod
-
-  method cmovb_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovb r,m')
-  endmethod
-
-  method cmovbe_r_r(regDst, regSrc)
-    die('not implemented: cmovbe r,r')
-  endmethod
-
-  method cmovbe_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovbe r,m')
-  endmethod
-
-  method cmovc_r_r(regDst, regSrc)
-    die('not implemented: cmovc r,r')
-  endmethod
-
-  method cmovc_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovc r,m')
-  endmethod
-
-  method cmove_r_r(regDst, regSrc)
-    die('not implemented: cmove r,r')
-  endmethod
-
-  method cmove_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmove r,m')
-  endmethod
-
-  method cmovg_r_r(regDst, regSrc)
-    die('not implemented: cmovg r,r')
-  endmethod
-
-  method cmovg_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovg r,m')
-  endmethod
-
-  method cmovge_r_r(regDst, regSrc)
-    die('not implemented: cmovge r,r')
-  endmethod
-
-  method cmovge_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovge r,m')
-  endmethod
-
-  method cmovl_r_r(regDst, regSrc)
-    die('not implemented: cmovl r,r')
-  endmethod
-
-  method cmovl_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovl r,m')
-  endmethod
-
-  method cmovle_r_r(regDst, regSrc)
-    die('not implemented: cmovle r,r')
-  endmethod
-
-  method cmovle_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovle r,m')
-  endmethod
-
-  method cmovna_r_r(regDst, regSrc)
-    die('not implemented: cmovna r,r')
-  endmethod
-
-  method cmovna_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovna r,m')
-  endmethod
-
-  method cmovnae_r_r(regDst, regSrc)
-    die('not implemented: cmovnae r,r')
-  endmethod
-
-  method cmovnae_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovnae r,m')
-  endmethod
-
-  method cmovnb_r_r(regDst, regSrc)
-    die('not implemented: cmovnb r,r')
-  endmethod
-
-  method cmovnb_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovnb r,m')
-  endmethod
-
-  method cmovnbe_r_r(regDst, regSrc)
-    die('not implemented: cmovnbe r,r')
-  endmethod
-
-  method cmovnbe_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovnbe r,m')
-  endmethod
-
-  method cmovnc_r_r(regDst, regSrc)
-    die('not implemented: cmovnc r,r')
-  endmethod
-
-  method cmovnc_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovnc r,m')
-  endmethod
-
-  method cmovne_r_r(regDst, regSrc)
-    die('not implemented: cmovne r,r')
-  endmethod
-
-  method cmovne_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovne r,m')
-  endmethod
-
-  method cmovng_r_r(regDst, regSrc)
-    die('not implemented: cmovng r,r')
-  endmethod
-
-  method cmovng_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovng r,m')
-  endmethod
-
-  method cmovnge_r_r(regDst, regSrc)
-    die('not implemented: cmovnge r,r')
-  endmethod
-
-  method cmovnge_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovnge r,m')
-  endmethod
-
-  method cmovnl_r_r(regDst, regSrc)
-    die('not implemented: cmovnl r,r')
-  endmethod
-
-  method cmovnl_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovnl r,m')
-  endmethod
-
-  method cmovnle_r_r(regDst, regSrc)
-    die('not implemented: cmovnle r,r')
-  endmethod
-
-  method cmovnle_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovnle r,m')
+  # r,r
+  method cmovo_r_r(regDst, regSrc)
+    global X64_CMOVO
+    this.emitCore_r_r(X64_CMOVO, regDst, regSrc)
   endmethod
 
   method cmovno_r_r(regDst, regSrc)
-    die('not implemented: cmovno r,r')
+    global X64_CMOVNO
+    this.emitCore_r_r(X64_CMOVNO, regDst, regSrc)
   endmethod
 
-  method cmovno_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovno r,m')
+  method cmovb_r_r(regDst, regSrc)
+    global X64_CMOVB
+    this.emitCore_r_r(X64_CMOVB, regDst, regSrc)
   endmethod
 
-  method cmovnp_r_r(regDst, regSrc)
-    die('not implemented: cmovnp r,r')
+  method cmove_r_r(regDst, regSrc)
+    global X64_CMOVE
+    this.emitCore_r_r(X64_CMOVE, regDst, regSrc)
   endmethod
 
-  method cmovnp_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovnp r,m')
+  method cmovne_r_r(regDst, regSrc)
+    global X64_CMOVNE
+    this.emitCore_r_r(X64_CMOVNE, regDst, regSrc)
   endmethod
 
-  method cmovns_r_r(regDst, regSrc)
-    die('not implemented: cmovns r,r')
+  method cmovbe_r_r(regDst, regSrc)
+    global X64_CMOVBE
+    this.emitCore_r_r(X64_CMOVBE, regDst, regSrc)
   endmethod
 
-  method cmovns_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovns r,m')
-  endmethod
-
-  method cmovnz_r_r(regDst, regSrc)
-    die('not implemented: cmovnz r,r')
-  endmethod
-
-  method cmovnz_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovnz r,m')
-  endmethod
-
-  method cmovo_r_r(regDst, regSrc)
-    die('not implemented: cmovo r,r')
-  endmethod
-
-  method cmovo_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovo r,m')
-  endmethod
-
-  method cmovp_r_r(regDst, regSrc)
-    die('not implemented: cmovp r,r')
-  endmethod
-
-  method cmovp_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovp r,m')
-  endmethod
-
-  method cmovpe_r_r(regDst, regSrc)
-    die('not implemented: cmovpe r,r')
-  endmethod
-
-  method cmovpe_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovpe r,m')
-  endmethod
-
-  method cmovpo_r_r(regDst, regSrc)
-    die('not implemented: cmovpo r,r')
-  endmethod
-
-  method cmovpo_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovpo r,m')
+  method cmova_r_r(regDst, regSrc)
+    global X64_CMOVA
+    this.emitCore_r_r(X64_CMOVA, regDst, regSrc)
   endmethod
 
   method cmovs_r_r(regDst, regSrc)
-    die('not implemented: cmovs r,r')
+    global X64_CMOVS
+    this.emitCore_r_r(X64_CMOVS, regDst, regSrc)
+  endmethod
+
+  method cmovns_r_r(regDst, regSrc)
+    global X64_CMOVNS
+    this.emitCore_r_r(X64_CMOVNS, regDst, regSrc)
+  endmethod
+
+  method cmovp_r_r(regDst, regSrc)
+    global X64_CMOVP
+    this.emitCore_r_r(X64_CMOVP, regDst, regSrc)
+  endmethod
+
+  method cmovnp_r_r(regDst, regSrc)
+    global X64_CMOVNP
+    this.emitCore_r_r(X64_CMOVNP, regDst, regSrc)
+  endmethod
+
+  method cmovl_r_r(regDst, regSrc)
+    global X64_CMOVL
+    this.emitCore_r_r(X64_CMOVL, regDst, regSrc)
+  endmethod
+
+  method cmovge_r_r(regDst, regSrc)
+    global X64_CMOVGE
+    this.emitCore_r_r(X64_CMOVGE, regDst, regSrc)
+  endmethod
+
+  method cmovg_r_r(regDst, regSrc)
+    global X64_CMOVG
+    this.emitCore_r_r(X64_CMOVG, regDst, regSrc)
+  endmethod
+
+  # r,m
+  method cmovo_r_m(regDst, regBase, scale, regIndex, disp)
+    global X64_CMOVO
+    this.emitCore_r_m(X64_CMOVO, regBase, scale, regIndex, disp)
+  endmethod
+
+  method cmovno_r_m(regDst, regBase, scale, regIndex, disp)
+    global X64_CMOVNO
+    this.emitCore_r_m(X64_CMOVNO, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method cmovb_r_m(regDst, regBase, scale, regIndex, disp)
+    global X64_CMOVB
+    this.emitCore_r_m(X64_CMOVB, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method cmove_r_m(regDst, regBase, scale, regIndex, disp)
+    global X64_CMOVE
+    this.emitCore_r_m(X64_CMOVE, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method cmovne_r_m(regDst, regBase, scale, regIndex, disp)
+    global X64_CMOVNE
+    this.emitCore_r_m(X64_CMOVNE, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method cmovbe_r_m(regDst, regBase, scale, regIndex, disp)
+    global X64_CMOVBE
+    this.emitCore_r_m(X64_CMOVBE, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method cmova_r_m(regDst, regBase, scale, regIndex, disp)
+    global X64_CMOVA
+    this.emitCore_r_m(X64_CMOVA, regDst, regBase, scale, regIndex, disp)
   endmethod
 
   method cmovs_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovs r,m')
+    global X64_CMOVS
+    this.emitCore_r_m(X64_CMOVS, regDst, regBase, scale, regIndex, disp)
   endmethod
 
-  method cmovz_r_r(regDst, regSrc)
-    die('not implemented: cmovz r,r')
+  method cmovns_r_m(regDst, regBase, scale, regIndex, disp)
+    global X64_CMOVNS
+    this.emitCore_r_m(X64_CMOVNS, regDst, regBase, scale, regIndex, disp)
   endmethod
 
-  method cmovz_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: cmovz r,m')
+  method cmovp_r_m(regDst, regBase, scale, regIndex, disp)
+    global X64_CMOVP
+    this.emitCore_r_m(X64_CMOVP, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method cmovnp_r_m(regDst, regBase, scale, regIndex, disp)
+    global X64_CMOVNP
+    this.emitCore_r_m(X64_CMOVNP, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method cmovl_r_m(regDst, regBase, scale, regIndex, disp)
+    global X64_CMOVL
+    this.emitCore_r_m(X64_CMOVL, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method cmovge_r_m(regDst, regBase, scale, regIndex, disp)
+    global X64_CMOVGE
+    this.emitCore_r_m(X64_CMOVGE, regDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method cmovg_r_m(regDst, regBase, scale, regIndex, disp)
+    global X64_CMOVG
+    this.emitCore_r_m(X64_CMOVG, regDst, regBase, scale, regIndex, disp)
   endmethod
 
   method ud2()
-    die('not implemented: ud2')
+    global X64_UD2
+    this.emitWord(X64_UD2)
   endmethod
 
   #-----------------------------------------------------------------------------
@@ -2368,7 +2467,8 @@ class X64Encoder
   #-----------------------------------------------------------------------------
 
   method rdpmc()
-    die('not implemented: rdpmc')
+    global X64_RDPMC
+    this.emitWord(X64_RDPMC)
   endmethod
 
   #-----------------------------------------------------------------------------
@@ -2376,11 +2476,13 @@ class X64Encoder
   #-----------------------------------------------------------------------------
 
   method syscall()
-    die('not implemented: syscall')
+    global X64_SYSCALL
+    this.emitWord(X64_SYSCALL)
   endmethod
 
   method sysret()
-    die('not implemented: sysret')
+    global X64_SYSRET
+    this.emitWord(X64_SYSRET)
   endmethod
 
   #-----------------------------------------------------------------------------
@@ -2388,27 +2490,32 @@ class X64Encoder
   #-----------------------------------------------------------------------------
 
   method sysenter()
-    die('not implemented: sysenter')
+    global X64_SYSENTER
+    this.emitWord(X64_SYSENTER)
   endmethod
 
   method sysexit()
-    die('not implemented: sysexit')
+    global X64_SYSEXIT
+    this.emitWord(X64_SYSEXIT)
   endmethod
 
   #-----------------------------------------------------------------------------
   # Mnemonics added with Amd64:
   #-----------------------------------------------------------------------------
 
-  method movsxd_r_r(regDst, regSrc)
-    die('not implemented: movsxd r,r')
+  method movsxd_r64_r32(regDst, regSrc)
+    global X64_MOVSXD_R32_RM32
+    this.emitCore_r_r(X64_MOVSXD_R32_RM32, regSrc, regDst)
   endmethod
 
-  method movsxd_r_m(regDst, regBase, scale, regIndex, disp)
-    die('not implemented: movsxd r,m')
+  method movsxd_r64_m32(regDst, regBase, scale, regIndex, disp)
+    global X64_MOVSXD_R32_RM32
+    this.emitCore_r_m(X64_MOVSXD_R32_RM32, regDst, regBase, scale, regIndex, disp)
   endmethod
 
   method cmpxchg16b_m(regBase, scale, regIndex, disp)
-    die('not implemented: cmpxchg16b m')
+    this.emitPrefix64()
+    this.cmpxchg8b_m(regBase, scale, regIndex, disp)
   endmethod
 
   method cdqe()
@@ -2417,7 +2524,8 @@ class X64Encoder
   endmethod
 
   method cqo()
-    die('not implemented: cqo')
+    global X64_CQO
+    this.emitWord(X64_CQO)
   endmethod
 
   method cmpsq()
@@ -2441,23 +2549,26 @@ class X64Encoder
   endmethod
 
   method iretq()
-    die('not implemented: iretq')
+    this.emitPrefix64()
+    this.iret()
   endmethod
 
   method popfq()
-    die('not implemented: popfq')
+    this.popf()
   endmethod
 
   method pushfq()
-    die('not implemented: pushfq')
+    this.pushf()
   endmethod
 
   method rdtscp()
-    die('not implemented: rdtscp')
+    global X64_RDTSCP
+    this.emitWord(X64_RDTSCP)
   endmethod
 
   method swapgs()
-    die('not implemented: swapgs')
+    global X64_SWAPGS
+    this.emitWord(X64_SWAPGS)
   endmethod
 
   #
@@ -2469,5 +2580,5 @@ class X64Encoder
   endmethod
 endclass
 
-#machineEncoder = new MachineEncoderX64()
-#machineEncoder.mov_r_m(X64_BL, X64_RAX, 1, X64_RBX, 0)
+#encoder = new X64Encoder()
+#encoder.rcl_r_imm(X64_RBX, 1)

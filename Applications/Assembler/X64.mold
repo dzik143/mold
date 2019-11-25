@@ -19,7 +19,7 @@
 ################################################################################
 
 # ------------------------------------------------------------------------------
-#                                 One byte opcodes
+#                           Core: one byte opcodes
 # ------------------------------------------------------------------------------
 
 X64_ADD                     = 0x00 # 00-05 add
@@ -138,7 +138,7 @@ X64_RETFN                   = 0xca # ca    far retn
 X64_RETF                    = 0xcb # cb    far ret
 X64_INT3                    = 0xcc # cc    int3
 X64_INT_IMM8                = 0xcd # cd    int imm8
-X64_INTO                    = 0xce # ce    into
+X64_INTO                    = 0xce # ce    into (invalid in 64-bit)
 X64_IRET                    = 0xcf # cf    iret
 X64_SHIFT_RM8_1_GROUP       = 0xd0 # d0    rol/ror/rcl/rcr/shl/rhr/sar r/m8, 1
 X64_SHIFT_RM32_1_GROUP      = 0xd1 # d1    rol/ror/rcl/rcr/shl/rhr/sar r/m32, 1
@@ -184,6 +184,122 @@ X64_INC_DEC_RM32_GROUP      = 0xff # ff    inc/dec r/m32
 X64_CALL_GROUP              = 0xff # ff    call
 
 # ------------------------------------------------------------------------------
+#               Core: One byte opcodes with hardcoded prefix
+# ------------------------------------------------------------------------------
+
+X64_CQO = 0x9948 # REX.W 99 cqo
+
+# ------------------------------------------------------------------------------
+#                           Core: Two byte opcodes
+# ------------------------------------------------------------------------------
+
+X64_GROUP_0F_00 = 0x000f # 0f 00 /0 sldt
+                         # 0f 00 /1 str
+                         # 0f 00 /2 lldt
+                         # 0f 00 /3 ltr
+                         # 0f 00 /4 verr
+                         # 0f 00 /5 verw
+
+X64_GROUP_0F_01 = 0x010f # 0f 01 /0 sgdt
+                         # 0f 01 /1 sidt
+                         # 0f 01 /2 lgdt
+                         # 0f 01 /3 lidt
+                         # 0f 01 /4 smsw
+                         # 0f 01 /6 lmsw
+                         # 0f 01 /7 invlpg
+
+X64_LAR      = 0x020f # 0f 02 lar      r16,r16 | r32,r32 | r16,m16 | r32,m16
+X64_LSL      = 0x030f # 0f 03 lsl      rd,rd   | rd,md
+X64_SYSCALL  = 0x050f # 0f 05 syscall  -
+X64_CLTS     = 0x060f # 0f 06 clts     -
+X64_SYSRET   = 0x070f # 0f 07 sysret   -
+X64_INVD     = 0x080f # 0f 08 invd     -
+X64_WBINVD   = 0x090f # 0f 09 wbinvd   -
+X64_UD2      = 0x0b0f # 0f 0b ud2      -
+X64_NOP_RM   = 0x1f0f # 0f 1f nop      rd | md
+X64_WRMSR    = 0x300f # 0f 30 wrmsr    -
+X64_RDTSC    = 0x310f # 0f 31 rdtsc    -
+X64_RDMSR    = 0x320f # 0f 32 rdmsr    -
+X64_RDPMC    = 0x330f # 0f 33 rdpmc    -
+X64_SYSENTER = 0x340f # 0f 34 sysenter -
+X64_SYSEXIT  = 0x350f # 0f 35 sysexit  -
+
+X64_CMOVO    = 0x400f # 0f 40 cmovo   rd,rd | rd,md
+X64_CMOVNO   = 0x410f # 0f 41 cmovno  rd,rd | rd,md
+X64_CMOVB    = 0x420f # 0f 42 cmovb   rd,rd | rd,md
+X64_CMOVAE   = 0x430f # 0f 43 cmovae  rd,rd | rd,md
+X64_CMOVE    = 0x440f # 0f 44 cmove   rd,rd | rd,md
+X64_CMOVNE   = 0x450f # 0f 45 cmovne  rd,rd | rd,md
+X64_CMOVBE   = 0x460f # 0f 46 cmovbe  rd,rd | rd,md
+X64_CMOVA    = 0x470f # 0f 47 cmova   rd,rd | rd,md
+X64_CMOVS    = 0x480f # 0f 48 cmovs   rd,rd | rd,md
+X64_CMOVNS   = 0x490f # 0f 49 cmovns  rd,rd | rd,md
+X64_CMOVP    = 0x4a0f # 0f 4a cmovp   rd,rd | rd,md
+X64_CMOVNP   = 0x4b0f # 0f 4b cmovnp  rd,rd | rd,md
+X64_CMOVL    = 0x4c0f # 0f 4c cmovl   rd,rd | rd,md
+X64_CMOVGE   = 0x4d0f # 0f 4d cmovge  rd,rd | rd,md
+X64_CMOVLE   = 0x4e0f # 0f 4e cmovle  rd,rd | rd,md
+X64_CMOVG    = 0x4f0f # 0f 4f cmovg   rd,rd | rd,md
+
+X64_SETO     = 0x900f # 0f 90 seto    r8 | m8
+X64_SETNO    = 0x910f # 0f 91 setno   r8 | m8
+X64_SETB     = 0x920f # 0f 92 setb    r8 | m8
+X64_SETAE    = 0x930f # 0f 93 setae   r8 | m8
+X64_SETE     = 0x940f # 0f 94 sete    r8 | m8
+X64_SETNE    = 0x950f # 0f 95 setne   r8 | m8
+X64_SETBE    = 0x960f # 0f 96 setbe   r8 | m8
+X64_SETA     = 0x970f # 0f 97 seta    r8 | m8
+X64_SETS     = 0x980f # 0f 98 sets    r8 | m8
+X64_SETNS    = 0x990f # 0f 99 setns   r8 | m8
+X64_SETP     = 0x9a0f # 0f 9a setp    r8 | m8
+X64_SETNP    = 0x9b0f # 0f 9b setnp   r8 | m8
+X64_SETL     = 0x9c0f # 0f 9c setl    r8 | m8
+X64_SETGE    = 0x9d0f # 0f 9d setge   r8 | m8
+X64_SETLE    = 0x9e0f # 0f 9e setle   r8 | m8
+X64_SETG     = 0x9f0f # 0f 9f setg    r8 | m8
+
+X64_CPUID    = 0xa20f # 0f a2 cpuid   -
+X64_RSM      = 0xaa0f # 0f aa rsm     -
+
+X64_CMPXCHG_RM8_R8   = 0xb00f # 0f b0 cmpxchg  r8,r8 | m8,r8
+X64_CMPXCHG_RM32_R32 = 0xb10f # 0f b1 cmpxchg  rd,rd | md,rd
+
+X64_LSS = 0xb20f # 0f b2 lss  rd,md
+X64_LFS = 0xb40f # 0f b4 lfs  rd,md
+X64_LGS = 0xb50f # 0f b5 lgs  rd,md
+
+X64_BT_RM_R  = 0xa30f # 0f a3 bt   rd,rd | md,rd
+X64_BTS_RM_R = 0xab0f # 0f ab bts  rd,rd | md,rd
+X64_BTC_RM_R = 0xbb0f # 0f bb btc  rd,rd | md,rd
+X64_BTR_RM_R = 0xb30f # 0f b3 btr  rd,rd | md,rd
+
+X64_BT_GROUP = 0xba0f # 0f ba /4 bt   rd,i8 | md|i8
+                      # 0f ba /5 bts  rd,i8 | md|i8
+                      # 0f ba /6 btr  rd,i8 | md|i8
+                      # 0f ba /7 btc  rd,i8 | md|i8
+
+X64_BSF = 0xbc0f # 0f bc bsf  rd,rd | rd,md
+X64_BSR = 0xbd0f # 0f bd bsr  rd,rd | rd,md
+
+X64_MOVZX_R_RM8  = 0xb60f # 0f b6 movzx      rd,r8   | rd,m8
+X64_MOVZX_R_RM16 = 0xb70f # 0f b7 movzx      r32,r16 | r32,m16 | r64,r16 | r64,m16
+X64_MOVSX_R_RM8  = 0xbe0f # 0f be movsx      rd,r8   | rd,m8
+X64_MOVSX_R_RM16 = 0xbf0f # 0f bf movsx      r32,r16 | r32,m16 | r64,r16 | r64,m16
+
+X64_XADD_RM8_R8  = 0xc00f # 0f c0 xadd       r8,r8   | m8,r8
+X64_XADD_RM32_R8 = 0xc10f # 0f c1 xadd       rd,rd   | md,rd
+X64_CMPXCHG8B    = 0xc70f # 0f c7 cmpxchg8b  m64
+X64_CMPXCHG16B   = 0xc70f # 0f c7 cmpxchg16b m128
+X64_BSWAP        = 0xc80f # 0f c8 bswap      r32     | r64
+
+# ------------------------------------------------------------------------------
+#                          Core: Three bytes opcodes
+# ------------------------------------------------------------------------------
+
+X64_SWAPGS = 0xf8010f # 0f 01 f8 swapgs -
+X64_RDTSCP = 0xf9010f # 0f 01 f9 rdtscp -
+
+# ------------------------------------------------------------------------------
 #                                  Registers
 # ------------------------------------------------------------------------------
 
@@ -196,14 +312,14 @@ X64_AH   = 4
 X64_CH   = 5
 X64_DH   = 6
 X64_BH   = 7
-X64_R8L  = 8
-X64_R9L  = 9
-X64_R10L = 10
-X64_R11L = 11
-X64_R12L = 12
-X64_R13L = 13
-X64_R14L = 14
-X64_R15L = 15
+X64_R8B  = 8
+X64_R9B  = 9
+X64_R10B = 10
+X64_R11B = 11
+X64_R12B = 12
+X64_R13B = 13
+X64_R14B = 14
+X64_R15B = 15
 
 # Registers: 16-bit
 X64_AX   = 16 + 0
