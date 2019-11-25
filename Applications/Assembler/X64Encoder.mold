@@ -113,11 +113,11 @@ class X64Encoder
       # Set size bit in primary operand byte.
 
       # TODO: Clean up this mess.
-      if opcode > 255
-        opcode = bitor(opcode, X64_SIZE16_32_64 * 256)
-      else
-        opcode = bitor(opcode, X64_SIZE16_32_64)
-      endif
+      #if opcode > 255
+      #  opcode = bitor(opcode, X64_SIZE16_32_64 * 256)
+      #else
+      #  opcode = bitor(opcode, X64_SIZE16_32_64)
+      #endif
 
       this.emitSizePrefixIfNeeded(reg)
     endif
@@ -416,6 +416,9 @@ class X64Encoder
 
   method emitCore_unaryGroup_m(operationId, base, scale, index, disp, dataSize)
     global X64_UNARY8_GROUP
+    global X64_UNARY32_GROUP
+    opcode = X64_UNARY32_GROUP
+
     if dataSize is 2
       # access word (2-bytes)
       operationId = operationId + 16
@@ -427,9 +430,13 @@ class X64Encoder
     elif dataSize is 8
       # access qword (8-bytes)
       operationId = operationId + 48
+
+    else
+      # access single byte (8-bit)
+      opcode = X64_UNARY8_GROUP
     endif
 
-    this.emitCore_group_m(X64_UNARY8_GROUP, operationId, base, scale, index, disp)
+    this.emitCore_group_m(opcode, operationId, base, scale, index, disp)
   endmethod
 
   method emitCore_shiftGroup_r_imm8(operationId, regDst, imm8)
@@ -1311,7 +1318,7 @@ class X64Encoder
   endmethod
 
   method xchg_r_r(reg1, reg2)
-    global X64_XCHG_RM8_R8, X64_XCHG_EAX_R32, X64_NOP
+    global X64_XCHG_RM8_R8, X64_XCHG_EAX_R32, X64_XCHG_RM32_R32, X64_NOP
     global X64_AL, X64_EAX, X64_RAX
 
     if X64_IsReg8(reg1) is true
@@ -1342,7 +1349,7 @@ class X64Encoder
 
       else
         # General case: xchg r, r
-        this.emitCore_r_r(X64_XCHG_RM8_R8, reg2, reg1)
+        this.emitCore_r_r(X64_XCHG_RM32_R32, reg2, reg1)
       endif
     endif
   endmethod
@@ -1813,7 +1820,7 @@ class X64Encoder
   # 286: Other
   method lar_r_r(regDst, regSrc)
     global X64_LAR
-    this.emitCore286_r_r(regDst, regSrc)
+    this.emitCore286_r_r(X64_LAR, regDst, regSrc)
   endmethod
 
   method lar_r_m16(regDst, regBase, scale, regIndex, disp)

@@ -140,12 +140,12 @@ X64_OPCODES_MAP_CORE_ALU2 = {
   'mov':  X64_MOV_RM8_R8,
   'test': X64_TEST_RM8_R8,
   'xchg': X64_XCHG_RM8_R8,
+  'bt':   X64_BT_RM_R,
+  'btc':  X64_BTC_RM_R,
+  'btr':  X64_BTR_RM_R,
+  'bts':  X64_BTS_RM_R,
   'cmpxchg': X64_CMPXCHG_RM8_R8,
-  'xadd':    X64_XADD_RM8_R8,
-  'bt':    X64_BT_RM_R,
-  'btc':   X64_BTC_RM_R,
-  'btr':   X64_BTR_RM_R,
-  'bts':   X64_BTS_RM_R
+  'xadd':    X64_XADD_RM8_R8
 }
 
 # TODO: Review it.
@@ -351,6 +351,8 @@ class X64Translator extends PipeAbstract
     global X64_OPCODES_MAP_286_RD_MD
     global X64_OPCODES_MAP_SHIFT_GROUP
     global X64_OPCODES_MAP_SETCC
+    global X64_CMPXCHG_RM8_R8, X64_CMPXCHG_RM32_R32
+    global X64_XADD_RM8_R8, X64_XADD_RM32_R32
 
     #print item
 
@@ -568,6 +570,21 @@ class X64Translator extends PipeAbstract
 
         if opcode is defined
           # Recognized common two-operands opcode.
+          if imm is undefined
+            if (X64_IsReg8(reg) is true) or (item.dataSize is 1)
+              # 8-bit operands. Do nothing.
+
+            elif opcode < 256
+              # Set size bit in primary opcode to enable operands
+              # greater than 8-bit.
+              # This is old encoding pattern from original 8086 processor.
+              opcode = opcode + 1
+
+            else
+              # 2-byte opcode. Primary opcode is in the higher byte.
+              opcode = bitor(opcode, 256)
+            endif
+          endif
 
           # Special case for test and xchg.
           # These opcodes have fixed diretion flag, but other assemblers accept both and
@@ -608,6 +625,7 @@ class X64Translator extends PipeAbstract
               # not/neg/mul/div/imul/idiv r
               encoder.emitCore_unaryGroup_r(operationId, reg)
             endif
+
           else
             opcode = X64_OPCODES_JUMPS[mnemonic]
 

@@ -24,7 +24,7 @@ arrayOfTests = [
 /*
  TODO: 'core/shld',
  TODO: 'core/shrd',
-
+*/
   'common/common_align',
   'common/common_data',
   'common/common_equ',
@@ -35,7 +35,6 @@ arrayOfTests = [
   'core/adc',
   'core/add',
   'core/and',
-*/
   'core/bsf',
   'core/bsr',
   'core/bswap',

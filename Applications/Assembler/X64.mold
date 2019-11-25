@@ -281,16 +281,16 @@ X64_BT_GROUP = 0xba0f # 0f ba /4 bt   rd,i8 | md|i8
 X64_BSF = 0xbc0f # 0f bc bsf  rd,rd | rd,md
 X64_BSR = 0xbd0f # 0f bd bsr  rd,rd | rd,md
 
-X64_MOVZX_R_RM8  = 0xb60f # 0f b6 movzx      rd,r8   | rd,m8
-X64_MOVZX_R_RM16 = 0xb70f # 0f b7 movzx      r32,r16 | r32,m16 | r64,r16 | r64,m16
-X64_MOVSX_R_RM8  = 0xbe0f # 0f be movsx      rd,r8   | rd,m8
-X64_MOVSX_R_RM16 = 0xbf0f # 0f bf movsx      r32,r16 | r32,m16 | r64,r16 | r64,m16
+X64_MOVZX_R_RM8   = 0xb60f # 0f b6 movzx      rd,r8   | rd,m8
+X64_MOVZX_R_RM16  = 0xb70f # 0f b7 movzx      r32,r16 | r32,m16 | r64,r16 | r64,m16
+X64_MOVSX_R_RM8   = 0xbe0f # 0f be movsx      rd,r8   | rd,m8
+X64_MOVSX_R_RM16  = 0xbf0f # 0f bf movsx      r32,r16 | r32,m16 | r64,r16 | r64,m16
 
-X64_XADD_RM8_R8  = 0xc00f # 0f c0 xadd       r8,r8   | m8,r8
-X64_XADD_RM32_R8 = 0xc10f # 0f c1 xadd       rd,rd   | md,rd
-X64_CMPXCHG8B    = 0xc70f # 0f c7 cmpxchg8b  m64
-X64_CMPXCHG16B   = 0xc70f # 0f c7 cmpxchg16b m128
-X64_BSWAP        = 0xc80f # 0f c8 bswap      r32     | r64
+X64_XADD_RM8_R8   = 0xc00f # 0f c0 xadd       r8,r8   | m8,r8
+X64_XADD_RM32_R32 = 0xc10f # 0f c1 xadd       rd,rd   | md,rd
+X64_CMPXCHG8B     = 0xc70f # 0f c7 cmpxchg8b  m64
+X64_CMPXCHG16B    = 0xc70f # 0f c7 cmpxchg16b m128
+X64_BSWAP         = 0xc80f # 0f c8 bswap      r32     | r64
 
 # ------------------------------------------------------------------------------
 #                          Core: Three bytes opcodes
