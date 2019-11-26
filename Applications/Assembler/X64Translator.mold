@@ -309,12 +309,11 @@ X64_OPCODES_MAP = {
   'mov':        X64_MOV_RM8_R8       + X64_SYNTAX_CUSTOM,
   'test':       X64_TEST_RM8_R8      + X64_SYNTAX_CUSTOM,
   'xchg':       X64_XCHG_RM8_R8      + X64_SYNTAX_CUSTOM,
-  'lea':        X64_LEA_R32_M64      + X64_SYNTAX_CUSTOM,
+  'lea':        X64_LEA              + X64_SYNTAX_CUSTOM,
   'push':       X64_PUSH_R64         + X64_SYNTAX_CUSTOM,
   'pop':        X64_POP_R64          + X64_SYNTAX_CUSTOM,
   'call':       X64_CALL_REL32       + X64_SYNTAX_CUSTOM,
   'jmp':        X64_JMP_REL32        + X64_SYNTAX_CUSTOM,
-  'jecxz':      X64_JECXZ_REL8       + X64_SYNTAX_CUSTOM,
   'ret':        X64_RET_IMM16        + X64_SYNTAX_CUSTOM,
   'retf':       X64_RETF_IMM16       + X64_SYNTAX_CUSTOM,
   'movsxd':     X64_MOVSXD_R32_RM32  + X64_SYNTAX_CUSTOM,
@@ -418,6 +417,7 @@ class X64Translator extends PipeAbstract
     global X64_SYNTAX_INVALID_IN_64, X64_SYNTAX_OPCODE_ONLY_0F_XX_YY
     global X64_SYNTAX_CUSTOM, X64_SYNTAX_OPCODE_ONLY_BYTE
     global X64_SYNTAX_OPCODE_ONLY_WORD, X64_SYNTAX_MOV_EXTEND
+    global X64_LEA
 
     encoder = this.outputObject
 
@@ -594,7 +594,7 @@ class X64Translator extends PipeAbstract
             this.emitCoreALU2(opcode, item)
           endif
 
-        elif mnemonic is 'lea'
+        elif opcode is X64_LEA
           encoder.lea_r_m(reg, regBase, scale, regIndex, disp)
 
         elif mnemonic is 'test'
@@ -668,9 +668,6 @@ class X64Translator extends PipeAbstract
             # jmp rel8/32
             encoder.jmp_rel(imm - item.offset)
           endif
-
-        elif mnemonic is 'jecxz'
-          encoder.jecxz_rel(imm - item.offset)
 
         elif mnemonic is 'ret'
           if imm is defined
