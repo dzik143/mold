@@ -307,9 +307,9 @@ X64_OPCODES_MAP = {
   'setnle':     X64_SETG  + X64_SYNTAX_SETCC,
   'setg':       X64_SETG  + X64_SYNTAX_SETCC,
 
-  'mov':        X64_MOV_RM8_R8       + X64_SYNTAX_CUSTOM,
-  'test':       X64_TEST_RM8_R8      + X64_SYNTAX_CUSTOM,
-  'xchg':       X64_XCHG_RM8_R8      + X64_SYNTAX_CUSTOM,
+  'mov':        X64_MOV              + X64_SYNTAX_CUSTOM,
+  'test':       X64_TEST             + X64_SYNTAX_CUSTOM,
+  'xchg':       X64_XCHG             + X64_SYNTAX_CUSTOM,
   'lea':        X64_LEA              + X64_SYNTAX_CUSTOM,
   'push':       X64_PUSH_R64         + X64_SYNTAX_CUSTOM,
   'pop':        X64_POP_R64          + X64_SYNTAX_CUSTOM,
@@ -417,7 +417,10 @@ class X64Translator extends PipeAbstract
     global X64_SYNTAX_INVALID_IN_64, X64_SYNTAX_OPCODE_ONLY_0F_XX_YY
     global X64_SYNTAX_CUSTOM, X64_SYNTAX_OPCODE_ONLY_BYTE
     global X64_SYNTAX_OPCODE_ONLY_WORD, X64_SYNTAX_MOV_EXTEND
-    global X64_LEA
+    global X64_LEA, X64_MOV, X64_TEST, X64_XCHG, X64_CALL_REL32, X64_NOP
+    global X64_IN, X64_OUT, X64_JMP_REL32, X64_PUSH_R64, X64_POP_R64
+    global X64_RET, X64_RETF, X64_BSWAP, X64_CMPXCHG8B, X64_CMPXCHG16B
+    global X64_INC_R32, X64_DEC_R32, X64_ENTER, X64_LEAVE, X64_INT
 
     encoder = this.outputObject
 
@@ -581,7 +584,7 @@ class X64Translator extends PipeAbstract
       elif handlerId is X64_SYNTAX_CUSTOM
         # Custom handler needed for this mnemonic.
         # Dispatch opcode.
-        if mnemonic is 'mov'
+        if opcode is X64_MOV
           if imm is defined
             if reg isnt -1
               # mov r, imm
@@ -597,7 +600,7 @@ class X64Translator extends PipeAbstract
         elif opcode is X64_LEA
           encoder.lea_r_m(reg, regBase, scale, regIndex, disp)
 
-        elif mnemonic is 'test'
+        elif opcode is X64_TEST
           if imm is defined
             if reg isnt -1
               # test r, imm
@@ -610,7 +613,7 @@ class X64Translator extends PipeAbstract
             this.emitCoreALU2(opcode, item)
           endif
 
-        elif mnemonic is 'push'
+        elif opcode is X64_PUSH_R64
           if reg isnt -1
             # push r
             encoder.push_r(reg)
@@ -628,14 +631,14 @@ class X64Translator extends PipeAbstract
             encoder.push_m(regBase, scale, regIndex, disp, dataSize)
           endif
 
-        elif mnemonic is 'pop'
+        elif opcode is X64_POP_R64
           if reg isnt -1
             encoder.pop_r(reg)
           else
             encoder.pop_m(regBase, scale, regIndex, disp, dataSize)
           endif
 
-        elif mnemonic is 'xchg'
+        elif opcode is X64_XCHG
           if (reg isnt -1) and (rm isnt -1)
             # xchg r, r
             encoder.xchg_r_r(reg, rm)
@@ -643,7 +646,7 @@ class X64Translator extends PipeAbstract
             this.emitCoreALU2(opcode, item)
           endif
 
-        elif mnemonic is 'call'
+        elif opcode is X64_CALL_REL32
           if reg isnt -1
             # call r
             encoder.call_r(reg)
@@ -657,7 +660,7 @@ class X64Translator extends PipeAbstract
             encoder.call_rel(imm - item.offset)
           endif
 
-        elif mnemonic is 'jmp'
+        elif opcode is X64_JMP_REL32
           if reg isnt -1
             # jmp r
             encoder.jmp_r(reg)
@@ -669,44 +672,44 @@ class X64Translator extends PipeAbstract
             encoder.jmp_rel(imm - item.offset)
           endif
 
-        elif mnemonic is 'ret'
+        elif opcode is X64_RET
           if imm is defined
             encoder.ret_imm(imm)
           else
             encoder.ret()
           endif
 
-        elif mnemonic is 'retf'
+        elif opcode is X64_RETF
           if imm is defined
             encoder.retf_imm(imm)
           else
             encoder.retf()
           endif
 
-        elif mnemonic is 'out'
+        elif opcode is X64_OUT
           if imm is defined
             encoder.out_imm_r(imm, reg)
           else
             encoder.out_r_r(reg, rm)
           endif
 
-        elif mnemonic is 'in'
+        elif opcode is X64_IN
           if imm is defined
             encoder.in_r_imm(reg, imm)
           else
             encoder.in_r_r(reg, rm)
           endif
 
-        elif mnemonic is 'bswap'
+        elif opcode is X64_BSWAP
           encoder.bswap_r(reg)
 
-        elif mnemonic is 'cmpxchg8b'
+        elif opcode is X64_CMPXCHG8B
           encoder.cmpxchg8b_m(regBase, scale, regIndex, disp)
 
-        elif mnemonic is 'cmpxchg16b'
+        elif opcode is X64_CMPXCHG16B
           encoder.cmpxchg16b_m(regBase, scale, regIndex, disp)
 
-        elif mnemonic is 'inc'
+        elif opcode is X64_INC_R32
           if reg isnt -1
             # inc r
             encoder.inc_r(reg)
@@ -715,7 +718,7 @@ class X64Translator extends PipeAbstract
             encoder.inc_m(regBase, scale, regIndex, disp, dataSize)
           endif
 
-        elif mnemonic is 'dec'
+        elif opcode is X64_DEC_R32
           if reg isnt -1
             # dec r
             encoder.dec_r(reg)
@@ -724,15 +727,15 @@ class X64Translator extends PipeAbstract
             encoder.dec_m(regBase, scale, regIndex, disp, dataSize)
           endif
 
-        elif mnemonic is 'enter'
+        elif opcode is X64_ENTER
           # enter imm16, imm8
           encoder.enter_imm16_imm8(imm, item.imm2)
 
-        elif mnemonic is 'int'
+        elif opcode is X64_INT
           # int imm8
           encoder.int_imm(imm)
 
-        elif mnemonic is 'nop'
+        elif opcode is X64_NOP
           if scale is defined
             # nop m
             encoder.nop_m(regBase, scale, regIndex, disp, dataSize)
