@@ -21,22 +21,24 @@
 import 'X64.mold'
 import '../../Compiler/Utils/PipeAbstract.mold'
 
-X64_SYNTAX_OPCODE_ONLY          = 0x00000000
-X64_SYNTAX_CORE_ALU1            = 0x01000000
-X64_SYNTAX_CORE_ALU2            = 0x02000000
-X64_SYNTAX_CORE2                = 0x03000000
-X64_SYNTAX_JUMPS                = 0x04000000
-X64_SYNTAX_JUMPS_REL8           = 0x05000000
-X64_SYNTAX_JUMPS_REL8_2BYTES    = 0x06000000
-X64_SYNTAX_286_RD_MD            = 0x07000000
-X64_SYNTAX_0F_00_GROUP          = 0x08000000
-X64_SYNTAX_0F_01_GROUP          = 0x09000000
-X64_SYNTAX_SHIFT_GROUP          = 0x0a000000
-X64_SYNTAX_SETCC                = 0x0b000000
-X64_SYNTAX_OPCODE_ONLY_0F_XX_YY = 0x0c000000
-X64_SYNTAX_CUSTOM               = 0x0d000000
-X64_SYNTAX_DO_NOTHING           = 0x0e000000
-X64_SYNTAX_INVALID_IN_64        = 0xff000000
+X64_SYNTAX_OPCODE_ONLY_BYTE     = 0x00000000
+X64_SYNTAX_OPCODE_ONLY_WORD     = 0x01000000
+X64_SYNTAX_OPCODE_ONLY_0F_XX_YY = 0x02000000
+
+X64_SYNTAX_CORE_ALU1            = 0x03000000
+X64_SYNTAX_CORE_ALU2            = 0x04000000
+X64_SYNTAX_CORE2                = 0x05000000
+X64_SYNTAX_JUMPS                = 0x06000000
+X64_SYNTAX_JUMPS_REL8           = 0x07000000
+X64_SYNTAX_JUMPS_REL8_2BYTES    = 0x08000000
+X64_SYNTAX_286_RD_MD            = 0x09000000
+X64_SYNTAX_0F_00_GROUP          = 0x0a000000
+X64_SYNTAX_0F_01_GROUP          = 0x0b000000
+X64_SYNTAX_SHIFT_GROUP          = 0x0c000000
+X64_SYNTAX_SETCC                = 0x0d000000
+X64_SYNTAX_CUSTOM               = 0x0e000000
+X64_SYNTAX_DO_NOTHING           = 0x10000000
+X64_SYNTAX_INVALID_IN_64        = 0x11000000
 
 
 # Opcodes, that does not require any operands.
@@ -62,13 +64,8 @@ X64_OPCODES_MAP = {
   'popfd':      X64_SYNTAX_INVALID_IN_64,
   'into':       X64_SYNTAX_INVALID_IN_64,
 
-  'cbw':        X64_CBW,
   'cwde':       X64_CWDE,
-  'cdqe':       X64_CDQE,
-
-  'cwd':        X64_CWD,
   'cdq':        X64_CDQ,
-  'cqo':        X64_CQO,
 
   'clc':        X64_CLC,
   'cld':        X64_CLD,
@@ -79,36 +76,18 @@ X64_OPCODES_MAP = {
   'cmc':        X64_CMC,
 
   'cmpsb':      X64_CMPSB,
-  'cmpsw':      X64_CMPSW,
   'cmpsd':      X64_CMPSD,
-  'cmpsq':      X64_CMPSQ,
-
   'movsb':      X64_MOVSB,
-  'movsw':      X64_MOVSW,
   'movsd':      X64_MOVSD,
-  'movsq':      X64_MOVSQ,
-
   'lodsb':      X64_LODSB,
-  'lodsw':      X64_LODSW,
   'lodsd':      X64_LODSD,
-  'lodsq':      X64_LODSQ,
-
   'stosb':      X64_STOSB,
-  'stosw':      X64_STOSW,
   'stosd':      X64_STOSD,
-  'stosq':      X64_STOSQ,
-
   'scasb':      X64_SCASB,
-  'scasw':      X64_SCASW,
   'scasd':      X64_SCASD,
-  'scasq':      X64_SCASQ,
-
   'insb' :      X64_INSB,
-  'insw' :      X64_INSW,
   'insd' :      X64_INSD,
-
   'outsb':      X64_OUTSB,
-  'outsw':      X64_OUTSW,
   'outsd':      X64_OUTSD,
 
   'rep':        X64_PREFIX_REPE,
@@ -125,35 +104,49 @@ X64_OPCODES_MAP = {
   'int3':       X64_INT3,
   'iret':       X64_IRET,
   'iretd':      X64_IRET,
-  'iretq':      X64_IRETQ,
 
   'pushf':      X64_PUSHF,
-  'pushfw':     X64_PUSHFW,
   'pushfq':     X64_PUSHF,
-
   'popf':       X64_POPF,
-  'popfw':      X64_POPFW,
   'popfq':      X64_POPF,
 
   'leave':      X64_LEAVE,
   'wait':       X64_FWAIT,
   'fwait':      X64_FWAIT,
-  'clts':       X64_CLTS,
-  'cpuid':      X64_CPUID,
-  'wrmsr':      X64_WRMSR,
-  'rdtsc':      X64_RDTSC,
-  'rdmsr':      X64_RDMSR,
-  'rdpmc':      X64_RDPMC,
-  'rsm':        X64_RSM,
-  'invd':       X64_INVD,
-  'wbinvd':     X64_WBINVD,
-  'clts':       X64_CLTS,
 
-  'syscall':    X64_SYSCALL,
-  'sysret':     X64_SYSRET,
-  'sysenter':   X64_SYSENTER,
-  'sysexit':    X64_SYSEXIT,
-  'ud2':        X64_UD2,
+  'cmpsw':      X64_CMPSW    + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'cmpsq':      X64_CMPSQ    + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'movsw':      X64_MOVSW    + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'movsq':      X64_MOVSQ    + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'lodsw':      X64_LODSW    + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'lodsq':      X64_LODSQ    + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'stosw':      X64_STOSW    + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'stosq':      X64_STOSQ    + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'scasw':      X64_SCASW    + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'scasq':      X64_SCASQ    + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'insw' :      X64_INSW     + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'outsw':      X64_OUTSW    + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'cbw':        X64_CBW      + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'cdqe':       X64_CDQE     + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'cwd':        X64_CWD      + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'cqo':        X64_CQO      + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'iretq':      X64_IRETQ    + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'pushfw':     X64_PUSHFW   + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'popfw':      X64_POPFW    + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'clts':       X64_CLTS     + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'cpuid':      X64_CPUID    + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'wrmsr':      X64_WRMSR    + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'rdtsc':      X64_RDTSC    + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'rdmsr':      X64_RDMSR    + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'rdpmc':      X64_RDPMC    + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'rsm':        X64_RSM      + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'invd':       X64_INVD     + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'wbinvd':     X64_WBINVD   + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'syscall':    X64_SYSCALL  + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'sysret':     X64_SYSRET   + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'sysenter':   X64_SYSENTER + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'sysexit':    X64_SYSEXIT  + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'ud2':        X64_UD2      + X64_SYNTAX_OPCODE_ONLY_WORD,
 
   'rdtscp':     X64_RDTSCP + X64_SYNTAX_OPCODE_ONLY_0F_XX_YY,
   'swapgs':     X64_SWAPGS + X64_SYNTAX_OPCODE_ONLY_0F_XX_YY,
@@ -416,13 +409,15 @@ class X64Translator extends PipeAbstract
     global X64_OPCODES_MAP
     global X64_CMPXCHG_RM8_R8, X64_CMPXCHG_RM32_R32
     global X64_XADD_RM8_R8, X64_XADD_RM32_R32
-    global X64_SYNTAX_OPCODE_ONLY, X64_SYNTAX_CORE_ALU1, X64_SYNTAX_CORE_ALU2
+    global X64_SYNTAX_CORE_ALU1, X64_SYNTAX_CORE_ALU2
     global X64_SYNTAX_CORE2, X64_SYNTAX_JUMPS, X64_SYNTAX_JUMPS_REL8
     global X64_SYNTAX_JUMPS_REL8_2BYTES, X64_SYNTAX_286_RD_MD
     global X64_SYNTAX_0F_00_GROUP, X64_SYNTAX_0F_01_GROUP
     global X64_SYNTAX_SHIFT_GROUP, X64_SYNTAX_SETCC, X64_SYNTAX_DO_NOTHING
     global X64_SYNTAX_INVALID_IN_64, X64_SYNTAX_OPCODE_ONLY_0F_XX_YY
-    global X64_SYNTAX_CUSTOM
+    global X64_SYNTAX_CUSTOM, X64_SYNTAX_OPCODE_ONLY_BYTE
+    global X64_SYNTAX_OPCODE_ONLY_WORD
+
 
     #print item
 
@@ -456,17 +451,24 @@ class X64Translator extends PipeAbstract
       handlerId = bitand(opcodeInfo, 0xff000000)
 
       # Dispatch opcode handler.
-      if handlerId is X64_SYNTAX_OPCODE_ONLY
+      if handlerId is X64_SYNTAX_OPCODE_ONLY_BYTE
         # Recognized no-operands opcode.
         # Just emit opcode as is.
-        if opcode < 256
-          encoder.emitByte(opcode)
-        elif opcode < 65536
-          encoder.emitWord(opcode)
-        endif
+        encoder.emitByte(opcode)
+
+      elif handlerId is X64_SYNTAX_OPCODE_ONLY_BYTE
+        # Single byte opcode: xx
+        # Just emit opcode as is.
+        encoder.emitByte(opcode)
+
+      elif handlerId is X64_SYNTAX_OPCODE_ONLY_WORD
+        # Two bytes opcode: xx yy
+        # Just emit opcode as is.
+        encoder.emitWord(opcode)
 
       elif handlerId is X64_SYNTAX_OPCODE_ONLY_0F_XX_YY
         # Three bytes opcode: 0f xx yy
+        # Just emit opcode as is.
         encoder.emitByte(0x0f)
         encoder.emitWord(opcode // 256)
 
