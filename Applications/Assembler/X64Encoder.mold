@@ -107,20 +107,7 @@ class X64Encoder
     global X64_SIZE16_32_64
 
     # Emit prefixes if needed.
-    if X64_IsReg8(reg) is false
-      # 16, 32 or 64-bit operand(s)
-      # 32-bit is default (no prefix needed)
-      # Set size bit in primary operand byte.
-
-      # TODO: Clean up this mess.
-      #if opcode > 255
-      #  opcode = bitor(opcode, X64_SIZE16_32_64 * 256)
-      #else
-      #  opcode = bitor(opcode, X64_SIZE16_32_64)
-      #endif
-
-      this.emitSizePrefixIfNeeded(reg)
-    endif
+    this.emitSizePrefixIfNeeded(reg)
 
     # Primary opcode.
     if opcode > 255
