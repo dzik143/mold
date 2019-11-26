@@ -327,7 +327,6 @@ X64_OPCODES_MAP = {
   'dec':        X64_DEC_R32          + X64_SYNTAX_CUSTOM,
   'enter':      X64_ENTER_IMM16_IMM8 + X64_SYNTAX_CUSTOM,
   'int':        X64_INT_IMM8         + X64_SYNTAX_CUSTOM,
-  'lar':        X64_LAR              + X64_SYNTAX_CUSTOM,
   'nop':        X64_NOP              + X64_SYNTAX_CUSTOM
 }
 
@@ -506,7 +505,13 @@ class X64Translator extends PipeAbstract
         encoder.emitCore_jmp_rel8(opcode, imm - item.offset - 3)
 
       elif handlerId is X64_SYNTAX_286_RD_MD
-        encoder.emitCore286_r_m(opcode, reg, regBase, scale, regIndex, disp)
+        if scale is defined
+          # r,m
+          encoder.emitCore286_r_m(opcode, reg, regBase, scale, regIndex, disp)
+        else
+          # r,r
+          encoder.emitCore286_r_r(opcode, reg, rm)
+        endif
 
       elif handlerId is X64_SYNTAX_0F_00_GROUP
         # 0f 00 /x
@@ -738,15 +743,6 @@ class X64Translator extends PipeAbstract
         elif mnemonic is 'int'
           # int imm8
           encoder.int_imm(imm)
-
-        elif mnemonic is 'lar'
-          if (reg isnt -1) and (rm isnt -1)
-            # lar r,r
-            encoder.lar_r_r(reg, rm)
-          else
-            # lar r,m
-            encoder.lar_r_m16(reg, regBase, scale, regIndex, disp)
-          endif
 
         elif mnemonic is 'nop'
           if scale is defined
