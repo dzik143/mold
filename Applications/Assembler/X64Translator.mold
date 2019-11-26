@@ -36,7 +36,8 @@ X64_SYNTAX_0F_00_GROUP          = 0x0a000000
 X64_SYNTAX_0F_01_GROUP          = 0x0b000000
 X64_SYNTAX_SHIFT_GROUP          = 0x0c000000
 X64_SYNTAX_SETCC                = 0x0d000000
-X64_SYNTAX_CUSTOM               = 0x0e000000
+X64_SYNTAX_MOV_EXTEND           = 0x0e000000
+X64_SYNTAX_CUSTOM               = 0x0f000000
 X64_SYNTAX_DO_NOTHING           = 0x10000000
 X64_SYNTAX_INVALID_IN_64        = 0x11000000
 
@@ -271,6 +272,9 @@ X64_OPCODES_MAP = {
   'shr':        5 + X64_SYNTAX_SHIFT_GROUP,
   'sar':        7 + X64_SYNTAX_SHIFT_GROUP,
 
+  'movsx':      X64_MOVSX_R_RM8 + X64_SYNTAX_MOV_EXTEND,
+  'movzx':      X64_MOVZX_R_RM8 + X64_SYNTAX_MOV_EXTEND,
+
   'seto':       X64_SETO  + X64_SYNTAX_SETCC,
   'setno':      X64_SETNO + X64_SYNTAX_SETCC,
   'setb':       X64_SETB  + X64_SYNTAX_SETCC,
@@ -324,8 +328,6 @@ X64_OPCODES_MAP = {
   'enter':      X64_ENTER_IMM16_IMM8 + X64_SYNTAX_CUSTOM,
   'int':        X64_INT_IMM8         + X64_SYNTAX_CUSTOM,
   'lar':        X64_LAR              + X64_SYNTAX_CUSTOM,
-  'movsx':      X64_MOVSX_R_RM8      + X64_SYNTAX_CUSTOM,
-  'movzx':      X64_MOVZX_R_RM8      + X64_SYNTAX_CUSTOM,
   'nop':        X64_NOP              + X64_SYNTAX_CUSTOM
 }
 
@@ -416,18 +418,11 @@ class X64Translator extends PipeAbstract
     global X64_SYNTAX_SHIFT_GROUP, X64_SYNTAX_SETCC, X64_SYNTAX_DO_NOTHING
     global X64_SYNTAX_INVALID_IN_64, X64_SYNTAX_OPCODE_ONLY_0F_XX_YY
     global X64_SYNTAX_CUSTOM, X64_SYNTAX_OPCODE_ONLY_BYTE
-    global X64_SYNTAX_OPCODE_ONLY_WORD
-
-
-    #print item
+    global X64_SYNTAX_OPCODE_ONLY_WORD, X64_SYNTAX_MOV_EXTEND
 
     encoder = this.outputObject
 
-    if item.type is 'label'
-      # Collect label positions.
-      this.labelsMap[item.name] = encoder.getCurrentPosition()
-
-    elif item.type is 'instruction'
+    if item.type is 'instruction'
       # Parse one code line.
       # Fetch instruction info.
       mnemonic = item.mnemonic
@@ -457,17 +452,17 @@ class X64Translator extends PipeAbstract
         encoder.emitByte(opcode)
 
       elif handlerId is X64_SYNTAX_OPCODE_ONLY_BYTE
-        # Single byte opcode: xx
+        # Single byte opcode without operands: xx
         # Just emit opcode as is.
         encoder.emitByte(opcode)
 
       elif handlerId is X64_SYNTAX_OPCODE_ONLY_WORD
-        # Two bytes opcode: xx yy
+        # Two bytes opcode without operands: xx yy
         # Just emit opcode as is.
         encoder.emitWord(opcode)
 
       elif handlerId is X64_SYNTAX_OPCODE_ONLY_0F_XX_YY
-        # Three bytes opcode: 0f xx yy
+        # Three bytes opcode without operands: 0f xx yy
         # Just emit opcode as is.
         encoder.emitByte(0x0f)
         encoder.emitWord(opcode // 256)
@@ -552,14 +547,27 @@ class X64Translator extends PipeAbstract
         endif
 
       elif handlerId is X64_SYNTAX_SETCC
-        if opcode is defined
-          if scale is defined
-            # setcc m8
-            encoder.emitCore_m(opcode, regBase, scale, regIndex, disp)
-          else
-            # setcc r8
-            encoder.emitCore_r(opcode, reg)
+        if scale is defined
+          # setcc m8
+          encoder.emitCore_m(opcode, regBase, scale, regIndex, disp)
+        else
+          # setcc r8
+          encoder.emitCore_r(opcode, reg)
+        endif
+
+      elif handlerId is X64_SYNTAX_MOV_EXTEND
+        if scale is defined
+          # movsx r16/32/64, m8/16
+          # movzx r16/32/64, m8/16
+          if dataSize is 2
+            opcode = bitor(opcode, 256)
           endif
+          encoder.emitCore_movExtend_r_m(opcode, reg, regBase, scale, regIndex, disp)
+
+        else
+          # movsx r16/32/64, r8/16
+          # movzx r16/32/64, r8/16
+          encoder.emitCore_movExtend_r_r(opcode, reg, rm)
         endif
 
       elif handlerId is X64_SYNTAX_DO_NOTHING
@@ -634,9 +642,11 @@ class X64Translator extends PipeAbstract
           if reg isnt -1
             # call r
             encoder.call_r(reg)
+
           elif scale is defined
             # call m
             encoder.call_m(regBase, scale, regIndex, disp, dataSize)
+
           else
             # call rel32
             encoder.call_rel(imm - item.offset)
@@ -738,34 +748,6 @@ class X64Translator extends PipeAbstract
             encoder.lar_r_m16(reg, regBase, scale, regIndex, disp)
           endif
 
-        elif mnemonic is 'movsx'
-          if scale is defined
-            if dataSize is 1
-              # movsx r16/32/64, m8
-              encoder.movsx_r_m8(reg, regBase, scale, regIndex, disp)
-            else
-              # movsx r16/32/64, m16
-              encoder.movsx_r_m16(reg, regBase, scale, regIndex, disp)
-            endif
-          else
-            # movsx r16/32/64, r8/16
-            encoder.movsx_r_r(reg, rm)
-          endif
-
-        elif mnemonic is 'movzx'
-          if scale is defined
-            if dataSize is 1
-              # movsx r16/32/64, m8
-              encoder.movzx_r_m8(reg, regBase, scale, regIndex, disp)
-            else
-              # movsx r16/32/64, m16
-              encoder.movzx_r_m16(reg, regBase, scale, regIndex, disp)
-            endif
-          else
-            # movsx r16/32/64, r8/16
-            encoder.movzx_r_r(reg, rm)
-          endif
-
         elif mnemonic is 'nop'
           if scale is defined
             # nop m
@@ -788,6 +770,10 @@ class X64Translator extends PipeAbstract
         # Should never happen on production.
         die('error: unknown opcode handler: ' + str(handlerId))
       endif
+
+    elif item.type is 'label'
+      # Collect label positions.
+      this.labelsMap[item.name] = encoder.getCurrentPosition()
 
     elif item.type is 'data'
       if item.dataSize is 1
