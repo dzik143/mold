@@ -21,288 +21,319 @@
 import 'X64.mold'
 import '../../Compiler/Utils/PipeAbstract.mold'
 
-# Opcodes, that exists, but are invalid in 64-bit mode.
-X64_POOL_OF_MNEMONICS_INVALID64 = [
-  'das'   , 'aas'  , 'bound'  , 'sahf'  , 'lahf',
-  'les'   , 'lds'  , 'aam'    , 'aad'   , 'arpl',
-  'pusha' , 'popa' , 'pushad' , 'popad' , 'pushfd' , 'popfd',
-  'into'
-]
+X64_SYNTAX_OPCODE_ONLY          = 0x00000000
+X64_SYNTAX_CORE_ALU1            = 0x01000000
+X64_SYNTAX_CORE_ALU2            = 0x02000000
+X64_SYNTAX_CORE2                = 0x03000000
+X64_SYNTAX_JUMPS                = 0x04000000
+X64_SYNTAX_JUMPS_REL8           = 0x05000000
+X64_SYNTAX_JUMPS_REL8_2BYTES    = 0x06000000
+X64_SYNTAX_286_RD_MD            = 0x07000000
+X64_SYNTAX_0F_00_GROUP          = 0x08000000
+X64_SYNTAX_0F_01_GROUP          = 0x09000000
+X64_SYNTAX_SHIFT_GROUP          = 0x0a000000
+X64_SYNTAX_SETCC                = 0x0b000000
+X64_SYNTAX_OPCODE_ONLY_0F_XX_YY = 0x0c000000
+X64_SYNTAX_CUSTOM               = 0x0d000000
+X64_SYNTAX_DO_NOTHING           = 0x0e000000
+X64_SYNTAX_INVALID_IN_64        = 0xff000000
+
 
 # Opcodes, that does not require any operands.
 # We can emit them as is.
-X64_OPCODES_MAP0 = {
-  'cbw':  X64_CBW,
-  'cwde': X64_CWDE,
-  'cdqe': X64_CDQE,
+X64_OPCODES_MAP = {
+  'use64':      X64_SYNTAX_DO_NOTHING,
 
-  'cwd': X64_CWD,
-  'cdq': X64_CDQ,
-  'cqo': X64_CQO,
+  'das':        X64_SYNTAX_INVALID_IN_64,
+  'aas':        X64_SYNTAX_INVALID_IN_64,
+  'bound':      X64_SYNTAX_INVALID_IN_64,
+  'sahf':       X64_SYNTAX_INVALID_IN_64,
+  'lahf':       X64_SYNTAX_INVALID_IN_64,
+  'les':        X64_SYNTAX_INVALID_IN_64,
+  'lds':        X64_SYNTAX_INVALID_IN_64,
+  'aam':        X64_SYNTAX_INVALID_IN_64,
+  'aad':        X64_SYNTAX_INVALID_IN_64,
+  'arpl':       X64_SYNTAX_INVALID_IN_64,
+  'pusha':      X64_SYNTAX_INVALID_IN_64,
+  'popa':       X64_SYNTAX_INVALID_IN_64,
+  'pushad':     X64_SYNTAX_INVALID_IN_64,
+  'popad':      X64_SYNTAX_INVALID_IN_64,
+  'pushfd':     X64_SYNTAX_INVALID_IN_64,
+  'popfd':      X64_SYNTAX_INVALID_IN_64,
+  'into':       X64_SYNTAX_INVALID_IN_64,
 
-  'clc': X64_CLC,
-  'cld': X64_CLD,
-  'cli': X64_CLI,
-  'stc': X64_STC,
-  'std': X64_STD,
-  'sti': X64_STI,
-  'cmc': X64_CMC,
+  'cbw':        X64_CBW,
+  'cwde':       X64_CWDE,
+  'cdqe':       X64_CDQE,
 
-  'cmpsb': X64_CMPSB,
-  'cmpsw': X64_CMPSW,
-  'cmpsd': X64_CMPSD,
-  'cmpsq': X64_CMPSQ,
+  'cwd':        X64_CWD,
+  'cdq':        X64_CDQ,
+  'cqo':        X64_CQO,
 
-  'movsb': X64_MOVSB,
-  'movsw': X64_MOVSW,
-  'movsd': X64_MOVSD,
-  'movsq': X64_MOVSQ,
+  'clc':        X64_CLC,
+  'cld':        X64_CLD,
+  'cli':        X64_CLI,
+  'stc':        X64_STC,
+  'std':        X64_STD,
+  'sti':        X64_STI,
+  'cmc':        X64_CMC,
 
-  'lodsb': X64_LODSB,
-  'lodsw': X64_LODSW,
-  'lodsd': X64_LODSD,
-  'lodsq': X64_LODSQ,
+  'cmpsb':      X64_CMPSB,
+  'cmpsw':      X64_CMPSW,
+  'cmpsd':      X64_CMPSD,
+  'cmpsq':      X64_CMPSQ,
 
-  'stosb': X64_STOSB,
-  'stosw': X64_STOSW,
-  'stosd': X64_STOSD,
-  'stosq': X64_STOSQ,
+  'movsb':      X64_MOVSB,
+  'movsw':      X64_MOVSW,
+  'movsd':      X64_MOVSD,
+  'movsq':      X64_MOVSQ,
 
-  'scasb': X64_SCASB,
-  'scasw': X64_SCASW,
-  'scasd': X64_SCASD,
-  'scasq': X64_SCASQ,
+  'lodsb':      X64_LODSB,
+  'lodsw':      X64_LODSW,
+  'lodsd':      X64_LODSD,
+  'lodsq':      X64_LODSQ,
 
-  'insb' : X64_INSB,
-  'insw' : X64_INSW,
-  'insd' : X64_INSD,
+  'stosb':      X64_STOSB,
+  'stosw':      X64_STOSW,
+  'stosd':      X64_STOSD,
+  'stosq':      X64_STOSQ,
 
-  'outsb': X64_OUTSB,
-  'outsw': X64_OUTSW,
-  'outsd': X64_OUTSD,
+  'scasb':      X64_SCASB,
+  'scasw':      X64_SCASW,
+  'scasd':      X64_SCASD,
+  'scasq':      X64_SCASQ,
 
-  'rep':   X64_PREFIX_REPE,
-  'repe':  X64_PREFIX_REPE,
-  'repz':  X64_PREFIX_REPE,
-  'repne': X64_PREFIX_REPNE,
-  'repnz': X64_PREFIX_REPNE,
+  'insb' :      X64_INSB,
+  'insw' :      X64_INSW,
+  'insd' :      X64_INSD,
 
-  'hlt':  X64_HLT,
-  'lock': X64_PREFIX_LOCK,
-  'xlatb': X64_XLATB,
+  'outsb':      X64_OUTSB,
+  'outsw':      X64_OUTSW,
+  'outsd':      X64_OUTSD,
 
-  'int1':  X64_INT1,
-  'int3':  X64_INT3,
-  'iret':  X64_IRET,
-  'iretd': X64_IRET,
-  'iretq': X64_IRETQ,
+  'rep':        X64_PREFIX_REPE,
+  'repe':       X64_PREFIX_REPE,
+  'repz':       X64_PREFIX_REPE,
+  'repne':      X64_PREFIX_REPNE,
+  'repnz':      X64_PREFIX_REPNE,
 
-  'pushf':  X64_PUSHF,
-  'pushfw': X64_PUSHFW,
-  'pushfq': X64_PUSHF,
+  'hlt':        X64_HLT,
+  'lock':       X64_PREFIX_LOCK,
+  'xlatb':      X64_XLATB,
 
-  'popf':   X64_POPF,
-  'popfw':  X64_POPFW,
-  'popfq':  X64_POPF,
+  'int1':       X64_INT1,
+  'int3':       X64_INT3,
+  'iret':       X64_IRET,
+  'iretd':      X64_IRET,
+  'iretq':      X64_IRETQ,
 
-  'leave':  X64_LEAVE,
-  'wait':   X64_FWAIT,
-  'fwait':  X64_FWAIT,
-  'clts':   X64_CLTS,
-  'cpuid':  X64_CPUID,
-  'wrmsr':  X64_WRMSR,
-  'rdtsc':  X64_RDTSC,
-  'rdmsr':  X64_RDMSR,
-  'rdpmc':  X64_RDPMC,
-  'rdtscp': X64_RDTSCP,
-  'rsm':    X64_RSM,
-  'invd':   X64_INVD,
-  'wbinvd': X64_WBINVD,
-  'clts':   X64_CLTS,
+  'pushf':      X64_PUSHF,
+  'pushfw':     X64_PUSHFW,
+  'pushfq':     X64_PUSHF,
 
-  'syscall':  X64_SYSCALL,
-  'sysret':   X64_SYSRET,
-  'sysenter': X64_SYSENTER,
-  'sysexit':  X64_SYSEXIT,
-  'swapgs':   X64_SWAPGS,
-  'ud2':      X64_UD2
-}
+  'popf':       X64_POPF,
+  'popfw':      X64_POPFW,
+  'popfq':      X64_POPF,
 
-X64_OPCODES_MAP_CORE_ALU2 = {
-  'adc':  X64_ADC,
-  'add':  X64_ADD,
-  'and':  X64_AND,
-  'cmp':  X64_CMP,
-  'sbb':  X64_SBB,
-  'sub':  X64_SUB,
-  'or':   X64_OR,
-  'xor':  X64_XOR,
-  'mov':  X64_MOV_RM8_R8,
-  'test': X64_TEST_RM8_R8,
-  'xchg': X64_XCHG_RM8_R8,
-  'bt':   X64_BT_RM_R,
-  'btc':  X64_BTC_RM_R,
-  'btr':  X64_BTR_RM_R,
-  'bts':  X64_BTS_RM_R,
-  'cmpxchg': X64_CMPXCHG_RM8_R8,
-  'xadd':    X64_XADD_RM8_R8
-}
+  'leave':      X64_LEAVE,
+  'wait':       X64_FWAIT,
+  'fwait':      X64_FWAIT,
+  'clts':       X64_CLTS,
+  'cpuid':      X64_CPUID,
+  'wrmsr':      X64_WRMSR,
+  'rdtsc':      X64_RDTSC,
+  'rdmsr':      X64_RDMSR,
+  'rdpmc':      X64_RDPMC,
+  'rsm':        X64_RSM,
+  'invd':       X64_INVD,
+  'wbinvd':     X64_WBINVD,
+  'clts':       X64_CLTS,
 
-# TODO: Review it.
-X64_OPCODES_MAP_CORE2 = {
-  'bsf':     X64_BSF,
-  'bsr':     X64_BSR,
-  'cmovo':   X64_CMOVO,
-  'cmovno':  X64_CMOVNO,
-  'cmovb':   X64_CMOVB,
-  'cmovnae': X64_CMOVB,
-  'cmovc':   X64_CMOVB,
-  'cmovnb':  X64_CMOVAE,
-  'cmovae':  X64_CMOVAE,
-  'cmovnc':  X64_CMOVAE,
-  'cmovz':   X64_CMOVE,
-  'cmove':   X64_CMOVE,
-  'cmovnz':  X64_CMOVNE,
-  'cmovne':  X64_CMOVNE,
-  'cmovbe':  X64_CMOVBE,
-  'cmovna':  X64_CMOVBE,
-  'cmovnbe': X64_CMOVA,
-  'cmova':   X64_CMOVA,
-  'cmovs':   X64_CMOVS,
-  'cmovns':  X64_CMOVNS,
-  'cmovp':   X64_CMOVP,
-  'cmovpe':  X64_CMOVP,
-  'cmovnp':  X64_CMOVNP,
-  'cmovpo':  X64_CMOVNP,
-  'cmovl':   X64_CMOVL,
-  'cmovnge': X64_CMOVL,
-  'cmovge':  X64_CMOVGE,
-  'cmovnl':  X64_CMOVGE,
-  'cmovle':  X64_CMOVLE,
-  'cmovng':  X64_CMOVLE,
-  'cmovnle': X64_CMOVG,
-  'cmovg':   X64_CMOVG,
-  'lsl':     X64_LSL
-}
+  'syscall':    X64_SYSCALL,
+  'sysret':     X64_SYSRET,
+  'sysenter':   X64_SYSENTER,
+  'sysexit':    X64_SYSEXIT,
+  'ud2':        X64_UD2,
 
-X64_OPCODES_MAP_UNARY_GROUP = {
-  'not': 2,
-  'neg': 3,
-  'mul': 4,
-  'imul': 5,
-  'div': 6,
-  'idiv': 7
-}
+  'rdtscp':     X64_RDTSCP + X64_SYNTAX_OPCODE_ONLY_0F_XX_YY,
+  'swapgs':     X64_SWAPGS + X64_SYNTAX_OPCODE_ONLY_0F_XX_YY,
 
-X64_OPCODES_MAP_286_RD_MD = {
-  'lar': X64_LAR,
-  'lss': X64_LSS,
-  'lfs': X64_LFS,
-  'lgs': X64_LGS
-}
+  'adc':        X64_ADC            + X64_SYNTAX_CORE_ALU2,
+  'add':        X64_ADD            + X64_SYNTAX_CORE_ALU2,
+  'and':        X64_AND            + X64_SYNTAX_CORE_ALU2,
+  'cmp':        X64_CMP            + X64_SYNTAX_CORE_ALU2,
+  'sbb':        X64_SBB            + X64_SYNTAX_CORE_ALU2,
+  'sub':        X64_SUB            + X64_SYNTAX_CORE_ALU2,
+  'or':         X64_OR             + X64_SYNTAX_CORE_ALU2,
+  'xor':        X64_XOR            + X64_SYNTAX_CORE_ALU2,
+  'bt':         X64_BT_RM_R        + X64_SYNTAX_CORE_ALU2,
+  'btc':        X64_BTC_RM_R       + X64_SYNTAX_CORE_ALU2,
+  'btr':        X64_BTR_RM_R       + X64_SYNTAX_CORE_ALU2,
+  'bts':        X64_BTS_RM_R       + X64_SYNTAX_CORE_ALU2,
+  'cmpxchg':    X64_CMPXCHG_RM8_R8 + X64_SYNTAX_CORE_ALU2,
+  'xadd':       X64_XADD_RM8_R8    + X64_SYNTAX_CORE_ALU2,
 
-X64_OPCODES_MAP_0F_00_GROUP = {
-  'sldt': 0,
-  'str':  1,
-  'lldt': 2,
-  'ltr':  3,
-  'verr': 4,
-  'verw': 5
-}
+  'bsf':        X64_BSF     + X64_SYNTAX_CORE2,
+  'bsr':        X64_BSR     + X64_SYNTAX_CORE2,
+  'cmovo':      X64_CMOVO   + X64_SYNTAX_CORE2,
+  'cmovno':     X64_CMOVNO  + X64_SYNTAX_CORE2,
+  'cmovb':      X64_CMOVB   + X64_SYNTAX_CORE2,
+  'cmovnae':    X64_CMOVB   + X64_SYNTAX_CORE2,
+  'cmovc':      X64_CMOVB   + X64_SYNTAX_CORE2,
+  'cmovnb':     X64_CMOVAE  + X64_SYNTAX_CORE2,
+  'cmovae':     X64_CMOVAE  + X64_SYNTAX_CORE2,
+  'cmovnc':     X64_CMOVAE  + X64_SYNTAX_CORE2,
+  'cmovz':      X64_CMOVE   + X64_SYNTAX_CORE2,
+  'cmove':      X64_CMOVE   + X64_SYNTAX_CORE2,
+  'cmovnz':     X64_CMOVNE  + X64_SYNTAX_CORE2,
+  'cmovne':     X64_CMOVNE  + X64_SYNTAX_CORE2,
+  'cmovbe':     X64_CMOVBE  + X64_SYNTAX_CORE2,
+  'cmovna':     X64_CMOVBE  + X64_SYNTAX_CORE2,
+  'cmovnbe':    X64_CMOVA   + X64_SYNTAX_CORE2,
+  'cmova':      X64_CMOVA   + X64_SYNTAX_CORE2,
+  'cmovs':      X64_CMOVS   + X64_SYNTAX_CORE2,
+  'cmovns':     X64_CMOVNS  + X64_SYNTAX_CORE2,
+  'cmovp':      X64_CMOVP   + X64_SYNTAX_CORE2,
+  'cmovpe':     X64_CMOVP   + X64_SYNTAX_CORE2,
+  'cmovnp':     X64_CMOVNP  + X64_SYNTAX_CORE2,
+  'cmovpo':     X64_CMOVNP  + X64_SYNTAX_CORE2,
+  'cmovl':      X64_CMOVL   + X64_SYNTAX_CORE2,
+  'cmovnge':    X64_CMOVL   + X64_SYNTAX_CORE2,
+  'cmovge':     X64_CMOVGE  + X64_SYNTAX_CORE2,
+  'cmovnl':     X64_CMOVGE  + X64_SYNTAX_CORE2,
+  'cmovle':     X64_CMOVLE  + X64_SYNTAX_CORE2,
+  'cmovng':     X64_CMOVLE  + X64_SYNTAX_CORE2,
+  'cmovnle':    X64_CMOVG   + X64_SYNTAX_CORE2,
+  'cmovg':      X64_CMOVG   + X64_SYNTAX_CORE2,
+  'lsl':        X64_LSL     + X64_SYNTAX_CORE2,
 
-X64_OPCODES_MAP_0F_01_GROUP = {
-  'sgdt': 0,
-  'sidt': 1,
-  'lgdt': 2,
-  'lidt': 3,
-  'smsw': 4,
-  'lmsw': 6,
-  'invlpg': 7
-}
+  'not':        2 + X64_SYNTAX_CORE_ALU1,
+  'neg':        3 + X64_SYNTAX_CORE_ALU1,
+  'mul':        4 + X64_SYNTAX_CORE_ALU1,
+  'imul':       5 + X64_SYNTAX_CORE_ALU1,
+  'div':        6 + X64_SYNTAX_CORE_ALU1,
+  'idiv':       7 + X64_SYNTAX_CORE_ALU1,
 
-X64_OPCODES_JUMPS = {
-  'call': X64_CALL_REL32,
-  'jo':   X64_JO,
-  'jno':  X64_JNO,
-  'jb':   X64_JB,
-  'jae':  X64_JAE,
-  'jz':   X64_JZ,
-  'je':   X64_JZ,
-  'jnz':  X64_JNZ,
-  'jne':  X64_JNZ,
-  'jbe':  X64_JBE,
-  'ja':   X64_JA,
-  'js':   X64_JS,
-  'jns':  X64_JNS,
-  'jp':   X64_JP,
-  'jnp':  X64_JNP,
-  'jl':   X64_JL,
-  'jge':  X64_JGE,
-  'jle':  X64_JLE,
-  'jg':   X64_JG,
-  'jmp':  X64_JMP_REL32
-}
+  'lar':        X64_LAR + X64_SYNTAX_286_RD_MD,
+  'lss':        X64_LSS + X64_SYNTAX_286_RD_MD,
+  'lfs':        X64_LFS + X64_SYNTAX_286_RD_MD,
+  'lgs':        X64_LGS + X64_SYNTAX_286_RD_MD,
 
-X64_OPCODES_1BYTE_JUMPS_REL8 = {
-  'loop':   X64_LOOP_REL8,
-  'loopz':  X64_LOOPZ_REL8,
-  'loopnz': X64_LOOPNZ_REL8,
-  'loope':  X64_LOOPZ_REL8,
-  'loopne': X64_LOOPNZ_REL8,
-  'jrcxz':  X64_JRCXZ_REL8
-}
+  'sldt':       0 + X64_SYNTAX_0F_00_GROUP,
+  'str':        1 + X64_SYNTAX_0F_00_GROUP,
+  'lldt':       2 + X64_SYNTAX_0F_00_GROUP,
+  'ltr':        3 + X64_SYNTAX_0F_00_GROUP,
+  'verr':       4 + X64_SYNTAX_0F_00_GROUP,
+  'verw':       5 + X64_SYNTAX_0F_00_GROUP,
 
-X64_OPCODES_2BYTE_JUMPS_REL8 = {
-  'loopd':   X64_LOOP_REL8,
-  'loopzd':  X64_LOOPZ_REL8,
-  'loopnzd': X64_LOOPNZ_REL8,
-  'looped':  X64_LOOPZ_REL8,
-  'loopned': X64_LOOPNZ_REL8,
-  'jecxz':   X64_JRCXZ_REL8
-}
+  'sgdt':       0 + X64_SYNTAX_0F_01_GROUP,
+  'sidt':       1 + X64_SYNTAX_0F_01_GROUP,
+  'lgdt':       2 + X64_SYNTAX_0F_01_GROUP,
+  'lidt':       3 + X64_SYNTAX_0F_01_GROUP,
+  'smsw':       4 + X64_SYNTAX_0F_01_GROUP,
+  'lmsw':       6 + X64_SYNTAX_0F_01_GROUP,
+  'invlpg':     7 + X64_SYNTAX_0F_01_GROUP,
 
-X64_OPCODES_MAP_SHIFT_GROUP = {
-  'rol': 0,
-  'ror': 1,
-  'rcl': 2,
-  'rcr': 3,
-  'shl': 4,
-  'sal': 4,
-  'shr': 5,
-  'sar': 7
-}
+  'call':       X64_CALL_REL32 + X64_SYNTAX_JUMPS,
+  'jo':         X64_JO         + X64_SYNTAX_JUMPS,
+  'jno':        X64_JNO        + X64_SYNTAX_JUMPS,
+  'jb':         X64_JB         + X64_SYNTAX_JUMPS,
+  'jae':        X64_JAE        + X64_SYNTAX_JUMPS,
+  'jz':         X64_JZ         + X64_SYNTAX_JUMPS,
+  'je':         X64_JZ         + X64_SYNTAX_JUMPS,
+  'jnz':        X64_JNZ        + X64_SYNTAX_JUMPS,
+  'jne':        X64_JNZ        + X64_SYNTAX_JUMPS,
+  'jbe':        X64_JBE        + X64_SYNTAX_JUMPS,
+  'ja':         X64_JA         + X64_SYNTAX_JUMPS,
+  'js':         X64_JS         + X64_SYNTAX_JUMPS,
+  'jns':        X64_JNS        + X64_SYNTAX_JUMPS,
+  'jp':         X64_JP         + X64_SYNTAX_JUMPS,
+  'jnp':        X64_JNP        + X64_SYNTAX_JUMPS,
+  'jl':         X64_JL         + X64_SYNTAX_JUMPS,
+  'jge':        X64_JGE        + X64_SYNTAX_JUMPS,
+  'jle':        X64_JLE        + X64_SYNTAX_JUMPS,
+  'jg':         X64_JG         + X64_SYNTAX_JUMPS,
+  'jmp':        X64_JMP_REL32  + X64_SYNTAX_JUMPS,
 
-X64_OPCODES_MAP_SETCC = {
-  'seto':   X64_SETO,
-  'setno':  X64_SETNO,
-  'setb':   X64_SETB,
-  'setnae': X64_SETB,
-  'setc':   X64_SETB,
-  'setnb':  X64_SETAE,
-  'setae':  X64_SETAE,
-  'setnc':  X64_SETAE,
-  'setz':   X64_SETE,
-  'sete':   X64_SETE,
-  'setnz':  X64_SETNE,
-  'setne':  X64_SETNE,
-  'setbe':  X64_SETBE,
-  'setna':  X64_SETBE,
-  'setnbe': X64_SETA,
-  'seta':   X64_SETA,
-  'sets':   X64_SETS,
-  'setns':  X64_SETNS,
-  'setp':   X64_SETP,
-  'setpe':  X64_SETP,
-  'setnp':  X64_SETNP,
-  'setpo':  X64_SETNP,
-  'setl':   X64_SETL,
-  'setnge': X64_SETL,
-  'setge':  X64_SETGE,
-  'setnl':  X64_SETGE,
-  'setle':  X64_SETLE,
-  'setng':  X64_SETLE,
-  'setnle': X64_SETG,
-  'setg':   X64_SETG
+  'loop':       X64_LOOP_REL8   + X64_SYNTAX_JUMPS_REL8,
+  'loopz':      X64_LOOPZ_REL8  + X64_SYNTAX_JUMPS_REL8,
+  'loopnz':     X64_LOOPNZ_REL8 + X64_SYNTAX_JUMPS_REL8,
+  'loope':      X64_LOOPZ_REL8  + X64_SYNTAX_JUMPS_REL8,
+  'loopne':     X64_LOOPNZ_REL8 + X64_SYNTAX_JUMPS_REL8,
+  'jrcxz':      X64_JRCXZ_REL8  + X64_SYNTAX_JUMPS_REL8,
+
+  'loopd':      X64_LOOP_REL8   + X64_SYNTAX_JUMPS_REL8_2BYTES,
+  'loopzd':     X64_LOOPZ_REL8  + X64_SYNTAX_JUMPS_REL8_2BYTES,
+  'loopnzd':    X64_LOOPNZ_REL8 + X64_SYNTAX_JUMPS_REL8_2BYTES,
+  'looped':     X64_LOOPZ_REL8  + X64_SYNTAX_JUMPS_REL8_2BYTES,
+  'loopned':    X64_LOOPNZ_REL8 + X64_SYNTAX_JUMPS_REL8_2BYTES,
+  'jecxz':      X64_JRCXZ_REL8  + X64_SYNTAX_JUMPS_REL8_2BYTES,
+
+  'rol':        0 + X64_SYNTAX_SHIFT_GROUP,
+  'ror':        1 + X64_SYNTAX_SHIFT_GROUP,
+  'rcl':        2 + X64_SYNTAX_SHIFT_GROUP,
+  'rcr':        3 + X64_SYNTAX_SHIFT_GROUP,
+  'shl':        4 + X64_SYNTAX_SHIFT_GROUP,
+  'sal':        4 + X64_SYNTAX_SHIFT_GROUP,
+  'shr':        5 + X64_SYNTAX_SHIFT_GROUP,
+  'sar':        7 + X64_SYNTAX_SHIFT_GROUP,
+
+  'seto':       X64_SETO  + X64_SYNTAX_SETCC,
+  'setno':      X64_SETNO + X64_SYNTAX_SETCC,
+  'setb':       X64_SETB  + X64_SYNTAX_SETCC,
+  'setnae':     X64_SETB  + X64_SYNTAX_SETCC,
+  'setc':       X64_SETB  + X64_SYNTAX_SETCC,
+  'setnb':      X64_SETAE + X64_SYNTAX_SETCC,
+  'setae':      X64_SETAE + X64_SYNTAX_SETCC,
+  'setnc':      X64_SETAE + X64_SYNTAX_SETCC,
+  'setz':       X64_SETE  + X64_SYNTAX_SETCC,
+  'sete':       X64_SETE  + X64_SYNTAX_SETCC,
+  'setnz':      X64_SETNE + X64_SYNTAX_SETCC,
+  'setne':      X64_SETNE + X64_SYNTAX_SETCC,
+  'setbe':      X64_SETBE + X64_SYNTAX_SETCC,
+  'setna':      X64_SETBE + X64_SYNTAX_SETCC,
+  'setnbe':     X64_SETA  + X64_SYNTAX_SETCC,
+  'seta':       X64_SETA  + X64_SYNTAX_SETCC,
+  'sets':       X64_SETS  + X64_SYNTAX_SETCC,
+  'setns':      X64_SETNS + X64_SYNTAX_SETCC,
+  'setp':       X64_SETP  + X64_SYNTAX_SETCC,
+  'setpe':      X64_SETP  + X64_SYNTAX_SETCC,
+  'setnp':      X64_SETNP + X64_SYNTAX_SETCC,
+  'setpo':      X64_SETNP + X64_SYNTAX_SETCC,
+  'setl':       X64_SETL  + X64_SYNTAX_SETCC,
+  'setnge':     X64_SETL  + X64_SYNTAX_SETCC,
+  'setge':      X64_SETGE + X64_SYNTAX_SETCC,
+  'setnl':      X64_SETGE + X64_SYNTAX_SETCC,
+  'setle':      X64_SETLE + X64_SYNTAX_SETCC,
+  'setng':      X64_SETLE + X64_SYNTAX_SETCC,
+  'setnle':     X64_SETG  + X64_SYNTAX_SETCC,
+  'setg':       X64_SETG  + X64_SYNTAX_SETCC,
+
+  'mov':        X64_MOV_RM8_R8       + X64_SYNTAX_CUSTOM,
+  'test':       X64_TEST_RM8_R8      + X64_SYNTAX_CUSTOM,
+  'xchg':       X64_XCHG_RM8_R8      + X64_SYNTAX_CUSTOM,
+  'lea':        X64_LEA_R32_M64      + X64_SYNTAX_CUSTOM,
+  'push':       X64_PUSH_R64         + X64_SYNTAX_CUSTOM,
+  'pop':        X64_POP_R64          + X64_SYNTAX_CUSTOM,
+  'call':       X64_CALL_REL32       + X64_SYNTAX_CUSTOM,
+  'jmp':        X64_JMP_REL32        + X64_SYNTAX_CUSTOM,
+  'jecxz':      X64_JECXZ_REL8       + X64_SYNTAX_CUSTOM,
+  'ret':        X64_RET_IMM16        + X64_SYNTAX_CUSTOM,
+  'retf':       X64_RETF_IMM16       + X64_SYNTAX_CUSTOM,
+  'movsxd':     X64_MOVSXD_R32_RM32  + X64_SYNTAX_CUSTOM,
+  'out':        X64_OUT_IMM8_AL      + X64_SYNTAX_CUSTOM,
+  'in':         X64_IN_AL_IMM8       + X64_SYNTAX_CUSTOM,
+  'bswap':      X64_BSWAP            + X64_SYNTAX_CUSTOM,
+  'cmpxchg8b':  X64_CMPXCHG8B        + X64_SYNTAX_CUSTOM,
+  'cmpxchg16b': X64_CMPXCHG16B       + X64_SYNTAX_CUSTOM,
+  'inc':        X64_INC_R32          + X64_SYNTAX_CUSTOM,
+  'dec':        X64_DEC_R32          + X64_SYNTAX_CUSTOM,
+  'enter':      X64_ENTER_IMM16_IMM8 + X64_SYNTAX_CUSTOM,
+  'int':        X64_INT_IMM8         + X64_SYNTAX_CUSTOM,
+  'lar':        X64_LAR              + X64_SYNTAX_CUSTOM,
+  'movsx':      X64_MOVSX_R_RM8      + X64_SYNTAX_CUSTOM,
+  'movzx':      X64_MOVZX_R_RM8      + X64_SYNTAX_CUSTOM,
+  'nop':        X64_NOP              + X64_SYNTAX_CUSTOM
 }
 
 class X64Translator extends PipeAbstract
@@ -347,22 +378,51 @@ class X64Translator extends PipeAbstract
     endif
   endmethod
 
+  method emitCoreALU2(opcode, item)
+    # Recognized common two-operands opcode.
+    if item.imm is undefined
+      if (X64_IsReg8(item.reg) is true) or (item.dataSize is 1)
+        # 8-bit operands. Do nothing.
+
+      elif opcode < 256
+        # Set size bit in primary opcode to enable operands
+        # greater than 8-bit.
+        # This is old encoding pattern from original 8086 processor.
+        opcode = opcode + 1
+
+      else
+        # 2-byte opcode. Primary opcode is in the higher byte.
+        opcode = bitor(opcode, 256)
+      endif
+    endif
+
+    # Special case for test and xchg.
+    # These opcodes have fixed diretion flag, but other assemblers accept both and
+    # swap operands silently if needed.
+    if item.mnemonic is 'test'
+      # Only test r/m, r/imm exists.
+      item.isWriteToMemory = true
+
+    elif item.mnemonic is 'xchg'
+      # Only xchg r, r/m exists.
+      item.isWriteToMemory = false
+    endif
+
+    # Generic two operands handler.
+    this.emitCore_x_y(opcode, item)
+  endmethod
+
   method processOneItem(item)
-    global X64_OPCODES_MAP0
-    global X64_OPCODES_MAP_CORE_ALU2
-    global X64_OPCODES_MAP_UNARY_GROUP
-    global X64_TEST_RM8_R8
-    global X64_OPCODES_JUMPS
-    global X64_OPCODES_1BYTE_JUMPS_REL8
-    global X64_OPCODES_2BYTE_JUMPS_REL8
-    global X64_OPCODES_MAP_CORE2
-    global X64_OPCODES_MAP_0F_00_GROUP
-    global X64_OPCODES_MAP_0F_01_GROUP
-    global X64_OPCODES_MAP_286_RD_MD
-    global X64_OPCODES_MAP_SHIFT_GROUP
-    global X64_OPCODES_MAP_SETCC
+    global X64_OPCODES_MAP
     global X64_CMPXCHG_RM8_R8, X64_CMPXCHG_RM32_R32
     global X64_XADD_RM8_R8, X64_XADD_RM32_R32
+    global X64_SYNTAX_OPCODE_ONLY, X64_SYNTAX_CORE_ALU1, X64_SYNTAX_CORE_ALU2
+    global X64_SYNTAX_CORE2, X64_SYNTAX_JUMPS, X64_SYNTAX_JUMPS_REL8
+    global X64_SYNTAX_JUMPS_REL8_2BYTES, X64_SYNTAX_286_RD_MD
+    global X64_SYNTAX_0F_00_GROUP, X64_SYNTAX_0F_01_GROUP
+    global X64_SYNTAX_SHIFT_GROUP, X64_SYNTAX_SETCC, X64_SYNTAX_DO_NOTHING
+    global X64_SYNTAX_INVALID_IN_64, X64_SYNTAX_OPCODE_ONLY_0F_XX_YY
+    global X64_SYNTAX_CUSTOM
 
     #print item
 
@@ -374,9 +434,8 @@ class X64Translator extends PipeAbstract
 
     elif item.type is 'instruction'
       # Parse one code line.
+      # Fetch instruction info.
       mnemonic = item.mnemonic
-      opcode   = X64_OPCODES_MAP0[mnemonic]
-
       reg      = item.reg
       rm       = item.rm
       regBase  = item.base
@@ -386,241 +445,324 @@ class X64Translator extends PipeAbstract
       imm      = item.imm
       dataSize = item.dataSize
 
-      #print item #'[', mnemonic, item.reg, item.rm, item.imm, ']'
+      # Search for mnemonic.
+      opcodeInfo = X64_OPCODES_MAP[mnemonic]
+      if opcodeInfo is undefined
+        die("error: invalid instruction: '" + mnemonic + "'")
+      endif
 
-      if opcode is defined
+      # Decode handler and opcode.
+      opcode    = bitand(opcodeInfo, 0x00ffffff)
+      handlerId = bitand(opcodeInfo, 0xff000000)
+
+      # Dispatch opcode handler.
+      if handlerId is X64_SYNTAX_OPCODE_ONLY
         # Recognized no-operands opcode.
         # Just emit opcode as is.
         if opcode < 256
           encoder.emitByte(opcode)
         elif opcode < 65536
           encoder.emitWord(opcode)
-        else
-          encoder.emitByte(0x0f)
-          encoder.emitWord(opcode // 256)
         endif
 
-      elif (imm is defined) and (mnemonic is 'mov')
-        if reg isnt -1
-          # mov r, imm
-          encoder.mov_r_imm(reg, imm)
+      elif handlerId is X64_SYNTAX_OPCODE_ONLY_0F_XX_YY
+        # Three bytes opcode: 0f xx yy
+        encoder.emitByte(0x0f)
+        encoder.emitWord(opcode // 256)
+
+      elif handlerId is X64_SYNTAX_CORE_ALU1
+        if reg is -1
+          # not/neg/mul/div/imul/idiv m
+          encoder.emitCore_unaryGroup_m(opcode, regBase, scale, regIndex, disp, dataSize)
         else
-          # mov m, imm
-          encoder.mov_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
+          # not/neg/mul/div/imul/idiv r
+          encoder.emitCore_unaryGroup_r(opcode, reg)
         endif
 
-      elif mnemonic is 'lea'
-        encoder.lea_r_m(reg, regBase, scale, regIndex, disp)
+      elif handlerId is X64_SYNTAX_CORE_ALU2
+        this.emitCoreALU2(opcode, item)
 
-      elif (imm is defined) and (mnemonic is 'test')
-        if reg isnt -1
-          # test r, imm
-          encoder.test_r_imm(reg, imm)
-        else
-          # test m, imm
-          encoder.test_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
+      elif handlerId is X64_SYNTAX_CORE2
+        # TODO: Review it.
+        # Why we need to swap regs here?
+        if (reg isnt -1) and (item.rm isnt -1)
+          item.reg = rm
+          item.rm  = reg
         endif
 
-      elif mnemonic is 'push'
-        if reg isnt -1
-          # push r
-          encoder.push_r(reg)
+        this.emitCore_x_y(opcode, item)
+
+      elif handlerId is X64_SYNTAX_JUMPS
+        # jxx rel8/32
+        encoder.emitCore_jxx_rel(opcode, imm - item.offset)
+
+      elif handlerId is X64_SYNTAX_JUMPS_REL8
+        # One byte jump with rel8 always.
+        # loopz rel8 like.
+        encoder.emitCore_jmp_rel8(opcode, imm - item.offset - 2)
+
+      elif handlerId is X64_SYNTAX_JUMPS_REL8_2BYTES
+        # One byte jump with rel8 always and 0x67 prefix.
+        # loopz rel8 like.
+        # TODO: Clean up this mess.
+        encoder.emitByte(0x67)
+        encoder.emitCore_jmp_rel8(opcode, imm - item.offset - 3)
+
+      elif handlerId is X64_SYNTAX_286_RD_MD
+        encoder.emitCore286_r_m(opcode, reg, regBase, scale, regIndex, disp)
+
+      elif handlerId is X64_SYNTAX_0F_00_GROUP
+        # 0f 00 /x
+        if scale is defined
+          # m
+          encoder.emitCore_group0f_00_m(opcode, regBase, scale, regIndex, disp)
+        else
+          # r
+          encoder.emitCore_group0f_00_r(opcode, reg)
+        endif
+
+      elif handlerId is X64_SYNTAX_0F_01_GROUP
+        # 0f 01 /x
+        if scale is defined
+          # m
+          encoder.emitCore_group0f_01_m(opcode, regBase, scale, regIndex, disp)
+        else
+          # r
+          encoder.emitCore_group0f_01_r(opcode, reg)
+        endif
+
+      elif handlerId is X64_SYNTAX_SHIFT_GROUP
+        if scale is defined
+          if imm is defined
+            # m, imm8
+            encoder.emitCore_shiftGroup_m_imm8(opcode, regBase, scale, regIndex, disp, imm, dataSize)
+          else
+            # m, cl
+            encoder.emitCore_shiftGroup_m_cl(opcode, regBase, scale, regIndex, disp, dataSize)
+          endif
 
         elif imm is defined
-          if (imm >= -127) and (imm <= 128)
-            # push imm8
-            encoder.push_imm8(imm)
-          else
-            # push imm32
-            encoder.push_imm32(imm)
-           endif
+          # r, imm8
+          encoder.emitCore_shiftGroup_r_imm8(opcode, reg, imm)
         else
-          # push m
-          encoder.push_m(regBase, scale, regIndex, disp, dataSize)
+          # r, cl
+          encoder.emitCore_shiftGroup_r_cl(opcode, reg)
         endif
 
-      elif mnemonic is 'pop'
-        if reg isnt -1
-          encoder.pop_r(reg)
-        else
-          encoder.pop_m(regBase, scale, regIndex, disp, dataSize)
-        endif
-
-      elif (mnemonic is 'xchg') and (reg isnt -1) and (rm isnt -1)
-        # xchg r, r
-        encoder.xchg_r_r(reg, rm)
-
-      elif mnemonic is 'call'
-        if reg isnt -1
-          # call r
-          encoder.call_r(reg)
-        elif scale is defined
-          # call m
-          encoder.call_m(regBase, scale, regIndex, disp, dataSize)
-        else
-          # call rel32
-          encoder.call_rel(imm - item.offset)
-        endif
-
-      elif mnemonic is 'jmp'
-        if reg isnt -1
-          # jmp r
-          encoder.jmp_r(reg)
-        elif scale is defined
-          # jmp m
-          encoder.jmp_m(regBase, scale, regIndex, disp, dataSize)
-        else
-          # jmp rel8/32
-          encoder.jmp_rel(imm - item.offset)
-        endif
-
-      elif mnemonic is 'jecxz'
-        encoder.jecxz_rel(imm - item.offset)
-
-      elif mnemonic is 'ret'
-        if imm is defined
-          encoder.ret_imm(imm)
-        else
-          encoder.ret()
-        endif
-
-      elif mnemonic is 'retf'
-        if imm is defined
-          encoder.retf_imm(imm)
-        else
-          encoder.retf()
-        endif
-
-      elif mnemonic is 'movsxd'
-        if (reg isnt -1) and (rm isnt -1)
-          # movsxd r64, r32
-          encoder.movsxd_r64_r32(reg, rm)
-        else
-          # movsxd r64, m32
-          encoder.movsxd_r64_m32(reg, regBase, scale, regIndex, disp)
-        endif
-
-      elif mnemonic is 'out'
-        if imm is defined
-          encoder.out_imm_r(imm, reg)
-        else
-          encoder.out_r_r(reg, rm)
-        endif
-
-      elif mnemonic is 'in'
-        if imm is defined
-          encoder.in_r_imm(reg, imm)
-        else
-          encoder.in_r_r(reg, rm)
-        endif
-
-      elif mnemonic is 'bswap'
-        encoder.bswap_r(reg)
-
-      elif mnemonic is 'cmpxchg8b'
-        encoder.cmpxchg8b_m(regBase, scale, regIndex, disp)
-
-      elif mnemonic is 'cmpxchg16b'
-        encoder.cmpxchg16b_m(regBase, scale, regIndex, disp)
-
-      elif mnemonic is 'inc'
-        if reg isnt -1
-          # inc r
-          encoder.inc_r(reg)
-        else
-          # inc m
-          encoder.inc_m(regBase, scale, regIndex, disp, dataSize)
-        endif
-
-      elif mnemonic is 'dec'
-        if reg isnt -1
-          # dec r
-          encoder.dec_r(reg)
-        else
-          # dec m
-          encoder.dec_m(regBase, scale, regIndex, disp, dataSize)
-        endif
-
-      elif mnemonic is 'enter'
-        # enter imm16, imm8
-        encoder.enter_imm16_imm8(imm, item.imm2)
-
-      elif mnemonic is 'int'
-        # int imm8
-        encoder.int_imm(imm)
-
-      elif mnemonic is 'lar'
-        if (reg isnt -1) and (rm isnt -1)
-          # lar r,r
-          encoder.lar_r_r(reg, rm)
-        else
-          # lar r,m
-          encoder.lar_r_m16(reg, regBase, scale, regIndex, disp)
-        endif
-
-      elif mnemonic is 'movsx'
-        if scale is defined
-          if dataSize is 1
-            # movsx r16/32/64, m8
-            encoder.movsx_r_m8(reg, regBase, scale, regIndex, disp)
-          else
-            # movsx r16/32/64, m16
-            encoder.movsx_r_m16(reg, regBase, scale, regIndex, disp)
-          endif
-        else
-          # movsx r16/32/64, r8/16
-          encoder.movsx_r_r(reg, rm)
-        endif
-
-      elif mnemonic is 'movzx'
-        if scale is defined
-          if dataSize is 1
-            # movsx r16/32/64, m8
-            encoder.movzx_r_m8(reg, regBase, scale, regIndex, disp)
-          else
-            # movsx r16/32/64, m16
-            encoder.movzx_r_m16(reg, regBase, scale, regIndex, disp)
-          endif
-        else
-          # movsx r16/32/64, r8/16
-          encoder.movzx_r_r(reg, rm)
-        endif
-
-      else
-        opcode = X64_OPCODES_MAP_CORE_ALU2[mnemonic]
-
+      elif handlerId is X64_SYNTAX_SETCC
         if opcode is defined
-          # Recognized common two-operands opcode.
-          if imm is undefined
-            if (X64_IsReg8(reg) is true) or (dataSize is 1)
-              # 8-bit operands. Do nothing.
+          if scale is defined
+            # setcc m8
+            encoder.emitCore_m(opcode, regBase, scale, regIndex, disp)
+          else
+            # setcc r8
+            encoder.emitCore_r(opcode, reg)
+          endif
+        endif
 
-            elif opcode < 256
-              # Set size bit in primary opcode to enable operands
-              # greater than 8-bit.
-              # This is old encoding pattern from original 8086 processor.
-              opcode = opcode + 1
+      elif handlerId is X64_SYNTAX_DO_NOTHING
+        # Do nothing.
 
+      elif handlerId is X64_SYNTAX_CUSTOM
+        # Custom handler needed for this mnemonic.
+        # Dispatch opcode.
+        if mnemonic is 'mov'
+          if imm is defined
+            if reg isnt -1
+              # mov r, imm
+              encoder.mov_r_imm(reg, imm)
             else
-              # 2-byte opcode. Primary opcode is in the higher byte.
-              opcode = bitor(opcode, 256)
+              # mov m, imm
+              encoder.mov_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
             endif
+          else
+            this.emitCoreALU2(opcode, item)
           endif
 
-          # Special case for test and xchg.
-          # These opcodes have fixed diretion flag, but other assemblers accept both and
-          # swap operands silently if needed.
-          if mnemonic is 'test'
-            # Only test r/m, r/imm exists.
-            item.isWriteToMemory = true
+        elif mnemonic is 'lea'
+          encoder.lea_r_m(reg, regBase, scale, regIndex, disp)
 
-          elif mnemonic is 'xchg'
-            # Only xchg r, r/m exists.
-            item.isWriteToMemory = false
+        elif mnemonic is 'test'
+          if imm is defined
+            if reg isnt -1
+              # test r, imm
+              encoder.test_r_imm(reg, imm)
+            else
+              # test m, imm
+              encoder.test_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
+            endif
+          else
+            this.emitCoreALU2(opcode, item)
           endif
 
-          # Generic two operands handler.
-          this.emitCore_x_y(opcode, item)
+        elif mnemonic is 'push'
+          if reg isnt -1
+            # push r
+            encoder.push_r(reg)
+
+          elif imm is defined
+            if (imm >= -127) and (imm <= 128)
+              # push imm8
+              encoder.push_imm8(imm)
+            else
+              # push imm32
+              encoder.push_imm32(imm)
+             endif
+          else
+            # push m
+            encoder.push_m(regBase, scale, regIndex, disp, dataSize)
+          endif
+
+        elif mnemonic is 'pop'
+          if reg isnt -1
+            encoder.pop_r(reg)
+          else
+            encoder.pop_m(regBase, scale, regIndex, disp, dataSize)
+          endif
+
+        elif mnemonic is 'xchg'
+          if (reg isnt -1) and (rm isnt -1)
+            # xchg r, r
+            encoder.xchg_r_r(reg, rm)
+          else
+            this.emitCoreALU2(opcode, item)
+          endif
+
+        elif mnemonic is 'call'
+          if reg isnt -1
+            # call r
+            encoder.call_r(reg)
+          elif scale is defined
+            # call m
+            encoder.call_m(regBase, scale, regIndex, disp, dataSize)
+          else
+            # call rel32
+            encoder.call_rel(imm - item.offset)
+          endif
+
+        elif mnemonic is 'jmp'
+          if reg isnt -1
+            # jmp r
+            encoder.jmp_r(reg)
+          elif scale is defined
+            # jmp m
+            encoder.jmp_m(regBase, scale, regIndex, disp, dataSize)
+          else
+            # jmp rel8/32
+            encoder.jmp_rel(imm - item.offset)
+          endif
+
+        elif mnemonic is 'jecxz'
+          encoder.jecxz_rel(imm - item.offset)
+
+        elif mnemonic is 'ret'
+          if imm is defined
+            encoder.ret_imm(imm)
+          else
+            encoder.ret()
+          endif
+
+        elif mnemonic is 'retf'
+          if imm is defined
+            encoder.retf_imm(imm)
+          else
+            encoder.retf()
+          endif
+
+        elif mnemonic is 'movsxd'
+          if (reg isnt -1) and (rm isnt -1)
+            # movsxd r64, r32
+            encoder.movsxd_r64_r32(reg, rm)
+          else
+            # movsxd r64, m32
+            encoder.movsxd_r64_m32(reg, regBase, scale, regIndex, disp)
+          endif
+
+        elif mnemonic is 'out'
+          if imm is defined
+            encoder.out_imm_r(imm, reg)
+          else
+            encoder.out_r_r(reg, rm)
+          endif
+
+        elif mnemonic is 'in'
+          if imm is defined
+            encoder.in_r_imm(reg, imm)
+          else
+            encoder.in_r_r(reg, rm)
+          endif
+
+        elif mnemonic is 'bswap'
+          encoder.bswap_r(reg)
+
+        elif mnemonic is 'cmpxchg8b'
+          encoder.cmpxchg8b_m(regBase, scale, regIndex, disp)
+
+        elif mnemonic is 'cmpxchg16b'
+          encoder.cmpxchg16b_m(regBase, scale, regIndex, disp)
+
+        elif mnemonic is 'inc'
+          if reg isnt -1
+            # inc r
+            encoder.inc_r(reg)
+          else
+            # inc m
+            encoder.inc_m(regBase, scale, regIndex, disp, dataSize)
+          endif
+
+        elif mnemonic is 'dec'
+          if reg isnt -1
+            # dec r
+            encoder.dec_r(reg)
+          else
+            # dec m
+            encoder.dec_m(regBase, scale, regIndex, disp, dataSize)
+          endif
+
+        elif mnemonic is 'enter'
+          # enter imm16, imm8
+          encoder.enter_imm16_imm8(imm, item.imm2)
+
+        elif mnemonic is 'int'
+          # int imm8
+          encoder.int_imm(imm)
+
+        elif mnemonic is 'lar'
+          if (reg isnt -1) and (rm isnt -1)
+            # lar r,r
+            encoder.lar_r_r(reg, rm)
+          else
+            # lar r,m
+            encoder.lar_r_m16(reg, regBase, scale, regIndex, disp)
+          endif
+
+        elif mnemonic is 'movsx'
+          if scale is defined
+            if dataSize is 1
+              # movsx r16/32/64, m8
+              encoder.movsx_r_m8(reg, regBase, scale, regIndex, disp)
+            else
+              # movsx r16/32/64, m16
+              encoder.movsx_r_m16(reg, regBase, scale, regIndex, disp)
+            endif
+          else
+            # movsx r16/32/64, r8/16
+            encoder.movsx_r_r(reg, rm)
+          endif
+
+        elif mnemonic is 'movzx'
+          if scale is defined
+            if dataSize is 1
+              # movsx r16/32/64, m8
+              encoder.movzx_r_m8(reg, regBase, scale, regIndex, disp)
+            else
+              # movsx r16/32/64, m16
+              encoder.movzx_r_m16(reg, regBase, scale, regIndex, disp)
+            endif
+          else
+            # movsx r16/32/64, r8/16
+            encoder.movzx_r_r(reg, rm)
+          endif
 
         elif mnemonic is 'nop'
           if scale is defined
@@ -633,139 +775,16 @@ class X64Translator extends PipeAbstract
            # One byte nop.
            encoder.nop()
           endif
-
-        else
-          operationId = X64_OPCODES_MAP_UNARY_GROUP[mnemonic]
-
-          if operationId is defined
-            if reg is -1
-              # not/neg/mul/div/imul/idiv m
-              encoder.emitCore_unaryGroup_m(
-                operationId, regBase, scale, regIndex, disp, dataSize)
-            else
-              # not/neg/mul/div/imul/idiv r
-              encoder.emitCore_unaryGroup_r(operationId, reg)
-            endif
-
-          else
-            opcode = X64_OPCODES_JUMPS[mnemonic]
-
-            if opcode is defined
-              # jxx rel8/32
-              encoder.emitCore_jxx_rel(opcode, imm - item.offset)
-
-            else
-              opcode1b = X64_OPCODES_1BYTE_JUMPS_REL8[mnemonic]
-              opcode2b = X64_OPCODES_2BYTE_JUMPS_REL8[mnemonic]
-
-              if opcode1b is defined
-                # One byte jump with rel8 always.
-                # loopz rel8 like.
-                encoder.emitCore_jmp_rel8(opcode1b, imm - item.offset - 2)
-
-              elif opcode2b is defined
-                # One byte jump with rel8 always with 0x67 prefix.
-                # loopz rel8 like.
-                # TODO: Clean up this mess.
-                encoder.emitByte(0x67)
-                encoder.emitCore_jmp_rel8(opcode2b, imm - item.offset - 3)
-
-              else
-                opcode = X64_OPCODES_MAP_CORE2[mnemonic]
-
-                if opcode is defined
-                  # TODO: Review it.
-                  # Why we need to swap regs here?
-                  if (reg isnt -1) and (item.rm isnt -1)
-                    item.reg = rm
-                    item.rm  = reg
-                  endif
-
-                  this.emitCore_x_y(opcode, item)
-
-                else
-                  # 0f 00 /x
-                  operationId = X64_OPCODES_MAP_0F_00_GROUP[mnemonic]
-
-                  if operationId is defined
-                    if scale is defined
-                      # m
-                      encoder.emitCore_group0f_00_m(operationId, regBase, scale, regIndex, disp)
-                    else
-                      # r
-                      encoder.emitCore_group0f_00_r(operationId, reg)
-                    endif
-
-                  else
-                    # 0f 01 /x
-                    operationId = X64_OPCODES_MAP_0F_01_GROUP[mnemonic]
-
-                    if operationId is defined
-                      if scale is defined
-                        # m
-                        encoder.emitCore_group0f_01_m(operationId, regBase, scale, regIndex, disp)
-                      else
-                        # r
-                        encoder.emitCore_group0f_01_r(operationId, reg)
-                      endif
-
-
-                    else
-                      opcode = X64_OPCODES_MAP_286_RD_MD[mnemonic]
-
-                      if opcode is defined
-                        encoder.emitCore286_r_m(opcode, reg, regBase, scale, regIndex, disp)
-
-                      else
-                        operationId = X64_OPCODES_MAP_SHIFT_GROUP[mnemonic]
-                        if operationId is defined
-                          if scale is defined
-
-                            if imm is defined
-                              # m, imm8
-                              encoder.emitCore_shiftGroup_m_imm8(operationId, regBase, scale, regIndex, disp, imm, dataSize)
-                            else
-                              # m, cl
-                              encoder.emitCore_shiftGroup_m_cl(operationId, regBase, scale, regIndex, disp, dataSize)
-                            endif
-
-                          else
-                            if imm is defined
-                              # r, imm8
-                              encoder.emitCore_shiftGroup_r_imm8(operationId, reg, imm)
-                            else
-                              # r, cl
-                              encoder.emitCore_shiftGroup_r_cl(operationId, reg)
-                            endif
-                          endif
-
-                        else
-                          opcode = X64_OPCODES_MAP_SETCC[mnemonic]
-
-                          if opcode is defined
-                            if scale is defined
-                              # setcc m8
-                              encoder.emitCore_m(opcode, regBase, scale, regIndex, disp)
-                            else
-                              # setcc r8
-                              encoder.emitCore_r(opcode, reg)
-                            endif
-
-                          elif mnemonic is 'use64'
-                           # Nothing to do.
-
-                          else
-                            die("error: invalid instruction: '" + mnemonic + "'")
-                          endif
-                        endif
-                      endif
-                    endif
-                  endif
-                endif
-              endif
-            endif
-          endif
         endif
+
+      elif handlerId is X64_SYNTAX_INVALID_IN_64
+        # Instruction is correct, but not allowed in native 64-bit mode.
+        die("error: not allowed in long mode: '" + mnemonic + "'")
+
+      else
+        # Error - unexpected handler id.
+        # Should never happen on production.
+        die('error: unknown opcode handler: ' + str(handlerId))
       endif
 
     elif item.type is 'data'
