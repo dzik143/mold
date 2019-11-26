@@ -399,18 +399,6 @@ class X64Translator extends PipeAbstract
       endif
     endif
 
-    # Special case for test and xchg.
-    # These opcodes have fixed diretion flag, but other assemblers accept both and
-    # swap operands silently if needed.
-    if item.mnemonic is 'test'
-      # Only test r/m, r/imm exists.
-      item.isWriteToMemory = true
-
-    elif item.mnemonic is 'xchg'
-      # Only xchg r, r/m exists.
-      item.isWriteToMemory = false
-    endif
-
     # Generic two operands handler.
     this.emitCore_x_y(opcode, item)
   endmethod
@@ -613,6 +601,10 @@ class X64Translator extends PipeAbstract
               encoder.test_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
             endif
           else
+            # Opcodes have fixed diretion flag, but other assemblers accept both and
+            # swap operands silently if needed.
+            # Only test r/m, r/imm exists.
+            item.isWriteToMemory = true
             this.emitCoreALU2(opcode, item)
           endif
 
@@ -646,6 +638,10 @@ class X64Translator extends PipeAbstract
             # xchg r, r
             encoder.xchg_r_r(reg, rm)
           else
+            # Opcodes have fixed diretion flag, but other assemblers accept both and
+            # swap operands silently if needed.
+            # Only xchg r, r/m exists.
+            item.isWriteToMemory = false
             this.emitCoreALU2(opcode, item)
           endif
 
