@@ -377,6 +377,12 @@ class X64Parser extends AbstractDescentParser
     this._parseSecondOperand(newItem)
     this._emitOneItem(newItem)
 
+    # TODO: Clean up this mess.
+    if (newItem.mnemonic[0] is 'j') and (newItem.labelObj is undefined) and (newItem.imm is defined)
+      newItem.absoluteAddress = newItem.imm
+      this.arrayOfLabelsAndRefs[len(this.arrayOfLabelsAndRefs)] = newItem
+    endif
+
     newItem.codeSize = this.outputObject.getCurrentPosition() - newItem.offset
   endmethod
 
@@ -555,3 +561,4 @@ class X64Parser extends AbstractDescentParser
     rv = this.arrayOfLabelsAndRefs
   endmethod
 endclass
+

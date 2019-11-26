@@ -1070,7 +1070,7 @@ class X64Encoder
 
   method emitCore_jxx_rel(opcode, rel)
     # TODO: Review it.
-    if (rel >= -126) and (rel <= 128)
+    if (rel >= -126) and (rel <= 128 + 5)
       # jxx rel8
       this.emitByte(opcode)
       this.emitByte(rel - 2)
@@ -1097,6 +1097,22 @@ class X64Encoder
       # jmp rel32
       this.emitCore_jmp_rel32(X64_JMP_REL32, rel - 5)
     endif
+  endmethod
+
+  method jmp_r(reg)
+    global X64_CALL_GROUP
+    if X64_IsReg16(reg) is true
+      this.emitPrefix16()
+    endif
+    this.emitCore_group_r(X64_CALL_GROUP, 4, bitand(reg, 0x7))
+  endmethod
+
+  method jmp_m(regBase, scale, regIndex, disp, dataSize)
+    global X64_CALL_GROUP
+    if dataSize is 2
+      this.emitPrefix16()
+    endif
+    this.emitCore_group_m(X64_CALL_GROUP, 4, regBase, scale, regIndex, disp)
   endmethod
 
   #
@@ -1198,6 +1214,24 @@ class X64Encoder
     this.emitCore_jmp_rel8(X64_LOOP_REL8, rel - 2)
   endmethod
 
+  method loopzd_rel(rel)
+    global X64_LOOPZ_REL8
+    this.emitByte(0x67)
+    this.emitCore_jmp_rel8(X64_LOOPZ_REL8, rel - 3)
+  endmethod
+
+  method loopnzd_rel(rel)
+    global X64_LOOPNZ_REL8
+    this.emitByte(0x67)
+    this.emitCore_jmp_rel8(X64_LOOPNZ_REL8, rel - 3)
+  endmethod
+
+  method loopd_rel(rel)
+    global X64_LOOP_REL8
+    this.emitByte(0x67)
+    this.emitCore_jmp_rel8(X64_LOOP_REL8, rel - 3)
+  endmethod
+
   method jecxz_rel(rel)
     global X64_JRCXZ_REL8
     this.emitByte(0x67)
@@ -1223,11 +1257,14 @@ class X64Encoder
     if X64_IsReg16(reg) is true
       this.emitPrefix16()
     endif
-    this.emitCore_group_r(X64_CALL_GROUP, 6, bitand(reg, 0x7))
+    this.emitCore_group_r(X64_CALL_GROUP, 2, bitand(reg, 0x7))
   endmethod
 
-  method call_m(regBase, scale, regIndex, disp)
+  method call_m(regBase, scale, regIndex, disp, dataSize)
     global X64_CALL_GROUP
+    if dataSize is 2
+      this.emitPrefix16()
+    endif
     this.emitCore_group_m(X64_CALL_GROUP, 2, regBase, scale, regIndex, disp)
   endmethod
 
@@ -1248,9 +1285,9 @@ class X64Encoder
   endmethod
 
   method retf_imm(imm)
-    global X64_RETFN
+    global X64_RETF_IMM16
     this.emitPrefix64()
-    this.emitByte(X64_RETFN)
+    this.emitByte(X64_RETF_IMM16)
     this.emitWord(imm)
   endmethod
 
@@ -1371,7 +1408,7 @@ class X64Encoder
   endmethod
 
   #
-  # Interrupts: int, into, int1, int3, iret
+  # Interrupts: int, int1, int3, iret
   #
 
   method int_imm(imm8)

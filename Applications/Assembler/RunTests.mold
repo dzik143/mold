@@ -223,7 +223,32 @@ arrayOfTests = [
   'core/xadd',
   'core/xchg',
   'core/xlatb',
-  'core/xor'
+  'core/xor',
+  'core-jumps/call',
+  'core-jumps/jmp',
+  'core-jumps/jo',
+  'core-jumps/jno',
+  'core-jumps/jb',
+  'core-jumps/jae',
+  'core-jumps/jz',
+  'core-jumps/jnz',
+  'core-jumps/jbe',
+  'core-jumps/ja',
+  'core-jumps/js',
+  'core-jumps/jns',
+  'core-jumps/jp',
+  'core-jumps/jnp',
+  'core-jumps/jl',
+  'core-jumps/jge',
+  'core-jumps/jle',
+  'core-jumps/jg',
+  'core-jumps/loop',
+  'core-jumps/loope',
+  'core-jumps/loopne',
+  'core-jumps/jecxz',
+  'core-jumps/looped',
+  'core-jumps/loopned',
+  'core-jumps/jrcxz'
 ]
 
 class X64Tester

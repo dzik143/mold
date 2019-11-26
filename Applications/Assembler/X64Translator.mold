@@ -25,19 +25,20 @@ import '../../Compiler/Utils/PipeAbstract.mold'
 X64_POOL_OF_MNEMONICS_INVALID64 = [
   'das'   , 'aas'  , 'bound'  , 'sahf'  , 'lahf',
   'les'   , 'lds'  , 'aam'    , 'aad'   , 'arpl',
-  'pusha' , 'popa' , 'pushad' , 'popad' , 'pushfd' , 'popfd'
+  'pusha' , 'popa' , 'pushad' , 'popad' , 'pushfd' , 'popfd',
+  'into'
 ]
 
 # Opcodes, that does not require any operands.
 # We can emit them as is.
 X64_OPCODES_MAP0 = {
-  'cbw':  X64_CWDE * 256 + X64_PREFIX_OPERAND_SIZE,
+  'cbw':  X64_CBW,
   'cwde': X64_CWDE,
-  'cdqe': X64_CWDE * 256 + X64_PREFIX_REX_W,
+  'cdqe': X64_CDQE,
 
-  'cwd': X64_CDQ * 256 + X64_PREFIX_OPERAND_SIZE,
+  'cwd': X64_CWD,
   'cdq': X64_CDQ,
-  'cqo': X64_CDQ * 256 + X64_PREFIX_REX_W,
+  'cqo': X64_CQO,
 
   'clc': X64_CLC,
   'cld': X64_CLD,
@@ -48,36 +49,36 @@ X64_OPCODES_MAP0 = {
   'cmc': X64_CMC,
 
   'cmpsb': X64_CMPSB,
-  'cmpsw': X64_CMPSD * 256 + X64_PREFIX_OPERAND_SIZE,
+  'cmpsw': X64_CMPSW,
   'cmpsd': X64_CMPSD,
-  'cmpsq': X64_CMPSD * 256 + X64_PREFIX_REX_W,
+  'cmpsq': X64_CMPSQ,
 
   'movsb': X64_MOVSB,
-  'movsw': X64_MOVSD * 256 + X64_PREFIX_OPERAND_SIZE,
+  'movsw': X64_MOVSW,
   'movsd': X64_MOVSD,
-  'movsq': X64_MOVSD * 256 + X64_PREFIX_REX_W,
+  'movsq': X64_MOVSQ,
 
   'lodsb': X64_LODSB,
-  'lodsw': X64_LODSD * 256 + X64_PREFIX_OPERAND_SIZE,
+  'lodsw': X64_LODSW,
   'lodsd': X64_LODSD,
-  'lodsq': X64_LODSD * 256 + X64_PREFIX_REX_W,
+  'lodsq': X64_LODSQ,
 
   'stosb': X64_STOSB,
-  'stosw': X64_STOSD * 256 + X64_PREFIX_OPERAND_SIZE,
+  'stosw': X64_STOSW,
   'stosd': X64_STOSD,
-  'stosq': X64_STOSD * 256 + X64_PREFIX_REX_W,
+  'stosq': X64_STOSQ,
 
   'scasb': X64_SCASB,
-  'scasw': X64_SCASD * 256 + X64_PREFIX_OPERAND_SIZE,
+  'scasw': X64_SCASW,
   'scasd': X64_SCASD,
-  'scasq': X64_SCASD * 256 + X64_PREFIX_REX_W,
+  'scasq': X64_SCASQ,
 
   'insb' : X64_INSB,
-  'insw' : X64_INSD * 256 + X64_PREFIX_OPERAND_SIZE,
+  'insw' : X64_INSW,
   'insd' : X64_INSD,
 
   'outsb': X64_OUTSB,
-  'outsw': X64_OUTSD * 256 + X64_PREFIX_OPERAND_SIZE,
+  'outsw': X64_OUTSW,
   'outsd': X64_OUTSD,
 
   'rep':   X64_PREFIX_REPE,
@@ -88,21 +89,20 @@ X64_OPCODES_MAP0 = {
 
   'hlt':  X64_HLT,
   'lock': X64_PREFIX_LOCK,
-  'xlatb': X64_XLAT,
+  'xlatb': X64_XLATB,
 
-  'into':  X64_INTO,
   'int1':  X64_INT1,
   'int3':  X64_INT3,
   'iret':  X64_IRET,
   'iretd': X64_IRET,
-  'iretq': X64_IRET * 256 + X64_PREFIX_REX_W,
+  'iretq': X64_IRETQ,
 
   'pushf':  X64_PUSHF,
-  'pushfw': X64_PUSHF * 256 + X64_PREFIX_OPERAND_SIZE,
+  'pushfw': X64_PUSHFW,
   'pushfq': X64_PUSHF,
 
   'popf':   X64_POPF,
-  'popfw':  X64_POPF  * 256 + X64_PREFIX_OPERAND_SIZE,
+  'popfw':  X64_POPFW,
   'popfq':  X64_POPF,
 
   'leave':  X64_LEAVE,
@@ -252,6 +252,15 @@ X64_OPCODES_1BYTE_JUMPS_REL8 = {
   'jrcxz':  X64_JRCXZ_REL8
 }
 
+X64_OPCODES_2BYTE_JUMPS_REL8 = {
+  'loopd':   X64_LOOP_REL8,
+  'loopzd':  X64_LOOPZ_REL8,
+  'loopnzd': X64_LOOPNZ_REL8,
+  'looped':  X64_LOOPZ_REL8,
+  'loopned': X64_LOOPNZ_REL8,
+  'jecxz':   X64_JRCXZ_REL8
+}
+
 X64_OPCODES_MAP_SHIFT_GROUP = {
   'rol': 0,
   'ror': 1,
@@ -345,6 +354,7 @@ class X64Translator extends PipeAbstract
     global X64_TEST_RM8_R8
     global X64_OPCODES_JUMPS
     global X64_OPCODES_1BYTE_JUMPS_REL8
+    global X64_OPCODES_2BYTE_JUMPS_REL8
     global X64_OPCODES_MAP_CORE2
     global X64_OPCODES_MAP_0F_00_GROUP
     global X64_OPCODES_MAP_0F_01_GROUP
@@ -374,6 +384,7 @@ class X64Translator extends PipeAbstract
       disp     = item.disp
       scale    = item.scale
       imm      = item.imm
+      dataSize = item.dataSize
 
       #print item #'[', mnemonic, item.reg, item.rm, item.imm, ']'
 
@@ -395,7 +406,7 @@ class X64Translator extends PipeAbstract
           encoder.mov_r_imm(reg, imm)
         else
           # mov m, imm
-          encoder.mov_m_imm(regBase, scale, regIndex, disp, imm, item.dataSize)
+          encoder.mov_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
         endif
 
       elif mnemonic is 'lea'
@@ -407,7 +418,7 @@ class X64Translator extends PipeAbstract
           encoder.test_r_imm(reg, imm)
         else
           # test m, imm
-          encoder.test_m_imm(regBase, scale, regIndex, disp, imm, item.dataSize)
+          encoder.test_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
         endif
 
       elif mnemonic is 'push'
@@ -425,14 +436,14 @@ class X64Translator extends PipeAbstract
            endif
         else
           # push m
-          encoder.push_m(regBase, scale, regIndex, disp, item.dataSize)
+          encoder.push_m(regBase, scale, regIndex, disp, dataSize)
         endif
 
       elif mnemonic is 'pop'
         if reg isnt -1
           encoder.pop_r(reg)
         else
-          encoder.pop_m(regBase, scale, regIndex, disp, item.dataSize)
+          encoder.pop_m(regBase, scale, regIndex, disp, dataSize)
         endif
 
       elif (mnemonic is 'xchg') and (reg isnt -1) and (rm isnt -1)
@@ -440,14 +451,28 @@ class X64Translator extends PipeAbstract
         encoder.xchg_r_r(reg, rm)
 
       elif mnemonic is 'call'
-        if item.scale is defined
-          encoder.call_m(regBase, scale, regIndex, disp)
+        if reg isnt -1
+          # call r
+          encoder.call_r(reg)
+        elif scale is defined
+          # call m
+          encoder.call_m(regBase, scale, regIndex, disp, dataSize)
         else
+          # call rel32
           encoder.call_rel(imm - item.offset)
         endif
 
       elif mnemonic is 'jmp'
-        encoder.jmp_rel(imm - item.offset)
+        if reg isnt -1
+          # jmp r
+          encoder.jmp_r(reg)
+        elif scale is defined
+          # jmp m
+          encoder.jmp_m(regBase, scale, regIndex, disp, dataSize)
+        else
+          # jmp rel8/32
+          encoder.jmp_rel(imm - item.offset)
+        endif
 
       elif mnemonic is 'jecxz'
         encoder.jecxz_rel(imm - item.offset)
@@ -465,10 +490,6 @@ class X64Translator extends PipeAbstract
         else
           encoder.retf()
         endif
-
-      elif mnemonic is 'leave'
-        # Handle two immediates at one opcode.
-        die('not implemented: leave imm16, imm8')
 
       elif mnemonic is 'movsxd'
         if (reg isnt -1) and (rm isnt -1)
@@ -508,7 +529,7 @@ class X64Translator extends PipeAbstract
           encoder.inc_r(reg)
         else
           # inc m
-          encoder.inc_m(regBase, scale, regIndex, disp, item.dataSize)
+          encoder.inc_m(regBase, scale, regIndex, disp, dataSize)
         endif
 
       elif mnemonic is 'dec'
@@ -517,7 +538,7 @@ class X64Translator extends PipeAbstract
           encoder.dec_r(reg)
         else
           # dec m
-          encoder.dec_m(regBase, scale, regIndex, disp, item.dataSize)
+          encoder.dec_m(regBase, scale, regIndex, disp, dataSize)
         endif
 
       elif mnemonic is 'enter'
@@ -539,7 +560,7 @@ class X64Translator extends PipeAbstract
 
       elif mnemonic is 'movsx'
         if scale is defined
-          if item.dataSize is 1
+          if dataSize is 1
             # movsx r16/32/64, m8
             encoder.movsx_r_m8(reg, regBase, scale, regIndex, disp)
           else
@@ -553,7 +574,7 @@ class X64Translator extends PipeAbstract
 
       elif mnemonic is 'movzx'
         if scale is defined
-          if item.dataSize is 1
+          if dataSize is 1
             # movsx r16/32/64, m8
             encoder.movzx_r_m8(reg, regBase, scale, regIndex, disp)
           else
@@ -571,7 +592,7 @@ class X64Translator extends PipeAbstract
         if opcode is defined
           # Recognized common two-operands opcode.
           if imm is undefined
-            if (X64_IsReg8(reg) is true) or (item.dataSize is 1)
+            if (X64_IsReg8(reg) is true) or (dataSize is 1)
               # 8-bit operands. Do nothing.
 
             elif opcode < 256
@@ -604,7 +625,7 @@ class X64Translator extends PipeAbstract
         elif mnemonic is 'nop'
           if scale is defined
             # nop m
-            encoder.nop_m(regBase, scale, regIndex, disp, item.dataSize)
+            encoder.nop_m(regBase, scale, regIndex, disp, dataSize)
           elif reg isnt -1
             # nop r
             encoder.nop_r(reg)
@@ -620,7 +641,7 @@ class X64Translator extends PipeAbstract
             if reg is -1
               # not/neg/mul/div/imul/idiv m
               encoder.emitCore_unaryGroup_m(
-                operationId, regBase, scale, regIndex, disp, item.dataSize)
+                operationId, regBase, scale, regIndex, disp, dataSize)
             else
               # not/neg/mul/div/imul/idiv r
               encoder.emitCore_unaryGroup_r(operationId, reg)
@@ -634,12 +655,20 @@ class X64Translator extends PipeAbstract
               encoder.emitCore_jxx_rel(opcode, imm - item.offset)
 
             else
-              opcode = X64_OPCODES_1BYTE_JUMPS_REL8[mnemonic]
+              opcode1b = X64_OPCODES_1BYTE_JUMPS_REL8[mnemonic]
+              opcode2b = X64_OPCODES_2BYTE_JUMPS_REL8[mnemonic]
 
-              if opcode is defined
+              if opcode1b is defined
                 # One byte jump with rel8 always.
                 # loopz rel8 like.
-                encoder.emitCore_jmp_rel8(opcode, imm - item.offset - 2)
+                encoder.emitCore_jmp_rel8(opcode1b, imm - item.offset - 2)
+
+              elif opcode2b is defined
+                # One byte jump with rel8 always with 0x67 prefix.
+                # loopz rel8 like.
+                # TODO: Clean up this mess.
+                encoder.emitByte(0x67)
+                encoder.emitCore_jmp_rel8(opcode2b, imm - item.offset - 3)
 
               else
                 opcode = X64_OPCODES_MAP_CORE2[mnemonic]
@@ -694,10 +723,10 @@ class X64Translator extends PipeAbstract
 
                             if imm is defined
                               # m, imm8
-                              encoder.emitCore_shiftGroup_m_imm8(operationId, regBase, scale, regIndex, disp, imm, item.dataSize)
+                              encoder.emitCore_shiftGroup_m_imm8(operationId, regBase, scale, regIndex, disp, imm, dataSize)
                             else
                               # m, cl
-                              encoder.emitCore_shiftGroup_m_cl(operationId, regBase, scale, regIndex, disp, item.dataSize)
+                              encoder.emitCore_shiftGroup_m_cl(operationId, regBase, scale, regIndex, disp, dataSize)
                             endif
 
                           else

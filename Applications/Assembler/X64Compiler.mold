@@ -74,6 +74,7 @@ class X64Compiler
     # TODO: Clean up this mess.
     for values item in refs
       item.originalCodeSize = item.codeSize
+      item.originalOffset   = item.offset
     endfor
 
     while codeSizeDiffTotal isnt 0
@@ -88,14 +89,17 @@ class X64Compiler
           codeSizeBefore = item.codeSize
 
           # TODO: Clean up this mess.
-          if item.labelObjForDisp is defined
-            # [rip + disp]
-            item.disp = item.labelObjForDisp.offset - item.offset - item.codeSize
-          endif
-
           if item.labelObj is defined
             # jxx rel
             item.imm = item.labelObj.offset
+
+          elif item.labelObjForDisp is defined
+            # [rip + disp]
+            item.disp = item.labelObjForDisp.offset - item.offset - item.codeSize
+
+          elif item.absoluteAddress is defined
+            # jxx <absolute address>
+            item.imm = item.absoluteAddress
           endif
 
           # Go to current referencing instruction.

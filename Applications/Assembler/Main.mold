@@ -20,7 +20,7 @@
 
 import 'X64Compiler.mold'
 
-VERSION_STRING = '0.1.191121'
+VERSION_STRING = '0.1.191125'
 
 # Parse command line arguments.
 if argc isnt 2
