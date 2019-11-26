@@ -307,26 +307,26 @@ X64_OPCODES_MAP = {
   'setnle':     X64_SETG  + X64_SYNTAX_SETCC,
   'setg':       X64_SETG  + X64_SYNTAX_SETCC,
 
-  'mov':        X64_MOV              + X64_SYNTAX_CUSTOM,
-  'test':       X64_TEST             + X64_SYNTAX_CUSTOM,
-  'xchg':       X64_XCHG             + X64_SYNTAX_CUSTOM,
-  'lea':        X64_LEA              + X64_SYNTAX_CUSTOM,
-  'push':       X64_PUSH_R64         + X64_SYNTAX_CUSTOM,
-  'pop':        X64_POP_R64          + X64_SYNTAX_CUSTOM,
-  'call':       X64_CALL_REL32       + X64_SYNTAX_CUSTOM,
-  'jmp':        X64_JMP_REL32        + X64_SYNTAX_CUSTOM,
-  'ret':        X64_RET              + X64_SYNTAX_CUSTOM,
-  'retf':       X64_RETF             + X64_SYNTAX_CUSTOM,
-  'out':        X64_OUT_IMM8_AL      + X64_SYNTAX_CUSTOM,
-  'in':         X64_IN_AL_IMM8       + X64_SYNTAX_CUSTOM,
-  'bswap':      X64_BSWAP            + X64_SYNTAX_CUSTOM,
-  'cmpxchg8b':  X64_CMPXCHG8B        + X64_SYNTAX_CUSTOM,
-  'cmpxchg16b': X64_CMPXCHG16B       + X64_SYNTAX_CUSTOM,
-  'inc':        X64_INC_R32          + X64_SYNTAX_CUSTOM,
-  'dec':        X64_DEC_R32          + X64_SYNTAX_CUSTOM,
-  'enter':      X64_ENTER            + X64_SYNTAX_CUSTOM,
-  'int':        X64_INT              + X64_SYNTAX_CUSTOM,
-  'nop':        X64_NOP              + X64_SYNTAX_CUSTOM
+  'mov':        X64_MOV         + X64_SYNTAX_CUSTOM,
+  'test':       X64_TEST        + X64_SYNTAX_CUSTOM,
+  'xchg':       X64_XCHG        + X64_SYNTAX_CUSTOM,
+  'lea':        X64_LEA         + X64_SYNTAX_CUSTOM,
+  'push':       X64_PUSH_R64    + X64_SYNTAX_CUSTOM,
+  'pop':        X64_POP_R64     + X64_SYNTAX_CUSTOM,
+  'call':       X64_CALL_REL32  + X64_SYNTAX_CUSTOM,
+  'jmp':        X64_JMP_REL32   + X64_SYNTAX_CUSTOM,
+  'ret':        X64_RET         + X64_SYNTAX_CUSTOM,
+  'retf':       X64_RETF        + X64_SYNTAX_CUSTOM,
+  'out':        X64_OUT_IMM8_AL + X64_SYNTAX_CUSTOM,
+  'in':         X64_IN_AL_IMM8  + X64_SYNTAX_CUSTOM,
+  'bswap':      X64_BSWAP       + X64_SYNTAX_CUSTOM,
+  'cmpxchg8b':  X64_CMPXCHG8B   + X64_SYNTAX_CUSTOM,
+  'cmpxchg16b': X64_CMPXCHG16B  + X64_SYNTAX_CUSTOM,
+  'inc':        X64_INC_R32     + X64_SYNTAX_CUSTOM,
+  'dec':        X64_DEC_R32     + X64_SYNTAX_CUSTOM,
+  'enter':      X64_ENTER       + X64_SYNTAX_CUSTOM,
+  'int':        X64_INT         + X64_SYNTAX_CUSTOM,
+  'nop':        X64_NOP         + X64_SYNTAX_CUSTOM
 }
 
 class X64Translator extends PipeAbstract
@@ -372,6 +372,16 @@ class X64Translator extends PipeAbstract
   endmethod
 
   method emitCoreALU2(opcode, item)
+    # TODO: Review it.
+    # Why we need to swap regs here?
+    reg = item.reg
+    rm  = item.rm
+
+    if (reg isnt -1) and (item.rm isnt -1)
+      item.reg = item.rm
+      item.rm  = reg
+    endif
+
     # Recognized common two-operands opcode.
     if item.imm is undefined
       if (X64_IsReg8(item.reg) is true) or (item.dataSize is 1)
@@ -482,13 +492,6 @@ class X64Translator extends PipeAbstract
         this.emitCoreALU2(opcode, item)
 
       elif handlerId is X64_SYNTAX_CORE2
-        # TODO: Review it.
-        # Why we need to swap regs here?
-        if (reg isnt -1) and (item.rm isnt -1)
-          item.reg = rm
-          item.rm  = reg
-        endif
-
         this.emitCore_x_y(opcode, item)
 
       elif handlerId is X64_SYNTAX_JUMPS

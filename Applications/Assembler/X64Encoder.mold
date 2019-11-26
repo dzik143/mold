@@ -138,7 +138,7 @@ class X64Encoder
 
   method emitCore_r_r(opcode, regDst, regSrc)
     global X64_MOD_REGISTER
-    this.emitCore(opcode, X64_MOD_REGISTER, regSrc, regDst)
+    this.emitCore(opcode, X64_MOD_REGISTER, regDst, regSrc)
   endmethod
 
   method emitCore_m_r(opcode, regBase, scale, regIndex, disp, regSrc)
@@ -275,7 +275,7 @@ class X64Encoder
   endmethod
 
   method emitCore_r(opcode, reg)
-    this.emitCore_r_r(opcode, reg, 0)
+    this.emitCore_r_r(opcode, 0, reg)
   endmethod
 
   method emitCore_m(opcode, regBase, scale, regIndex, disp)
@@ -1297,7 +1297,7 @@ class X64Encoder
 
   method mov_r_r(regDst, regSrc)
     global X64_MOV_RM8_R8
-    this.emitCore_r_r(X64_MOV_RM8_R8, regDst, regSrc)
+    this.emitCore_r_r(X64_MOV_RM8_R8, regSrc, regDst)
   endmethod
 
   method mov_r_m(regDst, regBase, scale, regIndex, disp)
@@ -1365,7 +1365,7 @@ class X64Encoder
 
     if X64_IsReg8(reg1) is true
       # xchg r8, r8
-      this.emitCore_r_r(X64_XCHG_RM8_R8, reg2, reg1)
+      this.emitCore_r_r(X64_XCHG_RM8_R8, reg1, reg2)
 
     elif (reg1 is X64_EAX) and (reg2 is X64_EAX)
       # Avoid emitting optimized one byte version for
@@ -1391,7 +1391,7 @@ class X64Encoder
 
       else
         # General case: xchg r, r
-        this.emitCore_r_r(X64_XCHG_RM32_R32, reg2, reg1)
+        this.emitCore_r_r(X64_XCHG_RM32_R32, reg1, reg2)
       endif
     endif
   endmethod
@@ -1412,14 +1412,14 @@ class X64Encoder
   #
 
   method int_imm(imm8)
-    global X64_INT_IMM8
+    global X64_INT
     global X64_INT3
 
     if imm8 is 3
       this.emitByte(X64_INT3)
 
     else
-      this.emitByte(X64_INT_IMM8)
+      this.emitByte(X64_INT)
       this.emitByte(imm8)
     endif
   endmethod
@@ -1468,8 +1468,8 @@ class X64Encoder
   #
 
   method lea_r_m(regDst, regBase, scale, regIndex, disp)
-    global X64_LEA_R32_M64
-    this.emitCore_m_r(X64_LEA_R32_M64, regBase, scale, regIndex, disp, regDst)
+    global X64_LEA
+    this.emitCore_m_r(X64_LEA, regBase, scale, regIndex, disp, regDst)
   endmethod
 
   #
@@ -1661,8 +1661,8 @@ class X64Encoder
   #-----------------------------------------------------------------------------
 
   method enter_imm16_imm8(disp, level)
-    global X64_ENTER_IMM16_IMM8
-    this.emitByte(X64_ENTER_IMM16_IMM8)
+    global X64_ENTER
+    this.emitByte(X64_ENTER)
     this.emitWord(disp)
     this.emitByte(level)
   endmethod
@@ -1731,7 +1731,7 @@ class X64Encoder
     # TODO: Why we need to swap operands?
     this.emitSizePrefixIfNeeded(regDst)
     regDst = bitand(regDst, 0x7)
-    this.emitCore_r_r(opcode, regSrc, regDst)
+    this.emitCore_r_r(opcode, regDst, regSrc)
   endmethod
 
   method emitCore286_r_m(opcode, regDst, regBase, scale, regIndex, disp)
@@ -1876,7 +1876,7 @@ class X64Encoder
 
   method lsl_r_r(regDst, regSrc)
     global X64_LSL
-    this.emitCore_r_r(X64_LSL, regDst, regSrc)
+    this.emitCore_r_r(X64_LSL, regSrc, regDst)
   endmethod
 
   method lsl_r_m(regDst, regBase, scale, regIndex, disp)
@@ -2558,13 +2558,13 @@ class X64Encoder
   #-----------------------------------------------------------------------------
 
   method movsxd_r64_r32(regDst, regSrc)
-    global X64_MOVSXD_R32_RM32
-    this.emitCore_r_r(X64_MOVSXD_R32_RM32, regSrc, regDst)
+    global X64_MOVSXD
+    this.emitCore_r_r(X64_MOVSXD, regDst, regSrc)
   endmethod
 
   method movsxd_r64_m32(regDst, regBase, scale, regIndex, disp)
-    global X64_MOVSXD_R32_RM32
-    this.emitCore_r_m(X64_MOVSXD_R32_RM32, regDst, regBase, scale, regIndex, disp)
+    global X64_MOVSXD
+    this.emitCore_r_m(X64_MOVSXD, regDst, regBase, scale, regIndex, disp)
   endmethod
 
   method cmpxchg16b_m(regBase, scale, regIndex, disp)
