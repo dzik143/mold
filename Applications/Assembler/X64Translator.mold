@@ -200,6 +200,7 @@ X64_OPCODES_MAP = {
   'cmovnle':    X64_CMOVG   + X64_SYNTAX_CORE2,
   'cmovg':      X64_CMOVG   + X64_SYNTAX_CORE2,
   'lsl':        X64_LSL     + X64_SYNTAX_CORE2,
+  'movsxd':     X64_MOVSXD  + X64_SYNTAX_CORE2,
 
   'not':        2 + X64_SYNTAX_CORE_ALU1,
   'neg':        3 + X64_SYNTAX_CORE_ALU1,
@@ -314,9 +315,8 @@ X64_OPCODES_MAP = {
   'pop':        X64_POP_R64          + X64_SYNTAX_CUSTOM,
   'call':       X64_CALL_REL32       + X64_SYNTAX_CUSTOM,
   'jmp':        X64_JMP_REL32        + X64_SYNTAX_CUSTOM,
-  'ret':        X64_RET_IMM16        + X64_SYNTAX_CUSTOM,
-  'retf':       X64_RETF_IMM16       + X64_SYNTAX_CUSTOM,
-  'movsxd':     X64_MOVSXD_R32_RM32  + X64_SYNTAX_CUSTOM,
+  'ret':        X64_RET              + X64_SYNTAX_CUSTOM,
+  'retf':       X64_RETF             + X64_SYNTAX_CUSTOM,
   'out':        X64_OUT_IMM8_AL      + X64_SYNTAX_CUSTOM,
   'in':         X64_IN_AL_IMM8       + X64_SYNTAX_CUSTOM,
   'bswap':      X64_BSWAP            + X64_SYNTAX_CUSTOM,
@@ -324,8 +324,8 @@ X64_OPCODES_MAP = {
   'cmpxchg16b': X64_CMPXCHG16B       + X64_SYNTAX_CUSTOM,
   'inc':        X64_INC_R32          + X64_SYNTAX_CUSTOM,
   'dec':        X64_DEC_R32          + X64_SYNTAX_CUSTOM,
-  'enter':      X64_ENTER_IMM16_IMM8 + X64_SYNTAX_CUSTOM,
-  'int':        X64_INT_IMM8         + X64_SYNTAX_CUSTOM,
+  'enter':      X64_ENTER            + X64_SYNTAX_CUSTOM,
+  'int':        X64_INT              + X64_SYNTAX_CUSTOM,
   'nop':        X64_NOP              + X64_SYNTAX_CUSTOM
 }
 
@@ -681,15 +681,6 @@ class X64Translator extends PipeAbstract
             encoder.retf_imm(imm)
           else
             encoder.retf()
-          endif
-
-        elif mnemonic is 'movsxd'
-          if (reg isnt -1) and (rm isnt -1)
-            # movsxd r64, r32
-            encoder.movsxd_r64_r32(reg, rm)
-          else
-            # movsxd r64, m32
-            encoder.movsxd_r64_m32(reg, regBase, scale, regIndex, disp)
           endif
 
         elif mnemonic is 'out'
