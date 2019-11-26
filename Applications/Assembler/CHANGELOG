@@ -1,0 +1,49 @@
+UNRELEASED
+----------
+...
+
+0.1.191126 (released on 2019-11-26)
+-----------------------------------
+
+  1. Implemented encoding for the most of core x64 opcodes:
+
+    - ALU(x, y)  | adc, add, and, or, sbb, sub, test, xor
+    - ALU(x)     | inc, dec, neg, not
+    - Div/mul    | div, idiv, mul, imul
+    - Shifts     | sal, sar, shl, shr
+    - Rotates    | rcl, rcr, rol, ror
+    - Stack      | push, pop, pushf, popf, pushfq, popfq
+    - Procedures | call, ret, retf, enter, leave
+    - Interrupts | int, int3, int1, iret, iretd, iretq
+    - Convert    | cbw, cwd, cwde, cdq, cdqe, cqo
+    - Ports      | in, out, ins, outs, insd, outsd
+    - Flags      | clc, cld, cli, stc, std, sti, cmc
+    - Prefixes   | lock, rep, repe, repne
+    - Data move  | mov, xchg, movsx, movzx, movsxd
+    - Address    | lea, lfs, lgs, lss
+    - Bits       | bsf, bsr, bt, btc, btr, bts, bswap
+    - Condition  | setcc, cmovcc
+    - Compare    | cmp, cmpxchg, cmpxchg8b, cmpxchg16b, xadd
+    - Cache      | invlpg, invd, wbinvd
+    - Counters   | rdmsr, rdtsc, rdpmc, rdtscp
+    - Jumps      | jmp, loop, loopcc, loopd, loopccd, jcc, jecxz, jrcxz
+
+    - System     | sldt, lar, lsl, smsw, str, lldt, lmsw, ltr, verr,
+                 | verw, lgdt, lidt, sgdt, sidt, clts, rsm, wrmsr,
+                 | syscall, sysret, sysenter, sysexit, swapgs
+
+    - Strings    | cmpsb, lodsb, stosb, movsb, scasb,
+                 | cmpsw, lodsw, stosw, movsw, scasw,
+                 | cmpsd, lodsd, stosd, movsd, scasd,
+                 | cmpsq, lodsq, stosq, movsq, scasq
+
+    - Other      | hlt, wait, xlatb, nop, cpuid, ud2
+
+  2. Generated tests for instructions up to SSE (core, x87, MMX, SSE1).
+
+  3. Still on TODO list:
+    - CR/DR/TR registers,
+    - registers r8-r15,
+    - registers sil, dil, bpl, spl,
+    - 32-bit addresses,
+    - missing opcodes: shld, shrd, bt/c/s/r with immediate.
