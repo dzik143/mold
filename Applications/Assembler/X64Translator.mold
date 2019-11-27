@@ -34,12 +34,14 @@ X64_HANDLER_JUMPS_REL8_2BYTES    = 0x13000000
 X64_HANDLER_0F_01_GROUP          = 0x14000000
 X64_HANDLER_SETCC                = 0x15000000
 
-# Encoding handlers: two operands.
+# Encoding handlers: two operands with equal size.
 X64_HANDLER_CORE_ALU2            = 0x20000000
 X64_HANDLER_CORE2                = 0x21000000
-X64_HANDLER_MOV_EXTEND           = 0x22000000
-X64_HANDLER_SHIFT_GROUP          = 0x23000000
-X64_HANDLER_286                  = 0x24000000
+
+# Encoding handler: two operands (generic).
+X64_HANDLER_SHIFT_GROUP          = 0x30000000
+X64_HANDLER_MOV_EXTEND           = 0x31000000
+X64_HANDLER_286                  = 0x32000000
 
 # Other.
 X64_HANDLER_0F_00_GROUP          = 0xf0000000
@@ -51,9 +53,11 @@ X64_HANDLER_INVALID_IN_64        = 0xff000000
 X64_DATA_SIZE_ID = [0,0,1,1,2,2,2,2,3]
 
 # Common operands combinations for generic syntax checking.
-X64_SYNTAX_ZERO_OPERANDS = 0x00000000
-X64_SYNTAX_ONE_OPERAND   = 0x10000000
-X64_SYNTAX_TWO_OPERANDS  = 0x20000000
+X64_SYNTAX_ZERO_OPERANDS           = 0x00000000
+X64_SYNTAX_ONE_OPERAND             = 0x10000000
+X64_SYNTAX_TWO_OPERANDS_EQUAL_SIZE = 0x20000000
+X64_SYNTAX_TWO_OPERANDS            = 0x30000000
+
 
 # Opcodes, that does not require any operands.
 # We can emit them as is.
@@ -213,8 +217,6 @@ X64_OPCODES_MAP = {
   'cmovng':     X64_CMOVLE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
   'cmovnle':    X64_CMOVG   + X64_HANDLER_CORE2, # rd,rd   | rd,md
   'cmovg':      X64_CMOVG   + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'lsl':        X64_LSL     + X64_HANDLER_CORE2, # rd,r16  | rd,m16
-  'movsxd':     X64_MOVSXD  + X64_HANDLER_CORE2, # r64,r32 | r64,m32
 
   'not':        2 + X64_HANDLER_CORE_ALU1, # r | m
   'neg':        3 + X64_HANDLER_CORE_ALU1, # r | m
@@ -338,7 +340,9 @@ X64_OPCODES_MAP = {
   'dec':        X64_DEC_R32     + X64_HANDLER_CUSTOM, # r | m
   'enter':      X64_ENTER       + X64_HANDLER_CUSTOM, # imm16, imm8
   'int':        X64_INT         + X64_HANDLER_CUSTOM, # imm8
-  'nop':        X64_NOP         + X64_HANDLER_CUSTOM  # - | rd | md
+  'nop':        X64_NOP         + X64_HANDLER_CUSTOM, # - | rd | md
+  'lsl':        X64_LSL         + X64_HANDLER_CUSTOM, # rd,r16  | rd,m16
+  'movsxd':     X64_MOVSXD      + X64_HANDLER_CUSTOM  # r64,r32 | r64,m32
 }
 
 class X64Translator extends PipeAbstract
@@ -417,7 +421,7 @@ class X64Translator extends PipeAbstract
 
   method _validateNumberOfOperands(cnt, expectedCnt)
     if cnt < expectedCnt
-      die('error: too less operands')
+      die('error: not enough operands')
     elif cnt > expectedCnt
       die('error: too many operands')
     endif
@@ -458,7 +462,8 @@ class X64Translator extends PipeAbstract
     global X64_RET, X64_RETF, X64_BSWAP, X64_CMPXCHG8B, X64_CMPXCHG16B
     global X64_INC_R32, X64_DEC_R32, X64_ENTER, X64_LEAVE, X64_INT
     global X64_SYNTAX_ZERO_OPERANDS, X64_SYNTAX_ONE_OPERAND
-    global X64_SYNTAX_TWO_OPERANDS
+    global X64_SYNTAX_TWO_OPERANDS, X64_SYNTAX_TWO_OPERANDS_EQUAL_SIZE
+    global X64_LSL, X64_MOVSXD
 
     encoder = this.outputObject
 
@@ -494,9 +499,12 @@ class X64Translator extends PipeAbstract
       elif syntaxId is X64_SYNTAX_ONE_OPERAND
         this._validateNumberOfOperands(numberOfOperands, 1)
 
+      elif syntaxId is X64_SYNTAX_TWO_OPERANDS_EQUAL_SIZE
+        this._validateNumberOfOperands(numberOfOperands, 2)
+        this._validateOperandSizes(reg, rm, dataSize, imm)
+
       elif syntaxId is X64_SYNTAX_TWO_OPERANDS
         this._validateNumberOfOperands(numberOfOperands, 2)
-        # TODO: this._validateOperandSizes(reg, rm, dataSize, imm)
       endif
 
       # Dispatch opcode handler.
@@ -801,6 +809,12 @@ class X64Translator extends PipeAbstract
            # One byte nop.
            encoder.nop()
           endif
+
+        elif opcode is X64_LSL
+          this.emitCore_x_y(opcode, item)
+
+        elif opcode is X64_MOVSXD
+          this.emitCore_x_y(opcode, item)
         endif
 
       elif handlerId is X64_HANDLER_INVALID_IN_64
