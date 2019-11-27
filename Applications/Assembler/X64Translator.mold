@@ -28,11 +28,12 @@ X64_HANDLER_OPCODE_ONLY_0F_XX_YY = 0x02000000
 
 # Encoding handlers: one operands.
 X64_HANDLER_CORE_ALU1            = 0x10000000
-X64_HANDLER_JUMPS                = 0x11000000
+X64_HANDLER_JCC                  = 0x11000000
 X64_HANDLER_JUMPS_REL8           = 0x12000000
 X64_HANDLER_JUMPS_REL8_2BYTES    = 0x13000000
 X64_HANDLER_0F_01_GROUP          = 0x14000000
 X64_HANDLER_SETCC                = 0x15000000
+X64_HANDLER_CUSTOM_X             = 0x16000000
 
 # Encoding handlers: two operands with equal size.
 X64_HANDLER_CORE_ALU2            = 0x20000000
@@ -42,6 +43,7 @@ X64_HANDLER_CORE2                = 0x21000000
 X64_HANDLER_SHIFT_GROUP          = 0x30000000
 X64_HANDLER_MOV_EXTEND           = 0x31000000
 X64_HANDLER_286                  = 0x32000000
+X64_HANDLER_CUSTOM_X_Y           = 0x33000000
 
 # Other.
 X64_HANDLER_0F_00_GROUP          = 0xf0000000
@@ -57,7 +59,6 @@ X64_SYNTAX_ZERO_OPERANDS           = 0x00000000
 X64_SYNTAX_ONE_OPERAND             = 0x10000000
 X64_SYNTAX_TWO_OPERANDS_EQUAL_SIZE = 0x20000000
 X64_SYNTAX_TWO_OPERANDS            = 0x30000000
-
 
 # Opcodes, that does not require any operands.
 # We can emit them as is.
@@ -185,38 +186,38 @@ X64_OPCODES_MAP = {
   'cmpxchg':    X64_CMPXCHG_RM8_R8 + X64_HANDLER_CORE_ALU2, # rd,rd | md,rd
   'xadd':       X64_XADD_RM8_R8    + X64_HANDLER_CORE_ALU2, # rd,rd | md,rd
 
-  'bsf':        X64_BSF     + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'bsr':        X64_BSR     + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovo':      X64_CMOVO   + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovno':     X64_CMOVNO  + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovb':      X64_CMOVB   + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovnae':    X64_CMOVB   + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovc':      X64_CMOVB   + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovnb':     X64_CMOVAE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovae':     X64_CMOVAE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovnc':     X64_CMOVAE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovz':      X64_CMOVE   + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmove':      X64_CMOVE   + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovnz':     X64_CMOVNE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovne':     X64_CMOVNE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovbe':     X64_CMOVBE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovna':     X64_CMOVBE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovnbe':    X64_CMOVA   + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmova':      X64_CMOVA   + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovs':      X64_CMOVS   + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovns':     X64_CMOVNS  + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovp':      X64_CMOVP   + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovpe':     X64_CMOVP   + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovnp':     X64_CMOVNP  + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovpo':     X64_CMOVNP  + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovl':      X64_CMOVL   + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovnge':    X64_CMOVL   + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovge':     X64_CMOVGE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovnl':     X64_CMOVGE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovle':     X64_CMOVLE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovng':     X64_CMOVLE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovnle':    X64_CMOVG   + X64_HANDLER_CORE2, # rd,rd   | rd,md
-  'cmovg':      X64_CMOVG   + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'bsf':        X64_BSF     + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'bsr':        X64_BSR     + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovo':      X64_CMOVO   + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovno':     X64_CMOVNO  + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovb':      X64_CMOVB   + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovnae':    X64_CMOVB   + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovc':      X64_CMOVB   + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovnb':     X64_CMOVAE  + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovae':     X64_CMOVAE  + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovnc':     X64_CMOVAE  + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovz':      X64_CMOVE   + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmove':      X64_CMOVE   + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovnz':     X64_CMOVNE  + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovne':     X64_CMOVNE  + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovbe':     X64_CMOVBE  + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovna':     X64_CMOVBE  + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovnbe':    X64_CMOVA   + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmova':      X64_CMOVA   + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovs':      X64_CMOVS   + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovns':     X64_CMOVNS  + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovp':      X64_CMOVP   + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovpe':     X64_CMOVP   + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovnp':     X64_CMOVNP  + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovpo':     X64_CMOVNP  + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovl':      X64_CMOVL   + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovnge':    X64_CMOVL   + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovge':     X64_CMOVGE  + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovnl':     X64_CMOVGE  + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovle':     X64_CMOVLE  + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovng':     X64_CMOVLE  + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovnle':    X64_CMOVG   + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovg':      X64_CMOVG   + X64_HANDLER_CORE2, # rd,rd | rd,md
 
   'not':        2 + X64_HANDLER_CORE_ALU1, # r | m
   'neg':        3 + X64_HANDLER_CORE_ALU1, # r | m
@@ -245,24 +246,24 @@ X64_OPCODES_MAP = {
   'lmsw':       6 + X64_HANDLER_0F_01_GROUP, # rd | m16
   'invlpg':     7 + X64_HANDLER_0F_01_GROUP, # m
 
-  'jo':         X64_JO         + X64_HANDLER_JUMPS, # rel8 | rel32
-  'jno':        X64_JNO        + X64_HANDLER_JUMPS, # rel8 | rel32
-  'jb':         X64_JB         + X64_HANDLER_JUMPS, # rel8 | rel32
-  'jae':        X64_JAE        + X64_HANDLER_JUMPS, # rel8 | rel32
-  'jz':         X64_JZ         + X64_HANDLER_JUMPS, # rel8 | rel32
-  'je':         X64_JZ         + X64_HANDLER_JUMPS, # rel8 | rel32
-  'jnz':        X64_JNZ        + X64_HANDLER_JUMPS, # rel8 | rel32
-  'jne':        X64_JNZ        + X64_HANDLER_JUMPS, # rel8 | rel32
-  'jbe':        X64_JBE        + X64_HANDLER_JUMPS, # rel8 | rel32
-  'ja':         X64_JA         + X64_HANDLER_JUMPS, # rel8 | rel32
-  'js':         X64_JS         + X64_HANDLER_JUMPS, # rel8 | rel32
-  'jns':        X64_JNS        + X64_HANDLER_JUMPS, # rel8 | rel32
-  'jp':         X64_JP         + X64_HANDLER_JUMPS, # rel8 | rel32
-  'jnp':        X64_JNP        + X64_HANDLER_JUMPS, # rel8 | rel32
-  'jl':         X64_JL         + X64_HANDLER_JUMPS, # rel8 | rel32
-  'jge':        X64_JGE        + X64_HANDLER_JUMPS, # rel8 | rel32
-  'jle':        X64_JLE        + X64_HANDLER_JUMPS, # rel8 | rel32
-  'jg':         X64_JG         + X64_HANDLER_JUMPS, # rel8 | rel32
+  'jo':         X64_JO  + X64_HANDLER_JCC, # rel8 | rel32
+  'jno':        X64_JNO + X64_HANDLER_JCC, # rel8 | rel32
+  'jb':         X64_JB  + X64_HANDLER_JCC, # rel8 | rel32
+  'jae':        X64_JAE + X64_HANDLER_JCC, # rel8 | rel32
+  'jz':         X64_JZ  + X64_HANDLER_JCC, # rel8 | rel32
+  'je':         X64_JZ  + X64_HANDLER_JCC, # rel8 | rel32
+  'jnz':        X64_JNZ + X64_HANDLER_JCC, # rel8 | rel32
+  'jne':        X64_JNZ + X64_HANDLER_JCC, # rel8 | rel32
+  'jbe':        X64_JBE + X64_HANDLER_JCC, # rel8 | rel32
+  'ja':         X64_JA  + X64_HANDLER_JCC, # rel8 | rel32
+  'js':         X64_JS  + X64_HANDLER_JCC, # rel8 | rel32
+  'jns':        X64_JNS + X64_HANDLER_JCC, # rel8 | rel32
+  'jp':         X64_JP  + X64_HANDLER_JCC, # rel8 | rel32
+  'jnp':        X64_JNP + X64_HANDLER_JCC, # rel8 | rel32
+  'jl':         X64_JL  + X64_HANDLER_JCC, # rel8 | rel32
+  'jge':        X64_JGE + X64_HANDLER_JCC, # rel8 | rel32
+  'jle':        X64_JLE + X64_HANDLER_JCC, # rel8 | rel32
+  'jg':         X64_JG  + X64_HANDLER_JCC, # rel8 | rel32
 
   'loop':       X64_LOOP_REL8   + X64_HANDLER_JUMPS_REL8, # rel8
   'loopz':      X64_LOOPZ_REL8  + X64_HANDLER_JUMPS_REL8, # rel8
@@ -321,28 +322,30 @@ X64_OPCODES_MAP = {
   'setnle':     X64_SETG  + X64_HANDLER_SETCC, # r8 | m8
   'setg':       X64_SETG  + X64_HANDLER_SETCC, # r8 | m8
 
-  'call':       X64_CALL_REL32  + X64_HANDLER_CUSTOM, #       rel16 | rel32 | r16 | r64 | m16 | m64
-  'jmp':        X64_JMP_REL32   + X64_HANDLER_CUSTOM, # rel8| rel16 | rel32 | r16 | r64 | m16 | m64
-  'mov':        X64_MOV         + X64_HANDLER_CUSTOM, # r,r | r,m | m,r | r,imm | m,imm | r64,imm64
-  'test':       X64_TEST        + X64_HANDLER_CUSTOM, # r,r | r,m | m,r | r,imm | m,imm
-  'xchg':       X64_XCHG        + X64_HANDLER_CUSTOM, # r,r | r,m | m,r
-  'lea':        X64_LEA         + X64_HANDLER_CUSTOM, # r16 | m16 | r64 | m64 | imm8 | imm16
-  'push':       X64_PUSH_R64    + X64_HANDLER_CUSTOM, # r16 | m16 | r64 | m64
-  'pop':        X64_POP_R64     + X64_HANDLER_CUSTOM, # - | imm16
-  'ret':        X64_RET         + X64_HANDLER_CUSTOM, # - | imm16
-  'retf':       X64_RETF        + X64_HANDLER_CUSTOM, # imm8,al | imm8,ax | imm8,eax | dx,al | dx,ax | dx,eax
-  'out':        X64_OUT_IMM8_AL + X64_HANDLER_CUSTOM, # al,imm8 | ax,imm8 | eax,imm8 | al,dx | ax,dx | eax,dx
-  'in':         X64_IN_AL_IMM8  + X64_HANDLER_CUSTOM, # r32 | r64
-  'bswap':      X64_BSWAP       + X64_HANDLER_CUSTOM, # m64
-  'cmpxchg8b':  X64_CMPXCHG8B   + X64_HANDLER_CUSTOM, # m128
-  'cmpxchg16b': X64_CMPXCHG16B  + X64_HANDLER_CUSTOM, # rd,m
-  'inc':        X64_INC_R32     + X64_HANDLER_CUSTOM, # r | m
-  'dec':        X64_DEC_R32     + X64_HANDLER_CUSTOM, # r | m
+  'mov':        X64_MOV         + X64_HANDLER_CUSTOM_X_Y, # r,r | r,m | m,r | r,imm | m,imm | r64,imm64
+  'test':       X64_TEST        + X64_HANDLER_CUSTOM_X_Y, # r,r | r,m | m,r | r,imm | m,imm
+  'xchg':       X64_XCHG        + X64_HANDLER_CUSTOM_X_Y, # r,r | r,m | m,r
+  'out':        X64_OUT_IMM8_AL + X64_HANDLER_CUSTOM_X_Y, # imm8,al | imm8,ax | imm8,eax | dx,al | dx,ax | dx,eax
+  'in':         X64_IN_AL_IMM8  + X64_HANDLER_CUSTOM_X_Y, # al,imm8 | ax,imm8 | eax,imm8 | al,dx | ax,dx | eax,dx
+  'lsl':        X64_LSL         + X64_HANDLER_CUSTOM_X_Y, # rd,r16  | rd,m16
+  'movsxd':     X64_MOVSXD      + X64_HANDLER_CUSTOM_X_Y, # r64,r32 | r64,m32
+  'lea':        X64_LEA         + X64_HANDLER_CUSTOM_X_Y, # rd,m
+
+  'call':       X64_CALL_REL32  + X64_HANDLER_CUSTOM_X, #       rel16 | rel32 | r16 | r64 | m16 | m64
+  'jmp':        X64_JMP_REL32   + X64_HANDLER_CUSTOM_X, # rel8| rel16 | rel32 | r16 | r64 | m16 | m64
+  'push':       X64_PUSH_R64    + X64_HANDLER_CUSTOM_X, # r16 | m16 | r64 | m64 | imm8 | imm16
+  'pop':        X64_POP_R64     + X64_HANDLER_CUSTOM_X, # r16 | m16 | r64 | m64
+  'bswap':      X64_BSWAP       + X64_HANDLER_CUSTOM_X, # r32 | r64
+  'cmpxchg8b':  X64_CMPXCHG8B   + X64_HANDLER_CUSTOM_X, # m64
+  'cmpxchg16b': X64_CMPXCHG16B  + X64_HANDLER_CUSTOM_X, # m128
+  'inc':        X64_INC_R32     + X64_HANDLER_CUSTOM_X, # r | m
+  'dec':        X64_DEC_R32     + X64_HANDLER_CUSTOM_X, # r | m
+  'int':        X64_INT         + X64_HANDLER_CUSTOM_X, # imm8
+
   'enter':      X64_ENTER       + X64_HANDLER_CUSTOM, # imm16, imm8
-  'int':        X64_INT         + X64_HANDLER_CUSTOM, # imm8
-  'nop':        X64_NOP         + X64_HANDLER_CUSTOM, # - | rd | md
-  'lsl':        X64_LSL         + X64_HANDLER_CUSTOM, # rd,r16  | rd,m16
-  'movsxd':     X64_MOVSXD      + X64_HANDLER_CUSTOM  # r64,r32 | r64,m32
+  'retf':       X64_RETF        + X64_HANDLER_CUSTOM, # - | imm16
+  'ret':        X64_RET         + X64_HANDLER_CUSTOM, # - | imm16
+  'nop':        X64_NOP         + X64_HANDLER_CUSTOM  # - | rd | md
 }
 
 class X64Translator extends PipeAbstract
@@ -450,7 +453,7 @@ class X64Translator extends PipeAbstract
     global X64_CMPXCHG_RM8_R8, X64_CMPXCHG_RM32_R32
     global X64_XADD_RM8_R8, X64_XADD_RM32_R32
     global X64_HANDLER_CORE_ALU1, X64_HANDLER_CORE_ALU2
-    global X64_HANDLER_CORE2, X64_HANDLER_JUMPS, X64_HANDLER_JUMPS_REL8
+    global X64_HANDLER_CORE2, X64_HANDLER_JCC, X64_HANDLER_JUMPS_REL8
     global X64_HANDLER_JUMPS_REL8_2BYTES, X64_HANDLER_286
     global X64_HANDLER_0F_00_GROUP, X64_HANDLER_0F_01_GROUP
     global X64_HANDLER_SHIFT_GROUP, X64_HANDLER_SETCC, X64_HANDLER_DO_NOTHING
@@ -463,6 +466,7 @@ class X64Translator extends PipeAbstract
     global X64_INC_R32, X64_DEC_R32, X64_ENTER, X64_LEAVE, X64_INT
     global X64_SYNTAX_ZERO_OPERANDS, X64_SYNTAX_ONE_OPERAND
     global X64_SYNTAX_TWO_OPERANDS, X64_SYNTAX_TWO_OPERANDS_EQUAL_SIZE
+    global X64_HANDLER_CUSTOM_X, X64_HANDLER_CUSTOM_X_Y
     global X64_LSL, X64_MOVSXD
 
     encoder = this.outputObject
@@ -544,7 +548,7 @@ class X64Translator extends PipeAbstract
       elif handlerId is X64_HANDLER_CORE2
         this.emitCore_x_y(opcode, item)
 
-      elif handlerId is X64_HANDLER_JUMPS
+      elif handlerId is X64_HANDLER_JCC
         # jcc rel8/32
         encoder.emitCore_jcc_rel(opcode, imm - item.offset)
 
@@ -634,9 +638,9 @@ class X64Translator extends PipeAbstract
       elif handlerId is X64_HANDLER_DO_NOTHING
         # Do nothing.
 
-      elif handlerId is X64_HANDLER_CUSTOM
-        # Custom handler needed for this mnemonic.
-        # Dispatch opcode.
+      elif handlerId is X64_HANDLER_CUSTOM_X_Y
+        # Custom handler for two operands opcode
+        # opcode x,y
         if opcode is X64_MOV
           if imm is defined
             if reg isnt -1
@@ -670,7 +674,43 @@ class X64Translator extends PipeAbstract
             this.emitCoreALU2(opcode, item)
           endif
 
-        elif opcode is X64_PUSH_R64
+        elif opcode is X64_XCHG
+          if (reg isnt -1) and (rm isnt -1)
+            # xchg r, r
+            encoder.xchg_r_r(reg, rm)
+          else
+            # Opcodes have fixed diretion flag, but other assemblers accept both and
+            # swap operands silently if needed.
+            # Only xchg r, r/m exists.
+            item.isWriteToMemory = false
+            this.emitCoreALU2(opcode, item)
+          endif
+
+        elif opcode is X64_OUT
+          if imm is defined
+            encoder.out_imm_r(imm, reg)
+          else
+            encoder.out_r_r(reg, rm)
+          endif
+
+        elif opcode is X64_IN
+          if imm is defined
+            encoder.in_r_imm(reg, imm)
+          else
+            encoder.in_r_r(reg, rm)
+          endif
+
+        elif opcode is X64_LSL
+          this.emitCore_x_y(opcode, item)
+
+        elif opcode is X64_MOVSXD
+          this.emitCore_x_y(opcode, item)
+        endif
+
+      elif handlerId is X64_HANDLER_CUSTOM_X
+        # Custom handler for one operand opcode
+        # opcode x
+        if opcode is X64_PUSH_R64
           if reg isnt -1
             # push r
             encoder.push_r(reg)
@@ -693,18 +733,6 @@ class X64Translator extends PipeAbstract
             encoder.pop_r(reg)
           else
             encoder.pop_m(regBase, scale, regIndex, disp, dataSize)
-          endif
-
-        elif opcode is X64_XCHG
-          if (reg isnt -1) and (rm isnt -1)
-            # xchg r, r
-            encoder.xchg_r_r(reg, rm)
-          else
-            # Opcodes have fixed diretion flag, but other assemblers accept both and
-            # swap operands silently if needed.
-            # Only xchg r, r/m exists.
-            item.isWriteToMemory = false
-            this.emitCoreALU2(opcode, item)
           endif
 
         elif opcode is X64_CALL_REL32
@@ -731,34 +759,6 @@ class X64Translator extends PipeAbstract
           else
             # jmp rel8/32
             encoder.jmp_rel(imm - item.offset)
-          endif
-
-        elif opcode is X64_RET
-          if imm is defined
-            encoder.ret_imm(imm)
-          else
-            encoder.ret()
-          endif
-
-        elif opcode is X64_RETF
-          if imm is defined
-            encoder.retf_imm(imm)
-          else
-            encoder.retf()
-          endif
-
-        elif opcode is X64_OUT
-          if imm is defined
-            encoder.out_imm_r(imm, reg)
-          else
-            encoder.out_r_r(reg, rm)
-          endif
-
-        elif opcode is X64_IN
-          if imm is defined
-            encoder.in_r_imm(reg, imm)
-          else
-            encoder.in_r_r(reg, rm)
           endif
 
         elif opcode is X64_BSWAP
@@ -790,13 +790,31 @@ class X64Translator extends PipeAbstract
             encoder.dec_m(regBase, scale, regIndex, disp, dataSize)
           endif
 
-        elif opcode is X64_ENTER
-          # enter imm16, imm8
-          encoder.enter_imm16_imm8(imm, item.imm2)
-
         elif opcode is X64_INT
           # int imm8
           encoder.int_imm(imm)
+        endif
+
+      elif handlerId is X64_HANDLER_CUSTOM
+        # Custom handler for opcodes with variable numberof operands.
+        # Dispatch opcode.
+        if opcode is X64_RET
+          if imm is defined
+            encoder.ret_imm(imm)
+          else
+            encoder.ret()
+          endif
+
+        elif opcode is X64_RETF
+          if imm is defined
+            encoder.retf_imm(imm)
+          else
+            encoder.retf()
+          endif
+
+        elif opcode is X64_ENTER
+          # enter imm16, imm8
+          encoder.enter_imm16_imm8(imm, item.imm2)
 
         elif opcode is X64_NOP
           if scale is defined
@@ -809,12 +827,6 @@ class X64Translator extends PipeAbstract
            # One byte nop.
            encoder.nop()
           endif
-
-        elif opcode is X64_LSL
-          this.emitCore_x_y(opcode, item)
-
-        elif opcode is X64_MOVSXD
-          this.emitCore_x_y(opcode, item)
         endif
 
       elif handlerId is X64_HANDLER_INVALID_IN_64
