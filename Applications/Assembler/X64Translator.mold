@@ -21,312 +21,324 @@
 import 'X64.mold'
 import '../../Compiler/Utils/PipeAbstract.mold'
 
-X64_SYNTAX_OPCODE_ONLY_BYTE     = 0x00000000
-X64_SYNTAX_OPCODE_ONLY_WORD     = 0x01000000
-X64_SYNTAX_OPCODE_ONLY_0F_XX_YY = 0x02000000
+# Encoding handlers: no operands (opcode only).
+X64_HANDLER_OPCODE_ONLY_BYTE     = 0x00000000
+X64_HANDLER_OPCODE_ONLY_WORD     = 0x01000000
+X64_HANDLER_OPCODE_ONLY_0F_XX_YY = 0x02000000
 
-X64_SYNTAX_CORE_ALU1            = 0x03000000
-X64_SYNTAX_CORE_ALU2            = 0x04000000
-X64_SYNTAX_CORE2                = 0x05000000
-X64_SYNTAX_JUMPS                = 0x06000000
-X64_SYNTAX_JUMPS_REL8           = 0x07000000
-X64_SYNTAX_JUMPS_REL8_2BYTES    = 0x08000000
-X64_SYNTAX_286_RD_MD            = 0x09000000
-X64_SYNTAX_0F_00_GROUP          = 0x0a000000
-X64_SYNTAX_0F_01_GROUP          = 0x0b000000
-X64_SYNTAX_SHIFT_GROUP          = 0x0c000000
-X64_SYNTAX_SETCC                = 0x0d000000
-X64_SYNTAX_MOV_EXTEND           = 0x0e000000
-X64_SYNTAX_CUSTOM               = 0x0f000000
-X64_SYNTAX_DO_NOTHING           = 0x10000000
-X64_SYNTAX_INVALID_IN_64        = 0x11000000
+# Encoding handlers: one operands.
+X64_HANDLER_CORE_ALU1            = 0x10000000
+X64_HANDLER_JUMPS                = 0x11000000
+X64_HANDLER_JUMPS_REL8           = 0x12000000
+X64_HANDLER_JUMPS_REL8_2BYTES    = 0x13000000
+X64_HANDLER_0F_01_GROUP          = 0x14000000
+X64_HANDLER_SETCC                = 0x15000000
 
+# Encoding handlers: two operands.
+X64_HANDLER_CORE_ALU2            = 0x20000000
+X64_HANDLER_CORE2                = 0x21000000
+X64_HANDLER_MOV_EXTEND           = 0x22000000
+X64_HANDLER_SHIFT_GROUP          = 0x23000000
+X64_HANDLER_286                  = 0x24000000
+
+# Other.
+X64_HANDLER_0F_00_GROUP          = 0xf0000000
+X64_HANDLER_CUSTOM               = 0xfd000000
+X64_HANDLER_DO_NOTHING           = 0xfe000000
+X64_HANDLER_INVALID_IN_64        = 0xff000000
+
+                 #  0 1 2 3 4 5 6 7 8  bytes
+X64_DATA_SIZE_ID = [0,0,1,1,2,2,2,2,3]
+
+# Common operands combinations for generic syntax checking.
+X64_SYNTAX_ZERO_OPERANDS = 0x00000000
+X64_SYNTAX_ONE_OPERAND   = 0x10000000
+X64_SYNTAX_TWO_OPERANDS  = 0x20000000
 
 # Opcodes, that does not require any operands.
 # We can emit them as is.
 X64_OPCODES_MAP = {
-  'use64':      X64_SYNTAX_DO_NOTHING,
+  'use64':      X64_HANDLER_DO_NOTHING,
 
-  'das':        X64_SYNTAX_INVALID_IN_64,
-  'aas':        X64_SYNTAX_INVALID_IN_64,
-  'bound':      X64_SYNTAX_INVALID_IN_64,
-  'sahf':       X64_SYNTAX_INVALID_IN_64,
-  'lahf':       X64_SYNTAX_INVALID_IN_64,
-  'les':        X64_SYNTAX_INVALID_IN_64,
-  'lds':        X64_SYNTAX_INVALID_IN_64,
-  'aam':        X64_SYNTAX_INVALID_IN_64,
-  'aad':        X64_SYNTAX_INVALID_IN_64,
-  'arpl':       X64_SYNTAX_INVALID_IN_64,
-  'pusha':      X64_SYNTAX_INVALID_IN_64,
-  'popa':       X64_SYNTAX_INVALID_IN_64,
-  'pushad':     X64_SYNTAX_INVALID_IN_64,
-  'popad':      X64_SYNTAX_INVALID_IN_64,
-  'pushfd':     X64_SYNTAX_INVALID_IN_64,
-  'popfd':      X64_SYNTAX_INVALID_IN_64,
-  'into':       X64_SYNTAX_INVALID_IN_64,
+  'das':        X64_HANDLER_INVALID_IN_64,
+  'aas':        X64_HANDLER_INVALID_IN_64,
+  'bound':      X64_HANDLER_INVALID_IN_64,
+  'sahf':       X64_HANDLER_INVALID_IN_64,
+  'lahf':       X64_HANDLER_INVALID_IN_64,
+  'les':        X64_HANDLER_INVALID_IN_64,
+  'lds':        X64_HANDLER_INVALID_IN_64,
+  'aam':        X64_HANDLER_INVALID_IN_64,
+  'aad':        X64_HANDLER_INVALID_IN_64,
+  'arpl':       X64_HANDLER_INVALID_IN_64,
+  'pusha':      X64_HANDLER_INVALID_IN_64,
+  'popa':       X64_HANDLER_INVALID_IN_64,
+  'pushad':     X64_HANDLER_INVALID_IN_64,
+  'popad':      X64_HANDLER_INVALID_IN_64,
+  'pushfd':     X64_HANDLER_INVALID_IN_64,
+  'popfd':      X64_HANDLER_INVALID_IN_64,
+  'into':       X64_HANDLER_INVALID_IN_64,
 
-  'cwde':       X64_CWDE,
-  'cdq':        X64_CDQ,
+  'cwde':       X64_CWDE, # - (no operands)
+  'cdq':        X64_CDQ,  # - (no operands)
 
-  'clc':        X64_CLC,
-  'cld':        X64_CLD,
-  'cli':        X64_CLI,
-  'stc':        X64_STC,
-  'std':        X64_STD,
-  'sti':        X64_STI,
-  'cmc':        X64_CMC,
+  'clc':        X64_CLC, # - (no operands)
+  'cld':        X64_CLD, # - (no operands)
+  'cli':        X64_CLI, # - (no operands)
+  'stc':        X64_STC, # - (no operands)
+  'std':        X64_STD, # - (no operands)
+  'sti':        X64_STI, # - (no operands)
+  'cmc':        X64_CMC, # - (no operands)
 
-  'cmpsb':      X64_CMPSB,
-  'cmpsd':      X64_CMPSD,
-  'movsb':      X64_MOVSB,
-  'movsd':      X64_MOVSD,
-  'lodsb':      X64_LODSB,
-  'lodsd':      X64_LODSD,
-  'stosb':      X64_STOSB,
-  'stosd':      X64_STOSD,
-  'scasb':      X64_SCASB,
-  'scasd':      X64_SCASD,
-  'insb' :      X64_INSB,
-  'insd' :      X64_INSD,
-  'outsb':      X64_OUTSB,
-  'outsd':      X64_OUTSD,
+  'cmpsb':      X64_CMPSB, # - (no operands)
+  'cmpsd':      X64_CMPSD, # - (no operands)
+  'movsb':      X64_MOVSB, # - (no operands)
+  'movsd':      X64_MOVSD, # - (no operands)
+  'lodsb':      X64_LODSB, # - (no operands)
+  'lodsd':      X64_LODSD, # - (no operands)
+  'stosb':      X64_STOSB, # - (no operands)
+  'stosd':      X64_STOSD, # - (no operands)
+  'scasb':      X64_SCASB, # - (no operands)
+  'scasd':      X64_SCASD, # - (no operands)
+  'insb' :      X64_INSB,  # - (no operands)
+  'insd' :      X64_INSD,  # - (no operands)
+  'outsb':      X64_OUTSB, # - (no operands)
+  'outsd':      X64_OUTSD, # - (no operands)
 
-  'rep':        X64_PREFIX_REPE,
-  'repe':       X64_PREFIX_REPE,
-  'repz':       X64_PREFIX_REPE,
-  'repne':      X64_PREFIX_REPNE,
-  'repnz':      X64_PREFIX_REPNE,
+  'rep':        X64_PREFIX_REPE, # - (no operands)
+  'repe':       X64_PREFIX_REPE, # - (no operands)
+  'repz':       X64_PREFIX_REPE, # - (no operands)
+  'repne':      X64_PREFIX_REPNE,# - (no operands)
+  'repnz':      X64_PREFIX_REPNE,# - (no operands)
 
-  'hlt':        X64_HLT,
-  'lock':       X64_PREFIX_LOCK,
-  'xlatb':      X64_XLATB,
+  'hlt':        X64_HLT,         # - (no operands)
+  'lock':       X64_PREFIX_LOCK, # - (no operands)
+  'xlatb':      X64_XLATB,       # - (no operands)
 
-  'int1':       X64_INT1,
-  'int3':       X64_INT3,
-  'iret':       X64_IRET,
-  'iretd':      X64_IRET,
+  'int1':       X64_INT1, # - (no operands)
+  'int3':       X64_INT3, # - (no operands)
+  'iret':       X64_IRET, # - (no operands)
+  'iretd':      X64_IRET, # - (no operands)
 
-  'pushf':      X64_PUSHF,
-  'pushfq':     X64_PUSHF,
-  'popf':       X64_POPF,
-  'popfq':      X64_POPF,
+  'pushf':      X64_PUSHF, # - (no operands)
+  'pushfq':     X64_PUSHF, # - (no operands)
+  'popf':       X64_POPF,  # - (no operands)
+  'popfq':      X64_POPF,  # - (no operands)
 
-  'leave':      X64_LEAVE,
-  'wait':       X64_FWAIT,
-  'fwait':      X64_FWAIT,
+  'leave':      X64_LEAVE, # - (no operands)
+  'wait':       X64_FWAIT, # - (no operands)
+  'fwait':      X64_FWAIT, # - (no operands)
 
-  'cmpsw':      X64_CMPSW    + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'cmpsq':      X64_CMPSQ    + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'movsw':      X64_MOVSW    + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'movsq':      X64_MOVSQ    + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'lodsw':      X64_LODSW    + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'lodsq':      X64_LODSQ    + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'stosw':      X64_STOSW    + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'stosq':      X64_STOSQ    + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'scasw':      X64_SCASW    + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'scasq':      X64_SCASQ    + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'insw' :      X64_INSW     + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'outsw':      X64_OUTSW    + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'cbw':        X64_CBW      + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'cdqe':       X64_CDQE     + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'cwd':        X64_CWD      + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'cqo':        X64_CQO      + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'iretq':      X64_IRETQ    + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'pushfw':     X64_PUSHFW   + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'popfw':      X64_POPFW    + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'clts':       X64_CLTS     + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'cpuid':      X64_CPUID    + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'wrmsr':      X64_WRMSR    + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'rdtsc':      X64_RDTSC    + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'rdmsr':      X64_RDMSR    + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'rdpmc':      X64_RDPMC    + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'rsm':        X64_RSM      + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'invd':       X64_INVD     + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'wbinvd':     X64_WBINVD   + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'syscall':    X64_SYSCALL  + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'sysret':     X64_SYSRET   + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'sysenter':   X64_SYSENTER + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'sysexit':    X64_SYSEXIT  + X64_SYNTAX_OPCODE_ONLY_WORD,
-  'ud2':        X64_UD2      + X64_SYNTAX_OPCODE_ONLY_WORD,
+  'cmpsw':      X64_CMPSW    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'cmpsq':      X64_CMPSQ    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'movsw':      X64_MOVSW    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'movsq':      X64_MOVSQ    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'lodsw':      X64_LODSW    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'lodsq':      X64_LODSQ    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'stosw':      X64_STOSW    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'stosq':      X64_STOSQ    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'scasw':      X64_SCASW    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'scasq':      X64_SCASQ    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'insw' :      X64_INSW     + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'outsw':      X64_OUTSW    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'cbw':        X64_CBW      + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'cdqe':       X64_CDQE     + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'cwd':        X64_CWD      + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'cqo':        X64_CQO      + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'iretq':      X64_IRETQ    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'pushfw':     X64_PUSHFW   + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'popfw':      X64_POPFW    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'clts':       X64_CLTS     + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'cpuid':      X64_CPUID    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'wrmsr':      X64_WRMSR    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'rdtsc':      X64_RDTSC    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'rdmsr':      X64_RDMSR    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'rdpmc':      X64_RDPMC    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'rsm':        X64_RSM      + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'invd':       X64_INVD     + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'wbinvd':     X64_WBINVD   + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'syscall':    X64_SYSCALL  + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'sysret':     X64_SYSRET   + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'sysenter':   X64_SYSENTER + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'sysexit':    X64_SYSEXIT  + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
+  'ud2':        X64_UD2      + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
 
-  'rdtscp':     X64_RDTSCP + X64_SYNTAX_OPCODE_ONLY_0F_XX_YY,
-  'swapgs':     X64_SWAPGS + X64_SYNTAX_OPCODE_ONLY_0F_XX_YY,
+  'rdtscp':     X64_RDTSCP + X64_HANDLER_OPCODE_ONLY_0F_XX_YY, # - (no operands)
+  'swapgs':     X64_SWAPGS + X64_HANDLER_OPCODE_ONLY_0F_XX_YY, # - (no operands)
 
-  'adc':        X64_ADC            + X64_SYNTAX_CORE_ALU2,
-  'add':        X64_ADD            + X64_SYNTAX_CORE_ALU2,
-  'and':        X64_AND            + X64_SYNTAX_CORE_ALU2,
-  'cmp':        X64_CMP            + X64_SYNTAX_CORE_ALU2,
-  'sbb':        X64_SBB            + X64_SYNTAX_CORE_ALU2,
-  'sub':        X64_SUB            + X64_SYNTAX_CORE_ALU2,
-  'or':         X64_OR             + X64_SYNTAX_CORE_ALU2,
-  'xor':        X64_XOR            + X64_SYNTAX_CORE_ALU2,
-  'bt':         X64_BT_RM_R        + X64_SYNTAX_CORE_ALU2,
-  'btc':        X64_BTC_RM_R       + X64_SYNTAX_CORE_ALU2,
-  'btr':        X64_BTR_RM_R       + X64_SYNTAX_CORE_ALU2,
-  'bts':        X64_BTS_RM_R       + X64_SYNTAX_CORE_ALU2,
-  'cmpxchg':    X64_CMPXCHG_RM8_R8 + X64_SYNTAX_CORE_ALU2,
-  'xadd':       X64_XADD_RM8_R8    + X64_SYNTAX_CORE_ALU2,
+  'adc':        X64_ADC            + X64_HANDLER_CORE_ALU2, # r,r | r,m | m,r | r,imm | m,imm
+  'add':        X64_ADD            + X64_HANDLER_CORE_ALU2, # r,r | r,m | m,r | r,imm | m,imm
+  'and':        X64_AND            + X64_HANDLER_CORE_ALU2, # r,r | r,m | m,r | r,imm | m,imm
+  'cmp':        X64_CMP            + X64_HANDLER_CORE_ALU2, # r,r | r,m | m,r | r,imm | m,imm
+  'sbb':        X64_SBB            + X64_HANDLER_CORE_ALU2, # r,r | r,m | m,r | r,imm | m,imm
+  'sub':        X64_SUB            + X64_HANDLER_CORE_ALU2, # r,r | r,m | m,r | r,imm | m,imm
+  'or':         X64_OR             + X64_HANDLER_CORE_ALU2, # r,r | r,m | m,r | r,imm | m,imm
+  'xor':        X64_XOR            + X64_HANDLER_CORE_ALU2, # r,r | r,m | m,r | r,imm | m,imm
 
-  'bsf':        X64_BSF     + X64_SYNTAX_CORE2,
-  'bsr':        X64_BSR     + X64_SYNTAX_CORE2,
-  'cmovo':      X64_CMOVO   + X64_SYNTAX_CORE2,
-  'cmovno':     X64_CMOVNO  + X64_SYNTAX_CORE2,
-  'cmovb':      X64_CMOVB   + X64_SYNTAX_CORE2,
-  'cmovnae':    X64_CMOVB   + X64_SYNTAX_CORE2,
-  'cmovc':      X64_CMOVB   + X64_SYNTAX_CORE2,
-  'cmovnb':     X64_CMOVAE  + X64_SYNTAX_CORE2,
-  'cmovae':     X64_CMOVAE  + X64_SYNTAX_CORE2,
-  'cmovnc':     X64_CMOVAE  + X64_SYNTAX_CORE2,
-  'cmovz':      X64_CMOVE   + X64_SYNTAX_CORE2,
-  'cmove':      X64_CMOVE   + X64_SYNTAX_CORE2,
-  'cmovnz':     X64_CMOVNE  + X64_SYNTAX_CORE2,
-  'cmovne':     X64_CMOVNE  + X64_SYNTAX_CORE2,
-  'cmovbe':     X64_CMOVBE  + X64_SYNTAX_CORE2,
-  'cmovna':     X64_CMOVBE  + X64_SYNTAX_CORE2,
-  'cmovnbe':    X64_CMOVA   + X64_SYNTAX_CORE2,
-  'cmova':      X64_CMOVA   + X64_SYNTAX_CORE2,
-  'cmovs':      X64_CMOVS   + X64_SYNTAX_CORE2,
-  'cmovns':     X64_CMOVNS  + X64_SYNTAX_CORE2,
-  'cmovp':      X64_CMOVP   + X64_SYNTAX_CORE2,
-  'cmovpe':     X64_CMOVP   + X64_SYNTAX_CORE2,
-  'cmovnp':     X64_CMOVNP  + X64_SYNTAX_CORE2,
-  'cmovpo':     X64_CMOVNP  + X64_SYNTAX_CORE2,
-  'cmovl':      X64_CMOVL   + X64_SYNTAX_CORE2,
-  'cmovnge':    X64_CMOVL   + X64_SYNTAX_CORE2,
-  'cmovge':     X64_CMOVGE  + X64_SYNTAX_CORE2,
-  'cmovnl':     X64_CMOVGE  + X64_SYNTAX_CORE2,
-  'cmovle':     X64_CMOVLE  + X64_SYNTAX_CORE2,
-  'cmovng':     X64_CMOVLE  + X64_SYNTAX_CORE2,
-  'cmovnle':    X64_CMOVG   + X64_SYNTAX_CORE2,
-  'cmovg':      X64_CMOVG   + X64_SYNTAX_CORE2,
-  'lsl':        X64_LSL     + X64_SYNTAX_CORE2,
-  'movsxd':     X64_MOVSXD  + X64_SYNTAX_CORE2,
+  'bt':         X64_BT_RM_R        + X64_HANDLER_CORE_ALU2, # rd,rd | md,rd
+  'btc':        X64_BTC_RM_R       + X64_HANDLER_CORE_ALU2, # rd,rd | md,rd
+  'btr':        X64_BTR_RM_R       + X64_HANDLER_CORE_ALU2, # rd,rd | md,rd
+  'bts':        X64_BTS_RM_R       + X64_HANDLER_CORE_ALU2, # rd,rd | md,rd
+  'cmpxchg':    X64_CMPXCHG_RM8_R8 + X64_HANDLER_CORE_ALU2, # rd,rd | md,rd
+  'xadd':       X64_XADD_RM8_R8    + X64_HANDLER_CORE_ALU2, # rd,rd | md,rd
 
-  'not':        2 + X64_SYNTAX_CORE_ALU1,
-  'neg':        3 + X64_SYNTAX_CORE_ALU1,
-  'mul':        4 + X64_SYNTAX_CORE_ALU1,
-  'imul':       5 + X64_SYNTAX_CORE_ALU1,
-  'div':        6 + X64_SYNTAX_CORE_ALU1,
-  'idiv':       7 + X64_SYNTAX_CORE_ALU1,
+  'bsf':        X64_BSF     + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'bsr':        X64_BSR     + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovo':      X64_CMOVO   + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovno':     X64_CMOVNO  + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovb':      X64_CMOVB   + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovnae':    X64_CMOVB   + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovc':      X64_CMOVB   + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovnb':     X64_CMOVAE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovae':     X64_CMOVAE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovnc':     X64_CMOVAE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovz':      X64_CMOVE   + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmove':      X64_CMOVE   + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovnz':     X64_CMOVNE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovne':     X64_CMOVNE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovbe':     X64_CMOVBE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovna':     X64_CMOVBE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovnbe':    X64_CMOVA   + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmova':      X64_CMOVA   + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovs':      X64_CMOVS   + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovns':     X64_CMOVNS  + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovp':      X64_CMOVP   + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovpe':     X64_CMOVP   + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovnp':     X64_CMOVNP  + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovpo':     X64_CMOVNP  + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovl':      X64_CMOVL   + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovnge':    X64_CMOVL   + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovge':     X64_CMOVGE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovnl':     X64_CMOVGE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovle':     X64_CMOVLE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovng':     X64_CMOVLE  + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovnle':    X64_CMOVG   + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'cmovg':      X64_CMOVG   + X64_HANDLER_CORE2, # rd,rd   | rd,md
+  'lsl':        X64_LSL     + X64_HANDLER_CORE2, # rd,r16  | rd,m16
+  'movsxd':     X64_MOVSXD  + X64_HANDLER_CORE2, # r64,r32 | r64,m32
 
-  'lar':        X64_LAR + X64_SYNTAX_286_RD_MD,
-  'lss':        X64_LSS + X64_SYNTAX_286_RD_MD,
-  'lfs':        X64_LFS + X64_SYNTAX_286_RD_MD,
-  'lgs':        X64_LGS + X64_SYNTAX_286_RD_MD,
+  'not':        2 + X64_HANDLER_CORE_ALU1, # r | m
+  'neg':        3 + X64_HANDLER_CORE_ALU1, # r | m
+  'mul':        4 + X64_HANDLER_CORE_ALU1, # r | m
+  'imul':       5 + X64_HANDLER_CORE_ALU1, # r | m | rd,md | rd,md,imm
+  'div':        6 + X64_HANDLER_CORE_ALU1, # r | m
+  'idiv':       7 + X64_HANDLER_CORE_ALU1, # r | m
 
-  'sldt':       0 + X64_SYNTAX_0F_00_GROUP,
-  'str':        1 + X64_SYNTAX_0F_00_GROUP,
-  'lldt':       2 + X64_SYNTAX_0F_00_GROUP,
-  'ltr':        3 + X64_SYNTAX_0F_00_GROUP,
-  'verr':       4 + X64_SYNTAX_0F_00_GROUP,
-  'verw':       5 + X64_SYNTAX_0F_00_GROUP,
+  'lar':        X64_LAR + X64_HANDLER_286, # rd,r16    | rd,m16
+  'lss':        X64_LSS + X64_HANDLER_286, # rd,md-far
+  'lfs':        X64_LFS + X64_HANDLER_286, # rd,md-far
+  'lgs':        X64_LGS + X64_HANDLER_286, # rd,md-far
 
-  'sgdt':       0 + X64_SYNTAX_0F_01_GROUP,
-  'sidt':       1 + X64_SYNTAX_0F_01_GROUP,
-  'lgdt':       2 + X64_SYNTAX_0F_01_GROUP,
-  'lidt':       3 + X64_SYNTAX_0F_01_GROUP,
-  'smsw':       4 + X64_SYNTAX_0F_01_GROUP,
-  'lmsw':       6 + X64_SYNTAX_0F_01_GROUP,
-  'invlpg':     7 + X64_SYNTAX_0F_01_GROUP,
+  'sldt':       0 + X64_HANDLER_0F_00_GROUP, # r16 | r64 | m16
+  'str':        1 + X64_HANDLER_0F_00_GROUP, # rd  | m16
+  'lldt':       2 + X64_HANDLER_0F_00_GROUP, # r16 | m16
+  'ltr':        3 + X64_HANDLER_0F_00_GROUP, # r16 | m16
+  'verr':       4 + X64_HANDLER_0F_00_GROUP, # r16 | m16
+  'verw':       5 + X64_HANDLER_0F_00_GROUP, # r16 | m16
 
-  'call':       X64_CALL_REL32 + X64_SYNTAX_JUMPS,
-  'jo':         X64_JO         + X64_SYNTAX_JUMPS,
-  'jno':        X64_JNO        + X64_SYNTAX_JUMPS,
-  'jb':         X64_JB         + X64_SYNTAX_JUMPS,
-  'jae':        X64_JAE        + X64_SYNTAX_JUMPS,
-  'jz':         X64_JZ         + X64_SYNTAX_JUMPS,
-  'je':         X64_JZ         + X64_SYNTAX_JUMPS,
-  'jnz':        X64_JNZ        + X64_SYNTAX_JUMPS,
-  'jne':        X64_JNZ        + X64_SYNTAX_JUMPS,
-  'jbe':        X64_JBE        + X64_SYNTAX_JUMPS,
-  'ja':         X64_JA         + X64_SYNTAX_JUMPS,
-  'js':         X64_JS         + X64_SYNTAX_JUMPS,
-  'jns':        X64_JNS        + X64_SYNTAX_JUMPS,
-  'jp':         X64_JP         + X64_SYNTAX_JUMPS,
-  'jnp':        X64_JNP        + X64_SYNTAX_JUMPS,
-  'jl':         X64_JL         + X64_SYNTAX_JUMPS,
-  'jge':        X64_JGE        + X64_SYNTAX_JUMPS,
-  'jle':        X64_JLE        + X64_SYNTAX_JUMPS,
-  'jg':         X64_JG         + X64_SYNTAX_JUMPS,
-  'jmp':        X64_JMP_REL32  + X64_SYNTAX_JUMPS,
+  'sgdt':       0 + X64_HANDLER_0F_01_GROUP, # m80
+  'sidt':       1 + X64_HANDLER_0F_01_GROUP, # m80
+  'lgdt':       2 + X64_HANDLER_0F_01_GROUP, # m48
+  'lidt':       3 + X64_HANDLER_0F_01_GROUP, # m48
+  'smsw':       4 + X64_HANDLER_0F_01_GROUP, # rd | m16
+  'lmsw':       6 + X64_HANDLER_0F_01_GROUP, # rd | m16
+  'invlpg':     7 + X64_HANDLER_0F_01_GROUP, # m
 
-  'loop':       X64_LOOP_REL8   + X64_SYNTAX_JUMPS_REL8,
-  'loopz':      X64_LOOPZ_REL8  + X64_SYNTAX_JUMPS_REL8,
-  'loopnz':     X64_LOOPNZ_REL8 + X64_SYNTAX_JUMPS_REL8,
-  'loope':      X64_LOOPZ_REL8  + X64_SYNTAX_JUMPS_REL8,
-  'loopne':     X64_LOOPNZ_REL8 + X64_SYNTAX_JUMPS_REL8,
-  'jrcxz':      X64_JRCXZ_REL8  + X64_SYNTAX_JUMPS_REL8,
+  'jo':         X64_JO         + X64_HANDLER_JUMPS, # rel8 | rel32
+  'jno':        X64_JNO        + X64_HANDLER_JUMPS, # rel8 | rel32
+  'jb':         X64_JB         + X64_HANDLER_JUMPS, # rel8 | rel32
+  'jae':        X64_JAE        + X64_HANDLER_JUMPS, # rel8 | rel32
+  'jz':         X64_JZ         + X64_HANDLER_JUMPS, # rel8 | rel32
+  'je':         X64_JZ         + X64_HANDLER_JUMPS, # rel8 | rel32
+  'jnz':        X64_JNZ        + X64_HANDLER_JUMPS, # rel8 | rel32
+  'jne':        X64_JNZ        + X64_HANDLER_JUMPS, # rel8 | rel32
+  'jbe':        X64_JBE        + X64_HANDLER_JUMPS, # rel8 | rel32
+  'ja':         X64_JA         + X64_HANDLER_JUMPS, # rel8 | rel32
+  'js':         X64_JS         + X64_HANDLER_JUMPS, # rel8 | rel32
+  'jns':        X64_JNS        + X64_HANDLER_JUMPS, # rel8 | rel32
+  'jp':         X64_JP         + X64_HANDLER_JUMPS, # rel8 | rel32
+  'jnp':        X64_JNP        + X64_HANDLER_JUMPS, # rel8 | rel32
+  'jl':         X64_JL         + X64_HANDLER_JUMPS, # rel8 | rel32
+  'jge':        X64_JGE        + X64_HANDLER_JUMPS, # rel8 | rel32
+  'jle':        X64_JLE        + X64_HANDLER_JUMPS, # rel8 | rel32
+  'jg':         X64_JG         + X64_HANDLER_JUMPS, # rel8 | rel32
 
-  'loopd':      X64_LOOP_REL8   + X64_SYNTAX_JUMPS_REL8_2BYTES,
-  'loopzd':     X64_LOOPZ_REL8  + X64_SYNTAX_JUMPS_REL8_2BYTES,
-  'loopnzd':    X64_LOOPNZ_REL8 + X64_SYNTAX_JUMPS_REL8_2BYTES,
-  'looped':     X64_LOOPZ_REL8  + X64_SYNTAX_JUMPS_REL8_2BYTES,
-  'loopned':    X64_LOOPNZ_REL8 + X64_SYNTAX_JUMPS_REL8_2BYTES,
-  'jecxz':      X64_JRCXZ_REL8  + X64_SYNTAX_JUMPS_REL8_2BYTES,
+  'loop':       X64_LOOP_REL8   + X64_HANDLER_JUMPS_REL8, # rel8
+  'loopz':      X64_LOOPZ_REL8  + X64_HANDLER_JUMPS_REL8, # rel8
+  'loopnz':     X64_LOOPNZ_REL8 + X64_HANDLER_JUMPS_REL8, # rel8
+  'loope':      X64_LOOPZ_REL8  + X64_HANDLER_JUMPS_REL8, # rel8
+  'loopne':     X64_LOOPNZ_REL8 + X64_HANDLER_JUMPS_REL8, # rel8
+  'jrcxz':      X64_JRCXZ_REL8  + X64_HANDLER_JUMPS_REL8, # rel8
 
-  'rol':        0 + X64_SYNTAX_SHIFT_GROUP,
-  'ror':        1 + X64_SYNTAX_SHIFT_GROUP,
-  'rcl':        2 + X64_SYNTAX_SHIFT_GROUP,
-  'rcr':        3 + X64_SYNTAX_SHIFT_GROUP,
-  'shl':        4 + X64_SYNTAX_SHIFT_GROUP,
-  'sal':        4 + X64_SYNTAX_SHIFT_GROUP,
-  'shr':        5 + X64_SYNTAX_SHIFT_GROUP,
-  'sar':        7 + X64_SYNTAX_SHIFT_GROUP,
+  'loopd':      X64_LOOP_REL8   + X64_HANDLER_JUMPS_REL8_2BYTES, # rel8
+  'loopzd':     X64_LOOPZ_REL8  + X64_HANDLER_JUMPS_REL8_2BYTES, # rel8
+  'loopnzd':    X64_LOOPNZ_REL8 + X64_HANDLER_JUMPS_REL8_2BYTES, # rel8
+  'looped':     X64_LOOPZ_REL8  + X64_HANDLER_JUMPS_REL8_2BYTES, # rel8
+  'loopned':    X64_LOOPNZ_REL8 + X64_HANDLER_JUMPS_REL8_2BYTES, # rel8
+  'jecxz':      X64_JRCXZ_REL8  + X64_HANDLER_JUMPS_REL8_2BYTES, # rel8
 
-  'movsx':      X64_MOVSX_R_RM8 + X64_SYNTAX_MOV_EXTEND,
-  'movzx':      X64_MOVZX_R_RM8 + X64_SYNTAX_MOV_EXTEND,
+  'rol':        0 + X64_HANDLER_SHIFT_GROUP, # r,cl | r,imm8 | m,cl | m,imm8
+  'ror':        1 + X64_HANDLER_SHIFT_GROUP, # r,cl | r,imm8 | m,cl | m,imm8
+  'rcl':        2 + X64_HANDLER_SHIFT_GROUP, # r,cl | r,imm8 | m,cl | m,imm8
+  'rcr':        3 + X64_HANDLER_SHIFT_GROUP, # r,cl | r,imm8 | m,cl | m,imm8
+  'shl':        4 + X64_HANDLER_SHIFT_GROUP, # r,cl | r,imm8 | m,cl | m,imm8
+  'sal':        4 + X64_HANDLER_SHIFT_GROUP, # r,cl | r,imm8 | m,cl | m,imm8
+  'shr':        5 + X64_HANDLER_SHIFT_GROUP, # r,cl | r,imm8 | m,cl | m,imm8
+  'sar':        7 + X64_HANDLER_SHIFT_GROUP, # r,cl | r,imm8 | m,cl | m,imm8
 
-  'seto':       X64_SETO  + X64_SYNTAX_SETCC,
-  'setno':      X64_SETNO + X64_SYNTAX_SETCC,
-  'setb':       X64_SETB  + X64_SYNTAX_SETCC,
-  'setnae':     X64_SETB  + X64_SYNTAX_SETCC,
-  'setc':       X64_SETB  + X64_SYNTAX_SETCC,
-  'setnb':      X64_SETAE + X64_SYNTAX_SETCC,
-  'setae':      X64_SETAE + X64_SYNTAX_SETCC,
-  'setnc':      X64_SETAE + X64_SYNTAX_SETCC,
-  'setz':       X64_SETE  + X64_SYNTAX_SETCC,
-  'sete':       X64_SETE  + X64_SYNTAX_SETCC,
-  'setnz':      X64_SETNE + X64_SYNTAX_SETCC,
-  'setne':      X64_SETNE + X64_SYNTAX_SETCC,
-  'setbe':      X64_SETBE + X64_SYNTAX_SETCC,
-  'setna':      X64_SETBE + X64_SYNTAX_SETCC,
-  'setnbe':     X64_SETA  + X64_SYNTAX_SETCC,
-  'seta':       X64_SETA  + X64_SYNTAX_SETCC,
-  'sets':       X64_SETS  + X64_SYNTAX_SETCC,
-  'setns':      X64_SETNS + X64_SYNTAX_SETCC,
-  'setp':       X64_SETP  + X64_SYNTAX_SETCC,
-  'setpe':      X64_SETP  + X64_SYNTAX_SETCC,
-  'setnp':      X64_SETNP + X64_SYNTAX_SETCC,
-  'setpo':      X64_SETNP + X64_SYNTAX_SETCC,
-  'setl':       X64_SETL  + X64_SYNTAX_SETCC,
-  'setnge':     X64_SETL  + X64_SYNTAX_SETCC,
-  'setge':      X64_SETGE + X64_SYNTAX_SETCC,
-  'setnl':      X64_SETGE + X64_SYNTAX_SETCC,
-  'setle':      X64_SETLE + X64_SYNTAX_SETCC,
-  'setng':      X64_SETLE + X64_SYNTAX_SETCC,
-  'setnle':     X64_SETG  + X64_SYNTAX_SETCC,
-  'setg':       X64_SETG  + X64_SYNTAX_SETCC,
+  'movsx':      X64_MOVSX_R_RM8 + X64_HANDLER_MOV_EXTEND, # rd,r8 | rd,m8 | r32,r16 | r32,m16 | r64,r16 | r64,m16
+  'movzx':      X64_MOVZX_R_RM8 + X64_HANDLER_MOV_EXTEND, # rd,r8 | rd,m8 | r32,r16 | r32,m16 | r64,r16 | r64,m16
 
-  'mov':        X64_MOV         + X64_SYNTAX_CUSTOM,
-  'test':       X64_TEST        + X64_SYNTAX_CUSTOM,
-  'xchg':       X64_XCHG        + X64_SYNTAX_CUSTOM,
-  'lea':        X64_LEA         + X64_SYNTAX_CUSTOM,
-  'push':       X64_PUSH_R64    + X64_SYNTAX_CUSTOM,
-  'pop':        X64_POP_R64     + X64_SYNTAX_CUSTOM,
-  'call':       X64_CALL_REL32  + X64_SYNTAX_CUSTOM,
-  'jmp':        X64_JMP_REL32   + X64_SYNTAX_CUSTOM,
-  'ret':        X64_RET         + X64_SYNTAX_CUSTOM,
-  'retf':       X64_RETF        + X64_SYNTAX_CUSTOM,
-  'out':        X64_OUT_IMM8_AL + X64_SYNTAX_CUSTOM,
-  'in':         X64_IN_AL_IMM8  + X64_SYNTAX_CUSTOM,
-  'bswap':      X64_BSWAP       + X64_SYNTAX_CUSTOM,
-  'cmpxchg8b':  X64_CMPXCHG8B   + X64_SYNTAX_CUSTOM,
-  'cmpxchg16b': X64_CMPXCHG16B  + X64_SYNTAX_CUSTOM,
-  'inc':        X64_INC_R32     + X64_SYNTAX_CUSTOM,
-  'dec':        X64_DEC_R32     + X64_SYNTAX_CUSTOM,
-  'enter':      X64_ENTER       + X64_SYNTAX_CUSTOM,
-  'int':        X64_INT         + X64_SYNTAX_CUSTOM,
-  'nop':        X64_NOP         + X64_SYNTAX_CUSTOM
+  'seto':       X64_SETO  + X64_HANDLER_SETCC, # r8 | m8
+  'setno':      X64_SETNO + X64_HANDLER_SETCC, # r8 | m8
+  'setb':       X64_SETB  + X64_HANDLER_SETCC, # r8 | m8
+  'setnae':     X64_SETB  + X64_HANDLER_SETCC, # r8 | m8
+  'setc':       X64_SETB  + X64_HANDLER_SETCC, # r8 | m8
+  'setnb':      X64_SETAE + X64_HANDLER_SETCC, # r8 | m8
+  'setae':      X64_SETAE + X64_HANDLER_SETCC, # r8 | m8
+  'setnc':      X64_SETAE + X64_HANDLER_SETCC, # r8 | m8
+  'setz':       X64_SETE  + X64_HANDLER_SETCC, # r8 | m8
+  'sete':       X64_SETE  + X64_HANDLER_SETCC, # r8 | m8
+  'setnz':      X64_SETNE + X64_HANDLER_SETCC, # r8 | m8
+  'setne':      X64_SETNE + X64_HANDLER_SETCC, # r8 | m8
+  'setbe':      X64_SETBE + X64_HANDLER_SETCC, # r8 | m8
+  'setna':      X64_SETBE + X64_HANDLER_SETCC, # r8 | m8
+  'setnbe':     X64_SETA  + X64_HANDLER_SETCC, # r8 | m8
+  'seta':       X64_SETA  + X64_HANDLER_SETCC, # r8 | m8
+  'sets':       X64_SETS  + X64_HANDLER_SETCC, # r8 | m8
+  'setns':      X64_SETNS + X64_HANDLER_SETCC, # r8 | m8
+  'setp':       X64_SETP  + X64_HANDLER_SETCC, # r8 | m8
+  'setpe':      X64_SETP  + X64_HANDLER_SETCC, # r8 | m8
+  'setnp':      X64_SETNP + X64_HANDLER_SETCC, # r8 | m8
+  'setpo':      X64_SETNP + X64_HANDLER_SETCC, # r8 | m8
+  'setl':       X64_SETL  + X64_HANDLER_SETCC, # r8 | m8
+  'setnge':     X64_SETL  + X64_HANDLER_SETCC, # r8 | m8
+  'setge':      X64_SETGE + X64_HANDLER_SETCC, # r8 | m8
+  'setnl':      X64_SETGE + X64_HANDLER_SETCC, # r8 | m8
+  'setle':      X64_SETLE + X64_HANDLER_SETCC, # r8 | m8
+  'setng':      X64_SETLE + X64_HANDLER_SETCC, # r8 | m8
+  'setnle':     X64_SETG  + X64_HANDLER_SETCC, # r8 | m8
+  'setg':       X64_SETG  + X64_HANDLER_SETCC, # r8 | m8
+
+  'call':       X64_CALL_REL32  + X64_HANDLER_CUSTOM, #       rel16 | rel32 | r16 | r64 | m16 | m64
+  'jmp':        X64_JMP_REL32   + X64_HANDLER_CUSTOM, # rel8| rel16 | rel32 | r16 | r64 | m16 | m64
+  'mov':        X64_MOV         + X64_HANDLER_CUSTOM, # r,r | r,m | m,r | r,imm | m,imm | r64,imm64
+  'test':       X64_TEST        + X64_HANDLER_CUSTOM, # r,r | r,m | m,r | r,imm | m,imm
+  'xchg':       X64_XCHG        + X64_HANDLER_CUSTOM, # r,r | r,m | m,r
+  'lea':        X64_LEA         + X64_HANDLER_CUSTOM, # r16 | m16 | r64 | m64 | imm8 | imm16
+  'push':       X64_PUSH_R64    + X64_HANDLER_CUSTOM, # r16 | m16 | r64 | m64
+  'pop':        X64_POP_R64     + X64_HANDLER_CUSTOM, # - | imm16
+  'ret':        X64_RET         + X64_HANDLER_CUSTOM, # - | imm16
+  'retf':       X64_RETF        + X64_HANDLER_CUSTOM, # imm8,al | imm8,ax | imm8,eax | dx,al | dx,ax | dx,eax
+  'out':        X64_OUT_IMM8_AL + X64_HANDLER_CUSTOM, # al,imm8 | ax,imm8 | eax,imm8 | al,dx | ax,dx | eax,dx
+  'in':         X64_IN_AL_IMM8  + X64_HANDLER_CUSTOM, # r32 | r64
+  'bswap':      X64_BSWAP       + X64_HANDLER_CUSTOM, # m64
+  'cmpxchg8b':  X64_CMPXCHG8B   + X64_HANDLER_CUSTOM, # m128
+  'cmpxchg16b': X64_CMPXCHG16B  + X64_HANDLER_CUSTOM, # rd,m
+  'inc':        X64_INC_R32     + X64_HANDLER_CUSTOM, # r | m
+  'dec':        X64_DEC_R32     + X64_HANDLER_CUSTOM, # r | m
+  'enter':      X64_ENTER       + X64_HANDLER_CUSTOM, # imm16, imm8
+  'int':        X64_INT         + X64_HANDLER_CUSTOM, # imm8
+  'nop':        X64_NOP         + X64_HANDLER_CUSTOM  # - | rd | md
 }
 
 class X64Translator extends PipeAbstract
@@ -403,37 +415,66 @@ class X64Translator extends PipeAbstract
     this.emitCore_x_y(opcode, item)
   endmethod
 
+  method _validateNumberOfOperands(cnt, expectedCnt)
+    if cnt < expectedCnt
+      die('error: too less operands')
+    elif cnt > expectedCnt
+      die('error: too many operands')
+    endif
+  endmethod
+
+  method _validateOperandSizes(reg, rm, dataSize, imm)
+    global X64_DATA_SIZE_ID
+
+    if imm is undefined
+      # r,r
+      # r,m
+      # m,r
+      regSizeId  = reg // 16
+      rmSizeId   = rm  // 16
+      dataSizeId = X64_DATA_SIZE_ID[dataSize]
+
+      if (((rm isnt -1)       and (regSizeId isnt rmSizeId)) or # r,r
+         ((dataSize isnt -1) and (regSizeId isnt dataSizeId))) # r,m or m,r
+        die('error: operand sizes do not match')
+      endif
+    endif
+  endmethod
+
   method processOneItem(item)
     global X64_OPCODES_MAP
     global X64_CMPXCHG_RM8_R8, X64_CMPXCHG_RM32_R32
     global X64_XADD_RM8_R8, X64_XADD_RM32_R32
-    global X64_SYNTAX_CORE_ALU1, X64_SYNTAX_CORE_ALU2
-    global X64_SYNTAX_CORE2, X64_SYNTAX_JUMPS, X64_SYNTAX_JUMPS_REL8
-    global X64_SYNTAX_JUMPS_REL8_2BYTES, X64_SYNTAX_286_RD_MD
-    global X64_SYNTAX_0F_00_GROUP, X64_SYNTAX_0F_01_GROUP
-    global X64_SYNTAX_SHIFT_GROUP, X64_SYNTAX_SETCC, X64_SYNTAX_DO_NOTHING
-    global X64_SYNTAX_INVALID_IN_64, X64_SYNTAX_OPCODE_ONLY_0F_XX_YY
-    global X64_SYNTAX_CUSTOM, X64_SYNTAX_OPCODE_ONLY_BYTE
-    global X64_SYNTAX_OPCODE_ONLY_WORD, X64_SYNTAX_MOV_EXTEND
+    global X64_HANDLER_CORE_ALU1, X64_HANDLER_CORE_ALU2
+    global X64_HANDLER_CORE2, X64_HANDLER_JUMPS, X64_HANDLER_JUMPS_REL8
+    global X64_HANDLER_JUMPS_REL8_2BYTES, X64_HANDLER_286
+    global X64_HANDLER_0F_00_GROUP, X64_HANDLER_0F_01_GROUP
+    global X64_HANDLER_SHIFT_GROUP, X64_HANDLER_SETCC, X64_HANDLER_DO_NOTHING
+    global X64_HANDLER_INVALID_IN_64, X64_HANDLER_OPCODE_ONLY_0F_XX_YY
+    global X64_HANDLER_CUSTOM, X64_HANDLER_OPCODE_ONLY_BYTE
+    global X64_HANDLER_OPCODE_ONLY_WORD, X64_HANDLER_MOV_EXTEND
     global X64_LEA, X64_MOV, X64_TEST, X64_XCHG, X64_CALL_REL32, X64_NOP
     global X64_IN, X64_OUT, X64_JMP_REL32, X64_PUSH_R64, X64_POP_R64
     global X64_RET, X64_RETF, X64_BSWAP, X64_CMPXCHG8B, X64_CMPXCHG16B
     global X64_INC_R32, X64_DEC_R32, X64_ENTER, X64_LEAVE, X64_INT
+    global X64_SYNTAX_ZERO_OPERANDS, X64_SYNTAX_ONE_OPERAND
+    global X64_SYNTAX_TWO_OPERANDS
 
     encoder = this.outputObject
 
     if item.type is 'instruction'
       # Parse one code line.
       # Fetch instruction info.
-      mnemonic = item.mnemonic
-      reg      = item.reg
-      rm       = item.rm
-      regBase  = item.base
-      regIndex = item.index
-      disp     = item.disp
-      scale    = item.scale
-      imm      = item.imm
-      dataSize = item.dataSize
+      mnemonic         = item.mnemonic
+      reg              = item.reg
+      rm               = item.rm
+      regBase          = item.base
+      regIndex         = item.index
+      disp             = item.disp
+      scale            = item.scale
+      imm              = item.imm
+      dataSize         = item.dataSize
+      numberOfOperands = item.numberOfOperands
 
       # Search for mnemonic.
       opcodeInfo = X64_OPCODES_MAP[mnemonic]
@@ -444,30 +485,43 @@ class X64Translator extends PipeAbstract
       # Decode handler and opcode.
       opcode    = bitand(opcodeInfo, 0x00ffffff)
       handlerId = bitand(opcodeInfo, 0xff000000)
+      syntaxId  = bitand(opcodeInfo, 0xf0000000)
+
+      # Generic syntax checking for most common rules.
+      if syntaxId is X64_SYNTAX_ZERO_OPERANDS
+        this._validateNumberOfOperands(numberOfOperands, 0)
+
+      elif syntaxId is X64_SYNTAX_ONE_OPERAND
+        this._validateNumberOfOperands(numberOfOperands, 1)
+
+      elif syntaxId is X64_SYNTAX_TWO_OPERANDS
+        this._validateNumberOfOperands(numberOfOperands, 2)
+        # TODO: this._validateOperandSizes(reg, rm, dataSize, imm)
+      endif
 
       # Dispatch opcode handler.
-      if handlerId is X64_SYNTAX_OPCODE_ONLY_BYTE
+      if handlerId is X64_HANDLER_OPCODE_ONLY_BYTE
         # Recognized no-operands opcode.
         # Just emit opcode as is.
         encoder.emitByte(opcode)
 
-      elif handlerId is X64_SYNTAX_OPCODE_ONLY_BYTE
+      elif handlerId is X64_HANDLER_OPCODE_ONLY_BYTE
         # Single byte opcode without operands: xx
         # Just emit opcode as is.
         encoder.emitByte(opcode)
 
-      elif handlerId is X64_SYNTAX_OPCODE_ONLY_WORD
+      elif handlerId is X64_HANDLER_OPCODE_ONLY_WORD
         # Two bytes opcode without operands: xx yy
         # Just emit opcode as is.
         encoder.emitWord(opcode)
 
-      elif handlerId is X64_SYNTAX_OPCODE_ONLY_0F_XX_YY
+      elif handlerId is X64_HANDLER_OPCODE_ONLY_0F_XX_YY
         # Three bytes opcode without operands: 0f xx yy
         # Just emit opcode as is.
         encoder.emitByte(0x0f)
-        encoder.emitWord(opcode // 256)
+        encoder.emitWord(opcode)
 
-      elif handlerId is X64_SYNTAX_CORE_ALU1
+      elif handlerId is X64_HANDLER_CORE_ALU1
         if reg is -1
           # not/neg/mul/div/imul/idiv m
           encoder.emitCore_unaryGroup_m(opcode, regBase, scale, regIndex, disp, dataSize)
@@ -476,29 +530,29 @@ class X64Translator extends PipeAbstract
           encoder.emitCore_unaryGroup_r(opcode, reg)
         endif
 
-      elif handlerId is X64_SYNTAX_CORE_ALU2
+      elif handlerId is X64_HANDLER_CORE_ALU2
         this.emitCoreALU2(opcode, item)
 
-      elif handlerId is X64_SYNTAX_CORE2
+      elif handlerId is X64_HANDLER_CORE2
         this.emitCore_x_y(opcode, item)
 
-      elif handlerId is X64_SYNTAX_JUMPS
-        # jxx rel8/32
-        encoder.emitCore_jxx_rel(opcode, imm - item.offset)
+      elif handlerId is X64_HANDLER_JUMPS
+        # jcc rel8/32
+        encoder.emitCore_jcc_rel(opcode, imm - item.offset)
 
-      elif handlerId is X64_SYNTAX_JUMPS_REL8
+      elif handlerId is X64_HANDLER_JUMPS_REL8
         # One byte jump with rel8 always.
         # loopz rel8 like.
         encoder.emitCore_jmp_rel8(opcode, imm - item.offset - 2)
 
-      elif handlerId is X64_SYNTAX_JUMPS_REL8_2BYTES
+      elif handlerId is X64_HANDLER_JUMPS_REL8_2BYTES
         # One byte jump with rel8 always and 0x67 prefix.
         # loopz rel8 like.
         # TODO: Clean up this mess.
         encoder.emitByte(0x67)
         encoder.emitCore_jmp_rel8(opcode, imm - item.offset - 3)
 
-      elif handlerId is X64_SYNTAX_286_RD_MD
+      elif handlerId is X64_HANDLER_286
         if scale is defined
           # r,m
           encoder.emitCore286_r_m(opcode, reg, regBase, scale, regIndex, disp)
@@ -507,7 +561,7 @@ class X64Translator extends PipeAbstract
           encoder.emitCore286_r_r(opcode, reg, rm)
         endif
 
-      elif handlerId is X64_SYNTAX_0F_00_GROUP
+      elif handlerId is X64_HANDLER_0F_00_GROUP
         # 0f 00 /x
         if scale is defined
           # m
@@ -517,7 +571,7 @@ class X64Translator extends PipeAbstract
           encoder.emitCore_group0f_00_r(opcode, reg)
         endif
 
-      elif handlerId is X64_SYNTAX_0F_01_GROUP
+      elif handlerId is X64_HANDLER_0F_01_GROUP
         # 0f 01 /x
         if scale is defined
           # m
@@ -527,7 +581,7 @@ class X64Translator extends PipeAbstract
           encoder.emitCore_group0f_01_r(opcode, reg)
         endif
 
-      elif handlerId is X64_SYNTAX_SHIFT_GROUP
+      elif handlerId is X64_HANDLER_SHIFT_GROUP
         if scale is defined
           if imm is defined
             # m, imm8
@@ -545,7 +599,7 @@ class X64Translator extends PipeAbstract
           encoder.emitCore_shiftGroup_r_cl(opcode, reg)
         endif
 
-      elif handlerId is X64_SYNTAX_SETCC
+      elif handlerId is X64_HANDLER_SETCC
         if scale is defined
           # setcc m8
           encoder.emitCore_m(opcode, regBase, scale, regIndex, disp)
@@ -554,7 +608,7 @@ class X64Translator extends PipeAbstract
           encoder.emitCore_r(opcode, reg)
         endif
 
-      elif handlerId is X64_SYNTAX_MOV_EXTEND
+      elif handlerId is X64_HANDLER_MOV_EXTEND
         if scale is defined
           # movsx r16/32/64, m8/16
           # movzx r16/32/64, m8/16
@@ -569,10 +623,10 @@ class X64Translator extends PipeAbstract
           encoder.emitCore_movExtend_r_r(opcode, reg, rm)
         endif
 
-      elif handlerId is X64_SYNTAX_DO_NOTHING
+      elif handlerId is X64_HANDLER_DO_NOTHING
         # Do nothing.
 
-      elif handlerId is X64_SYNTAX_CUSTOM
+      elif handlerId is X64_HANDLER_CUSTOM
         # Custom handler needed for this mnemonic.
         # Dispatch opcode.
         if opcode is X64_MOV
@@ -703,10 +757,12 @@ class X64Translator extends PipeAbstract
           encoder.bswap_r(reg)
 
         elif opcode is X64_CMPXCHG8B
-          encoder.cmpxchg8b_m(regBase, scale, regIndex, disp)
-
-        elif opcode is X64_CMPXCHG16B
-          encoder.cmpxchg16b_m(regBase, scale, regIndex, disp)
+          # TODO: Don't compare strings.
+          if mnemonic is 'cmpxchg8b'
+            encoder.cmpxchg8b_m(regBase, scale, regIndex, disp)
+          else
+            encoder.cmpxchg16b_m(regBase, scale, regIndex, disp)
+          endif
 
         elif opcode is X64_INC_R32
           if reg isnt -1
@@ -747,7 +803,7 @@ class X64Translator extends PipeAbstract
           endif
         endif
 
-      elif handlerId is X64_SYNTAX_INVALID_IN_64
+      elif handlerId is X64_HANDLER_INVALID_IN_64
         # Instruction is correct, but not allowed in native 64-bit mode.
         die("error: not allowed in long mode: '" + mnemonic + "'")
 
