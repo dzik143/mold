@@ -26,18 +26,22 @@ X64_HANDLER_OPCODE_ONLY_BYTE     = 0x00000000
 X64_HANDLER_OPCODE_ONLY_WORD     = 0x01000000
 X64_HANDLER_OPCODE_ONLY_0F_XX_YY = 0x02000000
 
-# Encoding handlers: one operands.
-X64_HANDLER_CORE_ALU1            = 0x10000000
-X64_HANDLER_JCC                  = 0x11000000
-X64_HANDLER_JUMPS_REL8           = 0x12000000
-X64_HANDLER_JUMPS_REL8_2BYTES    = 0x13000000
-X64_HANDLER_0F_01_GROUP          = 0x14000000
-X64_HANDLER_SETCC                = 0x15000000
-X64_HANDLER_CUSTOM_X             = 0x16000000
+# Encoding handlers: one operands (read only).
+X64_HANDLER_JCC                  = 0x10000000
+X64_HANDLER_JUMPS_REL8           = 0x11000000
+X64_HANDLER_JUMPS_REL8_2BYTES    = 0x12000000
+X64_HANDLER_CUSTOM_X             = 0x13000000
+
+# Encoding handlers: one operands (read/write).
+X64_HANDLER_CORE_ALU1            = 0x40000000
+X64_HANDLER_0F_00_GROUP          = 0x41000000
+X64_HANDLER_0F_01_GROUP          = 0x42000000
+X64_HANDLER_SETCC                = 0x43000000
 
 # Encoding handlers: two operands with equal size.
 X64_HANDLER_CORE_ALU2            = 0x20000000
-X64_HANDLER_CORE2                = 0x21000000
+X64_HANDLER_CMOVCC               = 0x21000000
+X64_HANDLER_CORE_RD_RMD          = 0x22000000
 
 # Encoding handler: two operands (generic).
 X64_HANDLER_SHIFT_GROUP          = 0x30000000
@@ -46,7 +50,6 @@ X64_HANDLER_286                  = 0x32000000
 X64_HANDLER_CUSTOM_X_Y           = 0x33000000
 
 # Other.
-X64_HANDLER_0F_00_GROUP          = 0xf0000000
 X64_HANDLER_CUSTOM               = 0xfd000000
 X64_HANDLER_DO_NOTHING           = 0xfe000000
 X64_HANDLER_INVALID_IN_64        = 0xff000000
@@ -56,43 +59,50 @@ X64_DATA_SIZE_ID = [0,0,1,1,2,2,2,2,3]
 
 # Common operands combinations for generic syntax checking.
 X64_SYNTAX_ZERO_OPERANDS           = 0x00000000
-X64_SYNTAX_ONE_OPERAND             = 0x10000000
+X64_SYNTAX_ONE_OPERAND_READ_ONLY   = 0x10000000
 X64_SYNTAX_TWO_OPERANDS_EQUAL_SIZE = 0x20000000
 X64_SYNTAX_TWO_OPERANDS            = 0x30000000
+X64_SYNTAX_ONE_OPERAND_READWRITE   = 0x40000000
 
 # Opcodes, that does not require any operands.
 # We can emit them as is.
 X64_OPCODES_MAP = {
   'use64':      X64_HANDLER_DO_NOTHING,
 
-  'das':        X64_HANDLER_INVALID_IN_64,
-  'aas':        X64_HANDLER_INVALID_IN_64,
-  'bound':      X64_HANDLER_INVALID_IN_64,
-  'sahf':       X64_HANDLER_INVALID_IN_64,
-  'lahf':       X64_HANDLER_INVALID_IN_64,
-  'les':        X64_HANDLER_INVALID_IN_64,
-  'lds':        X64_HANDLER_INVALID_IN_64,
-  'aam':        X64_HANDLER_INVALID_IN_64,
+  'aaa':        X64_HANDLER_INVALID_IN_64,
   'aad':        X64_HANDLER_INVALID_IN_64,
-  'arpl':       X64_HANDLER_INVALID_IN_64,
-  'pusha':      X64_HANDLER_INVALID_IN_64,
+  'aam':        X64_HANDLER_INVALID_IN_64,
+  'lahf':       X64_HANDLER_INVALID_IN_64,
+  'aas':        X64_HANDLER_INVALID_IN_64,
+  'das':        X64_HANDLER_INVALID_IN_64,
+  'sahf':       X64_HANDLER_INVALID_IN_64,
+  'lds':        X64_HANDLER_INVALID_IN_64,
+  'les':        X64_HANDLER_INVALID_IN_64,
+  'daa':        X64_HANDLER_INVALID_IN_64,
+  'into':       X64_HANDLER_INVALID_IN_64,
+  'bound':      X64_HANDLER_INVALID_IN_64,
   'popa':       X64_HANDLER_INVALID_IN_64,
+  'pusha':      X64_HANDLER_INVALID_IN_64,
+  'arpl':       X64_HANDLER_INVALID_IN_64,
+  'loadall':    X64_HANDLER_INVALID_IN_64,
   'pushad':     X64_HANDLER_INVALID_IN_64,
   'popad':      X64_HANDLER_INVALID_IN_64,
   'pushfd':     X64_HANDLER_INVALID_IN_64,
   'popfd':      X64_HANDLER_INVALID_IN_64,
-  'into':       X64_HANDLER_INVALID_IN_64,
+  'loadalld':   X64_HANDLER_INVALID_IN_64,
+  'ibts':       X64_HANDLER_INVALID_IN_64,
+  'xbts':       X64_HANDLER_INVALID_IN_64,
 
-  'cwde':       X64_CWDE, # - (no operands)
-  'cdq':        X64_CDQ,  # - (no operands)
+  'cwde':       X64_CWDE,  # - (no operands)
+  'cdq':        X64_CDQ,   # - (no operands)
 
-  'clc':        X64_CLC, # - (no operands)
-  'cld':        X64_CLD, # - (no operands)
-  'cli':        X64_CLI, # - (no operands)
-  'stc':        X64_STC, # - (no operands)
-  'std':        X64_STD, # - (no operands)
-  'sti':        X64_STI, # - (no operands)
-  'cmc':        X64_CMC, # - (no operands)
+  'clc':        X64_CLC,   # - (no operands)
+  'cld':        X64_CLD,   # - (no operands)
+  'cli':        X64_CLI,   # - (no operands)
+  'stc':        X64_STC,   # - (no operands)
+  'std':        X64_STD,   # - (no operands)
+  'sti':        X64_STI,   # - (no operands)
+  'cmc':        X64_CMC,   # - (no operands)
 
   'cmpsb':      X64_CMPSB, # - (no operands)
   'cmpsd':      X64_CMPSD, # - (no operands)
@@ -179,45 +189,45 @@ X64_OPCODES_MAP = {
   'or':         X64_OR             + X64_HANDLER_CORE_ALU2, # r,r | r,m | m,r | r,imm | m,imm
   'xor':        X64_XOR            + X64_HANDLER_CORE_ALU2, # r,r | r,m | m,r | r,imm | m,imm
 
-  'bt':         X64_BT_RM_R        + X64_HANDLER_CORE_ALU2, # rd,rd | md,rd
-  'btc':        X64_BTC_RM_R       + X64_HANDLER_CORE_ALU2, # rd,rd | md,rd
-  'btr':        X64_BTR_RM_R       + X64_HANDLER_CORE_ALU2, # rd,rd | md,rd
-  'bts':        X64_BTS_RM_R       + X64_HANDLER_CORE_ALU2, # rd,rd | md,rd
-  'cmpxchg':    X64_CMPXCHG_RM8_R8 + X64_HANDLER_CORE_ALU2, # rd,rd | md,rd
-  'xadd':       X64_XADD_RM8_R8    + X64_HANDLER_CORE_ALU2, # rd,rd | md,rd
+  'bt':         X64_BT_RM_R        + X64_HANDLER_CORE_RD_RMD, # rd,rd | md,rd
+  'btc':        X64_BTC_RM_R       + X64_HANDLER_CORE_RD_RMD, # rd,rd | md,rd
+  'btr':        X64_BTR_RM_R       + X64_HANDLER_CORE_RD_RMD, # rd,rd | md,rd
+  'bts':        X64_BTS_RM_R       + X64_HANDLER_CORE_RD_RMD, # rd,rd | md,rd
+  'cmpxchg':    X64_CMPXCHG_RM8_R8 + X64_HANDLER_CORE_RD_RMD, # rd,rd | md,rd
+  'xadd':       X64_XADD_RM8_R8    + X64_HANDLER_CORE_RD_RMD, # rd,rd | md,rd
 
-  'bsf':        X64_BSF     + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'bsr':        X64_BSR     + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovo':      X64_CMOVO   + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovno':     X64_CMOVNO  + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovb':      X64_CMOVB   + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovnae':    X64_CMOVB   + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovc':      X64_CMOVB   + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovnb':     X64_CMOVAE  + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovae':     X64_CMOVAE  + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovnc':     X64_CMOVAE  + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovz':      X64_CMOVE   + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmove':      X64_CMOVE   + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovnz':     X64_CMOVNE  + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovne':     X64_CMOVNE  + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovbe':     X64_CMOVBE  + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovna':     X64_CMOVBE  + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovnbe':    X64_CMOVA   + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmova':      X64_CMOVA   + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovs':      X64_CMOVS   + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovns':     X64_CMOVNS  + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovp':      X64_CMOVP   + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovpe':     X64_CMOVP   + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovnp':     X64_CMOVNP  + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovpo':     X64_CMOVNP  + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovl':      X64_CMOVL   + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovnge':    X64_CMOVL   + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovge':     X64_CMOVGE  + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovnl':     X64_CMOVGE  + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovle':     X64_CMOVLE  + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovng':     X64_CMOVLE  + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovnle':    X64_CMOVG   + X64_HANDLER_CORE2, # rd,rd | rd,md
-  'cmovg':      X64_CMOVG   + X64_HANDLER_CORE2, # rd,rd | rd,md
+  'cmovo':      X64_CMOVO   + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovno':     X64_CMOVNO  + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovb':      X64_CMOVB   + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovnae':    X64_CMOVB   + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovc':      X64_CMOVB   + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovnb':     X64_CMOVAE  + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovae':     X64_CMOVAE  + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovnc':     X64_CMOVAE  + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovz':      X64_CMOVE   + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmove':      X64_CMOVE   + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovnz':     X64_CMOVNE  + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovne':     X64_CMOVNE  + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovbe':     X64_CMOVBE  + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovna':     X64_CMOVBE  + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovnbe':    X64_CMOVA   + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmova':      X64_CMOVA   + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovs':      X64_CMOVS   + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovns':     X64_CMOVNS  + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovp':      X64_CMOVP   + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovpe':     X64_CMOVP   + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovnp':     X64_CMOVNP  + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovpo':     X64_CMOVNP  + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovl':      X64_CMOVL   + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovnge':    X64_CMOVL   + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovge':     X64_CMOVGE  + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovnl':     X64_CMOVGE  + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovle':     X64_CMOVLE  + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovng':     X64_CMOVLE  + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovnle':    X64_CMOVG   + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'cmovg':      X64_CMOVG   + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'bsf':        X64_BSF     + X64_HANDLER_CMOVCC, # rd,rd | rd,md
+  'bsr':        X64_BSR     + X64_HANDLER_CMOVCC, # rd,rd | rd,md
 
   'not':        2 + X64_HANDLER_CORE_ALU1, # r | m
   'neg':        3 + X64_HANDLER_CORE_ALU1, # r | m
@@ -330,6 +340,7 @@ X64_OPCODES_MAP = {
   'lsl':        X64_LSL         + X64_HANDLER_CUSTOM_X_Y, # rd,r16  | rd,m16
   'movsxd':     X64_MOVSXD      + X64_HANDLER_CUSTOM_X_Y, # r64,r32 | r64,m32
   'lea':        X64_LEA         + X64_HANDLER_CUSTOM_X_Y, # rd,m
+  'enter':      X64_ENTER       + X64_HANDLER_CUSTOM_X_Y, # imm16, imm8
 
   'call':       X64_CALL_REL32  + X64_HANDLER_CUSTOM_X, #       rel16 | rel32 | r16 | r64 | m16 | m64
   'jmp':        X64_JMP_REL32   + X64_HANDLER_CUSTOM_X, # rel8| rel16 | rel32 | r16 | r64 | m16 | m64
@@ -342,7 +353,6 @@ X64_OPCODES_MAP = {
   'dec':        X64_DEC_R32     + X64_HANDLER_CUSTOM_X, # r | m
   'int':        X64_INT         + X64_HANDLER_CUSTOM_X, # imm8
 
-  'enter':      X64_ENTER       + X64_HANDLER_CUSTOM, # imm16, imm8
   'retf':       X64_RETF        + X64_HANDLER_CUSTOM, # - | imm16
   'ret':        X64_RET         + X64_HANDLER_CUSTOM, # - | imm16
   'nop':        X64_NOP         + X64_HANDLER_CUSTOM  # - | rd | md
@@ -401,6 +411,8 @@ class X64Translator extends PipeAbstract
       item.rm  = reg
     endif
 
+    this._validateOperandSizes(reg, rm, item.dataSize, item.imm)
+
     # Recognized common two-operands opcode.
     if item.imm is undefined
       if (X64_IsReg8(item.reg) is true) or (item.dataSize is 1)
@@ -422,11 +434,16 @@ class X64Translator extends PipeAbstract
     this.emitCore_x_y(opcode, item)
   endmethod
 
+  method _error(msg)
+    die('error: ' + msg)
+
+  endmethod
+
   method _validateNumberOfOperands(cnt, expectedCnt)
     if cnt < expectedCnt
-      die('error: not enough operands')
+      this._error('not enough operands')
     elif cnt > expectedCnt
-      die('error: too many operands')
+      this._error('too many operands')
     endif
   endmethod
 
@@ -442,18 +459,78 @@ class X64Translator extends PipeAbstract
       dataSizeId = X64_DATA_SIZE_ID[dataSize]
 
       if (((rm isnt -1)       and (regSizeId isnt rmSizeId)) or # r,r
-         ((dataSize isnt -1) and (regSizeId isnt dataSizeId))) # r,m or m,r
-        die('error: operand sizes do not match')
+         ((dataSize isnt -1) and (regSizeId isnt dataSizeId)))  # r,m or m,r
+        this._error('operand sizes do not match')
       endif
+    endif
+  endmethod
+
+  method _failIf8BitOperandIsUsed(item)
+    if ((item.dataSize is 1) or
+        ((item.reg isnt -1) and (item.reg // 16 is 0)) or
+        ((item.rm isnt -1) and (item.rm // 16 is 0)))
+      this._error("8-bit operands are not allowed for: '" + item.mnemonic + "'")
+    endif
+  endmethod
+
+  method _failIfNon8BitOperandIsUsed(item)
+    if (((item.scale isnt -1) and (item.dataSize > 1)) or
+        ((item.reg isnt -1) and (item.reg // 16 > 0)) or
+        ((item.rm isnt -1) and (item.rm // 16 > 0)))
+      this._error("only 8-bit operands are allowed for: '" + item.mnemonic + "'")
+    endif
+  endmethod
+
+  method _failIfNon16BitOperandIsUsed(item)
+    if (((item.scale isnt -1) and (item.dataSize isnt 2)) or
+        ((item.reg isnt -1) and (item.reg // 16 > 1)) or
+        ((item.rm isnt -1) and (item.rm // 16 > 1)))
+      this._error("only 16-bit operands are allowed for: '" + item.mnemonic + "'")
+    endif
+  endmethod
+
+  method _failIfMemoryWrite(item)
+    if item.isWriteToMemory is true
+      this._error("memory address cannot be destination operand for: '" + item.mnemonic + "'")
+    endif
+  endmethod
+
+  method _failIfMemoryRead(item)
+    if item.isWriteToMemory is false
+      this._error("memory address cannot be used as the second operand for: '" + item.mnemonic + "'")
+    endif
+  endmethod
+
+  method _failIfImmIsUsed(item)
+    if item.imm is defined
+      this._error("immediate operand is not allowed for: '" + item.mnemonic + "'")
+    endif
+  endmethod
+
+  method _failIfMemoryReadOrWrite(item)
+    if item.scale is defined
+      this._error("memory operands are not allowed for: '" + item.mnemonic + "'")
+    endif
+  endmethod
+
+  method _failIfRegsAreUsed(item)
+    if (item.reg isnt -1) or (item.rm isnt -1)
+      this._error("register operands are not allowed for: '" + item.mnemonic + "'")
+    endif
+  endmethod
+
+  method _failIfImmIsMissing(item)
+    if item.imm is undefined
+      this._error("immediate operand is expected for: '" + item.mnemonic + "'")
     endif
   endmethod
 
   method processOneItem(item)
     global X64_OPCODES_MAP
-    global X64_CMPXCHG_RM8_R8, X64_CMPXCHG_RM32_R32
+    global X64_CMPXCHG_RM8_R8, X64_CMPXCHG_RM32_R32, X64_CL, X64_DX
     global X64_XADD_RM8_R8, X64_XADD_RM32_R32
     global X64_HANDLER_CORE_ALU1, X64_HANDLER_CORE_ALU2
-    global X64_HANDLER_CORE2, X64_HANDLER_JCC, X64_HANDLER_JUMPS_REL8
+    global X64_HANDLER_CMOVCC, X64_HANDLER_JCC, X64_HANDLER_JUMPS_REL8
     global X64_HANDLER_JUMPS_REL8_2BYTES, X64_HANDLER_286
     global X64_HANDLER_0F_00_GROUP, X64_HANDLER_0F_01_GROUP
     global X64_HANDLER_SHIFT_GROUP, X64_HANDLER_SETCC, X64_HANDLER_DO_NOTHING
@@ -464,10 +541,11 @@ class X64Translator extends PipeAbstract
     global X64_IN, X64_OUT, X64_JMP_REL32, X64_PUSH_R64, X64_POP_R64
     global X64_RET, X64_RETF, X64_BSWAP, X64_CMPXCHG8B, X64_CMPXCHG16B
     global X64_INC_R32, X64_DEC_R32, X64_ENTER, X64_LEAVE, X64_INT
-    global X64_SYNTAX_ZERO_OPERANDS, X64_SYNTAX_ONE_OPERAND
+    global X64_SYNTAX_ZERO_OPERANDS, X64_SYNTAX_ONE_OPERAND_READ_ONLY
     global X64_SYNTAX_TWO_OPERANDS, X64_SYNTAX_TWO_OPERANDS_EQUAL_SIZE
+    global X64_SYNTAX_ONE_OPERAND_READWRITE
     global X64_HANDLER_CUSTOM_X, X64_HANDLER_CUSTOM_X_Y
-    global X64_LSL, X64_MOVSXD
+    global X64_LSL, X64_MOVSXD, X64_HANDLER_CORE_RD_RMD
 
     encoder = this.outputObject
 
@@ -488,7 +566,7 @@ class X64Translator extends PipeAbstract
       # Search for mnemonic.
       opcodeInfo = X64_OPCODES_MAP[mnemonic]
       if opcodeInfo is undefined
-        die("error: invalid instruction: '" + mnemonic + "'")
+        this._error("unrecognized instruction: '" + mnemonic + "'")
       endif
 
       # Decode handler and opcode.
@@ -500,8 +578,12 @@ class X64Translator extends PipeAbstract
       if syntaxId is X64_SYNTAX_ZERO_OPERANDS
         this._validateNumberOfOperands(numberOfOperands, 0)
 
-      elif syntaxId is X64_SYNTAX_ONE_OPERAND
+      elif syntaxId is X64_SYNTAX_ONE_OPERAND_READ_ONLY
         this._validateNumberOfOperands(numberOfOperands, 1)
+
+      elif syntaxId is X64_SYNTAX_ONE_OPERAND_READWRITE
+        this._validateNumberOfOperands(numberOfOperands, 1)
+        this._failIfImmIsUsed(item)
 
       elif syntaxId is X64_SYNTAX_TWO_OPERANDS_EQUAL_SIZE
         this._validateNumberOfOperands(numberOfOperands, 2)
@@ -545,7 +627,9 @@ class X64Translator extends PipeAbstract
       elif handlerId is X64_HANDLER_CORE_ALU2
         this.emitCoreALU2(opcode, item)
 
-      elif handlerId is X64_HANDLER_CORE2
+      elif handlerId is X64_HANDLER_CMOVCC
+        this._failIfMemoryWrite(item)
+        this._failIf8BitOperandIsUsed(item)
         this.emitCore_x_y(opcode, item)
 
       elif handlerId is X64_HANDLER_JCC
@@ -565,6 +649,8 @@ class X64Translator extends PipeAbstract
         encoder.emitCore_jmp_rel8(opcode, imm - item.offset - 3)
 
       elif handlerId is X64_HANDLER_286
+        this._failIf8BitOperandIsUsed(item)
+
         if scale is defined
           # r,m
           encoder.emitCore286_r_m(opcode, reg, regBase, scale, regIndex, disp)
@@ -574,6 +660,7 @@ class X64Translator extends PipeAbstract
         endif
 
       elif handlerId is X64_HANDLER_0F_00_GROUP
+        this._failIf8BitOperandIsUsed(item)
         # 0f 00 /x
         if scale is defined
           # m
@@ -584,6 +671,7 @@ class X64Translator extends PipeAbstract
         endif
 
       elif handlerId is X64_HANDLER_0F_01_GROUP
+        this._failIf8BitOperandIsUsed(item)
         # 0f 01 /x
         if scale is defined
           # m
@@ -594,13 +682,17 @@ class X64Translator extends PipeAbstract
         endif
 
       elif handlerId is X64_HANDLER_SHIFT_GROUP
+        regCL = -1
+
         if scale is defined
+          this._failIfMemoryRead(item)
           if imm is defined
             # m, imm8
             encoder.emitCore_shiftGroup_m_imm8(opcode, regBase, scale, regIndex, disp, imm, dataSize)
           else
             # m, cl
             encoder.emitCore_shiftGroup_m_cl(opcode, regBase, scale, regIndex, disp, dataSize)
+            regCL = reg
           endif
 
         elif imm is defined
@@ -609,9 +701,15 @@ class X64Translator extends PipeAbstract
         else
           # r, cl
           encoder.emitCore_shiftGroup_r_cl(opcode, reg)
+          regCL = rm
+        endif
+
+        if (regCL isnt -1) and (regCL isnt X64_CL)
+          this._error("only imm8 or the cl register can be used as the second operand for: '" + mnemonic + "'")
         endif
 
       elif handlerId is X64_HANDLER_SETCC
+        this._failIfNon8BitOperandIsUsed(item)
         if scale is defined
           # setcc m8
           encoder.emitCore_m(opcode, regBase, scale, regIndex, disp)
@@ -635,6 +733,11 @@ class X64Translator extends PipeAbstract
           encoder.emitCore_movExtend_r_r(opcode, reg, rm)
         endif
 
+      elif handlerId is X64_HANDLER_CORE_RD_RMD
+        this._failIf8BitOperandIsUsed(item)
+        this._failIfMemoryWrite(item)
+        this.emitCoreALU2(opcode, item)
+
       elif handlerId is X64_HANDLER_DO_NOTHING
         # Do nothing.
 
@@ -655,6 +758,9 @@ class X64Translator extends PipeAbstract
           endif
 
         elif opcode is X64_LEA
+          this._failIfMemoryWrite(item)
+          this._failIf8BitOperandIsUsed(item)
+          this._failIfImmIsUsed(item)
           encoder.lea_r_m(reg, regBase, scale, regIndex, disp)
 
         elif opcode is X64_TEST
@@ -675,6 +781,9 @@ class X64Translator extends PipeAbstract
           endif
 
         elif opcode is X64_XCHG
+          this._validateOperandSizes(reg, rm, dataSize, imm)
+          this._failIfImmIsUsed(item)
+
           if (reg isnt -1) and (rm isnt -1)
             # xchg r, r
             encoder.xchg_r_r(reg, rm)
@@ -687,17 +796,23 @@ class X64Translator extends PipeAbstract
           endif
 
         elif opcode is X64_OUT
+          this._failIfMemoryReadOrWrite(item)
           if imm is defined
             encoder.out_imm_r(imm, reg)
+          elif reg is X64_DX
+            encoder.out_dx_r(rm)
           else
-            encoder.out_r_r(reg, rm)
+            this._error("port must be imm8 or dx register for: 'out'")
           endif
 
         elif opcode is X64_IN
+          this._failIfMemoryReadOrWrite(item)
           if imm is defined
             encoder.in_r_imm(reg, imm)
+          elif rm is X64_DX
+            encoder.in_r_dx(reg)
           else
-            encoder.in_r_r(reg, rm)
+            this._error("port must be imm8 or dx register for: 'in'")
           endif
 
         elif opcode is X64_LSL
@@ -705,6 +820,13 @@ class X64Translator extends PipeAbstract
 
         elif opcode is X64_MOVSXD
           this.emitCore_x_y(opcode, item)
+
+        elif opcode is X64_ENTER
+          # enter imm16, imm8
+          if (imm is undefined) or (item.imm2 is undefined)
+            this._error("two immediate operands are expected for: 'enter'")
+          endif
+          encoder.enter_imm16_imm8(imm, item.imm2)
         endif
 
       elif handlerId is X64_HANDLER_CUSTOM_X
@@ -729,6 +851,7 @@ class X64Translator extends PipeAbstract
           endif
 
         elif opcode is X64_POP_R64
+          this._failIfImmIsUsed(item)
           if reg isnt -1
             encoder.pop_r(reg)
           else
@@ -762,9 +885,14 @@ class X64Translator extends PipeAbstract
           endif
 
         elif opcode is X64_BSWAP
+          this._failIfMemoryReadOrWrite(item)
+          this._failIfImmIsUsed(item)
           encoder.bswap_r(reg)
 
         elif opcode is X64_CMPXCHG8B
+          this._failIfImmIsUsed(item)
+          this._failIfRegsAreUsed(item)
+
           # TODO: Don't compare strings.
           if mnemonic is 'cmpxchg8b'
             encoder.cmpxchg8b_m(regBase, scale, regIndex, disp)
@@ -773,6 +901,7 @@ class X64Translator extends PipeAbstract
           endif
 
         elif opcode is X64_INC_R32
+          this._failIfImmIsUsed(item)
           if reg isnt -1
             # inc r
             encoder.inc_r(reg)
@@ -782,6 +911,7 @@ class X64Translator extends PipeAbstract
           endif
 
         elif opcode is X64_DEC_R32
+          this._failIfImmIsUsed(item)
           if reg isnt -1
             # dec r
             encoder.dec_r(reg)
@@ -792,6 +922,7 @@ class X64Translator extends PipeAbstract
 
         elif opcode is X64_INT
           # int imm8
+          this._failIfImmIsMissing(item)
           encoder.int_imm(imm)
         endif
 
@@ -799,44 +930,53 @@ class X64Translator extends PipeAbstract
         # Custom handler for opcodes with variable numberof operands.
         # Dispatch opcode.
         if opcode is X64_RET
-          if imm is defined
-            encoder.ret_imm(imm)
-          else
+          if numberOfOperands is 0
             encoder.ret()
+          else
+            this._validateNumberOfOperands(numberOfOperands, 1)
+            this._failIfImmIsMissing(item)
+            encoder.ret_imm(imm)
           endif
 
         elif opcode is X64_RETF
-          if imm is defined
-            encoder.retf_imm(imm)
-          else
+          if numberOfOperands is 0
             encoder.retf()
+          else
+            this._validateNumberOfOperands(numberOfOperands, 1)
+            this._failIfImmIsMissing(item)
+            encoder.retf_imm(imm)
           endif
 
-        elif opcode is X64_ENTER
-          # enter imm16, imm8
-          encoder.enter_imm16_imm8(imm, item.imm2)
-
         elif opcode is X64_NOP
-          if scale is defined
-            # nop m
-            encoder.nop_m(regBase, scale, regIndex, disp, dataSize)
-          elif reg isnt -1
-            # nop r
-            encoder.nop_r(reg)
+          if numberOfOperands is 0
+            # One byte nop.
+            this._validateNumberOfOperands(numberOfOperands, 0)
+            encoder.nop()
+
           else
-           # One byte nop.
-           encoder.nop()
+            # Muli-byte nop.
+            this._validateNumberOfOperands(numberOfOperands, 1)
+            this._failIfImmIsUsed(item)
+            this._failIf8BitOperandIsUsed(item)
+
+            if scale is defined
+              # nop m
+              encoder.nop_m(regBase, scale, regIndex, disp, dataSize)
+            elif reg isnt -1
+              # nop r
+              encoder.nop_r(reg)
+            endif
           endif
         endif
 
       elif handlerId is X64_HANDLER_INVALID_IN_64
         # Instruction is correct, but not allowed in native 64-bit mode.
-        die("error: not allowed in long mode: '" + mnemonic + "'")
+        this._error("invalid in 64-bit mode: '" + mnemonic + "'")
 
       else
         # Error - unexpected handler id.
         # Should never happen on production.
-        die('error: unknown opcode handler: ' + str(handlerId))
+        this._error('unknown opcode handler: ' + str(handlerId))
       endif
 
     elif item.type is 'label'
