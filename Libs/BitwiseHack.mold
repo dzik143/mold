@@ -40,7 +40,9 @@ function hex(x) -> rv
     elif x > -32767
       x = 65536 + x
     elif x > -2147483647
-      x = 4294967296 + x
+      # TODO: Clean up this mess.
+      # TODO: Fix int64 mess.
+      x = 4294967295 + x + 1
     endif
   endif
 

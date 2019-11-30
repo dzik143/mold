@@ -1,0 +1,7 @@
+1. CR/DR/TR registers,
+2. registers r8-r15,
+3. registers sil, dil, bpl, spl,
+5. segment registers,
+6. 32-bit addresses,
+7. missing opcodes: shld, shrd, bt/c/s/r with immediate, 3-operands imul,
+8. syntax checking.

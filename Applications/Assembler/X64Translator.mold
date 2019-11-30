@@ -41,7 +41,8 @@ X64_HANDLER_SETCC                = 0x43000000
 # Encoding handlers: two operands with equal size.
 X64_HANDLER_CORE_ALU2            = 0x20000000
 X64_HANDLER_CMOVCC               = 0x21000000
-X64_HANDLER_CORE_RD_RMD          = 0x22000000
+X64_HANDLER_CORE_RMD_RD          = 0x22000000
+X64_HANDLER_CORE_RM_R            = 0x23000000
 
 # Encoding handler: two operands (generic).
 X64_HANDLER_SHIFT_GROUP          = 0x30000000
@@ -189,12 +190,13 @@ X64_OPCODES_MAP = {
   'or':         X64_OR             + X64_HANDLER_CORE_ALU2, # r,r | r,m | m,r | r,imm | m,imm
   'xor':        X64_XOR            + X64_HANDLER_CORE_ALU2, # r,r | r,m | m,r | r,imm | m,imm
 
-  'bt':         X64_BT_RM_R        + X64_HANDLER_CORE_RD_RMD, # rd,rd | md,rd
-  'btc':        X64_BTC_RM_R       + X64_HANDLER_CORE_RD_RMD, # rd,rd | md,rd
-  'btr':        X64_BTR_RM_R       + X64_HANDLER_CORE_RD_RMD, # rd,rd | md,rd
-  'bts':        X64_BTS_RM_R       + X64_HANDLER_CORE_RD_RMD, # rd,rd | md,rd
-  'cmpxchg':    X64_CMPXCHG_RM8_R8 + X64_HANDLER_CORE_RD_RMD, # rd,rd | md,rd
-  'xadd':       X64_XADD_RM8_R8    + X64_HANDLER_CORE_RD_RMD, # rd,rd | md,rd
+  'bt':         X64_BT_RM_R        + X64_HANDLER_CORE_RMD_RD, # rd,rd | md,rd
+  'btc':        X64_BTC_RM_R       + X64_HANDLER_CORE_RMD_RD, # rd,rd | md,rd
+  'btr':        X64_BTR_RM_R       + X64_HANDLER_CORE_RMD_RD, # rd,rd | md,rd
+  'bts':        X64_BTS_RM_R       + X64_HANDLER_CORE_RMD_RD, # rd,rd | md,rd
+
+  'xadd':       X64_XADD_RM8_R8    + X64_HANDLER_CORE_RM_R, # r,r | m,r
+  'cmpxchg':    X64_CMPXCHG_RM8_R8 + X64_HANDLER_CORE_RM_R, # r,r | m,r
 
   'cmovo':      X64_CMOVO   + X64_HANDLER_CMOVCC, # rd,rd | rd,md
   'cmovno':     X64_CMOVNO  + X64_HANDLER_CMOVCC, # rd,rd | rd,md
@@ -449,18 +451,48 @@ class X64Translator extends PipeAbstract
 
   method _validateOperandSizes(reg, rm, dataSize, imm)
     global X64_DATA_SIZE_ID
+    regSizeId  = reg // 16
+    rmSizeId   = rm  // 16
+    dataSizeId = X64_DATA_SIZE_ID[dataSize]
 
+    # TODO: Optimize it.
     if imm is undefined
       # r,r
       # r,m
       # m,r
+      if (((rm isnt -1)      and (regSizeId isnt rmSizeId)) or # r,r
+         ((dataSize isnt -1) and (regSizeId isnt dataSizeId))) # r,m or m,r
+        this._error('operand sizes do not match')
+      endif
+    else
+      this._validateImmRange(reg, rm, dataSize, imm)
+    endif
+  endmethod
+
+  method _validateImmRange(reg, rm, dataSize, imm)
+    global X64_DATA_SIZE_ID
+
+    # TODO: Optimize it.
+    if imm is defined
       regSizeId  = reg // 16
       rmSizeId   = rm  // 16
       dataSizeId = X64_DATA_SIZE_ID[dataSize]
 
-      if (((rm isnt -1)       and (regSizeId isnt rmSizeId)) or # r,r
-         ((dataSize isnt -1) and (regSizeId isnt dataSizeId)))  # r,m or m,r
-        this._error('operand sizes do not match')
+      if reg isnt -1
+        # r, imm
+        if X64_IsReg8(reg) is true
+          this._failIfOutOfRange(imm, -127, 255)
+        elif X64_IsReg16(reg) is true
+          this._failIfOutOfRange(imm, -32767, 65535)
+        endif
+
+      elif dataSize isnt -1
+        # m, imm
+        if dataSize is 1
+          this._failIfOutOfRange(imm, -127, 255)
+        elif dataSize is 2
+          this._failIfOutOfRange(imm, -32767, 65535)
+        endif
       endif
     endif
   endmethod
@@ -469,12 +501,12 @@ class X64Translator extends PipeAbstract
     if ((item.dataSize is 1) or
         ((item.reg isnt -1) and (item.reg // 16 is 0)) or
         ((item.rm isnt -1) and (item.rm // 16 is 0)))
-      this._error("8-bit operands are not allowed for: '" + item.mnemonic + "'")
+      this._error("8-bit operands not allowed for: '" + item.mnemonic + "'")
     endif
   endmethod
 
   method _failIfNon8BitOperandIsUsed(item)
-    if (((item.scale isnt -1) and (item.dataSize > 1)) or
+    if (((item.scale is defined) and (item.dataSize > 1)) or
         ((item.reg isnt -1) and (item.reg // 16 > 0)) or
         ((item.rm isnt -1) and (item.rm // 16 > 0)))
       this._error("only 8-bit operands are allowed for: '" + item.mnemonic + "'")
@@ -482,7 +514,7 @@ class X64Translator extends PipeAbstract
   endmethod
 
   method _failIfNon16BitOperandIsUsed(item)
-    if (((item.scale isnt -1) and (item.dataSize isnt 2)) or
+    if (((item.scale is defined) and (item.dataSize isnt 2)) or
         ((item.reg isnt -1) and (item.reg // 16 > 1)) or
         ((item.rm isnt -1) and (item.rm // 16 > 1)))
       this._error("only 16-bit operands are allowed for: '" + item.mnemonic + "'")
@@ -503,26 +535,36 @@ class X64Translator extends PipeAbstract
 
   method _failIfImmIsUsed(item)
     if item.imm is defined
-      this._error("immediate operand is not allowed for: '" + item.mnemonic + "'")
+      this._error("immediate operand not allowed for: '" + item.mnemonic + "'")
     endif
   endmethod
 
   method _failIfMemoryReadOrWrite(item)
     if item.scale is defined
-      this._error("memory operands are not allowed for: '" + item.mnemonic + "'")
+      this._error("memory operands not allowed for: '" + item.mnemonic + "'")
     endif
   endmethod
 
   method _failIfRegsAreUsed(item)
     if (item.reg isnt -1) or (item.rm isnt -1)
-      this._error("register operands are not allowed for: '" + item.mnemonic + "'")
+      this._error("register operands not allowed for: '" + item.mnemonic + "'")
     endif
   endmethod
 
   method _failIfImmIsMissing(item)
     if item.imm is undefined
-      this._error("immediate operand is expected for: '" + item.mnemonic + "'")
+      this._error("immediate operand expected for: '" + item.mnemonic + "'")
     endif
+  endmethod
+
+  method _failIfOutOfRange(x, valueMin, valueMax)
+    if (x < valueMin) or (x > valueMax)
+      this._error('value out of range')
+    endif
+  endmethod
+
+  method _errorBadSyntax(item)
+    this._error("operand does not match the statement for: '" + item.mnemonic + "'")
   endmethod
 
   method processOneItem(item)
@@ -545,7 +587,7 @@ class X64Translator extends PipeAbstract
     global X64_SYNTAX_TWO_OPERANDS, X64_SYNTAX_TWO_OPERANDS_EQUAL_SIZE
     global X64_SYNTAX_ONE_OPERAND_READWRITE
     global X64_HANDLER_CUSTOM_X, X64_HANDLER_CUSTOM_X_Y
-    global X64_LSL, X64_MOVSXD, X64_HANDLER_CORE_RD_RMD
+    global X64_LSL, X64_MOVSXD, X64_HANDLER_CORE_RMD_RD, X64_HANDLER_CORE_RM_R
 
     encoder = this.outputObject
 
@@ -588,9 +630,15 @@ class X64Translator extends PipeAbstract
       elif syntaxId is X64_SYNTAX_TWO_OPERANDS_EQUAL_SIZE
         this._validateNumberOfOperands(numberOfOperands, 2)
         this._validateOperandSizes(reg, rm, dataSize, imm)
+        this._validateImmRange(reg, rm, dataSize, imm)
 
       elif syntaxId is X64_SYNTAX_TWO_OPERANDS
         this._validateNumberOfOperands(numberOfOperands, 2)
+      endif
+
+      # Only mov can handle 64-bit immediate.
+      if (imm is defined) and (opcode isnt X64_MOV)
+        this._failIfOutOfRange(imm, -2147483647, 4294967295)
       endif
 
       # Dispatch opcode handler.
@@ -630,56 +678,33 @@ class X64Translator extends PipeAbstract
       elif handlerId is X64_HANDLER_CMOVCC
         this._failIfMemoryWrite(item)
         this._failIf8BitOperandIsUsed(item)
+        this._failIfImmIsUsed(item)
         this.emitCore_x_y(opcode, item)
 
       elif handlerId is X64_HANDLER_JCC
         # jcc rel8/32
+        this._failIfImmIsMissing(item)
         encoder.emitCore_jcc_rel(opcode, imm - item.offset)
 
       elif handlerId is X64_HANDLER_JUMPS_REL8
         # One byte jump with rel8 always.
         # loopz rel8 like.
-        encoder.emitCore_jmp_rel8(opcode, imm - item.offset - 2)
+        this._failIfImmIsMissing(item)
+        rel8 = imm - item.offset - 2
+        # TODO: Check range.
+        # this._failIfOutOfRange(rel8, -127, 128)
+        encoder.emitCore_jmp_rel8(opcode, rel8)
 
       elif handlerId is X64_HANDLER_JUMPS_REL8_2BYTES
         # One byte jump with rel8 always and 0x67 prefix.
         # loopz rel8 like.
         # TODO: Clean up this mess.
+        this._failIfImmIsMissing(item)
+        rel8 = imm - item.offset - 3
+        # TODO: Check range.
+        # this._failIfOutOfRange(rel8, -127, 128)
         encoder.emitByte(0x67)
-        encoder.emitCore_jmp_rel8(opcode, imm - item.offset - 3)
-
-      elif handlerId is X64_HANDLER_286
-        this._failIf8BitOperandIsUsed(item)
-
-        if scale is defined
-          # r,m
-          encoder.emitCore286_r_m(opcode, reg, regBase, scale, regIndex, disp)
-        else
-          # r,r
-          encoder.emitCore286_r_r(opcode, reg, rm)
-        endif
-
-      elif handlerId is X64_HANDLER_0F_00_GROUP
-        this._failIf8BitOperandIsUsed(item)
-        # 0f 00 /x
-        if scale is defined
-          # m
-          encoder.emitCore_group0f_00_m(opcode, regBase, scale, regIndex, disp)
-        else
-          # r
-          encoder.emitCore_group0f_00_r(opcode, reg)
-        endif
-
-      elif handlerId is X64_HANDLER_0F_01_GROUP
-        this._failIf8BitOperandIsUsed(item)
-        # 0f 01 /x
-        if scale is defined
-          # m
-          encoder.emitCore_group0f_01_m(opcode, regBase, scale, regIndex, disp)
-        else
-          # r
-          encoder.emitCore_group0f_01_r(opcode, reg)
-        endif
+        encoder.emitCore_jmp_rel8(opcode, rel8)
 
       elif handlerId is X64_HANDLER_SHIFT_GROUP
         regCL = -1
@@ -688,6 +713,7 @@ class X64Translator extends PipeAbstract
           this._failIfMemoryRead(item)
           if imm is defined
             # m, imm8
+            this._failIfOutOfRange(imm, -127, 255)
             encoder.emitCore_shiftGroup_m_imm8(opcode, regBase, scale, regIndex, disp, imm, dataSize)
           else
             # m, cl
@@ -697,6 +723,7 @@ class X64Translator extends PipeAbstract
 
         elif imm is defined
           # r, imm8
+          this._failIfOutOfRange(imm, -127, 255)
           encoder.emitCore_shiftGroup_r_imm8(opcode, reg, imm)
         else
           # r, cl
@@ -719,23 +746,42 @@ class X64Translator extends PipeAbstract
         endif
 
       elif handlerId is X64_HANDLER_MOV_EXTEND
+        this._failIfImmIsUsed(item)
+        this._failIfMemoryWrite(item)
         if scale is defined
           # movsx r16/32/64, m8/16
           # movzx r16/32/64, m8/16
+          if (dataSize > 2) or (reg // 16 <= dataSize - 1)
+            # Destination must be wider than source.
+            this._errorBadSyntax(item)
+          endif
+
           if dataSize is 2
             opcode = bitor(opcode, 256)
           endif
+
           encoder.emitCore_movExtend_r_m(opcode, reg, regBase, scale, regIndex, disp)
 
         else
           # movsx r16/32/64, r8/16
           # movzx r16/32/64, r8/16
+          if (rm >= 32) or ((reg // 16) <= (rm // 16))
+            # Destination must be wider than source.
+            this._errorBadSyntax(item)
+          endif
+
           encoder.emitCore_movExtend_r_r(opcode, reg, rm)
         endif
 
-      elif handlerId is X64_HANDLER_CORE_RD_RMD
+      elif handlerId is X64_HANDLER_CORE_RMD_RD
         this._failIf8BitOperandIsUsed(item)
-        this._failIfMemoryWrite(item)
+        this._failIfMemoryRead(item)
+        this._failIfImmIsUsed(item)
+        this.emitCoreALU2(opcode, item)
+
+      elif handlerId is X64_HANDLER_CORE_RM_R
+        this._failIfMemoryRead(item)
+        this._failIfImmIsUsed(item)
         this.emitCoreALU2(opcode, item)
 
       elif handlerId is X64_HANDLER_DO_NOTHING
@@ -746,6 +792,7 @@ class X64Translator extends PipeAbstract
         # opcode x,y
         if opcode is X64_MOV
           if imm is defined
+            this._validateImmRange(reg, rm, dataSize, imm)
             if reg isnt -1
               # mov r, imm
               encoder.mov_r_imm(reg, imm)
@@ -759,12 +806,17 @@ class X64Translator extends PipeAbstract
 
         elif opcode is X64_LEA
           this._failIfMemoryWrite(item)
-          this._failIf8BitOperandIsUsed(item)
           this._failIfImmIsUsed(item)
+
+          if X64_IsReg8(reg) is true
+            this._errorBadSyntax(item)
+          endif
+
           encoder.lea_r_m(reg, regBase, scale, regIndex, disp)
 
         elif opcode is X64_TEST
           if imm is defined
+            this._validateImmRange(reg, rm, dataSize, imm)
             if reg isnt -1
               # test r, imm
               encoder.test_r_imm(reg, imm)
@@ -798,6 +850,7 @@ class X64Translator extends PipeAbstract
         elif opcode is X64_OUT
           this._failIfMemoryReadOrWrite(item)
           if imm is defined
+            this._failIfOutOfRange(imm, 0, 255)
             encoder.out_imm_r(imm, reg)
           elif reg is X64_DX
             encoder.out_dx_r(rm)
@@ -808,6 +861,7 @@ class X64Translator extends PipeAbstract
         elif opcode is X64_IN
           this._failIfMemoryReadOrWrite(item)
           if imm is defined
+            this._failIfOutOfRange(imm, 0, 255)
             encoder.in_r_imm(reg, imm)
           elif rm is X64_DX
             encoder.in_r_dx(reg)
@@ -816,9 +870,26 @@ class X64Translator extends PipeAbstract
           endif
 
         elif opcode is X64_LSL
+          this._failIfMemoryWrite(item)
+          this._failIf8BitOperandIsUsed(item)
+          this._failIfImmIsUsed(item)
+
+          if (scale is defined) and (dataSize isnt 2)
+            this._errorBadSyntax(item)
+          endif
           this.emitCore_x_y(opcode, item)
 
         elif opcode is X64_MOVSXD
+          # movsxd r64, r/m32
+          this._failIfMemoryWrite(item)
+          this._failIfImmIsUsed(item)
+
+          if ((X64_IsReg64(reg) is false) or
+              ((rm isnt -1) and (X64_IsReg32(rm) is false)) or
+              ((dataSize isnt -1) and (dataSize isnt 4)))
+            this._errorBadSyntax(item)
+          endif
+
           this.emitCore_x_y(opcode, item)
 
         elif opcode is X64_ENTER
@@ -826,6 +897,8 @@ class X64Translator extends PipeAbstract
           if (imm is undefined) or (item.imm2 is undefined)
             this._error("two immediate operands are expected for: 'enter'")
           endif
+          this._failIfOutOfRange(imm,       0, 65535)
+          this._failIfOutOfRange(item.imm2, 0, 255)
           encoder.enter_imm16_imm8(imm, item.imm2)
         endif
 
@@ -843,6 +916,7 @@ class X64Translator extends PipeAbstract
               encoder.push_imm8(imm)
             else
               # push imm32
+              this._failIfOutOfRange(imm, -32767, 65535)
               encoder.push_imm32(imm)
              endif
           else
@@ -861,10 +935,17 @@ class X64Translator extends PipeAbstract
         elif opcode is X64_CALL_REL32
           if reg isnt -1
             # call r
+            if (X64_IsReg8(reg) is true) or (X64_IsReg32(reg) is true)
+              this._error("8/32-bit addresses not allowed for: '" + item.mnemonic + "'")
+            endif
             encoder.call_r(reg)
 
           elif scale is defined
             # call m
+            if (dataSize is 1) or (dataSize is 4)
+              this._error("8/32-bit addresses not allowed for: '" + item.mnemonic + "'")
+            endif
+
             encoder.call_m(regBase, scale, regIndex, disp, dataSize)
 
           else
@@ -875,9 +956,15 @@ class X64Translator extends PipeAbstract
         elif opcode is X64_JMP_REL32
           if reg isnt -1
             # jmp r
+            if (X64_IsReg8(reg) is true) or (X64_IsReg32(reg) is true)
+              this._error("8/32-bit addresses not allowed for: '" + item.mnemonic + "'")
+            endif
             encoder.jmp_r(reg)
           elif scale is defined
             # jmp m
+            if (dataSize is 1) or (dataSize is 4)
+              this._error("8/32-bit addresses not allowed for: '" + item.mnemonic + "'")
+            endif
             encoder.jmp_m(regBase, scale, regIndex, disp, dataSize)
           else
             # jmp rel8/32
@@ -887,6 +974,10 @@ class X64Translator extends PipeAbstract
         elif opcode is X64_BSWAP
           this._failIfMemoryReadOrWrite(item)
           this._failIfImmIsUsed(item)
+          if reg < 32
+            this._errorBadSyntax(item)
+          endif
+
           encoder.bswap_r(reg)
 
         elif opcode is X64_CMPXCHG8B
@@ -923,6 +1014,7 @@ class X64Translator extends PipeAbstract
         elif opcode is X64_INT
           # int imm8
           this._failIfImmIsMissing(item)
+          this._failIfOutOfRange(imm, 0, 255)
           encoder.int_imm(imm)
         endif
 
@@ -935,6 +1027,7 @@ class X64Translator extends PipeAbstract
           else
             this._validateNumberOfOperands(numberOfOperands, 1)
             this._failIfImmIsMissing(item)
+            this._failIfOutOfRange(imm, 0, 65535)
             encoder.ret_imm(imm)
           endif
 
@@ -944,6 +1037,7 @@ class X64Translator extends PipeAbstract
           else
             this._validateNumberOfOperands(numberOfOperands, 1)
             this._failIfImmIsMissing(item)
+            this._failIfOutOfRange(imm, 0, 65535)
             encoder.retf_imm(imm)
           endif
 
@@ -967,6 +1061,40 @@ class X64Translator extends PipeAbstract
               encoder.nop_r(reg)
             endif
           endif
+        endif
+
+      elif handlerId is X64_HANDLER_286
+        this._failIfMemoryWrite(item)
+        this._failIf8BitOperandIsUsed(item)
+        this._failIfImmIsUsed(item)
+
+        if scale is defined
+          # r,m
+          encoder.emitCore286_r_m(opcode, reg, regBase, scale, regIndex, disp)
+        else
+          # r,r
+          encoder.emitCore286_r_r(opcode, reg, rm)
+        endif
+
+      elif handlerId is X64_HANDLER_0F_00_GROUP
+        this._failIf8BitOperandIsUsed(item)
+        # 0f 00 /x
+        if scale is defined
+          # m
+          encoder.emitCore_group0f_00_m(opcode, regBase, scale, regIndex, disp)
+        else
+          # r
+          encoder.emitCore_group0f_00_r(opcode, reg)
+        endif
+
+      elif handlerId is X64_HANDLER_0F_01_GROUP
+        # 0f 01 /x
+        if scale is defined
+          # m
+          encoder.emitCore_group0f_01_m(opcode, regBase, scale, regIndex, disp)
+        else
+          # r
+          encoder.emitCore_group0f_01_r(opcode, reg)
         endif
 
       elif handlerId is X64_HANDLER_INVALID_IN_64

@@ -40,9 +40,16 @@ function m64()     {return 'qword ['.r64().']';}
 function m80()     {return 'tword ['.r64().']';}
 function mcustom() {return '['.r64().']';}
 
-function i8()  {return rand(-127, 128);}
-function i16() {return rand(-32767, 32768);}
-function i32() {return i16() * i16();}
+function u8()  {return rand(0, 255);}
+function u16() {return rand(256, 65535);}
+function u32() {return rand(65536, 4294967295);}
+function u64() {return '4294967296'.rand(0,99999);}
+
+function sgn() {return (rand() % 2) ? -1 : 1;}
+function i8()  {return sgn() * rand(0, 127);}
+function i16() {return sgn() * rand(256, 32767);}
+function i32() {return sgn() * rand(65536, 2147483647);}
+function i64() {return getFromPool(['-', '']).u64();}
 
 function head($text)
 {
@@ -229,6 +236,15 @@ foreach ($pool as $opcode)
   // Bad operand: imm destination.
   test($opcode, i32(), r32(), 'constant used as destination operand');
 
+  // Out of range immediate.
+  test($opcode, r8() , i16(), 'value out of range');
+  test($opcode, r16(), i32(), 'value out of range');
+  test($opcode, r64(), i64(), 'value out of range');
+
+  test($opcode, m8() , i16(), 'value out of range');
+  test($opcode, m16(), i32(), 'value out of range');
+  test($opcode, m64(), i64(), 'value out of range');
+
   // Good examples (should assemble without error).
   // r,r
   test($opcode, r8() , r8()  , '');
@@ -282,6 +298,10 @@ foreach ($pool as $opcode)
 
   // Memory-memory.
   test($opcode, m8(), m8(), 'too many memory operands');
+
+  // Bad operand: out of range.
+  test($opcode, r32() , i16(), 'value out of range');
+  test($opcode, m64() , i16(), 'value out of range');
 
   // Good examples.
   test($opcode, r8() , 'cl', '');
@@ -342,6 +362,9 @@ test('push', r8()  , 'push/pop r8/32 are unavailable in 64-bit mode');
 test('push', r32() , 'push/pop r8/32 are unavailable in 64-bit mode');
 test('push', m8()  , 'push/pop m8/32 are unavailable in 64-bit mode');
 test('push', m32() , 'push/pop m8/32 are unavailable in 64-bit mode');
+
+// Bad operand: out of range.
+test('push', i32(), 'value out of range');
 
 // Good examples (should assemble without error).
 test('push', r16(), '');
@@ -405,6 +428,15 @@ test('mov', r8() , r16(), 'operand sizes do not match');
 test('mov', r16(), m8() , 'operand sizes do not match');
 test('mov', r32(), m64(), 'operand sizes do not match');
 test('mov', m64(), r8() , 'operand sizes do not match');
+
+// Bad operand: out of range immediate.
+test('mov', r8()  , i16(), 'value out of range');
+test('mov', r16() , i32(), 'value out of range');
+# TODO: test('mov', r32() , i64(), 'value out of range');
+
+test('mov', m8()  , i16(), 'value out of range');
+test('mov', m16() , i32(), 'value out of range');
+# TODO: test('mov', m32() , i64(), 'value out of range');
 
 // Good examples (should assemble without error).
 test('mov', r8()  , r8()  , '');
@@ -576,11 +608,12 @@ test('in', i8() , 'dx', "constant used as destination operand");
 test('in', 'al' , 'dl' , "port must be imm8 or dx register for: 'in'");
 test('in', 'ax' , 'al' , "port must be imm8 or dx register for: 'in'");
 test('in', 'eax', m16(), "memory operands not allowed for: 'in'");
+test('in', 'al' , u16(), 'value out of range');
 
 // Good examples (should assemble without error).
-test('in', 'al' , i8(), '');
-test('in', 'ax' , i8(), '');
-test('in', 'eax', i8(), '');
+test('in', 'al' , u8(), '');
+test('in', 'ax' , u8(), '');
+test('in', 'eax', u8(), '');
 test('in', 'al' , 'dx', '');
 test('in', 'ax' , 'dx', '');
 test('in', 'eax', 'dx', '');
@@ -609,11 +642,12 @@ test('out', 'dx', m8() , "memory operands not allowed for: 'out'");
 test('out', 'dl' , 'al' , "port must be imm8 or dx register for: 'out'");
 test('out', 'al' , 'ax' , "port must be imm8 or dx register for: 'out'");
 test('out', m16(), 'eax', "memory operands not allowed for: 'out'");
+test('out', u16(), 'al' , 'value out of range');
 
 // Good examples (should assemble without error).
-test('out', i8(), 'al' , '');
-test('out', i8(), 'ax' , '');
-test('out', i8(), 'eax', '');
+test('out', u8(), 'al' , '');
+test('out', u8(), 'ax' , '');
+test('out', u8(), 'eax', '');
 test('out', 'dx', 'al' , '');
 test('out', 'dx', 'ax' , '');
 test('out', 'dx', 'eax', '');
@@ -663,11 +697,12 @@ test('int', r8(), r8(),       'too many operands');
 test('int', r8(), r8(), r8(), 'too many operands');
 
 // Bad interrupt number.
-test('int', m8(), "immediate operand expected for: 'int'");
-test('int', r8(), "immediate operand expected for: 'int'");
+test('int', m8() , "immediate operand expected for: 'int'");
+test('int', r8() , "immediate operand expected for: 'int'");
+test('int', i16(), 'value out of range');
 
 // Good examples (should assemble without error).
-test('int', i8(), '');
+test('int', u8(), '');
 
 // -----------------------------------------------------------------------------
 // nop -
@@ -708,12 +743,13 @@ test('ret', r32(), i16(),        'too many operands');
 test('ret', r32(), r32(), i16(), 'too many operands');
 
 // Bad immediate.
-test('ret', m8(), "immediate operand expected for: 'ret'");
-test('ret', r8(), "immediate operand expected for: 'ret'");
+test('ret', m8() , "immediate operand expected for: 'ret'");
+test('ret', r8() , "immediate operand expected for: 'ret'");
+test('ret', i32(), 'value out of range');
 
 // Good examples (should assemble without error).
 test('ret', '');
-test('ret', i16(), '');
+test('ret', u16(), '');
 
 // -----------------------------------------------------------------------------
 // enter imm16, imm8
@@ -726,13 +762,15 @@ test('enter',                    'not enough operands');
 test('enter', i16(), i8(), r8(), 'too many operands');
 
 // Bad operands.
-test('enter', r16(), i8(), "two immediate operands are expected for: 'enter'");
-test('enter', m16(), i8(), "two immediate operands are expected for: 'enter'");
-test('enter', i16(), r8(), "two immediate operands are expected for: 'enter'");
-test('enter', i16(), m8(), "two immediate operands are expected for: 'enter'");
+test('enter', r16(), i8() , "two immediate operands are expected for: 'enter'");
+test('enter', m16(), i8() , "two immediate operands are expected for: 'enter'");
+test('enter', i16(), r8() , "two immediate operands are expected for: 'enter'");
+test('enter', i16(), m8() , "two immediate operands are expected for: 'enter'");
+test('enter', i32(), u8() , 'value out of range');
+test('enter', u16(), i16(), 'value out of range');
 
 // Good examples (should assemble without error).
-test('enter', i16(), i8(), '');
+test('enter', u16(), u8(), '');
 
 // -----------------------------------------------------------------------------
 // lar/lsl rd,r16

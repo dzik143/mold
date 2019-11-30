@@ -874,6 +874,11 @@ class X64Encoder
     global X64_POP_RM64
     if dataSize is 2
       this.emitPrefix16()
+    elif dataSize is 8
+      # push qword [...]
+      # Default scenario - nothing to do.
+    else
+      die('error: push/pop m8/32 are unavailable in 64-bit mode')
     endif
     this.emitCore_group_m(X64_POP_RM64, 0, regBase, scale, regIndex, disp)
   endmethod
@@ -882,6 +887,11 @@ class X64Encoder
     global X64_CALL_GROUP
     if dataSize is 2
       this.emitPrefix16()
+    elif dataSize is 8
+      # push qword [...]
+      # Default scenario - nothing to do.
+    else
+      die('error: push/pop m8/32 are unavailable in 64-bit mode')
     endif
     this.emitCore_group_m(X64_CALL_GROUP, 6, regBase, scale, regIndex, disp)
   endmethod
@@ -917,15 +927,12 @@ class X64Encoder
       this.emitByte(opcode + 1)
 
     else
-      die('error: only al, ax or eax can be used with in/out opcodes')
+      die('error: only al/ax/eax registers can be data operand for in/out')
     endif
 
     if portNumber >= 0
       # Emit port number as 8-bit immediate.
       this.emitByte(portNumber)
-
-    elif portNumber isnt -X64_DX
-      die('error: port must be imm8 or dx register for in/out opcodes')
     endif
   endmethod
 
@@ -939,14 +946,14 @@ class X64Encoder
     this.emitCore_inOut(X64_OUT_IMM8_AL, regSrc, imm)
   endmethod
 
-  method in_r_r(regDst, regDX)
-    global X64_IN_AL_DX
-    this.emitCore_inOut(X64_IN_AL_DX, regDst, -regDX)
+  method in_r_dx(regDst)
+    global X64_IN_AL_DX, X64_DX
+    this.emitCore_inOut(X64_IN_AL_DX, regDst, -X64_DX)
   endmethod
 
-  method out_r_r(regDX, regSrc)
-    global X64_OUT_DX_AL
-    this.emitCore_inOut(X64_OUT_DX_AL, regSrc, -regDX)
+  method out_dx_r(regSrc)
+    global X64_OUT_DX_AL, X64_DX
+    this.emitCore_inOut(X64_OUT_DX_AL, regSrc, -X64_DX)
   endmethod
 
   method insb()
@@ -1055,16 +1062,16 @@ class X64Encoder
     this.emitDword(rel)
   endmethod
 
-  method emitCore_jxx_rel(opcode, rel)
+  method emitCore_jcc_rel(opcode, rel)
     # TODO: Review it.
     if (rel >= -126) and (rel <= 128 + 5)
-      # jxx rel8
+      # jcc rel8
       this.emitByte(opcode)
       this.emitByte(rel - 2)
 
     else
-      # jxx rel32
-      # 0f 8x = two bytes jxx jump
+      # jcc rel32
+      # 0f 8x = two bytes jcc jump
       # TODO: Avoid hardcoded opcode.
       this.emitByte(0x0f)
       this.emitByte(opcode + 0x10)
@@ -1103,87 +1110,87 @@ class X64Encoder
   endmethod
 
   #
-  # Conditional jumps: jxx, loopnz, loopz, loop, jrcxz, jecxz
+  # Conditional jumps: jcc, loopnz, loopz, loop, jrcxz, jecxz
   #
 
   method jo_rel(rel)
     global X64_JO
-    this.emitCore_jxx_rel(X64_JO, rel)
+    this.emitCore_jcc_rel(X64_JO, rel)
   endmethod
 
   method jno_rel(rel)
     global X64_JNO
-    this.emitCore_jxx_rel(X64_JNO, rel)
+    this.emitCore_jcc_rel(X64_JNO, rel)
   endmethod
 
   method jb_rel(rel)
     global X64_JB
-    this.emitCore_jxx_rel(X64_JB, rel)
+    this.emitCore_jcc_rel(X64_JB, rel)
   endmethod
 
   method jae_rel(rel)
     global X64_JAE
-    this.emitCore_jxx_rel(X64_JAE, rel)
+    this.emitCore_jcc_rel(X64_JAE, rel)
   endmethod
 
   method jz_rel(rel)
     global X64_JZ
-    this.emitCore_jxx_rel(X64_JZ, rel)
+    this.emitCore_jcc_rel(X64_JZ, rel)
   endmethod
 
   method jnz_rel(rel)
     global X64_JNZ
-    this.emitCore_jxx_rel(X64_JNZ, rel)
+    this.emitCore_jcc_rel(X64_JNZ, rel)
   endmethod
 
   method jbe_rel(rel)
     global X64_JBE
-    this.emitCore_jxx_rel(X64_JBE, rel)
+    this.emitCore_jcc_rel(X64_JBE, rel)
   endmethod
 
   method ja_rel(rel)
     global X64_JA
-    this.emitCore_jxx_rel(X64_JA, rel)
+    this.emitCore_jcc_rel(X64_JA, rel)
   endmethod
 
   method js_rel(rel)
     global X64_JS
-    this.emitCore_jxx_rel(X64_JS, rel)
+    this.emitCore_jcc_rel(X64_JS, rel)
   endmethod
 
   method jns_rel(rel)
     global X64_JNS
-    this.emitCore_jxx_rel(X64_JNS, rel)
+    this.emitCore_jcc_rel(X64_JNS, rel)
   endmethod
 
   method jp_rel(rel)
     global X64_JP
-    this.emitCore_jxx_rel(X64_JP, rel)
+    this.emitCore_jcc_rel(X64_JP, rel)
   endmethod
 
   method jnp_rel(rel)
     global X64_JNP
-    this.emitCore_jxx_rel(X64_JNP, rel)
+    this.emitCore_jcc_rel(X64_JNP, rel)
   endmethod
 
   method jl_rel(rel)
     global X64_JL
-    this.emitCore_jxx_rel(X64_JL, rel)
+    this.emitCore_jcc_rel(X64_JL, rel)
   endmethod
 
   method jge_rel(rel)
     global X64_JGE
-    this.emitCore_jxx_rel(X64_JGE, rel)
+    this.emitCore_jcc_rel(X64_JGE, rel)
   endmethod
 
   method jle_rel(rel)
     global X64_JLE
-    this.emitCore_jxx_rel(X64_JLE, rel)
+    this.emitCore_jcc_rel(X64_JLE, rel)
   endmethod
 
   method jg_rel(rel)
     global X64_JG
-    this.emitCore_jxx_rel(X64_JG, rel)
+    this.emitCore_jcc_rel(X64_JG, rel)
   endmethod
 
   method loopz_rel(rel)
@@ -2606,11 +2613,13 @@ class X64Encoder
 
   method rdtscp()
     global X64_RDTSCP
+    this.emitByte(0xf)
     this.emitWord(X64_RDTSCP)
   endmethod
 
   method swapgs()
     global X64_SWAPGS
+    this.emitByte(0xf)
     this.emitWord(X64_SWAPGS)
   endmethod
 

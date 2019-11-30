@@ -1,6 +1,14 @@
 UNRELEASED
 ----------
-...
+  ...
+
+0.2.191130 (released on 2019-11-30)
+-----------------------------------
+  1. Implemented syntax checking:
+    - number of operands,
+    - operand sizes match for x,y opcodes,
+    - operand type match to instruction statement,
+    - immediate range.
 
 0.1.191126 (released on 2019-11-26)
 -----------------------------------
@@ -40,10 +48,3 @@ UNRELEASED
     - Other      | hlt, wait, xlatb, nop, cpuid, ud2
 
   2. Generated tests for instructions up to SSE (core, x87, MMX, SSE1).
-
-  3. Still on TODO list:
-    - CR/DR/TR registers,
-    - registers r8-r15,
-    - registers sil, dil, bpl, spl,
-    - 32-bit addresses,
-    - missing opcodes: shld, shrd, bt/c/s/r with immediate.

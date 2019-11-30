@@ -111,6 +111,10 @@ class X64Parser extends AbstractDescentParser
   method _matchMemory(instruction)
     global X64_RIP
 
+    if instruction.scale is defined
+      this._error('too many memory operands')
+    endif
+
     this._skipWhites()
 
     disp  = 0
@@ -236,10 +240,8 @@ class X64Parser extends AbstractDescentParser
     instruction.index = index
     instruction.disp  = disp
 
-    if instruction.reg is -1
-      # This is the first operand, so we write to memory.
-      instruction.isWriteToMemory = true
-    endif
+    # This is the first operand, so we write to memory.
+    instruction.isWriteToMemory = (instruction.reg is -1)
   endmethod
 
   method _setImmediate(instruction, value)
@@ -351,12 +353,21 @@ class X64Parser extends AbstractDescentParser
 
   method _parseFirstOperand(instruction)
     if this._isEndOfLine(this.lookupBuffer) is false
+      instruction.numberOfOperands = 1
       this._matchOperand(instruction)
     endif
   endmethod
 
   method _parseSecondOperand(instruction)
     if this.lookupBuffer is ','
+      if ((instruction.imm is defined) and
+          (instruction.mnemonic isnt 'enter') and
+          (instruction.mnemonic isnt 'out'))
+        # opcode imm, ...
+        this._error('constant used as destination operand')
+      endif
+
+      instruction.numberOfOperands = instruction.numberOfOperands + 1
       this._getChar()
       this._matchOperand(instruction)
     endif
@@ -370,10 +381,14 @@ class X64Parser extends AbstractDescentParser
       'mnemonic': mnemonic,
       'reg': -1,
       'rm': -1,
-      'offset': this.outputObject.getCurrentPosition()
+      'dataSize': -1,
+      'offset': this.outputObject.getCurrentPosition(),
+      'numberOfOperands': 0
     }
 
     this._parseFirstOperand(newItem)
+    this._parseSecondOperand(newItem)
+    # TODO: Review it.
     this._parseSecondOperand(newItem)
     this._emitOneItem(newItem)
 
@@ -508,7 +523,7 @@ class X64Parser extends AbstractDescentParser
     endwhile
   endmethod
 
-  method _parseLine()
+  method parseOneLine()
     global PARSER_X64_DEFINE_DATA_MAP
 
     this._skipWhites()
@@ -553,7 +568,7 @@ class X64Parser extends AbstractDescentParser
   method _parseSource()
     this.reset()
     while ord(this.lookupBuffer) isnt 0
-      this._parseLine()
+      this.parseOneLine()
     endwhile
   endmethod
 
@@ -561,4 +576,3 @@ class X64Parser extends AbstractDescentParser
     rv = this.arrayOfLabelsAndRefs
   endmethod
 endclass
-

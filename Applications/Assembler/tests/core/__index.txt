@@ -70,7 +70,7 @@ pop        r16 | m16 | r64 | m64
 mov        r,r | r,m | m,r | r,imm | m,imm | r64,imm64
 xchg       r,r | r,m | m,r
 
-;mul        r | m | rd,rd | rd,md | rd,md,imm
+;mul        r | m | rd,rd | rd,md 
 ;imul       r | m | rd,rd | rd,md | rd,md,imm
 
 in         al,imm8 | ax,imm8 | eax,imm8 | al,dx | ax,dx | eax,dx
