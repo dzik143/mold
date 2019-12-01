@@ -636,7 +636,6 @@ class Parser
 
       this.buf[this.bufSize] = nextChar
       this.bufSize           = this.bufSize + 1
-      this.buf[this.bufSize] = 0
     endwhile
 
     rv = this.buf[offset]
@@ -666,7 +665,6 @@ class Parser
       this.bufSize = newBufCnt
     else
       this.bufSize = 0
-      this.buf[0]  = 0
     endif
 
     debug('clear input done: bufSize=[' + str(this.bufSize) + ']')
