@@ -715,11 +715,7 @@ class Parser
 
     stack    = []
     stackIdx = 0
-
     stack[0] = new Token()
-
-    stackIdx = 0
-
 
     #
     # Begin of main parser loop
@@ -739,35 +735,6 @@ class Parser
       currentSym = -1
       currentLen = 0
 
-      /*
-      TODO: Clean up this mess.
-      THIS IS OLD CODE TO HANDLE CASE INSENSIVE INPUT.
-
-      if @@mode is 1
-        #
-        # mode = 1
-        #
-
-        symGoOn = true
-
-        while symGoOn is true
-          # TODO: this._lex()
-          if (currentSym &gt; -1) and (_symbols[currentSym][SYMBOL_WHITESPACE_IDX] is 1)
-            this._clearInput(currentLen)
-            currentSym = -1
-            currentLen = 0
-          else
-            symGoOn = false
-          endif
-        endwhile
-
-      else
-      */
-
-      #
-      # mode = 0
-      #
-
       if _dfa_select[stack[stackIdx].state] > -1
         #
         # LEX
@@ -780,12 +747,7 @@ class Parser
 
         debug('starting lex...')
 
-        if @@mode is 1
-          mach = 0
-        else
-          mach = @@prefix_dfa_select[stack[stackIdx].state]
-        endif
-
+        mach = @@prefix_dfa_select[stack[stackIdx].state]
         next = __mold_ord(this._getInput(length))
 
         if next is UNICC_EOF
@@ -836,23 +798,10 @@ class Parser
             if (dfa_st &lt; 0) or (next is UNICC_EOF)
               lexGoOn = false
             endif
-            #print 'LEX ITER DONE', stackIdx, stack
-
           endwhile
         endif
 
-        if currentSym is @@eof
-          symText = 'EOF'
-        elif currentSym > -1
-          symEntry = _symbols[currentSym]
-          isWhite  = symEntry[SYMBOL_WHITESPACE_IDX]
-          symText  = str(currentSym)
-        else
-          isWhite = 0
-          symText = str(currentSym)
-        endif
-
-        debug('lex done: sym=[' + symText + '], whitespace=[' + str(isWhite) + ']')
+        debug('lex done: sym=[' + str(currentSym) + ']')
 
         #
         # END OF LEX
@@ -869,23 +818,7 @@ class Parser
         currentSym = @@eof
       endif
 
-      /*
-        endif
-      */
-
-      if currentSym &gt; -1
-        rv = 1
-      else
-        rv = 0
-      endif
-
-      if currentSym is @@eof
-        symText = 'EOF'
-      else
-        symText = str(currentSym)
-      endif
-
-      debug('got symbol: rv=[' + str(rv) + '], sym=[' + symText + ']' + ', len=[' + str(currentLen) + ']')
+      debug('got symbol: sym=[' + str(currentSym) + ']' + ', len=[' + str(currentLen) + ']')
 
       #
       # END OF GET SYMBOL
@@ -952,8 +885,6 @@ class Parser
 
         stackIdx = stackIdx + 1
 
-        #print 'PUSH TO STACK (shift)', stackIdx
-
         stack[stackIdx] = new Token()
 
         #
@@ -995,13 +926,7 @@ class Parser
         endfor
         @@top-value = newValue
 
-        #if stack[stackIdx].symbol[SYMBOL_EMIT_IDX] isnt ''
-        #  print 'CREATING #1:', stack[stackIdx].symbol[SYMBOL_EMIT_IDX]
-        #  stack[stackIdx].node = new AST(stack[stackIdx].symbol[SYMBOL_EMIT_IDX], null)
-        #else
-          stack[stackIdx].node = null
-        #endif
-
+        stack[stackIdx].node = null
         this.buf[currentLen] = nextChar
 
         # Perform the shift on input
@@ -1030,23 +955,12 @@ class Parser
         currentLhs = _productions[currentIdx][PRODUCTION_LHS_IDX]
 
         # Run reduction code
-        # currentRet = null
-
         # TODO: switch( pcb-&gt;idx )
         if false
           @@actions
         endif
 
         emit = _productions[currentIdx][PRODUCTION_EMIT_IDX]
-
-        #print currentRet, _productions[currentIdx]
-
-        #if emit isnt ''
-        #  print emit, currentRet
-        #endif
-
-        #token = stack[stackIdx]
-        #token.print()
 
         # Drop right-hand side
         # TODO: Destructor callbacks?
@@ -1074,8 +988,6 @@ class Parser
 
           stackIdx = stackIdx - 1
         endfor
-
-        # pcb-&gt;tos -= _productions[ pcb-&gt;idx ].length
 
         if node isnt null
           lnode = stack[stackIdx].node
