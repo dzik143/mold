@@ -314,8 +314,7 @@ class CodeGeneratorX64
     # Fetch code and code metas.
     #
 
-    quads    = codeObj.quads
-    quadsCnt = len(quads)
+    quads = codeObj.quads
 
     currentProcProto    = false
     currentProcName     = false
@@ -333,9 +332,8 @@ class CodeGeneratorX64
     # Translate code section.
     #
 
-    for quadIdx in 0 .. quadsCnt
+    for values item in quads
       # Fetch instruction
-      item    = quads[quadIdx]
       itemCnt = len(item)
       opcode  = item[0]
       dst     = item[1]
