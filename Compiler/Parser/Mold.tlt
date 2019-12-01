@@ -196,18 +196,12 @@
 #                                Constants
 # -----------------------------------------------------------------------------
 
-UNICC_ERROR       = 0
-UNICC_REDUCE      = 1
-UNICC_SHIFT       = 2
-UNICC_ERROR_DELAY = 3
+UNICC_ERROR  = 0
+UNICC_REDUCE = 1
+UNICC_SHIFT  = 2
+UNICC_EOF    = 0
 
-UNICC_MALLOCSTEP = 128
-
-UNICC_DEBUG             = false
-UNICC_SYNTAXTREE        = false
-UNICC_UTF8              = false
-UNICC_STACKDEBUG        = false
-UNICC_SEMANTIC_TERM_SEL = false
+UNICC_DEBUG = false
 
 SYMBOL_NAME_IDX       = 0
 SYMBOL_EMIT_IDX       = 1
@@ -614,10 +608,6 @@ class Parser
     this.buf     = []
     this.bufSize = 0
 
-    # Lexical analysis
-    this.eof    = 0
-    this.is_eof = false
-
     this.line   = 1
     this.column = 1
 
@@ -629,72 +619,57 @@ class Parser
   endmethod
 
   method _getInput(offset) -&gt; rv
+    global UNICC_EOF
     #debug('going to get input, bufSize=[' + str(this.bufSize) + '], offset=[' + str(offset) + ']')
     #print this.buf
 
-    if this.is_eof is false
-      while offset &gt;= this.bufSize
+    while offset &gt;= this.bufSize
+      # Get next character from input stream
+      if this.inputIdx &lt; this.inputLen
+        nextChar      = this.input[this.inputIdx]
+        this.inputIdx = this.inputIdx + 1
+      else
+        nextChar = UNICC_EOF
+      endif
 
-        # Get next character from input stream
-        if this.inputIdx &lt; this.inputLen
-          nextChar      = this.input[this.inputIdx]
-          this.inputIdx = this.inputIdx + 1
-        else
-          nextChar = this.eof
-        endif
+      # debug('pop char [' + nextChar + '] from input')
 
-        # debug('pop char [' + nextChar + '] from input')
+      this.buf[this.bufSize] = nextChar
+      this.bufSize           = this.bufSize + 1
+      this.buf[this.bufSize] = 0
+    endwhile
 
-        this.buf[this.bufSize] = nextChar
-        this.bufSize           = this.bufSize + 1
-        this.buf[this.bufSize] = 0
-      endwhile
-
-      rv = this.buf[offset]
-      debug('got input [' + str(rv) + ']')
-
-    else
-      rv = this.eof
-      debug('got input [EOF]')
-    endif
-
-    #print this.buf
+    rv = this.buf[offset]
+    debug('got input [' + str(rv) + ']')
   endmethod
 
   method _clearInput(currentLen)
-    global null
-
     debug('going to clear input: len=[' + str(currentLen) + '], bufSize=[' + str(this.bufSize) + ']')
 
-    if this.buf isnt null
-      if currentLen &gt; 0
-        # Update counters for line and column
-        for idx in 0 .. currentLen
-          if __mold_ord(this.buf[idx]) is 10
-            this.line   = this.line + 1
-            this.column = 1
-          else
-            this.column = this.column + 1
-          endif
-        endfor
+    if currentLen &gt; 0
+      # Update counters for line and column
+      for idx in 0 .. currentLen
+        if __mold_ord(this.buf[idx]) is 10
+          this.line   = this.line + 1
+          this.column = 1
+        else
+          this.column = this.column + 1
+        endif
+      endfor
 
-        newBuf    = []
-        newBufCnt = this.bufSize - currentLen + 1 + 1
+      # TODO: Optimize it,
+      newBufCnt = this.bufSize - currentLen
+      for idx in 0 .. newBufCnt
+        this.buf[idx] = this.buf[idx + currentLen]
+      endfor
 
-        for idx in 0 .. newBufCnt
-          newBuf[idx] = this.buf[idx + currentLen]
-        endfor
-
-        this.buf     = newBuf
-        this.bufSize = this.bufSize - currentLen
-      else
-        this.bufSize = 0
-        this.buf[0]  = 0
-      endif
+      this.bufSize = newBufCnt
+    else
+      this.bufSize = 0
+      this.buf[0]  = 0
     endif
 
     debug('clear input done: bufSize=[' + str(this.bufSize) + ']')
-
   endmethod
 
   method _handleError(msg)
@@ -703,48 +678,17 @@ class Parser
 
   method _parseInternal(text) -> ast
     global null
-    global UNICC_ERROR
-    global UNICC_REDUCE
-    global UNICC_SHIFT
-    global UNICC_ERROR_DELAY
+    global UNICC_ERROR, UNICC_REDUCE, UNICC_SHIFT
     global SYMBOL_EMIT_IDX
     global PRODUCTION_LHS_IDX
     global PRODUCTION_LENGTH_IDX
     global PRODUCTION_EMIT_IDX
-    global _symbols
-    global _productions
-
-    global _dfa_idx
-    global _dfa_chars
-    global _dfa_trans
-    global _dfa_accept
-    global _dfa_select
-    global _go
-    global _symbols
     global SYMBOL_GREEDY_IDX
     global SYMBOL_WHITESPACE_IDX
+    global UNICC_EOF
 
-
-    global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
-    global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_NULL, AST_DATA_UNDEFINED
-    global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
-    global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
-    global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
-    global AST_OPCODE_REFERENCE, AST_OPCODE_CALL
-    global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV
-    global AST_OPCODE_IDIV
-    global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
-    global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
-    global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
-
-    global AST_OPCODE_BLOCK, AST_OPCODE_PROGRAM
-    global AST_OPCODE_DECLARE_OR_ASSIGN
-
-    global _act, _def_prod
-    global UNICC_ERROR
-    global _symbols
-    global _dfa_select
-    global SYMBOL_WHITESPACE_IDX
+    global _symbols, _productions, _act, _def_prod
+    global _dfa_idx, _dfa_chars, _dfa_trans, _dfa_accept, _dfa_select, _go
 
     ast        = null
     goOn       = true
@@ -760,6 +704,8 @@ class Parser
     this.input    = text
     this.inputIdx = 0
     this.inputLen = len(text)
+    this.line     = 1
+    this.column   = 1
 
     # State
     currentAct = 0
@@ -774,8 +720,6 @@ class Parser
 
     stackIdx = 0
 
-    this.line   = 1
-    this.column = 1
 
     #
     # Begin of main parser loop
@@ -844,7 +788,7 @@ class Parser
 
         next = __mold_ord(this._getInput(length))
 
-        if next is this.eof
+        if next is UNICC_EOF
           currentSym = @@eof
 
         else
@@ -889,7 +833,7 @@ class Parser
               chr = chr + 2
             endwhile
 
-            if (dfa_st &lt; 0) or (next is this.eof)
+            if (dfa_st &lt; 0) or (next is UNICC_EOF)
               lexGoOn = false
             endif
             #print 'LEX ITER DONE', stackIdx, stack
@@ -921,7 +865,7 @@ class Parser
         # raise.
         #
 
-      elif this._getInput(0) is this.eof
+      elif this._getInput(0) is UNICC_EOF
         currentSym = @@eof
       endif
 
