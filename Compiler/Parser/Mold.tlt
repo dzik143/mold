@@ -56,19 +56,19 @@
   Semantic action templates
   ****************************************************************************
   -->
-  <action_start>        elif this.idx is @@production-number
+  <action_start>        elif currentIdx is @@production-number
       </action_start>
   <action_end>
 
 </action_end>
 
-  <action_single>this.stack[this.stackIdx - @@offset].value</action_single>
+  <action_single>stack[stackIdx - @@offset].value</action_single>
 
-  <action_union>this.stack[this.stackIdx - @@offset].value.@@attribute</action_union>
-  <action_lhs_single>     this.ret</action_lhs_single>
-  <action_lhs_union>     this.ret.@@attribute</action_lhs_union>
+  <action_union>stack[stackIdx - @@offset].value.@@attribute</action_union>
+  <action_lhs_single>     currentRet</action_lhs_single>
+  <action_lhs_union>     currentRet.@@attribute</action_lhs_union>
 
-  <action_set_lhs>     this.lhs = @@sym</action_set_lhs>
+  <action_set_lhs>     currentLhs = @@sym</action_set_lhs>
 
   <!--
   ****************************************************************************
@@ -81,12 +81,12 @@
   </scan_action_end>
 
   <scan_action_begin_offset>@@prefix_lexem( pcb )</scan_action_begin_offset>
-  <scan_action_end_offset>this.len</scan_action_end_offset>
+  <scan_action_end_offset>currentLen</scan_action_end_offset>
 
-  <scan_action_ret_single>this.stack[this.stackIdx].value</scan_action_ret_single>
-  <scan_action_ret_union>this.stack[this.stackIdx].@@attribute</scan_action_ret_union>
+  <scan_action_ret_single>stack[stackIdx].value</scan_action_ret_single>
+  <scan_action_ret_union>stack[stackIdx].@@attribute</scan_action_ret_union>
 
-  <scan_action_set_symbol>this.sym = @@sym</scan_action_set_symbol>
+  <scan_action_set_symbol>currentSym = @@sym</scan_action_set_symbol>
 
   <!--
   ****************************************************************************
@@ -610,42 +610,16 @@ class Parser
   method constructor()
     global null
 
-    # Values
-    this.ret  = null
-    this.test = null
-
-    # State
-    this.act = 0
-    this.idx = 0
-    this.lhs = 0
-
-    # Lookahead
-    this.sym     = 0
-    this.old_sym = 0
-    this.len     = 0
-
     # Input buffering
-    this.lexem = null
-
     this.buf     = []
     this.bufSize = 0
 
     # Lexical analysis
-    this.next   = 0
     this.eof    = 0
     this.is_eof = false
 
-    # Error handling
-    this.error_delay = 0
-    this.error_count = 0
-
     this.line   = 1
     this.column = 1
-
-    this.ast = null
-
-    this.stack    = []
-    this.stackIdx = 0
 
     this.inputIdx = 0
     this.inputLen = 0
@@ -654,52 +628,48 @@ class Parser
     debug('created parser object')
   endmethod
 
-  method getAst() -> rv
-    rv = this.ast
-  endmethod
-
   method _getInput(offset) -&gt; rv
     #debug('going to get input, bufSize=[' + str(this.bufSize) + '], offset=[' + str(offset) + ']')
     #print this.buf
 
-    while (this.is_eof is false) and (offset &gt;= this.bufSize)
+    if this.is_eof is false
+      while offset &gt;= this.bufSize
 
-      # Get next character from input stream
-      if this.inputIdx &lt; this.inputLen
-        nextChar      = this.input[this.inputIdx]
-        this.inputIdx = this.inputIdx + 1
-      else
-        nextChar = this.eof
-      endif
+        # Get next character from input stream
+        if this.inputIdx &lt; this.inputLen
+          nextChar      = this.input[this.inputIdx]
+          this.inputIdx = this.inputIdx + 1
+        else
+          nextChar = this.eof
+        endif
 
-      # debug('pop char [' + nextChar + '] from input')
+        # debug('pop char [' + nextChar + '] from input')
 
-      this.buf[this.bufSize] = nextChar
-      this.bufSize           = this.bufSize + 1
-      this.buf[this.bufSize] = 0
-    endwhile
+        this.buf[this.bufSize] = nextChar
+        this.bufSize           = this.bufSize + 1
+        this.buf[this.bufSize] = 0
+      endwhile
 
-    if this.is_eof is true
-      rv = this.eof
-      debug('got input [EOF]')
-
-    else
       rv = this.buf[offset]
       debug('got input [' + str(rv) + ']')
+
+    else
+      rv = this.eof
+      debug('got input [EOF]')
     endif
 
     #print this.buf
   endmethod
 
-  method _clearInput()
+  method _clearInput(currentLen)
     global null
 
-    debug('going to clear input: len=[' + str(this.len) + '], bufSize=[' + str(this.bufSize) + ']')
+    debug('going to clear input: len=[' + str(currentLen) + '], bufSize=[' + str(this.bufSize) + ']')
 
     if this.buf isnt null
-      if this.len &gt; 0
+      if currentLen &gt; 0
         # Update counters for line and column
-        for idx in 0 .. this.len
+        for idx in 0 .. currentLen
           if __mold_ord(this.buf[idx]) is 10
             this.line   = this.line + 1
             this.column = 1
@@ -709,24 +679,21 @@ class Parser
         endfor
 
         newBuf    = []
-        newBufCnt = this.bufSize - this.len + 1 + 1
+        newBufCnt = this.bufSize - currentLen + 1 + 1
 
         for idx in 0 .. newBufCnt
-          newBuf[idx] = this.buf[idx + this.len]
+          newBuf[idx] = this.buf[idx + currentLen]
         endfor
 
         this.buf     = newBuf
-        this.bufSize = this. bufSize - this.len
+        this.bufSize = this.bufSize - currentLen
       else
         this.bufSize = 0
         this.buf[0]  = 0
       endif
     endif
 
-    this.len = 0
-    this.sym = -1
-
-    debug('clear input done: len=[' + str(this.len) + '], bufSize=[' + str(this.bufSize) + ']')
+    debug('clear input done: bufSize=[' + str(this.bufSize) + ']')
 
   endmethod
 
@@ -779,7 +746,7 @@ class Parser
     global _dfa_select
     global SYMBOL_WHITESPACE_IDX
 
-
+    ast        = null
     goOn       = true
     innerGoOn  = true
     masterIter = 1
@@ -794,15 +761,21 @@ class Parser
     this.inputIdx = 0
     this.inputLen = len(text)
 
-    this.stack[0] = new Token()
+    # State
+    currentAct = 0
+    currentIdx = 0
+    currentLhs = 0
+    currentRet = null
 
-    this.stackIdx = 0
-    this.sym      = -1
-    this.old_sym  = -1
-    this.line     = 1
-    this.column   = 1
+    stack    = []
+    stackIdx = 0
 
-    this.test = null
+    stack[0] = new Token()
+
+    stackIdx = 0
+
+    this.line   = 1
+    this.column = 1
 
     #
     # Begin of main parser loop
@@ -819,8 +792,8 @@ class Parser
       # GET SYMBOL
       #
 
-      this.sym = -1
-      this.len = 0
+      currentSym = -1
+      currentLen = 0
 
       /*
       TODO: Clean up this mess.
@@ -835,8 +808,10 @@ class Parser
 
         while symGoOn is true
           # TODO: this._lex()
-          if (this.sym &gt; -1) and (_symbols[this.sym][SYMBOL_WHITESPACE_IDX] is 1)
-            this._clearInput()
+          if (currentSym &gt; -1) and (_symbols[currentSym][SYMBOL_WHITESPACE_IDX] is 1)
+            this._clearInput(currentLen)
+            currentSym = -1
+            currentLen = 0
           else
             symGoOn = false
           endif
@@ -849,7 +824,7 @@ class Parser
       # mode = 0
       #
 
-      if _dfa_select[this.stack[this.stackIdx].state] > -1
+      if _dfa_select[stack[stackIdx].state] > -1
         #
         # LEX
         # this._lex()
@@ -864,13 +839,13 @@ class Parser
         if @@mode is 1
           mach = 0
         else
-          mach = @@prefix_dfa_select[this.stack[this.stackIdx].state]
+          mach = @@prefix_dfa_select[stack[stackIdx].state]
         endif
 
         next = __mold_ord(this._getInput(length))
 
         if next is this.eof
-          this.sym = @@eof
+          currentSym = @@eof
 
         else
           lexGoOn = true
@@ -889,15 +864,15 @@ class Parser
                 dfa_st =  _dfa_trans[chr // 2]
 
                 if _dfa_accept[mach][dfa_st] &gt; 0
-                  this.len = length + 1
-                  this.sym = _dfa_accept[mach][dfa_st] - 1
+                  currentLen = length + 1
+                  currentSym = _dfa_accept[mach][dfa_st] - 1
 
-                  if this.sym is @@eof
+                  if currentSym is @@eof
                     # test!
                     dfa_st       = -1
                     lexInnerGoOn = false
 
-                  elif _symbols[this.sym][SYMBOL_GREEDY_IDX] is 0
+                  elif _symbols[currentSym][SYMBOL_GREEDY_IDX] is 0
                     # Stop if matched symbol should be parsed nongreedy
                     dfa_st       = -1
                     lexInnerGoOn = false
@@ -917,20 +892,20 @@ class Parser
             if (dfa_st &lt; 0) or (next is this.eof)
               lexGoOn = false
             endif
-            #print 'LEX ITER DONE', this.stackIdx, this.stack
+            #print 'LEX ITER DONE', stackIdx, stack
 
           endwhile
         endif
 
-        if this.sym is @@eof
+        if currentSym is @@eof
           symText = 'EOF'
-        elif this.sym > -1
-          symEntry = _symbols[this.sym]
+        elif currentSym > -1
+          symEntry = _symbols[currentSym]
           isWhite  = symEntry[SYMBOL_WHITESPACE_IDX]
-          symText  = str(this.sym)
+          symText  = str(currentSym)
         else
           isWhite = 0
-          symText = str(this.sym)
+          symText = str(currentSym)
         endif
 
         debug('lex done: sym=[' + symText + '], whitespace=[' + str(isWhite) + ']')
@@ -947,26 +922,26 @@ class Parser
         #
 
       elif this._getInput(0) is this.eof
-        this.sym = @@eof
+        currentSym = @@eof
       endif
 
       /*
         endif
       */
 
-      if this.sym &gt; -1
+      if currentSym &gt; -1
         rv = 1
       else
         rv = 0
       endif
 
-      if this.sym is @@eof
+      if currentSym is @@eof
         symText = 'EOF'
       else
-        symText = str(this.sym)
+        symText = str(currentSym)
       endif
 
-      debug('got symbol: rv=[' + str(rv) + '], sym=[' + symText + ']' + ', len=[' + str(this.len) + ']')
+      debug('got symbol: rv=[' + str(rv) + '], sym=[' + symText + ']' + ', len=[' + str(currentLen) + ']')
 
       #
       # END OF GET SYMBOL
@@ -979,20 +954,20 @@ class Parser
       actionIdx = 1
       rv        = -1
 
-      state = this.stack[this.stackIdx].state
+      state = stack[stackIdx].state
 
       act = _act[state]
       cnt = act[0] * 3
 
       while (rv is -1) and (actionIdx &lt; cnt)
-        if act[actionIdx] is this.sym
-          this.act = act[actionIdx + 1]
+        if act[actionIdx] is currentSym
+          currentAct = act[actionIdx + 1]
 
-          if this.act is UNICC_ERROR
+          if currentAct is UNICC_ERROR
             # Force parse error!
             rv = 0
           else
-            this.idx = act[actionIdx + 2]
+            currentIdx = act[actionIdx + 2]
             rv = 1
           endif
         endif
@@ -1002,17 +977,17 @@ class Parser
 
       if rv is -1
         # Default production
-        this.idx = _def_prod[state]
-        if this.idx &gt; -1
+        currentIdx = _def_prod[state]
+        if currentIdx &gt; -1
           # Reduce
-          this.act = 1
+          currentAct = 1
           rv = 1
         else
           rv = 0
         endif
       endif
 
-      debug('got action: rv=[' + str(rv) + '], act=[' + str(this.act) + '], idx=[' + str(this.idx) + ']')
+      debug('got action: rv=[' + str(rv) + '], act=[' + str(currentAct) + '], idx=[' + str(currentIdx) + ']')
 
       if rv is 0
         this._handleError('syntax error')
@@ -1026,16 +1001,16 @@ class Parser
       # Shift
       #
 
-      if bitwiseAnd(this.act, UNICC_SHIFT) isnt 0
+      if bitwiseAnd(currentAct, UNICC_SHIFT) isnt 0
         debug('going to shift...')
-        this.next          = this.buf[this.len]
-        this.buf[this.len] = 0
+        nextChar = this.buf[currentLen]
+        this.buf[currentLen] = 0
 
-        this.stackIdx = this.stackIdx + 1
+        stackIdx = stackIdx + 1
 
-        #print 'PUSH TO STACK (shift)', this.stackIdx
+        #print 'PUSH TO STACK (shift)', stackIdx
 
-        this.stack[this.stackIdx] = new Token()
+        stack[stackIdx] = new Token()
 
         #
         #  Execute scanner actions, if existing.
@@ -1045,7 +1020,7 @@ class Parser
 
         #
         # Scan actions.
-        # TODO: switch(this.sym)
+        # TODO: switch(currentSym)
         #
 
         if false
@@ -1060,39 +1035,36 @@ class Parser
         # End of scan actions.
         #
 
-        if bitwiseAnd(this.act, UNICC_REDUCE) isnt 0
-          this.stack[this.stackIdx].state = -1
+        if bitwiseAnd(currentAct, UNICC_REDUCE) isnt 0
+          stack[stackIdx].state = -1
         else
-          this.stack[this.stackIdx].state = this.idx
+          stack[stackIdx].state = currentIdx
         endif
 
-        this.stack[this.stackIdx].symbol = _symbols[this.sym]
-        this.stack[this.stackIdx].line   = this.line
-        this.stack[this.stackIdx].column = this.column
+        stack[stackIdx].symbol = _symbols[currentSym]
+        stack[stackIdx].line   = this.line
+        stack[stackIdx].column = this.column
 
         newValue = ''
-        for idx in 0 .. this.len
+        for idx in 0 .. currentLen
           newValue = newValue + this.buf[idx]
         endfor
         @@top-value = newValue
 
-        #if this.stack[this.stackIdx].symbol[SYMBOL_EMIT_IDX] isnt ''
-        #  print 'CREATING #1:', this.stack[this.stackIdx].symbol[SYMBOL_EMIT_IDX]
-        #  this.stack[this.stackIdx].node = new AST(this.stack[this.stackIdx].symbol[SYMBOL_EMIT_IDX], null)
+        #if stack[stackIdx].symbol[SYMBOL_EMIT_IDX] isnt ''
+        #  print 'CREATING #1:', stack[stackIdx].symbol[SYMBOL_EMIT_IDX]
+        #  stack[stackIdx].node = new AST(stack[stackIdx].symbol[SYMBOL_EMIT_IDX], null)
         #else
-          this.stack[this.stackIdx].node = null
+          stack[stackIdx].node = null
         #endif
 
-        this.buf[this.len] = this.next
+        this.buf[currentLen] = nextChar
 
         # Perform the shift on input
-        if (this.sym isnt @@eof) and (this.sym isnt @@goal-value)
-          this._clearInput()
-          this.old_sym = -1
-        endif
-
-        if this.error_delay &gt; 0
-          this.error_delay = this.error_delay - 1
+        if (currentSym isnt @@eof) and (currentSym isnt @@goal-value)
+          this._clearInput(currentLen)
+          currentSym = -1
+          currentLen = 0
         endif
 
         debug('shifted')
@@ -1105,64 +1077,64 @@ class Parser
       innerGoOn  = true
       reduceIter = 1
 
-      while (innerGoOn is true) and (bitwiseAnd(this.act, UNICC_REDUCE) isnt 0)
+      while (innerGoOn is true) and (bitwiseAnd(currentAct, UNICC_REDUCE) isnt 0)
         debug('')
         debug('------------------------------')
         debug('REDUCE ITER #' + str(masterIter) + '.' + str(reduceIter))
 
         # Set default left-hand side
-        this.lhs = _productions[this.idx][PRODUCTION_LHS_IDX]
+        currentLhs = _productions[currentIdx][PRODUCTION_LHS_IDX]
 
         # Run reduction code
-        # this.ret = null
+        # currentRet = null
 
         # TODO: switch( pcb-&gt;idx )
         if false
           @@actions
         endif
 
-        emit = _productions[this.idx][PRODUCTION_EMIT_IDX]
+        emit = _productions[currentIdx][PRODUCTION_EMIT_IDX]
 
-        #print this.ret, _productions[this.idx]
+        #print currentRet, _productions[currentIdx]
 
         #if emit isnt ''
-        #  print emit, this.ret
+        #  print emit, currentRet
         #endif
 
-        #token = this.stack[this.stackIdx]
+        #token = stack[stackIdx]
         #token.print()
 
         # Drop right-hand side
         # TODO: Destructor callbacks?
         node = null
 
-        for i in 0 .. _productions[this.idx][PRODUCTION_LENGTH_IDX]
+        for i in 0 .. _productions[currentIdx][PRODUCTION_LENGTH_IDX]
 
-          if this.stack[this.stackIdx].node isnt null
+          if stack[stackIdx].node isnt null
 
             if node isnt null
               while (node.prev isnt null)
                 node = node.prev
               endwhile
 
-              node.prev = this.stack[this.stackIdx].node
+              node.prev = stack[stackIdx].node
 
-              this.stack[this.stackIdx].node.next = node
+              stack[stackIdx].node.next = node
             endif
 
-            node = this.stack[this.stackIdx].node
+            node = stack[stackIdx].node
 
-            this.stack[this.stackIdx].node = null
+            stack[stackIdx].node = null
 
           endif
 
-          this.stackIdx = this.stackIdx - 1
+          stackIdx = stackIdx - 1
         endfor
 
         # pcb-&gt;tos -= _productions[ pcb-&gt;idx ].length
 
         if node isnt null
-          lnode = this.stack[this.stackIdx].node
+          lnode = stack[stackIdx].node
 
           if lnode isnt null
             while lnode.next isnt null
@@ -1172,24 +1144,26 @@ class Parser
             lnode.next = node
             node .prev = lnode
           else
-            this.stack[this.stackIdx].node = node
+            stack[stackIdx].node = node
           endif
         endif
 
-        if _productions[this.idx][PRODUCTION_EMIT_IDX] isnt ''
-          node       = new AST(_productions[this.idx][PRODUCTION_EMIT_IDX], this.ret)
-          node.child = this.stack[this.stackIdx].node
-          this.stack[this.stackIdx].node = node
+        if _productions[currentIdx][PRODUCTION_EMIT_IDX] isnt ''
+          node       = new AST(_productions[currentIdx][PRODUCTION_EMIT_IDX], currentRet)
+          node.child = stack[stackIdx].node
+          stack[stackIdx].node = node
         endif
 
-        debug('goal symbol? (lhs=[' + str(this.lhs) + '], goal=[' + str(@@goal) + '], stackIdx=[' + str(this.stackIdx) + '])')
+        debug('goal symbol? (lhs=[' + str(currentLhs) + '], goal=[' + str(@@goal) + '], stackIdx=[' + str(stackIdx) + '])')
         # Goal symbol reduced, and stack is empty?
-        if (this.lhs is @@goal) and (this.stackIdx is 0)
-          this.stack[this.stackIdx].value = this.ret
-          this.ast = this.stack[this.stackIdx].node
+        if (currentLhs is @@goal) and (stackIdx is 0)
+          stack[stackIdx].value = currentRet
+          ast = stack[stackIdx].node
 
-          this._clearInput()
-          innerGoOn = false
+          this._clearInput(currentLen)
+          currentSym = -1
+          currentLen = 0
+          innerGoOn  = false
 
         else
           #
@@ -1198,14 +1172,14 @@ class Parser
 
           rv    = 0
           goIdx = 1
-          state = this.stack[this.stackIdx].state
+          state = stack[stackIdx].state
           go    = _go[state]
           cnt   = go[0] * 3
 
           while (rv is 0) and (goIdx &lt; cnt)
-            if (go[goIdx] is this.lhs)
-              this.act = go[goIdx + 1]
-              this.idx = go[goIdx + 2]
+            if (go[goIdx] is currentLhs)
+              currentAct = go[goIdx + 1]
+              currentIdx = go[goIdx + 2]
 
               rv = 1
             endif
@@ -1217,18 +1191,18 @@ class Parser
           # END OF GET GO
           #
 
-          this.stackIdx = this.stackIdx + 1
+          stackIdx = stackIdx + 1
 
-          this.stack[this.stackIdx]        = new Token()
-          this.stack[this.stackIdx].value  = this.ret
-          this.stack[this.stackIdx].symbol = _symbols[this.lhs]
-          this.stack[this.stackIdx].line   = this.line
-          this.stack[this.stackIdx].column = this.column
+          stack[stackIdx]        = new Token()
+          stack[stackIdx].value  = currentRet
+          stack[stackIdx].symbol = _symbols[currentLhs]
+          stack[stackIdx].line   = this.line
+          stack[stackIdx].column = this.column
 
-          if bitwiseAnd(this.act, UNICC_REDUCE) isnt 0
-            this.stack[this.stackIdx].state = -1
+          if bitwiseAnd(currentAct, UNICC_REDUCE) isnt 0
+            stack[stackIdx].state = -1
           else
-            this.stack[this.stackIdx].state = this.idx
+            stack[stackIdx].state = currentIdx
           endif
         endif
 
@@ -1237,9 +1211,9 @@ class Parser
         debug('reduced')
       endwhile
 
-      debug('END CONDITION: reduce=[' + str(bitwiseAnd(this.act, UNICC_REDUCE)) + '], idx=[' + str(this.idx) +'], goalIdx=[' + str(@@goal-production) + ']')
+      debug('END CONDITION: reduce=[' + str(bitwiseAnd(currentAct, UNICC_REDUCE)) + '], idx=[' + str(currentIdx) +'], goalIdx=[' + str(@@goal-production) + ']')
 
-      if (bitwiseAnd(this.act, UNICC_REDUCE) isnt 0) and (this.idx is @@goal-production)
+      if (bitwiseAnd(currentAct, UNICC_REDUCE) isnt 0) and (currentIdx is @@goal-production)
         goOn = false
       endif
 
@@ -1249,8 +1223,6 @@ class Parser
         die('MAX ITERS reached!')
       endif
     endwhile
-
-    ast = this.getAst()
   endmethod
 
   method parseFile(path) -> ast
