@@ -658,30 +658,21 @@ class Parser
     rv = this.ast
   endmethod
 
-  method _getChar() -&gt; rv
-    # Get next character from input stream
-    if this.inputIdx &lt; this.inputLen
-      rv            = this.input[this.inputIdx]
-      this.inputIdx = this.inputIdx + 1
-    else
-      rv = this.eof
-    endif
-
-    # debug('pop char [' + rv + '] from input')
-  endmethod
-
   method _getInput(offset) -&gt; rv
     #debug('going to get input, bufSize=[' + str(this.bufSize) + '], offset=[' + str(offset) + ']')
     #print this.buf
 
     while (this.is_eof is false) and (offset &gt;= this.bufSize)
 
-      nextChar = this._getChar()
+      # Get next character from input stream
+      if this.inputIdx &lt; this.inputLen
+        nextChar      = this.input[this.inputIdx]
+        this.inputIdx = this.inputIdx + 1
+      else
+        nextChar = this.eof
+      endif
 
-      # TODO: Review is it needed?
-      #if nextChar is this.eof
-      #  this.is_eof = true
-      #endif
+      # debug('pop char [' + nextChar + '] from input')
 
       this.buf[this.bufSize] = nextChar
       this.bufSize           = this.bufSize + 1
@@ -739,229 +730,6 @@ class Parser
 
   endmethod
 
-  method _lexem() -&gt; rv
-    this.lexem = this.buf
-    rv         = this.lexem
-  endmethod
-
-  method _getAct() -&gt; rv
-    global _act, _def_prod
-    global UNICC_ERROR
-
-    i  = 1
-    rv = -1
-
-    state = this.stack[this.stackIdx].state
-
-    act = _act[state]
-    cnt = act[0] * 3
-
-    while (rv is -1) and (i &lt; cnt)
-      if act[i] is this.sym
-        this.act = act[i + 1]
-
-        if this.act is UNICC_ERROR
-          # Force parse error!
-          rv = 0
-        else
-          this.idx = act[i + 2]
-          rv = 1
-        endif
-      endif
-
-      i = i + 3
-    endwhile
-
-    if rv is -1
-      # Default production
-      this.idx = _def_prod[state]
-      if this.idx &gt; -1
-        # Reduce
-        this.act = 1
-        rv = 1
-      else
-        rv = 0
-      endif
-    endif
-
-    debug('got action: rv=[' + str(rv) + '], act=[' + str(this.act) + '], idx=[' + str(this.idx) + ']')
-
-    if rv is 0
-      this._handleError('syntax error')
-    endif
-  endmethod
-
-  method _getGo() -&gt; rv
-    global _go
-
-    rv    = 0
-    i     = 1
-    state = this.stack[this.stackIdx].state
-    go    = _go[state]
-    cnt   = go[0] * 3
-
-    while (rv is 0) and (i &lt; cnt)
-      if (go[i] is this.lhs)
-        this.act = go[i + 1]
-        this.idx = go[i + 2]
-
-        rv = 1
-      endif
-
-      i = i + 3
-    endwhile
-  endmethod
-
-  method _lex()
-    global _dfa_idx
-    global _dfa_chars
-    global _dfa_trans
-    global _dfa_accept
-    global _dfa_select
-    global _symbols
-    global SYMBOL_GREEDY_IDX
-    global SYMBOL_WHITESPACE_IDX
-
-    dfa_st = 0
-    length = 0
-    chr    = 0
-
-    debug('starting lex...')
-
-    if @@mode is 1
-      mach = 0
-    else
-      mach = @@prefix_dfa_select[this.stack[this.stackIdx].state]
-    endif
-
-    next = __mold_ord(this._getInput(length))
-
-    if next is this.eof
-      this.sym = @@eof
-
-    else
-      goOn = true
-
-      while goOn is true
-        # debug('_lex(): outer loop, chr=[' + str(chr) + ']\n')
-
-        innerGoOn = true
-        chr       = _dfa_idx[mach][dfa_st]
-        dfa_st    = -1
-
-        while (innerGoOn is true) and (_dfa_chars[chr] &gt; -1)
-          #debug('_lex(): inner loop, chr=[' + str(chr) + ']')
-
-          if (next &gt;= _dfa_chars[chr]) and (next &lt;= _dfa_chars[chr + 1])
-            dfa_st =  _dfa_trans[chr // 2]
-
-            if _dfa_accept[mach][dfa_st] &gt; 0
-              this.len = length + 1
-              this.sym = _dfa_accept[mach][dfa_st] - 1
-
-              if this.sym is @@eof
-                # test!
-                dfa_st    = -1
-                innerGoOn = false
-
-              elif _symbols[this.sym][SYMBOL_GREEDY_IDX] is 0
-                # Stop if matched symbol should be parsed nongreedy
-                dfa_st = -1
-                innerGoOn = false
-              endif
-            endif
-
-            if innerGoOn is true
-              length    = length + 1
-              next      = __mold_ord(this._getInput(length))
-              innerGoOn = false
-            endif
-          endif
-
-          chr = chr + 2
-        endwhile
-
-        if (dfa_st &lt; 0) or (next is this.eof)
-          goOn = false
-        endif
-        #print 'LEX ITER DONE', this.stackIdx, this.stack
-
-      endwhile
-    endif
-
-    if this.sym is @@eof
-      symText = 'EOF'
-    elif this.sym > -1
-      symEntry = _symbols[this.sym]
-      isWhite  = symEntry[SYMBOL_WHITESPACE_IDX]
-      symText  = str(this.sym)
-    else
-      isWhite = 0
-      symText = str(this.sym)
-    endif
-
-    debug('lex done: sym=[' + symText + '], whitespace=[' + str(isWhite) + ']')
-  endmethod
-
-  method _getSym() -&gt; rv
-    global _symbols
-    global _dfa_select
-    global SYMBOL_WHITESPACE_IDX
-
-    this.sym = -1
-    this.len = 0
-
-    if @@mode is 1
-      #
-      # mode = 1
-      #
-
-      goOn = true
-
-      while goOn is true
-        this._lex()
-        if (this.sym &gt; -1) and (_symbols[this.sym][SYMBOL_WHITESPACE_IDX] is 1)
-          this._clearInput()
-        else
-          goOn = false
-        endif
-      endwhile
-
-    else
-      #
-      # mode = 0
-      #
-
-      if _dfa_select[this.stack[this.stackIdx].state] > -1
-        this._lex()
-
-        #
-        # If there is no DFA state machine,
-        # try to identify the end-of-file symbol.
-        # If this also fails, a parse error will
-        # raise.
-        #
-
-      elif this._getInput(0) is this.eof
-        this.sym = @@eof
-      endif
-    endif
-
-    if this.sym &gt; -1
-      rv = 1
-    else
-      rv = 0
-    endif
-
-    if this.sym is @@eof
-      symText = 'EOF'
-    else
-      symText = str(this.sym)
-    endif
-
-    debug('got symbol: rv=[' + str(rv) + '], sym=[' + symText + ']' + ', len=[' + str(this.len) + ']')
-  endmethod
-
   method _handleError(msg)
     die(this.filePath + ':' + str(this.line) + ':' + str(this.column) + ': error: ' + str(msg))
   endmethod
@@ -979,6 +747,17 @@ class Parser
     global _symbols
     global _productions
 
+    global _dfa_idx
+    global _dfa_chars
+    global _dfa_trans
+    global _dfa_accept
+    global _dfa_select
+    global _go
+    global _symbols
+    global SYMBOL_GREEDY_IDX
+    global SYMBOL_WHITESPACE_IDX
+
+
     global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
     global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_NULL, AST_DATA_UNDEFINED
     global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
@@ -993,6 +772,13 @@ class Parser
 
     global AST_OPCODE_BLOCK, AST_OPCODE_PROGRAM
     global AST_OPCODE_DECLARE_OR_ASSIGN
+
+    global _act, _def_prod
+    global UNICC_ERROR
+    global _symbols
+    global _dfa_select
+    global SYMBOL_WHITESPACE_IDX
+
 
     goOn       = true
     innerGoOn  = true
@@ -1029,8 +815,212 @@ class Parser
       debug('------------------------------')
       debug('MASTER ITER #' + str(masterIter))
 
-      this._getSym()
-      this._getAct()
+      #
+      # GET SYMBOL
+      #
+
+      this.sym = -1
+      this.len = 0
+
+      /*
+      TODO: Clean up this mess.
+      THIS IS OLD CODE TO HANDLE CASE INSENSIVE INPUT.
+
+      if @@mode is 1
+        #
+        # mode = 1
+        #
+
+        symGoOn = true
+
+        while symGoOn is true
+          # TODO: this._lex()
+          if (this.sym &gt; -1) and (_symbols[this.sym][SYMBOL_WHITESPACE_IDX] is 1)
+            this._clearInput()
+          else
+            symGoOn = false
+          endif
+        endwhile
+
+      else
+      */
+
+      #
+      # mode = 0
+      #
+
+      if _dfa_select[this.stack[this.stackIdx].state] > -1
+        #
+        # LEX
+        # this._lex()
+        #
+
+        dfa_st = 0
+        length = 0
+        chr    = 0
+
+        debug('starting lex...')
+
+        if @@mode is 1
+          mach = 0
+        else
+          mach = @@prefix_dfa_select[this.stack[this.stackIdx].state]
+        endif
+
+        next = __mold_ord(this._getInput(length))
+
+        if next is this.eof
+          this.sym = @@eof
+
+        else
+          lexGoOn = true
+
+          while lexGoOn is true
+            # debug('_lex(): outer loop, chr=[' + str(chr) + ']\n')
+
+            lexInnerGoOn = true
+            chr          = _dfa_idx[mach][dfa_st]
+            dfa_st       = -1
+
+            while (lexInnerGoOn is true) and (_dfa_chars[chr] &gt; -1)
+              #debug('_lex(): inner loop, chr=[' + str(chr) + ']')
+
+              if (next &gt;= _dfa_chars[chr]) and (next &lt;= _dfa_chars[chr + 1])
+                dfa_st =  _dfa_trans[chr // 2]
+
+                if _dfa_accept[mach][dfa_st] &gt; 0
+                  this.len = length + 1
+                  this.sym = _dfa_accept[mach][dfa_st] - 1
+
+                  if this.sym is @@eof
+                    # test!
+                    dfa_st       = -1
+                    lexInnerGoOn = false
+
+                  elif _symbols[this.sym][SYMBOL_GREEDY_IDX] is 0
+                    # Stop if matched symbol should be parsed nongreedy
+                    dfa_st       = -1
+                    lexInnerGoOn = false
+                  endif
+                endif
+
+                if lexInnerGoOn is true
+                  length    = length + 1
+                  next      = __mold_ord(this._getInput(length))
+                  lexInnerGoOn = false
+                endif
+              endif
+
+              chr = chr + 2
+            endwhile
+
+            if (dfa_st &lt; 0) or (next is this.eof)
+              lexGoOn = false
+            endif
+            #print 'LEX ITER DONE', this.stackIdx, this.stack
+
+          endwhile
+        endif
+
+        if this.sym is @@eof
+          symText = 'EOF'
+        elif this.sym > -1
+          symEntry = _symbols[this.sym]
+          isWhite  = symEntry[SYMBOL_WHITESPACE_IDX]
+          symText  = str(this.sym)
+        else
+          isWhite = 0
+          symText = str(this.sym)
+        endif
+
+        debug('lex done: sym=[' + symText + '], whitespace=[' + str(isWhite) + ']')
+
+        #
+        # END OF LEX
+        #
+
+        #
+        # If there is no DFA state machine,
+        # try to identify the end-of-file symbol.
+        # If this also fails, a parse error will
+        # raise.
+        #
+
+      elif this._getInput(0) is this.eof
+        this.sym = @@eof
+      endif
+
+      /*
+        endif
+      */
+
+      if this.sym &gt; -1
+        rv = 1
+      else
+        rv = 0
+      endif
+
+      if this.sym is @@eof
+        symText = 'EOF'
+      else
+        symText = str(this.sym)
+      endif
+
+      debug('got symbol: rv=[' + str(rv) + '], sym=[' + symText + ']' + ', len=[' + str(this.len) + ']')
+
+      #
+      # END OF GET SYMBOL
+      #
+
+      #
+      # GET ACT
+      #
+
+      actionIdx = 1
+      rv        = -1
+
+      state = this.stack[this.stackIdx].state
+
+      act = _act[state]
+      cnt = act[0] * 3
+
+      while (rv is -1) and (actionIdx &lt; cnt)
+        if act[actionIdx] is this.sym
+          this.act = act[actionIdx + 1]
+
+          if this.act is UNICC_ERROR
+            # Force parse error!
+            rv = 0
+          else
+            this.idx = act[actionIdx + 2]
+            rv = 1
+          endif
+        endif
+
+        actionIdx = actionIdx + 3
+      endwhile
+
+      if rv is -1
+        # Default production
+        this.idx = _def_prod[state]
+        if this.idx &gt; -1
+          # Reduce
+          this.act = 1
+          rv = 1
+        else
+          rv = 0
+        endif
+      endif
+
+      debug('got action: rv=[' + str(rv) + '], act=[' + str(this.act) + '], idx=[' + str(this.idx) + ']')
+
+      if rv is 0
+        this._handleError('syntax error')
+      endif
+
+      #
+      # END OF GET ACT
+      #
 
       #
       # Shift
@@ -1202,7 +1192,30 @@ class Parser
           innerGoOn = false
 
         else
-          this._getGo()
+          #
+          # GET GO
+          #
+
+          rv    = 0
+          goIdx = 1
+          state = this.stack[this.stackIdx].state
+          go    = _go[state]
+          cnt   = go[0] * 3
+
+          while (rv is 0) and (goIdx &lt; cnt)
+            if (go[goIdx] is this.lhs)
+              this.act = go[goIdx + 1]
+              this.idx = go[goIdx + 2]
+
+              rv = 1
+            endif
+
+            goIdx = goIdx + 3
+          endwhile
+
+          #
+          # END OF GET GO
+          #
 
           this.stackIdx = this.stackIdx + 1
 
