@@ -2,8 +2,6 @@ x = []
 undefined = x[0]
 object = 0
 
-DEBUG_AST_OPTIMIZER = true
-DEBUG_MOLD = true
 NodeId = 1000
 
 
@@ -39,6 +37,9 @@ import '1.ast'
 # TODO: Remove this step.
 #ast = ast.convert()
 
+DEBUG_AST_OPTIMIZER = true
+DEBUG_MOLD = true
+
 
 #print '<pre>'
 
@@ -58,11 +59,11 @@ endif
 app._debug('Preprocessing AST nodes...')
 app.getAstPreprocessor().processNode(ast)
 
-print 'Building symbol table...'
+app._debug('Building symbol table...')
 astSymbolsCollector.buildSymbolTable(ast)
 
 # ------------------------------------------------------------------------------
-
+/*
 # TODO: More generic way to apply selected optimizations.
 app._debug('VCall optimization...')
 app.getAstOptimizerVCall().processNode(ast)
@@ -86,7 +87,7 @@ app.getAstOptimizerDeadCodeRemove().processNode(ast)
 
 app._debug('Common subexpression elimination (CSE)...')
 app.getAstOptimizerCSE().processNode(ast)
-
+*/
 # ------------------------------------------------------------------------------
 
 print 'Type cast...'
@@ -106,8 +107,8 @@ astTranslator = new ASTTranslatorMIR1(app)
 print 'Going to translate AST to MIR1...'
 mirCollector = new MIRQuadCollector()
 mirOptimizer = new MIRQuadOptimizer()
-#astTranslator.connectTo(mirCollector)
-astTranslator.connectTo(mirOptimizer).connectTo(mirCollector)
+astTranslator.connectTo(mirCollector)
+#astTranslator.connectTo(mirOptimizer).connectTo(mirCollector)
 
 astTranslator.run(ast)
 mirCollector.printQuads()

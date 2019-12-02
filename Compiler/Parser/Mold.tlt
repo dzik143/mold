@@ -648,7 +648,7 @@ class Parser
     if currentLen &gt; 0
       # Update counters for line and column
       for idx in 0 .. currentLen
-        if __mold_ord(this.buf[idx]) is 10
+        if ord(this.buf[idx]) is 10
           this.line   = this.line + 1
           this.column = 1
         else
@@ -746,7 +746,7 @@ class Parser
         debug('starting lex...')
 
         mach = @@prefix_dfa_select[stack[stackIdx].state]
-        next = __mold_ord(this._getInput(length))
+        next = ord(this._getInput(length))
 
         if next is UNICC_EOF
           currentSym = @@eof
@@ -784,8 +784,8 @@ class Parser
                 endif
 
                 if lexInnerGoOn is true
-                  length    = length + 1
-                  next      = __mold_ord(this._getInput(length))
+                  length       = length + 1
+                  next         = ord(this._getInput(length))
                   lexInnerGoOn = false
                 endif
               endif
@@ -876,7 +876,7 @@ class Parser
       # Shift
       #
 
-      if bitwiseAnd(currentAct, UNICC_SHIFT) isnt 0
+      if bitand(currentAct, UNICC_SHIFT) isnt 0
         debug('going to shift...')
         nextChar = this.buf[currentLen]
         this.buf[currentLen] = 0
@@ -908,7 +908,7 @@ class Parser
         # End of scan actions.
         #
 
-        if bitwiseAnd(currentAct, UNICC_REDUCE) isnt 0
+        if bitand(currentAct, UNICC_REDUCE) isnt 0
           stack[stackIdx].state = -1
         else
           stack[stackIdx].state = currentIdx
@@ -944,7 +944,7 @@ class Parser
       innerGoOn  = true
       reduceIter = 1
 
-      while (innerGoOn is true) and (bitwiseAnd(currentAct, UNICC_REDUCE) isnt 0)
+      while (innerGoOn is true) and (bitand(currentAct, UNICC_REDUCE) isnt 0)
         debug('')
         debug('------------------------------')
         debug('REDUCE ITER #' + str(masterIter) + '.' + str(reduceIter))
@@ -1053,7 +1053,7 @@ class Parser
           stack[stackIdx].line   = this.line
           stack[stackIdx].column = this.column
 
-          if bitwiseAnd(currentAct, UNICC_REDUCE) isnt 0
+          if bitand(currentAct, UNICC_REDUCE) isnt 0
             stack[stackIdx].state = -1
           else
             stack[stackIdx].state = currentIdx
@@ -1065,9 +1065,9 @@ class Parser
         debug('reduced')
       endwhile
 
-      debug('END CONDITION: reduce=[' + str(bitwiseAnd(currentAct, UNICC_REDUCE)) + '], idx=[' + str(currentIdx) +'], goalIdx=[' + str(@@goal-production) + ']')
+      debug('END CONDITION: reduce=[' + str(bitand(currentAct, UNICC_REDUCE)) + '], idx=[' + str(currentIdx) +'], goalIdx=[' + str(@@goal-production) + ']')
 
-      if (bitwiseAnd(currentAct, UNICC_REDUCE) isnt 0) and (currentIdx is @@goal-production)
+      if (bitand(currentAct, UNICC_REDUCE) isnt 0) and (currentIdx is @@goal-production)
         goOn = false
       endif
 
@@ -1081,7 +1081,9 @@ class Parser
 
   method parseFile(path) -> ast
     # Load source code from file.
-    source        = __mold_loadFile(path)
+    # TODO: Don't use syscall directly.
+    # 29 = __MOLD_FileLoad
+    source        = __mold_syscall(29, path)
     this.filePath = path
 
     # Parse source into AST tree.

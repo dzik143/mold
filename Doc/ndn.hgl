@@ -2087,6 +2087,10 @@ FILES *.mold;*.mold.test;mold.tlt;*.mold.rules
   GeneralFLAGS 80
   StringFLAGS   3
   
+; Types
+  keywords1 undefined, defined, integer, float, string, array, map, object
+  keywords1 increase, decrease
+
   keywords1 print, die, exit, str, strescape, len
   keywords1 true, false
   keywords1 integer, boolean, float, double
@@ -2113,14 +2117,14 @@ FILES *.mold;*.mold.test;mold.tlt;*.mold.rules
   keywords1 new, delete, range, out of
   keywords1 values, keys, indexes, properties, reverse
   keywords1 is storing, isnt storing, inside, 
-  keywords1 write, read, endwrite, endread, values, accept
+  keywords1 write, read, endwrite, endread, values, accept, file, content, as
   keywords1 exception, ~, join
 
   RegKeywords COLOR green \@[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*
   RegKeywords COLOR green \@
   RegKeywords COLOR Yellow this.[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*
   RegKeywords COLOR Yellow this
-  RegKeywords COLOR green int32, int64, float32, float64
+;  RegKeywords COLOR green int8, int16, int32, int64, float32, float64
 
   RegKeywords COLOR darkgray \$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*
   

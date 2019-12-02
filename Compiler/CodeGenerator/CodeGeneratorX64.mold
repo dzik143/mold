@@ -940,75 +940,42 @@ class CodeGeneratorX64
         params    = item[3]
         paramsCnt = len(params)
 
-        if name is 'bitwiseAnd'
-          # TODO: Clean up this hack.
+        if rv is defined
+          # Function has return value.
+          # TODO: Clean up this mess.
           this.variantDestroy(rv)
-          print '  mov rax, [', params[0], '+ Variant_t.value]'
-          print '  and rax, [', params[1], '+ Variant_t.value]'
-          print '  mov [', rv, '+ Variant_t.type], VARIANT_INTEGER'
-          print '  mov [', rv, '+ Variant_t.value], rax'
+          this.push('rdi')
+          this.pushParametersBeforeCall(params)
+          this.lea('rdi', rv)
+          this.mov('[rdi + Variant_t.type]', 'VARIANT_UNDEFINED')
 
-        elif name is '__mold_parseFloat'
-          # TODO: Clean up this hack.
-          this.variantDestroy(rv)
-          print '  mov rcx, [', params[0], '+ Variant_t.value]' # rcx = text (Buffer_t)
-          print '  mov rcx, [ rcx + Buffer_t.bytesPtr ]'        # rcx = text (String_t)
-          print '  lea rcx, [ rcx + String_t.text ]'            # rcx = text (char*)
-          print '  cinvoke atof'                                # rcx = atof(text)
-          print '  mov [', rv, '+ Variant_t.type], VARIANT_DOUBLE'
-          print '  movq [', rv, '+ Variant_t.value], xmm0'
-
-        elif name is '__mold_parseInteger'
-          # TODO: Clean up this hack.
-          this.variantDestroy(rv)
-          print '  mov rcx, [', params[0], '+ Variant_t.value]' # rcx = text (Buffer_t)
-          print '  mov rcx, [ rcx + Buffer_t.bytesPtr ]'        # rcx = text (String_t)
-          print '  lea rcx, [ rcx + String_t.text ]'            # rcx = text (char*)
-          print '  mov rdx, 0'                                  # rdx = temp buf = NULL
-          print '  mov r8, rdx'                                 # rdx = base = 0 = auto
-          print '  cinvoke strtol'                              # rcx = int(text)
-          print '  mov [', rv, '+ Variant_t.type], VARIANT_INTEGER'
-          print '  mov [', rv, '+ Variant_t.value], rax'
-
-        else
-          # Generic call.
-          if rv is defined
-            # Function has return value.
-            # TODO: Clean up this mess.
-            this.variantDestroy(rv)
-            this.push('rdi')
-            this.pushParametersBeforeCall(params)
-            this.lea('rdi', rv)
-            this.mov('[rdi + Variant_t.type]', 'VARIANT_UNDEFINED')
-
-            if opcode is 'syscall'
-              # Syscall
-              if typeof(name) is 'integer'
-                print '  mov eax, ', name
-              else
-                print '  mov eax, dword [', name, '+ Variant_t.value]'
-              endif
-
-              this.call('__MOLD_SysCall')
-
+          if opcode is 'syscall'
+            # Syscall
+            if typeof(name) is 'integer'
+              print '  mov eax, ', name
             else
-              # Pure function.
-              this.call(name)
+              print '  mov eax, dword [', name, '+ Variant_t.value]'
             endif
 
+            this.call('__MOLD_SysCall')
+
           else
-            # No return value.
-            this.pushParametersBeforeCall(params)
+            # Pure function.
             this.call(name)
           endif
 
-          if paramsCnt > 4
-            print '  add rsp,', paramsCnt * 8 - 32
-          endif
+        else
+          # No return value.
+          this.pushParametersBeforeCall(params)
+          this.call(name)
+        endif
 
-          if rv is defined
-            this.pop('rdi')
-          endif
+        if paramsCnt > 4
+          print '  add rsp,', paramsCnt * 8 - 32
+        endif
+
+        if rv is defined
+          this.pop('rdi')
         endif
 
       elif opcode is 'vcall'

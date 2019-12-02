@@ -20,6 +20,7 @@
 
 DEBUG_AST_OPTIMIZER = false
 
+import '../Libs/Io.mold'
 import 'AST/AST.mold'
 import 'Parser/ParserMold.mold'
 
@@ -34,11 +35,16 @@ import 'CodeGenerator/CodeGeneratorX64.mold'
 import 'MIR/MIRQuadOptimizer.mold'
 import 'VM/VMachineStack.mold'
 
+VERSION_STRING = '0.1.191201'
+
 # ------------------------------------------------------------------------------
 #                              Helper functions
 # ------------------------------------------------------------------------------
 
 function BadUsageError()
+  global VERSION_STRING
+
+  print 'Mold version', VERSION_STRING
   print 'Usage:'
   print '  mold [-c] [--asm] [--mir0] [--mir] <input.mold>'
   exit()

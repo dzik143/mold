@@ -36,7 +36,7 @@ read from 'test.txt' values x, y, z, @eol
 # Write binary data to stdout:
 # - write three int32 values,
 # - wrwite one float64 value.
-write to stdout values int32(a), int32(b), int32(c), float64(x)
+write to stdout values @int32(a), @int32(b), @int32(c), @float64(x)
 
 # Write binary data to external file:
 # - open file 'test.dat' for write (if not opened yet),
@@ -120,3 +120,171 @@ read from 'test.dat'
 exception
   # Error while reading or vertex out-of-range.
 endread
+
+# ------------------------------------------------------------------------------
+
+# Binary data: primitives.
+@int8(x)    - treat as 8-bit signed integer (little-endian)
+@int16(x)   - treat as 16-bit signed integer (little-endian)
+@int32(x)   - treat as 32-bit signed integer (little-endian)
+@int64(x)   - treat as 64-bit signed integer (little-endian)
+@float32(x) - treat as 32-bit floating point (little-endian)
+@float64(x) - treat as 64-bit floating point (little-endian)
+@bool8(x)   - treat as 8-bit boolean
+@bool16(x)  - treat as 16-bit boolean
+@bool32(x)  - treat as 32-bit boolean
+@bool64(x)  - treat as 64-bit boolean
+
+# Binary data: arrays.
+@int8array(x, size)  - treat as array of 8-bit integers (<size> bytes)
+@int16array(x, size) - treat as array of 16-bit integers (2 * <size> bytes)
+@int32array(x, size) - treat as array of 32-bit integers (4 * <size> bytes)
+@int64array(x, size) - treat as array of 64-bit integers (8 * <size> bytes)
+
+@float32array(x, size) - treat as array of 8-bit integers (<size> bytes)
+@int16array(x, size) - treat as array of 16-bit integers (2 * <size> bytes)
+@int32array(x, size) - treat as array of 32-bit integers (4 * <size> bytes)
+@int64array(x, size) - treat as array of 64-bit integers (8 * <size> bytes)
+
+# Textual data.
+@text(x)     - arbitraty text sequence e.g. 'Hello Mold!'
+@word(x)     - textual word e.g. 'Mold'
+@line(x)     - one line of text e.g. 'This first line line'
+@sentence(x) - textual sentence e.g. 'Mold is a programming language.'
+@integer(x)  - integer number in textual form e.g. '1234'
+@float(x)    - float number in textual form e.g. '3.14'
+
+# Control sequences.
+@newline  - end of line character(s)
+@close    - close stream
+@truncate - truncate output stream
+
+read from 'test.txt' values @int32(cnt), @int32array(x, cnt)
+read from 'test.txt' values @int32(cnt), @arrayOfInts32(x, cnt)
+read from 'test.txt' values @int32(cnt), @int32(x) times cnt
+read from 'test.txt' values @int32(cnt), cnt * @int32(x)
+read from 'test.txt' values @int32(cnt), @int32(@array(x, cnt))
+read from 'test.txt' values @int32(cnt), @array(x, @int32, cnt)
+read from 'test.txt' values @int32(cnt), @array(x) type @int32 length cnt
+read from 'test.txt' values @int32(cnt), @int32(x:cnt)
+read from 'test.txt' values @int32(cnt), @int32(x length cnt)
+read from 'test.txt' values @int32(cnt), @int32(x size cnt)
+read from 'test.txt' values @int32(cnt), @int32(x times cnt)
+read from 'test.txt' values @int32(cnt), @int32(x rep cnt)
+read from 'test.txt' values @int32(cnt), @int32(x repeat cnt)
+read from 'test.txt' values @int32(cnt), @int32(x, cnt)
+read from 'test.txt' values @int32(cnt), @int32(x*cnt)
+read from 'test.txt' values @int32(cnt), @int32[cnt](x)
+read from 'test.txt' values @int32(cnt), @int32(x[0..cnt])
+read from 'test.txt' values @int32(cnt), @int32(x[0..cnt])
+
+# Read array of 32-bit ints:
+read from 'test.txt' values @int32(cnt), @int32[cnt](x)
+read from 'test.txt' values @int32(cnt), @int32(x:cnt)
+read from 'test.txt' values @int32(cnt), @int32(x[0..cnt])
+read from 'test.txt' values @int32(cnt), @int32(x[0..cnt])
+read from 'test.txt' values @int32(n), @int32(m), @int32(x[0..n, 0..m])
+
+# Variant I.
+int32(x)             - read single 32-bit integer
+int32(x[i])          - read single 32-bit integer and store it in array
+int32(x[0..n])       - read whole array of <n> 32-bit integers at once
+int32(x[0..n, 0..m]) - read 2d array (matrix) with dimensions n x m
+
+# Variant II.
+int32(x)      - read single 32-bit integer
+int32(x[i])   - read single 32-bit integer and store it in array
+int32[n](x)   - read whole array of <n> 32-bit integers at once
+int32[n,m](x) - read 2d array (matrix) with dimensions n x m
+
+# Variant III.
+int32(x)             - read single 32-bit integer
+int32(x[i])          - read single 32-bit integer and store it in array
+int32[0..n](x)       - read whole array of <n> 32-bit integers at once
+int32[0..n, 0..m](x) - read 2d array (matrix) with dimensions n x m
+
+read from 'test.txt'
+  @int32(cnt)
+  @int32[cnt](x)
+endread
+
+read from 'test.txt'
+  @int32(cnt)
+  @int32(x)
+endread
+
+read from 'test.txt'
+  @int32(cnt)
+  @int32(x:cnt)
+endread
+
+read from 'test.txt'
+  @int32(cnt)
+  @int32(x[0..cnt])
+endread
+
+# Read 2-dimensional array of 32-bit ints.
+read from 'test.txt' values @int32(width), @int32(height), @int32[width, height](x)
+read from 'test.txt' values @int32(width), @int32(height), @int32(x[0..width, 0..height])
+
+read from 'test.txt'
+  @int32(width)
+  @int32(height)
+  @int32[width, height](x)
+endread
+
+read from 'test.txt'
+  @int32(width)
+  @int32(height)
+  @int32(x[0..width, 0..height])
+endread
+
+
+read from 'test.txt'
+  @int32(cnt)
+  @int32Array(x, cnt) in range(0, 1000)
+endread
+
+read from 'test.txt'
+  @int32(cnt)
+  @arrayOfInts32(x, cnt) in range(0, 1000)
+endread
+
+read from 'test.txt'
+  @int32(cnt)
+  @int32(x) in range(0, 1000) times cnt
+endread
+
+read from 'test.txt'
+  @int32(cnt)
+  @array(x) of int32 length cnt values in range(0,1000)
+endread
+
+read from 'test.txt'
+  @int32(cnt)
+  @int32(x repeat cnt) in range(0,1000)
+endread
+
+read from 'test.txt'
+  @int32(cnt)
+  @int32(x:cnt) in range(0,1000)
+endread
+
+read from 'test.txt'
+  @int32(cnt)
+  for idx in 0 .. cnt
+    @int32(x[idx]) in range(0, 1000)
+  endfor
+endread
+
+#############################
+read from 'test.dat'
+  @filesize(fsize)
+  @createTime(t1)
+  @accessTime(t2)
+  @modifyTime(t3)
+endread
+
+#############################
+
+write to 'test.dat', int32(len(x)), int32(x[0..len(x)])

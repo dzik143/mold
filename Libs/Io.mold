@@ -51,6 +51,21 @@ function readByte(f) -> rv
   rv = __mold_syscall(8, f)
 endfunction
 
+function readWord(f) -> rv
+  # Read one word (2 bytes) from file.
+  rv = __mold_syscall(9, f)
+endfunction
+
+function readDword(f) -> rv
+  # Read one double word (4 bytes) from file.
+  rv = __mold_syscall(10, f)
+endfunction
+
+function readQword(f) -> rv
+  # Read one quad word (8 bytes) from file.
+  rv = __mold_syscall(11, f)
+endfunction
+
 function readChar(f) -> rv
   # Read one byte from file.
   rv = __mold_syscall(20, f)
@@ -110,4 +125,28 @@ function readLine(f) -> rv
       rv = rv + c
     endif
   endwhile
+endfunction
+
+function parseInteger(x) -> rv
+  rv = __mold_syscall(33, x)
+endfunction
+
+function parseFloat(x) -> rv
+  rv = __mold_syscall(34, x)
+endfunction
+
+function bitand(x, y) -> rv
+  rv = __mold_syscall(35, x, y)
+endfunction
+
+function bitor(x, y) -> rv
+  rv = __mold_syscall(36, x, y)
+endfunction
+
+function bitxor(x, y) -> rv
+  rv = __mold_syscall(37, x, y)
+endfunction
+
+function bitnot(x) -> rv
+  rv = __mold_syscall(38, x)
 endfunction

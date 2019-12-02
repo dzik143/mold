@@ -145,18 +145,6 @@ class MIRCode
     this.proceduresCnt = this.proceduresCnt + 1
   endmethod
 
-  method createExternalProc(name, params, paramsCnt, rv, externAddr)
-    this.procedures[this.proceduresCnt] = {
-      'name': name,
-      'startAddr': externAddr,
-      'params': params,
-      'paramsCnt': paramsCnt,
-      'rv': rv,
-      'external': true
-    }
-    this.proceduresCnt = this.proceduresCnt + 1
-  endmethod
-
   method resolveLabel(labelId) -> rv
     rv = this.labels[labelId]
   endmethod
@@ -515,12 +503,6 @@ class MIRCode
   method createLabel() -> rv
     rv = this.labelsCnt
     this.labels[this.labelsCnt] = -1
-    this.labelsCnt = this.labelsCnt + 1
-  endmethod
-
-  method createExternalLabel(addr) -> rv
-    rv = this.labelsCnt
-    this.labels[this.labelsCnt] = addr
     this.labelsCnt = this.labelsCnt + 1
   endmethod
 

@@ -275,3 +275,10 @@ decrease y
 
 increase x by 2
 decrease y by 2
+
+#############################
+
+push to box values x,y,z
+pop from box values x,y,z
+
+insert to box values x,y,z

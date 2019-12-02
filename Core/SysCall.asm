@@ -19,7 +19,7 @@
 ;###############################################################################
 
 __MOLD_SysCall:
-  cmp  eax, 34
+  cmp  eax, 38
   ja   .error
 
   jmp  qword [.jmpTable + eax * 8]
@@ -56,13 +56,18 @@ __MOLD_SysCall:
   dq .error         ; 26
   dq .error         ; 27
   dq .error         ; 28
-  dq .error         ; 29
+  dq __MOLD_LoadFile; 29
   dq .error         ; 30
 
   dq .ord           ; 31
   dq .asc           ; 32
   dq .parse_integer ; 33
   dq .parse_float   ; 34
+
+  dq .bitwise_and   ; 35
+  dq .bitwise_or    ; 36
+  dq .bitwise_xor   ; 37
+  dq .bitwise_not   ; 38
 
 ; ------------------------------------------------------------------------------
 ; Open file
@@ -239,7 +244,6 @@ __MOLD_SysCall:
 
     mov     [rdi + Variant_t.type], VARIANT_INTEGER
     mov     [rdi + Variant_t.value], rax
-
     ret
 
 ; ------------------------------------------------------------------------------
@@ -247,7 +251,41 @@ __MOLD_SysCall:
 ; ------------------------------------------------------------------------------
 
 .parse_float:
-    jmp .error
+    mov     rcx, [rcx + Variant_t.value]             ; rcx = text (Buffer_t)
+    mov     rcx, [rcx + Buffer_t.bytesPtr]           ; rcx = text (String_t)
+    lea     rcx, [rcx + String_t.text]               ; rcx = text (char*)
+    cinvoke atof                                     ; rcx = atof(text)
+
+    mov     [rdi + Variant_t.type], VARIANT_DOUBLE
+    movq    [rdi + Variant_t.value], xmm0
+    ret
+
+; ------------------------------------------------------------------------------
+; Bitwise operations
+; ------------------------------------------------------------------------------
+
+.bitwise_and:
+    mov rax, [rcx + Variant_t.value]  ; rax = x
+    and rax, [rdx + Variant_t.value]  ; rax = x & y
+    jmp .bitwise_done
+
+.bitwise_or:
+    mov rax, [rcx + Variant_t.value]  ; rax = x
+    or  rax, [rdx + Variant_t.value]  ; rax = x | y
+    jmp .bitwise_done
+
+.bitwise_xor:
+    mov rax, [rcx + Variant_t.value]  ; rax = x
+    xor rax, [rdx + Variant_t.value]  ; rax = x ^ y
+    jmp .bitwise_done
+
+.bitwise_not:
+    mov rax, [rcx + Variant_t.value]  ; rax = x
+    not rax                           ; rax = ~x
+
+.bitwise_done:
+    mov [rdi + Variant_t.type], VARIANT_INTEGER
+    mov [rdi + Variant_t.value], rax
     ret
 
 ; ------------------------------------------------------------------------------

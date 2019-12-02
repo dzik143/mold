@@ -484,11 +484,11 @@ number
   ;
 
 integer
-  : @INTEGER [* @@ = __mold_parseInteger(@1) *]
+  : @INTEGER [* @@ = parseInteger(@1) *]
   ;
 
 float
-  : @FLOAT [* @@ = __mold_parseFloat(@1) *]
+  : @FLOAT [* @@ = parseFloat(@1) *]
   ;
 
 string

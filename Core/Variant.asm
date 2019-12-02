@@ -2856,7 +2856,6 @@ __mold_ord:
 ;###############################################################################
 
 __MOLD_LoadFile:
-__mold_loadFile:
     ; TODO: Handle read error
 
     sub     rsp, 32
