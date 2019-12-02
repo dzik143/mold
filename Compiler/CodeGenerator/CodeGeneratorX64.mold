@@ -1112,10 +1112,6 @@ class CodeGeneratorX64
         print '  cmp  [', x, ' + Variant_t.value],', y
         print '  jge ', dst
 
-      elif opcode is 'halt'
-        print '  mov  rcx, 0'
-        print '  call __MOLD_Halt'
-
       elif opcode is 'inner_ret'
         # TODO: Better handling of nested procedures.
         print '  ret'

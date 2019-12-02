@@ -84,8 +84,6 @@ MIR_OPCODE_LOAD_ARGC        = 252
 MIR_OPCODE_LOAD_ARGV        = 253
 MIR_OPCODE_LOAD_MOLD_SOURCE = 254
 
-MIR_OPCODE_HALT = 255
-
 class MIRCode
   method constructor()
     # Store instructions list.
@@ -209,11 +207,6 @@ class MIRCode
   method nop()
     global MIR_OPCODE_NOP
     this.push0(MIR_OPCODE_NOP)
-  endmethod
-
-  method halt()
-    global MIR_OPCODE_HALT
-    this.push0(MIR_OPCODE_HALT)
   endmethod
 
   method neg()

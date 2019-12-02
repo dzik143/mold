@@ -26,10 +26,10 @@ MOLD_SYSCALL_ONE_ARG   = 0x1000
 MOLD_SYSCALL_TWO_ARGS  = 0x2000
 
 MOLD_SYSCALL_MAP = {
-  'FileOpenForRead':   1,
-  'FileOpenForWrite':  2,
-  'FileOpenForCreate': 3,
-  'FileClose':         4,
+  'FileOpenForRead':   MOLD_SYSCALL_ONE_ARG + 1,
+  'FileOpenForWrite':  MOLD_SYSCALL_ONE_ARG + 2,
+  'FileOpenForCreate': MOLD_SYSCALL_ONE_ARG + 3,
+  'FileClose':         MOLD_SYSCALL_ONE_ARG + 4,
 
   'FileReadInt8':    MOLD_SYSCALL_ONE_ARG + 8,
   'FileReadInt16':   MOLD_SYSCALL_ONE_ARG + 9,
@@ -43,12 +43,14 @@ MOLD_SYSCALL_MAP = {
   'FileReadBool64':  MOLD_SYSCALL_ONE_ARG + 19,
   'FileReadChar':    MOLD_SYSCALL_ONE_ARG + 20,
 
-  'FileWriteByte':   MOLD_SYSCALL_ONE_ARG + 21,
-  'FileWriteWord':   MOLD_SYSCALL_ONE_ARG + 22,
-  'FileWriteDWord':  MOLD_SYSCALL_ONE_ARG + 23,
-  'FileWriteQWord':  MOLD_SYSCALL_ONE_ARG + 24,
-  'FileWriteDQWord': MOLD_SYSCALL_ONE_ARG + 25,
-  'FileLoad':        MOLD_SYSCALL_ONE_ARG + 29,
+  'FileWriteInt8':    MOLD_SYSCALL_TWO_ARGS + 21,
+  'FileWriteChar':    MOLD_SYSCALL_TWO_ARGS + 21,
+  'FileWriteInt16':   MOLD_SYSCALL_TWO_ARGS + 22,
+  'FileWriteInt32':   MOLD_SYSCALL_TWO_ARGS + 23,
+  'FileWriteInt64':   MOLD_SYSCALL_TWO_ARGS + 24,
+  'FileWriteFloat64': MOLD_SYSCALL_TWO_ARGS + 24,
+
+  'FileLoad': MOLD_SYSCALL_ONE_ARG + 29,
 
   'ord':          MOLD_SYSCALL_ONE_ARG + 31,
   'asc':          MOLD_SYSCALL_ONE_ARG + 32,
@@ -58,7 +60,12 @@ MOLD_SYSCALL_MAP = {
   'bitand': MOLD_SYSCALL_TWO_ARGS + 35,
   'bitor':  MOLD_SYSCALL_TWO_ARGS + 36,
   'bitxor': MOLD_SYSCALL_TWO_ARGS + 37,
-  'bitnot': MOLD_SYSCALL_ONE_ARG  + 38
+  'bitnot': MOLD_SYSCALL_ONE_ARG  + 38,
+
+  'exit': MOLD_SYSCALL_ZERO_ARGS + 40,
+  'die':  MOLD_SYSCALL_ONE_ARG + 41
+#  'str':  MOLD_SYSCALL_ONE_ARG + 42
+#  'len':  MOLD_SYSCALL_ONE_ARG + 43
 }
 
 class ASTPreprocessor

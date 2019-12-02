@@ -18,8 +18,6 @@
 #                                                                              #
 ################################################################################
 
-import '../../Libs/Io.mold'
-
 class PEWriter
   method constructor()
     this.path             = ''
@@ -30,22 +28,22 @@ class PEWriter
   endmethod
 
   method emitByte(x)
-    writeByte(this.f, x)
+    FileWriteInt8(this.f, x)
     this.ofs = this.ofs + 1
   endmethod
 
   method emitWord(x)
-    writeWord(this.f, x)
+    FileWriteInt16(this.f, x)
     this.ofs = this.ofs + 2
   endmethod
 
   method emitDword(x)
-    writeDword(this.f, x)
+    FileWriteInt32(this.f, x)
     this.ofs = this.ofs + 4
   endmethod
 
   method emitQword(x)
-    writeQword(this.f, x)
+    FileWriteInt64(this.f, x)
     this.ofs = this.ofs + 8
   endmethod
 
@@ -157,7 +155,7 @@ class PEWriter
 
   method create(path)
     this.path = path
-    this.f    = open(path, 'w+')
+    this.f    = FileOpenForCreate(path)
 
     #this._emit_HeaderDOS()
     #this._emit_HeaderPE()
@@ -171,6 +169,7 @@ class PEWriter
   endmethod
 
   method close()
+    FileClose(this.f)
     #missingBytes = 1024 - this.ofs
     #for idx in 0 .. missingBytes
     #  this.emitByte(0)
@@ -178,6 +177,6 @@ class PEWriter
   endmethod
 endclass
 
-#peWriter = new PEWriter()
-#peWriter.create('test.exe')
-#peWriter.close()
+peWriter = new PEWriter()
+peWriter.create('test.exe')
+peWriter.close()
