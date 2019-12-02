@@ -585,7 +585,6 @@ class ASTSymbolsCollector
             (funcName is 'str') or
             (funcName is 'strescape') or
             (funcName is '__mold_createObject') or
-            (funcName is '__mold_getClassName') or
             (funcName is '__mold_warning') or
             (funcName is '__mold_printToStdOutput') or
             (funcName is '__mold_syscall') or

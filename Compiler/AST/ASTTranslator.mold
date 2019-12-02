@@ -762,10 +762,6 @@ class ASTTranslator
       this._verifyNumberOfParameters('built-in __mold_createObject', 1, paramsCnt)
       this._callMoldCreateObject(rv, params[0])
 
-    elif funcName is '__mold_getClassName'
-      this._verifyNumberOfParameters('built-in __mold_getClassName', 1, paramsCnt)
-      this._callMoldGetClassName(rv, params[0])
-
     elif funcName is '__mold_warning'
       this._verifyNumberOfParameters('built-in __mold_warning', 1, paramsCnt)
       this._callMoldWarning(params[0])
