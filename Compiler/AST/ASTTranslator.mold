@@ -85,14 +85,6 @@ class ASTTranslator
     this._error('_callMoldPrintToStdOut not implemented')
   endmethod
 
-  method _callMoldCreateObject(rv, classProto)
-    this._error('_callMoldCreateObject not implemented')
-  endmethod
-
-  method _callMoldGetClassName(rv, thiz)
-    this._error('_callMoldGetClassName not implemented')
-  endmethod
-
   method _callMoldParseFile(rv, filePath)
     this._error('_callMoldParseFile not implemented')
   endmethod
@@ -757,10 +749,6 @@ class ASTTranslator
     elif funcName is 'strescape'
       this._verifyNumberOfParameters('built-in strescape', 1, paramsCnt)
       this._callStrEscape(rv, params[0])
-
-    elif funcName is '__mold_createObject'
-      this._verifyNumberOfParameters('built-in __mold_createObject', 1, paramsCnt)
-      this._callMoldCreateObject(rv, params[0])
 
     elif funcName is '__mold_warning'
       this._verifyNumberOfParameters('built-in __mold_warning', 1, paramsCnt)

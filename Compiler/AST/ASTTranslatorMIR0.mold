@@ -56,14 +56,6 @@ class ASTTranslatorMIR0 extends ASTTranslator
     this.code.callPrintToStdOut(msg)
   endmethod
 
-  method _callMoldCreateObject(rv, classProto)
-    this.code.createObject(classProto)
-  endmethod
-
-  method _callMoldGetClassName(rv, thiz)
-    #this._error('_callMoldGetClassName not implemented')
-  endmethod
-
   method _callMoldParseFile(rv, filePath)
     this.code.loadMoldSource()
   endmethod

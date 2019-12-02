@@ -201,14 +201,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.push('<print:unused_rv>')
   endmethod
 
-  method _callMoldCreateObject(rv, classProto)
-    this._error('__mold_createObject() is not implemented')
-  endmethod
-
-  method _callMoldGetClassName(rv, thiz)
-    this._error('_callMoldGetClassName() is not implemented')
-  endmethod
-
   method _callMoldParseFile(rv, filePath)
     this._error('_callMoldParseFile() is obsolete')
   endmethod
