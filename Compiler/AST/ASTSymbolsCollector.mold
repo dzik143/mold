@@ -578,8 +578,7 @@ class ASTSymbolsCollector
       if opcode is AST_OPCODE_CALL
         funcName = node.value
 
-        if ((funcName is 'typeof') or
-            (funcName is 'print') or
+        if ((funcName is 'print') or
             (funcName is 'super') or
             (funcName is '__mold_syscall') or
             (funcName is 'global'))

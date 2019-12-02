@@ -62,12 +62,14 @@ MOLD_SYSCALL_MAP = {
   'bitxor': MOLD_SYSCALL_TWO_ARGS + 37,
   'bitnot': MOLD_SYSCALL_ONE_ARG  + 38,
 
-  'exit': MOLD_SYSCALL_ZERO_ARGS + 40,
-  'die':  MOLD_SYSCALL_ONE_ARG + 41,
-  'str':  MOLD_SYSCALL_ONE_ARG + 42,
-  'len':  MOLD_SYSCALL_ONE_ARG + 43,
-  '__mold_printToStdOutput': MOLD_SYSCALL_ONE_ARG + 44,
-  '__mold_warning': MOLD_SYSCALL_ONE_ARG + 45
+  'exit':   MOLD_SYSCALL_ZERO_ARGS + 40,
+  'die':    MOLD_SYSCALL_ONE_ARG + 41,
+  'str':    MOLD_SYSCALL_ONE_ARG + 42,
+  'len':    MOLD_SYSCALL_ONE_ARG + 43,
+  'typeof': MOLD_SYSCALL_ONE_ARG + 44,
+
+  '__mold_printToStdOutput': MOLD_SYSCALL_ONE_ARG + 45,
+  '__mold_warning': MOLD_SYSCALL_ONE_ARG + 46
 }
 
 class ASTPreprocessor
@@ -122,7 +124,8 @@ class ASTPreprocessor
           children[0] = {
             'id': AST_GetNextId(),
             'opcode': AST_OPCODE_CALL,
-            'value': 'typeof',
+            'value': '__mold_syscall',
+            'sysCallId': 44, # TODO: Don't use hardcoded value ('typeof')
             'children': [x],
             'childrenCnt': 1
           }

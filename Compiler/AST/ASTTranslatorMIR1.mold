@@ -386,10 +386,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.push('<print:unused_rv>')
   endmethod
 
-  method _typeof(rv, value)
-    this.popOneArgAndEmitOpcode('typeof', rv)
-  endmethod
-
   method _loadFromIndex(rv, unusedBox, unusedIdx)
     this.popTwoArgsAndEmitOpcode('load_index', rv)
   endmethod

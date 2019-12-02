@@ -296,14 +296,47 @@ class ASTOptimizerConstantFolding
 
           # Dispatch opcode.
           if opcode is AST_OPCODE_CALL
-            if value is 'typeof'
-              newValue = typeof(x.value)
+            if (value is '__mold_syscall') and (childrenCnt is 1)
+              # TODO: Don't use hardcoded values.
+              # TODO: Clean up this mess.
+              #'ord':          MOLD_SYSCALL_ONE_ARG + 31,
+              #'asc':          MOLD_SYSCALL_ONE_ARG + 32,
+              #'ParseInteger': MOLD_SYSCALL_ONE_ARG + 33,
+              #'ParseFloat':   MOLD_SYSCALL_ONE_ARG + 34,
+              #'bitand':       MOLD_SYSCALL_TWO_ARGS + 35,
+              #'bitor':        MOLD_SYSCALL_TWO_ARGS + 36,
+              #'bitxor':       MOLD_SYSCALL_TWO_ARGS + 37,
+              #'bitnot':       MOLD_SYSCALL_ONE_ARG  + 38,
+              #'str':          MOLD_SYSCALL_ONE_ARG + 42,
+              #'len':          MOLD_SYSCALL_ONE_ARG + 43,
+              #'typeof':       MOLD_SYSCALL_ONE_ARG + 44,
+              sysCallId = node.sysCallId
+              xValue    = x.value
 
-            elif value is 'len'
-              newValue = len(x.value)
+              if sysCallId is 31
+                newValue = ord(xValue)
 
-            elif value is 'str'
-              newValue = str(x.value)
+              elif sysCallId is 32
+                newValue = asc(xValue)
+
+              elif sysCallId is 33
+                newValue = ParseInteger(xValue)
+
+              elif sysCallId is 34
+                newValue = ParseFloat(xValue)
+
+              elif sysCallId is 42
+                newValue = str(xValue)
+
+              elif sysCallId is 43
+                newValue = len(xValue)
+
+              elif sysCallId is 44
+                newValue = typeof(xValue)
+
+              else
+                # Unhandled syscall - do nothing.
+              endif
 
             else
               # Unhandled call - do nothing.
@@ -383,7 +416,11 @@ class ASTOptimizerConstantFolding
             endif
           endif
 
-        elif (opcode is AST_OPCODE_CALL) and (value is 'typeof')
+        # TODO: Remove hardcoded value ('typeof').
+        elif ((opcode is AST_OPCODE_CALL) and
+              (value is '__mold_syscall') and
+              (node.sysCallId is 44))
+
           # typeof(...) - non imm variant.
           # Maybe we already know type?
           astType = AST_GetDataType(x)

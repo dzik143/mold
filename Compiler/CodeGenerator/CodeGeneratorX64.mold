@@ -423,9 +423,6 @@ class CodeGeneratorX64
       # Typeof(x)
       # TODO: Move typeof(imm) to core.
       #
-      elif opcode is 'typeof_variant'
-        this.variantDestroy(dst)
-        this.call2('__MOLD_VariantTypeOf', x, dst)
 
       elif (opcode is 'typeof_int64') or (opcode is 'typeof_int32')
         this.variantDestroy(dst)

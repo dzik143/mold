@@ -114,10 +114,6 @@ class ASTTranslator
     this._error('_callPrint() not implemented')
   endmethod
 
-  method _typeof(rv, value)
-    this._error('_typeof() not implemented')
-  endmethod
-
   method _neg(rv, value)
     this._error('_neg() not implemented')
   endmethod
@@ -702,12 +698,7 @@ class ASTTranslator
       this._releaseTempVar(oneParam)
     endfor
 
-    if funcName is 'typeof'
-      # Built-in typeof.
-      this._verifyNumberOfParameters('built-in typeof', 1, paramsCnt)
-      this._typeof(rv, params[0])
-
-    elif funcName is 'print'
+    if funcName is 'print'
       # Built-in print function.
       this._callPrint(params, paramsCnt)
 

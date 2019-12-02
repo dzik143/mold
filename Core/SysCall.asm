@@ -301,6 +301,11 @@ __MOLD_SysCall:
     mov     rdx, rdi
     jmp     __MOLD_VariantLength
 
+.typeof:
+    ; TODO: Change function proto and call directly.
+    mov     rdx, rdi
+    jmp     __MOLD_VariantTypeOf
+
 ; ------------------------------------------------------------------------------
 ; Error file
 ; ------------------------------------------------------------------------------
@@ -363,8 +368,9 @@ __MOLD_SysCall:
   dq .die           ; 41
   dq .str           ; 42 ; TODO: __MOLD_VariantConvertToString
   dq .len           ; 43 ; TODO: __MOLD_VariantLength
+  dq .typeof        ; 44 ; TODO: __MOLD_VariantTypeOf
 
-  dq __MOLD_PrintVariant           ; 44
-  dq __MOLD_PrintVariantToStdError ; 45
+  dq __MOLD_PrintVariant           ; 45
+  dq __MOLD_PrintVariantToStdError ; 46
 
 .jmpTableEnd:

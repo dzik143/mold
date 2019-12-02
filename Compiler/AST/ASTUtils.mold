@@ -516,7 +516,10 @@ function AST_HasSideEffects(node) -> rv
 
   if opcode is AST_OPCODE_CALL
     # TODO: Check function protos.
-    if (node.value is 'str') or (node.value is 'len')
+    # TODO: Don't use hardcoded values.
+    if ((node.value is '__mold_syscall') and
+        (node.sysCallId >= 31) and
+        (node.sysCallId <= 44))
       # Built-in function without side effect.
       rv = false
     else

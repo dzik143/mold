@@ -58,7 +58,6 @@ MIR_OPCODE_OVER      = 30
 MIR_OPCODE_MOVE_BACK = 31
 
 MIR_OPCODE_PRINT         = 32
-MIR_OPCODE_TYPEOF        = 35
 MIR_OPCODE_CREATE_OBJECT = 36
 MIR_OPCODE_VCALL         = 38
 
@@ -382,11 +381,6 @@ class MIRCode
   method loadArgv()
     global MIR_OPCODE_LOAD_ARGV
     this.push0(MIR_OPCODE_LOAD_ARGV)
-  endmethod
-
-  method getTypeOf()
-    global MIR_OPCODE_TYPEOF
-    this.push0(MIR_OPCODE_TYPEOF)
   endmethod
 
   method createObject(classProto)

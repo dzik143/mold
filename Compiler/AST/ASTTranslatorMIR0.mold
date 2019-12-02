@@ -199,10 +199,6 @@ class ASTTranslatorMIR0 extends ASTTranslator
     this.code.callPrint(paramsCnt)
   endmethod
 
-  method _typeof(rv, value)
-    this.code.getTypeOf()
-  endmethod
-
   method _loadFromIndex(rv, unusedBox, unusedIdx)
     this.code.loadIndex()
   endmethod
