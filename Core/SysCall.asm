@@ -19,7 +19,7 @@
 ;###############################################################################
 
 __MOLD_SysCall:
-  cmp  eax, 38
+  cmp  eax, 43
   ja   .error
   jmp  qword [.jmpTable + eax * 8]
 
@@ -243,6 +243,53 @@ __MOLD_SysCall:
     ret
 
 ; ------------------------------------------------------------------------------
+; Call external procedure
+; rcx - DLL name
+; rdx - Procedure name
+; r8  - param1
+; r9  - param2
+; etc.
+; ------------------------------------------------------------------------------
+
+.callExternal:
+    push    rdx
+
+    ; Load DLL
+    ; TODO: Don't resolve handle each time.
+    ; ------------------------------------
+    mov     rcx, [rcx + Variant_t.value]
+    mov     rcx, [rcx + Buffer_t.bytesPtr]
+    lea     rcx, [rcx + String_t.text]
+
+    cinvoke LoadLibrary                     ; rax = DLL Handle
+    mov     rcx, rax                        ; rcx = DLL Handle
+
+    ; Import procedure from DLL
+    ; TODO: Don't resolve symbol each time.
+    ; ------------------------------------
+
+    pop     rdx
+    mov     rdx, [rdx + Variant_t.value]
+    mov     rdx, [rdx + Buffer_t.bytesPtr]
+    lea     rdx, [rdx + String_t.text]
+
+    cinvoke GetProcAddress                  ; rax = external procedure ptr
+
+    ; Call imported procedure
+    ; TODO: Handle parameters.
+    ; ------------------------------------
+    jmp     rax
+
+; ------------------------------------------------------------------------------
+; die(msg)
+; Print error message to stderr and exit process.
+; ------------------------------------------------------------------------------
+
+.die:
+    call    __MOLD_PrintVariantToStdError
+    jmp     __MOLD_Halt
+
+; ------------------------------------------------------------------------------
 ; Error file
 ; ------------------------------------------------------------------------------
 
@@ -298,5 +345,11 @@ __MOLD_SysCall:
   dq .bitwise_or    ; 36
   dq .bitwise_xor   ; 37
   dq .bitwise_not   ; 38
+  dq .callExternal  ; 39
+
+  dq __MOLD_Halt    ; 40
+  dq .die           ; 41
+  dq __MOLD_VariantConvertToString ; 42
+  dq __MOLD_VariantLength          ; 43
 
 .jmpTableEnd:
