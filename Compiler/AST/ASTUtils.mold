@@ -618,6 +618,14 @@ function AST_HashInternal(node, isCodeMode) -> rv
       endif
 
       rv = AST_GetOpcodeAsShortText(opcode) + ':' + name + ',' + str(childrenCnt)
+
+      # TODO: Clean up this mess.
+      # Hash syscall id to avoid fake code duplication result.
+      if node.value is '__mold_syscall'
+        rv = rv + ',' + str(node.sysCallId)
+      endif
+
+      # Hash call parameters.
       for idx in 0 .. childrenCnt
         rv  = rv + ',' + AST_HashInternal(children[idx], isCodeMode)
       endfor
