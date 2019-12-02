@@ -18,8 +18,10 @@
 ;#                                                                             #
 ;###############################################################################
 
+MAX_SYSCALL_ID EQU (.jmpTableEnd - .jmpTable) / 8
+
 __MOLD_SysCall:
-  cmp  eax, 43
+  cmp  eax, MAX_SYSCALL_ID
   ja   .error
   jmp  qword [.jmpTable + eax * 8]
 
@@ -351,5 +353,7 @@ __MOLD_SysCall:
   dq .die           ; 41
   dq __MOLD_VariantConvertToString ; 42
   dq __MOLD_VariantLength          ; 43
+  dq __MOLD_PrintVariant           ; 44
+  dq __MOLD_PrintVariantToStdError ; 45
 
 .jmpTableEnd:

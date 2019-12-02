@@ -187,16 +187,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.popOneArgAndEmitOpcode('len', rv)
   endmethod
 
-  method _callMoldWarning(msg)
-    this.emitTargetOnlyOpcode('print_err', this.popForRead())
-    this.push('<print:unused_rv>')
-  endmethod
-
-  method _callMoldPrintToStdOut(msg)
-    this.emitTargetOnlyOpcode('print_out', this.popForRead())
-    this.push('<print:unused_rv>')
-  endmethod
-
   method _callMoldParseFile(rv, filePath)
     this._error('_callMoldParseFile() is obsolete')
   endmethod

@@ -73,14 +73,6 @@ class ASTTranslator
     this._error('_callStr not implemented')
   endmethod
 
-  method _callMoldWarning(msg)
-    this._error('_callMoldWarning not implemented')
-  endmethod
-
-  method _callMoldPrintToStdOut(msg)
-    this._error('_callMoldPrintToStdOut not implemented')
-  endmethod
-
   method _callMoldParseFile(rv, filePath)
     this._error('_callMoldParseFile not implemented')
   endmethod
@@ -741,14 +733,6 @@ class ASTTranslator
     elif funcName is 'str'
       this._verifyNumberOfParameters('built-in str', 1, paramsCnt)
       this._callStr(rv, params[0])
-
-    elif funcName is '__mold_warning'
-      this._verifyNumberOfParameters('built-in __mold_warning', 1, paramsCnt)
-      this._callMoldWarning(params[0])
-
-    elif funcName is '__mold_printToStdOutput'
-      this._verifyNumberOfParameters('built-in __mold_printToStdOutput', 1, paramsCnt)
-      this._callMoldPrintToStdOut(params[0])
 
     elif (funcName is '__mold_parseFile') or (funcName is 'moldParseFile')
       this._verifyNumberOfParameters('built-in __mold_parseFile', 1, paramsCnt)

@@ -891,18 +891,6 @@ class CodeGeneratorX64
           endif
         endif
 
-      elif opcode is 'print_err'
-        this.call1('__MOLD_PrintVariantToStdError', dst)
-
-      elif opcode is 'print_out'
-        this.call1('__MOLD_PrintVariant', dst)
-
-      elif opcode is 'print_out_newline'
-        this.call('__MOLD_PrintNewLine')
-
-      elif opcode is 'print_out_space'
-        this.call('__MOLD_PrintSpace')
-
       elif opcode is 'str_variant'
         this.variantDestroy(dst)
         this.call2('__MOLD_VariantConvertToString', x, dst)
