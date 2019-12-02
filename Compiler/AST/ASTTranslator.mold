@@ -77,20 +77,12 @@ class ASTTranslator
     this._error('_callStrEscape not implemented')
   endmethod
 
-  method _callExit()
-    this._error('_callExit not implemented')
-  endmethod
-
   method _callMoldWarning(msg)
     this._error('_callMoldWarning not implemented')
   endmethod
 
   method _callMoldPrintToStdOut(msg)
     this._error('_callMoldPrintToStdOut not implemented')
-  endmethod
-
-  method _callDie(msg)
-    this._error('_callDie not implemented')
   endmethod
 
   method _callMoldCreateObject(rv, classProto)
@@ -765,14 +757,6 @@ class ASTTranslator
     elif funcName is 'strescape'
       this._verifyNumberOfParameters('built-in strescape', 1, paramsCnt)
       this._callStrEscape(rv, params[0])
-
-    elif funcName is 'exit'
-      this._verifyNumberOfParameters('built-in exit', 0, paramsCnt)
-      this._callExit()
-
-    elif funcName is 'die'
-      this._verifyNumberOfParameters('built-in die', 1, paramsCnt)
-      this._callDie(params[0])
 
     elif funcName is '__mold_createObject'
       this._verifyNumberOfParameters('built-in __mold_createObject', 1, paramsCnt)

@@ -191,11 +191,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.popOneArgAndEmitOpcode('len', rv)
   endmethod
 
-  method _callExit()
-    this.emitZeroArgsOpcode('halt')
-    this.push('<error:unused_rv>')
-  endmethod
-
   method _callMoldWarning(msg)
     this.emitTargetOnlyOpcode('print_err', this.popForRead())
     this.push('<print:unused_rv>')
@@ -204,11 +199,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
   method _callMoldPrintToStdOut(msg)
     this.emitTargetOnlyOpcode('print_out', this.popForRead())
     this.push('<print:unused_rv>')
-  endmethod
-
-  method _callDie(msg)
-    this._callMoldWarning(msg)
-    this._callExit()
   endmethod
 
   method _callMoldCreateObject(rv, classProto)

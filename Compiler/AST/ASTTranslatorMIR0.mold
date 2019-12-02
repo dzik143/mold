@@ -48,22 +48,12 @@ class ASTTranslatorMIR0 extends ASTTranslator
     this.code.getLen()
   endmethod
 
-  method _callExit()
-    this.code.halt()
-  endmethod
-
   method _callMoldWarning(msg)
     this.code.callPrintError(msg)
   endmethod
 
   method _callMoldPrintToStdOut(msg)
     this.code.callPrintToStdOut(msg)
-  endmethod
-
-  method _callDie(msg)
-    this.code.callPrintError(msg)
-    this.code.drop()
-    this.code.halt()
   endmethod
 
   method _callMoldCreateObject(rv, classProto)
