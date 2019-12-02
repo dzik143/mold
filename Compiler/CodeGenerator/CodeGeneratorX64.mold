@@ -442,10 +442,6 @@ class CodeGeneratorX64
         print '  movdqu xmm0, [StringBoolean]'
         print '  movdqu [', dst, '], xmm0'
 
-      elif opcode is 'len_variant'
-        this.variantDestroy(dst)
-        this.call2('__MOLD_VariantLength', x, dst)
-
       elif opcode is 'neg_variant'
         this.variantDestroy(dst)
         this.call2('__MOLD_VariantNeg', x, dst)
@@ -890,10 +886,6 @@ class CodeGeneratorX64
             print '  add rsp,', paramsCnt * 8 - 32
           endif
         endif
-
-      elif opcode is 'str_variant'
-        this.variantDestroy(dst)
-        this.call2('__MOLD_VariantConvertToString', x, dst)
 
       elif opcode is 'str_int64'
         this.variantDestroy(dst)

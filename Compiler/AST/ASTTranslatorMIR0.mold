@@ -36,18 +36,6 @@ class ASTTranslatorMIR0 extends ASTTranslator
   #                         Implement built-in functions
   # ----------------------------------------------------------------------------
 
-  method _callStr(rv, x)
-    this.code.conv2str()
-  endmethod
-
-  method _callLen(rv, x)
-    this.code.getLen()
-  endmethod
-
-  method _callMoldParseFile(rv, filePath)
-    this.code.loadMoldSource()
-  endmethod
-
   method _loadArgsVector()
     this.code.loadArgv()
   endmethod

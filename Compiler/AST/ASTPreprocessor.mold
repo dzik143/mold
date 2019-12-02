@@ -64,8 +64,8 @@ MOLD_SYSCALL_MAP = {
 
   'exit': MOLD_SYSCALL_ZERO_ARGS + 40,
   'die':  MOLD_SYSCALL_ONE_ARG + 41,
-  'xxxstr':  MOLD_SYSCALL_ONE_ARG + 42,
-  'xxxlen':  MOLD_SYSCALL_ONE_ARG + 43,
+  'str':  MOLD_SYSCALL_ONE_ARG + 42,
+  'len':  MOLD_SYSCALL_ONE_ARG + 43,
   '__mold_printToStdOutput': MOLD_SYSCALL_ONE_ARG + 44,
   '__mold_warning': MOLD_SYSCALL_ONE_ARG + 45
 }

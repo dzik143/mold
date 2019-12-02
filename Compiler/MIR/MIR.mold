@@ -71,15 +71,12 @@ MIR_OPCODE_RET          = 43
 MIR_OPCODE_INNER_RET    = 44
 MIR_OPCODE_RETVAL_GUARD = 45
 MIR_OPCODE_INIT_FRAME   = 46
-MIR_OPCODE_CONV2STR     = 47
 MIR_OPCODE_SYSCALL      = 48
 
 MIR_OPCODE_FOR_EACH = 100
 
-MIR_OPCODE_GETLEN           = 251
 MIR_OPCODE_LOAD_ARGC        = 252
 MIR_OPCODE_LOAD_ARGV        = 253
-MIR_OPCODE_LOAD_MOLD_SOURCE = 254
 
 class MIRCode
   method constructor()
@@ -194,11 +191,6 @@ class MIRCode
   method push3(op, arg1, arg2, arg3)
     this.code[this.codeCnt] = [op, arg1, arg2, arg3]
     this.codeCnt = this.codeCnt + 1
-  endmethod
-
-  method conv2str()
-    global MIR_OPCODE_CONV2STR
-    this.push0(MIR_OPCODE_CONV2STR)
   endmethod
 
   method nop()
@@ -397,11 +389,6 @@ class MIRCode
     this.push0(MIR_OPCODE_TYPEOF)
   endmethod
 
-  method getLen()
-    global MIR_OPCODE_GETLEN
-    this.push0(MIR_OPCODE_GETLEN)
-  endmethod
-
   method createObject(classProto)
     global MIR_OPCODE_CREATE_OBJECT
     this.push1(MIR_OPCODE_CREATE_OBJECT, classProto)
@@ -468,11 +455,6 @@ class MIRCode
   method callPrint(paramsCnt)
     global MIR_OPCODE_PRINT
     this.push1(MIR_OPCODE_PRINT, paramsCnt)
-  endmethod
-
-  method loadMoldSource()
-    global MIR_OPCODE_LOAD_MOLD_SOURCE
-    this.push0(MIR_OPCODE_LOAD_MOLD_SOURCE)
   endmethod
 
   method initFrame(paramsCnt)

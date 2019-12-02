@@ -62,9 +62,8 @@ class VMachineStack
     global MIR_OPCODE_JMP_IF_FALSE, MIR_OPCODE_CALL, MIR_OPCODE_RET
     global MIR_OPCODE_PRINT, MIR_OPCODE_INIT_FRAME, MIR_OPCODE_RETVAL_GUARD
     global MIR_OPCODE_CREATE_OBJECT
-    global MIR_OPCODE_CONV2STR
-    global MIR_OPCODE_GETLEN, MIR_OPCODE_LOAD_ARGC, MIR_OPCODE_LOAD_ARGV
-    global MIR_OPCODE_LOAD_MOLD_SOURCE, MIR_OPCODE_MOVE_BACK
+    global MIR_OPCODE_LOAD_ARGC, MIR_OPCODE_LOAD_ARGV
+    global MIR_OPCODE_MOVE_BACK
     global MIR_OPCODE_FOR_EACH
     global MIR_OPCODE_INNER_RET
     global MIR_OPCODE_SYSCALL
@@ -174,12 +173,6 @@ class VMachineStack
 
       elif opcode is MIR_OPCODE_LOAD_GLOBAL
         stack.push(_vm_heap[item[1]])
-
-      elif opcode is MIR_OPCODE_CONV2STR
-        stack.push(str(stack.pop()))
-
-      elif opcode is MIR_OPCODE_GETLEN
-        stack.push(len(stack.pop()))
 
       elif opcode is MIR_OPCODE_LOAD_INDEX
         idx = stack.pop()
@@ -403,9 +396,8 @@ class VMachineStack
     global MIR_OPCODE_VCALL, MIR_OPCODE_JMP, MIR_OPCODE_JMP_IF_TRUE
     global MIR_OPCODE_JMP_IF_FALSE, MIR_OPCODE_CALL, MIR_OPCODE_RET
     global MIR_OPCODE_PRINT, MIR_OPCODE_INIT_FRAME, MIR_OPCODE_RETVAL_GUARD
-    global MIR_OPCODE_CONV2STR
-    global MIR_OPCODE_GETLEN, MIR_OPCODE_MOVE_BACK
-    global MIR_OPCODE_LOAD_MOLD_SOURCE, MIR_OPCODE_LOAD_ARGC, MIR_OPCODE_LOAD_ARGV
+    global MIR_OPCODE_MOVE_BACK
+    global MIR_OPCODE_LOAD_ARGC, MIR_OPCODE_LOAD_ARGV
     global MIR_OPCODE_FOR_EACH
     global MIR_OPCODE_INNER_RET
     global MIR_OPCODE_SYSCALL
@@ -598,17 +590,8 @@ class VMachineStack
       elif opcode is MIR_OPCODE_CREATE_OBJECT
         txt = 'create.object ' + item[1]['name']
 
-      elif opcode is MIR_OPCODE_CONV2STR
-        txt = 'str'
-
-      elif opcode is MIR_OPCODE_GETLEN
-        txt = 'len'
-
       elif opcode is MIR_OPCODE_MOVE_BACK
         txt = 'move.back'
-
-      elif opcode is MIR_OPCODE_LOAD_MOLD_SOURCE
-        txt = 'load.mold.source'
 
       elif opcode is MIR_OPCODE_LOAD_ARGC
         txt = 'load.argc'

@@ -179,18 +179,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
   #                         Implement built-in functions
   # ----------------------------------------------------------------------------
 
-  method _callStr(rv, x)
-    this.popOneArgAndEmitOpcode('str', rv)
-  endmethod
-
-  method _callLen(rv, x)
-    this.popOneArgAndEmitOpcode('len', rv)
-  endmethod
-
-  method _callMoldParseFile(rv, filePath)
-    this._error('_callMoldParseFile() is obsolete')
-  endmethod
-
   method _loadArgsVector()
     this.push('argv')
   endmethod

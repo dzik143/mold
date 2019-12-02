@@ -581,8 +581,6 @@ class ASTSymbolsCollector
         if ((funcName is 'typeof') or
             (funcName is 'print') or
             (funcName is 'super') or
-            (funcName is 'len') or
-            (funcName is 'str') or
             (funcName is '__mold_syscall') or
             (funcName is 'global'))
 

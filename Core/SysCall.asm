@@ -291,6 +291,16 @@ __MOLD_SysCall:
     call    __MOLD_PrintVariantToStdError
     jmp     __MOLD_Halt
 
+.str:
+    ; TODO: Change function proto and call directly.
+    mov     rdx, rdi
+    jmp     __MOLD_VariantConvertToString
+
+.len:
+    ; TODO: Change function proto and call directly.
+    mov     rdx, rdi
+    jmp     __MOLD_VariantLength
+
 ; ------------------------------------------------------------------------------
 ; Error file
 ; ------------------------------------------------------------------------------
@@ -351,8 +361,9 @@ __MOLD_SysCall:
 
   dq __MOLD_Halt    ; 40
   dq .die           ; 41
-  dq __MOLD_VariantConvertToString ; 42
-  dq __MOLD_VariantLength          ; 43
+  dq .str           ; 42 ; TODO: __MOLD_VariantConvertToString
+  dq .len           ; 43 ; TODO: __MOLD_VariantLength
+
   dq __MOLD_PrintVariant           ; 44
   dq __MOLD_PrintVariantToStdError ; 45
 

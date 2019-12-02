@@ -65,18 +65,6 @@ class ASTTranslator
   #                            Built-in functions
   # ----------------------------------------------------------------------------
 
-  method _callLen(rv, x)
-    this._error('_callLen not implemented')
-  endmethod
-
-  method _callStr(rv, x)
-    this._error('_callStr not implemented')
-  endmethod
-
-  method _callMoldParseFile(rv, filePath)
-    this._error('_callMoldParseFile not implemented')
-  endmethod
-
   method _loadArgsVector(rv)
     this._error('_loadArgsVector not implemented')
   endmethod
@@ -725,14 +713,6 @@ class ASTTranslator
 
     elif funcName is 'super'
       this._callSuper(rv, params, paramsCnt)
-
-    elif funcName is 'len'
-      this._verifyNumberOfParameters('built-in len', 1, paramsCnt)
-      this._callLen(rv, params[0])
-
-    elif funcName is 'str'
-      this._verifyNumberOfParameters('built-in str', 1, paramsCnt)
-      this._callStr(rv, params[0])
 
     elif (funcName is '__mold_syscall')
       this._syscall(rv, ast.sysCallId, params, paramsCnt)
