@@ -617,12 +617,12 @@ class X64Encoder
 
   method xor_r_m(regDst, regBase, scale, regIndex, disp)
     global X64_XOR
-    this.emitCore_r_m(X64_XOR, regBase, scale, regIndex, disp)
+    this.emitCore_r_m(X64_XOR, regDst, regBase, scale, regIndex, disp)
   endmethod
 
   method cmp_r_m(regDst, regBase, scale, regIndex, disp)
     global X64_CMP
-    this.emitCore_r_m(X64_CMP, regBase, scale, regIndex, disp)
+    this.emitCore_r_m(X64_CMP, regDst, regBase, scale, regIndex, disp)
   endmethod
 
   # alu m, r
@@ -656,9 +656,9 @@ class X64Encoder
     this.emitCore_r_m(X64_SUB, regBase, scale, regIndex, disp, regSrc)
   endmethod
 
-  method xor_m_r(regDst, regBase, scale, regIndex, disp)
+  method xor_m_r(regBase, scale, regIndex, disp, regSrc)
     global X64_XOR
-    this.emitCore_r_m(X64_XOR, regBase, scale, regIndex, disp)
+    this.emitCore_r_m(X64_XOR, regBase, scale, regIndex, disp, regSrc)
   endmethod
 
   method cmp_m_r(regBase, scale, regIndex, disp, regSrc)
@@ -817,28 +817,28 @@ class X64Encoder
   endmethod
 
   # opcode m
-  method not_m(base, scale, index, disp)
-    this.emitCore_unaryGroup_m(2, base, scale, index, disp)
+  method not_m(base, scale, index, disp, dataSize)
+    this.emitCore_unaryGroup_m(2, base, scale, index, disp, dataSize)
   endmethod
 
-  method neg_m(base, scale, index, disp)
-    this.emitCore_unaryGroup_m(3, base, scale, index, disp)
+  method neg_m(base, scale, index, disp, dataSize)
+    this.emitCore_unaryGroup_m(3, base, scale, index, disp, dataSize)
   endmethod
 
-  method mul_m(base, scale, index, disp)
-    this.emitCore_unaryGroup_m(4, base, scale, index, disp)
+  method mul_m(base, scale, index, disp, dataSize)
+    this.emitCore_unaryGroup_m(4, base, scale, index, disp, dataSize)
   endmethod
 
-  method imul_m(base, scale, index, disp)
-    this.emitCore_unaryGroup_m(5, base, scale, index, disp)
+  method imul_m(base, scale, index, disp, dataSize)
+    this.emitCore_unaryGroup_m(5, base, scale, index, disp, dataSize)
   endmethod
 
-  method div_m(base, scale, index, disp)
-    this.emitCore_unaryGroup_m(6, base, scale, index, disp)
+  method div_m(base, scale, index, disp, dataSize)
+    this.emitCore_unaryGroup_m(6, base, scale, index, disp, dataSize)
   endmethod
 
-  method idiv_m(base, scale, index, disp)
-    this.emitCore_unaryGroup_m(7, base, scale, index, disp)
+  method idiv_m(base, scale, index, disp, dataSize)
+    this.emitCore_unaryGroup_m(7, base, scale, index, disp, dataSize)
   endmethod
 
   #
@@ -846,11 +846,11 @@ class X64Encoder
   #
 
   method emitCore_pushPop_r(opcode, reg)
-    if X64_IsReg16(reg)
+    if X64_IsReg16(reg) is true
       # push r16
       this.emitPrefix16()
 
-    elif X64_IsReg64(reg)
+    elif X64_IsReg64(reg) is true
       # push r64
       # Default scenario - nothing to do.
     else
@@ -1850,11 +1850,11 @@ class X64Encoder
 
   # Group 0f 01 /x: register operand
   method smsw_r(regSrc)
-    this.emitCore_group0f_01_m(4, regSrc)
+    this.emitCore_group0f_01_r(4, regSrc)
   endmethod
 
   method lmsw_r(regDst)
-    this.emitCore_group0f_01_m(6, regDst)
+    this.emitCore_group0f_01_r(6, regDst)
   endmethod
 
   # 286: Other
@@ -2437,7 +2437,7 @@ class X64Encoder
   # r,m
   method cmovo_r_m(regDst, regBase, scale, regIndex, disp)
     global X64_CMOVO
-    this.emitCore_r_m(X64_CMOVO, regBase, scale, regIndex, disp)
+    this.emitCore_r_m(X64_CMOVO, regDst, regBase, scale, regIndex, disp)
   endmethod
 
   method cmovno_r_m(regDst, regBase, scale, regIndex, disp)
