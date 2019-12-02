@@ -183,10 +183,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.popOneArgAndEmitOpcode('str', rv)
   endmethod
 
-  method _callStrEscape(rv, x)
-    this._error('_callStrEscape() is not implemented')
-  endmethod
-
   method _callLen(rv, x)
     this.popOneArgAndEmitOpcode('len', rv)
   endmethod

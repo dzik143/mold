@@ -40,10 +40,6 @@ class ASTTranslatorMIR0 extends ASTTranslator
     this.code.conv2str()
   endmethod
 
-  method _callStrEscape(rv, x)
-    this._error('_callStrEscape not implemented')
-  endmethod
-
   method _callLen(rv, x)
     this.code.getLen()
   endmethod
