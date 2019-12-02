@@ -734,10 +734,6 @@ class ASTTranslator
       this._verifyNumberOfParameters('built-in str', 1, paramsCnt)
       this._callStr(rv, params[0])
 
-    elif (funcName is '__mold_parseFile') or (funcName is 'moldParseFile')
-      this._verifyNumberOfParameters('built-in __mold_parseFile', 1, paramsCnt)
-      this._callMoldParseFile(rv, params[0])
-
     elif (funcName is '__mold_syscall')
       this._syscall(rv, ast.sysCallId, params, paramsCnt)
 
