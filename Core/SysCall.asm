@@ -21,53 +21,7 @@
 __MOLD_SysCall:
   cmp  eax, 38
   ja   .error
-
   jmp  qword [.jmpTable + eax * 8]
-
-.jmpTable:
-  dq .error         ; 0
-  dq .openForRead   ; 1
-  dq .openForWrite  ; 2
-  dq .openForCreate ; 3
-  dq .close         ; 4
-  dq .error         ; 5
-  dq .error         ; 6
-  dq .error         ; 7
-
-  dq .read_int8     ; 8    010 00b
-  dq .read_int16    ; 9    010 01b
-  dq .read_int32    ; 10   010 10b
-  dq .read_int64    ; 11   010 11b
-  dq .error         ; 12   011 00b
-  dq .error         ; 13   011 01b
-  dq .read_float32  ; 14   011 10b
-  dq .read_float64  ; 15   011 11b
-  dq .read_bool8    ; 16   100 00b
-  dq .read_bool16   ; 17   100 01b
-  dq .read_bool32   ; 18   100 10b
-  dq .read_bool64   ; 19   100 11b
-  dq .read_char     ; 20   101 00b
-
-  dq .write_byte    ; 21
-  dq .write_word    ; 22
-  dq .write_dword   ; 23
-  dq .write_qword   ; 24
-  dq .write_dqword  ; 25
-  dq .error         ; 26
-  dq .error         ; 27
-  dq .error         ; 28
-  dq __MOLD_LoadFile; 29
-  dq .error         ; 30
-
-  dq .ord           ; 31
-  dq .asc           ; 32
-  dq .parse_integer ; 33
-  dq .parse_float   ; 34
-
-  dq .bitwise_and   ; 35
-  dq .bitwise_or    ; 36
-  dq .bitwise_xor   ; 37
-  dq .bitwise_not   ; 38
 
 ; ------------------------------------------------------------------------------
 ; Open file
@@ -295,3 +249,54 @@ __MOLD_SysCall:
 .error:
     cinvoke printf, '__MOLD_SysCall: Invalid syscall id: %d', eax
     ret
+
+; ------------------------------------------------------------------------------
+; Jump table to dispatch routine by syscall id
+; ------------------------------------------------------------------------------
+
+.jmpTable:
+  dq .error         ; 0
+  dq .openForRead   ; 1
+  dq .openForWrite  ; 2
+  dq .openForCreate ; 3
+  dq .close         ; 4
+  dq .error         ; 5
+  dq .error         ; 6
+  dq .error         ; 7
+
+  dq .read_int8     ; 8    010 00b
+  dq .read_int16    ; 9    010 01b
+  dq .read_int32    ; 10   010 10b
+  dq .read_int64    ; 11   010 11b
+  dq .error         ; 12   011 00b
+  dq .error         ; 13   011 01b
+  dq .read_float32  ; 14   011 10b
+  dq .read_float64  ; 15   011 11b
+  dq .read_bool8    ; 16   100 00b
+  dq .read_bool16   ; 17   100 01b
+  dq .read_bool32   ; 18   100 10b
+  dq .read_bool64   ; 19   100 11b
+  dq .read_char     ; 20   101 00b
+
+  dq .write_byte    ; 21
+  dq .write_word    ; 22
+  dq .write_dword   ; 23
+  dq .write_qword   ; 24
+  dq .write_dqword  ; 25
+  dq .error         ; 26
+  dq .error         ; 27
+  dq .error         ; 28
+  dq __MOLD_LoadFile; 29
+  dq .error         ; 30
+
+  dq .ord           ; 31
+  dq .asc           ; 32
+  dq .parse_integer ; 33
+  dq .parse_float   ; 34
+
+  dq .bitwise_and   ; 35
+  dq .bitwise_or    ; 36
+  dq .bitwise_xor   ; 37
+  dq .bitwise_not   ; 38
+
+.jmpTableEnd:

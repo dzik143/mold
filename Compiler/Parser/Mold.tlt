@@ -1081,9 +1081,7 @@ class Parser
 
   method parseFile(path) -> ast
     # Load source code from file.
-    # TODO: Don't use syscall directly.
-    # 29 = __MOLD_FileLoad
-    source        = __mold_syscall(29, path)
+    source        = FileLoad(path)
     this.filePath = path
 
     # Parse source into AST tree.

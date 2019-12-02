@@ -484,11 +484,11 @@ number
   ;
 
 integer
-  : @INTEGER [* @@ = parseInteger(@1) *]
+  : @INTEGER [* @@ = ParseInteger(@1) *]
   ;
 
 float
-  : @FLOAT [* @@ = parseFloat(@1) *]
+  : @FLOAT [* @@ = ParseFloat(@1) *]
   ;
 
 string

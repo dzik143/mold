@@ -21,6 +21,46 @@
 import 'AST/AST.mold'
 import 'AST/ASTUtils.mold'
 
+MOLD_SYSCALL_ZERO_ARGS = 0x0000
+MOLD_SYSCALL_ONE_ARG   = 0x1000
+MOLD_SYSCALL_TWO_ARGS  = 0x2000
+
+MOLD_SYSCALL_MAP = {
+  'FileOpenForRead':   1,
+  'FileOpenForWrite':  2,
+  'FileOpenForCreate': 3,
+  'FileClose':         4,
+
+  'FileReadInt8':    MOLD_SYSCALL_ONE_ARG + 8,
+  'FileReadInt16':   MOLD_SYSCALL_ONE_ARG + 9,
+  'FileReadInt32':   MOLD_SYSCALL_ONE_ARG + 10,
+  'FileReadInt64':   MOLD_SYSCALL_ONE_ARG + 11,
+  'FileReadFloat32': MOLD_SYSCALL_ONE_ARG + 14,
+  'FileReadFloat64': MOLD_SYSCALL_ONE_ARG + 15,
+  'FileReadBool8':   MOLD_SYSCALL_ONE_ARG + 16,
+  'FileReadBool16':  MOLD_SYSCALL_ONE_ARG + 17,
+  'FileReadBool32':  MOLD_SYSCALL_ONE_ARG + 18,
+  'FileReadBool64':  MOLD_SYSCALL_ONE_ARG + 19,
+  'FileReadChar':    MOLD_SYSCALL_ONE_ARG + 20,
+
+  'FileWriteByte':   MOLD_SYSCALL_ONE_ARG + 21,
+  'FileWriteWord':   MOLD_SYSCALL_ONE_ARG + 22,
+  'FileWriteDWord':  MOLD_SYSCALL_ONE_ARG + 23,
+  'FileWriteQWord':  MOLD_SYSCALL_ONE_ARG + 24,
+  'FileWriteDQWord': MOLD_SYSCALL_ONE_ARG + 25,
+  'FileLoad':        MOLD_SYSCALL_ONE_ARG + 29,
+
+  'ord':          MOLD_SYSCALL_ONE_ARG + 31,
+  'asc':          MOLD_SYSCALL_ONE_ARG + 32,
+  'ParseInteger': MOLD_SYSCALL_ONE_ARG + 33,
+  'ParseFloat':   MOLD_SYSCALL_ONE_ARG + 34,
+
+  'bitand': MOLD_SYSCALL_TWO_ARGS + 35,
+  'bitor':  MOLD_SYSCALL_TWO_ARGS + 36,
+  'bitxor': MOLD_SYSCALL_TWO_ARGS + 37,
+  'bitnot': MOLD_SYSCALL_ONE_ARG  + 38
+}
+
 class ASTPreprocessor
   method constructor(app)
     this.app = app
@@ -38,6 +78,7 @@ class ASTPreprocessor
     global AST_OPCODE_CALL
     global AST_DATA_STRING
     global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ
+    global MOLD_SYSCALL_MAP
 
     opcode   = node.opcode
     children = node.children
@@ -82,7 +123,23 @@ class ASTPreprocessor
       endif
 
     elif opcode is AST_OPCODE_CALL
-      if node.value is '__mold_syscall'
+      funcName  = node.value
+      sysCallId = MOLD_SYSCALL_MAP[funcName]
+
+      if sysCallId is defined
+        # One of built-in functions.
+        # Verify number of passed parameters.
+        paramsExpectedCnt = sysCallId // 0x1000
+        paramsPassedCnt   = node.childrenCnt
+        if paramsExpectedCnt isnt paramsPassedCnt
+          die('error: built-in ' + funcName + ' function requires exactly ' + str(paramsExpectedCnt) + ' parameter(s), but ' + str(paramsPassedCnt) + ' were passed')
+        endif
+
+        # Map to related syscall routine.
+        node.value      = '__mold_syscall'
+        node.sysCallId  = bitand(sysCallId, 0xff)
+
+      elif funcName is '__mold_syscall'
         # TODO: Clean up this mess.
         # Treat first parameter as hard-coded integer syscall id.
         node.sysCallId = children[0].value
