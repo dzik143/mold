@@ -594,9 +594,10 @@ class Parser
   method _getInput(offset) -&gt; rv
     global UNICC_EOF
 
-    numberOfbytesToRead = offset - this.bufSize + 1
+    numberOfBytesToRead    = offset - this.bufSize + 1
+    numberOfBytesRemaining = this.inputLen - this.inputIdx
 
-    for idx in 0 .. numberOfbytesToRead
+    for idx in 0 .. numberOfBytesToRead
       # Get next character from input stream
       if this.inputIdx &lt; this.inputLen
         nextChar      = this.input[this.inputIdx]
@@ -687,10 +688,7 @@ class Parser
     stackLines   = [0]
     stackColumns = [0]
 
-    #
     # Begin of main parser loop
-    #
-
     debug('falling into main parser loop')
 
     while goOn is true
@@ -698,27 +696,18 @@ class Parser
       debug('------------------------------')
       debug('MASTER ITER #' + str(masterIter))
 
-      #
-      # GET SYMBOL
-      #
-
+      # Get symbol.
       currentSym = -1
       currentLen = 0
 
       if _dfa_select[stackStates[stackIdx]] > -1
-        #
-        # LEX
-        # this._lex()
-        #
+        debug('starting lex...')
 
         dfa_st = 0
         length = 0
         chr    = 0
-
-        debug('starting lex...')
-
-        mach = @@prefix_dfa_select[stackStates[stackIdx]]
-        next = ord(this._getInput(length))
+        mach   = @@prefix_dfa_select[stackStates[stackIdx]]
+        next   = ord(this._getInput(length))
 
         if next is UNICC_EOF
           # End of file - no more data.
