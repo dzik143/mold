@@ -958,13 +958,15 @@ class Parser
           @@actions
         endif
 
-        emit = _productions[currentIdx][PRODUCTION_EMIT_IDX]
+        currentProduction       = _productions[currentIdx]
+        currentProductionLength = currentProduction[PRODUCTION_LENGTH_IDX]
+        emit                    = currentProduction[PRODUCTION_EMIT_IDX]
 
         # Drop right-hand side
         # TODO: Destructor callbacks?
         node = null
 
-        for i in 0 .. _productions[currentIdx][PRODUCTION_LENGTH_IDX]
+        for i in 0 .. currentProductionLength
 
           if stack[stackIdx].node isnt null
 
@@ -1002,8 +1004,8 @@ class Parser
           endif
         endif
 
-        if _productions[currentIdx][PRODUCTION_EMIT_IDX] isnt ''
-          node       = new AST(_productions[currentIdx][PRODUCTION_EMIT_IDX], currentRet)
+        if emit isnt ''
+          node       = new AST(emit, currentRet)
           node.child = stack[stackIdx].node
           stack[stackIdx].node = node
         endif
