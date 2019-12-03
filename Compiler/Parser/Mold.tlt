@@ -707,7 +707,7 @@ class Parser
         length = 0
         chr    = 0
         mach   = @@prefix_dfa_select[stackStates[stackIdx]]
-        next   = ord(this._getInput(length))
+        next   = ord(this._getInput(0))
 
         if next is UNICC_EOF
           # End of file - no more data.
