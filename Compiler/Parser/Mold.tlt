@@ -850,7 +850,6 @@ class Parser
       if bitand(currentAct, UNICC_SHIFT) isnt 0
         debug('going to shift...')
         nextChar = this.buf[currentLen]
-        this.buf[currentLen] = 0
         stackIdx = stackIdx + 1
 
         #
@@ -958,19 +957,20 @@ class Parser
             endwhile
 
             lnode.next = node
-            node .prev = lnode
+            node.prev  = lnode
           else
             stackNodes[stackIdx] = node
           endif
         endif
 
         if emit isnt ''
-          node       = new AST(emit, currentRet)
-          node.child = stackNodes[stackIdx]
+          node                 = new AST(emit, currentRet)
+          node.child           = stackNodes[stackIdx]
           stackNodes[stackIdx] = node
         endif
 
         debug('goal symbol? (lhs=[' + str(currentLhs) + '], goal=[' + str(@@goal) + '], stackIdx=[' + str(stackIdx) + '])')
+
         # Goal symbol reduced, and stack is empty?
         if (currentLhs is @@goal) and (stackIdx is 0)
           stackValues[stackIdx] = currentRet
@@ -982,10 +982,7 @@ class Parser
           innerGoOn  = false
 
         else
-          #
-          # GET GO
-          #
-
+          # Get goto.
           rv    = 0
           goIdx = 1
           state = stackStates[stackIdx]
@@ -993,20 +990,16 @@ class Parser
           cnt   = go[0] * 3
 
           while (rv is 0) and (goIdx &lt; cnt)
-            if (go[goIdx] is currentLhs)
+            if go[goIdx] is currentLhs
               currentAct = go[goIdx + 1]
               currentIdx = go[goIdx + 2]
-
-              rv = 1
+              rv         = 1
             endif
 
             goIdx = goIdx + 3
           endwhile
 
-          #
-          # END OF GET GO
-          #
-
+          # Push new item to state stack.
           stackIdx               = stackIdx + 1
           stackNodes[stackIdx]   = null
           stackValues[stackIdx]  = currentRet
@@ -1020,6 +1013,7 @@ class Parser
           endif
         endif
 
+        # Count reduce iters for debug purposes.
         reduceIter = reduceIter + 1
 
         debug('reduced')
