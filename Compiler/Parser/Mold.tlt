@@ -593,10 +593,10 @@ class Parser
 
   method _getInput(offset) -&gt; rv
     global UNICC_EOF
-    #debug('going to get input, bufSize=[' + str(this.bufSize) + '], offset=[' + str(offset) + ']')
-    #print this.buf
 
-    while offset &gt;= this.bufSize
+    numberOfbytesToRead = offset - this.bufSize + 1
+
+    for idx in 0 .. numberOfbytesToRead
       # Get next character from input stream
       if this.inputIdx &lt; this.inputLen
         nextChar      = this.input[this.inputIdx]
@@ -605,13 +605,12 @@ class Parser
         nextChar = UNICC_EOF
       endif
 
-      # debug('pop char [' + nextChar + '] from input')
-
       this.buf[this.bufSize] = nextChar
       this.bufSize           = this.bufSize + 1
-    endwhile
+    endfor
 
     rv = this.buf[offset]
+
     debug('got input [' + str(rv) + ']')
   endmethod
 
