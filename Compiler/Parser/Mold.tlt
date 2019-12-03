@@ -159,12 +159,12 @@
   -->
 
   <symbols>
-    <col>  [ /* @@symbol */ "@@symbol-name", "@@emit", @@type, @@lexem, @@whitespace, @@greedy ]</col>
+    <col>  [ "@@emit", @@type, @@lexem, @@whitespace, @@greedy ] /* @@symbol: "@@symbol-name"*/</col>
     <col_sep>,&#x0A;</col_sep>
   </symbols>
 
   <productions>
-    <col>  [ /* @@production-number */ "@@production", "@@emit", @@length, @@lhs ]</col>
+    <col>  [ "@@emit", @@length, @@lhs ] /* @@production-number: "@@production"*/</col>
     <col_sep>,&#x0A;</col_sep>
   </productions>
 
@@ -203,17 +203,17 @@ UNICC_EOF    = 0
 
 UNICC_DEBUG = false
 
-SYMBOL_NAME_IDX       = 0
-SYMBOL_EMIT_IDX       = 1
-SYMBOL_TYPE_IDX       = 2
-SYMBOL_LEXEM_IDX      = 3
-SYMBOL_WHITESPACE_IDX = 4
-SYMBOL_GREEDY_IDX     = 5
+SYMBOL_EMIT_IDX       = 0
+SYMBOL_TYPE_IDX       = 1
+SYMBOL_LEXEM_IDX      = 2
+SYMBOL_WHITESPACE_IDX = 3
+SYMBOL_GREEDY_IDX     = 4
+SYMBOL_NAME_IDX       = 5 # Unused, comment off when needed
 
-PRODUCTION_DEFINITION_IDX = 0
-PRODUCTION_EMIT_IDX       = 1
-PRODUCTION_LENGTH_IDX     = 2
-PRODUCTION_LHS_IDX        = 3
+PRODUCTION_EMIT_IDX       = 0
+PRODUCTION_LENGTH_IDX     = 1
+PRODUCTION_LHS_IDX        = 2
+PRODUCTION_DEFINITION_IDX = 3 # Unused, comment off when needed
 
 # -----------------------------------------------------------------------------
 #                              Helper functions
@@ -976,12 +976,10 @@ class Parser
               endwhile
 
               node.prev = stack[stackIdx].node
-
               stack[stackIdx].node.next = node
             endif
 
             node = stack[stackIdx].node
-
             stack[stackIdx].node = null
 
           endif
