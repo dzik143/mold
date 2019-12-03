@@ -62,9 +62,9 @@
 
 </action_end>
 
-  <action_single>stack[stackIdx - @@offset].value</action_single>
+  <action_single>stackValues[stackIdx - @@offset]</action_single>
 
-  <action_union>stack[stackIdx - @@offset].value.@@attribute</action_union>
+  <action_union>stackValues[stackIdx - @@offset].@@attribute</action_union>
   <action_lhs_single>     currentRet</action_lhs_single>
   <action_lhs_union>     currentRet.@@attribute</action_lhs_union>
 
@@ -83,8 +83,11 @@
   <scan_action_begin_offset>@@prefix_lexem( pcb )</scan_action_begin_offset>
   <scan_action_end_offset>currentLen</scan_action_end_offset>
 
-  <scan_action_ret_single>stack[stackIdx].value</scan_action_ret_single>
-  <scan_action_ret_union>stack[stackIdx].@@attribute</scan_action_ret_union>
+  <scan_action_ret_single>stackValues[stackIdx]</scan_action_ret_single>
+
+  <!-- TODO: Is it needed?
+    <scan_action_ret_union>stack[stackIdx].@@attribute</scan_action_ret_union>
+  -->
 
   <scan_action_set_symbol>currentSym = @@sym</scan_action_set_symbol>
 
@@ -203,13 +206,6 @@ UNICC_EOF    = 0
 
 UNICC_DEBUG = false
 
-SYMBOL_GREEDY_IDX     = 0
-SYMBOL_EMIT_IDX       = 1 # Unused, comment off when needed
-SYMBOL_TYPE_IDX       = 2 # Unused, comment off when needed
-SYMBOL_LEXEM_IDX      = 3 # Unused, comment off when needed
-SYMBOL_WHITESPACE_IDX = 4 # Unused, comment off when needed
-SYMBOL_NAME_IDX       = 5 # Unused, comment off when needed
-
 PRODUCTION_EMIT_IDX       = 0
 PRODUCTION_LENGTH_IDX     = 1
 PRODUCTION_LHS_IDX        = 2
@@ -273,7 +269,7 @@ const @@prefix_dfa_accept = [
 ]
 
 # Symbol information table
-const @@prefix_symbols = [
+const @@prefix_symbolsGreedy = [
 @@symbols
 ]
 
@@ -573,28 +569,6 @@ class AST
 
 endclass
 
-#
-# Stack token.
-#
-
-class Token
-  method constructor()
-    global null
-
-    this.value  = null
-    this.node   = null
-
-    this.state  = 0
-    this.line   = 0
-    this.column = 0
-  endmethod
-
-  method print()
-    print '[', this.value, this.node, this.state, ']'
-  endmethod
-
-endclass
-
 # -----------------------------------------------------------------------------
 #                                Parser class
 # -----------------------------------------------------------------------------
@@ -681,7 +655,7 @@ class Parser
     global PRODUCTION_EMIT_IDX
     global UNICC_EOF
 
-    global _symbols, _productions, _act, _def_prod
+    global _symbolsGreedy, _productions, _act, _def_prod
     global _dfa_idx, _dfa_chars, _dfa_trans, _dfa_accept, _dfa_select, _go
 
     ast        = null
@@ -701,15 +675,18 @@ class Parser
     this.line     = 1
     this.column   = 1
 
-    # State
+    # Current parser state.
     currentAct = 0
     currentIdx = 0
     currentLhs = 0
     currentRet = null
 
-    stack    = []
-    stackIdx = 0
-    stack[0] = new Token()
+    stackIdx     = 0
+    stackValues  = [0]
+    stackNodes   = [0]
+    stackStates  = [0]
+    stackLines   = [0]
+    stackColumns = [0]
 
     #
     # Begin of main parser loop
@@ -729,7 +706,7 @@ class Parser
       currentSym = -1
       currentLen = 0
 
-      if _dfa_select[stack[stackIdx].state] > -1
+      if _dfa_select[stackStates[stackIdx]] > -1
         #
         # LEX
         # this._lex()
@@ -741,7 +718,7 @@ class Parser
 
         debug('starting lex...')
 
-        mach = @@prefix_dfa_select[stack[stackIdx].state]
+        mach = @@prefix_dfa_select[stackStates[stackIdx]]
         next = ord(this._getInput(length))
 
         if next is UNICC_EOF
@@ -772,7 +749,7 @@ class Parser
                     dfa_st       = -1
                     lexInnerGoOn = false
 
-                  elif _symbols[currentSym] is 0
+                  elif _symbolsGreedy[currentSym] is 0
                     # Stop if matched symbol should be parsed nongreedy
                     dfa_st       = -1
                     lexInnerGoOn = false
@@ -822,13 +799,11 @@ class Parser
       # GET ACT
       #
 
-      actionIdx = 1
       rv        = -1
-
-      state = stack[stackIdx].state
-
-      act = _act[state]
-      cnt = act[0] * 3
+      actionIdx = 1
+      state     = stackStates[stackIdx]
+      act       = _act[state]
+      cnt       = act[0] * 3
 
       while (rv is -1) and (actionIdx &lt; cnt)
         if act[actionIdx] is currentSym
@@ -876,10 +851,7 @@ class Parser
         debug('going to shift...')
         nextChar = this.buf[currentLen]
         this.buf[currentLen] = 0
-
         stackIdx = stackIdx + 1
-
-        stack[stackIdx] = new Token()
 
         #
         #  Execute scanner actions, if existing.
@@ -905,13 +877,13 @@ class Parser
         #
 
         if bitand(currentAct, UNICC_REDUCE) isnt 0
-          stack[stackIdx].state = -1
+          stackStates[stackIdx] = -1
         else
-          stack[stackIdx].state = currentIdx
+          stackStates[stackIdx] = currentIdx
         endif
 
-        stack[stackIdx].line   = this.line
-        stack[stackIdx].column = this.column
+        stackLines[stackIdx]   = this.line
+        stackColumns[stackIdx] = this.column
 
         newValue = ''
         for idx in 0 .. currentLen
@@ -919,7 +891,7 @@ class Parser
         endfor
         @@top-value = newValue
 
-        stack[stackIdx].node = null
+        stackNodes[stackIdx] = null
         this.buf[currentLen] = nextChar
 
         # Perform the shift on input
@@ -951,7 +923,6 @@ class Parser
           @@actions
         endif
 
-        #currentProduction       = _productions[3 * currentIdx +
         currentLhs              = _productions[3 * currentIdx + PRODUCTION_LHS_IDX]
         currentProductionLength = _productions[3 * currentIdx + PRODUCTION_LENGTH_IDX]
         emit                    = _productions[3 * currentIdx + PRODUCTION_EMIT_IDX]
@@ -961,28 +932,25 @@ class Parser
         node = null
 
         for i in 0 .. currentProductionLength
-
-          if stack[stackIdx].node isnt null
-
+          if stackNodes[stackIdx] isnt null
             if node isnt null
               while (node.prev isnt null)
                 node = node.prev
               endwhile
 
-              node.prev = stack[stackIdx].node
-              stack[stackIdx].node.next = node
+              node.prev = stackNodes[stackIdx]
+              stackNodes[stackIdx].next = node
             endif
 
-            node = stack[stackIdx].node
-            stack[stackIdx].node = null
-
+            node = stackNodes[stackIdx]
+            stackNodes[stackIdx] = null
           endif
 
           stackIdx = stackIdx - 1
         endfor
 
         if node isnt null
-          lnode = stack[stackIdx].node
+          lnode = stackNodes[stackIdx]
 
           if lnode isnt null
             while lnode.next isnt null
@@ -992,21 +960,21 @@ class Parser
             lnode.next = node
             node .prev = lnode
           else
-            stack[stackIdx].node = node
+            stackNodes[stackIdx] = node
           endif
         endif
 
         if emit isnt ''
           node       = new AST(emit, currentRet)
-          node.child = stack[stackIdx].node
-          stack[stackIdx].node = node
+          node.child = stackNodes[stackIdx]
+          stackNodes[stackIdx] = node
         endif
 
         debug('goal symbol? (lhs=[' + str(currentLhs) + '], goal=[' + str(@@goal) + '], stackIdx=[' + str(stackIdx) + '])')
         # Goal symbol reduced, and stack is empty?
         if (currentLhs is @@goal) and (stackIdx is 0)
-          stack[stackIdx].value = currentRet
-          ast = stack[stackIdx].node
+          stackValues[stackIdx] = currentRet
+          ast = stackNodes[stackIdx]
 
           this._clearInput(currentLen)
           currentSym = -1
@@ -1020,7 +988,7 @@ class Parser
 
           rv    = 0
           goIdx = 1
-          state = stack[stackIdx].state
+          state = stackStates[stackIdx]
           go    = _go[state]
           cnt   = go[0] * 3
 
@@ -1039,17 +1007,16 @@ class Parser
           # END OF GET GO
           #
 
-          stackIdx = stackIdx + 1
-
-          stack[stackIdx]        = new Token()
-          stack[stackIdx].value  = currentRet
-          stack[stackIdx].line   = this.line
-          stack[stackIdx].column = this.column
+          stackIdx               = stackIdx + 1
+          stackNodes[stackIdx]   = null
+          stackValues[stackIdx]  = currentRet
+          stackLines[stackIdx]   = this.line
+          stackColumns[stackIdx] = this.column
 
           if bitand(currentAct, UNICC_REDUCE) isnt 0
-            stack[stackIdx].state = -1
+            stackStates[stackIdx] = -1
           else
-            stack[stackIdx].state = currentIdx
+            stackStates[stackIdx] = currentIdx
           endif
         endif
 
