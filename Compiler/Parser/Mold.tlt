@@ -722,21 +722,20 @@ class Parser
         next = ord(this._getInput(length))
 
         if next is UNICC_EOF
+          # End of file - no more data.
           currentSym = @@eof
 
         else
+          # The are still some input data to read.
+          # Read next token.
           lexGoOn = true
 
           while lexGoOn is true
-            # debug('_lex(): outer loop, chr=[' + str(chr) + ']\n')
-
             lexInnerGoOn = true
             chr          = _dfa_idx[mach][dfa_st]
             dfa_st       = -1
 
             while (lexInnerGoOn is true) and (_dfa_chars[chr] &gt; -1)
-              #debug('_lex(): inner loop, chr=[' + str(chr) + ']')
-
               if (next &gt;= _dfa_chars[chr]) and (next &lt;= _dfa_chars[chr + 1])
                 dfa_st =  _dfa_trans[chr // 2]
 
@@ -745,12 +744,12 @@ class Parser
                   currentSym = _dfa_accept[mach][dfa_st] - 1
 
                   if currentSym is @@eof
-                    # test!
+                    # End of file. Don't go on anymore.
                     dfa_st       = -1
                     lexInnerGoOn = false
 
                   elif _symbolsGreedy[currentSym] is 0
-                    # Stop if matched symbol should be parsed nongreedy
+                    # Stop if matched symbol should be parsed nongreedy.
                     dfa_st       = -1
                     lexInnerGoOn = false
                   endif
@@ -774,31 +773,13 @@ class Parser
 
         debug('lex done: sym=[' + str(currentSym) + ']')
 
-        #
-        # END OF LEX
-        #
-
-        #
-        # If there is no DFA state machine,
-        # try to identify the end-of-file symbol.
-        # If this also fails, a parse error will
-        # raise.
-        #
-
       elif this._getInput(0) is UNICC_EOF
         currentSym = @@eof
       endif
 
       debug('got symbol: sym=[' + str(currentSym) + ']' + ', len=[' + str(currentLen) + ']')
 
-      #
-      # END OF GET SYMBOL
-      #
-
-      #
-      # GET ACT
-      #
-
+      # Get action.
       rv        = -1
       actionIdx = 1
       state     = stackStates[stackIdx]
@@ -822,10 +803,10 @@ class Parser
       endwhile
 
       if rv is -1
-        # Default production
+        # Default production.
         currentIdx = _def_prod[state]
         if currentIdx &gt; -1
-          # Reduce
+          # Reduce.
           currentAct = 1
           rv = 1
         else
@@ -839,41 +820,21 @@ class Parser
         this._handleError('syntax error')
       endif
 
-      #
-      # END OF GET ACT
-      #
-
-      #
       # Shift
-      #
-
       if bitand(currentAct, UNICC_SHIFT) isnt 0
         debug('going to shift...')
         nextChar = this.buf[currentLen]
         stackIdx = stackIdx + 1
 
-        #
-        #  Execute scanner actions, if existing.
-        #  Here, UNICC_ON_SHIFT is set to 1, so that shifting-
-        #  related operations will be performed.
-        #
-
-        #
+        # Execute scanner actions, if existing.
+        # Here, UNICC_ON_SHIFT is set to 1, so that shifting-
+        # related operations will be performed.
         # Scan actions.
-        # TODO: switch(currentSym)
-        #
-
         if false
-
 @@scan_actions
-
         else
           @@top-value = this._getInput(0)
         endif
-
-        #
-        # End of scan actions.
-        #
 
         if bitand(currentAct, UNICC_REDUCE) isnt 0
           stackStates[stackIdx] = -1
@@ -884,6 +845,8 @@ class Parser
         stackLines[stackIdx]   = this.line
         stackColumns[stackIdx] = this.column
 
+        # Pop value from buffer.
+        # TODO: Optimize it.
         newValue = ''
         for idx in 0 .. currentLen
           newValue = newValue + this.buf[idx]
@@ -903,10 +866,7 @@ class Parser
         debug('shifted')
       endif
 
-      #
       # Reduce
-      #
-
       innerGoOn  = true
       reduceIter = 1
 
@@ -927,7 +887,6 @@ class Parser
         emit                    = _productions[3 * currentIdx + PRODUCTION_EMIT_IDX]
 
         # Drop right-hand side
-        # TODO: Destructor callbacks?
         node = null
 
         for i in 0 .. currentProductionLength
@@ -973,10 +932,11 @@ class Parser
 
         # Goal symbol reduced, and stack is empty?
         if (currentLhs is @@goal) and (stackIdx is 0)
-          stackValues[stackIdx] = currentRet
-          ast = stackNodes[stackIdx]
-
           this._clearInput(currentLen)
+
+          stackValues[stackIdx] = currentRet
+
+          ast        = stackNodes[stackIdx]
           currentSym = -1
           currentLen = 0
           innerGoOn  = false
