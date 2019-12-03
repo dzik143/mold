@@ -164,7 +164,7 @@
   </symbols>
 
   <productions>
-    <col>  [ '@@emit', @@length, @@lhs ] /* @@production-number | '@@production' */</col>
+    <col>  '@@emit', @@length, @@lhs /* @@production-number | '@@production' */</col>
     <col_sep>,&#x0A;</col_sep>
   </productions>
 
@@ -584,9 +584,6 @@ class Token
     this.value  = null
     this.node   = null
 
-    # TODO: Is it still needed?
-    # this.symbol = null
-
     this.state  = 0
     this.line   = 0
     this.column = 0
@@ -913,9 +910,6 @@ class Parser
           stack[stackIdx].state = currentIdx
         endif
 
-        # TODO: Is it still needed?
-        # stack[stackIdx].symbol = _symbols[currentSym]
-
         stack[stackIdx].line   = this.line
         stack[stackIdx].column = this.column
 
@@ -952,15 +946,15 @@ class Parser
 
         # Set default left-hand side
         # Run reduction code
-        # TODO: switch( pcb-&gt;idx )
+        # TODO: Use switch
         if false
           @@actions
         endif
 
-        currentProduction       = _productions[currentIdx]
-        currentLhs              = currentProduction[PRODUCTION_LHS_IDX]
-        currentProductionLength = currentProduction[PRODUCTION_LENGTH_IDX]
-        emit                    = currentProduction[PRODUCTION_EMIT_IDX]
+        #currentProduction       = _productions[3 * currentIdx +
+        currentLhs              = _productions[3 * currentIdx + PRODUCTION_LHS_IDX]
+        currentProductionLength = _productions[3 * currentIdx + PRODUCTION_LENGTH_IDX]
+        emit                    = _productions[3 * currentIdx + PRODUCTION_EMIT_IDX]
 
         # Drop right-hand side
         # TODO: Destructor callbacks?
@@ -1049,10 +1043,6 @@ class Parser
 
           stack[stackIdx]        = new Token()
           stack[stackIdx].value  = currentRet
-
-          # TODO: Is it still needed?
-          # stack[stackIdx].symbol = _symbols[currentLhs]
-
           stack[stackIdx].line   = this.line
           stack[stackIdx].column = this.column
 
