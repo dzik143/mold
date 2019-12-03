@@ -159,12 +159,12 @@
   -->
 
   <symbols>
-    <col>  [ "@@emit", @@type, @@lexem, @@whitespace, @@greedy ] /* @@symbol: "@@symbol-name"*/</col>
+    <col>  @@greedy /* @@type | @@lexem | @@whitespace | @@symbol |' @@emit' | '@@symbol-name' */</col>
     <col_sep>,&#x0A;</col_sep>
   </symbols>
 
   <productions>
-    <col>  [ "@@emit", @@length, @@lhs ] /* @@production-number: "@@production"*/</col>
+    <col>  [ '@@emit', @@length, @@lhs ] /* @@production-number | '@@production' */</col>
     <col_sep>,&#x0A;</col_sep>
   </productions>
 
@@ -203,11 +203,11 @@ UNICC_EOF    = 0
 
 UNICC_DEBUG = false
 
-SYMBOL_EMIT_IDX       = 0
-SYMBOL_TYPE_IDX       = 1
-SYMBOL_LEXEM_IDX      = 2
-SYMBOL_WHITESPACE_IDX = 3
-SYMBOL_GREEDY_IDX     = 4
+SYMBOL_GREEDY_IDX     = 0
+SYMBOL_EMIT_IDX       = 1 # Unused, comment off when needed
+SYMBOL_TYPE_IDX       = 2 # Unused, comment off when needed
+SYMBOL_LEXEM_IDX      = 3 # Unused, comment off when needed
+SYMBOL_WHITESPACE_IDX = 4 # Unused, comment off when needed
 SYMBOL_NAME_IDX       = 5 # Unused, comment off when needed
 
 PRODUCTION_EMIT_IDX       = 0
@@ -583,7 +583,9 @@ class Token
 
     this.value  = null
     this.node   = null
-    this.symbol = null
+
+    # TODO: Is it still needed?
+    # this.symbol = null
 
     this.state  = 0
     this.line   = 0
@@ -591,7 +593,7 @@ class Token
   endmethod
 
   method print()
-    print '[', this.value, this.node, this.symbol, this.state, ']'
+    print '[', this.value, this.node, this.state, ']'
   endmethod
 
 endclass
@@ -677,12 +679,9 @@ class Parser
   method _parseInternal(text) -> ast
     global null
     global UNICC_ERROR, UNICC_REDUCE, UNICC_SHIFT
-    global SYMBOL_EMIT_IDX
     global PRODUCTION_LHS_IDX
     global PRODUCTION_LENGTH_IDX
     global PRODUCTION_EMIT_IDX
-    global SYMBOL_GREEDY_IDX
-    global SYMBOL_WHITESPACE_IDX
     global UNICC_EOF
 
     global _symbols, _productions, _act, _def_prod
@@ -776,7 +775,7 @@ class Parser
                     dfa_st       = -1
                     lexInnerGoOn = false
 
-                  elif _symbols[currentSym][SYMBOL_GREEDY_IDX] is 0
+                  elif _symbols[currentSym] is 0
                     # Stop if matched symbol should be parsed nongreedy
                     dfa_st       = -1
                     lexInnerGoOn = false
@@ -914,7 +913,9 @@ class Parser
           stack[stackIdx].state = currentIdx
         endif
 
-        stack[stackIdx].symbol = _symbols[currentSym]
+        # TODO: Is it still needed?
+        # stack[stackIdx].symbol = _symbols[currentSym]
+
         stack[stackIdx].line   = this.line
         stack[stackIdx].column = this.column
 
@@ -950,8 +951,6 @@ class Parser
         debug('REDUCE ITER #' + str(masterIter) + '.' + str(reduceIter))
 
         # Set default left-hand side
-        currentLhs = _productions[currentIdx][PRODUCTION_LHS_IDX]
-
         # Run reduction code
         # TODO: switch( pcb-&gt;idx )
         if false
@@ -959,6 +958,7 @@ class Parser
         endif
 
         currentProduction       = _productions[currentIdx]
+        currentLhs              = currentProduction[PRODUCTION_LHS_IDX]
         currentProductionLength = currentProduction[PRODUCTION_LENGTH_IDX]
         emit                    = currentProduction[PRODUCTION_EMIT_IDX]
 
@@ -1049,7 +1049,10 @@ class Parser
 
           stack[stackIdx]        = new Token()
           stack[stackIdx].value  = currentRet
-          stack[stackIdx].symbol = _symbols[currentLhs]
+
+          # TODO: Is it still needed?
+          # stack[stackIdx].symbol = _symbols[currentLhs]
+
           stack[stackIdx].line   = this.line
           stack[stackIdx].column = this.column
 
