@@ -733,9 +733,7 @@ class Parser
         else
           # The are still some input data to read.
           # Read next token.
-          lexGoOn = true
-
-          while lexGoOn is true
+          while (dfa_st &gt;= 0) and (next isnt UNICC_EOF)
             lexInnerGoOn = true
             chr          = _dfa_idx[mach][dfa_st]
             dfa_st       = -1
@@ -762,10 +760,6 @@ class Parser
 
               chr = chr + 2
             endwhile
-
-            if (dfa_st &lt; 0) or (next is UNICC_EOF)
-              lexGoOn = false
-            endif
           endwhile
         endif
 
