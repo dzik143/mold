@@ -591,41 +591,6 @@ class Parser
     debug('created parser object')
   endmethod
 
-  method _clearInput(currentLen)
-    debug('going to clear input: len=[' + str(currentLen) + '], bufSize=[' + str(this.bufSize) + ']')
-
-    if currentLen &gt; 0
-      # Update counters for line and column
-      for idx in 0 .. currentLen
-        if ord(this.buf[idx]) is 10
-          this.line   = this.line + 1
-          this.column = 1
-        else
-          this.column = this.column + 1
-        endif
-      endfor
-
-      # TODO: Optimize it,
-      newBufCnt = this.bufSize - currentLen
-      for idx in 0 .. newBufCnt
-        this.buf[idx] = this.buf[idx + currentLen]
-      endfor
-
-      this.bufSize = newBufCnt
-    else
-      this.bufSize  = 0
-    endif
-
-    if this.bufSize is 0
-      # Reload one lookup byte.
-      this.buf[0]   = this.input[this.inputIdx]
-      this.bufSize  = 1
-      this.inputIdx = this.inputIdx + 1
-    endif
-
-    debug('clear input done: bufSize=[' + str(this.bufSize) + ']')
-  endmethod
-
   method _handleError(msg)
     die(this.filePath + ':' + str(this.line) + ':' + str(this.column) + ': error: ' + str(msg))
   endmethod
@@ -842,7 +807,44 @@ class Parser
 
         # Perform the shift on input
         if (currentSym isnt @@eof) and (currentSym isnt @@goal-value)
-          this._clearInput(currentLen)
+
+          #
+          # BEGIN OF CLEAR INPUT
+          #
+
+          if currentLen &gt; 0
+            # Update counters for line and column
+            for idx in 0 .. currentLen
+              if ord(this.buf[idx]) is 10
+                this.line   = this.line + 1
+                this.column = 1
+              else
+                this.column = this.column + 1
+              endif
+            endfor
+
+            # TODO: Optimize it,
+            newBufCnt = this.bufSize - currentLen
+            for idx in 0 .. newBufCnt
+              this.buf[idx] = this.buf[idx + currentLen]
+            endfor
+
+            this.bufSize = newBufCnt
+          else
+            this.bufSize  = 0
+          endif
+
+          if this.bufSize is 0
+            # Reload one lookup byte.
+            this.buf[0]   = this.input[this.inputIdx]
+            this.bufSize  = 1
+            this.inputIdx = this.inputIdx + 1
+          endif
+
+          #
+          # END OF CLEAR INPUT
+          #
+
           currentSym = -1
           currentLen = 0
         endif
@@ -916,7 +918,42 @@ class Parser
 
         # Goal symbol reduced, and stack is empty?
         if (currentLhs is @@goal) and (stackIdx is 0)
-          this._clearInput(currentLen)
+          #
+          # BEGIN OF CLEAR INPUT
+          #
+
+          if currentLen &gt; 0
+            # Update counters for line and column
+            for idx in 0 .. currentLen
+              if ord(this.buf[idx]) is 10
+                this.line   = this.line + 1
+                this.column = 1
+              else
+                this.column = this.column + 1
+              endif
+            endfor
+
+            # TODO: Optimize it,
+            newBufCnt = this.bufSize - currentLen
+            for idx in 0 .. newBufCnt
+              this.buf[idx] = this.buf[idx + currentLen]
+            endfor
+
+            this.bufSize = newBufCnt
+          else
+            this.bufSize  = 0
+          endif
+
+          if this.bufSize is 0
+            # Reload one lookup byte.
+            this.buf[0]   = this.input[this.inputIdx]
+            this.bufSize  = 1
+            this.inputIdx = this.inputIdx + 1
+          endif
+
+          #
+          # END OF CLEAR INPUT
+          #
 
           stackValues[stackIdx] = currentRet
 
