@@ -748,23 +748,16 @@ class Parser
                   currentLen = length + 1
                   currentSym = _dfa_accept[mach][dfa_st] - 1
 
-                  if currentSym is @@eof
-                    # End of file. Don't go on anymore.
-                    dfa_st       = -1
-                    lexInnerGoOn = false
-
-                  elif _symbolsGreedy[currentSym] is 0
-                    # Stop if matched symbol should be parsed nongreedy.
-                    dfa_st       = -1
-                    lexInnerGoOn = false
+                  if (currentSym is @@eof) or (_symbolsGreedy[currentSym] is 0)
+                    # End of file or non-greedy symbol.
+                    dfa_st = -1
                   endif
                 endif
 
-                if lexInnerGoOn is true
-                  length       = length + 1
-                  next         = ord(this._getInput(length))
-                  lexInnerGoOn = false
-                endif
+                # Get next char from input.
+                length       = length + 1
+                next         = ord(this._getInput(length))
+                lexInnerGoOn = false
               endif
 
               chr = chr + 2
