@@ -594,8 +594,7 @@ class Parser
   method _getInput(offset) -&gt; rv
     global UNICC_EOF
 
-    numberOfBytesToRead    = offset - this.bufSize + 1
-    numberOfBytesRemaining = this.inputLen - this.inputIdx
+    numberOfBytesToRead = offset - this.bufSize + 2
 
     for idx in 0 .. numberOfBytesToRead
       # Get next character from input stream
@@ -637,7 +636,14 @@ class Parser
 
       this.bufSize = newBufCnt
     else
-      this.bufSize = 0
+      this.bufSize  = 0
+    endif
+
+    if this.bufSize is 0
+      # Reload one lookup byte.
+      this.buf[0]   = this.input[this.inputIdx]
+      this.bufSize  = 1
+      this.inputIdx = this.inputIdx + 1
     endif
 
     debug('clear input done: bufSize=[' + str(this.bufSize) + ']')
@@ -675,6 +681,17 @@ class Parser
     this.line     = 1
     this.column   = 1
 
+    # Buffer first lookup byte.
+    # TODO: Clean up this mess.
+    lookupByte = UNICC_EOF
+    if this.inputLen > 0
+      lookupByte = this.input[0]
+    endif
+
+    this.buf      = [lookupByte]
+    this.bufSize  = 1
+    this.inputIdx = 1
+
     # Current parser state.
     currentAct = 0
     currentIdx = 0
@@ -707,7 +724,7 @@ class Parser
         length = 0
         chr    = 0
         mach   = @@prefix_dfa_select[stackStates[stackIdx]]
-        next   = ord(this._getInput(0))
+        next   = ord(this.buf[0])
 
         if next is UNICC_EOF
           # End of file - no more data.
@@ -761,7 +778,7 @@ class Parser
 
         debug('lex done: sym=[' + str(currentSym) + ']')
 
-      elif this._getInput(0) is UNICC_EOF
+      elif this.buf[0] is UNICC_EOF
         currentSym = @@eof
       endif
 
@@ -821,7 +838,7 @@ class Parser
         if false
 @@scan_actions
         else
-          @@top-value = this._getInput(0)
+          @@top-value = this.buf[0]
         endif
 
         if bitand(currentAct, UNICC_REDUCE) isnt 0
