@@ -591,29 +591,6 @@ class Parser
     debug('created parser object')
   endmethod
 
-  method _getInput(offset) -&gt; rv
-    global UNICC_EOF
-
-    numberOfBytesToRead = offset - this.bufSize + 2
-
-    for idx in 0 .. numberOfBytesToRead
-      # Get next character from input stream
-      if this.inputIdx &lt; this.inputLen
-        nextChar      = this.input[this.inputIdx]
-        this.inputIdx = this.inputIdx + 1
-      else
-        nextChar = UNICC_EOF
-      endif
-
-      this.buf[this.bufSize] = nextChar
-      this.bufSize           = this.bufSize + 1
-    endfor
-
-    rv = this.buf[offset]
-
-    debug('got input [' + str(rv) + ']')
-  endmethod
-
   method _clearInput(currentLen)
     debug('going to clear input: len=[' + str(currentLen) + '], bufSize=[' + str(this.bufSize) + ']')
 
@@ -753,8 +730,23 @@ class Parser
                 endif
 
                 # Get next char from input.
-                length       = length + 1
-                next         = ord(this._getInput(length))
+                length              = length + 1
+                numberOfBytesToRead = length - this.bufSize + 2
+
+                for idx in 0 .. numberOfBytesToRead
+                  # Get next character from input stream
+                  if this.inputIdx &lt; this.inputLen
+                    nextChar      = this.input[this.inputIdx]
+                    this.inputIdx = this.inputIdx + 1
+                  else
+                    nextChar = UNICC_EOF
+                  endif
+
+                  this.buf[this.bufSize] = nextChar
+                  this.bufSize           = this.bufSize + 1
+                endfor
+
+                next         = ord(this.buf[length])
                 lexInnerGoOn = false
               endif
 
