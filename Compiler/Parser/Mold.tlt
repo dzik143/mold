@@ -574,25 +574,8 @@ endclass
 # -----------------------------------------------------------------------------
 
 class Parser
-  method constructor()
-    global null
-
-    # Input buffering
-    this.buf     = []
-    this.bufSize = 0
-
-    this.line   = 1
-    this.column = 1
-
-    this.inputIdx = 0
-    this.inputLen = 0
-    this.input    = null
-
-    debug('created parser object')
-  endmethod
-
-  method _handleError(msg)
-    die(this.filePath + ':' + str(this.line) + ':' + str(this.column) + ': error: ' + str(msg))
+  method _handleError(line, column, msg)
+    die(this.filePath + ':' + str(line) + ':' + str(column) + ': error: ' + msg)
   endmethod
 
   method _parseInternal(text) -> ast
@@ -617,22 +600,22 @@ class Parser
 
     debug('going to parse [' + str(len(text)) + '] bytes')
 
-    this.input    = text
-    this.inputIdx = 0
-    this.inputLen = len(text)
-    this.line     = 1
-    this.column   = 1
+    input    = text
+    inputIdx = 0
+    inputLen = len(text)
+    line     = 1
+    column   = 1
 
     # Buffer first lookup byte.
     # TODO: Clean up this mess.
     lookupByte = UNICC_EOF
-    if this.inputLen > 0
-      lookupByte = this.input[0]
+    if inputLen > 0
+      lookupByte = input[0]
     endif
 
-    this.buf      = [lookupByte]
-    this.bufSize  = 1
-    this.inputIdx = 1
+    buf      = [lookupByte]
+    bufSize  = 1
+    inputIdx = 1
 
     # Current parser state.
     currentAct = 0
@@ -666,7 +649,7 @@ class Parser
         length = 0
         chr    = 0
         mach   = @@prefix_dfa_select[stackStates[stackIdx]]
-        next   = ord(this.buf[0])
+        next   = ord(buf[0])
 
         if next is UNICC_EOF
           # End of file - no more data.
@@ -696,22 +679,22 @@ class Parser
 
                 # Get next char from input.
                 length              = length + 1
-                numberOfBytesToRead = length - this.bufSize + 2
+                numberOfBytesToRead = length - bufSize + 2
 
                 for idx in 0 .. numberOfBytesToRead
                   # Get next character from input stream
-                  if this.inputIdx &lt; this.inputLen
-                    nextChar      = this.input[this.inputIdx]
-                    this.inputIdx = this.inputIdx + 1
+                  if inputIdx &lt; inputLen
+                    nextChar = input[inputIdx]
+                    inputIdx = inputIdx + 1
                   else
                     nextChar = UNICC_EOF
                   endif
 
-                  this.buf[this.bufSize] = nextChar
-                  this.bufSize           = this.bufSize + 1
+                  buf[bufSize] = nextChar
+                  bufSize      = bufSize + 1
                 endfor
 
-                next         = ord(this.buf[length])
+                next         = ord(buf[length])
                 lexInnerGoOn = false
               endif
 
@@ -722,7 +705,7 @@ class Parser
 
         debug('lex done: sym=[' + str(currentSym) + ']')
 
-      elif this.buf[0] is UNICC_EOF
+      elif buf[0] is UNICC_EOF
         currentSym = @@eof
       endif
 
@@ -766,13 +749,13 @@ class Parser
       debug('got action: rv=[' + str(rv) + '], act=[' + str(currentAct) + '], idx=[' + str(currentIdx) + ']')
 
       if rv is 0
-        this._handleError('syntax error')
+        this._handleError(line, column, 'syntax error')
       endif
 
       # Shift
       if bitand(currentAct, UNICC_SHIFT) isnt 0
         debug('going to shift...')
-        nextChar = this.buf[currentLen]
+        nextChar = buf[currentLen]
         stackIdx = stackIdx + 1
 
         # Execute scanner actions, if existing.
@@ -782,7 +765,7 @@ class Parser
         if false
 @@scan_actions
         else
-          @@top-value = this.buf[0]
+          @@top-value = buf[0]
         endif
 
         if bitand(currentAct, UNICC_REDUCE) isnt 0
@@ -791,19 +774,19 @@ class Parser
           stackStates[stackIdx] = currentIdx
         endif
 
-        stackLines[stackIdx]   = this.line
-        stackColumns[stackIdx] = this.column
+        stackLines[stackIdx]   = line
+        stackColumns[stackIdx] = column
 
         # Pop value from buffer.
         # TODO: Optimize it.
         newValue = ''
         for idx in 0 .. currentLen
-          newValue = newValue + this.buf[idx]
+          newValue = newValue + buf[idx]
         endfor
         @@top-value = newValue
 
         stackNodes[stackIdx] = null
-        this.buf[currentLen] = nextChar
+        buf[currentLen] = nextChar
 
         # Perform the shift on input
         if (currentSym isnt @@eof) and (currentSym isnt @@goal-value)
@@ -815,30 +798,30 @@ class Parser
           if currentLen &gt; 0
             # Update counters for line and column
             for idx in 0 .. currentLen
-              if ord(this.buf[idx]) is 10
-                this.line   = this.line + 1
-                this.column = 1
+              if ord(buf[idx]) is 10
+                line   = line + 1
+                column = 1
               else
-                this.column = this.column + 1
+                column = column + 1
               endif
             endfor
 
             # TODO: Optimize it,
-            newBufCnt = this.bufSize - currentLen
+            newBufCnt = bufSize - currentLen
             for idx in 0 .. newBufCnt
-              this.buf[idx] = this.buf[idx + currentLen]
+              buf[idx] = buf[idx + currentLen]
             endfor
 
-            this.bufSize = newBufCnt
+            bufSize = newBufCnt
           else
-            this.bufSize  = 0
+            bufSize  = 0
           endif
 
-          if this.bufSize is 0
+          if bufSize is 0
             # Reload one lookup byte.
-            this.buf[0]   = this.input[this.inputIdx]
-            this.bufSize  = 1
-            this.inputIdx = this.inputIdx + 1
+            buf[0]   = input[inputIdx]
+            bufSize  = 1
+            inputIdx = inputIdx + 1
           endif
 
           #
@@ -925,30 +908,30 @@ class Parser
           if currentLen &gt; 0
             # Update counters for line and column
             for idx in 0 .. currentLen
-              if ord(this.buf[idx]) is 10
-                this.line   = this.line + 1
-                this.column = 1
+              if ord(buf[idx]) is 10
+                line   = line + 1
+                column = 1
               else
-                this.column = this.column + 1
+                column = column + 1
               endif
             endfor
 
             # TODO: Optimize it,
-            newBufCnt = this.bufSize - currentLen
+            newBufCnt = bufSize - currentLen
             for idx in 0 .. newBufCnt
-              this.buf[idx] = this.buf[idx + currentLen]
+              buf[idx] = buf[idx + currentLen]
             endfor
 
-            this.bufSize = newBufCnt
+            bufSize = newBufCnt
           else
-            this.bufSize  = 0
+            bufSize  = 0
           endif
 
-          if this.bufSize is 0
+          if bufSize is 0
             # Reload one lookup byte.
-            this.buf[0]   = this.input[this.inputIdx]
-            this.bufSize  = 1
-            this.inputIdx = this.inputIdx + 1
+            buf[0]   = input[inputIdx]
+            bufSize  = 1
+            inputIdx = inputIdx + 1
           endif
 
           #
@@ -984,8 +967,8 @@ class Parser
           stackIdx               = stackIdx + 1
           stackNodes[stackIdx]   = null
           stackValues[stackIdx]  = currentRet
-          stackLines[stackIdx]   = this.line
-          stackColumns[stackIdx] = this.column
+          stackLines[stackIdx]   = line
+          stackColumns[stackIdx] = column
 
           if bitand(currentAct, UNICC_REDUCE) isnt 0
             stackStates[stackIdx] = -1
