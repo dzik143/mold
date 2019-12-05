@@ -512,5 +512,5 @@ bool
 //
 
 error_unterminated_string
-  : @UNTERMINATED_STRING [* this._handleError('unterminated string') *]
+  : @UNTERMINATED_STRING [* this._handleError(line, column, 'unterminated string') *]
   ;

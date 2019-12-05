@@ -47,7 +47,7 @@ class ASTModuleResolver
           # Load only once.
           this.importedModules[moduleName] = true
 
-          this.app._debug('Resolving module [' + str(moduleName) + ']...')
+          this.app.logDebug('Resolving module [' + str(moduleName) + ']...')
 
           # Parse source into AST tree.
           parser      = new Parser()

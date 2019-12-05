@@ -56,36 +56,36 @@ endif
 
 # Preprocess AST to expand built-in constructions.
 # Example: x is defined => typeof(x) isnt 'undefined'
-app._debug('Preprocessing AST nodes...')
+app.logDebug('Preprocessing AST nodes...')
 app.getAstPreprocessor().processNode(ast)
 
-app._debug('Building symbol table...')
+app.logDebug('Building symbol table...')
 astSymbolsCollector.buildSymbolTable(ast)
 
 # ------------------------------------------------------------------------------
 /*
 # TODO: More generic way to apply selected optimizations.
-app._debug('VCall optimization...')
+app.logDebug('VCall optimization...')
 app.getAstOptimizerVCall().processNode(ast)
 
-app._debug('Inline optimization... (TEMPORARY DISABLED!)')
+app.logDebug('Inline optimization... (TEMPORARY DISABLED!)')
 #app.getAstOptimizerInline().processNode(ast)
 
 # Evaluate values stored inside nodes before go-on with
 # further AST optimization.
-app._debug('Evaluating AST nodes...')
+app.logDebug('Evaluating AST nodes...')
 app.getAstEvaluator().processNode(ast)
 
-app._debug('Constant folding...')
+app.logDebug('Constant folding...')
 app.getAstOptimizerConstantFolding().processNode(ast)
 
-app._debug('If optimization...')
+app.logDebug('If optimization...')
 app.getAstOptimizerIf().processNode(ast)
 
-app._debug('Dead code elimination...')
+app.logDebug('Dead code elimination...')
 app.getAstOptimizerDeadCodeRemove().processNode(ast)
 
-app._debug('Common subexpression elimination (CSE)...')
+app.logDebug('Common subexpression elimination (CSE)...')
 app.getAstOptimizerCSE().processNode(ast)
 */
 # ------------------------------------------------------------------------------

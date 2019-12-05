@@ -346,7 +346,6 @@ class CodeGeneratorX64
     print "section '.text' code readable executable"
     print "stack 1024*1024*4, 1024*1024*4"
     print "include 'Variant.asm'"
-    # print "__rv EQU rdi"
 
     #
     # Fetch code and code metas.
@@ -1368,9 +1367,9 @@ class CodeGeneratorX64
     #
 
     print '; ------------------------------------------------------------------------------'
-    print ';                           Constant data section'
+    print ';                     Constant (read-only) data section'
     print '; ------------------------------------------------------------------------------'
-    print "section '.cdata' data readable"
+    print "section '.rdata' data readable"
 
     print ''
     print '; Constants'
@@ -1466,8 +1465,8 @@ class CodeGeneratorX64
     # Generate debug section with symbols.
     #
 
-    procedures     = codeObj.procedures
-    proceduresCnt  = codeObj.proceduresCnt
+    procedures    = codeObj.procedures
+    proceduresCnt = codeObj.proceduresCnt
 
     print '; ------------------------------------------------------------------------------'
     print ';                                Debug section'
@@ -1499,6 +1498,5 @@ class CodeGeneratorX64
     endfor
 
     print "name_endOfCodeSection db 'out of code section', 0"
-
   endmethod
 endclass

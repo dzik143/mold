@@ -29,44 +29,44 @@ astSymbolsCollector = app.getAstSymbolsCollector()
 astPrinterText      = new ASTPrinterText()
 astPrinterHtml      = new ASTPrinterHtml()
 
-app._debug('Building symbol table...')
+app.logDebug('Building symbol table...')
 astSymbolsCollector.buildSymbolTable(ast)
 
 # ------------------------------------------------------------------------------
 
 # TODO: More generic way to apply selected optimizations.
-app._debug('VCall optimization...')
+app.logDebug('VCall optimization...')
 app.getAstOptimizerVCall().processNode(ast)
 
-#app._debug('Inline optimization...')
+#app.logDebug('Inline optimization...')
 #app.getAstOptimizerInline().processNode(ast)
 
 # Common preprocess before go-on with further AST optimization.
-app._debug('Evaluating AST nodes...')
+app.logDebug('Evaluating AST nodes...')
 app.getAstEvaluator().processNode(ast)
 
-app._debug('Constant folding...')
+app.logDebug('Constant folding...')
 app.getAstOptimizerConstantFolding().processNode(ast)
 
-app._debug('If optimization...')
+app.logDebug('If optimization...')
 app.getAstOptimizerIf().processNode(ast)
 
-app._debug('Dead code elimination...')
+app.logDebug('Dead code elimination...')
 app.getAstOptimizerDeadCodeRemove().processNode(ast)
 
-app._debug('Common subexpression elimination (CSE)...')
+app.logDebug('Common subexpression elimination (CSE)...')
 app.getAstOptimizerCSE().processNode(ast)
 
 # ------------------------------------------------------------------------------
 
-app._debug('Type cast...')
+app.logDebug('Type cast...')
 app.getAstTypeCast().processNode(ast)
 
 
-app._debug('Printing source code...')
+app.logDebug('Printing source code...')
 astPrinterText.printNode(ast)
 
 print '</pre>'
 
-app._debug('Emmiting HTML...')
+app.logDebug('Emmiting HTML...')
 astPrinterHtml.printNode(ast)

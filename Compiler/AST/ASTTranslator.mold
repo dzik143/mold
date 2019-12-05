@@ -58,7 +58,7 @@ class ASTTranslator
   endmethod
 
   method _error(msg)
-    die('error: ' + msg)
+    this.app.logError(msg)
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -263,7 +263,7 @@ class ASTTranslator
     children  = ast['children']
 
     if children is defined
-      this.app._debug('Emitting function ' + funcName + '...')
+      this.app.logDebug('Emitting function ' + funcName + '...')
 
       oldSymbolTable   = this.symbolTable
       this.symbolTable = ast.children[0].symbolTable
@@ -284,7 +284,7 @@ class ASTTranslator
       this.symbolTable = oldSymbolTable
       this.symbolTableForTemps = false
 
-      this.app._debug('Function emited: ' + funcName)
+      this.app.logDebug('Function emited: ' + funcName)
     endif
   endmethod
 

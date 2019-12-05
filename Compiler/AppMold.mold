@@ -37,15 +37,8 @@ import 'MIR/MIR.mold'
 DEBUG_MOLD = false
 
 class AppMold
-  method _debug(msg)
-    global DEBUG_MOLD
-    if DEBUG_MOLD is true
-      print '[ AppMold ]', msg
-    endif
-  endmethod
-
   method constructor()
-    this._debug('Created new object')
+    this.logDebug('Created new object')
 
     this.symbolTable                 = new SymbolTable(this)
     this.astOptimizerConstantFolding = new ASTOptimizerConstantFolding(this)
@@ -61,7 +54,18 @@ class AppMold
     this.astModuleResolver           = new ASTModuleResolver(this)
 
     this.code = new MIRCode()
-    this._debug('Ready to work')
+    this.logDebug('Ready to work')
+  endmethod
+
+  method logDebug(msg)
+    global DEBUG_MOLD
+    if DEBUG_MOLD is true
+      print '[ AppMold ]', msg
+    endif
+  endmethod
+
+  method logError(msg)
+    die('[ AppMold ] error: ' + msg)
   endmethod
 
   method getMir1Code() -> rv

@@ -34,7 +34,7 @@ import 'CodeGenerator/CodeGeneratorX64.mold'
 import 'MIR/MIRQuadOptimizer.mold'
 import 'VM/VMachineStack.mold'
 
-VERSION_STRING = '0.1.191202'
+VERSION_STRING = '0.1.191205'
 
 # ------------------------------------------------------------------------------
 #                              Helper functions
@@ -134,10 +134,10 @@ endif
 
 app = new AppMold()
 
-app._debug('Creating parser object...')
+app.logDebug('Creating parser object...')
 parser = new Parser()
 
-app._debug('Parsing source...')
+app.logDebug('Parsing source...')
 ast = parser.parseFile(path)
 
 #
@@ -156,32 +156,32 @@ elif mode is 'astjson'
 else
   # Convert AST to understood by translator format.
   # TODO: Remove this step.
-  app._debug('Converting AST...')
+  app.logDebug('Converting AST...')
   ast = ast.convert()
 
   # Resolve imports if any.
-  app._debug('Resolving imports...')
+  app.logDebug('Resolving imports...')
   astModuleResolver = app.getAstModuleResolver()
   astModuleResolver.resolveImports(ast)
 
   # Preprocess AST to expand built-in constructions.
   # Example: x is defined => typeof(x) isnt 'undefined'
-  app._debug('Preprocessing AST...')
+  app.logDebug('Preprocessing AST...')
   app.getAstPreprocessor().processNode(ast)
 
   # Build symbol table.
-  app._debug('Building symbol table...')
+  app.logDebug('Building symbol table...')
   astSymbolsCollector = app.getAstSymbolsCollector()
   astSymbolsCollector.buildSymbolTable(ast)
 
   # Optimize AST if needed.
-  app._debug('Optimizing AST...')
+  app.logDebug('Optimizing AST...')
 
   if optimizationLevel is 0
     # No optimization - do nothing.
     # TODO: Why we need call evaluate here?
     # (Newton method test failed without it)
-    app._debug('Evaluating AST nodes...')
+    app.logDebug('Evaluating AST nodes...')
     app.getAstEvaluator().processNode(ast)
 
   elif optimizationLevel is 1
@@ -191,30 +191,30 @@ else
     # - common subexpression elimination (CSE).
 
     # TODO: More generic way to apply selected optimizations.
-    app._debug('VCall optimization...')
+    app.logDebug('VCall optimization...')
     app.getAstOptimizerVCall().processNode(ast)
 
-    app._debug('Inline optimization... (TEMPORARY DISABLED!)')
+    app.logDebug('Inline optimization... (TEMPORARY DISABLED!)')
     #app.getAstOptimizerInline().processNode(ast)
 
     # Common preprocess before go-on with further AST optimization.
-    app._debug('Evaluating AST nodes...')
+    app.logDebug('Evaluating AST nodes...')
     app.getAstEvaluator().processNode(ast)
 
-    app._debug('Constant folding...')
+    app.logDebug('Constant folding...')
     app.getAstOptimizerConstantFolding().processNode(ast)
 
     if (mode is 'mir0') or (mode is 'interpreter')
-      app._debug('If optimization... (TEMPORARY DISABLED FOR MIR0!)')
+      app.logDebug('If optimization... (TEMPORARY DISABLED FOR MIR0!)')
     else
-      app._debug('If optimization...')
+      app.logDebug('If optimization...')
       app.getAstOptimizerIf().processNode(ast)
     endif
 
-    app._debug('Dead code elimination...')
+    app.logDebug('Dead code elimination...')
     app.getAstOptimizerDeadCodeRemove().processNode(ast)
 
-    app._debug('Common subexpression elimination (CSE)...')
+    app.logDebug('Common subexpression elimination (CSE)...')
     app.getAstOptimizerCSE().processNode(ast)
 
   else
@@ -266,11 +266,11 @@ else
         astTranslator.connectTo(mirQuadOptimizer).connectTo(mirQuadCollector)
       endif
 
-      app._debug('Type cast...')
+      app.logDebug('Type cast...')
       app.getAstTypeCast().processNode(ast)
 
       # Run build quads process.
-      app._debug('Translating AST...')
+      app.logDebug('Translating AST...')
       astTranslator.run(ast)
 
       if mode is 'mir1'
@@ -284,7 +284,7 @@ else
         code.symbolTable = app.getSymbolTable()
 
         # Generate x64 code.
-        app._debug('Generating x64 code...')
+        app.logDebug('Generating x64 code...')
         codeGenerator = new CodeGeneratorX64()
         codeGenerator.run(code)
 

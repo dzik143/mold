@@ -88,6 +88,10 @@ class SymbolTable
       print '[ SymbolTable ]', msg
     endif
   endmethod
+  
+  method _error(msg)
+    this.app.logError(msg)
+  endmethod
 
   # ----------------------------------------------------------------------------
   #                               Generic calls
@@ -103,7 +107,7 @@ class SymbolTable
 
   method insert(name, entry)
     if this.symbols[name] is defined
-      die("error: redeclaration of '" + name + "'")
+      this._error("redeclaration of '" + name + "'")
 
     else
       this.symbols[name] = entry
@@ -177,7 +181,7 @@ class SymbolTable
     rv = this._lookupInternal(name)
 
     if rv is undefined
-      die("error: '" + name + "' was not declared in this scope")
+      this._error("'" + name + "' was not declared in this scope")
     endif
 
     # TODO: Use max(x, y) if ready.
@@ -241,7 +245,7 @@ class SymbolTable
     this._debug('Enter scope')
 
     if this.deepIdx >= this.deepMax
-      die('error: too deep (' + str(this.deepIdx) + ')')
+      this._error('too deep (' + str(this.deepIdx) + ')')
     endif
 
     rv = new SymbolTable(this.app)
@@ -267,7 +271,7 @@ class SymbolTable
     this._debug('Leave scope')
 
     if this.deepIdx < 1
-      die('error: unmatched scope leave')
+      this._error('unmatched scope leave')
     endif
     # TODO: Review it.
     #this.vacuum()
@@ -294,7 +298,7 @@ class SymbolTable
     rv = this.lookupGlobal(name)
 
     if rv.kind isnt SYMBOL_KIND_FUNCTION
-      die("error: '" + name + "' is not a function")
+      this._error("'" + name + "' is not a function")
 
     else
       # TODO: Clean up this mess.
@@ -304,7 +308,7 @@ class SymbolTable
       endif
 
       if rv.proto.paramsCnt isnt paramsCnt
-        die("error: function '" + name + "' requires exactly " + str(rv['proto']['paramsCnt']) + ' parameters, but ' + str(paramsCnt) + ' were passed')
+        this._error("function '" + name + "' requires exactly " + str(rv['proto']['paramsCnt']) + ' parameters, but ' + str(paramsCnt) + ' were passed')
       endif
     endif
   endmethod
@@ -331,22 +335,23 @@ class SymbolTable
     global SYMBOL_KIND_CLASS
     rv = this.lookupGlobal(name)
     if rv['kind'] isnt SYMBOL_KIND_CLASS
-      die("error: '" + name + "' is not a class")
+      this._error("'" + name + "' is not a class")
     endif
   endmethod
 
+/*
+  TODO: Is it still needed?
   method lookupMethod(className, methodName, paramsCnt) -> rv
-    print 'lookupMethod', className, methodName
-
     rv = this.lookupClass(className)['proto']['vtable'][methodName]
 
     if rv is undefined
-      die("error: class '" + className + "' has no method '" + methodName + "'")
+      this._error("class '" + className + "' has no method '" + methodName + "'")
 
     elif rv['paramsCnt'] isnt paramsCnt
-      die("error: method '" + methodName + "' requires exactly " + str(rv['paramsCnt']) + ' parameters, but ' + str(paramsCnt) + ' were passed')
+      this._error("method '" + methodName + "' requires exactly " + str(rv['paramsCnt']) + ' parameters, but ' + str(paramsCnt) + ' were passed')
     endif
   endmethod
+*/  
 
   # ----------------------------------------------------------------------------
   #                               Variable helper
@@ -356,7 +361,7 @@ class SymbolTable
     global SYMBOL_KIND_VAR_LOCAL
 
     if this.deepIdx < 1
-      die('error: attemp to declare local within global table')
+      this._error('attemp to declare local within global table')
     endif
 
     newEntry = {
@@ -371,7 +376,7 @@ class SymbolTable
     global SYMBOL_KIND_CONST
 
     if this.deepIdx <= 1
-      die('error: global directive used in global space')
+      this._error('global directive used in global space')
 
     elif this.isset(name) is true
       # Symbol already declared in current scope.
@@ -385,7 +390,7 @@ class SymbolTable
         # It's a global constant. Do nothing.
       else
         # It's already declared as another kind.
-        die("error: conflicting declaration 'global " + name + "'")
+        this._error("conflicting declaration 'global " + name + "'")
       endif
 
     else
@@ -520,7 +525,7 @@ class SymbolTable
 
       else
         # Error - type mismatch.
-        die('error: attemp to assign ' + AST_ConvertDataTypeToText(newType) + ' to ' + AST_ConvertDataTypeToText(oldType))
+        this._error('attemp to assign ' + AST_ConvertDataTypeToText(newType) + ' to ' + AST_ConvertDataTypeToText(oldType))
       endif
 
       if goOn is true
