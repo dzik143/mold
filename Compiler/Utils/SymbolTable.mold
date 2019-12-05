@@ -63,7 +63,7 @@ class SymbolTable
     this.procLevel = 0
 
     # Track used literals to avoid emitting the same text
-    # multiple time.
+    # multiple times.
     this.literals = {}
 
     # Track temporary variables usage and reuse them if possible.

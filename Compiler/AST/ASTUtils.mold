@@ -49,15 +49,10 @@ const AST_DataTypeForMIR = [
 ]
 
 # TODO: Synchronize id along whole code.
-#AST_NextId = 1000
-
 function AST_GetNextId() -> rv
   global NodeId
   rv = NodeId
   NodeId = NodeId + 1
-  #global AST_NextId
-  #rv = AST_NextId
-  #AST_NextId = AST_NextId + 1
 endfunction
 
 function AST_CreateNodeVariable(name) -> rv

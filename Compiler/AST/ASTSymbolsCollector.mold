@@ -25,11 +25,6 @@ class ASTSymbolsCollector
 
   method constructor(app)
     this.app = app
-
-    # TODO: Remove redundant array if map iteration will work.
-    this.vtable        = {}
-    this.vtableKeys    = []
-    this.vtableKeysCnt = 0
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -167,10 +162,6 @@ class ASTSymbolsCollector
           methodParamsCnt = methodProto['paramsCnt']
           methodFullName  = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
 
-          this.vtable[methodFullName]         = baseMethods[methodName]['fullName']
-          this.vtableKeys[this.vtableKeysCnt] = methodFullName
-          this.vtableKeysCnt                  = this.vtableKeysCnt + 1
-
           vtable[methodName] = methodProto
           methodsAsFlatArray[methodsAsFlatArrayCnt] = methodName
           methodsAsFlatArrayCnt = methodsAsFlatArrayCnt + 1
@@ -189,8 +180,6 @@ class ASTSymbolsCollector
 
           child['fullName']  = methodFullName
 
-          this.vtable[methodFullName] = methodFullName
-
           if vtable[methodName] is undefined
             # Method seen first time.
             methodsAsFlatArray[methodsAsFlatArrayCnt] = methodName
@@ -205,10 +194,6 @@ class ASTSymbolsCollector
             baseMethodProto     = baseMethods[methodName]
             child['baseMethod'] = baseMethodProto
             baseMethodProto.isOverloaded = true
-
-          else
-            this.vtableKeys[this.vtableKeysCnt] = methodFullName
-            this.vtableKeysCnt                  = this.vtableKeysCnt + 1
           endif
 
           vtable[methodName] = child

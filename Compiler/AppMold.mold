@@ -65,7 +65,7 @@ class AppMold
   endmethod
 
   method logError(msg)
-    die('[ AppMold ] error: ' + msg)
+    die('error: ' + msg)
   endmethod
 
   method getMir1Code() -> rv

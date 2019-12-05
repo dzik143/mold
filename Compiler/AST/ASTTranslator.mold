@@ -29,22 +29,10 @@ class ASTTranslator
   method constructor(app)
     this.app = app
 
-    # TODO: Clean up this mess.
-    this.nextId          = 1
-    this.importedModules = {}
-
-    # TODO: Remove redundant array if map iteration will work.
-    this.vtable        = {}
-    this.vtableKeys    = []
-    this.vtableKeysCnt = 0
-
     # TODO: Use null?
     this.currentClassProto    = false
     this.currentFunctionProto = false
     this.symbolTableForTemps  = false
-
-    # TODO: Use many deep levels in symbol table.
-    this.branchDeepIdx = 0
   endmethod
 
   # ----------------------------------------------------------------------------
