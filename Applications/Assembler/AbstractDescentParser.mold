@@ -18,8 +18,6 @@
 #                                                                              #
 ################################################################################
 
-import '../../Libs/Io.mold'
-
 class AbstractDescentParser
   # ----------------------------------------------------------------------------
   #                                  Init code
@@ -46,7 +44,7 @@ class AbstractDescentParser
 
   method _getChar() -> rv
     rv = this.lookupBuffer
-    this.lookupBuffer = readChar(this.f)
+    this.lookupBuffer = FileReadChar(this.f)
   endmethod
 
   method _skipWhites()
@@ -128,7 +126,7 @@ class AbstractDescentParser
 
   method parseFile(path)
     this.path         = path
-    this.f            = open(this.path, 'r')
+    this.f            = FileOpenForRead(this.path)
     this.lookupBuffer = ' '
 
     this._parseSource()

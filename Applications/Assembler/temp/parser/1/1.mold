@@ -1,0 +1,975 @@
+debug: created parser object
+debug: going to parse [26] bytes
+debug: falling into main parser loop
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #1
+0 []
+debug: starting lex...
+debug: got input [1]
+debug: got input [2]
+debug: got input [3]
+debug: got input [4]
+debug: got input [ ]
+debug: lex done: sym=[2]
+debug: got symbol: sym=[2], len=[4]
+debug: got action: rv=[1], act=[1], idx=[15]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #1.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[0])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[2], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #2
+5 ['1', '2', '3', '4', ' ']
+debug: starting lex...
+debug: got input [1]
+debug: got input [2]
+debug: got input [3]
+debug: got input [4]
+debug: got input [ ]
+debug: lex done: sym=[2]
+debug: got symbol: sym=[2], len=[4]
+debug: got action: rv=[1], act=[2], idx=[3]
+debug: going to shift...
+debug: got input [1]
+debug: going to clear input: len=[4], bufSize=[5]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: END CONDITION: reduce=[0], idx=[3], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #3
+1 [' ', '2', '3', '4', ' ']
+debug: starting lex...
+debug: got input [ ]
+debug: got input [+]
+debug: lex done: sym=[10]
+debug: got symbol: sym=[10], len=[1]
+debug: got action: rv=[1], act=[3], idx=[11]
+debug: going to shift...
+debug: got input [ ]
+debug: going to clear input: len=[1], bufSize=[2]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #3.1
+debug: goal symbol? (lhs=[23], goal=[11], stackIdx=[2])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #3.2
+debug: goal symbol? (lhs=[22], goal=[11], stackIdx=[2])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[1], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #4
+1 ['+', '+', '3', '4', ' ']
+debug: starting lex...
+debug: got input [+]
+debug: got input [ ]
+debug: lex done: sym=[9]
+debug: got symbol: sym=[9], len=[1]
+debug: got action: rv=[1], act=[1], idx=[14]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #4.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[2])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #4.2
+debug: goal symbol? (lhs=[13], goal=[11], stackIdx=[1])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #4.3
+debug: goal symbol? (lhs=[26], goal=[11], stackIdx=[1])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[5], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #5
+2 ['+', ' ', '3', '4', ' ']
+debug: starting lex...
+debug: got input [+]
+debug: got input [ ]
+debug: lex done: sym=[9]
+debug: got symbol: sym=[9], len=[1]
+debug: got action: rv=[1], act=[2], idx=[7]
+debug: going to shift...
+debug: got input [+]
+debug: going to clear input: len=[1], bufSize=[2]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: END CONDITION: reduce=[0], idx=[7], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #6
+1 [' ', ' ', '3', '4', ' ']
+debug: starting lex...
+debug: got input [ ]
+debug: got input [f]
+debug: lex done: sym=[10]
+debug: got symbol: sym=[10], len=[1]
+debug: got action: rv=[1], act=[3], idx=[11]
+debug: going to shift...
+debug: got input [ ]
+debug: going to clear input: len=[1], bufSize=[2]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #6.1
+debug: goal symbol? (lhs=[23], goal=[11], stackIdx=[3])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #6.2
+debug: goal symbol? (lhs=[22], goal=[11], stackIdx=[3])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[1], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #7
+1 ['f', 'f', '3', '4', ' ']
+debug: starting lex...
+debug: got input [f]
+debug: got input [o]
+debug: got input [o]
+debug: got input [(]
+debug: lex done: sym=[1]
+debug: got symbol: sym=[1], len=[3]
+debug: got action: rv=[1], act=[1], idx=[14]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #7.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[3])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #7.2
+debug: goal symbol? (lhs=[20], goal=[11], stackIdx=[2])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[11], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #8
+4 ['f', 'o', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [f]
+debug: got input [o]
+debug: got input [o]
+debug: got input [(]
+debug: lex done: sym=[1]
+debug: got symbol: sym=[1], len=[3]
+debug: got action: rv=[1], act=[2], idx=[4]
+debug: going to shift...
+debug: got input [f]
+debug: going to clear input: len=[3], bufSize=[4]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: END CONDITION: reduce=[0], idx=[4], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #9
+1 ['(', 'o', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [(]
+debug: got input [1]
+debug: lex done: sym=[5]
+debug: got symbol: sym=[5], len=[1]
+debug: got action: rv=[1], act=[1], idx=[15]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #9.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[4])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #9.2
+debug: goal symbol? (lhs=[16], goal=[11], stackIdx=[3])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[6], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #10
+2 ['(', '1', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [(]
+debug: got input [1]
+debug: lex done: sym=[5]
+debug: got symbol: sym=[5], len=[1]
+debug: got action: rv=[1], act=[2], idx=[15]
+debug: going to shift...
+debug: got input [(]
+debug: going to clear input: len=[1], bufSize=[2]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: END CONDITION: reduce=[0], idx=[15], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #11
+1 ['1', '1', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [1]
+debug: got input [,]
+debug: lex done: sym=[2]
+debug: got symbol: sym=[2], len=[1]
+debug: got action: rv=[1], act=[1], idx=[15]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #11.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[5])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #11.2
+debug: goal symbol? (lhs=[15], goal=[11], stackIdx=[4])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[16], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #12
+2 ['1', ',', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [1]
+debug: got input [,]
+debug: lex done: sym=[2]
+debug: got symbol: sym=[2], len=[1]
+debug: got action: rv=[1], act=[2], idx=[3]
+debug: going to shift...
+debug: got input [1]
+debug: going to clear input: len=[1], bufSize=[2]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: END CONDITION: reduce=[0], idx=[3], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #13
+1 [',', ',', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [,]
+debug: got input [2]
+debug: lex done: sym=[3]
+debug: got symbol: sym=[3], len=[1]
+debug: got action: rv=[1], act=[1], idx=[15]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #13.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[6])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #13.2
+debug: goal symbol? (lhs=[13], goal=[11], stackIdx=[5])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #13.3
+debug: goal symbol? (lhs=[26], goal=[11], stackIdx=[5])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[21], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #14
+2 [',', '2', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [,]
+debug: got input [2]
+debug: lex done: sym=[3]
+debug: got symbol: sym=[3], len=[1]
+debug: got action: rv=[1], act=[1], idx=[10]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #14.1
+debug: goal symbol? (lhs=[25], goal=[11], stackIdx=[5])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[22], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #15
+2 [',', '2', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [,]
+debug: got input [2]
+debug: lex done: sym=[3]
+debug: got symbol: sym=[3], len=[1]
+debug: got action: rv=[1], act=[2], idx=[24]
+debug: going to shift...
+debug: got input [,]
+debug: going to clear input: len=[1], bufSize=[2]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: END CONDITION: reduce=[0], idx=[24], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #16
+1 ['2', '2', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [2]
+debug: got input [,]
+debug: lex done: sym=[2]
+debug: got symbol: sym=[2], len=[1]
+debug: got action: rv=[1], act=[1], idx=[15]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #16.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[7])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #16.2
+debug: goal symbol? (lhs=[12], goal=[11], stackIdx=[6])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[25], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #17
+2 ['2', ',', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [2]
+debug: got input [,]
+debug: lex done: sym=[2]
+debug: got symbol: sym=[2], len=[1]
+debug: got action: rv=[1], act=[2], idx=[3]
+debug: going to shift...
+debug: got input [2]
+debug: going to clear input: len=[1], bufSize=[2]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: END CONDITION: reduce=[0], idx=[3], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #18
+1 [',', ',', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [,]
+debug: got input [3]
+debug: lex done: sym=[3]
+debug: got symbol: sym=[3], len=[1]
+debug: got action: rv=[1], act=[1], idx=[15]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #18.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[8])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #18.2
+debug: goal symbol? (lhs=[13], goal=[11], stackIdx=[7])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #18.3
+debug: goal symbol? (lhs=[26], goal=[11], stackIdx=[7])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[27], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #19
+2 [',', '3', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [,]
+debug: got input [3]
+debug: lex done: sym=[3]
+debug: got symbol: sym=[3], len=[1]
+debug: got action: rv=[1], act=[1], idx=[9]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #19.1
+debug: goal symbol? (lhs=[25], goal=[11], stackIdx=[5])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[22], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #20
+2 [',', '3', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [,]
+debug: got input [3]
+debug: lex done: sym=[3]
+debug: got symbol: sym=[3], len=[1]
+debug: got action: rv=[1], act=[2], idx=[24]
+debug: going to shift...
+debug: got input [,]
+debug: going to clear input: len=[1], bufSize=[2]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: END CONDITION: reduce=[0], idx=[24], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #21
+1 ['3', '3', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [3]
+debug: got input [,]
+debug: lex done: sym=[2]
+debug: got symbol: sym=[2], len=[1]
+debug: got action: rv=[1], act=[1], idx=[15]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #21.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[7])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #21.2
+debug: goal symbol? (lhs=[12], goal=[11], stackIdx=[6])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[25], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #22
+2 ['3', ',', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [3]
+debug: got input [,]
+debug: lex done: sym=[2]
+debug: got symbol: sym=[2], len=[1]
+debug: got action: rv=[1], act=[2], idx=[3]
+debug: going to shift...
+debug: got input [3]
+debug: going to clear input: len=[1], bufSize=[2]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: END CONDITION: reduce=[0], idx=[3], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #23
+1 [',', ',', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [,]
+debug: got input [0]
+debug: lex done: sym=[3]
+debug: got symbol: sym=[3], len=[1]
+debug: got action: rv=[1], act=[1], idx=[15]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #23.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[8])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #23.2
+debug: goal symbol? (lhs=[13], goal=[11], stackIdx=[7])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #23.3
+debug: goal symbol? (lhs=[26], goal=[11], stackIdx=[7])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[27], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #24
+2 [',', '0', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [,]
+debug: got input [0]
+debug: lex done: sym=[3]
+debug: got symbol: sym=[3], len=[1]
+debug: got action: rv=[1], act=[1], idx=[9]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #24.1
+debug: goal symbol? (lhs=[25], goal=[11], stackIdx=[5])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[22], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #25
+2 [',', '0', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [,]
+debug: got input [0]
+debug: lex done: sym=[3]
+debug: got symbol: sym=[3], len=[1]
+debug: got action: rv=[1], act=[2], idx=[24]
+debug: going to shift...
+debug: got input [,]
+debug: going to clear input: len=[1], bufSize=[2]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: END CONDITION: reduce=[0], idx=[24], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #26
+1 ['0', '0', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [0]
+debug: got input [,]
+debug: lex done: sym=[2]
+debug: got symbol: sym=[2], len=[1]
+debug: got action: rv=[1], act=[1], idx=[15]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #26.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[7])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #26.2
+debug: goal symbol? (lhs=[12], goal=[11], stackIdx=[6])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[25], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #27
+2 ['0', ',', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [0]
+debug: got input [,]
+debug: lex done: sym=[2]
+debug: got symbol: sym=[2], len=[1]
+debug: got action: rv=[1], act=[2], idx=[3]
+debug: going to shift...
+debug: got input [0]
+debug: going to clear input: len=[1], bufSize=[2]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: END CONDITION: reduce=[0], idx=[3], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #28
+1 [',', ',', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [,]
+debug: got input [0]
+debug: lex done: sym=[3]
+debug: got symbol: sym=[3], len=[1]
+debug: got action: rv=[1], act=[1], idx=[15]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #28.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[8])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #28.2
+debug: goal symbol? (lhs=[13], goal=[11], stackIdx=[7])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #28.3
+debug: goal symbol? (lhs=[26], goal=[11], stackIdx=[7])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[27], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #29
+2 [',', '0', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [,]
+debug: got input [0]
+debug: lex done: sym=[3]
+debug: got symbol: sym=[3], len=[1]
+debug: got action: rv=[1], act=[1], idx=[9]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #29.1
+debug: goal symbol? (lhs=[25], goal=[11], stackIdx=[5])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[22], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #30
+2 [',', '0', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [,]
+debug: got input [0]
+debug: lex done: sym=[3]
+debug: got symbol: sym=[3], len=[1]
+debug: got action: rv=[1], act=[2], idx=[24]
+debug: going to shift...
+debug: got input [,]
+debug: going to clear input: len=[1], bufSize=[2]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: END CONDITION: reduce=[0], idx=[24], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #31
+1 ['0', '0', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [0]
+debug: got input [,]
+debug: lex done: sym=[2]
+debug: got symbol: sym=[2], len=[1]
+debug: got action: rv=[1], act=[1], idx=[15]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #31.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[7])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #31.2
+debug: goal symbol? (lhs=[12], goal=[11], stackIdx=[6])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[25], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #32
+2 ['0', ',', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [0]
+debug: got input [,]
+debug: lex done: sym=[2]
+debug: got symbol: sym=[2], len=[1]
+debug: got action: rv=[1], act=[2], idx=[3]
+debug: going to shift...
+debug: got input [0]
+debug: going to clear input: len=[1], bufSize=[2]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: END CONDITION: reduce=[0], idx=[3], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #33
+1 [',', ',', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [,]
+debug: got input [0]
+debug: lex done: sym=[3]
+debug: got symbol: sym=[3], len=[1]
+debug: got action: rv=[1], act=[1], idx=[15]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #33.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[8])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #33.2
+debug: goal symbol? (lhs=[13], goal=[11], stackIdx=[7])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #33.3
+debug: goal symbol? (lhs=[26], goal=[11], stackIdx=[7])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[27], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #34
+2 [',', '0', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [,]
+debug: got input [0]
+debug: lex done: sym=[3]
+debug: got symbol: sym=[3], len=[1]
+debug: got action: rv=[1], act=[1], idx=[9]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #34.1
+debug: goal symbol? (lhs=[25], goal=[11], stackIdx=[5])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[22], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #35
+2 [',', '0', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [,]
+debug: got input [0]
+debug: lex done: sym=[3]
+debug: got symbol: sym=[3], len=[1]
+debug: got action: rv=[1], act=[2], idx=[24]
+debug: going to shift...
+debug: got input [,]
+debug: going to clear input: len=[1], bufSize=[2]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: END CONDITION: reduce=[0], idx=[24], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #36
+1 ['0', '0', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [0]
+debug: got input [,]
+debug: lex done: sym=[2]
+debug: got symbol: sym=[2], len=[1]
+debug: got action: rv=[1], act=[1], idx=[15]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #36.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[7])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #36.2
+debug: goal symbol? (lhs=[12], goal=[11], stackIdx=[6])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[25], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #37
+2 ['0', ',', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [0]
+debug: got input [,]
+debug: lex done: sym=[2]
+debug: got symbol: sym=[2], len=[1]
+debug: got action: rv=[1], act=[2], idx=[3]
+debug: going to shift...
+debug: got input [0]
+debug: going to clear input: len=[1], bufSize=[2]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: END CONDITION: reduce=[0], idx=[3], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #38
+1 [',', ',', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [,]
+debug: got input [9]
+debug: lex done: sym=[3]
+debug: got symbol: sym=[3], len=[1]
+debug: got action: rv=[1], act=[1], idx=[15]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #38.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[8])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #38.2
+debug: goal symbol? (lhs=[13], goal=[11], stackIdx=[7])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #38.3
+debug: goal symbol? (lhs=[26], goal=[11], stackIdx=[7])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[27], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #39
+2 [',', '9', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [,]
+debug: got input [9]
+debug: lex done: sym=[3]
+debug: got symbol: sym=[3], len=[1]
+debug: got action: rv=[1], act=[1], idx=[9]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #39.1
+debug: goal symbol? (lhs=[25], goal=[11], stackIdx=[5])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[22], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #40
+2 [',', '9', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [,]
+debug: got input [9]
+debug: lex done: sym=[3]
+debug: got symbol: sym=[3], len=[1]
+debug: got action: rv=[1], act=[2], idx=[24]
+debug: going to shift...
+debug: got input [,]
+debug: going to clear input: len=[1], bufSize=[2]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: END CONDITION: reduce=[0], idx=[24], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #41
+1 ['9', '9', 'o', '(', ' ']
+debug: starting lex...
+debug: got input [9]
+debug: got input [9]
+debug: got input [)]
+debug: lex done: sym=[2]
+debug: got symbol: sym=[2], len=[2]
+debug: got action: rv=[1], act=[1], idx=[15]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #41.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[7])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #41.2
+debug: goal symbol? (lhs=[12], goal=[11], stackIdx=[6])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[25], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #42
+3 ['9', '9', ')', '(', ' ']
+debug: starting lex...
+debug: got input [9]
+debug: got input [9]
+debug: got input [)]
+debug: lex done: sym=[2]
+debug: got symbol: sym=[2], len=[2]
+debug: got action: rv=[1], act=[2], idx=[3]
+debug: going to shift...
+debug: got input [9]
+debug: going to clear input: len=[2], bufSize=[3]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: END CONDITION: reduce=[0], idx=[3], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #43
+1 [')', '9', ')', '(', ' ']
+debug: starting lex...
+debug: got input [)]
+debug: got input [0]
+debug: lex done: sym=[4]
+debug: got symbol: sym=[4], len=[1]
+debug: got action: rv=[1], act=[1], idx=[15]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #43.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[8])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #43.2
+debug: goal symbol? (lhs=[13], goal=[11], stackIdx=[7])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #43.3
+debug: goal symbol? (lhs=[26], goal=[11], stackIdx=[7])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[27], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #44
+2 [')', 0, ')', '(', ' ']
+debug: starting lex...
+debug: got input [)]
+debug: got input [0]
+debug: lex done: sym=[4]
+debug: got symbol: sym=[4], len=[1]
+debug: got action: rv=[1], act=[1], idx=[9]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #44.1
+debug: goal symbol? (lhs=[25], goal=[11], stackIdx=[5])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[22], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #45
+2 [')', 0, ')', '(', ' ']
+debug: starting lex...
+debug: got input [)]
+debug: got input [0]
+debug: lex done: sym=[4]
+debug: got symbol: sym=[4], len=[1]
+debug: got action: rv=[1], act=[1], idx=[6]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #45.1
+debug: goal symbol? (lhs=[24], goal=[11], stackIdx=[5])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[23], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #46
+2 [')', 0, ')', '(', ' ']
+debug: starting lex...
+debug: got input [)]
+debug: got input [0]
+debug: lex done: sym=[4]
+debug: got symbol: sym=[4], len=[1]
+debug: got action: rv=[1], act=[2], idx=[26]
+debug: going to shift...
+debug: got input [)]
+debug: going to clear input: len=[1], bufSize=[2]
+debug: clear input done: bufSize=[1]
+debug: shifted
+debug: END CONDITION: reduce=[0], idx=[26], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #47
+1 [0, 0, ')', '(', ' ']
+debug: starting lex...
+debug: got input [0]
+debug: lex done: sym=[0]
+debug: got symbol: sym=[0], len=[0]
+debug: got action: rv=[1], act=[1], idx=[15]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #47.1
+debug: goal symbol? (lhs=[21], goal=[11], stackIdx=[7])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #47.2
+debug: goal symbol? (lhs=[14], goal=[11], stackIdx=[6])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #47.3
+debug: goal symbol? (lhs=[26], goal=[11], stackIdx=[3])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[17], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #48
+1 [0, 0, ')', '(', ' ']
+debug: starting lex...
+debug: got input [0]
+debug: lex done: sym=[0]
+debug: got symbol: sym=[0], len=[0]
+debug: got action: rv=[1], act=[1], idx=[1]
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #48.1
+debug: goal symbol? (lhs=[26], goal=[11], stackIdx=[1])
+debug: reduced
+debug: END CONDITION: reduce=[0], idx=[5], goalIdx=[25]
+debug: 
+debug: ------------------------------
+debug: MASTER ITER #49
+1 [0, 0, ')', '(', ' ']
+debug: starting lex...
+debug: got input [0]
+debug: lex done: sym=[0]
+debug: got symbol: sym=[0], len=[0]
+debug: got action: rv=[1], act=[3], idx=[0]
+debug: going to shift...
+debug: got input [0]
+debug: shifted
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #49.1
+debug: goal symbol? (lhs=[27], goal=[11], stackIdx=[1])
+debug: reduced
+debug: 
+debug: ------------------------------
+debug: REDUCE ITER #49.2
+debug: goal symbol? (lhs=[11], goal=[11], stackIdx=[0])
+debug: going to clear input: len=[0], bufSize=[1]
+debug: clear input done: bufSize=[0]
+debug: reduced
+debug: END CONDITION: reduce=[1], idx=[25], goalIdx=[25]
+----------------------------------
+ Abstract Syntax Tree
+----------------------------------
+expr 1234
+..add 1234
+....int 1234
+....call foo
+......int 1
+......int 2
+......int 3
+......int 0
+......int 0
+......int 0
+......int 99
