@@ -1,0 +1,10 @@
+
+UNRELEASED:
+-----------
+
+  1. Removed obsolete __mold_xxx() functions.
+  2. Generic syscall() function for internal communication with core code.
+  3. Map built-in functions to syscall.
+  4. Major clean up and performance improvement in LALR(1) parser.
+
+.... TODO
