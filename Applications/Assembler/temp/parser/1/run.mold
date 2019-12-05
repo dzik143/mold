@@ -1,9 +1,0 @@
-import 'AST.mold'
-import 'expr.ast.mold'
-
-#UNICC_DEBUG = true
-
-source = '1234 + foo(1,2,3,0,0,0,99)'
-parser = new Parser()
-ast = parser.parseText(source)
-ast.print()
