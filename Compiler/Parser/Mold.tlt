@@ -544,6 +544,11 @@ class AST
     rv['value']  = value
     rv['id']     = node.id
 
+    # TODO: Review it.
+    rv.line     = node.line
+    rv.column   = node.column
+    rv.filePath = node.filePath
+
     node = node.child
 
     while node isnt null
@@ -895,6 +900,11 @@ class Parser
           node                 = new AST(emit, currentRet)
           node.child           = stackNodes[stackIdx]
           stackNodes[stackIdx] = node
+
+          # TODO: Review it.
+          node.line     = line
+          node.column   = column
+          node.filePath = this.filePath
         endif
 
         debug('goal symbol? (lhs=[' + str(currentLhs) + '], goal=[' + str(@@goal) + '], stackIdx=[' + str(stackIdx) + '])')

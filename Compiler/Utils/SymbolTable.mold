@@ -88,7 +88,7 @@ class SymbolTable
       print '[ SymbolTable ]', msg
     endif
   endmethod
-  
+
   method _error(msg)
     this.app.logError(msg)
   endmethod
@@ -351,7 +351,7 @@ class SymbolTable
       this._error("method '" + methodName + "' requires exactly " + str(rv['paramsCnt']) + ' parameters, but ' + str(paramsCnt) + ' were passed')
     endif
   endmethod
-*/  
+*/
 
   # ----------------------------------------------------------------------------
   #                               Variable helper

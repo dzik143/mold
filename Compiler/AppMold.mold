@@ -53,8 +53,31 @@ class AppMold
     this.astTypeCast                 = new ASTTypeCast(this)
     this.astModuleResolver           = new ASTModuleResolver(this)
 
+    # TODO: Clean up this mess.
+    # TODO: Better way to pass current line/column to error
+    # handler.
+    this.clearLogContext()
+
     this.code = new MIRCode()
     this.logDebug('Ready to work')
+  endmethod
+
+  method clearLogContext()
+    # TODO: Clean up this mess.
+    # TODO: Better way to pass current line/column to error
+    # handler.
+    this.logCtx = {
+      'filePath': '',
+      'column': -1,
+      'line': -1
+    }
+  endmethod
+
+  method setLogContext(ctx)
+    # TODO: Clean up this mess.
+    # TODO: Better way to pass current line/column to error
+    # handler.
+    this.logCtx = ctx
   endmethod
 
   method logDebug(msg)
@@ -65,7 +88,9 @@ class AppMold
   endmethod
 
   method logError(msg)
-    die('error: ' + msg)
+    logCtx    = this.logCtx
+    msgPrefix = str(logCtx.filePath) + ':' + str(logCtx.line) + ':' + str(logCtx.column) + ': error: '
+    die(msgPrefix + msg)
   endmethod
 
   method getMir1Code() -> rv

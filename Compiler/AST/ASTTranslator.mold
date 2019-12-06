@@ -415,6 +415,9 @@ class ASTTranslator
 
     this._debug('_evaluateNode: ' + str(opcode) + ', ' + str(value))
 
+    # TODO: Better way to pass source position to error handler.
+    this.app.setLogContext(ast)
+
     #
     # DEBUG ONLY
     #
@@ -768,6 +771,9 @@ class ASTTranslator
     global AST_OPCODE_FOR_KEYS_VALUES
     global AST_OPCODE_FOR_INDEXES
     global AST_OPCODE_FOR_INDEXES_VALUES
+
+    # TODO: Better way to pass source position to error handler.
+    this.app.setLogContext(ast)
 
     # Fetch opcode.
     opcode      = ast['opcode']

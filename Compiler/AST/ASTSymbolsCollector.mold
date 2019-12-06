@@ -100,6 +100,11 @@ class ASTSymbolsCollector
     global AST_OPCODE_FOR_INDEXES
     global AST_OPCODE_FOR_INDEXES_VALUES
 
+    # TODO: Clean up this mess.
+    # TODO: Better way to pass current line/column to error
+    # handler.
+    this.app.setLogContext(node)
+
     opcode      = node.opcode
     children    = node.children
     childrenCnt = node.childrenCnt

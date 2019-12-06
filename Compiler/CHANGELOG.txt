@@ -4,7 +4,9 @@ UNRELEASED:
 
   1. Removed obsolete __mold_xxx() functions.
   2. Generic syscall() function for internal communication with core code.
-  3. Map built-in functions to syscall.
+  3. Map built-in functions to syscall mechanism.
   4. Major clean up and performance improvement in LALR(1) parser.
+  5. Improved error reporting. Source code line is presented during AST
+    processing stage too.
 
 .... TODO
