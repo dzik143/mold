@@ -52,7 +52,7 @@ for idx in 0 .. 10
 endfor
 
 EXPECTED_ERROR:
-error: built-in die function requires exactly 1 parameter(s), but 2 were passed
+./temp/source.mold:6:50: error: built-in die function requires exactly 1 parameter(s), but 2 were passed
 -------------------------------------------------------------------------------
 
 TEST "Bug: Not cleaned retval after die() call"

@@ -2,7 +2,7 @@ TEST "Attemp to call undeclared function"
 foo()
 
 EXPECTED_ERROR:
-error: 'foo' was not declared in this scope
+./temp/source.mold:1:6: error: 'foo' was not declared in this scope
 -------------------------------------------------------------------------------
 
 TEST "Unused procedure"

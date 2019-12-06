@@ -8,7 +8,7 @@ endfunction
 foo()
 
 EXPECTED_ERROR
-error: 'x' was not declared in this scope
+./temp/source.mold:4:10: error: 'x' was not declared in this scope
 --------------------------------------------------------------------------------
 
 TEST "Attemp to import non-existing global"
@@ -19,7 +19,7 @@ endfunction
 foo()
 
 EXPECTED_ERROR
-error: 'x' was not declared in this scope
+./temp/source.mold:3:11: error: 'x' was not declared in this scope
 --------------------------------------------------------------------------------
 
 TEST "Read global variable within function"
@@ -155,7 +155,7 @@ endfunction
 foo()
 
 EXPECTED_ERROR:
-error: conflicting declaration 'global x'
+./temp/source.mold:6:11: error: conflicting declaration 'global x'
 --------------------------------------------------------------------------------
 
 TEST "Merge if branches #1 (if-else)"
@@ -210,7 +210,7 @@ endif
 print x
 
 EXPECTED_ERROR:
-error: 'x' was not declared in this scope
+./temp/source.mold:15:8: error: 'x' was not declared in this scope
 --------------------------------------------------------------------------------
 
 TEST "Access to global array"
