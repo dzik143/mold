@@ -632,9 +632,9 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     # Emit case bodies.
     for idx in 1 .. childrenCnt
-      values = children[idx].arrayOfValues
+      arrayOfValues = children[idx].arrayOfValues
 
-      if values is defined
+      if arrayOfValues is defined
         if AST_IsEmpty(children[idx]) is true
           # Nop code. Just jump to done label.
           caseLabel = doneLabel
@@ -647,9 +647,9 @@ class ASTTranslatorMIR1 extends ASTTranslator
           this.emitJmp(doneLabel)
         endif
 
-        valuesCnt = len(values)
+        valuesCnt = len(arrayOfValues)
         for valueIdx in 0 .. valuesCnt
-          jmpTable[values[valueIdx]] = caseLabel
+          jmpTable[arrayOfValues[valueIdx]] = caseLabel
         endfor
       else
         caseDefaultIdx = idx
