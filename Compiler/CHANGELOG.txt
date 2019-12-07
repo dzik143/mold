@@ -7,6 +7,6 @@ UNRELEASED:
   3. Map built-in functions to syscall mechanism.
   4. Major clean up and performance improvement in LALR(1) parser.
   5. Improved error reporting. Source code line is presented during AST
-    processing stage too.
+    processing stage too (but not during runtime error).
 
 .... TODO
