@@ -60,7 +60,7 @@ stmt
   | stmt_if @EOL                  =if
   | stmt_for @EOL                 =for
   | stmt_while @EOL               =while
-// TODO:  | stmt_switch @EOL              =switch
+//TODO  | stmt_switch @EOL              =switch
   | stmt_for_values @EOL          =for_values
   | stmt_for_keys @EOL            =for_keys
   | stmt_for_keys_values @EOL     =for_keys_values
@@ -337,6 +337,8 @@ stmt_elif
   | "elif" condition @EOL stmt_list stmt_elif                 =elif
   ;
 
+/*
+TODO
 //
 // switch x
 //   case 1
@@ -348,18 +350,16 @@ stmt_elif
 // endswitch
 //
 
-/*
-TODO
 stmt_switch
-  : "switch" rval @EOL stmt_switch_case* stmt_switch_case? "endswitch" =stmt_switch
+  : "switch" rval @EOL stmt_switch_case+ stmt_switch_otherwise? "endswitch"
   ;
 
 stmt_switch_case
-  : "case" imm_list @EOL stmt_list =switch_case
+  : "case" imm_list @EOL stmt_list
   ;
 
 stmt_switch_otherwise
-  : "otherwise" @EOL stmt_list =switch_otherwise
+  : "otherwise" @EOL stmt_list
   ;
 */
 
