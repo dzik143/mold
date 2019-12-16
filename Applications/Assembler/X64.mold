@@ -104,7 +104,7 @@ X64_XCHG_EAX_R32            = 0x90 # 90-97 xchg eax, r32
 X64_CWDE                    = 0x98 # 98    cbw / cwde / cdqe
 X64_CDQ                     = 0x99 # 99    cwd / cdq / cqo
 X64_CALLF                   = 0x9a # 9a    call ptr16:32 (invalid in 64-bit)
-X64_FWAIT                   = 0x9b # 9b    fwait
+X64_WAIT                    = 0x9b # 9b    wait / fwait
 X64_PUSHF                   = 0x9c # 9c    pushf
 X64_POPF                    = 0x9d # 9d    popf
 X64_SAHF                    = 0x9e # 9e    sahf (invalid in 64-bit)
@@ -215,6 +215,7 @@ X64_POPFQ  = X64_POPF  * 256 + X64_PREFIX_REX_W
 X64_CBW    = X64_CWDE  * 256 + X64_PREFIX_OPERAND_SIZE
 X64_CWD    = X64_CDQ   * 256 + X64_PREFIX_OPERAND_SIZE
 X64_PUSHFW = X64_PUSHF * 256 + X64_PREFIX_OPERAND_SIZE
+X64_IRETW  = X64_IRET  * 256 + X64_PREFIX_OPERAND_SIZE
 X64_POPFW  = X64_POPF  * 256 + X64_PREFIX_OPERAND_SIZE
 X64_CMPSW  = X64_CMPSD * 256 + X64_PREFIX_OPERAND_SIZE
 X64_LODSW  = X64_LODSD * 256 + X64_PREFIX_OPERAND_SIZE
@@ -344,6 +345,235 @@ X64_RDTSCP = 0xf901 # 0f 01 f9 rdtscp -
 X64_CMPXCHG16B = 0xc70f # 48 0f c7 cmpxchg16b m128
 
 # ------------------------------------------------------------------------------
+#                              FPU opcodes (x87)
+# ------------------------------------------------------------------------------
+
+# FWAIT prefix (it's the same opcode as WAIT).
+# Used to check pending unmasked floating-point exceptions.
+# FWAIT + fnxxx gives fxxx.
+# fnxxx means fpu no-wait xxx opcode.
+# fxxx  means the same opcode prefixed with FWAIT.
+#
+# EXAMPLE:
+#   fnclex    db e2 (no-wait)
+#   fclex  9b db e2 (wait and then fnclex)
+
+X64_FWAIT = 0x9b
+
+# Opcodes without operands.
+# We may emit them as is.
+
+X64_FNOP    = 0xd0d9  # d9 d0 fnop    -
+X64_FCHS    = 0xe0d9  # d9 e0 fchs    -
+X64_FABS    = 0xe1d9  # d9 e1 fabs    -
+X64_FXAM    = 0xe5d9  # d9 e5 fxam    -
+X64_FLD1    = 0xe8d9  # d9 e8 fld1    -
+X64_FLDL2T  = 0xe9d9  # d9 e9 fldl2t  -
+X64_FLDL2E  = 0xead9  # d9 ea fldl2e  -
+X64_FLDPI   = 0xebd9  # d9 eb fldpi   -
+X64_FLDLG2  = 0xecd9  # d9 ec fldlg2  -
+X64_FLDLN2  = 0xedd9  # d9 ed fldln2  -
+X64_FLDZ    = 0xeed9  # d9 ee fldz    -
+
+X64_FTST    = 0xe4d9  # d9 e4 ftst    -
+X64_F2XM1   = 0xf0d9  # d9 f0 f2xm1   -
+X64_FYL2X   = 0xf1d9  # d9 f1 fyl2x   -
+X64_FPTAN   = 0xf2d9  # d9 f2 fptan   -
+X64_FPATAN  = 0xf3d9  # d9 f3 fnop    -
+X64_FXTRACT = 0xf4d9  # d9 f4 fxtract -
+X64_FPREM1  = 0xf5d9  # d9 f5 fprem1  -
+X64_FDECSTP = 0xf6d9  # d9 f6 fdecstp -
+X64_FINCSTP = 0xf7d9  # d9 f7 fincstp -
+X64_FPREM   = 0xf8d9  # d9 f8 fprem   -
+X64_FYL2XP1 = 0xf9d9  # d9 f9 fyl2xp1 -
+X64_FSQRT   = 0xfad9  # d9 fa fsqrt   -
+X64_FSINCOS = 0xfbd9  # d9 fb fsincos -
+X64_FRNDINT = 0xfcd9  # d9 fc frndint -
+X64_FSCALE  = 0xfdd9  # d9 fd fscale  -
+X64_FSIN    = 0xfed9  # d9 fe fsin    -
+X64_FCOS    = 0xffd9  # d9 ff fcos    -
+
+X64_FUCOMPP = 0xe9da  # da e9 fucompp        -
+X64_FNCLEX  = 0xe2db  # db e2 fnclex / fclex -
+X64_FNINIT  = 0xe3db  # db e3 fninit / finit -
+X64_FCOMPP  = 0xd9de  # de d9 fcompp         -
+
+# Opcodes with one memory operand: xx /y
+# Reg-Mod-R/M stores operation id in Mod part.
+# Below values are not really opcodes, but masks conaining
+# primary opcode and Mod part combined together.
+
+X64_FLDENV     = 0x04d9 # d9 /4  fldenv  m224
+X64_FLDCW      = 0x05d9 # d9 /5  fldcw   m16
+X64_FNSTENV    = 0x06d9 # d9 /6  fnstenv m112/224
+X64_FNSTCW     = 0x07d9 # d9 /7  fnstcw  m16
+X64_FRSTOR     = 0x04dd # dd /4  frstor  m94/108
+X64_FNSAVE     = 0x06dd # dd /6  fnsave  m94/108
+X64_FBLD       = 0x04df # df /4  fbld    m80
+X64_FBSTP      = 0x06df # df /6  fbstp   m80
+
+X64_FLD        = 0x00d9 # d9 /0  fld     m32
+X64_FLD_M32    = 0x00d9 # d9 /0  fld     m32
+X64_FLD_M64    = 0x00dd # dd /0  fld     m64
+X64_FLD_M80    = 0x05db # db /5  fld     m80
+
+X64_FST        = 0x02d9 # d9 /2  fst     m32
+X64_FST_M32    = 0x02d9 # d9 /2  fst     m32
+X64_FST_M64    = 0x02dd # dd /2  fst     m64
+
+X64_FSTP       = 0x03d9 # d9 /3  fstp    m32
+X64_FSTP_M32   = 0x03d9 # d9 /3  fstp    m32
+X64_FSTP_M64   = 0x03dd # dd /3  fstp    m64
+X64_FSTP_M80   = 0x07db # d9 /3  fstp    m80
+
+X64_FILD_M16   = 0x00df # df /0  fild    m16
+X64_FILD_M32   = 0x00db # db /0  fild    m32
+X64_FILD_M64   = 0x05df # df /5  fild    m64
+
+X64_FISTTP_M16 = 0x01df # df /1  fisttp  m16
+X64_FISTTP_M32 = 0x01db # db /1  fisttp  m32
+X64_FISTTP_M64 = 0x01dd # dd /1  fisttp  m64
+
+X64_FIST_M16   = 0x02df # df /2  fist    m16
+X64_FIST_M32   = 0x02db # db /2  fist    m32
+
+X64_FISTP_M16  = 0x03df # df /3  fistp   m16
+X64_FISTP_M32  = 0x03db # db /3  fistp   m32
+X64_FISTP_M64  = 0x07df # df /7  fistp   m64
+
+X64_FIADD_M16  = 0x00de # de /0  fiadd   m16
+X64_FIMUL_M16  = 0x01de # de /1  fimul   m16
+X64_FICOM_M16  = 0x02de # de /2  ficom   m16
+X64_FICOMP_M16 = 0x03de # de /3  ficomp  m16
+X64_FISUB_M16  = 0x04de # de /4  fisub   m16
+X64_FISUBR_M16 = 0x05de # de /5  fisubr  m16
+X64_FIDIV_M16  = 0x06de # de /6  fidiv   m16
+X64_FIDIVR_M16 = 0x07de # de /7  fidivr  m16
+
+X64_FIADD_M32  = 0x00da # da /0  fiadd   m32
+X64_FIMUL_M32  = 0x01da # da /1  fimul   m32
+X64_FICOM_M32  = 0x02da # da /2  ficom   m32
+X64_FICOMP_M32 = 0x03da # da /3  ficomp  m32
+X64_FISUB_M32  = 0x04da # da /4  fisub   m32
+X64_FISUBR_M32 = 0x05da # da /5  fisubr  m32
+X64_FIDIV_M32  = 0x06da # da /6  fidiv   m32
+X64_FIDIVR_M32 = 0x07da # da /7  fidivr  m32
+
+# fcmovcc
+X64_FCMOVB   = 0xc0da # da c0+i fcmovb   st0, sti
+X64_FCMOVE   = 0xc8da # da c8+i fcmove   st0, sti
+X64_FCMOVBE  = 0xd0da # da d0+i fcmovbe  st0, sti
+X64_FCMOVU   = 0xd8da # da d8+i fcmovu   st0, sti
+X64_FCMOVNB  = 0xc0db # db c0+i fcmovnb  st0, sti
+X64_FCMOVNE  = 0xc8db # db c8+i fcmovne  st0, sti
+X64_FCMOVNBE = 0xd0db # db d0+i fcmovnbe st0, sti
+X64_FCMOVNU  = 0xd8db # db d8+i fcmovnu  st0, sti
+
+X64_FCOM     = 0xd0d8 # d8 d0+i fcom    sti
+X64_FCOMP    = 0xd8d8 # d8 d8+i fcomp   sti
+X64_FXCH     = 0xc8d9 # d9 c8+i fxch    sti
+X64_FLD_STI  = 0xc0d9 # df f0+i fld     sti
+X64_FCOMI    = 0xf0db # db f0+i fcomi   sti
+X64_FUCOMI   = 0xe8db # db e8+i fucomi  sti
+X64_FFREE    = 0xc0dd # dd c0+i ffree   sti
+X64_FST_STI  = 0xd0dd # dd d0+i fst     sti
+X64_FSTP_STI = 0xd8dd # dd d8+i fstp    sti
+X64_FUCOM    = 0xe0dd # dd e0+i fucom   sti
+X64_FUCOMP   = 0xe8dd # dd e8+i fucomp  sti
+X64_FUCOMIP  = 0xe8df # df e8+i fucomip sti
+X64_FCOMIP   = 0xf0df # df f0+i fcomip  sti
+
+X64_FNSTSW_M16 = 0x07dd # dd 07 fnstsw m16
+X64_FNSTSW_AX  = 0xe0df # df e0 fnstsw ax
+
+X64_FSTSW_M16 = 0x07dd9b # 9b dd 07 fstsw m16
+X64_FSTSW_AX  = 0xe0df9b # 9b df e0 fstsw ax
+
+X64_GROUP_ST0_STI = 0xd8
+X64_GROUP_STI_ST0 = 0xdc
+
+X64_GROUP_M32REAL = 0xd8
+X64_GROUP_M64REAL = 0xdc
+
+X64_GROUP_STATE   = 0xae0f # 0f ae
+
+X64_FXSAVE  = 0x00ae0f # 0f ae 0f fxsave  m4096
+X64_FXRSTOR = 0x01ae0f # 0f ae 0f fxrstor m4096
+
+
+#        SIM
+# st,sti 000 (d8) (internal 80-bit)
+# m32    000 (d8) (real 32-bit)
+# m32    010 (da) (int 32-bit)
+# sti,st 100 (dc) (internal 80-bit)
+# m64    100 (dc) (real 64-bit)
+# m16    110 (de) (int 16-bit)
+
+X64_GROUP_MATH_FLOAT32 = 0xd8 # d8 /0 fadd    st,sti | m32
+                                  # d8 /1 fmul    st,sti | m32
+                                  # d8 /2 fcom    st,sti | m32
+                                  # d8 /3 fcomp   st,sti | m32
+                                  # d8 /4 fsub    st,sti | m32
+                                  # d8 /5 fsubr   st,sti | m32
+                                  # d8 /6 fdiv    st,sti | m32
+                                  # d8 /7 fdivr   st,sti | m32
+
+X64_GROUP_MATH_INT32   = 0xda # da /0 fiadd   m32
+                                  # da /1 fimul   m32
+                                  # da /2 ficom   m32
+                                  # da /3 ficomp  m32
+                                  # da /4 fisub   m32
+                                  # da /5 fisubr  m32
+                                  # da /6 fidiv   m32
+                                  # da /7 fidivr  m32
+
+X64_GROUP_MATH_FLOAT64 = 0xdc # dc /0 fadd    st,sti | m64
+                                  # dc /1 fmul    st,sti | m64
+                                  # dc /2 fcom    st,sti | m64
+                                  # dc /3 fcomp   st,sti | m64
+                                  # dc /4 fsub    st,sti | m64
+                                  # dc /5 fsubr   st,sti | m64
+                                  # dc /6 fdiv    st,sti | m64
+                                  # dc /7 fdivr   st,sti | m64
+
+
+X64_GROUP_MATH_INT16   = 0xde # de /0 fiadd   m16
+                                  # de /1 fimul   m16
+                                  # de /2 ficom   m16
+                                  # de /3 ficomp  m16
+                                  # de /4 fisub   m16
+                                  # de /5 fisubr  m16
+                                  # de /6 fidiv   m16
+                                  # de /7 fidivr  m16
+
+
+
+X64_GROUP_LOAD_FLOAT32 = 0xd9 # d9 /0 fld     sti | m32
+                                  # d9 /2 fst     m32
+                                  # d9 /3 fstp    m32
+
+X64_GROUP_LOAD_FLOAT64 = 0xdd # dd /0 fld     m64
+                                  # dd /1 fisttp  m64
+                                  # dd /2 fst     m64 | sti
+                                  # dd /3 fstp    m64 | sti
+
+X64_GROUP_LOAD_INT32   = 0xdb # db /0 fild    m32
+                                  # db /1 fisttp  m32
+                                  # db /2 fist    m32
+                                  # db /3 fistp   m32
+                                  # db /5 fld     m80
+                                  # db /7 fstp    m80
+
+X64_GROUP_LOAD_INT16   = 0xdf # df /0 fild    m16
+                                  # df /1 fisttp  m16
+                                  # df /2 fist    m16
+                                  # df /3 fistp   m16
+
+                                  # df /5 fild    m64
+                                  # df /7 fistp   m64
+
+
+# ------------------------------------------------------------------------------
 #                                  Registers
 # ------------------------------------------------------------------------------
 
@@ -419,6 +649,16 @@ X64_R13 = 16 * 3 + 13
 X64_R14 = 16 * 3 + 14
 X64_R15 = 16 * 3 + 15
 
+# Registers: ST0-ST7 (FPU)
+X64_ST0 = 16 * 4 + 0
+X64_ST1 = 16 * 4 + 1
+X64_ST2 = 16 * 4 + 2
+X64_ST3 = 16 * 4 + 3
+X64_ST4 = 16 * 4 + 4
+X64_ST5 = 16 * 4 + 5
+X64_ST6 = 16 * 4 + 6
+X64_ST7 = 16 * 4 + 7
+
 X64_RIP = 100
 
 # ------------------------------------------------------------------------------
@@ -459,14 +699,15 @@ X64_SCALE8 = 3
 # ------------------------------------------------------------------------------
 
 const X64_REGISTER_NAMES = [
-  'al'  , 'cl'  , 'dl'   , 'bl'   , 'ah'   , 'ch'   , 'dh'   , 'bh',
-  'r8l' , 'r9l' , 'r10l' , 'r11l' , 'r12l' , 'r13l' , 'r14l' , 'r15l',
-  'ax'  , 'cx'  , 'dx'   , 'bx'   , 'sp'   , 'bp'   , 'si'   , 'di',
-  'r8w' , 'r9w' , 'r10w' , 'r11w' , 'r12w' , 'r13w' , 'r14w' , 'r15w',
-  'eax' , 'ecx' , 'edx'  , 'ebx'  , 'esp'  , 'ebp'  , 'esi'  , 'edi',
-  'r8d' , 'r9d' , 'r10d' , 'r11d' , 'r12d' , 'r13d' , 'r14d' , 'r15d',
-  'rax' , 'rcx' , 'rdx'  , 'rbx'  , 'rsp'  , 'rbp'  , 'rsi'  , 'rdi',
-  'r8'  , 'r9'  , 'r10'  , 'r11'  , 'r12'  , 'r13'  , 'r14'  , 'r15'
+  'al'  , 'cl'  , 'dl'   , 'bl'   , 'ah'   , 'ch'   , 'dh'   , 'bh',   # 00-07
+  'r8l' , 'r9l' , 'r10l' , 'r11l' , 'r12l' , 'r13l' , 'r14l' , 'r15l', # 08-0f
+  'ax'  , 'cx'  , 'dx'   , 'bx'   , 'sp'   , 'bp'   , 'si'   , 'di',   # 10-17
+  'r8w' , 'r9w' , 'r10w' , 'r11w' , 'r12w' , 'r13w' , 'r14w' , 'r15w', # 18-1f
+  'eax' , 'ecx' , 'edx'  , 'ebx'  , 'esp'  , 'ebp'  , 'esi'  , 'edi',  # 20-27
+  'r8d' , 'r9d' , 'r10d' , 'r11d' , 'r12d' , 'r13d' , 'r14d' , 'r15d', # 28-2f
+  'rax' , 'rcx' , 'rdx'  , 'rbx'  , 'rsp'  , 'rbp'  , 'rsi'  , 'rdi',  # 30-37
+  'r8'  , 'r9'  , 'r10'  , 'r11'  , 'r12'  , 'r13'  , 'r14'  , 'r15',  # 38-3f
+  'st0' , 'st1' , 'st2'  , 'st3'  , 'st4'  , 'st5'  , 'st6'  , 'st7'   # 40-47
 ]
 
 # TODO: Don't build this map at runtime.
@@ -478,6 +719,9 @@ for values regName in X64_REGISTER_NAMES
   regId = regId + 1
 endfor
 X64_REGISTER_NAMES_MAP['rip'] = X64_RIP
+
+# Special case: map 'st' to st0.
+X64_REGISTER_NAMES_MAP['st'] = X64_ST0
 
 # ------------------------------------------------------------------------------
 #                                Util functions

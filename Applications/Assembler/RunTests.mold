@@ -248,7 +248,113 @@ arrayOfTests = [
   'core-jumps/jecxz',
   'core-jumps/looped',
   'core-jumps/loopned',
-  'core-jumps/jrcxz'
+  'core-jumps/jrcxz',
+
+  'x87/fadd',
+  'x87/faddp',
+  'x87/fiadd',
+  'x87/ficom',
+  'x87/ficomp',
+  'x87/fidiv',
+  'x87/fidivr',
+  'x87/fimul',
+  'x87/fisub',
+  'x87/fisubr',
+  'x87/fmul',
+  'x87/fmulp',
+  'x87/fdiv',
+  'x87/fdivp',
+  'x87/fdivr',
+  'x87/fdivrp',
+  'x87/fsub',
+  'x87/fsubp',
+  'x87/fsubr',
+  'x87/fsubrp',
+  'x87/f2xm1',
+  'x87/fabs',
+  'x87/fchs',
+  'x87/fcompp',
+  'x87/fcos',
+  'x87/fdecstp',
+  'x87/fincstp',
+  'x87/fld1',
+  'x87/fldl2e',
+  'x87/fldl2t',
+  'x87/fldlg2',
+  'x87/fldln2',
+  'x87/fldpi',
+  'x87/fldz',
+  'x87/fnclex',
+  'x87/fninit',
+  'x87/fnop',
+  'x87/fpatan',
+  'x87/fprem',
+  'x87/fprem1',
+  'x87/fptan',
+  'x87/frndint',
+  'x87/fscale',
+  'x87/fsin',
+  'x87/fsincos',
+  'x87/fsqrt',
+  'x87/fucompp',
+  'x87/fwait',
+  'x87/fxam',
+  'x87/fxtract',
+  'x87/fyl2x',
+  'x87/fyl2xp1',
+  'x87/fbld',
+  'x87/fbstp',
+  'x87/fldenv',
+  'x87/fldenvd',
+  'x87/fnsave',
+  'x87/fnstcw',
+  'x87/fnstenv',
+  'x87/frstor',
+  'x87/frstord',
+  'x87/fcmovb',
+  'x87/fcmovbe',
+  'x87/fcmove',
+  'x87/fcmovnb',
+  'x87/fcmovnbe',
+  'x87/fcmovne',
+  'x87/fcmovnu',
+  'x87/fcmovu',
+  'x87/fcom',
+  'x87/fcomp',
+  'x87/fcomi',
+  'x87/fcomip',
+  'x87/fucom',
+  'x87/fucomi',
+  'x87/fucomip',
+  'x87/fucomp',
+  'x87/ffree',
+  'x87/fstenv',
+  'x87/fstenvd',
+  'x87/fsave',
+  'x87/fsaved',
+  'x87/fxch',
+  'x87/fxrstor',
+  'x87/fxsave',
+  'x87/fld',
+  'x87/fst',
+  'x87/fstp',
+  'x87/ftst',
+  'x87/fild',
+  'x87/fisttp',
+  'x87/fist',
+  'x87/fistp',
+  'x87/fclex',
+  'x87/finit',
+  'x87/fldenvw',
+  'x87/fnstenvw',
+  'x87/fnstsw',
+  'x87/frstorw',
+  'x87/fsavew',
+  'x87/fstcw',
+  'x87/fstenvw',
+  'x87/fstsw',
+  'x87/fnsavew',
+  'x87/fnstsw'
 ]
 
 class X64Tester
@@ -263,36 +369,36 @@ class X64Tester
   endmethod
 
   method emitByte(x)
-    this.compare(x, readByte(this.f))
+    this.compare(x, FileReadInt8(this.f))
   endmethod
 
   method emitWord(x)
-    this.compare(x, readWord(this.f))
+    this.compare(x, FileReadInt16(this.f))
   endmethod
 
   method emitDword(x)
-    this.compare(x, readDword(this.f))
+    this.compare(x, FileReadInt32(this.f))
   endmethod
 
   method emitQword(x)
-    this.compare(x, readQword(this.f))
+    this.compare(x, FileReadInt64(this.f))
   endmethod
 
   method compileSourceFile(pathAsm, pathBin)
     # Open reference file to compare result.
     __mold_printToStdOutput(pathAsm + '...')
-    this.f = open('tests/' + pathBin, 'r')
+    this.f = FileOpenForRead('tests/' + pathBin)
 
     # Redirect compiler result to this object and
     # compare content byte-by-byte with reference file.
     this.compiler.compile(this, 'tests/' + pathAsm)
 
     # TODO: Compare number of bytes emited.
-    if ord(readChar(this.f)) isnt 0
+    if ord(FileReadChar(this.f)) isnt 0
       die('FAIL! (too less data)')
     endif
 
-    close(this.f)
+    FileClose(this.f)
 
     print ' OK'
     endmethod

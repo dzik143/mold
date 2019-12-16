@@ -67,8 +67,8 @@
     'xmm,m,imm'   => '_xmm_m_imm(xmmDst, regBase, scale, regIndex, disp, imm)',
 
     'sti'         => '_sti(stDst)',
-    'st0,sti'     => '_sti_sti(stDst, stSrc)',
-    'sti,st0'     => '_sti_sti(stDst, stSrc)',
+    'st0,sti'     => '_st0_sti(stSrc)',
+    'sti,st0'     => '_sti_st0(stDst)',
   );
 
   $IS_VISITED = array();
