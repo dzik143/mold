@@ -39,8 +39,7 @@ X64_HANDLER_CORE_ALU2            = 0x20000000
 X64_HANDLER_CMOVCC               = 0x21000000
 X64_HANDLER_CORE_RMD_RD          = 0x22000000
 X64_HANDLER_CORE_RM_R            = 0x23000000
-X64_HANDLER_FPU_FMOVCC           = 0x24000000
-X64_HANDLER_FPU_ST0_STI          = 0x25000000
+X64_HANDLER_FPU_ST0_STI          = 0x24000000
 
 # Encoding handler: two operands (generic).
 X64_HANDLER_SHIFT_GROUP          = 0x30000000
@@ -453,14 +452,14 @@ X64_OPCODES_MAP = {
   'fprem1':     X64_FPREM1  + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
   'fucompp':    X64_FUCOMPP + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
 
-  'fcmovb':     X64_FCMOVB   + X64_HANDLER_FPU_FMOVCC, # st,sti
-  'fcmove':     X64_FCMOVE   + X64_HANDLER_FPU_FMOVCC, # st,sti
-  'fcmovbe':    X64_FCMOVBE  + X64_HANDLER_FPU_FMOVCC, # st,sti
-  'fcmovu':     X64_FCMOVU   + X64_HANDLER_FPU_FMOVCC, # st,sti
-  'fcmovnb':    X64_FCMOVNB  + X64_HANDLER_FPU_FMOVCC, # st,sti
-  'fcmovne':    X64_FCMOVNE  + X64_HANDLER_FPU_FMOVCC, # st,sti
-  'fcmovnbe':   X64_FCMOVNBE + X64_HANDLER_FPU_FMOVCC, # st,sti
-  'fcmovnu':    X64_FCMOVNU  + X64_HANDLER_FPU_FMOVCC, # st,sti
+  'fcmovb':     X64_FCMOVB   + X64_HANDLER_FPU_ST0_STI, # st,sti
+  'fcmove':     X64_FCMOVE   + X64_HANDLER_FPU_ST0_STI, # st,sti
+  'fcmovbe':    X64_FCMOVBE  + X64_HANDLER_FPU_ST0_STI, # st,sti
+  'fcmovu':     X64_FCMOVU   + X64_HANDLER_FPU_ST0_STI, # st,sti
+  'fcmovnb':    X64_FCMOVNB  + X64_HANDLER_FPU_ST0_STI, # st,sti
+  'fcmovne':    X64_FCMOVNE  + X64_HANDLER_FPU_ST0_STI, # st,sti
+  'fcmovnbe':   X64_FCMOVNBE + X64_HANDLER_FPU_ST0_STI, # st,sti
+  'fcmovnu':    X64_FCMOVNU  + X64_HANDLER_FPU_ST0_STI, # st,sti
 
   'fcomi':      X64_FCOMI    + X64_HANDLER_FPU_ST0_STI, # st,sti
   'fcomip':     X64_FCOMIP   + X64_HANDLER_FPU_ST0_STI, # st,sti
@@ -726,7 +725,7 @@ class X64Translator extends PipeAbstract
     global X64_HANDLER_FPU_MATH_FLOAT_POP
     global X64_HANDLER_CUSTOM_X, X64_HANDLER_CUSTOM_X_Y
     global X64_HANDLER_CORE_RMD_RD, X64_HANDLER_CORE_RM_R
-    global X64_HANDLER_GROUP_M, X64_HANDLER_FPU_FMOVCC, X64_HANDLER_FPU_ST0_STI
+    global X64_HANDLER_GROUP_M, X64_HANDLER_FPU_ST0_STI
     global X64_HANDLER_GROUP_M_66
 
     global X64_LEA, X64_MOV, X64_TEST, X64_XCHG, X64_CALL_REL32, X64_NOP
@@ -1361,11 +1360,6 @@ class X64Translator extends PipeAbstract
           endif
 
           encoder.emitCore_group_r(0xde, opcode, bitand(reg, 0x7))
-
-        elif handlerId is X64_HANDLER_FPU_FMOVCC
-          # fcmov st,sti
-          # TODO: Validate operands.
-          encoder.emitFPU_sti(opcode, rm)
 
         elif handlerId is X64_HANDLER_FPU_STI
           if numberOfOperands is 0
