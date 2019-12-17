@@ -390,9 +390,6 @@ X64_OPCODES_MAP = {
   'fnstsw':     X64_FNSTSW_M16 + X64_HANDLER_CUSTOM_X, # m16 | ax
   'fstsw':      X64_FSTSW_M16  + X64_HANDLER_CUSTOM_X, # m16 | ax
 
-  'fstenvw':    X64_FNSTENV + X64_HANDLER_GROUP_M_WAIT_66, # m112
-  'fsavew':     X64_FNSAVE  + X64_HANDLER_GROUP_M_WAIT_66, # m752
-
   'fclex':      X64_FNCLEX  + X64_HANDLER_OPCODE_ONLY_WAIT_XX_YY, # - (no operands)
   'finit':      X64_FNINIT  + X64_HANDLER_OPCODE_ONLY_WAIT_XX_YY, # - (no operands)
 
@@ -480,12 +477,12 @@ X64_OPCODES_MAP_FPU_M = {
   'fnstcw': [0 , X64_FNSTCW , 0 , 0 , 0 , 0 , 0], # m16
   'fstcw':  [0 , X64_FSTCW  , 0 , 0 , 0 , 0 , 0], # m16
 
-  'fldenv':  [0, 0, 0, 0, 0, X64_FLDENV  , 0], # m224
-  'fldenvd': [0, 0, 0, 0, 0, X64_FLDENV  , 0], # m224
-  'fnstenv': [0, 0, 0, 0, 0, X64_FNSTENV , 0], # m224
-  'frstor':  [0, 0, 0, 0, 0, X64_FRSTOR  , 0], # m864
-  'frstord': [0, 0, 0, 0, 0, X64_FRSTOR  , 0], # m864
-  'fnsave':  [0, 0, 0, 0, 0, X64_FNSAVE  , 0], # m864
+  'fldenv':   [0, 0, 0, 0, 0, X64_FLDENV   , 0], # m224
+  'fldenvd':  [0, 0, 0, 0, 0, X64_FLDENV   , 0], # m224
+  'fnstenv':  [0, 0, 0, 0, 0, X64_FNSTENV  , 0], # m224
+  'frstor':   [0, 0, 0, 0, 0, X64_FRSTOR   , 0], # m864
+  'frstord':  [0, 0, 0, 0, 0, X64_FRSTOR   , 0], # m864
+  'fnsave':   [0, 0, 0, 0, 0, X64_FNSAVE   , 0], # m864
 
   'fldenvw':  [0, 0, 0, 0, 0, X64_FLDENVW  , 0], # m112
   'fnstenvw': [0, 0, 0, 0, 0, X64_FNSTENVW , 0], # m112
@@ -495,10 +492,13 @@ X64_OPCODES_MAP_FPU_M = {
   'frstorw':  [0, 0, 0, 0, 0, X64_FRSTORW  , 0], # m752
   'fnsavew':  [0, 0, 0, 0, 0, X64_FNSAVEW  , 0], # m752
 
-  'fstenv':   [0, 0, 0, 0, 0, X64_FSTENV , 0], # m224
-  'fstenvd':  [0, 0, 0, 0, 0, X64_FSTENV , 0], # m224
-  'fsave':    [0, 0, 0, 0, 0, X64_FSAVE  , 0], # m864
-  'fsaved':   [0, 0, 0, 0, 0, X64_FSAVE  , 0]  # m864
+  'fstenv':   [0, 0, 0, 0, 0, X64_FSTENV   , 0], # m224
+  'fstenvd':  [0, 0, 0, 0, 0, X64_FSTENV   , 0], # m224
+  'fsave':    [0, 0, 0, 0, 0, X64_FSAVE    , 0], # m864
+  'fsaved':   [0, 0, 0, 0, 0, X64_FSAVE    , 0], # m864
+
+  'fstenvw':  [0, 0, 0, 0, 0, X64_FSTENVW  , 0], # m112
+  'fsavew':   [0, 0, 0, 0, 0, X64_FSAVEW   , 0]  # m752
 }
 
 class X64Translator extends PipeAbstract
