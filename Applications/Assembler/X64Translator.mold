@@ -390,18 +390,6 @@ X64_OPCODES_MAP = {
   'fnstsw':     X64_FNSTSW_M16 + X64_HANDLER_CUSTOM_X, # m16 | ax
   'fstsw':      X64_FSTSW_M16  + X64_HANDLER_CUSTOM_X, # m16 | ax
 
-  'fldenv':     X64_FLDENV  + X64_HANDLER_GROUP_M,  # m224
-  'fldenvd':    X64_FLDENV  + X64_HANDLER_GROUP_M,  # m224
-  'fnstenv':    X64_FNSTENV + X64_HANDLER_GROUP_M,  # m224
-  'frstor':     X64_FRSTOR  + X64_HANDLER_GROUP_M,  # m864
-  'frstord':    X64_FRSTOR  + X64_HANDLER_GROUP_M,  # m864
-  'fnsave':     X64_FNSAVE  + X64_HANDLER_GROUP_M,  # m864
-
-  'fldenvw':    X64_FLDENV  + X64_HANDLER_GROUP_M_66, # m112
-  'fnstenvw':   X64_FNSTENV + X64_HANDLER_GROUP_M_66, # m112
-  'frstorw':    X64_FRSTOR  + X64_HANDLER_GROUP_M_66, # m752
-  'fnsavew':    X64_FNSAVE  + X64_HANDLER_GROUP_M_66, # m752
-
   'fstenv':     X64_FNSTENV + X64_HANDLER_GROUP_M_WAIT, # m224
   'fstenvd':    X64_FNSTENV + X64_HANDLER_GROUP_M_WAIT, # m224
   'fsave':      X64_FNSAVE  + X64_HANDLER_GROUP_M_WAIT, # m864
@@ -494,7 +482,22 @@ X64_OPCODES_MAP_FPU_M = {
   'fucom':  [X64_FUCOM_STI  , 0 , 0 , 0 , 0 , 0 , X64_FUCOM_ST1],
   'fucomp': [X64_FUCOMP_STI , 0 , 0 , 0 , 0 , 0 , X64_FUCOMP_ST1],
   'ffree':  [X64_FFREE_STI  , 0 , 0 , 0 , 0 , 0 , 0],
-  'fxch':   [X64_FXCH_STI   , 0 , 0 , 0 , 0 , 0 , X64_FXCH_ST1]
+  'fxch':   [X64_FXCH_STI   , 0 , 0 , 0 , 0 , 0 , X64_FXCH_ST1],
+
+  'fldenv':  [0, 0, 0, 0, 0, X64_FLDENV  , 0], # m224
+  'fldenvd': [0, 0, 0, 0, 0, X64_FLDENV  , 0], # m224
+  'fnstenv': [0, 0, 0, 0, 0, X64_FNSTENV , 0], # m224
+  'frstor':  [0, 0, 0, 0, 0, X64_FRSTOR  , 0], # m864
+  'frstord': [0, 0, 0, 0, 0, X64_FRSTOR  , 0], # m864
+  'fnsave':  [0, 0, 0, 0, 0, X64_FNSAVE  , 0], # m864
+
+  'fldenvw':  [0, 0, 0, 0, 0, X64_FLDENVW  , 0], # m112
+  'fnstenvw': [0, 0, 0, 0, 0, X64_FNSTENVW , 0], # m112
+  'frstorw':  [0, 0, 0, 0, 0, X64_FRSTORW  , 0], # m752
+  'fnsavew':  [0, 0, 0, 0, 0, X64_FNSAVEW  , 0], # m752
+  'fnstenvw': [0, 0, 0, 0, 0, X64_FNSTENVW , 0], # m112
+  'frstorw':  [0, 0, 0, 0, 0, X64_FRSTORW  , 0], # m752
+  'fnsavew':  [0, 0, 0, 0, 0, X64_FNSAVEW  , 0]  # m752
 }
 
 class X64Translator extends PipeAbstract
@@ -1399,30 +1402,46 @@ class X64Translator extends PipeAbstract
 
           elif scale is defined
             # opcode m
-            if dataSize is undefined
-              # Memory operand without word/dword/qword/tword prefix.
-              this._error("ambiguous operand size for: '" + mnemonic + "'")
-
-            elif dataSize is 0
+            if dataSize is 0
               # There is no 8-bit operand allowed for FPU opcodes.
               this._error("8-bit operand not allowed for: '" + mnemonic + "'")
 
             else
               # Get opcode for current memory size.
-              dataSizeId = X64_DATA_SIZE_ID[dataSize]
-              opcode     = opcodeInfoFPU[dataSizeId]
+              if dataSize is -1
+                # Memory operand without word/dword/qword/tword prefix.
+                opcode = opcodeInfoFPU[5]
+                if opcode is undefined
+                  this._error("ambiguous operand size for: '" + mnemonic + "'")
+                endif
 
-              if opcode isnt 0
-                # Memory size matched.
-                # Emit opcode.
-                primaryOpcode = bitand(opcode, 0xff)
-                operationId   = opcode // 256
-                encoder.emitCore_group_m(primaryOpcode, operationId, regBase, scale, regIndex, disp)
+                # Emit hardcoded prefixes if needed.
+                if opcode > 0xffffff
+                  # 2 byte prefixes.
+                  encoder.emitWord(bitand(opcode, 0xffff))
+                  opcode = opcode // 65536
+
+                elif opcode > 0xffff
+                  # 1 byte prefix.
+                  encoder.emitByte(bitand(opcode, 0xff))
+                  opcode = opcode // 256
+                endif
 
               else
-                # Syntax error - there is no opcode with for memory size.
-                this._error("invalid operand size for: '" + mnemonic + "'")
+                # Memory operand with word/dword/qword/tword prefix.
+                dataSizeId = X64_DATA_SIZE_ID[dataSize]
+                opcode     = opcodeInfoFPU[dataSizeId]
+                if opcode is undefined
+                  # Syntax error - there is no opcode with for memory size.
+                  this._error("invalid operand size for: '" + mnemonic + "'")
+                endif
               endif
+
+              # Memory size matched.
+              # Emit opcode.
+              primaryOpcode = bitand(opcode, 0xff)
+              operationId   = opcode // 256
+              encoder.emitCore_group_m(primaryOpcode, operationId, regBase, scale, regIndex, disp)
             endif
           endif
 
