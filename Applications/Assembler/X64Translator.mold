@@ -460,10 +460,7 @@ X64_OPCODES_MAP = {
   'fcomi':      X64_FCOMI    + X64_HANDLER_FPU_ST0_STI, # st,sti
   'fcomip':     X64_FCOMIP   + X64_HANDLER_FPU_ST0_STI, # st,sti
   'fucomi':     X64_FUCOMI   + X64_HANDLER_FPU_ST0_STI, # st,sti
-  'fucomip':    X64_FUCOMIP  + X64_HANDLER_FPU_ST0_STI, # st,sti
-
-  'ffree':      X64_FFREE    + X64_HANDLER_FPU_STI, # sti
-  'fxch':       X64_FXCH     + X64_HANDLER_FPU_STI  # sti
+  'fucomip':    X64_FUCOMIP  + X64_HANDLER_FPU_ST0_STI  # st,sti
 }
 
 # TODO: Move comment inside map after parser fix up.
@@ -495,7 +492,9 @@ X64_OPCODES_MAP_FPU_M = {
   'fcomp':  [X64_FCOMP_STI , 0 , X64_FCOMP_M32 , X64_FCOMP_M64 , 0 , 0 , X64_FCOMP_ST1],
 
   'fucom':  [X64_FUCOM_STI  , 0 , 0 , 0 , 0 , 0 , X64_FUCOM_ST1],
-  'fucomp': [X64_FUCOMP_STI , 0 , 0 , 0 , 0 , 0 , X64_FUCOMP_ST1]
+  'fucomp': [X64_FUCOMP_STI , 0 , 0 , 0 , 0 , 0 , X64_FUCOMP_ST1],
+  'ffree':  [X64_FFREE_STI  , 0 , 0 , 0 , 0 , 0 , 0],
+  'fxch':   [X64_FXCH_STI   , 0 , 0 , 0 , 0 , 0 , X64_FXCH_ST1]
 }
 
 class X64Translator extends PipeAbstract
