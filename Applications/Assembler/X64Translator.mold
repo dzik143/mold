@@ -366,42 +366,6 @@ X64_OPCODES_MAP = {
   'ret':        X64_RET         + X64_HANDLER_CUSTOM, # - | imm16
   'nop':        X64_NOP         + X64_HANDLER_CUSTOM, # - | rd | md
 
-  'f2xm1':      X64_F2XM1   + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fabs':       X64_FABS    + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fchs':       X64_FCHS    + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fcompp':     X64_FCOMPP  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fdecstp':    X64_FDECSTP + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fincstp':    X64_FINCSTP + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fld1':       X64_FLD1    + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fldl2e':     X64_FLDL2E  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fldl2t':     X64_FLDL2T  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fldlg2':     X64_FLDLG2  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fldln2':     X64_FLDLN2  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fldpi':      X64_FLDPI   + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fldz':       X64_FLDZ    + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fnclex':     X64_FNCLEX  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fninit':     X64_FNINIT  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fclex':      X64_FCLEX   + X64_HANDLER_OPCODE_ONLY_3BYTES, # - (no operands)
-  'finit':      X64_FINIT   + X64_HANDLER_OPCODE_ONLY_3BYTES, # - (no operands)
-  'fnop':       X64_FNOP    + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fpatan':     X64_FPATAN  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fprem':      X64_FPREM   + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fptan':      X64_FPTAN   + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'frndint':    X64_FRNDINT + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fscale':     X64_FSCALE  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fsqrt':      X64_FSQRT   + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'ftst':       X64_FTST    + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fwait':      X64_FWAIT   + X64_HANDLER_OPCODE_ONLY_BYTE,   # - (no operands)
-  'fxam':       X64_FXAM    + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fxtract':    X64_FXTRACT + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fyl2x':      X64_FYL2X   + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fyl2xp1':    X64_FYL2XP1 + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fsin':       X64_FSIN    + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fcos':       X64_FCOS    + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fsincos':    X64_FSINCOS + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fprem1':     X64_FPREM1  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-  'fucompp':    X64_FUCOMPP + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
-
   'fadd':       0 + X64_HANDLER_FPU_MATH_FLOAT, # st,sti | sti,st | st,m32 | st,m64
   'fmul':       1 + X64_HANDLER_FPU_MATH_FLOAT, # st,sti | sti,st | st,m32 | st,m64
   'fsub':       4 + X64_HANDLER_FPU_MATH_FLOAT, # st,sti | sti,st | st,m32 | st,m64
@@ -409,35 +373,51 @@ X64_OPCODES_MAP = {
   'fdiv':       6 + X64_HANDLER_FPU_MATH_FLOAT, # st,sti | sti,st | st,m32 | st,m64
   'fdivr':      7 + X64_HANDLER_FPU_MATH_FLOAT, # st,sti | sti,st | st,m32 | st,m64
 
-  'faddp':      0 + X64_HANDLER_FPU_MATH_FLOAT_POP, # - | sti,st
-  'fmulp':      1 + X64_HANDLER_FPU_MATH_FLOAT_POP, # - | sti,st
-  'fsubrp':     4 + X64_HANDLER_FPU_MATH_FLOAT_POP, # - | sti,st
-  'fsubp':      5 + X64_HANDLER_FPU_MATH_FLOAT_POP, # - | sti,st
-  'fdivrp':     6 + X64_HANDLER_FPU_MATH_FLOAT_POP, # - | sti,st
-  'fdivp':      7 + X64_HANDLER_FPU_MATH_FLOAT_POP, # - | sti,st
-
   'fxsave':     X64_FXSAVE     + X64_HANDLER_CUSTOM_X, # m4096
   'fxrstor':    X64_FXRSTOR    + X64_HANDLER_CUSTOM_X, # m4096
   'fnstsw':     X64_FNSTSW_M16 + X64_HANDLER_CUSTOM_X, # m16 | ax
-  'fstsw':      X64_FSTSW_M16  + X64_HANDLER_CUSTOM_X, # m16 | ax
-
-  'fcmovb':     X64_FCMOVB   + X64_HANDLER_FPU_ST0_STI, # st,sti
-  'fcmove':     X64_FCMOVE   + X64_HANDLER_FPU_ST0_STI, # st,sti
-  'fcmovbe':    X64_FCMOVBE  + X64_HANDLER_FPU_ST0_STI, # st,sti
-  'fcmovu':     X64_FCMOVU   + X64_HANDLER_FPU_ST0_STI, # st,sti
-  'fcmovnb':    X64_FCMOVNB  + X64_HANDLER_FPU_ST0_STI, # st,sti
-  'fcmovne':    X64_FCMOVNE  + X64_HANDLER_FPU_ST0_STI, # st,sti
-  'fcmovnbe':   X64_FCMOVNBE + X64_HANDLER_FPU_ST0_STI, # st,sti
-  'fcmovnu':    X64_FCMOVNU  + X64_HANDLER_FPU_ST0_STI, # st,sti
-  'fcomi':      X64_FCOMI    + X64_HANDLER_FPU_ST0_STI, # st,sti
-  'fcomip':     X64_FCOMIP   + X64_HANDLER_FPU_ST0_STI, # st,sti
-  'fucomi':     X64_FUCOMI   + X64_HANDLER_FPU_ST0_STI, # st,sti
-  'fucomip':    X64_FUCOMIP  + X64_HANDLER_FPU_ST0_STI  # st,sti
+  'fstsw':      X64_FSTSW_M16  + X64_HANDLER_CUSTOM_X  # m16 | ax
 }
 
 # TODO: Move comment inside map after parser fix up.
-  # opcode   sti, m16, m32, m64, m80, mcustom, -
+  # opcode  - | m16 | m32 | m64 | m80 | mcustom | sti | sti,st | st,sti | st,m32 | st,m64
 X64_OPCODES_MAP_FPU_M = {
+  'f2xm1':    [X64_F2XM1   , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fabs':     [X64_FABS    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fchs':     [X64_FCHS    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fcompp':   [X64_FCOMPP  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fdecstp':  [X64_FDECSTP , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fincstp':  [X64_FINCSTP , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fld1':     [X64_FLD1    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fldl2e':   [X64_FLDL2E  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fldl2t':   [X64_FLDL2T  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fldlg2':   [X64_FLDLG2  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fldln2':   [X64_FLDLN2  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fldpi':    [X64_FLDPI   , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fldz':     [X64_FLDZ    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fnclex':   [X64_FNCLEX  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fninit':   [X64_FNINIT  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fclex':    [X64_FCLEX   , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'finit':    [X64_FINIT   , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fnop':     [X64_FNOP    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fpatan':   [X64_FPATAN  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fprem':    [X64_FPREM   , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fptan':    [X64_FPTAN   , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'frndint':  [X64_FRNDINT , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fscale':   [X64_FSCALE  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fsqrt':    [X64_FSQRT   , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'ftst':     [X64_FTST    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fwait':    [X64_FWAIT   , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fxam':     [X64_FXAM    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fxtract':  [X64_FXTRACT , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fyl2x':    [X64_FYL2X   , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fyl2xp1':  [X64_FYL2XP1 , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fsin':     [X64_FSIN    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fcos':     [X64_FCOS    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fsincos':  [X64_FSINCOS , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fprem1':   [X64_FPREM1  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'fucompp':  [X64_FUCOMPP , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+
   'fild':     [0 , X64_FILD_M16   , X64_FILD_M32   , X64_FILD_M64   , 0         , 0 , 0],
   'fisttp':   [0 , X64_FISTTP_M16 , X64_FISTTP_M32 , X64_FISTTP_M64 , 0         , 0 , 0],
   'fist':     [0 , X64_FIST_M16   , X64_FIST_M32   , 0              , 0         , 0 , 0],
@@ -454,19 +434,40 @@ X64_OPCODES_MAP_FPU_M = {
   'fidiv':    [0 , X64_FIDIV_M16  , X64_FIDIV_M32  , 0 , 0 , 0 , 0],
   'fidivr':   [0 , X64_FIDIVR_M16 , X64_FIDIVR_M32 , 0 , 0 , 0 , 0],
 
-  'fld':      [X64_FLD_STI   , 0 , X64_FLD_M32   , X64_FLD_M64   , X64_FLD_M80  , 0 , 0],
-  'fst':      [X64_FST_STI   , 0 , X64_FST_M32   , X64_FST_M64   , 0            , 0 , 0],
-  'fstp':     [X64_FSTP_STI  , 0 , X64_FSTP_M32  , X64_FSTP_M64  , X64_FSTP_M80 , 0 , 0],
-  'fcom':     [X64_FCOM_STI  , 0 , X64_FCOM_M32  , X64_FCOM_M64  , 0            , 0 , X64_FCOM_ST1],
-  'fcomp':    [X64_FCOMP_STI , 0 , X64_FCOMP_M32 , X64_FCOMP_M64 , 0            , 0 , X64_FCOMP_ST1],
+  'fld':      [0             , 0, X64_FLD_M32   , X64_FLD_M64   , X64_FLD_M80  , 0 , X64_FLD_STI  ],
+  'fst':      [0             , 0, X64_FST_M32   , X64_FST_M64   , 0            , 0 , X64_FST_STI  ],
+  'fstp':     [0             , 0, X64_FSTP_M32  , X64_FSTP_M64  , X64_FSTP_M80 , 0 , X64_FSTP_STI ],
+  'fcom':     [X64_FCOM_ST1  , 0, X64_FCOM_M32  , X64_FCOM_M64  , 0            , 0 , X64_FCOM_STI ],
+  'fcomp':    [X64_FCOMP_ST1 , 0, X64_FCOMP_M32 , X64_FCOMP_M64 , 0            , 0 , X64_FCOMP_STI],
 
-  'fucom':    [X64_FUCOM_STI  , 0          , 0 , 0 , 0 , 0 , X64_FUCOM_ST1],
-  'fucomp':   [X64_FUCOMP_STI , 0          , 0 , 0 , 0 , 0 , X64_FUCOMP_ST1],
-  'fxch':     [X64_FXCH_STI   , 0          , 0 , 0 , 0 , 0 , X64_FXCH_ST1],
-  'ffree':    [X64_FFREE_STI  , 0          , 0 , 0 , 0 , 0 , 0],
-  'fldcw':    [0              , X64_FLDCW  , 0 , 0 , 0 , 0 , 0], # m16
-  'fnstcw':   [0              , X64_FNSTCW , 0 , 0 , 0 , 0 , 0], # m16
-  'fstcw':    [0              , X64_FSTCW  , 0 , 0 , 0 , 0 , 0], # m16
+  'fucom':    [X64_FUCOM_ST1  , 0 , 0 , 0 , 0 , 0 , X64_FUCOM_STI],
+  'fucomp':   [X64_FUCOMP_ST1 , 0 , 0 , 0 , 0 , 0 , X64_FUCOMP_STI],
+  'fxch':     [X64_FXCH_ST1   , 0 , 0 , 0 , 0 , 0 , X64_FXCH_STI],
+  'ffree':    [0              , 0 , 0 , 0 , 0 , 0 , X64_FFREE_STI],
+
+  'faddp':    [X64_FADDP_ST1_ST0  , 0 , 0 , 0 , 0 , 0 , 0 , X64_FADDP_STI_ST0],
+  'fmulp':    [X64_FMULP_ST1_ST0  , 0 , 0 , 0 , 0 , 0 , 0 , X64_FMULP_STI_ST0],
+  'fsubrp':   [X64_FSUBRP_ST1_ST0 , 0 , 0 , 0 , 0 , 0 , 0 , X64_FSUBRP_STI_ST0],
+  'fsubp':    [X64_FSUBP_ST1_ST0  , 0 , 0 , 0 , 0 , 0 , 0 , X64_FSUBP_STI_ST0],
+  'fdivrp':   [X64_FDIVRP_ST1_ST0 , 0 , 0 , 0 , 0 , 0 , 0 , X64_FDIVRP_STI_ST0],
+  'fdivp':    [X64_FDIVP_ST1_ST0  , 0 , 0 , 0 , 0 , 0 , 0 , X64_FDIVP_STI_ST0],
+
+  'fcmovb':   [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVB   , 0, 0],
+  'fcmove':   [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVE   , 0, 0],
+  'fcmovbe':  [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVBE  , 0, 0],
+  'fcmovu':   [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVU   , 0, 0],
+  'fcmovnb':  [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVNB  , 0, 0],
+  'fcmovne':  [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVNE  , 0, 0],
+  'fcmovnbe': [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVNBE , 0, 0],
+  'fcmovnu':  [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVNU  , 0, 0],
+  'fcomi':    [0, 0, 0, 0, 0, 0, 0, 0, X64_FCOMI    , 0, 0],
+  'fcomip':   [0, 0, 0, 0, 0, 0, 0, 0, X64_FCOMIP   , 0, 0],
+  'fucomi':   [0, 0, 0, 0, 0, 0, 0, 0, X64_FUCOMI   , 0, 0],
+  'fucomip':  [0, 0, 0, 0, 0, 0, 0, 0, X64_FUCOMIP  , 0, 0],
+
+  'fldcw':    [0, X64_FLDCW  , 0 , 0 , 0 , 0 , 0], # m16
+  'fnstcw':   [0, X64_FNSTCW , 0 , 0 , 0 , 0 , 0], # m16
+  'fstcw':    [0, X64_FSTCW  , 0 , 0 , 0 , 0 , 0], # m16
 
   'fldenv':   [0, 0, 0, 0, 0, X64_FLDENV   , 0], # m224
   'fldenvd':  [0, 0, 0, 0, 0, X64_FLDENV   , 0], # m224
@@ -1344,59 +1345,105 @@ class X64Translator extends PipeAbstract
           # FPU opcode with single operand.
           if numberOfOperands is 0
             # opcode without operands
-            opcode = opcodeInfoFPU[6]
+            opcode = opcodeInfoFPU[0]
             if opcode is 0
               this._error('not enough operands')
             endif
-            encoder.emitWord(opcode)
 
-          elif reg isnt -1
-            # opcode sti
-            opcode = opcodeInfoFPU[0]
-            encoder.emitFPU_sti(opcode, reg)
-
-          elif scale is defined
-            # opcode m
-            if dataSize is 0
-              # There is no 8-bit operand allowed for FPU opcodes.
-              this._error("8-bit operand not allowed for: '" + mnemonic + "'")
-
+            if opcode > 0xffff
+              # 3 bytes opcode.
+              encoder.emitByte(bitand(opcode, 0xff))
+              encoder.emitWord(opcode // 256)
             else
-              # Get opcode for current memory size.
-              if dataSize is -1
-                # Memory operand without word/dword/qword/tword prefix.
-                opcode = opcodeInfoFPU[5]
-                if opcode is 0
-                  this._error("ambiguous operand size for: '" + mnemonic + "'")
-                endif
+              # 2 bytes opcode.
+              encoder.emitWord(opcode)
+            endif
+
+          elif numberOfOperands is 1
+            # Opcode with one operand
+            if reg isnt -1
+              # opcode sti
+              opcode = opcodeInfoFPU[6]
+              encoder.emitFPU_sti(opcode, reg)
+
+            elif scale is defined
+              # opcode m
+              if dataSize is 0
+                # There is no 8-bit operand allowed for FPU opcodes.
+                this._error("8-bit operand not allowed for: '" + mnemonic + "'")
 
               else
-                # Memory operand with word/dword/qword/tword prefix.
-                dataSizeId = X64_DATA_SIZE_ID[dataSize]
-                opcode     = opcodeInfoFPU[dataSizeId]
-                if opcode is 0
-                  # Syntax error - there is no opcode with for memory size.
-                  this._error("invalid operand size for: '" + mnemonic + "'")
+                # Get opcode for current memory size.
+                if dataSize is -1
+                  # Memory operand without word/dword/qword/tword prefix.
+                  opcode = opcodeInfoFPU[5]
+                  if opcode is 0
+                    this._error("ambiguous operand size for: '" + mnemonic + "'")
+                  endif
+
+                else
+                  # Memory operand with word/dword/qword/tword prefix.
+                  dataSizeId = X64_DATA_SIZE_ID[dataSize]
+                  opcode     = opcodeInfoFPU[dataSizeId]
+                  if opcode is 0
+                    # Syntax error - there is no opcode with for memory size.
+                    this._error("invalid operand size for: '" + mnemonic + "'")
+                  endif
                 endif
+
+                # Emit hardcoded prefixes if needed.
+                if opcode > 0xffffff
+                  # 2 byte prefixes.
+                  encoder.emitWord(bitand(opcode, 0xffff))
+                  opcode = opcode // 65536
+
+                elif opcode > 0xffff
+                  # 1 byte prefix.
+                  encoder.emitByte(bitand(opcode, 0xff))
+                  opcode = opcode // 256
+                endif
+
+                # Memory size matched.
+                # Emit opcode.
+                primaryOpcode = bitand(opcode, 0xff)
+                operationId   = opcode // 256
+                encoder.emitCore_group_m(primaryOpcode, operationId, regBase, scale, regIndex, disp)
               endif
+            endif
 
-              # Emit hardcoded prefixes if needed.
-              if opcode > 0xffffff
-                # 2 byte prefixes.
-                encoder.emitWord(bitand(opcode, 0xffff))
-                opcode = opcode // 65536
-
-              elif opcode > 0xffff
-                # 1 byte prefix.
-                encoder.emitByte(bitand(opcode, 0xff))
-                opcode = opcode // 256
-              endif
-
-              # Memory size matched.
-              # Emit opcode.
+          elif numberOfOperands is 2
+            # Opcode with two operands
+            if dataSize is 4
+              # st0,m32
+              opcode        = opcodeInfoFPU[9]
               primaryOpcode = bitand(opcode, 0xff)
               operationId   = opcode // 256
-              encoder.emitCore_group_m(primaryOpcode, operationId, regBase, scale, regIndex, disp)
+              encoder.emitCore_group_m(opcode, operationId, regBase, scale, regIndex, disp)
+
+            elif dataSize is 8
+              # st0,m64
+              opcode        = opcodeInfoFPU[10]
+              primaryOpcode = bitand(opcode, 0xff)
+              operationId   = opcode // 256
+              encoder.emitCore_group_m(opcode, operationId, regBase, scale, regIndex, disp)
+
+            elif (reg is X64_ST0) and (rm is X64_ST0)
+              # st0,st0
+              opcode = opcodeInfoFPU[7]
+              if opcode is 0
+                opcode = opcodeInfoFPU[8]
+              endif
+              encoder.emitFPU_sti(opcode, reg)
+
+            elif rm is X64_ST0
+              # sti,st0
+              opcode = opcodeInfoFPU[7]
+              encoder.emitFPU_sti(opcode, reg)
+
+            elif reg is X64_ST0
+              # st0,sti
+              opcode = opcodeInfoFPU[8]
+              encoder.emitFPU_sti(opcode, rm)
             endif
           endif
 
