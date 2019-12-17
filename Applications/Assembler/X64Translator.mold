@@ -453,9 +453,9 @@ X64_OPCODES_MAP_FPU = [
     'fnstsw':   [0, X64_FNSTSW_M16, 0, 0, 0, 0, X64_FNSTSW_AX],
     'fstsw':    [0, X64_FSTSW_M16 , 0, 0, 0, 0, X64_FSTSW_AX],
 
-    'fldcw':    [0, X64_FLDCW  , 0, 0, 0, 0, 0, 0, 0], # m16
-    'fnstcw':   [0, X64_FNSTCW , 0, 0, 0, 0, 0, 0, 0], # m16
-    'fstcw':    [0, X64_FSTCW  , 0, 0, 0, 0, 0, 0, 0], # m16
+    'fldcw':    [0, X64_FLDCW  , 0, 0, 0, 0, 0, 0, 0],   # m16
+    'fnstcw':   [0, X64_FNSTCW , 0, 0, 0, 0, 0, 0, 0],   # m16
+    'fstcw':    [0, X64_FSTCW  , 0, 0, 0, 0, 0, 0, 0],   # m16
 
     'fldenv':   [0, 0, 0, 0, 0, X64_FLDENV   , 0, 0, 0], # m224
     'fldenvd':  [0, 0, 0, 0, 0, X64_FLDENV   , 0, 0, 0], # m224
@@ -484,33 +484,33 @@ X64_OPCODES_MAP_FPU = [
   },
   {
     # Two operands.
-    # opcode     sti,st0            , st0,sti
-    'fadd':     [X64_FADD_STI_ST0   , X64_FADD_ST0_STI],
-    'fmul':     [X64_FMUL_STI_ST0   , X64_FMUL_ST0_STI],
-    'fsub':     [X64_FSUB_STI_ST0   , X64_FSUB_ST0_STI],
-    'fsubr':    [X64_FSUBR_STI_ST0  , X64_FSUBR_ST0_STI],
-    'fdiv':     [X64_FDIV_STI_ST0   , X64_FDIV_ST0_STI],
-    'fdivr':    [X64_FDIVR_STI_ST0  , X64_FDIVR_ST0_STI],
+    # opcode     st0,sti           , sti,st0
+    'fadd':     [X64_FADD_ST0_STI  , X64_FADD_STI_ST0],
+    'fmul':     [X64_FMUL_ST0_STI  , X64_FMUL_STI_ST0],
+    'fsub':     [X64_FSUB_ST0_STI  , X64_FSUB_STI_ST0],
+    'fsubr':    [X64_FSUBR_ST0_STI , X64_FSUBR_STI_ST0],
+    'fdiv':     [X64_FDIV_ST0_STI  , X64_FDIV_STI_ST0],
+    'fdivr':    [X64_FDIVR_ST0_STI , X64_FDIVR_STI_ST0],
 
-    'faddp':    [X64_FADDP_STI_ST0  , 0],
-    'fmulp':    [X64_FMULP_STI_ST0  , 0],
-    'fsubrp':   [X64_FSUBRP_STI_ST0 , 0],
-    'fsubp':    [X64_FSUBP_STI_ST0  , 0],
-    'fdivrp':   [X64_FDIVRP_STI_ST0 , 0],
-    'fdivp':    [X64_FDIVP_STI_ST0  , 0],
+    'faddp':    [0, X64_FADDP_STI_ST0],
+    'fmulp':    [0, X64_FMULP_STI_ST0],
+    'fsubrp':   [0, X64_FSUBRP_STI_ST0],
+    'fsubp':    [0, X64_FSUBP_STI_ST0],
+    'fdivrp':   [0, X64_FDIVRP_STI_ST0],
+    'fdivp':    [0, X64_FDIVP_STI_ST0],
 
-    'fcmovb':   [0, X64_FCMOVB],
-    'fcmove':   [0, X64_FCMOVE],
-    'fcmovbe':  [0, X64_FCMOVBE ],
-    'fcmovu':   [0, X64_FCMOVU],
-    'fcmovnb':  [0, X64_FCMOVNB],
-    'fcmovne':  [0, X64_FCMOVNE],
-    'fcmovnbe': [0, X64_FCMOVNBE],
-    'fcmovnu':  [0, X64_FCMOVNU],
-    'fcomi':    [0, X64_FCOMI],
-    'fcomip':   [0, X64_FCOMIP],
-    'fucomi':   [0, X64_FUCOMI],
-    'fucomip':  [0, X64_FUCOMIP]
+    'fcmovb':   [X64_FCMOVB   , 0],
+    'fcmove':   [X64_FCMOVE   , 0],
+    'fcmovbe':  [X64_FCMOVBE  , 0],
+    'fcmovu':   [X64_FCMOVU   , 0],
+    'fcmovnb':  [X64_FCMOVNB  , 0],
+    'fcmovne':  [X64_FCMOVNE  , 0],
+    'fcmovnbe': [X64_FCMOVNBE , 0],
+    'fcmovnu':  [X64_FCMOVNU  , 0],
+    'fcomi':    [X64_FCOMI    , 0],
+    'fcomip':   [X64_FCOMIP   , 0],
+    'fucomi':   [X64_FUCOMI   , 0],
+    'fucomip':  [X64_FUCOMIP  , 0]
   }
 ]
 
@@ -722,9 +722,134 @@ class X64Translator extends PipeAbstract
     this._error("operand does not match the statement for: '" + item.mnemonic + "'")
   endmethod
 
+  method _emitVariableLengthOpcode(opcode)
+    encoder = this.outputObject
+
+    if opcode > 0xffff
+      # 3 bytes opcode.
+      encoder.emitByte(bitand(opcode, 0xff))
+      encoder.emitWord(opcode // 256)
+    elif opcode > 0xff
+      # 2 bytes opcode.
+      encoder.emitWord(opcode)
+    else
+      # 1 byte opcode.
+      encoder.emitByte(opcode)
+    endif
+  endmethod
+
+  method _processFPU(item)
+    global X64_OPCODES_MAP_FPU
+    global X64_ST0
+    global X64_AX
+    global X64_DATA_SIZE_ID
+
+    encoder          = this.outputObject
+    mnemonic         = item.mnemonic
+    reg              = item.reg
+    rm               = item.rm
+    scale            = item.scale
+    dataSize         = item.dataSize
+    numberOfOperands = item.numberOfOperands
+
+    opcodesMapFPU = X64_OPCODES_MAP_FPU[numberOfOperands]
+    opcodeInfoFPU = opcodesMapFPU[mnemonic]
+    opcode        = 0
+
+    if opcodeInfoFPU is undefined
+      this._error("unrecognized instruction: '" + mnemonic + "'")
+    endif
+
+    # FPU opcode with single operand.
+    if numberOfOperands is 0
+      # opcode without operands
+      this._emitVariableLengthOpcode(opcodeInfoFPU)
+
+    else
+      if scale is defined
+        # opcode m
+        if dataSize is 0
+          # There is no 8-bit operand allowed for FPU opcodes.
+          this._error("8-bit operand not allowed for: '" + mnemonic + "'")
+
+        else
+          # Get opcode for current memory size.
+          if dataSize is -1
+            # Memory operand without word/dword/qword/tword prefix.
+            opcode = opcodeInfoFPU[5]
+            if opcode is 0
+              this._error("ambiguous operand size for: '" + mnemonic + "'")
+            endif
+
+          else
+            # Memory operand with word/dword/qword/tword prefix.
+            dataSizeId = X64_DATA_SIZE_ID[dataSize]
+            opcode     = opcodeInfoFPU[dataSizeId]
+            if opcode is 0
+              # Syntax error - there is no opcode with for memory size.
+              this._error("invalid operand size for: '" + mnemonic + "'")
+            endif
+          endif
+        endif
+
+      elif numberOfOperands is 1
+        if reg is X64_AX
+          # ax
+          opcode = opcodeInfoFPU[6]
+        else
+          # sti
+          opcode = opcodeInfoFPU[0]
+        endif
+
+      elif (reg is X64_ST0) and (rm is X64_ST0)
+        # st0,st0
+        opcode = opcodeInfoFPU[0]
+        if opcode is 0
+          opcode = opcodeInfoFPU[1]
+        endif
+
+      elif rm is X64_ST0
+        # sti,st0
+        opcode = opcodeInfoFPU[1]
+
+      elif reg is X64_ST0
+        # st0,sti
+        opcode = opcodeInfoFPU[0]
+        reg    = rm
+      endif
+
+      # Emit hardcoded prefixes if needed.
+      if opcode > 0xffffff
+        # 2 byte prefixes.
+        encoder.emitWord(bitand(opcode, 0xffff))
+        opcode = opcode // 65536
+
+      elif opcode > 0xffff
+        # 1 byte prefix.
+        encoder.emitByte(bitand(opcode, 0xff))
+        opcode = opcode // 256
+      endif
+
+      # Emit opcode.
+      if scale is defined
+        # opcode m16 | m32 | m64 | m80 | mcustom
+        regBase       = item.base
+        regIndex      = item.index
+        disp          = item.disp
+        dataSize      = item.dataSize
+        primaryOpcode = bitand(opcode, 0xff)
+        operationId   = opcode // 256
+        encoder.emitCore_group_m(primaryOpcode, operationId, regBase, scale, regIndex, disp)
+
+      else
+        # opcode sti | st0,sti | sti,st0
+        encoder.emitFPU_sti(opcode, reg)
+      endif
+    endif
+  endmethod
+
   method processOneItem(item)
     global X64_OPCODES_MAP
-    global X64_OPCODES_MAP_FPU
     global X64_DATA_SIZE_ID
 
     global X64_CMPXCHG_RM8_R8, X64_CMPXCHG_RM32_R32, X64_CL, X64_DX
@@ -757,123 +882,11 @@ class X64Translator extends PipeAbstract
     if item.type is 'instruction'
       # Parse one code line.
       # Fetch instruction info.
-      mnemonic         = item.mnemonic
-      reg              = item.reg
-      rm               = item.rm
-      regBase          = item.base
-      regIndex         = item.index
-      disp             = item.disp
-      scale            = item.scale
-      imm              = item.imm
-      dataSize         = item.dataSize
-      numberOfOperands = item.numberOfOperands
+      mnemonic = item.mnemonic
 
       if mnemonic[0] is 'f'
         # Escape to FPU (x87) handler.
-        opcodesMapFPU = X64_OPCODES_MAP_FPU[numberOfOperands]
-        opcodeInfoFPU = opcodesMapFPU[mnemonic]
-
-        if opcodeInfoFPU is undefined
-          this._error("unrecognized instruction: '" + mnemonic + "'")
-        endif
-
-        # FPU opcode with single operand.
-        if numberOfOperands is 0
-          # opcode without operands
-          opcode = opcodeInfoFPU
-          if opcode > 0xffff
-            # 3 bytes opcode.
-            encoder.emitByte(bitand(opcode, 0xff))
-            encoder.emitWord(opcode // 256)
-          else
-            # 2 bytes opcode.
-            encoder.emitWord(opcode)
-          endif
-
-        elif numberOfOperands is 1
-          # Opcode with one operand
-          if reg isnt -1
-            # opcode sti
-            if reg is X64_AX
-              opcode = opcodeInfoFPU[6]
-            else
-              opcode = opcodeInfoFPU[0]
-            endif
-
-            if opcode > 0xffff
-              # 1 byte prefix.
-              encoder.emitByte(bitand(opcode, 0xff))
-              opcode = opcode // 256
-            endif
-
-            encoder.emitFPU_sti(opcode, reg)
-
-          elif scale is defined
-            # opcode m
-            if dataSize is 0
-              # There is no 8-bit operand allowed for FPU opcodes.
-              this._error("8-bit operand not allowed for: '" + mnemonic + "'")
-
-            else
-              # Get opcode for current memory size.
-              if dataSize is -1
-                # Memory operand without word/dword/qword/tword prefix.
-                opcode = opcodeInfoFPU[5]
-                if opcode is 0
-                  this._error("ambiguous operand size for: '" + mnemonic + "'")
-                endif
-
-              else
-                # Memory operand with word/dword/qword/tword prefix.
-                dataSizeId = X64_DATA_SIZE_ID[dataSize]
-                opcode     = opcodeInfoFPU[dataSizeId]
-                if opcode is 0
-                  # Syntax error - there is no opcode with for memory size.
-                  this._error("invalid operand size for: '" + mnemonic + "'")
-                endif
-              endif
-
-              # Emit hardcoded prefixes if needed.
-              if opcode > 0xffffff
-                # 2 byte prefixes.
-                encoder.emitWord(bitand(opcode, 0xffff))
-                opcode = opcode // 65536
-
-              elif opcode > 0xffff
-                # 1 byte prefix.
-                encoder.emitByte(bitand(opcode, 0xff))
-                opcode = opcode // 256
-              endif
-
-              # Memory size matched.
-              # Emit opcode.
-              primaryOpcode = bitand(opcode, 0xff)
-              operationId   = opcode // 256
-              encoder.emitCore_group_m(primaryOpcode, operationId, regBase, scale, regIndex, disp)
-            endif
-          endif
-
-        elif numberOfOperands is 2
-          # Opcode with two operands
-          if (reg is X64_ST0) and (rm is X64_ST0)
-            # st0,st0
-            opcode = opcodeInfoFPU[1]
-            if opcode is 0
-              opcode = opcodeInfoFPU[0]
-            endif
-            encoder.emitFPU_sti(opcode, reg)
-
-          elif rm is X64_ST0
-            # sti,st0
-            opcode = opcodeInfoFPU[0]
-            encoder.emitFPU_sti(opcode, reg)
-
-          elif reg is X64_ST0
-            # st0,sti
-            opcode = opcodeInfoFPU[1]
-            encoder.emitFPU_sti(opcode, rm)
-          endif
-        endif
+        this._processFPU(item)
 
       else
         # General case.
@@ -885,6 +898,16 @@ class X64Translator extends PipeAbstract
           opcode    = bitand(opcodeInfo, 0x00ffffff)
           handlerId = bitand(opcodeInfo, 0xff000000)
           syntaxId  = bitand(opcodeInfo, 0xf0000000)
+
+          reg              = item.reg
+          rm               = item.rm
+          regBase          = item.base
+          regIndex         = item.index
+          disp             = item.disp
+          scale            = item.scale
+          imm              = item.imm
+          dataSize         = item.dataSize
+          numberOfOperands = item.numberOfOperands
 
           # Generic syntax checking for most common rules.
           if syntaxId is X64_SYNTAX_ZERO_OPERANDS
