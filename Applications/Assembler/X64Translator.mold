@@ -66,8 +66,8 @@ X64_HANDLER_CUSTOM               = 0xfd000000
 X64_HANDLER_DO_NOTHING           = 0xfe000000
 X64_HANDLER_INVALID_IN_64        = 0xff000000
 
-                 #  0 1 2 3 4 5 6 7 8 10 10 bytes
-X64_DATA_SIZE_ID = [0,0,1,1,2,2,2,2,3,4, 4]
+                 #  0 1 2 3 4 5 6 7 8 9 10 bytes
+X64_DATA_SIZE_ID = [0,0,1,1,2,2,2,2,3,3,4]
 
 # Common operands combinations for generic syntax checking.
 X64_SYNTAX_ZERO_OPERANDS           = 0x00000000
@@ -379,8 +379,8 @@ X64_OPCODES_MAP = {
   'fdiv':       6 + X64_HANDLER_FPU_MATH_FLOAT, # st,sti | sti,st | st,m32 | st,m64
   'fdivr':      7 + X64_HANDLER_FPU_MATH_FLOAT, # st,sti | sti,st | st,m32 | st,m64
 
-  'fcom':       X64_FCOM  + X64_HANDLER_CUSTOM, # sti | m32 | m64
-  'fcomp':      X64_FCOMP + X64_HANDLER_CUSTOM, # sti | m32 | m64
+  'fcom':       X64_FCOM  + X64_HANDLER_CUSTOM, # - | sti | m32 | m64
+  'fcomp':      X64_FCOMP + X64_HANDLER_CUSTOM, # - | sti | m32 | m64
 
   'faddp':      0 + X64_HANDLER_FPU_MATH_FLOAT_POP, # - | sti,st
   'fmulp':      1 + X64_HANDLER_FPU_MATH_FLOAT_POP, # - | sti,st
@@ -398,9 +398,6 @@ X64_OPCODES_MAP = {
 
   'fxsave':     X64_FXSAVE  + X64_HANDLER_CUSTOM_X, # m4096
   'fxrstor':    X64_FXRSTOR + X64_HANDLER_CUSTOM_X, # m4096
-  'fld':        X64_FLD     + X64_HANDLER_CUSTOM_X, # m32 | m64 | m80 | sti
-  'fst':        X64_FST     + X64_HANDLER_CUSTOM_X, # m32 | m64 |     | sti
-  'fstp':       X64_FSTP    + X64_HANDLER_CUSTOM_X, # m32 | m64 | m80 | sti
 
   'fnstsw':     X64_FNSTSW_M16 + X64_HANDLER_CUSTOM_X, # m16 | ax
   'fstsw':      X64_FSTSW_M16  + X64_HANDLER_CUSTOM_X, # m16 | ax
@@ -477,25 +474,29 @@ X64_OPCODES_MAP = {
 }
 
 # TODO: Move comment inside map after parser fix up.
-  # opcode   m8 | m16            | m32            | m64            | m80
+  # opcode   sti          | m16            | m32            | m64            | m80
 X64_OPCODES_MAP_FPU_M = {
-  'fild':   [0  , X64_FILD_M16   , X64_FILD_M32   , X64_FILD_M64   , 0],
-  'fisttp': [0  , X64_FISTTP_M16 , X64_FISTTP_M32 , X64_FISTTP_M64 , 0],
-  'fist':   [0  , X64_FIST_M16   , X64_FIST_M32   , 0              , 0],
-  'fistp':  [0  , X64_FISTP_M16  , X64_FISTP_M32  , X64_FISTP_M64  , 0],
-  'fldcw':  [0  , X64_FLDCW      , 0              , 0              , 0],
-  'fnstcw': [0  , X64_FNSTCW     , 0              , 0              , 0],
-  'fbld':   [0  , 0              , 0              , 0              , X64_FBLD],
-  'fbstp':  [0  , 0              , 0              , 0              , X64_FBSTP],
+  'fild':   [0            , X64_FILD_M16   , X64_FILD_M32   , X64_FILD_M64   , 0],
+  'fisttp': [0            , X64_FISTTP_M16 , X64_FISTTP_M32 , X64_FISTTP_M64 , 0],
+  'fist':   [0            , X64_FIST_M16   , X64_FIST_M32   , 0              , 0],
+  'fistp':  [0            , X64_FISTP_M16  , X64_FISTP_M32  , X64_FISTP_M64  , 0],
+  'fldcw':  [0            , X64_FLDCW      , 0              , 0              , 0],
+  'fnstcw': [0            , X64_FNSTCW     , 0              , 0              , 0],
+  'fbld':   [0            , 0              , 0              , 0              , X64_FBLD],
+  'fbstp':  [0            , 0              , 0              , 0              , X64_FBSTP],
 
-  'fiadd':  [0  , X64_FIADD_M16  , X64_FIADD_M32  , 0              , 0],
-  'fimul':  [0  , X64_FIMUL_M16  , X64_FIMUL_M32  , 0              , 0],
-  'ficom':  [0  , X64_FICOM_M16  , X64_FICOM_M32  , 0              , 0],
-  'ficomp': [0  , X64_FICOMP_M16 , X64_FICOMP_M32 , 0              , 0],
-  'fisub':  [0  , X64_FISUB_M16  , X64_FISUB_M32  , 0              , 0],
-  'fisubr': [0  , X64_FISUBR_M16 , X64_FISUBR_M32 , 0              , 0],
-  'fidiv':  [0  , X64_FIDIV_M16  , X64_FIDIV_M32  , 0              , 0],
-  'fidivr': [0  , X64_FIDIVR_M16 , X64_FIDIVR_M32 , 0              , 0]
+  'fiadd':  [0            , X64_FIADD_M16  , X64_FIADD_M32  , 0              , 0],
+  'fimul':  [0            , X64_FIMUL_M16  , X64_FIMUL_M32  , 0              , 0],
+  'ficom':  [0            , X64_FICOM_M16  , X64_FICOM_M32  , 0              , 0],
+  'ficomp': [0            , X64_FICOMP_M16 , X64_FICOMP_M32 , 0              , 0],
+  'fisub':  [0            , X64_FISUB_M16  , X64_FISUB_M32  , 0              , 0],
+  'fisubr': [0            , X64_FISUBR_M16 , X64_FISUBR_M32 , 0              , 0],
+  'fidiv':  [0            , X64_FIDIV_M16  , X64_FIDIV_M32  , 0              , 0],
+  'fidivr': [0            , X64_FIDIVR_M16 , X64_FIDIVR_M32 , 0              , 0],
+
+  'fld':    [X64_FLD_STI  , 0              , X64_FLD_M32    , X64_FLD_M64    , X64_FLD_M80],
+  'fst':    [X64_FST_STI  , 0              , X64_FST_M32    , X64_FST_M64    , 0],
+  'fstp':   [X64_FSTP_STI , 0              , X64_FSTP_M32   , X64_FSTP_M64   , X64_FSTP_M80]
 }
 
 class X64Translator extends PipeAbstract
@@ -1185,54 +1186,6 @@ class X64Translator extends PipeAbstract
             # TODO: Validate operands.
             encoder.fxrstor_m(regBase, scale, regIndex, disp)
 
-          elif opcode is X64_FLD
-            # TODO: Validate operands.
-            if scale is defined
-              if dataSize is 4
-                encoder.fld_m32(regBase, scale, regIndex, disp)
-
-              elif dataSize is 8
-                encoder.fld_m64(regBase, scale, regIndex, disp)
-
-              elif dataSize is 10
-                encoder.fld_m80(regBase, scale, regIndex, disp)
-              endif
-
-            else
-              encoder.fld_sti(reg)
-            endif
-
-          elif opcode is X64_FST
-            # TODO: Validate operands.
-            if scale is defined
-              if dataSize is 4
-                encoder.fst_m32(regBase, scale, regIndex, disp)
-
-              elif dataSize is 8
-                encoder.fst_m64(regBase, scale, regIndex, disp)
-              endif
-
-            else
-              encoder.fst_sti(reg)
-            endif
-
-          elif opcode is X64_FSTP
-            # TODO: Validate operands.
-            if scale is defined
-              if dataSize is 4
-                encoder.fstp_m32(regBase, scale, regIndex, disp)
-
-              elif dataSize is 8
-                encoder.fstp_m64(regBase, scale, regIndex, disp)
-
-              elif dataSize is 10
-                encoder.fstp_m80(regBase, scale, regIndex, disp)
-              endif
-
-            else
-              encoder.fstp_sti(reg)
-            endif
-
           elif opcode is X64_FNSTSW_M16
             # TODO: Validate operands.
             if scale is defined
@@ -1474,17 +1427,38 @@ class X64Translator extends PipeAbstract
 
         if opcodeInfoFPU is defined
           # FPU opcode with single operand.
-          dataSizeId = X64_DATA_SIZE_ID[dataSize]
-          opcode     = opcodeInfoFPU[dataSizeId]
+          if reg isnt -1
+            # opcode sti
+            opcode = opcodeInfoFPU[0]
+            encoder.emitFPU_sti(opcode, reg)
 
-          if opcode isnt 0
-            primaryOpcode = bitand(opcode, 0xff)
-            operationId   = opcode // 256
-            encoder.emitCore_group_m(primaryOpcode, operationId, regBase, scale, regIndex, disp)
+          elif scale is defined
+            # opcode m
+            if dataSize is undefined
+              # Memory operand without word/dword/qword/tword prefix.
+              this._error("ambiguous operand size for: '" + mnemonic + "'")
 
-          else
-            # Syntax error - there is no opcode with given memory size.
-            this._error("invalid operand size for: '" + mnemonic + "'")
+            elif dataSize is 0
+              # There is no 8-bit operand allowed for FPU opcodes.
+              this._error("8-bit operand not allowed for: '" + mnemonic + "'")
+
+            else
+              # Get opcode for current memory size.
+              dataSizeId = X64_DATA_SIZE_ID[dataSize]
+              opcode     = opcodeInfoFPU[dataSizeId]
+
+              if opcode isnt 0
+                # Memory size matched.
+                # Emit opcode.
+                primaryOpcode = bitand(opcode, 0xff)
+                operationId   = opcode // 256
+                encoder.emitCore_group_m(primaryOpcode, operationId, regBase, scale, regIndex, disp)
+
+              else
+                # Syntax error - there is no opcode with for memory size.
+                this._error("invalid operand size for: '" + mnemonic + "'")
+              endif
+            endif
           endif
 
         else
