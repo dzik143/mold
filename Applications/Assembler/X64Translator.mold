@@ -438,37 +438,35 @@ X64_OPCODES_MAP = {
 # TODO: Move comment inside map after parser fix up.
   # opcode   sti, m16, m32, m64, m80, mcustom, -
 X64_OPCODES_MAP_FPU_M = {
-  'fild':   [0 , X64_FILD_M16   , X64_FILD_M32   , X64_FILD_M64   , 0         , 0 , 0],
-  'fisttp': [0 , X64_FISTTP_M16 , X64_FISTTP_M32 , X64_FISTTP_M64 , 0         , 0 , 0],
-  'fist':   [0 , X64_FIST_M16   , X64_FIST_M32   , 0              , 0         , 0 , 0],
-  'fistp':  [0 , X64_FISTP_M16  , X64_FISTP_M32  , X64_FISTP_M64  , 0         , 0 , 0],
-  'fbld':   [0 , 0              , 0              , 0              , X64_FBLD  , 0 , 0],
-  'fbstp':  [0 , 0              , 0              , 0              , X64_FBSTP , 0 , 0],
+  'fild':     [0 , X64_FILD_M16   , X64_FILD_M32   , X64_FILD_M64   , 0         , 0 , 0],
+  'fisttp':   [0 , X64_FISTTP_M16 , X64_FISTTP_M32 , X64_FISTTP_M64 , 0         , 0 , 0],
+  'fist':     [0 , X64_FIST_M16   , X64_FIST_M32   , 0              , 0         , 0 , 0],
+  'fistp':    [0 , X64_FISTP_M16  , X64_FISTP_M32  , X64_FISTP_M64  , 0         , 0 , 0],
+  'fbld':     [0 , 0              , 0              , 0              , X64_FBLD  , 0 , 0],
+  'fbstp':    [0 , 0              , 0              , 0              , X64_FBSTP , 0 , 0],
 
-  'fiadd':  [0  , X64_FIADD_M16  , X64_FIADD_M32  , 0 , 0 , 0 , 0],
-  'fimul':  [0  , X64_FIMUL_M16  , X64_FIMUL_M32  , 0 , 0 , 0 , 0],
-  'ficom':  [0  , X64_FICOM_M16  , X64_FICOM_M32  , 0 , 0 , 0 , 0],
-  'ficomp': [0  , X64_FICOMP_M16 , X64_FICOMP_M32 , 0 , 0 , 0 , 0],
-  'fisub':  [0  , X64_FISUB_M16  , X64_FISUB_M32  , 0 , 0 , 0 , 0],
-  'fisubr': [0  , X64_FISUBR_M16 , X64_FISUBR_M32 , 0 , 0 , 0 , 0],
-  'fidiv':  [0  , X64_FIDIV_M16  , X64_FIDIV_M32  , 0 , 0 , 0 , 0],
-  'fidivr': [0  , X64_FIDIVR_M16 , X64_FIDIVR_M32 , 0 , 0 , 0 , 0],
+  'fiadd':    [0 , X64_FIADD_M16  , X64_FIADD_M32  , 0 , 0 , 0 , 0],
+  'fimul':    [0 , X64_FIMUL_M16  , X64_FIMUL_M32  , 0 , 0 , 0 , 0],
+  'ficom':    [0 , X64_FICOM_M16  , X64_FICOM_M32  , 0 , 0 , 0 , 0],
+  'ficomp':   [0 , X64_FICOMP_M16 , X64_FICOMP_M32 , 0 , 0 , 0 , 0],
+  'fisub':    [0 , X64_FISUB_M16  , X64_FISUB_M32  , 0 , 0 , 0 , 0],
+  'fisubr':   [0 , X64_FISUBR_M16 , X64_FISUBR_M32 , 0 , 0 , 0 , 0],
+  'fidiv':    [0 , X64_FIDIV_M16  , X64_FIDIV_M32  , 0 , 0 , 0 , 0],
+  'fidivr':   [0 , X64_FIDIVR_M16 , X64_FIDIVR_M32 , 0 , 0 , 0 , 0],
 
-  'fld':    [X64_FLD_STI  , 0 , X64_FLD_M32  , X64_FLD_M64  , X64_FLD_M80  , 0, 0],
-  'fst':    [X64_FST_STI  , 0 , X64_FST_M32  , X64_FST_M64  , 0            , 0, 0],
-  'fstp':   [X64_FSTP_STI , 0 , X64_FSTP_M32 , X64_FSTP_M64 , X64_FSTP_M80 , 0, 0],
+  'fld':      [X64_FLD_STI   , 0 , X64_FLD_M32   , X64_FLD_M64   , X64_FLD_M80  , 0 , 0],
+  'fst':      [X64_FST_STI   , 0 , X64_FST_M32   , X64_FST_M64   , 0            , 0 , 0],
+  'fstp':     [X64_FSTP_STI  , 0 , X64_FSTP_M32  , X64_FSTP_M64  , X64_FSTP_M80 , 0 , 0],
+  'fcom':     [X64_FCOM_STI  , 0 , X64_FCOM_M32  , X64_FCOM_M64  , 0            , 0 , X64_FCOM_ST1],
+  'fcomp':    [X64_FCOMP_STI , 0 , X64_FCOMP_M32 , X64_FCOMP_M64 , 0            , 0 , X64_FCOMP_ST1],
 
-  'fcom':   [X64_FCOM_STI  , 0 , X64_FCOM_M32  , X64_FCOM_M64  , 0 , 0 , X64_FCOM_ST1],
-  'fcomp':  [X64_FCOMP_STI , 0 , X64_FCOMP_M32 , X64_FCOMP_M64 , 0 , 0 , X64_FCOMP_ST1],
-
-  'fucom':  [X64_FUCOM_STI  , 0 , 0 , 0 , 0 , 0 , X64_FUCOM_ST1],
-  'fucomp': [X64_FUCOMP_STI , 0 , 0 , 0 , 0 , 0 , X64_FUCOMP_ST1],
-  'ffree':  [X64_FFREE_STI  , 0 , 0 , 0 , 0 , 0 , 0],
-  'fxch':   [X64_FXCH_STI   , 0 , 0 , 0 , 0 , 0 , X64_FXCH_ST1],
-
-  'fldcw':  [0 , X64_FLDCW  , 0 , 0 , 0 , 0 , 0], # m16
-  'fnstcw': [0 , X64_FNSTCW , 0 , 0 , 0 , 0 , 0], # m16
-  'fstcw':  [0 , X64_FSTCW  , 0 , 0 , 0 , 0 , 0], # m16
+  'fucom':    [X64_FUCOM_STI  , 0          , 0 , 0 , 0 , 0 , X64_FUCOM_ST1],
+  'fucomp':   [X64_FUCOMP_STI , 0          , 0 , 0 , 0 , 0 , X64_FUCOMP_ST1],
+  'fxch':     [X64_FXCH_STI   , 0          , 0 , 0 , 0 , 0 , X64_FXCH_ST1],
+  'ffree':    [X64_FFREE_STI  , 0          , 0 , 0 , 0 , 0 , 0],
+  'fldcw':    [0              , X64_FLDCW  , 0 , 0 , 0 , 0 , 0], # m16
+  'fnstcw':   [0              , X64_FNSTCW , 0 , 0 , 0 , 0 , 0], # m16
+  'fstcw':    [0              , X64_FSTCW  , 0 , 0 , 0 , 0 , 0], # m16
 
   'fldenv':   [0, 0, 0, 0, 0, X64_FLDENV   , 0], # m224
   'fldenvd':  [0, 0, 0, 0, 0, X64_FLDENV   , 0], # m224
@@ -729,8 +727,8 @@ class X64Translator extends PipeAbstract
     global X64_RET, X64_RETF, X64_BSWAP, X64_CMPXCHG8B, X64_CMPXCHG16B
     global X64_HANDLER_FPU_STI
     global X64_INC_R32, X64_DEC_R32, X64_ENTER, X64_LEAVE, X64_INT
-    global X64_FXSAVE, X64_FXRSTOR, X64_FLD, X64_FST
-    global X64_FSTP, X64_LSL, X64_MOVSXD, X64_FNSTSW_M16, X64_FSTSW_M16
+    global X64_FXSAVE, X64_FXRSTOR, X64_FNSTSW_M16, X64_FSTSW_M16
+    global X64_LSL, X64_MOVSXD
 
     global X64_SYNTAX_ZERO_OPERANDS, X64_SYNTAX_ONE_OPERAND_READ_ONLY
     global X64_SYNTAX_TWO_OPERANDS, X64_SYNTAX_TWO_OPERANDS_EQUAL_SIZE
