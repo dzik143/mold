@@ -24,9 +24,8 @@ import '../../Compiler/Utils/PipeAbstract.mold'
 # Encoding handlers: no operands (opcode only).
 X64_HANDLER_OPCODE_ONLY_BYTE       = 0x00000000
 X64_HANDLER_OPCODE_ONLY_WORD       = 0x01000000
-X64_HANDLER_OPCODE_ONLY_0F_XX_YY   = 0x02000000
-X64_HANDLER_OPCODE_ONLY_66_XX_YY   = 0x03000000
-X64_HANDLER_OPCODE_ONLY_WAIT_XX_YY = 0x04000000
+X64_HANDLER_OPCODE_ONLY_3BYTES     = 0x02000000
+X64_HANDLER_OPCODE_ONLY_0F_XX_YY   = 0x03000000
 
 # Encoding handlers: one operands (read only).
 X64_HANDLER_JCC                  = 0x10000000
@@ -52,10 +51,6 @@ X64_HANDLER_CORE_ALU1            = 0x40000000
 X64_HANDLER_0F_00_GROUP          = 0x41000000
 X64_HANDLER_0F_01_GROUP          = 0x42000000
 X64_HANDLER_SETCC                = 0x43000000
-X64_HANDLER_GROUP_M              = 0x44000000
-X64_HANDLER_GROUP_M_WAIT         = 0x45000000
-X64_HANDLER_GROUP_M_66           = 0x46000000
-X64_HANDLER_GROUP_M_WAIT_66      = 0x47000000
 
 # Other.
 X64_HANDLER_FPU_STI              = 0xfa000000
@@ -371,6 +366,42 @@ X64_OPCODES_MAP = {
   'ret':        X64_RET         + X64_HANDLER_CUSTOM, # - | imm16
   'nop':        X64_NOP         + X64_HANDLER_CUSTOM, # - | rd | md
 
+  'f2xm1':      X64_F2XM1   + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fabs':       X64_FABS    + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fchs':       X64_FCHS    + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fcompp':     X64_FCOMPP  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fdecstp':    X64_FDECSTP + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fincstp':    X64_FINCSTP + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fld1':       X64_FLD1    + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fldl2e':     X64_FLDL2E  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fldl2t':     X64_FLDL2T  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fldlg2':     X64_FLDLG2  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fldln2':     X64_FLDLN2  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fldpi':      X64_FLDPI   + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fldz':       X64_FLDZ    + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fnclex':     X64_FNCLEX  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fninit':     X64_FNINIT  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fclex':      X64_FCLEX   + X64_HANDLER_OPCODE_ONLY_3BYTES, # - (no operands)
+  'finit':      X64_FINIT   + X64_HANDLER_OPCODE_ONLY_3BYTES, # - (no operands)
+  'fnop':       X64_FNOP    + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fpatan':     X64_FPATAN  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fprem':      X64_FPREM   + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fptan':      X64_FPTAN   + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'frndint':    X64_FRNDINT + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fscale':     X64_FSCALE  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fsqrt':      X64_FSQRT   + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'ftst':       X64_FTST    + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fwait':      X64_FWAIT   + X64_HANDLER_OPCODE_ONLY_BYTE,   # - (no operands)
+  'fxam':       X64_FXAM    + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fxtract':    X64_FXTRACT + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fyl2x':      X64_FYL2X   + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fyl2xp1':    X64_FYL2XP1 + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fsin':       X64_FSIN    + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fcos':       X64_FCOS    + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fsincos':    X64_FSINCOS + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fprem1':     X64_FPREM1  + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+  'fucompp':    X64_FUCOMPP + X64_HANDLER_OPCODE_ONLY_WORD,   # - (no operands)
+
   'fadd':       0 + X64_HANDLER_FPU_MATH_FLOAT, # st,sti | sti,st | st,m32 | st,m64
   'fmul':       1 + X64_HANDLER_FPU_MATH_FLOAT, # st,sti | sti,st | st,m32 | st,m64
   'fsub':       4 + X64_HANDLER_FPU_MATH_FLOAT, # st,sti | sti,st | st,m32 | st,m64
@@ -390,43 +421,6 @@ X64_OPCODES_MAP = {
   'fnstsw':     X64_FNSTSW_M16 + X64_HANDLER_CUSTOM_X, # m16 | ax
   'fstsw':      X64_FSTSW_M16  + X64_HANDLER_CUSTOM_X, # m16 | ax
 
-  'fclex':      X64_FNCLEX  + X64_HANDLER_OPCODE_ONLY_WAIT_XX_YY, # - (no operands)
-  'finit':      X64_FNINIT  + X64_HANDLER_OPCODE_ONLY_WAIT_XX_YY, # - (no operands)
-
-  'f2xm1':      X64_F2XM1   + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fabs':       X64_FABS    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fchs':       X64_FCHS    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fcompp':     X64_FCOMPP  + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fdecstp':    X64_FDECSTP + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fincstp':    X64_FINCSTP + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fld1':       X64_FLD1    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fldl2e':     X64_FLDL2E  + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fldl2t':     X64_FLDL2T  + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fldlg2':     X64_FLDLG2  + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fldln2':     X64_FLDLN2  + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fldpi':      X64_FLDPI   + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fldz':       X64_FLDZ    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fnclex':     X64_FNCLEX  + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fninit':     X64_FNINIT  + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fnop':       X64_FNOP    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fpatan':     X64_FPATAN  + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fprem':      X64_FPREM   + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fptan':      X64_FPTAN   + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'frndint':    X64_FRNDINT + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fscale':     X64_FSCALE  + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fsqrt':      X64_FSQRT   + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'ftst':       X64_FTST    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fwait':      X64_FWAIT   + X64_HANDLER_OPCODE_ONLY_BYTE, # - (no operands)
-  'fxam':       X64_FXAM    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fxtract':    X64_FXTRACT + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fyl2x':      X64_FYL2X   + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fyl2xp1':    X64_FYL2XP1 + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fsin':       X64_FSIN    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fcos':       X64_FCOS    + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fsincos':    X64_FSINCOS + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fprem1':     X64_FPREM1  + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-  'fucompp':    X64_FUCOMPP + X64_HANDLER_OPCODE_ONLY_WORD, # - (no operands)
-
   'fcmovb':     X64_FCMOVB   + X64_HANDLER_FPU_ST0_STI, # st,sti
   'fcmove':     X64_FCMOVE   + X64_HANDLER_FPU_ST0_STI, # st,sti
   'fcmovbe':    X64_FCMOVBE  + X64_HANDLER_FPU_ST0_STI, # st,sti
@@ -435,7 +429,6 @@ X64_OPCODES_MAP = {
   'fcmovne':    X64_FCMOVNE  + X64_HANDLER_FPU_ST0_STI, # st,sti
   'fcmovnbe':   X64_FCMOVNBE + X64_HANDLER_FPU_ST0_STI, # st,sti
   'fcmovnu':    X64_FCMOVNU  + X64_HANDLER_FPU_ST0_STI, # st,sti
-
   'fcomi':      X64_FCOMI    + X64_HANDLER_FPU_ST0_STI, # st,sti
   'fcomip':     X64_FCOMIP   + X64_HANDLER_FPU_ST0_STI, # st,sti
   'fucomi':     X64_FUCOMI   + X64_HANDLER_FPU_ST0_STI, # st,sti
@@ -724,12 +717,12 @@ class X64Translator extends PipeAbstract
     global X64_HANDLER_INVALID_IN_64, X64_HANDLER_OPCODE_ONLY_0F_XX_YY
     global X64_HANDLER_CUSTOM, X64_HANDLER_OPCODE_ONLY_BYTE
     global X64_HANDLER_OPCODE_ONLY_WORD, X64_HANDLER_MOV_EXTEND
+    global X64_HANDLER_OPCODE_ONLY_3BYTES
     global X64_HANDLER_FPU_MATH_FLOAT
     global X64_HANDLER_FPU_MATH_FLOAT_POP
     global X64_HANDLER_CUSTOM_X, X64_HANDLER_CUSTOM_X_Y
     global X64_HANDLER_CORE_RMD_RD, X64_HANDLER_CORE_RM_R
-    global X64_HANDLER_GROUP_M, X64_HANDLER_FPU_ST0_STI
-    global X64_HANDLER_GROUP_M_66
+    global X64_HANDLER_FPU_ST0_STI
 
     global X64_LEA, X64_MOV, X64_TEST, X64_XCHG, X64_CALL_REL32, X64_NOP
     global X64_IN, X64_OUT, X64_JMP_REL32, X64_PUSH_R64, X64_POP_R64
@@ -741,9 +734,7 @@ class X64Translator extends PipeAbstract
 
     global X64_SYNTAX_ZERO_OPERANDS, X64_SYNTAX_ONE_OPERAND_READ_ONLY
     global X64_SYNTAX_TWO_OPERANDS, X64_SYNTAX_TWO_OPERANDS_EQUAL_SIZE
-    global X64_SYNTAX_ONE_OPERAND_READWRITE, X64_HANDLER_GROUP_M_WAIT
-    global X64_HANDLER_OPCODE_ONLY_WAIT_XX_YY
-    global X64_HANDLER_GROUP_M_WAIT_66
+    global X64_SYNTAX_ONE_OPERAND_READWRITE
 
     encoder = this.outputObject
 
@@ -800,11 +791,6 @@ class X64Translator extends PipeAbstract
 
         # Dispatch opcode handler.
         if handlerId is X64_HANDLER_OPCODE_ONLY_BYTE
-          # Recognized no-operands opcode.
-          # Just emit opcode as is.
-          encoder.emitByte(opcode)
-
-        elif handlerId is X64_HANDLER_OPCODE_ONLY_BYTE
           # Single byte opcode without operands: xx
           # Just emit opcode as is.
           encoder.emitByte(opcode)
@@ -814,16 +800,17 @@ class X64Translator extends PipeAbstract
           # Just emit opcode as is.
           encoder.emitWord(opcode)
 
+        elif handlerId is X64_HANDLER_OPCODE_ONLY_3BYTES
+          # Three bytes opcode without operands: xx yy zz
+          # Just emit opcode as is.
+          print hex(opcode)
+          encoder.emitByte(bitand(opcode, 0xff))
+          encoder.emitWord(opcode // 256)
+
         elif handlerId is X64_HANDLER_OPCODE_ONLY_0F_XX_YY
           # Three bytes opcode without operands: 0f xx yy
           # Just emit opcode as is.
           encoder.emitByte(0x0f)
-          encoder.emitWord(opcode)
-
-        elif handlerId is X64_HANDLER_OPCODE_ONLY_WAIT_XX_YY
-          # Three bytes opcode without operands: <wait> xx yy
-          # Just emit opcode as is.
-          encoder.wait()
           encoder.emitWord(opcode)
 
         elif handlerId is X64_HANDLER_CORE_ALU1
@@ -1204,37 +1191,6 @@ class X64Translator extends PipeAbstract
               encoder.fstsw_ax()
             endif
           endif
-
-        elif handlerId is X64_HANDLER_GROUP_M
-          # opcode m
-          primaryOpcode = bitand(opcode, 0xff)
-          operationId   = opcode // 256
-          encoder.emitCore_group_m(primaryOpcode, operationId, regBase, scale, regIndex, disp)
-
-        elif handlerId is X64_HANDLER_GROUP_M_66
-          # opcode m with 0x66 prefix
-          # TODO: Optimize it.
-          primaryOpcode = bitand(opcode, 0xff)
-          operationId   = opcode // 256
-          encoder.emitByte(0x66)
-          encoder.emitCore_group_m(primaryOpcode, operationId, regBase, scale, regIndex, disp)
-
-        elif handlerId is X64_HANDLER_GROUP_M_WAIT
-          # opcode m
-          # TODO: Optimize it.
-          primaryOpcode = bitand(opcode, 0xff)
-          operationId   = opcode // 256
-          encoder.wait()
-          encoder.emitCore_group_m(primaryOpcode, operationId, regBase, scale, regIndex, disp)
-
-        elif handlerId is X64_HANDLER_GROUP_M_WAIT_66
-          # opcode m
-          # TODO: Optimize it.
-          primaryOpcode = bitand(opcode, 0xff)
-          operationId   = opcode // 256
-          encoder.wait()
-          encoder.emitByte(0x66)
-          encoder.emitCore_group_m(primaryOpcode, operationId, regBase, scale, regIndex, disp)
 
         elif handlerId is X64_HANDLER_CUSTOM
           # Custom handler for opcodes with variable numberof operands.
