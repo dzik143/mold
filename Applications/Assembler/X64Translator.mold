@@ -390,12 +390,6 @@ X64_OPCODES_MAP = {
   'fnstsw':     X64_FNSTSW_M16 + X64_HANDLER_CUSTOM_X, # m16 | ax
   'fstsw':      X64_FSTSW_M16  + X64_HANDLER_CUSTOM_X, # m16 | ax
 
-  'fstenv':     X64_FNSTENV + X64_HANDLER_GROUP_M_WAIT, # m224
-  'fstenvd':    X64_FNSTENV + X64_HANDLER_GROUP_M_WAIT, # m224
-  'fsave':      X64_FNSAVE  + X64_HANDLER_GROUP_M_WAIT, # m864
-  'fsaved':     X64_FNSAVE  + X64_HANDLER_GROUP_M_WAIT, # m864
-  'fstcw':      X64_FNSTCW  + X64_HANDLER_GROUP_M_WAIT, # m16
-
   'fstenvw':    X64_FNSTENV + X64_HANDLER_GROUP_M_WAIT_66, # m112
   'fsavew':     X64_FNSAVE  + X64_HANDLER_GROUP_M_WAIT_66, # m752
 
@@ -458,8 +452,6 @@ X64_OPCODES_MAP_FPU_M = {
   'fisttp': [0 , X64_FISTTP_M16 , X64_FISTTP_M32 , X64_FISTTP_M64 , 0         , 0 , 0],
   'fist':   [0 , X64_FIST_M16   , X64_FIST_M32   , 0              , 0         , 0 , 0],
   'fistp':  [0 , X64_FISTP_M16  , X64_FISTP_M32  , X64_FISTP_M64  , 0         , 0 , 0],
-  'fldcw':  [0 , X64_FLDCW      , 0              , 0              , 0         , 0 , 0],
-  'fnstcw': [0 , X64_FNSTCW     , 0              , 0              , 0         , 0 , 0],
   'fbld':   [0 , 0              , 0              , 0              , X64_FBLD  , 0 , 0],
   'fbstp':  [0 , 0              , 0              , 0              , X64_FBSTP , 0 , 0],
 
@@ -484,6 +476,10 @@ X64_OPCODES_MAP_FPU_M = {
   'ffree':  [X64_FFREE_STI  , 0 , 0 , 0 , 0 , 0 , 0],
   'fxch':   [X64_FXCH_STI   , 0 , 0 , 0 , 0 , 0 , X64_FXCH_ST1],
 
+  'fldcw':  [0 , X64_FLDCW  , 0 , 0 , 0 , 0 , 0], # m16
+  'fnstcw': [0 , X64_FNSTCW , 0 , 0 , 0 , 0 , 0], # m16
+  'fstcw':  [0 , X64_FSTCW  , 0 , 0 , 0 , 0 , 0], # m16
+
   'fldenv':  [0, 0, 0, 0, 0, X64_FLDENV  , 0], # m224
   'fldenvd': [0, 0, 0, 0, 0, X64_FLDENV  , 0], # m224
   'fnstenv': [0, 0, 0, 0, 0, X64_FNSTENV , 0], # m224
@@ -497,7 +493,12 @@ X64_OPCODES_MAP_FPU_M = {
   'fnsavew':  [0, 0, 0, 0, 0, X64_FNSAVEW  , 0], # m752
   'fnstenvw': [0, 0, 0, 0, 0, X64_FNSTENVW , 0], # m112
   'frstorw':  [0, 0, 0, 0, 0, X64_FRSTORW  , 0], # m752
-  'fnsavew':  [0, 0, 0, 0, 0, X64_FNSAVEW  , 0]  # m752
+  'fnsavew':  [0, 0, 0, 0, 0, X64_FNSAVEW  , 0], # m752
+
+  'fstenv':   [0, 0, 0, 0, 0, X64_FSTENV , 0], # m224
+  'fstenvd':  [0, 0, 0, 0, 0, X64_FSTENV , 0], # m224
+  'fsave':    [0, 0, 0, 0, 0, X64_FSAVE  , 0], # m864
+  'fsaved':   [0, 0, 0, 0, 0, X64_FSAVE  , 0]  # m864
 }
 
 class X64Translator extends PipeAbstract
@@ -1411,30 +1412,30 @@ class X64Translator extends PipeAbstract
               if dataSize is -1
                 # Memory operand without word/dword/qword/tword prefix.
                 opcode = opcodeInfoFPU[5]
-                if opcode is undefined
+                if opcode is 0
                   this._error("ambiguous operand size for: '" + mnemonic + "'")
-                endif
-
-                # Emit hardcoded prefixes if needed.
-                if opcode > 0xffffff
-                  # 2 byte prefixes.
-                  encoder.emitWord(bitand(opcode, 0xffff))
-                  opcode = opcode // 65536
-
-                elif opcode > 0xffff
-                  # 1 byte prefix.
-                  encoder.emitByte(bitand(opcode, 0xff))
-                  opcode = opcode // 256
                 endif
 
               else
                 # Memory operand with word/dword/qword/tword prefix.
                 dataSizeId = X64_DATA_SIZE_ID[dataSize]
                 opcode     = opcodeInfoFPU[dataSizeId]
-                if opcode is undefined
+                if opcode is 0
                   # Syntax error - there is no opcode with for memory size.
                   this._error("invalid operand size for: '" + mnemonic + "'")
                 endif
+              endif
+
+              # Emit hardcoded prefixes if needed.
+              if opcode > 0xffffff
+                # 2 byte prefixes.
+                encoder.emitWord(bitand(opcode, 0xffff))
+                opcode = opcode // 65536
+
+              elif opcode > 0xffff
+                # 1 byte prefix.
+                encoder.emitByte(bitand(opcode, 0xff))
+                opcode = opcode // 256
               endif
 
               # Memory size matched.
