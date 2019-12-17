@@ -22,10 +22,10 @@ import 'X64.mold'
 import '../../Compiler/Utils/PipeAbstract.mold'
 
 # Encoding handlers: no operands (opcode only).
-X64_HANDLER_OPCODE_ONLY_BYTE       = 0x00000000
-X64_HANDLER_OPCODE_ONLY_WORD       = 0x01000000
-X64_HANDLER_OPCODE_ONLY_3BYTES     = 0x02000000
-X64_HANDLER_OPCODE_ONLY_0F_XX_YY   = 0x03000000
+X64_HANDLER_OPCODE_ONLY_BYTE     = 0x00000000
+X64_HANDLER_OPCODE_ONLY_WORD     = 0x01000000
+X64_HANDLER_OPCODE_ONLY_3BYTES   = 0x02000000
+X64_HANDLER_OPCODE_ONLY_0F_XX_YY = 0x03000000
 
 # Encoding handlers: one operands (read only).
 X64_HANDLER_JCC                  = 0x10000000
@@ -38,7 +38,6 @@ X64_HANDLER_CORE_ALU2            = 0x20000000
 X64_HANDLER_CMOVCC               = 0x21000000
 X64_HANDLER_CORE_RMD_RD          = 0x22000000
 X64_HANDLER_CORE_RM_R            = 0x23000000
-X64_HANDLER_FPU_ST0_STI          = 0x24000000
 
 # Encoding handler: two operands (generic).
 X64_HANDLER_SHIFT_GROUP          = 0x30000000
@@ -53,9 +52,6 @@ X64_HANDLER_0F_01_GROUP          = 0x42000000
 X64_HANDLER_SETCC                = 0x43000000
 
 # Other.
-X64_HANDLER_FPU_STI              = 0xfa000000
-X64_HANDLER_FPU_MATH_FLOAT       = 0xfb000000
-X64_HANDLER_FPU_MATH_FLOAT_POP   = 0xfc000000
 X64_HANDLER_CUSTOM               = 0xfd000000
 X64_HANDLER_DO_NOTHING           = 0xfe000000
 X64_HANDLER_INVALID_IN_64        = 0xff000000
@@ -369,7 +365,7 @@ X64_OPCODES_MAP = {
 
 # TODO: Move comment inside map after parser fix up.
   # opcode  - | m16 | m32 | m64 | m80 | mcustom | sti | sti,st | st,sti
-X64_OPCODES_MAP_FPU_M = {
+X64_OPCODES_MAP_FPU = {
   'f2xm1':    [X64_F2XM1   , 0, 0, 0, 0, 0, 0, 0, 0],
   'fabs':     [X64_FABS    , 0, 0, 0, 0, 0, 0, 0, 0],
   'fchs':     [X64_FCHS    , 0, 0, 0, 0, 0, 0, 0, 0],
@@ -703,7 +699,7 @@ class X64Translator extends PipeAbstract
 
   method processOneItem(item)
     global X64_OPCODES_MAP
-    global X64_OPCODES_MAP_FPU_M
+    global X64_OPCODES_MAP_FPU
     global X64_DATA_SIZE_ID
 
     global X64_CMPXCHG_RM8_R8, X64_CMPXCHG_RM32_R32, X64_CL, X64_DX
@@ -718,18 +714,13 @@ class X64Translator extends PipeAbstract
     global X64_HANDLER_CUSTOM, X64_HANDLER_OPCODE_ONLY_BYTE
     global X64_HANDLER_OPCODE_ONLY_WORD, X64_HANDLER_MOV_EXTEND
     global X64_HANDLER_OPCODE_ONLY_3BYTES
-    global X64_HANDLER_FPU_MATH_FLOAT
-    global X64_HANDLER_FPU_MATH_FLOAT_POP
     global X64_HANDLER_CUSTOM_X, X64_HANDLER_CUSTOM_X_Y
     global X64_HANDLER_CORE_RMD_RD, X64_HANDLER_CORE_RM_R
-    global X64_HANDLER_FPU_ST0_STI
 
     global X64_LEA, X64_MOV, X64_TEST, X64_XCHG, X64_CALL_REL32, X64_NOP
     global X64_IN, X64_OUT, X64_JMP_REL32, X64_PUSH_R64, X64_POP_R64
     global X64_RET, X64_RETF, X64_BSWAP, X64_CMPXCHG8B, X64_CMPXCHG16B
-    global X64_HANDLER_FPU_STI
     global X64_INC_R32, X64_DEC_R32, X64_ENTER, X64_LEAVE, X64_INT
-    global X64_FXSAVE, X64_FXRSTOR, X64_FNSTSW_M16, X64_FSTSW_M16
     global X64_LSL, X64_MOVSXD
 
     global X64_SYNTAX_ZERO_OPERANDS, X64_SYNTAX_ONE_OPERAND_READ_ONLY
@@ -752,595 +743,9 @@ class X64Translator extends PipeAbstract
       dataSize         = item.dataSize
       numberOfOperands = item.numberOfOperands
 
-      # Search for mnemonic.
-      opcodeInfo = X64_OPCODES_MAP[mnemonic]
-
-      if opcodeInfo is defined
-        # Decode handler and opcode.
-        opcode    = bitand(opcodeInfo, 0x00ffffff)
-        handlerId = bitand(opcodeInfo, 0xff000000)
-        syntaxId  = bitand(opcodeInfo, 0xf0000000)
-
-        # Generic syntax checking for most common rules.
-        if syntaxId is X64_SYNTAX_ZERO_OPERANDS
-          this._validateNumberOfOperands(numberOfOperands, 0)
-
-        elif syntaxId is X64_SYNTAX_ONE_OPERAND_READ_ONLY
-          this._validateNumberOfOperands(numberOfOperands, 1)
-
-        elif syntaxId is X64_SYNTAX_ONE_OPERAND_READWRITE
-          this._validateNumberOfOperands(numberOfOperands, 1)
-          this._failIfImmIsUsed(item)
-
-        elif syntaxId is X64_SYNTAX_TWO_OPERANDS_EQUAL_SIZE
-          this._validateNumberOfOperands(numberOfOperands, 2)
-          this._validateOperandSizes(reg, rm, dataSize, imm)
-          this._validateImmRange(reg, rm, dataSize, imm)
-
-        elif syntaxId is X64_SYNTAX_TWO_OPERANDS
-          this._validateNumberOfOperands(numberOfOperands, 2)
-        endif
-
-        # Only mov can handle 64-bit immediate.
-        if (imm is defined) and (opcode isnt X64_MOV)
-          this._failIfOutOfRange(imm, -2147483647, 4294967295)
-        endif
-
-        # Handle generic prefixes, which should be emited before opcode.
-        # TODO
-
-        # Dispatch opcode handler.
-        if handlerId is X64_HANDLER_OPCODE_ONLY_BYTE
-          # Single byte opcode without operands: xx
-          # Just emit opcode as is.
-          encoder.emitByte(opcode)
-
-        elif handlerId is X64_HANDLER_OPCODE_ONLY_WORD
-          # Two bytes opcode without operands: xx yy
-          # Just emit opcode as is.
-          encoder.emitWord(opcode)
-
-        elif handlerId is X64_HANDLER_OPCODE_ONLY_3BYTES
-          # Three bytes opcode without operands: xx yy zz
-          # Just emit opcode as is.
-          print hex(opcode)
-          encoder.emitByte(bitand(opcode, 0xff))
-          encoder.emitWord(opcode // 256)
-
-        elif handlerId is X64_HANDLER_OPCODE_ONLY_0F_XX_YY
-          # Three bytes opcode without operands: 0f xx yy
-          # Just emit opcode as is.
-          encoder.emitByte(0x0f)
-          encoder.emitWord(opcode)
-
-        elif handlerId is X64_HANDLER_CORE_ALU1
-          if reg is -1
-            # not/neg/mul/div/imul/idiv m
-            encoder.emitCore_unaryGroup_m(opcode, regBase, scale, regIndex, disp, dataSize)
-          else
-            # not/neg/mul/div/imul/idiv r
-            encoder.emitCore_unaryGroup_r(opcode, reg)
-          endif
-
-        elif handlerId is X64_HANDLER_CORE_ALU2
-          this.emitCoreALU2(opcode, item)
-
-        elif handlerId is X64_HANDLER_CMOVCC
-          this._failIfMemoryWrite(item)
-          this._failIf8BitOperandIsUsed(item)
-          this._failIfImmIsUsed(item)
-          this.emitCore_x_y(opcode, item)
-
-        elif handlerId is X64_HANDLER_JCC
-          # jcc rel8/32
-          this._failIfImmIsMissing(item)
-          encoder.emitCore_jcc_rel(opcode, imm - item.offset)
-
-        elif handlerId is X64_HANDLER_JUMPS_REL8
-          # One byte jump with rel8 always.
-          # loopz rel8 like.
-          this._failIfImmIsMissing(item)
-          rel8 = imm - item.offset - 2
-          # TODO: Check range.
-          # this._failIfOutOfRange(rel8, -127, 128)
-          encoder.emitCore_jmp_rel8(opcode, rel8)
-
-        elif handlerId is X64_HANDLER_JUMPS_REL8_2BYTES
-          # One byte jump with rel8 always and 0x67 prefix.
-          # loopz rel8 like.
-          # TODO: Clean up this mess.
-          this._failIfImmIsMissing(item)
-          rel8 = imm - item.offset - 3
-          # TODO: Check range.
-          # this._failIfOutOfRange(rel8, -127, 128)
-          encoder.emitByte(0x67)
-          encoder.emitCore_jmp_rel8(opcode, rel8)
-
-        elif handlerId is X64_HANDLER_SHIFT_GROUP
-          regCL = -1
-
-          if scale is defined
-            this._failIfMemoryRead(item)
-            if imm is defined
-              # m, imm8
-              this._failIfOutOfRange(imm, -127, 255)
-              encoder.emitCore_shiftGroup_m_imm8(opcode, regBase, scale, regIndex, disp, imm, dataSize)
-            else
-              # m, cl
-              encoder.emitCore_shiftGroup_m_cl(opcode, regBase, scale, regIndex, disp, dataSize)
-              regCL = reg
-            endif
-
-          elif imm is defined
-            # r, imm8
-            this._failIfOutOfRange(imm, -127, 255)
-            encoder.emitCore_shiftGroup_r_imm8(opcode, reg, imm)
-          else
-            # r, cl
-            encoder.emitCore_shiftGroup_r_cl(opcode, reg)
-            regCL = rm
-          endif
-
-          if (regCL isnt -1) and (regCL isnt X64_CL)
-            this._error("only imm8 or the cl register can be used as the second operand for: '" + mnemonic + "'")
-          endif
-
-        elif handlerId is X64_HANDLER_SETCC
-          this._failIfNon8BitOperandIsUsed(item)
-          if scale is defined
-            # setcc m8
-            encoder.emitCore_m(opcode, regBase, scale, regIndex, disp)
-          else
-            # setcc r8
-            encoder.emitCore_r(opcode, reg)
-          endif
-
-        elif handlerId is X64_HANDLER_MOV_EXTEND
-          this._failIfImmIsUsed(item)
-          this._failIfMemoryWrite(item)
-          if scale is defined
-            # movsx r16/32/64, m8/16
-            # movzx r16/32/64, m8/16
-            if (dataSize > 2) or (reg // 16 <= dataSize - 1)
-              # Destination must be wider than source.
-              this._errorBadSyntax(item)
-            endif
-
-            if dataSize is 2
-              opcode = bitor(opcode, 256)
-            endif
-
-            encoder.emitCore_movExtend_r_m(opcode, reg, regBase, scale, regIndex, disp)
-
-          else
-            # movsx r16/32/64, r8/16
-            # movzx r16/32/64, r8/16
-            if (rm >= 32) or ((reg // 16) <= (rm // 16))
-              # Destination must be wider than source.
-              this._errorBadSyntax(item)
-            endif
-
-            encoder.emitCore_movExtend_r_r(opcode, reg, rm)
-          endif
-
-        elif handlerId is X64_HANDLER_CORE_RMD_RD
-          this._failIf8BitOperandIsUsed(item)
-          this._failIfMemoryRead(item)
-          this._failIfImmIsUsed(item)
-          this.emitCoreALU2(opcode, item)
-
-        elif handlerId is X64_HANDLER_CORE_RM_R
-          this._failIfMemoryRead(item)
-          this._failIfImmIsUsed(item)
-          this.emitCoreALU2(opcode, item)
-
-        elif handlerId is X64_HANDLER_DO_NOTHING
-          # Do nothing.
-
-        elif handlerId is X64_HANDLER_CUSTOM_X_Y
-          # Custom handler for two operands opcode
-          # opcode x,y
-          if opcode is X64_MOV
-            if imm is defined
-              this._validateImmRange(reg, rm, dataSize, imm)
-              if reg isnt -1
-                # mov r, imm
-                encoder.mov_r_imm(reg, imm)
-              else
-                # mov m, imm
-                encoder.mov_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
-              endif
-            else
-              this.emitCoreALU2(opcode, item)
-            endif
-
-          elif opcode is X64_LEA
-            this._failIfMemoryWrite(item)
-            this._failIfImmIsUsed(item)
-
-            if X64_IsReg8(reg) is true
-              this._errorBadSyntax(item)
-            endif
-
-            encoder.lea_r_m(reg, regBase, scale, regIndex, disp)
-
-          elif opcode is X64_TEST
-            if imm is defined
-              this._validateImmRange(reg, rm, dataSize, imm)
-              if reg isnt -1
-                # test r, imm
-                encoder.test_r_imm(reg, imm)
-              else
-                # test m, imm
-                encoder.test_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
-              endif
-            else
-              # Opcodes have fixed diretion flag, but other assemblers accept both and
-              # swap operands silently if needed.
-              # Only test r/m, r/imm exists.
-              item.isWriteToMemory = true
-              this.emitCoreALU2(opcode, item)
-            endif
-
-          elif opcode is X64_XCHG
-            this._validateOperandSizes(reg, rm, dataSize, imm)
-            this._failIfImmIsUsed(item)
-
-            if (reg isnt -1) and (rm isnt -1)
-              # xchg r, r
-              encoder.xchg_r_r(reg, rm)
-            else
-              # Opcodes have fixed diretion flag, but other assemblers accept both and
-              # swap operands silently if needed.
-              # Only xchg r, r/m exists.
-              item.isWriteToMemory = false
-              this.emitCoreALU2(opcode, item)
-            endif
-
-          elif opcode is X64_OUT
-            this._failIfMemoryReadOrWrite(item)
-            if imm is defined
-              this._failIfOutOfRange(imm, 0, 255)
-              encoder.out_imm_r(imm, reg)
-            elif reg is X64_DX
-              encoder.out_dx_r(rm)
-            else
-              this._error("port must be imm8 or dx register for: 'out'")
-            endif
-
-          elif opcode is X64_IN
-            this._failIfMemoryReadOrWrite(item)
-            if imm is defined
-              this._failIfOutOfRange(imm, 0, 255)
-              encoder.in_r_imm(reg, imm)
-            elif rm is X64_DX
-              encoder.in_r_dx(reg)
-            else
-              this._error("port must be imm8 or dx register for: 'in'")
-            endif
-
-          elif opcode is X64_LSL
-            this._failIfMemoryWrite(item)
-            this._failIf8BitOperandIsUsed(item)
-            this._failIfImmIsUsed(item)
-
-            if (scale is defined) and (dataSize isnt 2)
-              this._errorBadSyntax(item)
-            endif
-            this.emitCore_x_y(opcode, item)
-
-          elif opcode is X64_MOVSXD
-            # movsxd r64, r/m32
-            this._failIfMemoryWrite(item)
-            this._failIfImmIsUsed(item)
-
-            if ((X64_IsReg64(reg) is false) or
-                ((rm isnt -1) and (X64_IsReg32(rm) is false)) or
-                ((dataSize isnt -1) and (dataSize isnt 4)))
-              this._errorBadSyntax(item)
-            endif
-
-            this.emitCore_x_y(opcode, item)
-
-          elif opcode is X64_ENTER
-            # enter imm16, imm8
-            if (imm is undefined) or (item.imm2 is undefined)
-              this._error("two immediate operands are expected for: 'enter'")
-            endif
-            this._failIfOutOfRange(imm,       0, 65535)
-            this._failIfOutOfRange(item.imm2, 0, 255)
-            encoder.enter_imm16_imm8(imm, item.imm2)
-          endif
-
-        elif handlerId is X64_HANDLER_CUSTOM_X
-          # Custom handler for one operand opcode
-          # opcode x
-          if opcode is X64_PUSH_R64
-            if reg isnt -1
-              # push r
-              encoder.push_r(reg)
-
-            elif imm is defined
-              if (imm >= -127) and (imm <= 128)
-                # push imm8
-                encoder.push_imm8(imm)
-              else
-                # push imm32
-                this._failIfOutOfRange(imm, -32767, 65535)
-                encoder.push_imm32(imm)
-               endif
-            else
-              # push m
-              encoder.push_m(regBase, scale, regIndex, disp, dataSize)
-            endif
-
-          elif opcode is X64_POP_R64
-            this._failIfImmIsUsed(item)
-            if reg isnt -1
-              encoder.pop_r(reg)
-            else
-              encoder.pop_m(regBase, scale, regIndex, disp, dataSize)
-            endif
-
-          elif opcode is X64_CALL_REL32
-            if reg isnt -1
-              # call r
-              if (X64_IsReg8(reg) is true) or (X64_IsReg32(reg) is true)
-                this._error("8/32-bit addresses not allowed for: '" + item.mnemonic + "'")
-              endif
-              encoder.call_r(reg)
-
-            elif scale is defined
-              # call m
-              if (dataSize is 1) or (dataSize is 4)
-                this._error("8/32-bit addresses not allowed for: '" + item.mnemonic + "'")
-              endif
-
-              encoder.call_m(regBase, scale, regIndex, disp, dataSize)
-
-            else
-              # call rel32
-              encoder.call_rel(imm - item.offset)
-            endif
-
-          elif opcode is X64_JMP_REL32
-            if reg isnt -1
-              # jmp r
-              if (X64_IsReg8(reg) is true) or (X64_IsReg32(reg) is true)
-                this._error("8/32-bit addresses not allowed for: '" + item.mnemonic + "'")
-              endif
-              encoder.jmp_r(reg)
-            elif scale is defined
-              # jmp m
-              if (dataSize is 1) or (dataSize is 4)
-                this._error("8/32-bit addresses not allowed for: '" + item.mnemonic + "'")
-              endif
-              encoder.jmp_m(regBase, scale, regIndex, disp, dataSize)
-            else
-              # jmp rel8/32
-              encoder.jmp_rel(imm - item.offset)
-            endif
-
-          elif opcode is X64_BSWAP
-            this._failIfMemoryReadOrWrite(item)
-            this._failIfImmIsUsed(item)
-            if reg < 32
-              this._errorBadSyntax(item)
-            endif
-
-            encoder.bswap_r(reg)
-
-          elif opcode is X64_CMPXCHG8B
-            this._failIfImmIsUsed(item)
-            this._failIfRegsAreUsed(item)
-
-            # TODO: Don't compare strings.
-            if mnemonic is 'cmpxchg8b'
-              encoder.cmpxchg8b_m(regBase, scale, regIndex, disp)
-            else
-              encoder.cmpxchg16b_m(regBase, scale, regIndex, disp)
-            endif
-
-          elif opcode is X64_INC_R32
-            this._failIfImmIsUsed(item)
-            if reg isnt -1
-              # inc r
-              encoder.inc_r(reg)
-            else
-              # inc m
-              encoder.inc_m(regBase, scale, regIndex, disp, dataSize)
-            endif
-
-          elif opcode is X64_DEC_R32
-            this._failIfImmIsUsed(item)
-            if reg isnt -1
-              # dec r
-              encoder.dec_r(reg)
-            else
-              # dec m
-              encoder.dec_m(regBase, scale, regIndex, disp, dataSize)
-            endif
-
-          elif opcode is X64_INT
-            # int imm8
-            this._failIfImmIsMissing(item)
-            this._failIfOutOfRange(imm, 0, 255)
-            encoder.int_imm(imm)
-
-          elif opcode is X64_FXSAVE
-            # TODO: Validate operands.
-            encoder.fxsave_m(regBase, scale, regIndex, disp)
-
-          elif opcode is X64_FXRSTOR
-            # TODO: Validate operands.
-            encoder.fxrstor_m(regBase, scale, regIndex, disp)
-
-          elif opcode is X64_FNSTSW_M16
-            # TODO: Validate operands.
-            if scale is defined
-              encoder.fnstsw_m16(regBase, scale, regIndex, disp)
-            else
-              encoder.fnstsw_ax()
-            endif
-
-          elif opcode is X64_FSTSW_M16
-            # TODO: Validate operands.
-            if scale is defined
-              encoder.fstsw_m16(regBase, scale, regIndex, disp)
-            else
-              encoder.fstsw_ax()
-            endif
-          endif
-
-        elif handlerId is X64_HANDLER_CUSTOM
-          # Custom handler for opcodes with variable numberof operands.
-          # Dispatch opcode.
-          if opcode is X64_RET
-            if numberOfOperands is 0
-              encoder.ret()
-            else
-              this._validateNumberOfOperands(numberOfOperands, 1)
-              this._failIfImmIsMissing(item)
-              this._failIfOutOfRange(imm, 0, 65535)
-              encoder.ret_imm(imm)
-            endif
-
-          elif opcode is X64_RETF
-            if numberOfOperands is 0
-              encoder.retf()
-            else
-              this._validateNumberOfOperands(numberOfOperands, 1)
-              this._failIfImmIsMissing(item)
-              this._failIfOutOfRange(imm, 0, 65535)
-              encoder.retf_imm(imm)
-            endif
-
-          elif opcode is X64_NOP
-            if numberOfOperands is 0
-              # One byte nop.
-              this._validateNumberOfOperands(numberOfOperands, 0)
-              encoder.nop()
-
-            else
-              # Muli-byte nop.
-              this._validateNumberOfOperands(numberOfOperands, 1)
-              this._failIfImmIsUsed(item)
-              this._failIf8BitOperandIsUsed(item)
-
-              if scale is defined
-                # nop m
-                encoder.nop_m(regBase, scale, regIndex, disp, dataSize)
-              elif reg isnt -1
-                # nop r
-                encoder.nop_r(reg)
-              endif
-            endif
-          endif
-
-        elif handlerId is X64_HANDLER_FPU_MATH_FLOAT
-          # TODO: Validate operands.
-          if scale is defined
-            # st,m
-            if dataSize is 4
-              encoder.emitFPU_m32real(opcode, regBase, scale, regIndex, disp)
-            else
-              encoder.emitFPU_m64real(opcode, regBase, scale, regIndex, disp)
-            endif
-
-          elif reg is X64_ST0
-            # st,sti
-            encoder.emitCore_group_r(0xd8, opcode, bitand(rm, 0x7))
-
-          else
-            # sti,st
-            # TODO: Clean up this mess.
-            if (mnemonic is 'fdiv')
-              # fdiv sti,st0
-              opcode = 7
-
-            elif (mnemonic is 'fdivr')
-              # fdivr sti,st0
-              opcode = 6
-
-            elif (mnemonic is 'fsub')
-              # fdivr sti,st0
-              opcode = 5
-
-            elif (mnemonic is 'fsubr')
-              # fdivr sti,st0
-              opcode = 4
-            endif
-
-            encoder.emitCore_group_r(0xdc, opcode, bitand(reg, 0x7))
-          endif
-
-        elif handlerId is X64_HANDLER_FPU_MATH_FLOAT_POP
-          # TODO: Validate operands.
-          if numberOfOperands is 0
-            # No operands.
-            # Should be defaulted to st1,st
-            reg = X64_ST1
-          endif
-
-          encoder.emitCore_group_r(0xde, opcode, bitand(reg, 0x7))
-
-        elif handlerId is X64_HANDLER_FPU_STI
-          if numberOfOperands is 0
-            reg = X64_ST1
-          endif
-          encoder.emitFPU_sti(opcode, reg)
-
-        elif handlerId is X64_HANDLER_FPU_ST0_STI
-          # TODO: Validate operands.
-          encoder.emitFPU_sti(opcode, rm)
-
-        elif handlerId is X64_HANDLER_286
-          this._failIfMemoryWrite(item)
-          this._failIf8BitOperandIsUsed(item)
-          this._failIfImmIsUsed(item)
-
-          if scale is defined
-            # r,m
-            encoder.emitCore286_r_m(opcode, reg, regBase, scale, regIndex, disp)
-          else
-            # r,r
-            encoder.emitCore286_r_r(opcode, reg, rm)
-          endif
-
-        elif handlerId is X64_HANDLER_0F_00_GROUP
-          this._failIf8BitOperandIsUsed(item)
-          # 0f 00 /x
-          if scale is defined
-            # m
-            encoder.emitCore_group0f_00_m(opcode, regBase, scale, regIndex, disp)
-          else
-            # r
-            encoder.emitCore_group0f_00_r(opcode, reg)
-          endif
-
-        elif handlerId is X64_HANDLER_0F_01_GROUP
-          # 0f 01 /x
-          if scale is defined
-            # m
-            encoder.emitCore_group0f_01_m(opcode, regBase, scale, regIndex, disp)
-          else
-            # r
-            encoder.emitCore_group0f_01_r(opcode, reg)
-          endif
-
-        elif handlerId is X64_HANDLER_INVALID_IN_64
-          # Instruction is correct, but not allowed in native 64-bit mode.
-          this._error("invalid in 64-bit mode: '" + mnemonic + "'")
-
-        else
-          # Error - unexpected handler id.
-          # Should never happen on production.
-          this._error('unknown opcode handler: ' + str(handlerId))
-        endif
-
-      else
-        # TODO: Clean up this mess.
-        opcodeInfoFPU = X64_OPCODES_MAP_FPU_M[mnemonic]
+      if mnemonic[0] is 'f'
+        # Escape to FPU (x87) handler.
+        opcodeInfoFPU = X64_OPCODES_MAP_FPU[mnemonic]
 
         if opcodeInfoFPU is defined
           # FPU opcode with single operand.
@@ -1457,6 +862,517 @@ class X64Translator extends PipeAbstract
               opcode = opcodeInfoFPU[8]
               encoder.emitFPU_sti(opcode, rm)
             endif
+          endif
+
+        else
+          this._error("unrecognized instruction: '" + mnemonic + "'")
+        endif
+
+      else
+        # General case.
+        # Search for mnemonic.
+        opcodeInfo = X64_OPCODES_MAP[mnemonic]
+
+        if opcodeInfo is defined
+          # Decode handler and opcode.
+          opcode    = bitand(opcodeInfo, 0x00ffffff)
+          handlerId = bitand(opcodeInfo, 0xff000000)
+          syntaxId  = bitand(opcodeInfo, 0xf0000000)
+
+          # Generic syntax checking for most common rules.
+          if syntaxId is X64_SYNTAX_ZERO_OPERANDS
+            this._validateNumberOfOperands(numberOfOperands, 0)
+
+          elif syntaxId is X64_SYNTAX_ONE_OPERAND_READ_ONLY
+            this._validateNumberOfOperands(numberOfOperands, 1)
+
+          elif syntaxId is X64_SYNTAX_ONE_OPERAND_READWRITE
+            this._validateNumberOfOperands(numberOfOperands, 1)
+            this._failIfImmIsUsed(item)
+
+          elif syntaxId is X64_SYNTAX_TWO_OPERANDS_EQUAL_SIZE
+            this._validateNumberOfOperands(numberOfOperands, 2)
+            this._validateOperandSizes(reg, rm, dataSize, imm)
+            this._validateImmRange(reg, rm, dataSize, imm)
+
+          elif syntaxId is X64_SYNTAX_TWO_OPERANDS
+            this._validateNumberOfOperands(numberOfOperands, 2)
+          endif
+
+          # Only mov can handle 64-bit immediate.
+          if (imm is defined) and (opcode isnt X64_MOV)
+            this._failIfOutOfRange(imm, -2147483647, 4294967295)
+          endif
+
+          # Handle generic prefixes, which should be emited before opcode.
+          # TODO
+
+          # Dispatch opcode handler.
+          if handlerId is X64_HANDLER_OPCODE_ONLY_BYTE
+            # Single byte opcode without operands: xx
+            # Just emit opcode as is.
+            encoder.emitByte(opcode)
+
+          elif handlerId is X64_HANDLER_OPCODE_ONLY_WORD
+            # Two bytes opcode without operands: xx yy
+            # Just emit opcode as is.
+            encoder.emitWord(opcode)
+
+          elif handlerId is X64_HANDLER_OPCODE_ONLY_3BYTES
+            # Three bytes opcode without operands: xx yy zz
+            # Just emit opcode as is.
+            print hex(opcode)
+            encoder.emitByte(bitand(opcode, 0xff))
+            encoder.emitWord(opcode // 256)
+
+          elif handlerId is X64_HANDLER_OPCODE_ONLY_0F_XX_YY
+            # Three bytes opcode without operands: 0f xx yy
+            # Just emit opcode as is.
+            encoder.emitByte(0x0f)
+            encoder.emitWord(opcode)
+
+          elif handlerId is X64_HANDLER_CORE_ALU1
+            if reg is -1
+              # not/neg/mul/div/imul/idiv m
+              encoder.emitCore_unaryGroup_m(opcode, regBase, scale, regIndex, disp, dataSize)
+            else
+              # not/neg/mul/div/imul/idiv r
+              encoder.emitCore_unaryGroup_r(opcode, reg)
+            endif
+
+          elif handlerId is X64_HANDLER_CORE_ALU2
+            this.emitCoreALU2(opcode, item)
+
+          elif handlerId is X64_HANDLER_CMOVCC
+            this._failIfMemoryWrite(item)
+            this._failIf8BitOperandIsUsed(item)
+            this._failIfImmIsUsed(item)
+            this.emitCore_x_y(opcode, item)
+
+          elif handlerId is X64_HANDLER_JCC
+            # jcc rel8/32
+            this._failIfImmIsMissing(item)
+            encoder.emitCore_jcc_rel(opcode, imm - item.offset)
+
+          elif handlerId is X64_HANDLER_JUMPS_REL8
+            # One byte jump with rel8 always.
+            # loopz rel8 like.
+            this._failIfImmIsMissing(item)
+            rel8 = imm - item.offset - 2
+            # TODO: Check range.
+            # this._failIfOutOfRange(rel8, -127, 128)
+            encoder.emitCore_jmp_rel8(opcode, rel8)
+
+          elif handlerId is X64_HANDLER_JUMPS_REL8_2BYTES
+            # One byte jump with rel8 always and 0x67 prefix.
+            # loopz rel8 like.
+            # TODO: Clean up this mess.
+            this._failIfImmIsMissing(item)
+            rel8 = imm - item.offset - 3
+            # TODO: Check range.
+            # this._failIfOutOfRange(rel8, -127, 128)
+            encoder.emitByte(0x67)
+            encoder.emitCore_jmp_rel8(opcode, rel8)
+
+          elif handlerId is X64_HANDLER_SHIFT_GROUP
+            regCL = -1
+
+            if scale is defined
+              this._failIfMemoryRead(item)
+              if imm is defined
+                # m, imm8
+                this._failIfOutOfRange(imm, -127, 255)
+                encoder.emitCore_shiftGroup_m_imm8(opcode, regBase, scale, regIndex, disp, imm, dataSize)
+              else
+                # m, cl
+                encoder.emitCore_shiftGroup_m_cl(opcode, regBase, scale, regIndex, disp, dataSize)
+                regCL = reg
+              endif
+
+            elif imm is defined
+              # r, imm8
+              this._failIfOutOfRange(imm, -127, 255)
+              encoder.emitCore_shiftGroup_r_imm8(opcode, reg, imm)
+            else
+              # r, cl
+              encoder.emitCore_shiftGroup_r_cl(opcode, reg)
+              regCL = rm
+            endif
+
+            if (regCL isnt -1) and (regCL isnt X64_CL)
+              this._error("only imm8 or the cl register can be used as the second operand for: '" + mnemonic + "'")
+            endif
+
+          elif handlerId is X64_HANDLER_SETCC
+            this._failIfNon8BitOperandIsUsed(item)
+            if scale is defined
+              # setcc m8
+              encoder.emitCore_m(opcode, regBase, scale, regIndex, disp)
+            else
+              # setcc r8
+              encoder.emitCore_r(opcode, reg)
+            endif
+
+          elif handlerId is X64_HANDLER_MOV_EXTEND
+            this._failIfImmIsUsed(item)
+            this._failIfMemoryWrite(item)
+            if scale is defined
+              # movsx r16/32/64, m8/16
+              # movzx r16/32/64, m8/16
+              if (dataSize > 2) or (reg // 16 <= dataSize - 1)
+                # Destination must be wider than source.
+                this._errorBadSyntax(item)
+              endif
+
+              if dataSize is 2
+                opcode = bitor(opcode, 256)
+              endif
+
+              encoder.emitCore_movExtend_r_m(opcode, reg, regBase, scale, regIndex, disp)
+
+            else
+              # movsx r16/32/64, r8/16
+              # movzx r16/32/64, r8/16
+              if (rm >= 32) or ((reg // 16) <= (rm // 16))
+                # Destination must be wider than source.
+                this._errorBadSyntax(item)
+              endif
+
+              encoder.emitCore_movExtend_r_r(opcode, reg, rm)
+            endif
+
+          elif handlerId is X64_HANDLER_CORE_RMD_RD
+            this._failIf8BitOperandIsUsed(item)
+            this._failIfMemoryRead(item)
+            this._failIfImmIsUsed(item)
+            this.emitCoreALU2(opcode, item)
+
+          elif handlerId is X64_HANDLER_CORE_RM_R
+            this._failIfMemoryRead(item)
+            this._failIfImmIsUsed(item)
+            this.emitCoreALU2(opcode, item)
+
+          elif handlerId is X64_HANDLER_DO_NOTHING
+            # Do nothing.
+
+          elif handlerId is X64_HANDLER_CUSTOM_X_Y
+            # Custom handler for two operands opcode
+            # opcode x,y
+            if opcode is X64_MOV
+              if imm is defined
+                this._validateImmRange(reg, rm, dataSize, imm)
+                if reg isnt -1
+                  # mov r, imm
+                  encoder.mov_r_imm(reg, imm)
+                else
+                  # mov m, imm
+                  encoder.mov_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
+                endif
+              else
+                this.emitCoreALU2(opcode, item)
+              endif
+
+            elif opcode is X64_LEA
+              this._failIfMemoryWrite(item)
+              this._failIfImmIsUsed(item)
+
+              if X64_IsReg8(reg) is true
+                this._errorBadSyntax(item)
+              endif
+
+              encoder.lea_r_m(reg, regBase, scale, regIndex, disp)
+
+            elif opcode is X64_TEST
+              if imm is defined
+                this._validateImmRange(reg, rm, dataSize, imm)
+                if reg isnt -1
+                  # test r, imm
+                  encoder.test_r_imm(reg, imm)
+                else
+                  # test m, imm
+                  encoder.test_m_imm(regBase, scale, regIndex, disp, imm, dataSize)
+                endif
+              else
+                # Opcodes have fixed diretion flag, but other assemblers accept both and
+                # swap operands silently if needed.
+                # Only test r/m, r/imm exists.
+                item.isWriteToMemory = true
+                this.emitCoreALU2(opcode, item)
+              endif
+
+            elif opcode is X64_XCHG
+              this._validateOperandSizes(reg, rm, dataSize, imm)
+              this._failIfImmIsUsed(item)
+
+              if (reg isnt -1) and (rm isnt -1)
+                # xchg r, r
+                encoder.xchg_r_r(reg, rm)
+              else
+                # Opcodes have fixed diretion flag, but other assemblers accept both and
+                # swap operands silently if needed.
+                # Only xchg r, r/m exists.
+                item.isWriteToMemory = false
+                this.emitCoreALU2(opcode, item)
+              endif
+
+            elif opcode is X64_OUT
+              this._failIfMemoryReadOrWrite(item)
+              if imm is defined
+                this._failIfOutOfRange(imm, 0, 255)
+                encoder.out_imm_r(imm, reg)
+              elif reg is X64_DX
+                encoder.out_dx_r(rm)
+              else
+                this._error("port must be imm8 or dx register for: 'out'")
+              endif
+
+            elif opcode is X64_IN
+              this._failIfMemoryReadOrWrite(item)
+              if imm is defined
+                this._failIfOutOfRange(imm, 0, 255)
+                encoder.in_r_imm(reg, imm)
+              elif rm is X64_DX
+                encoder.in_r_dx(reg)
+              else
+                this._error("port must be imm8 or dx register for: 'in'")
+              endif
+
+            elif opcode is X64_LSL
+              this._failIfMemoryWrite(item)
+              this._failIf8BitOperandIsUsed(item)
+              this._failIfImmIsUsed(item)
+
+              if (scale is defined) and (dataSize isnt 2)
+                this._errorBadSyntax(item)
+              endif
+              this.emitCore_x_y(opcode, item)
+
+            elif opcode is X64_MOVSXD
+              # movsxd r64, r/m32
+              this._failIfMemoryWrite(item)
+              this._failIfImmIsUsed(item)
+
+              if ((X64_IsReg64(reg) is false) or
+                  ((rm isnt -1) and (X64_IsReg32(rm) is false)) or
+                  ((dataSize isnt -1) and (dataSize isnt 4)))
+                this._errorBadSyntax(item)
+              endif
+
+              this.emitCore_x_y(opcode, item)
+
+            elif opcode is X64_ENTER
+              # enter imm16, imm8
+              if (imm is undefined) or (item.imm2 is undefined)
+                this._error("two immediate operands are expected for: 'enter'")
+              endif
+              this._failIfOutOfRange(imm,       0, 65535)
+              this._failIfOutOfRange(item.imm2, 0, 255)
+              encoder.enter_imm16_imm8(imm, item.imm2)
+            endif
+
+          elif handlerId is X64_HANDLER_CUSTOM_X
+            # Custom handler for one operand opcode
+            # opcode x
+            if opcode is X64_PUSH_R64
+              if reg isnt -1
+                # push r
+                encoder.push_r(reg)
+
+              elif imm is defined
+                if (imm >= -127) and (imm <= 128)
+                  # push imm8
+                  encoder.push_imm8(imm)
+                else
+                  # push imm32
+                  this._failIfOutOfRange(imm, -32767, 65535)
+                  encoder.push_imm32(imm)
+                 endif
+              else
+                # push m
+                encoder.push_m(regBase, scale, regIndex, disp, dataSize)
+              endif
+
+            elif opcode is X64_POP_R64
+              this._failIfImmIsUsed(item)
+              if reg isnt -1
+                encoder.pop_r(reg)
+              else
+                encoder.pop_m(regBase, scale, regIndex, disp, dataSize)
+              endif
+
+            elif opcode is X64_CALL_REL32
+              if reg isnt -1
+                # call r
+                if (X64_IsReg8(reg) is true) or (X64_IsReg32(reg) is true)
+                  this._error("8/32-bit addresses not allowed for: '" + item.mnemonic + "'")
+                endif
+                encoder.call_r(reg)
+
+              elif scale is defined
+                # call m
+                if (dataSize is 1) or (dataSize is 4)
+                  this._error("8/32-bit addresses not allowed for: '" + item.mnemonic + "'")
+                endif
+
+                encoder.call_m(regBase, scale, regIndex, disp, dataSize)
+
+              else
+                # call rel32
+                encoder.call_rel(imm - item.offset)
+              endif
+
+            elif opcode is X64_JMP_REL32
+              if reg isnt -1
+                # jmp r
+                if (X64_IsReg8(reg) is true) or (X64_IsReg32(reg) is true)
+                  this._error("8/32-bit addresses not allowed for: '" + item.mnemonic + "'")
+                endif
+                encoder.jmp_r(reg)
+              elif scale is defined
+                # jmp m
+                if (dataSize is 1) or (dataSize is 4)
+                  this._error("8/32-bit addresses not allowed for: '" + item.mnemonic + "'")
+                endif
+                encoder.jmp_m(regBase, scale, regIndex, disp, dataSize)
+              else
+                # jmp rel8/32
+                encoder.jmp_rel(imm - item.offset)
+              endif
+
+            elif opcode is X64_BSWAP
+              this._failIfMemoryReadOrWrite(item)
+              this._failIfImmIsUsed(item)
+              if reg < 32
+                this._errorBadSyntax(item)
+              endif
+
+              encoder.bswap_r(reg)
+
+            elif opcode is X64_CMPXCHG8B
+              this._failIfImmIsUsed(item)
+              this._failIfRegsAreUsed(item)
+
+              # TODO: Don't compare strings.
+              if mnemonic is 'cmpxchg8b'
+                encoder.cmpxchg8b_m(regBase, scale, regIndex, disp)
+              else
+                encoder.cmpxchg16b_m(regBase, scale, regIndex, disp)
+              endif
+
+            elif opcode is X64_INC_R32
+              this._failIfImmIsUsed(item)
+              if reg isnt -1
+                # inc r
+                encoder.inc_r(reg)
+              else
+                # inc m
+                encoder.inc_m(regBase, scale, regIndex, disp, dataSize)
+              endif
+
+            elif opcode is X64_DEC_R32
+              this._failIfImmIsUsed(item)
+              if reg isnt -1
+                # dec r
+                encoder.dec_r(reg)
+              else
+                # dec m
+                encoder.dec_m(regBase, scale, regIndex, disp, dataSize)
+              endif
+
+            elif opcode is X64_INT
+              # int imm8
+              this._failIfImmIsMissing(item)
+              this._failIfOutOfRange(imm, 0, 255)
+              encoder.int_imm(imm)
+            endif
+
+          elif handlerId is X64_HANDLER_CUSTOM
+            # Custom handler for opcodes with variable numberof operands.
+            # Dispatch opcode.
+            if opcode is X64_RET
+              if numberOfOperands is 0
+                encoder.ret()
+              else
+                this._validateNumberOfOperands(numberOfOperands, 1)
+                this._failIfImmIsMissing(item)
+                this._failIfOutOfRange(imm, 0, 65535)
+                encoder.ret_imm(imm)
+              endif
+
+            elif opcode is X64_RETF
+              if numberOfOperands is 0
+                encoder.retf()
+              else
+                this._validateNumberOfOperands(numberOfOperands, 1)
+                this._failIfImmIsMissing(item)
+                this._failIfOutOfRange(imm, 0, 65535)
+                encoder.retf_imm(imm)
+              endif
+
+            elif opcode is X64_NOP
+              if numberOfOperands is 0
+                # One byte nop.
+                this._validateNumberOfOperands(numberOfOperands, 0)
+                encoder.nop()
+
+              else
+                # Muli-byte nop.
+                this._validateNumberOfOperands(numberOfOperands, 1)
+                this._failIfImmIsUsed(item)
+                this._failIf8BitOperandIsUsed(item)
+
+                if scale is defined
+                  # nop m
+                  encoder.nop_m(regBase, scale, regIndex, disp, dataSize)
+                elif reg isnt -1
+                  # nop r
+                  encoder.nop_r(reg)
+                endif
+              endif
+            endif
+
+          elif handlerId is X64_HANDLER_286
+            this._failIfMemoryWrite(item)
+            this._failIf8BitOperandIsUsed(item)
+            this._failIfImmIsUsed(item)
+
+            if scale is defined
+              # r,m
+              encoder.emitCore286_r_m(opcode, reg, regBase, scale, regIndex, disp)
+            else
+              # r,r
+              encoder.emitCore286_r_r(opcode, reg, rm)
+            endif
+
+          elif handlerId is X64_HANDLER_0F_00_GROUP
+            this._failIf8BitOperandIsUsed(item)
+            # 0f 00 /x
+            if scale is defined
+              # m
+              encoder.emitCore_group0f_00_m(opcode, regBase, scale, regIndex, disp)
+            else
+              # r
+              encoder.emitCore_group0f_00_r(opcode, reg)
+            endif
+
+          elif handlerId is X64_HANDLER_0F_01_GROUP
+            # 0f 01 /x
+            if scale is defined
+              # m
+              encoder.emitCore_group0f_01_m(opcode, regBase, scale, regIndex, disp)
+            else
+              # r
+              encoder.emitCore_group0f_01_r(opcode, reg)
+            endif
+
+          elif handlerId is X64_HANDLER_INVALID_IN_64
+            # Instruction is correct, but not allowed in native 64-bit mode.
+            this._error("invalid in 64-bit mode: '" + mnemonic + "'")
+
+          else
+            # Error - unexpected handler id.
+            # Should never happen on production.
+            this._error('unknown opcode handler: ' + str(handlerId))
           endif
 
         else
