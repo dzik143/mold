@@ -364,134 +364,135 @@ X64_OPCODES_MAP = {
 
   'retf':       X64_RETF        + X64_HANDLER_CUSTOM, # - | imm16
   'ret':        X64_RET         + X64_HANDLER_CUSTOM, # - | imm16
-  'nop':        X64_NOP         + X64_HANDLER_CUSTOM, # - | rd | md
-
-  'fadd':       0 + X64_HANDLER_FPU_MATH_FLOAT, # st,sti | sti,st | st,m32 | st,m64
-  'fmul':       1 + X64_HANDLER_FPU_MATH_FLOAT, # st,sti | sti,st | st,m32 | st,m64
-  'fsub':       4 + X64_HANDLER_FPU_MATH_FLOAT, # st,sti | sti,st | st,m32 | st,m64
-  'fsubr':      5 + X64_HANDLER_FPU_MATH_FLOAT, # st,sti | sti,st | st,m32 | st,m64
-  'fdiv':       6 + X64_HANDLER_FPU_MATH_FLOAT, # st,sti | sti,st | st,m32 | st,m64
-  'fdivr':      7 + X64_HANDLER_FPU_MATH_FLOAT, # st,sti | sti,st | st,m32 | st,m64
-
-  'fxsave':     X64_FXSAVE     + X64_HANDLER_CUSTOM_X, # m4096
-  'fxrstor':    X64_FXRSTOR    + X64_HANDLER_CUSTOM_X, # m4096
-  'fnstsw':     X64_FNSTSW_M16 + X64_HANDLER_CUSTOM_X, # m16 | ax
-  'fstsw':      X64_FSTSW_M16  + X64_HANDLER_CUSTOM_X  # m16 | ax
+  'nop':        X64_NOP         + X64_HANDLER_CUSTOM  # - | rd | md
 }
 
 # TODO: Move comment inside map after parser fix up.
-  # opcode  - | m16 | m32 | m64 | m80 | mcustom | sti | sti,st | st,sti | st,m32 | st,m64
+  # opcode  - | m16 | m32 | m64 | m80 | mcustom | sti | sti,st | st,sti
 X64_OPCODES_MAP_FPU_M = {
-  'f2xm1':    [X64_F2XM1   , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fabs':     [X64_FABS    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fchs':     [X64_FCHS    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fcompp':   [X64_FCOMPP  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fdecstp':  [X64_FDECSTP , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fincstp':  [X64_FINCSTP , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fld1':     [X64_FLD1    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fldl2e':   [X64_FLDL2E  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fldl2t':   [X64_FLDL2T  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fldlg2':   [X64_FLDLG2  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fldln2':   [X64_FLDLN2  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fldpi':    [X64_FLDPI   , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fldz':     [X64_FLDZ    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fnclex':   [X64_FNCLEX  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fninit':   [X64_FNINIT  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fclex':    [X64_FCLEX   , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'finit':    [X64_FINIT   , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fnop':     [X64_FNOP    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fpatan':   [X64_FPATAN  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fprem':    [X64_FPREM   , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fptan':    [X64_FPTAN   , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'frndint':  [X64_FRNDINT , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fscale':   [X64_FSCALE  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fsqrt':    [X64_FSQRT   , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'ftst':     [X64_FTST    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fwait':    [X64_FWAIT   , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fxam':     [X64_FXAM    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fxtract':  [X64_FXTRACT , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fyl2x':    [X64_FYL2X   , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fyl2xp1':  [X64_FYL2XP1 , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fsin':     [X64_FSIN    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fcos':     [X64_FCOS    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fsincos':  [X64_FSINCOS , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fprem1':   [X64_FPREM1  , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  'fucompp':  [X64_FUCOMPP , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  'f2xm1':    [X64_F2XM1   , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fabs':     [X64_FABS    , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fchs':     [X64_FCHS    , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fcompp':   [X64_FCOMPP  , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fdecstp':  [X64_FDECSTP , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fincstp':  [X64_FINCSTP , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fld1':     [X64_FLD1    , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fldl2e':   [X64_FLDL2E  , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fldl2t':   [X64_FLDL2T  , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fldlg2':   [X64_FLDLG2  , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fldln2':   [X64_FLDLN2  , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fldpi':    [X64_FLDPI   , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fldz':     [X64_FLDZ    , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fnclex':   [X64_FNCLEX  , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fninit':   [X64_FNINIT  , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fclex':    [X64_FCLEX   , 0, 0, 0, 0, 0, 0, 0, 0],
+  'finit':    [X64_FINIT   , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fnop':     [X64_FNOP    , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fpatan':   [X64_FPATAN  , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fprem':    [X64_FPREM   , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fptan':    [X64_FPTAN   , 0, 0, 0, 0, 0, 0, 0, 0],
+  'frndint':  [X64_FRNDINT , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fscale':   [X64_FSCALE  , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fsqrt':    [X64_FSQRT   , 0, 0, 0, 0, 0, 0, 0, 0],
+  'ftst':     [X64_FTST    , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fwait':    [X64_FWAIT   , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fxam':     [X64_FXAM    , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fxtract':  [X64_FXTRACT , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fyl2x':    [X64_FYL2X   , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fyl2xp1':  [X64_FYL2XP1 , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fsin':     [X64_FSIN    , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fcos':     [X64_FCOS    , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fsincos':  [X64_FSINCOS , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fprem1':   [X64_FPREM1  , 0, 0, 0, 0, 0, 0, 0, 0],
+  'fucompp':  [X64_FUCOMPP , 0, 0, 0, 0, 0, 0, 0, 0],
 
-  'fild':     [0 , X64_FILD_M16   , X64_FILD_M32   , X64_FILD_M64   , 0         , 0 , 0],
-  'fisttp':   [0 , X64_FISTTP_M16 , X64_FISTTP_M32 , X64_FISTTP_M64 , 0         , 0 , 0],
-  'fist':     [0 , X64_FIST_M16   , X64_FIST_M32   , 0              , 0         , 0 , 0],
-  'fistp':    [0 , X64_FISTP_M16  , X64_FISTP_M32  , X64_FISTP_M64  , 0         , 0 , 0],
-  'fbld':     [0 , 0              , 0              , 0              , X64_FBLD  , 0 , 0],
-  'fbstp':    [0 , 0              , 0              , 0              , X64_FBSTP , 0 , 0],
+  'fild':     [0 , X64_FILD_M16   , X64_FILD_M32   , X64_FILD_M64   , 0         , 0, 0, 0, 0],
+  'fisttp':   [0 , X64_FISTTP_M16 , X64_FISTTP_M32 , X64_FISTTP_M64 , 0         , 0, 0, 0, 0],
+  'fist':     [0 , X64_FIST_M16   , X64_FIST_M32   , 0              , 0         , 0, 0, 0, 0],
+  'fistp':    [0 , X64_FISTP_M16  , X64_FISTP_M32  , X64_FISTP_M64  , 0         , 0, 0, 0, 0],
+  'fbld':     [0 , 0              , 0              , 0              , X64_FBLD  , 0, 0, 0, 0],
+  'fbstp':    [0 , 0              , 0              , 0              , X64_FBSTP , 0, 0, 0, 0],
 
-  'fiadd':    [0 , X64_FIADD_M16  , X64_FIADD_M32  , 0 , 0 , 0 , 0],
-  'fimul':    [0 , X64_FIMUL_M16  , X64_FIMUL_M32  , 0 , 0 , 0 , 0],
-  'ficom':    [0 , X64_FICOM_M16  , X64_FICOM_M32  , 0 , 0 , 0 , 0],
-  'ficomp':   [0 , X64_FICOMP_M16 , X64_FICOMP_M32 , 0 , 0 , 0 , 0],
-  'fisub':    [0 , X64_FISUB_M16  , X64_FISUB_M32  , 0 , 0 , 0 , 0],
-  'fisubr':   [0 , X64_FISUBR_M16 , X64_FISUBR_M32 , 0 , 0 , 0 , 0],
-  'fidiv':    [0 , X64_FIDIV_M16  , X64_FIDIV_M32  , 0 , 0 , 0 , 0],
-  'fidivr':   [0 , X64_FIDIVR_M16 , X64_FIDIVR_M32 , 0 , 0 , 0 , 0],
+  'fiadd':    [0 , X64_FIADD_M16  , X64_FIADD_M32  , 0 , 0 , 0 , 0, 0, 0],
+  'fimul':    [0 , X64_FIMUL_M16  , X64_FIMUL_M32  , 0 , 0 , 0 , 0, 0, 0],
+  'ficom':    [0 , X64_FICOM_M16  , X64_FICOM_M32  , 0 , 0 , 0 , 0, 0, 0],
+  'ficomp':   [0 , X64_FICOMP_M16 , X64_FICOMP_M32 , 0 , 0 , 0 , 0, 0, 0],
+  'fisub':    [0 , X64_FISUB_M16  , X64_FISUB_M32  , 0 , 0 , 0 , 0, 0, 0],
+  'fisubr':   [0 , X64_FISUBR_M16 , X64_FISUBR_M32 , 0 , 0 , 0 , 0, 0, 0],
+  'fidiv':    [0 , X64_FIDIV_M16  , X64_FIDIV_M32  , 0 , 0 , 0 , 0, 0, 0],
+  'fidivr':   [0 , X64_FIDIVR_M16 , X64_FIDIVR_M32 , 0 , 0 , 0 , 0, 0, 0],
 
-  'fld':      [0             , 0, X64_FLD_M32   , X64_FLD_M64   , X64_FLD_M80  , 0 , X64_FLD_STI  ],
-  'fst':      [0             , 0, X64_FST_M32   , X64_FST_M64   , 0            , 0 , X64_FST_STI  ],
-  'fstp':     [0             , 0, X64_FSTP_M32  , X64_FSTP_M64  , X64_FSTP_M80 , 0 , X64_FSTP_STI ],
-  'fcom':     [X64_FCOM_ST1  , 0, X64_FCOM_M32  , X64_FCOM_M64  , 0            , 0 , X64_FCOM_STI ],
-  'fcomp':    [X64_FCOMP_ST1 , 0, X64_FCOMP_M32 , X64_FCOMP_M64 , 0            , 0 , X64_FCOMP_STI],
+  'fld':      [0             , 0, X64_FLD_M32   , X64_FLD_M64   , X64_FLD_M80  , 0 , X64_FLD_STI   , 0, 0],
+  'fst':      [0             , 0, X64_FST_M32   , X64_FST_M64   , 0            , 0 , X64_FST_STI   , 0, 0],
+  'fstp':     [0             , 0, X64_FSTP_M32  , X64_FSTP_M64  , X64_FSTP_M80 , 0 , X64_FSTP_STI  , 0, 0],
+  'fcom':     [X64_FCOM_ST1  , 0, X64_FCOM_M32  , X64_FCOM_M64  , 0            , 0 , X64_FCOM_STI  , 0, 0],
+  'fcomp':    [X64_FCOMP_ST1 , 0, X64_FCOMP_M32 , X64_FCOMP_M64 , 0            , 0 , X64_FCOMP_STI , 0, 0],
 
-  'fucom':    [X64_FUCOM_ST1  , 0 , 0 , 0 , 0 , 0 , X64_FUCOM_STI],
-  'fucomp':   [X64_FUCOMP_ST1 , 0 , 0 , 0 , 0 , 0 , X64_FUCOMP_STI],
-  'fxch':     [X64_FXCH_ST1   , 0 , 0 , 0 , 0 , 0 , X64_FXCH_STI],
-  'ffree':    [0              , 0 , 0 , 0 , 0 , 0 , X64_FFREE_STI],
+  'fucom':    [X64_FUCOM_ST1  , 0 , 0 , 0 , 0 , 0 , X64_FUCOM_STI  , 0, 0],
+  'fucomp':   [X64_FUCOMP_ST1 , 0 , 0 , 0 , 0 , 0 , X64_FUCOMP_STI , 0, 0],
+  'fxch':     [X64_FXCH_ST1   , 0 , 0 , 0 , 0 , 0 , X64_FXCH_STI   , 0, 0],
+  'ffree':    [0              , 0 , 0 , 0 , 0 , 0 , X64_FFREE_STI  , 0, 0],
 
-  'faddp':    [X64_FADDP_ST1_ST0  , 0 , 0 , 0 , 0 , 0 , 0 , X64_FADDP_STI_ST0],
-  'fmulp':    [X64_FMULP_ST1_ST0  , 0 , 0 , 0 , 0 , 0 , 0 , X64_FMULP_STI_ST0],
-  'fsubrp':   [X64_FSUBRP_ST1_ST0 , 0 , 0 , 0 , 0 , 0 , 0 , X64_FSUBRP_STI_ST0],
-  'fsubp':    [X64_FSUBP_ST1_ST0  , 0 , 0 , 0 , 0 , 0 , 0 , X64_FSUBP_STI_ST0],
-  'fdivrp':   [X64_FDIVRP_ST1_ST0 , 0 , 0 , 0 , 0 , 0 , 0 , X64_FDIVRP_STI_ST0],
-  'fdivp':    [X64_FDIVP_ST1_ST0  , 0 , 0 , 0 , 0 , 0 , 0 , X64_FDIVP_STI_ST0],
+  'faddp':    [X64_FADDP_ST1_ST0  , 0 , 0 , 0 , 0 , 0 , 0 , X64_FADDP_STI_ST0  , 0],
+  'fmulp':    [X64_FMULP_ST1_ST0  , 0 , 0 , 0 , 0 , 0 , 0 , X64_FMULP_STI_ST0  , 0],
+  'fsubrp':   [X64_FSUBRP_ST1_ST0 , 0 , 0 , 0 , 0 , 0 , 0 , X64_FSUBRP_STI_ST0 , 0],
+  'fsubp':    [X64_FSUBP_ST1_ST0  , 0 , 0 , 0 , 0 , 0 , 0 , X64_FSUBP_STI_ST0  , 0],
+  'fdivrp':   [X64_FDIVRP_ST1_ST0 , 0 , 0 , 0 , 0 , 0 , 0 , X64_FDIVRP_STI_ST0 , 0],
+  'fdivp':    [X64_FDIVP_ST1_ST0  , 0 , 0 , 0 , 0 , 0 , 0 , X64_FDIVP_STI_ST0  , 0],
 
-  'fcmovb':   [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVB   , 0, 0],
-  'fcmove':   [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVE   , 0, 0],
-  'fcmovbe':  [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVBE  , 0, 0],
-  'fcmovu':   [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVU   , 0, 0],
-  'fcmovnb':  [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVNB  , 0, 0],
-  'fcmovne':  [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVNE  , 0, 0],
-  'fcmovnbe': [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVNBE , 0, 0],
-  'fcmovnu':  [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVNU  , 0, 0],
-  'fcomi':    [0, 0, 0, 0, 0, 0, 0, 0, X64_FCOMI    , 0, 0],
-  'fcomip':   [0, 0, 0, 0, 0, 0, 0, 0, X64_FCOMIP   , 0, 0],
-  'fucomi':   [0, 0, 0, 0, 0, 0, 0, 0, X64_FUCOMI   , 0, 0],
-  'fucomip':  [0, 0, 0, 0, 0, 0, 0, 0, X64_FUCOMIP  , 0, 0],
+  'fadd':     [0, 0, X64_FADD_M32  , X64_FADD_M64  , 0, 0, 0, X64_FADD_STI_ST0 , X64_FADD_ST0_STI],
+  'fmul':     [0, 0, X64_FMUL_M32  , X64_FMUL_M64  , 0, 0, 0, X64_FMUL_STI_ST0 , X64_FMUL_ST0_STI],
+  'fsub':     [0, 0, X64_FSUB_M32  , X64_FSUB_M64  , 0, 0, 0, X64_FSUB_STI_ST0 , X64_FSUB_ST0_STI],
+  'fsubr':    [0, 0, X64_FSUBR_M32 , X64_FSUBR_M64 , 0, 0, 0, X64_FSUBR_STI_ST0, X64_FSUBR_ST0_STI],
+  'fdiv':     [0, 0, X64_FDIV_M32  , X64_FDIV_M64  , 0, 0, 0, X64_FDIV_STI_ST0 , X64_FDIV_ST0_STI],
+  'fdivr':    [0, 0, X64_FDIVR_M32 , X64_FDIVR_M64 , 0, 0, 0, X64_FDIVR_STI_ST0, X64_FDIVR_ST0_STI],
 
-  'fldcw':    [0, X64_FLDCW  , 0 , 0 , 0 , 0 , 0], # m16
-  'fnstcw':   [0, X64_FNSTCW , 0 , 0 , 0 , 0 , 0], # m16
-  'fstcw':    [0, X64_FSTCW  , 0 , 0 , 0 , 0 , 0], # m16
+  'fnstsw':   [0, X64_FNSTSW_M16, 0, 0, 0, 0, 0, 0, 0, X64_FNSTSW_AX],
+  'fstsw':    [0, X64_FSTSW_M16 , 0, 0, 0, 0, 0, 0, 0, X64_FSTSW_AX],
 
-  'fldenv':   [0, 0, 0, 0, 0, X64_FLDENV   , 0], # m224
-  'fldenvd':  [0, 0, 0, 0, 0, X64_FLDENV   , 0], # m224
-  'fnstenv':  [0, 0, 0, 0, 0, X64_FNSTENV  , 0], # m224
-  'frstor':   [0, 0, 0, 0, 0, X64_FRSTOR   , 0], # m864
-  'frstord':  [0, 0, 0, 0, 0, X64_FRSTOR   , 0], # m864
-  'fnsave':   [0, 0, 0, 0, 0, X64_FNSAVE   , 0], # m864
+  'fcmovb':   [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVB],
+  'fcmove':   [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVE],
+  'fcmovbe':  [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVBE ],
+  'fcmovu':   [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVU],
+  'fcmovnb':  [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVNB],
+  'fcmovne':  [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVNE],
+  'fcmovnbe': [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVNBE],
+  'fcmovnu':  [0, 0, 0, 0, 0, 0, 0, 0, X64_FCMOVNU],
+  'fcomi':    [0, 0, 0, 0, 0, 0, 0, 0, X64_FCOMI],
+  'fcomip':   [0, 0, 0, 0, 0, 0, 0, 0, X64_FCOMIP],
+  'fucomi':   [0, 0, 0, 0, 0, 0, 0, 0, X64_FUCOMI],
+  'fucomip':  [0, 0, 0, 0, 0, 0, 0, 0, X64_FUCOMIP],
 
-  'fldenvw':  [0, 0, 0, 0, 0, X64_FLDENVW  , 0], # m112
-  'fnstenvw': [0, 0, 0, 0, 0, X64_FNSTENVW , 0], # m112
-  'frstorw':  [0, 0, 0, 0, 0, X64_FRSTORW  , 0], # m752
-  'fnsavew':  [0, 0, 0, 0, 0, X64_FNSAVEW  , 0], # m752
-  'fnstenvw': [0, 0, 0, 0, 0, X64_FNSTENVW , 0], # m112
-  'frstorw':  [0, 0, 0, 0, 0, X64_FRSTORW  , 0], # m752
-  'fnsavew':  [0, 0, 0, 0, 0, X64_FNSAVEW  , 0], # m752
+  'fldcw':    [0, X64_FLDCW  , 0, 0, 0, 0, 0, 0, 0], # m16
+  'fnstcw':   [0, X64_FNSTCW , 0, 0, 0, 0, 0, 0, 0], # m16
+  'fstcw':    [0, X64_FSTCW  , 0, 0, 0, 0, 0, 0, 0], # m16
 
-  'fstenv':   [0, 0, 0, 0, 0, X64_FSTENV   , 0], # m224
-  'fstenvd':  [0, 0, 0, 0, 0, X64_FSTENV   , 0], # m224
-  'fsave':    [0, 0, 0, 0, 0, X64_FSAVE    , 0], # m864
-  'fsaved':   [0, 0, 0, 0, 0, X64_FSAVE    , 0], # m864
+  'fldenv':   [0, 0, 0, 0, 0, X64_FLDENV   , 0, 0, 0], # m224
+  'fldenvd':  [0, 0, 0, 0, 0, X64_FLDENV   , 0, 0, 0], # m224
+  'fnstenv':  [0, 0, 0, 0, 0, X64_FNSTENV  , 0, 0, 0], # m224
+  'frstor':   [0, 0, 0, 0, 0, X64_FRSTOR   , 0, 0, 0], # m864
+  'frstord':  [0, 0, 0, 0, 0, X64_FRSTOR   , 0, 0, 0], # m864
+  'fnsave':   [0, 0, 0, 0, 0, X64_FNSAVE   , 0, 0, 0], # m864
 
-  'fstenvw':  [0, 0, 0, 0, 0, X64_FSTENVW  , 0], # m112
-  'fsavew':   [0, 0, 0, 0, 0, X64_FSAVEW   , 0]  # m752
+  'fldenvw':  [0, 0, 0, 0, 0, X64_FLDENVW  , 0, 0, 0], # m112
+  'fnstenvw': [0, 0, 0, 0, 0, X64_FNSTENVW , 0, 0, 0], # m112
+  'frstorw':  [0, 0, 0, 0, 0, X64_FRSTORW  , 0, 0, 0], # m752
+  'fnsavew':  [0, 0, 0, 0, 0, X64_FNSAVEW  , 0, 0, 0], # m752
+  'fnstenvw': [0, 0, 0, 0, 0, X64_FNSTENVW , 0, 0, 0], # m112
+  'frstorw':  [0, 0, 0, 0, 0, X64_FRSTORW  , 0, 0, 0], # m752
+  'fnsavew':  [0, 0, 0, 0, 0, X64_FNSAVEW  , 0, 0, 0], # m752
+
+  'fstenv':   [0, 0, 0, 0, 0, X64_FSTENV   , 0, 0, 0], # m224
+  'fstenvd':  [0, 0, 0, 0, 0, X64_FSTENV   , 0, 0, 0], # m224
+  'fsave':    [0, 0, 0, 0, 0, X64_FSAVE    , 0, 0, 0], # m864
+  'fsaved':   [0, 0, 0, 0, 0, X64_FSAVE    , 0, 0, 0], # m864
+
+  'fstenvw':  [0, 0, 0, 0, 0, X64_FSTENVW  , 0, 0, 0], # m112
+  'fsavew':   [0, 0, 0, 0, 0, X64_FSAVEW   , 0, 0, 0], # m752
+  'fxsave':   [0, 0, 0, 0, 0, X64_FXSAVE   , 0, 0, 0], # m4096
+  'fxrstor':  [0, 0, 0, 0, 0, X64_FXRSTOR  , 0, 0, 0]  # m4096
 }
+
 
 class X64Translator extends PipeAbstract
   method emitCore_x_y(opcode, item)
@@ -706,7 +707,7 @@ class X64Translator extends PipeAbstract
     global X64_DATA_SIZE_ID
 
     global X64_CMPXCHG_RM8_R8, X64_CMPXCHG_RM32_R32, X64_CL, X64_DX
-    global X64_XADD_RM8_R8, X64_XADD_RM32_R32, X64_ST0, X64_ST1
+    global X64_XADD_RM8_R8, X64_XADD_RM32_R32, X64_ST0, X64_ST1, X64_AX
 
     global X64_HANDLER_CORE_ALU1, X64_HANDLER_CORE_ALU2
     global X64_HANDLER_CMOVCC, X64_HANDLER_JCC, X64_HANDLER_JUMPS_REL8
@@ -1363,7 +1364,18 @@ class X64Translator extends PipeAbstract
             # Opcode with one operand
             if reg isnt -1
               # opcode sti
-              opcode = opcodeInfoFPU[6]
+              if reg is X64_AX
+                opcode = opcodeInfoFPU[9]
+              else
+                opcode = opcodeInfoFPU[6]
+              endif
+
+              if opcode > 0xffff
+                # 1 byte prefix.
+                encoder.emitByte(bitand(opcode, 0xff))
+                opcode = opcode // 256
+              endif
+
               encoder.emitFPU_sti(opcode, reg)
 
             elif scale is defined
@@ -1429,9 +1441,9 @@ class X64Translator extends PipeAbstract
 
             elif (reg is X64_ST0) and (rm is X64_ST0)
               # st0,st0
-              opcode = opcodeInfoFPU[7]
+              opcode = opcodeInfoFPU[8]
               if opcode is 0
-                opcode = opcodeInfoFPU[8]
+                opcode = opcodeInfoFPU[7]
               endif
               encoder.emitFPU_sti(opcode, reg)
 
