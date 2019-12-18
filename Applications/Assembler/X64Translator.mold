@@ -881,13 +881,7 @@ class X64Translator extends PipeAbstract
       # Emit opcode.
       if scale is defined
         # opcode m16 | m32 | m64 | m80 | mcustom
-        regBase       = item.base
-        regIndex      = item.index
-        disp          = item.disp
-        dataSize      = item.dataSize
-        primaryOpcode = bitand(opcode, 0xff)
-        operationId   = opcode // 256
-        encoder.emitCore_group_m(primaryOpcode, operationId, regBase, scale, regIndex, disp)
+        encoder.emitFPU_m(opcode, item.base, scale, item.index, item.disp)
 
       else
         # opcode sti | st0,sti | sti,st0
