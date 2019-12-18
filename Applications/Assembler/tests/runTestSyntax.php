@@ -32,6 +32,8 @@ function r8()  {return getFromPool(['al' , 'bl' , 'cl' , 'dl']);}
 function r16() {return getFromPool(['ax' , 'bx' , 'cx' , 'dx' , 'sp' , 'bp' , 'si' , 'di']);}
 function r32() {return getFromPool(['eax', 'ebx', 'ecx', 'edx', 'esp', 'ebp', 'esi', 'edi']);}
 function r64() {return getFromPool(['rax', 'rbx', 'rcx', 'rdx', 'rsp', 'rbp', 'rsi', 'rdi']);}
+function sti() {return getFromPool(['st1', 'st2', 'st3', 'st4', 'st5', 'st6', 'st7']);}
+function st0() {return 'st0';}
 
 function m8()      {return 'byte ['.r64().']';}
 function m16()     {return 'word ['.r64().']';}
@@ -1303,3 +1305,435 @@ foreach ($pool as $opcode)
   test($opcode, m64() , '');
   test($opcode, i32() , '');
 }
+
+head('FPU OPCODES (X87)');
+
+// -----------------------------------------------------------------------------
+// FPU: Zero operands opcodes.
+// -----------------------------------------------------------------------------
+
+suite('FPU: Zero operand opcodes');
+
+$pool = [
+  'f2xm1'  , 'fabs'   , 'fchs'    , 'fcompp'  , 'fdecstp' , 'fincstp' ,
+  'fld1'   , 'fldl2e' , 'fldl2t'  , 'fldlg2'  , 'fldln2'  , 'fldpi'   ,
+  'fldz'   , 'fnclex' , 'fninit'  , 'fclex'   , 'finit'   , 'fnop'    ,
+  'fpatan' , 'fprem'  , 'fptan'   , 'frndint' , 'fscale'  , 'fsqrt'   ,
+  'ftst'   , 'fwait'  , 'fxam'    , 'fxtract' , 'fyl2x'   , 'fyl2xp1' ,
+  'fsin'   , 'fcos'   , 'fsincos' , 'fprem1'  , 'fucompp'];
+
+foreach ($pool as $opcode)
+{
+  // Check number of operands.
+  test($opcode, sti(),               'too many operands');
+  test($opcode, st0(), sti(),        'too many operands');
+  test($opcode, st0(), st0(), sti(), 'too many operands');
+}
+
+// -----------------------------------------------------------------------------
+// FPU: Real-real arithmetic: x o y.
+// m32 | m64 | st0,sti | sti,st0
+// -----------------------------------------------------------------------------
+
+$pool = ['fadd', 'fdiv', 'fdivr', 'fmul', 'fsub', 'fsubr'];
+
+foreach ($pool as $opcode)
+{
+  suite($opcode);
+
+  // Check number of operands.
+  test($opcode                      , 'not enough operands');
+  test($opcode, st0(), st0(), sti() , 'too many operands');
+
+  // Bad operand: non-memory.
+  test($opcode, sti() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, i8()  , "operand does not match the statement for: '$opcode'");
+
+  // Bad operand: wrong memory size.
+  test($opcode, m8()  , "invalid operand size for: '$opcode'");
+  test($opcode, m80() , "invalid operand size for: '$opcode'");
+
+  // Bad operand (two args).
+  test($opcode, sti() , sti(), "operand does not match the statement for: '$opcode'");
+  test($opcode, st0() , i16(), "operand does not match the statement for: '$opcode'");
+  test($opcode, st0() , r32(), "operand does not match the statement for: '$opcode'");
+  test($opcode, sti() , sti(), "operand does not match the statement for: '$opcode'");
+
+  // Good examples (should assemble without error).
+  test($opcode, m32(), '');
+  test($opcode, m64(), '');
+  test($opcode, st0(), st0(), '');
+  test($opcode, st0(), sti(), '');
+  test($opcode, sti(), st0(), '');
+}
+
+// -----------------------------------------------------------------------------
+// FPU: Real-real arithmetic and pop: x o y.
+// - | sti,st0
+// -----------------------------------------------------------------------------
+
+$pool = ['faddp', 'fdivp', 'fdivrp', 'fmulp', 'fsubp', 'fsubrp'];
+
+foreach ($pool as $opcode)
+{
+  suite($opcode);
+
+  // Check number of operands.
+  test($opcode, st0()               , "operand does not match the statement for: '$opcode'");
+  test($opcode, st0(), st0(), sti() , 'too many operands');
+
+  // Bad operand.
+  test($opcode, st0(), sti(), "operand does not match the statement for: '$opcode'");
+  test($opcode, sti(), sti(), "operand does not match the statement for: '$opcode'");
+  test($opcode, sti(), r16(), "operand does not match the statement for: '$opcode'");
+  test($opcode, sti(), i32(), "operand does not match the statement for: '$opcode'");
+  test($opcode, sti(), m64(), "operand does not match the statement for: '$opcode'");
+  test($opcode, r16(), st0(), "operand does not match the statement for: '$opcode'");
+  test($opcode, m32(), st0(), "operand does not match the statement for: '$opcode'");
+
+  // Bad operand (two args).
+  test($opcode, sti() , sti(), "operand does not match the statement for: '$opcode'");
+  test($opcode, st0() , i16(), "operand does not match the statement for: '$opcode'");
+  test($opcode, st0() , r32(), "operand does not match the statement for: '$opcode'");
+  test($opcode, sti() , sti(), "operand does not match the statement for: '$opcode'");
+
+  // Good examples (should assemble without error).
+  test($opcode, '');
+  test($opcode, st0(), st0(), '');
+  test($opcode, sti(), st0(), '');
+}
+
+// -----------------------------------------------------------------------------
+// FPU: Real-integer arithmetic: x o y.
+// m16 | m32
+// -----------------------------------------------------------------------------
+
+$pool = [
+  'fiadd', 'fidiv', 'fidivr', 'fimul', 'fisub', 'fisubr',
+  'fist' , 'ficom', 'ficomp'];
+
+foreach ($pool as $opcode)
+{
+  suite($opcode);
+
+  // Check number of operands.
+  test($opcode                      , 'not enough operands');
+  test($opcode, st0(), st0()        , 'too many operands');
+  test($opcode, st0(), st0(), sti() , 'too many operands');
+
+  // Bad operand: non-memory.
+  test($opcode, sti() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, i8()  , "operand does not match the statement for: '$opcode'");
+
+  // Bad operand: wrong memory size.
+  test($opcode, m8()      , "invalid operand size for: '$opcode'");
+  test($opcode, m64()     , "invalid operand size for: '$opcode'");
+  test($opcode, m80()     , "invalid operand size for: '$opcode'");
+  test($opcode, mcustom() , "ambiguous operand size for: '$opcode'");
+
+  // Good examples (should assemble without error).
+  test($opcode, m16(), '');
+  test($opcode, m32(), '');
+}
+
+// -----------------------------------------------------------------------------
+// FPU: Opcodes added with Pentium Pro:
+// fcmovcc st0,sti
+// fcomi   st0,sti
+// fcomip  st0,sti
+// fucomi  st0,sti
+// fucomip st0,sti
+// -----------------------------------------------------------------------------
+
+$pool = [
+  'fcmovb' , 'fcmovbe', 'fcmove', 'fcmovnb', 'fcmovnbe', 'fcmovne',
+  'fcmovnu', 'fcmovu' , 'fcomi' , 'fcomip' , 'fucomi'  , 'fucomip'];
+
+foreach ($pool as $opcode)
+{
+  suite($opcode);
+
+  // Check number of operands.
+  test($opcode, st0()               , 'not enough operands');
+  test($opcode, st0(), st0(), sti() , 'too many operands');
+
+  // Bad operand.
+  test($opcode, sti(), sti(), "operand does not match the statement for: '$opcode'");
+  test($opcode, sti(), r16(), "operand does not match the statement for: '$opcode'");
+  test($opcode, sti(), i32(), "operand does not match the statement for: '$opcode'");
+  test($opcode, sti(), m64(), "operand does not match the statement for: '$opcode'");
+  test($opcode, r16(), st0(), "operand does not match the statement for: '$opcode'");
+  test($opcode, m32(), st0(), "operand does not match the statement for: '$opcode'");
+
+  // Bad operand (two args).
+  test($opcode, sti() , sti(), "operand does not match the statement for: '$opcode'");
+  test($opcode, sti() , st0(), "operand does not match the statement for: '$opcode'");
+  test($opcode, st0() , i16(), "operand does not match the statement for: '$opcode'");
+  test($opcode, st0() , r32(), "operand does not match the statement for: '$opcode'");
+  test($opcode, sti() , sti(), "operand does not match the statement for: '$opcode'");
+
+  // Good examples (should assemble without error).
+  test($opcode, st0(), st0(), '');
+  test($opcode, st0(), sti(), '');
+}
+
+// -----------------------------------------------------------------------------
+// FPU: State management.
+// -----------------------------------------------------------------------------
+
+$pool = [
+  'frstor'  , 'fsave'   , 'fnsave'  , 'fnstenv' , 'fnstenvw' , 'fstenv',
+  'fldenv'  , 'fldenvw' , 'fnsavew' , 'frstorw' , 'fsavew'   , 'fstenvw',
+  'fldenvd' , 'fsaved'  , 'fstenvd' , 'frstord' , 'fstenvd'  , 'fxrstor',
+  'fxsave'];
+
+foreach ($pool as $opcode)
+{
+  suite($opcode);
+
+  // Check number of operands.
+  test($opcode                      , 'not enough operands');
+  test($opcode, st0(), st0()        , 'too many operands');
+  test($opcode, st0(), st0(), sti() , 'too many operands');
+
+  // Bad operand type.
+  test($opcode, sti() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r16() , "operand does not match the statement for: '$opcode'");
+  test($opcode, i32() , "operand does not match the statement for: '$opcode'");
+
+  // Bad operand size.
+  test($opcode, m8()  , "invalid operand size for: '$opcode'");
+  test($opcode, m16() , "invalid operand size for: '$opcode'");
+  test($opcode, m32() , "invalid operand size for: '$opcode'");
+  test($opcode, m64() , "invalid operand size for: '$opcode'");
+  test($opcode, m80() , "invalid operand size for: '$opcode'");
+
+  // Good examples (should assemble without error).
+  test($opcode, mcustom(), '');
+}
+
+// -----------------------------------------------------------------------------
+// FPU: Real load / store.
+// fld  m32 | m64 | m80 | sti
+// fstp m32 | m64 | m80 | sti
+// fst  m32 | m64 |       sti
+// -----------------------------------------------------------------------------
+
+$pool = ['fld', 'fst', 'fstp'];
+
+foreach ($pool as $opcode)
+{
+  suite($opcode);
+
+  // Check number of operands.
+  test($opcode                      , 'not enough operands');
+  test($opcode, st0(), st0()        , 'too many operands');
+  test($opcode, st0(), st0(), sti() , 'too many operands');
+
+  // Bad operand type.
+  test($opcode, r16() , "operand does not match the statement for: '$opcode'");
+  test($opcode, i32() , "operand does not match the statement for: '$opcode'");
+
+  // Bad operand size.
+  test($opcode, m8()      , "invalid operand size for: '$opcode'");
+  test($opcode, m16()     , "invalid operand size for: '$opcode'");
+  test($opcode, mcustom() , "ambiguous operand size for: '$opcode'");
+
+  // Good examples (should assemble without error).
+  test($opcode, m32(), '');
+  test($opcode, m64(), '');
+  test($opcode, sti(), '');
+}
+
+// Good examples with 80-bit long double.
+suite('FPU: Real load/store 80-bit');
+test('fld' , m80(), '');
+test('fstp', m80(), '');
+test('fst' , m80(), "invalid operand size for: 'fst'");
+
+// -----------------------------------------------------------------------------
+// FPU: Integer load / store.
+// fild   md
+// fistp  md
+// fisttp md
+// -----------------------------------------------------------------------------
+
+$pool = ['fild', 'fistp', 'fisttp'];
+
+foreach ($pool as $opcode)
+{
+  suite($opcode);
+
+  // Check number of operands.
+  test($opcode                      , 'not enough operands');
+  test($opcode, st0(), st0()        , 'too many operands');
+  test($opcode, st0(), st0(), sti() , 'too many operands');
+
+  // Bad operand type.
+  test($opcode, r16() , "operand does not match the statement for: '$opcode'");
+  test($opcode, i32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, sti() , "operand does not match the statement for: '$opcode'");
+
+  // Bad operand size.
+  test($opcode, m8()      , "invalid operand size for: '$opcode'");
+  test($opcode, m80()     , "invalid operand size for: '$opcode'");
+  test($opcode, mcustom() , "ambiguous operand size for: '$opcode'");
+
+  // Good examples (should assemble without error).
+  test($opcode, m16(), '');
+  test($opcode, m32(), '');
+  test($opcode, m64(), '');
+}
+
+// -----------------------------------------------------------------------------
+// FPU: fcom(p)
+// fcom  - | m32 | m64 | sti
+// fcomp - | m32 | m64 | sti
+// -----------------------------------------------------------------------------
+
+$pool = ['fcom', 'fcomp'];
+
+foreach ($pool as $opcode)
+{
+  suite($opcode);
+
+  // Check number of operands.
+  test($opcode, st0(), st0()        , "operand does not match the statement for: '$opcode'");
+  test($opcode, st0(), st0(), sti() , 'too many operands');
+
+  // Bad operand type.
+  test($opcode, r16() , "operand does not match the statement for: '$opcode'");
+  test($opcode, i32() , "operand does not match the statement for: '$opcode'");
+
+  // Bad operand size.
+  test($opcode, m8()      , "invalid operand size for: '$opcode'");
+  test($opcode, m16()     , "invalid operand size for: '$opcode'");
+  test($opcode, m80()     , "invalid operand size for: '$opcode'");
+  test($opcode, mcustom() , "ambiguous operand size for: '$opcode'");
+
+  // Good examples (should assemble without error).
+  test($opcode, m32(), '');
+  test($opcode, m64(), '');
+  test($opcode, sti(), '');
+}
+
+// -----------------------------------------------------------------------------
+// FPU:
+// fxch   - | sti
+// fucom  - | sti
+// fucomp - | sti
+// -----------------------------------------------------------------------------
+
+$pool = ['fxch', 'fucomp', 'fucomp'];
+
+foreach ($pool as $opcode)
+{
+  suite($opcode);
+
+  // Check number of operands.
+  test($opcode, st0(), st0()        , "operand does not match the statement for: '$opcode'");
+  test($opcode, st0(), st0(), sti() , 'too many operands');
+
+  // Bad operand type.
+  test($opcode, r16() , "operand does not match the statement for: '$opcode'");
+  test($opcode, i32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, m64() , "operand does not match the statement for: '$opcode'");
+
+  // Good examples (should assemble without error).
+  test($opcode, '');
+  test($opcode, sti(), '');
+}
+
+// -----------------------------------------------------------------------------
+// FPU:
+// fnstsw ax | m16
+// fstsw  ax | m16
+// fnstcw m16
+// fldcw  m16
+// fstcw  m16
+// -----------------------------------------------------------------------------
+
+$pool = ['fnstsw', 'fstsw', 'fnstcw', 'fldcw', 'fstcw'];
+
+foreach ($pool as $opcode)
+{
+  suite($opcode);
+
+  // Check number of operands.
+  test($opcode                      , 'not enough operands');
+  test($opcode, st0(), st0()        , 'too many operands');
+  test($opcode, st0(), st0(), sti() , 'too many operands');
+
+  // Bad operand type.
+  test($opcode, r32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, i32() , "operand does not match the statement for: '$opcode'");
+
+  // Bad operand size.
+  test($opcode, m8()      , "invalid operand size for: '$opcode'");
+  test($opcode, m32()     , "invalid operand size for: '$opcode'");
+  test($opcode, m64()     , "invalid operand size for: '$opcode'");
+  test($opcode, m80()     , "invalid operand size for: '$opcode'");
+  test($opcode, mcustom() , "ambiguous operand size for: '$opcode'");
+
+  // Good examples (should assemble without error).
+  test($opcode, m16(), '');
+}
+
+// Good examples with ax register (should assemble without errors).
+suite('FPU: f(n)stsw ax');
+test('fnstsw', 'ax', '');
+test('fstsw' , 'ax', '');
+
+// -----------------------------------------------------------------------------
+// FPU: Load/store BCD
+// fbld  m80
+// fbstp m80
+// -----------------------------------------------------------------------------
+
+$pool = ['fbld', 'fbstp'];
+
+foreach ($pool as $opcode)
+{
+  suite($opcode);
+
+  // Check number of operands.
+  test($opcode                      , 'not enough operands');
+  test($opcode, st0(), st0()        , 'too many operands');
+  test($opcode, st0(), st0(), sti() , 'too many operands');
+
+  // Bad operand type.
+  test($opcode, r32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, i32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, sti() , "operand does not match the statement for: '$opcode'");
+
+  // Bad operand size.
+  test($opcode, m8()      , "invalid operand size for: '$opcode'");
+  test($opcode, m16()     , "invalid operand size for: '$opcode'");
+  test($opcode, m32()     , "invalid operand size for: '$opcode'");
+  test($opcode, m64()     , "invalid operand size for: '$opcode'");
+  test($opcode, mcustom() , "ambiguous operand size for: '$opcode'");
+
+  // Good examples (should assemble without error).
+  test($opcode, m80(), '');
+}
+
+// -----------------------------------------------------------------------------
+// FPU: ffree sti
+// -----------------------------------------------------------------------------
+
+suite('ffree');
+
+// Check number of operands.
+test('ffree'                      , 'not enough operands');
+test('ffree', st0(), st0()        , 'too many operands');
+test('ffree', st0(), st0(), sti() , 'too many operands');
+
+// Bad operand type.
+test('ffree', i16() , "operand does not match the statement for: 'ffree'");
+test('ffree', r32() , "operand does not match the statement for: 'ffree'");
+test('ffree', m64() , "operand does not match the statement for: 'ffree'");
+
+// Good examples (should assemble without error).
+test('ffree', sti(), '');
