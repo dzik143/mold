@@ -438,49 +438,48 @@ X64_OPCODES_MAP_FPU = [
     'fcom':     [X64_FCOM_STI  , 0   , X64_FCOM_M32  , X64_FCOM_M64  , 0            , 0],
     'fcomp':    [X64_FCOMP_STI , 0   , X64_FCOMP_M32 , X64_FCOMP_M64 , 0            , 0],
 
-    'fucom':    [X64_FUCOM_STI  , 0 , 0 , 0 , 0],
-    'fucomp':   [X64_FUCOMP_STI , 0 , 0 , 0 , 0],
-    'fxch':     [X64_FXCH_STI   , 0 , 0 , 0 , 0],
-    'ffree':    [X64_FFREE_STI  , 0 , 0 , 0 , 0],
+    'fucom':    [X64_FUCOM_STI  , 0 , 0 , 0 , 0, 0],
+    'fucomp':   [X64_FUCOMP_STI , 0 , 0 , 0 , 0, 0],
+    'fxch':     [X64_FXCH_STI   , 0 , 0 , 0 , 0, 0],
+    'ffree':    [X64_FFREE_STI  , 0 , 0 , 0 , 0, 0],
 
-    'fadd':     [0, 0, X64_FADD_M32  , X64_FADD_M64  , 0],
-    'fmul':     [0, 0, X64_FMUL_M32  , X64_FMUL_M64  , 0],
-    'fsub':     [0, 0, X64_FSUB_M32  , X64_FSUB_M64  , 0],
-    'fsubr':    [0, 0, X64_FSUBR_M32 , X64_FSUBR_M64 , 0],
-    'fdiv':     [0, 0, X64_FDIV_M32  , X64_FDIV_M64  , 0],
-    'fdivr':    [0, 0, X64_FDIVR_M32 , X64_FDIVR_M64 , 0],
+    'fadd':     [0, 0, X64_FADD_M32  , X64_FADD_M64  , 0, 0],
+    'fmul':     [0, 0, X64_FMUL_M32  , X64_FMUL_M64  , 0, 0],
+    'fsub':     [0, 0, X64_FSUB_M32  , X64_FSUB_M64  , 0, 0],
+    'fsubr':    [0, 0, X64_FSUBR_M32 , X64_FSUBR_M64 , 0, 0],
+    'fdiv':     [0, 0, X64_FDIV_M32  , X64_FDIV_M64  , 0, 0],
+    'fdivr':    [0, 0, X64_FDIVR_M32 , X64_FDIVR_M64 , 0, 0],
 
-    'fnstsw':   [0, X64_FNSTSW_M16, 0, 0, 0, 0, X64_FNSTSW_AX],
-    'fstsw':    [0, X64_FSTSW_M16 , 0, 0, 0, 0, X64_FSTSW_AX],
+    'fnstsw':   [0, X64_FNSTSW_M16, 0, 0, 0, 0], # m16
+    'fstsw':    [0, X64_FSTSW_M16 , 0, 0, 0, 0], # m16
+    'fldcw':    [0, X64_FLDCW     , 0, 0, 0, 0], # m16
+    'fnstcw':   [0, X64_FNSTCW    , 0, 0, 0, 0], # m16
+    'fstcw':    [0, X64_FSTCW     , 0, 0, 0, 0], # m16
 
-    'fldcw':    [0, X64_FLDCW  , 0, 0, 0, 0, 0, 0, 0],   # m16
-    'fnstcw':   [0, X64_FNSTCW , 0, 0, 0, 0, 0, 0, 0],   # m16
-    'fstcw':    [0, X64_FSTCW  , 0, 0, 0, 0, 0, 0, 0],   # m16
+    'fldenv':   [0, 0, 0, 0, 0, X64_FLDENV  ], # m224
+    'fldenvd':  [0, 0, 0, 0, 0, X64_FLDENV  ], # m224
+    'fnstenv':  [0, 0, 0, 0, 0, X64_FNSTENV ], # m224
+    'frstor':   [0, 0, 0, 0, 0, X64_FRSTOR  ], # m864
+    'frstord':  [0, 0, 0, 0, 0, X64_FRSTOR  ], # m864
+    'fnsave':   [0, 0, 0, 0, 0, X64_FNSAVE  ], # m864
 
-    'fldenv':   [0, 0, 0, 0, 0, X64_FLDENV   , 0, 0, 0], # m224
-    'fldenvd':  [0, 0, 0, 0, 0, X64_FLDENV   , 0, 0, 0], # m224
-    'fnstenv':  [0, 0, 0, 0, 0, X64_FNSTENV  , 0, 0, 0], # m224
-    'frstor':   [0, 0, 0, 0, 0, X64_FRSTOR   , 0, 0, 0], # m864
-    'frstord':  [0, 0, 0, 0, 0, X64_FRSTOR   , 0, 0, 0], # m864
-    'fnsave':   [0, 0, 0, 0, 0, X64_FNSAVE   , 0, 0, 0], # m864
+    'fldenvw':  [0, 0, 0, 0, 0, X64_FLDENVW ], # m112
+    'fnstenvw': [0, 0, 0, 0, 0, X64_FNSTENVW], # m112
+    'frstorw':  [0, 0, 0, 0, 0, X64_FRSTORW ], # m752
+    'fnsavew':  [0, 0, 0, 0, 0, X64_FNSAVEW ], # m752
+    'fnstenvw': [0, 0, 0, 0, 0, X64_FNSTENVW], # m112
+    'frstorw':  [0, 0, 0, 0, 0, X64_FRSTORW ], # m752
+    'fnsavew':  [0, 0, 0, 0, 0, X64_FNSAVEW ], # m752
 
-    'fldenvw':  [0, 0, 0, 0, 0, X64_FLDENVW  , 0, 0, 0], # m112
-    'fnstenvw': [0, 0, 0, 0, 0, X64_FNSTENVW , 0, 0, 0], # m112
-    'frstorw':  [0, 0, 0, 0, 0, X64_FRSTORW  , 0, 0, 0], # m752
-    'fnsavew':  [0, 0, 0, 0, 0, X64_FNSAVEW  , 0, 0, 0], # m752
-    'fnstenvw': [0, 0, 0, 0, 0, X64_FNSTENVW , 0, 0, 0], # m112
-    'frstorw':  [0, 0, 0, 0, 0, X64_FRSTORW  , 0, 0, 0], # m752
-    'fnsavew':  [0, 0, 0, 0, 0, X64_FNSAVEW  , 0, 0, 0], # m752
+    'fstenv':   [0, 0, 0, 0, 0, X64_FSTENV  ], # m224
+    'fstenvd':  [0, 0, 0, 0, 0, X64_FSTENV  ], # m224
+    'fsave':    [0, 0, 0, 0, 0, X64_FSAVE   ], # m864
+    'fsaved':   [0, 0, 0, 0, 0, X64_FSAVE   ], # m864
 
-    'fstenv':   [0, 0, 0, 0, 0, X64_FSTENV   , 0, 0, 0], # m224
-    'fstenvd':  [0, 0, 0, 0, 0, X64_FSTENV   , 0, 0, 0], # m224
-    'fsave':    [0, 0, 0, 0, 0, X64_FSAVE    , 0, 0, 0], # m864
-    'fsaved':   [0, 0, 0, 0, 0, X64_FSAVE    , 0, 0, 0], # m864
-
-    'fstenvw':  [0, 0, 0, 0, 0, X64_FSTENVW  , 0, 0, 0], # m112
-    'fsavew':   [0, 0, 0, 0, 0, X64_FSAVEW   , 0, 0, 0], # m752
-    'fxsave':   [0, 0, 0, 0, 0, X64_FXSAVE   , 0, 0, 0], # m4096
-    'fxrstor':  [0, 0, 0, 0, 0, X64_FXRSTOR  , 0, 0, 0]  # m4096
+    'fstenvw':  [0, 0, 0, 0, 0, X64_FSTENVW ], # m112
+    'fsavew':   [0, 0, 0, 0, 0, X64_FSAVEW  ], # m752
+    'fxsave':   [0, 0, 0, 0, 0, X64_FXSAVE  ], # m4096
+    'fxrstor':  [0, 0, 0, 0, 0, X64_FXRSTOR ]  # m4096
   },
   {
     # Two operands.
@@ -593,7 +592,6 @@ class X64Translator extends PipeAbstract
 
   method _error(msg)
     die('error: ' + msg)
-
   endmethod
 
   method _validateNumberOfOperands(cnt, expectedCnt)
@@ -722,6 +720,37 @@ class X64Translator extends PipeAbstract
     this._error("operand does not match the statement for: '" + item.mnemonic + "'")
   endmethod
 
+  method _errorUnrecognizedInstruction(item)
+    this._error("unrecognized instruction: '" + item.mnemonic + "'")
+  endmethod
+
+  method _errorGenericFPU(item)
+    global X64_OPCODES_MAP_FPU
+
+    numberOfOperands = item.numberOfOperands
+    mnemonic         = item.mnemonic
+    opcode0          = X64_OPCODES_MAP_FPU[0][mnemonic]
+    opcode1          = X64_OPCODES_MAP_FPU[1][mnemonic]
+    opcode2          = X64_OPCODES_MAP_FPU[2][mnemonic]
+
+    if opcode0 is defined
+      if ((opcode1 is undefined) and (opcode2 is undefined))
+        this._validateNumberOfOperands(numberOfOperands, 0)
+      endif
+
+    elif opcode1 is defined
+      this._validateNumberOfOperands(numberOfOperands, 1)
+
+    elif opcode2 is defined
+      this._validateNumberOfOperands(numberOfOperands, 2)
+
+    else
+      this._errorUnrecognizedInstruction(item)
+    endif
+
+    this._errorBadSyntax(item)
+  endmethod
+
   method _emitVariableLengthOpcode(opcode)
     encoder = this.outputObject
 
@@ -743,6 +772,7 @@ class X64Translator extends PipeAbstract
     global X64_ST0
     global X64_AX
     global X64_DATA_SIZE_ID
+    global X64_FNSTSW_AX, X64_FSTSW_AX
 
     encoder          = this.outputObject
     mnemonic         = item.mnemonic
@@ -752,12 +782,17 @@ class X64Translator extends PipeAbstract
     dataSize         = item.dataSize
     numberOfOperands = item.numberOfOperands
 
+    if numberOfOperands > 2
+      this._error('too many operands')
+    endif
+
+    # Search for instruction.
     opcodesMapFPU = X64_OPCODES_MAP_FPU[numberOfOperands]
     opcodeInfoFPU = opcodesMapFPU[mnemonic]
     opcode        = 0
 
     if opcodeInfoFPU is undefined
-      this._error("unrecognized instruction: '" + mnemonic + "'")
+      this._errorGenericFPU(item)
     endif
 
     # FPU opcode with single operand.
@@ -766,14 +801,9 @@ class X64Translator extends PipeAbstract
       this._emitVariableLengthOpcode(opcodeInfoFPU)
 
     else
-      if scale is defined
-        # opcode m
-        if dataSize is 0
-          # There is no 8-bit operand allowed for FPU opcodes.
-          this._error("8-bit operand not allowed for: '" + mnemonic + "'")
-
-        else
-          # Get opcode for current memory size.
+      if numberOfOperands is 1
+        if scale is defined
+          # opcode m
           if dataSize is -1
             # Memory operand without word/dword/qword/tword prefix.
             opcode = opcodeInfoFPU[5]
@@ -785,18 +815,34 @@ class X64Translator extends PipeAbstract
             # Memory operand with word/dword/qword/tword prefix.
             dataSizeId = X64_DATA_SIZE_ID[dataSize]
             opcode     = opcodeInfoFPU[dataSizeId]
-            if opcode is 0
-              # Syntax error - there is no opcode with for memory size.
-              this._error("invalid operand size for: '" + mnemonic + "'")
+
+            if (opcode is 0) or (dataSize is 1)
+              if ((opcodeInfoFPU[1] isnt 0) or # m16
+                  (opcodeInfoFPU[2] isnt 0) or # m32
+                  (opcodeInfoFPU[3] isnt 0) or # m64
+                  (opcodeInfoFPU[4] isnt 0) or # m80
+                  (opcodeInfoFPU[5] isnt 0))   # mcustom
+
+                print 'CHUJ!'
+                # Instruction can handle memory operand, but not with given size.
+                this._error("invalid operand size for: '" + mnemonic + "'")
+              endif
             endif
           endif
-        endif
 
-      elif numberOfOperands is 1
-        if reg is X64_AX
-          # ax
-          opcode = opcodeInfoFPU[6]
-        else
+        elif reg is X64_AX
+          # Special case. There are only two FPU opcodes working with
+          # general purpose register.
+          if mnemonic is 'fnstsw'
+            # fnstsw ax
+            opcode = X64_FNSTSW_AX
+
+          elif mnemonic is 'fstsw'
+            # fstsw ax
+            opcode = X64_FSTSW_AX
+          endif
+
+        elif X64_IsRegSTI(reg) is true
           # sti
           opcode = opcodeInfoFPU[0]
         endif
@@ -808,11 +854,11 @@ class X64Translator extends PipeAbstract
           opcode = opcodeInfoFPU[1]
         endif
 
-      elif rm is X64_ST0
+      elif (rm is X64_ST0) and (X64_IsRegSTI(reg) is true)
         # sti,st0
         opcode = opcodeInfoFPU[1]
 
-      elif reg is X64_ST0
+      elif (reg is X64_ST0) and (X64_IsRegSTI(rm) is true)
         # st0,sti
         opcode = opcodeInfoFPU[0]
         reg    = rm
@@ -828,6 +874,9 @@ class X64Translator extends PipeAbstract
         # 1 byte prefix.
         encoder.emitByte(bitand(opcode, 0xff))
         opcode = opcode // 256
+
+      elif opcode is 0
+        this._errorBadSyntax(item)
       endif
 
       # Emit opcode.
@@ -850,7 +899,6 @@ class X64Translator extends PipeAbstract
 
   method processOneItem(item)
     global X64_OPCODES_MAP
-    global X64_DATA_SIZE_ID
 
     global X64_CMPXCHG_RM8_R8, X64_CMPXCHG_RM32_R32, X64_CL, X64_DX
     global X64_XADD_RM8_R8, X64_XADD_RM32_R32, X64_ST0, X64_ST1, X64_AX
@@ -933,9 +981,6 @@ class X64Translator extends PipeAbstract
           if (imm is defined) and (opcode isnt X64_MOV)
             this._failIfOutOfRange(imm, -2147483647, 4294967295)
           endif
-
-          # Handle generic prefixes, which should be emited before opcode.
-          # TODO
 
           # Dispatch opcode handler.
           if handlerId is X64_HANDLER_OPCODE_ONLY_BYTE
@@ -1054,11 +1099,15 @@ class X64Translator extends PipeAbstract
                 this._errorBadSyntax(item)
               endif
 
+              # TODO: Bad result with -O1 for:
+              # x = bitor(x, 256)
               if dataSize is 2
-                opcode = bitor(opcode, 256)
+                finalOpcode = bitor(opcode, 256)
+              else
+                finalOpcode = opcode
               endif
 
-              encoder.emitCore_movExtend_r_m(opcode, reg, regBase, scale, regIndex, disp)
+              encoder.emitCore_movExtend_r_m(finalOpcode, reg, regBase, scale, regIndex, disp)
 
             else
               # movsx r16/32/64, r8/16
@@ -1406,7 +1455,7 @@ class X64Translator extends PipeAbstract
           endif
 
         else
-          this._error("unrecognized instruction: '" + mnemonic + "'")
+          this._errorUnrecognizedInstruction(item)
         endif
       endif
 

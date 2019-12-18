@@ -2,34 +2,32 @@ UNRELEASED
 ----------
   ...
 
-0.3.191216 (released on 2019-12-16)
+0.3.191218 (released on 2019-12-18)
 -----------------------------------
   1. Implemented encoding for FPU (x87) opcodes:
 
-    - x op y (real)  | fadd, faddp, fmul, fmulp, fdiv, fdivp, fdivr
-                     | fdivrp, fsub, fsubp, fsubr, fsubrp
-
-    - x op y (int)   | fiadd, fimul, fidiv, fidivr, fisub, fisubr,
-                     | fscale, fprem, fprem1
-
-    - Convert        | frndint
-    - Compare (real) | fcom,  fcomp,  fcomi , fcomip,  fcompp
-                     | fucom, fucomp, fucomi, fucomip, fucompp
-
-    - Compare (int)  | ficom, ficomp
-
-    - Functions      | f2xm1, fabs, fchs, fsin, fcos, fsincos, fsqrt,
-                     | fyl2x, fyl2xp1, fpatan, fptan
-
     - Constants      | fld1, fldl2e, fldl2t, fldlg2, fldln2, fldpi, fldz
-
     - Condition      | fcmovcc
     - Stack          | fdecstp, fincstp, ffree, fxch
     - Test           | fxam, fxtract
-
     - Load data      | fld, fild, fbld
     - Store data     | fst, fstp, ftst, fisttp, fist, fistp, fbstp
+    - Convert        | frndint
+    - Compare (int)  | ficom, ficomp
     - Other          | fnop, fwait
+    - Remainder      | fprem, fprem1
+
+    - real x real    | fadd , fmul , fsub , fsubr , fdiv , fdivr,
+                     | faddp, fmulp, fsubp, fsubrp, fdivp, fdivrp,
+                     | fscale
+
+    - real x int     | fiadd , fimul, fisub, fisubr, fidiv, fidivr
+
+    - Compare (real) | fcom,  fcomp,  fcomi , fcomip,  fcompp
+                     | fucom, fucomp, fucomi, fucomip, fucompp
+
+    - Functions      | f2xm1, fabs, fchs, fsin, fcos, fsincos, fsqrt,
+                     | fyl2x, fyl2xp1, fpatan, fptan
 
     - FPU state      | fninit, finit, fldenvw, fnstenvw, fnstsw, frstorw,
                      | fsavew, fstcw, fstenvw, fstsw, fnsavew, fnstsw,
