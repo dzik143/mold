@@ -2637,11 +2637,16 @@ class X64Encoder
 
   method emitFPU_sti(opcode, sti)
     # TODO: Optimize it.
-    # TODO: Use bswap?
     # xx yy+i
     stiId  = bitand(sti, 0x7)
     opcode = bitor(opcode, 256 * stiId)
     this.emitWord(opcode)
+  endmethod
+
+  method emitFPU_m(mixedOpcode, regBase, scale, regIndex, disp)
+    baseOpcode  = bitand(mixedOpcode, 0xff)
+    operationId = bitand(mixedOpcode // 256, 0x07)
+    this.emitCore_group_m(baseOpcode, operationId, regBase, scale, regIndex, disp)
   endmethod
 
   method emitFPU_st0_sti(operationId, stSrc)
@@ -2662,12 +2667,6 @@ class X64Encoder
   method emitFPU_m64real(operationId, regBase, scale, regIndex, disp)
     global X64_GROUP_M64REAL
     this.emitCore_group_m(X64_GROUP_M64REAL, operationId, regBase, scale, regIndex, disp)
-  endmethod
-
-  method emitFPU_m(mixedOpcode, regBase, scale, regIndex, disp)
-    baseOpcode  = bitand(mixedOpcode, 0xff)
-    operationId = bitand(mixedOpcode // 256, 0x07)
-    this.emitCore_group_m(baseOpcode, operationId, regBase, scale, regIndex, disp)
   endmethod
 
   # st0,sti
@@ -2796,131 +2795,187 @@ class X64Encoder
 
 
   method faddp_sti_st0(stDst)
-    die('not implemented: faddp sti,st0')
+    global X64_FADDP_STI_ST0
+    this.emitFPU_sti(X64_FADDP_STI_ST0, stDst)
   endmethod
 
   method fdivp_sti_st0(stDst)
-    die('not implemented: fdivp sti,st0')
+    global X64_FDIVP_STI_ST0
+    this.emitFPU_sti(X64_FDIVP_STI_ST0, stDst)
   endmethod
 
   method fdivrp_sti_st0(stDst)
-    die('not implemented: fdivrp sti,st0')
+    global X64_FDIVRP_STI_ST0
+    this.emitFPU_sti(X64_FDIVRP_STI_ST0, stDst)
   endmethod
 
   method fmulp_sti_st0(stDst)
-    die('not implemented: fmulp sti,st0')
+    global X64_FMULP_STI_ST0
+    this.emitFPU_sti(X64_FMULP_STI_ST0, stDst)
   endmethod
 
   method fsubp_sti_st0(stDst)
-    die('not implemented: fsubp sti,st0')
+    global X64_FSUBP_STI_ST0
+    this.emitFPU_sti(X64_FSUBP_STI_ST0, stDst)
   endmethod
 
   method fsubrp_sti_st0(stDst)
-    die('not implemented: fsubrp sti,st0')
+    global X64_FSUBRP_STI_ST0
+    this.emitFPU_sti(X64_FSUBRP_STI_ST0, stDst)
+  endmethod
+
+  method fxch_sti(stSrc)
+    global X64_FXCH_STI
+    this.emitFPU_sti(X64_FXCH_STI, stSrc)
   endmethod
 
   method fcom()
-    die('not implemented: fcom -')
+    this.fcom_st0_sti(1)
   endmethod
 
   method fxch()
-    die('not implemented: fxch -')
-  endmethod
-
-  method fxch_sti(stDst)
-    die('not implemented: fxch sti')
+    this.fxch_sti(1)
   endmethod
 
   method fild_m16(regBase, scale, regIndex, disp)
-    # TODO: Remove hardcoded values.
-    this.emitCore_group_m(0xdf, 0, regBase, scale, regIndex, disp)
+    global X64_FILD_M16
+    this.emitFPU_m(X64_FILD_M16, regBase, scale, regIndex, disp)
   endmethod
 
   method fild_m32(regBase, scale, regIndex, disp)
-    # TODO: Remove hardcoded values.
-    this.emitCore_group_m(0xdb, 0, regBase, scale, regIndex, disp)
+    global X64_FILD_M32
+    this.emitFPU_m(X64_FILD_M32, regBase, scale, regIndex, disp)
   endmethod
 
   method fild_m64(regBase, scale, regIndex, disp)
-    # TODO: Remove hardcoded values.
-    this.emitCore_group_m(0xdf, 5, regBase, scale, regIndex, disp)
+    global X64_FILD_M64
+    this.emitFPU_m(X64_FILD_M64, regBase, scale, regIndex, disp)
   endmethod
 
   method fistp_m16(regBase, scale, regIndex, disp)
-    # TODO: Remove hardcoded values.
-    this.emitCore_group_m(0xdf, 3, regBase, scale, regIndex, disp)
+    global X64_FISTP_M16
+    this.emitFPU_m(X64_FISTP_M16, regBase, scale, regIndex, disp)
   endmethod
 
   method fistp_m32(regBase, scale, regIndex, disp)
-    # TODO: Remove hardcoded values.
-    this.emitCore_group_m(0xdb, 3, regBase, scale, regIndex, disp)
+    global X64_FISTP_M32
+    this.emitFPU_m(X64_FISTP_M32, regBase, scale, regIndex, disp)
   endmethod
 
   method fistp_m64(regBase, scale, regIndex, disp)
-    # TODO: Remove hardcoded values.
-    this.emitCore_group_m(0xdf, 7, regBase, scale, regIndex, disp)
+    global X64_FISTP_M64
+    this.emitFPU_m(X64_FISTP_M64, regBase, scale, regIndex, disp)
   endmethod
 
-  method fiadd_m(regBase, scale, regIndex, disp)
-    die('not implemented: fiadd m')
+  method fiadd_m16(regBase, scale, regIndex, disp)
+    global X64_FIADD_M16
+    this.emitFPU_m(X64_FIADD_M16, regBase, scale, regIndex, disp)
   endmethod
 
-  method fidiv_m(regBase, scale, regIndex, disp)
-    die('not implemented: fidiv m')
+  method fiadd_m32(regBase, scale, regIndex, disp)
+    global X64_FIADD_M32
+    this.emitFPU_m(X64_FIADD_M32, regBase, scale, regIndex, disp)
   endmethod
 
-  method fidivr_m(regBase, scale, regIndex, disp)
-    die('not implemented: fidivr m')
+  method fimul_m16(regBase, scale, regIndex, disp)
+    global X64_FIMUL_M16
+    this.emitFPU_m(X64_FIMUL_M16, regBase, scale, regIndex, disp)
   endmethod
 
-  method fimul_m(regBase, scale, regIndex, disp)
-    die('not implemented: fimul m')
+  method fimul_m32(regBase, scale, regIndex, disp)
+    global X64_FIMUL_M32
+    this.emitFPU_m(X64_FIMUL_M32, regBase, scale, regIndex, disp)
   endmethod
 
-  method fisub_m(regBase, scale, regIndex, disp)
-    die('not implemented: fisub m')
+  method fidiv_m16(regBase, scale, regIndex, disp)
+    global X64_FIDIV_M16
+    this.emitFPU_m(X64_FIDIV_M16, regBase, scale, regIndex, disp)
   endmethod
 
-  method fisubr_m(regBase, scale, regIndex, disp)
-    die('not implemented: fisubr m')
+  method fidiv_m32(regBase, scale, regIndex, disp)
+    global X64_FIDIV_M32
+    this.emitFPU_m(X64_FIDIV_M32, regBase, scale, regIndex, disp)
+  endmethod
+
+  method fidivr_m16(regBase, scale, regIndex, disp)
+    global X64_FIDIVR_M16
+    this.emitFPU_m(X64_FIDIVR_M16, regBase, scale, regIndex, disp)
+  endmethod
+
+  method fidivr_m32(regBase, scale, regIndex, disp)
+    global X64_FIDIVR_M32
+    this.emitFPU_m(X64_FIDIVR_M32, regBase, scale, regIndex, disp)
+  endmethod
+
+  method fisub_m16(regBase, scale, regIndex, disp)
+    global X64_FISUB_M16
+    this.emitFPU_m(X64_FISUB_M16, regBase, scale, regIndex, disp)
+  endmethod
+
+  method fisub_m32(regBase, scale, regIndex, disp)
+    global X64_FISUB_M32
+    this.emitFPU_m(X64_FISUB_M32, regBase, scale, regIndex, disp)
+  endmethod
+
+  method fisubr_m16(regBase, scale, regIndex, disp)
+    global X64_FISUBR_M16
+    this.emitFPU_m(X64_FISUBR_M16, regBase, scale, regIndex, disp)
+  endmethod
+
+  method fisubr_m32(regBase, scale, regIndex, disp)
+    global X64_FISUBR_M32
+    this.emitFPU_m(X64_FISUBR_M32, regBase, scale, regIndex, disp)
   endmethod
 
   method fist_m16(regBase, scale, regIndex, disp)
-    # TODO: Remove hardcoded values.
-    this.emitCore_group_m(0xdf, 2, regBase, scale, regIndex, disp)
+    global X64_FIST_M16
+    this.emitFPU_m(X64_FIST_M16, regBase, scale, regIndex, disp)
   endmethod
 
   method fist_m32(regBase, scale, regIndex, disp)
-    # TODO: Remove hardcoded values.
-    this.emitCore_group_m(0xdb, 2, regBase, scale, regIndex, disp)
+    global X64_FIST_M32
+    this.emitFPU_m(X64_FIST_M32, regBase, scale, regIndex, disp)
   endmethod
 
-  method ficom_m(regBase, scale, regIndex, disp)
-    die('not implemented: ficom m')
+  method ficom_m16(regBase, scale, regIndex, disp)
+    global X64_FICOM_M16
+    this.emitFPU_m(X64_FICOM_M16, regBase, scale, regIndex, disp)
   endmethod
 
-  method ficomp_m(regBase, scale, regIndex, disp)
-    die('not implemented: ficomp m')
+  method ficom_m32(regBase, scale, regIndex, disp)
+    global X64_FICOM_M32
+    this.emitFPU_m(X64_FICOM_M32, regBase, scale, regIndex, disp)
   endmethod
 
-  method ffree_sti(stDst)
-    die('not implemented: ffree sti')
+  method ficomp_m16(regBase, scale, regIndex, disp)
+    global X64_FICOMP_M16
+    this.emitFPU_m(X64_FICOMP_M16, regBase, scale, regIndex, disp)
+  endmethod
+
+  method ficomp_m32(regBase, scale, regIndex, disp)
+    global X64_FICOMP_M32
+    this.emitFPU_m(X64_FICOMP_M32, regBase, scale, regIndex, disp)
+  endmethod
+
+  method ffree_sti(sti)
+    global X64_FFREE_STI
+    this.emitFPU_sti(X64_FFREE_STI, sti)
   endmethod
 
   # fld m32 | m64 | m80 | sti
   method fld_m32(regBase, scale, regIndex, disp)
-    # TODO: Remove hardcoded values.
-    this.emitCore_group_m(0xd9, 0, regBase, scale, regIndex, disp)
+    global X64_FLD_M32
+    this.emitFPU_m(X64_FLD_M32, regBase, scale, regIndex, disp)
   endmethod
 
   method fld_m64(regBase, scale, regIndex, disp)
-    # TODO: Remove hardcoded values.
-    this.emitCore_group_m(0xdd, 0, regBase, scale, regIndex, disp)
+    global X64_FLD_M64
+    this.emitFPU_m(X64_FLD_M64, regBase, scale, regIndex, disp)
   endmethod
 
   method fld_m80(regBase, scale, regIndex, disp)
-    # TODO: Remove hardcoded values.
-    this.emitCore_group_m(0xdb, 5, regBase, scale, regIndex, disp)
+    global X64_FLD_M80
+    this.emitFPU_m(X64_FLD_M80, regBase, scale, regIndex, disp)
   endmethod
 
   method fld_sti(stDst)
@@ -2930,18 +2985,18 @@ class X64Encoder
 
   # fst m32 | m64 | m80 | sti
   method fstp_m32(regBase, scale, regIndex, disp)
-    # TODO: Remove hardcoded values.
-    this.emitCore_group_m(0xd9, 3, regBase, scale, regIndex, disp)
+    global X64_FSTP_M32
+    this.emitFPU_m(X64_FSTP_M32, regBase, scale, regIndex, disp)
   endmethod
 
   method fstp_m64(regBase, scale, regIndex, disp)
-    # TODO: Remove hardcoded values.
-    this.emitCore_group_m(0xdd, 3, regBase, scale, regIndex, disp)
+    global X64_FSTP_M64
+    this.emitFPU_m(X64_FSTP_M64, regBase, scale, regIndex, disp)
   endmethod
 
   method fstp_m80(regBase, scale, regIndex, disp)
-    # TODO: Remove hardcoded values.
-    this.emitCore_group_m(0xdb, 7, regBase, scale, regIndex, disp)
+    global X64_FSTP_M80
+    this.emitFPU_m(X64_FSTP_M80, regBase, scale, regIndex, disp)
   endmethod
 
   method fstp_sti(stSrc)
@@ -2951,13 +3006,13 @@ class X64Encoder
 
   # fst m32 | m64 | sti
   method fst_m32(regBase, scale, regIndex, disp)
-    # TODO: Remove hardcoded values.
-    this.emitCore_group_m(0xd9, 2, regBase, scale, regIndex, disp)
+    global X64_FST_M32
+    this.emitFPU_m(X64_FST_M32, regBase, scale, regIndex, disp)
   endmethod
 
   method fst_m64(regBase, scale, regIndex, disp)
-    # TODO: Remove hardcoded values.
-    this.emitCore_group_m(0xdd, 2, regBase, scale, regIndex, disp)
+    global X64_FST_M64
+    this.emitFPU_m(X64_FST_M64, regBase, scale, regIndex, disp)
   endmethod
 
   method fst_sti(stSrc)
@@ -2971,86 +3026,103 @@ class X64Encoder
   endmethod
 
   method fnstsw_m16(regBase, scale, regIndex, disp)
-    # TODO: Remove hardcoded values.
-    this.emitCore_group_m(0xdd, 7, regBase, scale, regIndex, disp)
+    global X64_FNSTSW_M16
+    this.emitFPU_m(X64_FNSTSW_M16, regBase, scale, regIndex, disp)
   endmethod
 
   method fstsw_ax()
-    this.wait()
+    this.fwait()
     this.fnstsw_ax()
   endmethod
 
   method fstsw_m16(regBase, scale, regIndex, disp)
-   this.wait()
+   this.fwait()
    this.fnstsw_m16(regBase, scale, regIndex, disp)
   endmethod
 
   method frstor_m(regBase, scale, regIndex, disp)
-    die('not implemented: frstor m')
-  endmethod
-
-  method fsave_m(regBase, scale, regIndex, disp)
-    die('not implemented: fsave m')
+    global X64_FRSTOR
+    this.emitFPU_m(X64_FRSTOR, regBase, scale, regIndex, disp)
   endmethod
 
   method fnsave_m(regBase, scale, regIndex, disp)
-    die('not implemented: fnsave m')
+    global X64_FNSAVE
+    this.emitFPU_m(X64_FNSAVE, regBase, scale, regIndex, disp)
+  endmethod
+
+  method fsave_m(regBase, scale, regIndex, disp)
+   this.fwait()
+   this.fnsave_m(regBase, scale, regIndex, disp)
   endmethod
 
   method fnstenv_m(regBase, scale, regIndex, disp)
-    die('not implemented: fnstenv m')
+    global X64_FNSTENV
+    this.emitFPU_m(X64_FNSTENV, regBase, scale, regIndex, disp)
   endmethod
 
   method fnstenvw_m(regBase, scale, regIndex, disp)
-    die('not implemented: fnstenvw m')
+    this.emitPrefix16()
+    this.fnstenv_m(regBase, scale, regIndex, disp)
   endmethod
 
   method fstenv_m(regBase, scale, regIndex, disp)
-    die('not implemented: fstenv m')
+    this.fwait()
+    this.fnstenv_m(regBase, scale, regIndex, disp)
   endmethod
 
   method fnstcw_m(regBase, scale, regIndex, disp)
-    die('not implemented: fnstcw m')
+    global X64_FNSTCW
+    this.emitFPU_m(X64_FNSTCW, regBase, scale, regIndex, disp)
   endmethod
 
   method fldcw_m(regBase, scale, regIndex, disp)
-    die('not implemented: fldcw m')
+    global X64_FLDCW
+    this.emitFPU_m(X64_FLDCW, regBase, scale, regIndex, disp)
   endmethod
 
   method fstcw_m(regBase, scale, regIndex, disp)
-    die('not implemented: fstcw m')
+    this.fwait()
+    this.fnstcw_m(regBase, scale, regIndex, disp)
   endmethod
 
   method fbld_m(regBase, scale, regIndex, disp)
-    die('not implemented: fbld m')
+    global X64_FBLD
+    this.emitFPU_m(X64_FBLD, regBase, scale, regIndex, disp)
   endmethod
 
   method fbstp_m(regBase, scale, regIndex, disp)
-    die('not implemented: fbstp m')
+    global X64_FBSTP
+    this.emitFPU_m(X64_FBSTP, regBase, scale, regIndex, disp)
   endmethod
 
   method fldenv_m(regBase, scale, regIndex, disp)
-    die('not implemented: fldenv m')
+    global X64_FLDENV
+    this.emitFPU_m(X64_FLDENV, regBase, scale, regIndex, disp)
   endmethod
 
   method fldenvw_m(regBase, scale, regIndex, disp)
-    die('not implemented: fldenvw m')
+    this.emitPrefix16()
+    this.fldenv_m(regBase, scale, regIndex, disp)
   endmethod
 
   method fnsavew_m(regBase, scale, regIndex, disp)
-    die('not implemented: fnsavew m')
+    this.emitPrefix16()
+    this.fnsave_m(regBase, scale, regIndex, disp)
   endmethod
 
   method frstorw_m(regBase, scale, regIndex, disp)
-    die('not implemented: frstorw m')
+    this.emitPrefix16()
+    this.frstor_m(regBase, scale, regIndex, disp)
   endmethod
 
   method fsavew_m(regBase, scale, regIndex, disp)
-    die('not implemented: fsavew m')
+    this.fwait()
+    this.fnsavew_m(regBase, scale, regIndex, disp)
   endmethod
 
   method fstenvw_m(regBase, scale, regIndex, disp)
-    die('not implemented: fstenvw m')
+    this.fwait()
+    this.fnstenvw_m(regBase, scale, regIndex, disp)
   endmethod
 
   method f2xm1()
@@ -3069,7 +3141,7 @@ class X64Encoder
   endmethod
 
   method fclex()
-    this.wait()
+    this.fwait()
     this.fnclex()
   endmethod
 
@@ -3089,7 +3161,7 @@ class X64Encoder
   endmethod
 
   method finit()
-    this.wait()
+    this.fwait()
     this.fninit()
   endmethod
 
@@ -3211,36 +3283,22 @@ class X64Encoder
   # FPU mnemonics added with 80387.
   # ------------------------------------------------------------------------------
 
-  method fucom()
-    die('not implemented: fucom -')
+  method fucom_sti(stSrc)
+    global X64_FUCOM_STI
+    this.emitFPU_sti(X64_FUCOM_STI, stSrc)
   endmethod
 
-  method fucom_sti(stDst)
-    die('not implemented: fucom sti')
+  method fucomp_sti(stSrc)
+    global X64_FUCOMP_STI
+    this.emitFPU_sti(X64_FUCOMP_STI, stSrc)
+  endmethod
+
+  method fucom()
+    this.fucom_sti(1)
   endmethod
 
   method fucomp()
-    die('not implemented: fucomp -')
-  endmethod
-
-  method fucomp_sti(stDst)
-    die('not implemented: fucomp sti')
-  endmethod
-
-  method fldenvd_m(regBase, scale, regIndex, disp)
-    die('not implemented: fldenvd m')
-  endmethod
-
-  method fsaved_m(regBase, scale, regIndex, disp)
-    die('not implemented: fsaved m')
-  endmethod
-
-  method fstenvd_m(regBase, scale, regIndex, disp)
-    die('not implemented: fstenvd m')
-  endmethod
-
-  method frstord_m(regBase, scale, regIndex, disp)
-    die('not implemented: frstord m')
+    this.fucomp_sti(1)
   endmethod
 
   method fsin()
@@ -3313,19 +3371,23 @@ class X64Encoder
   endmethod
 
   method fcomi_st0_sti(stSrc)
-    die('not implemented: fcomi st0,sti')
+    global X64_FCOMI
+    this.emitFPU_sti(X64_FCOMI, stSrc)
   endmethod
 
   method fcomip_st0_sti(stSrc)
-    die('not implemented: fcomip st0,sti')
+    global X64_FUCOMIP
+    this.emitFPU_sti(X64_FUCOMIP, stSrc)
   endmethod
 
   method fucomi_st0_sti(stSrc)
-    die('not implemented: fucomi st0,sti')
+    global X64_FUCOMI
+    this.emitFPU_sti(X64_FUCOMI, stSrc)
   endmethod
 
   method fucomip_st0_sti(stSrc)
-    die('not implemented: fucomip st0,sti')
+    global X64_FUCOMIP
+    this.emitFPU_sti(X64_FUCOMIP, stSrc)
   endmethod
 
   # ------------------------------------------------------------------------------
@@ -3346,8 +3408,19 @@ class X64Encoder
   # FPU mnemonics added with SSE3 extension.
   # ------------------------------------------------------------------------------
 
-  method fisttp_m(regBase, scale, regIndex, disp)
-    die('not implemented: fisttp m')
+  method fisttp_m16(regBase, scale, regIndex, disp)
+    global X64_FISTTP_M16
+    this.emitFPU_m(X64_FISTTP_M16, regBase, scale, regIndex, disp)
+  endmethod
+
+  method fisttp_m32(regBase, scale, regIndex, disp)
+    global X64_FISTTP_M32
+    this.emitFPU_m(X64_FISTTP_M32, regBase, scale, regIndex, disp)
+  endmethod
+
+  method fisttp_m64(regBase, scale, regIndex, disp)
+    global X64_FISTTP_M64
+    this.emitFPU_m(X64_FISTTP_M64, regBase, scale, regIndex, disp)
   endmethod
 
   #

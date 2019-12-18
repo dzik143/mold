@@ -524,13 +524,13 @@ X64_FXCH_STI       = 0xc8d9   # d9 c8+i fxch    sti
 X64_FXCH_ST1       = 0xc9d9   # d9 c9   fxch    -
 
 X64_FLD_STI        = 0xc0d9   # df f0+i fld     sti
-X64_FCOMI          = 0xf0db   # db f0+i fcomi   sti
-X64_FUCOMI         = 0xe8db   # db e8+i fucomi  sti
+X64_FCOMI          = 0xf0db   # db f0+i fcomi   st0,sti
+X64_FUCOMI         = 0xe8db   # db e8+i fucomi  st0,sti
 X64_FFREE_STI      = 0xc0dd   # dd c0+i ffree   sti
 X64_FST_STI        = 0xd0dd   # dd d0+i fst     sti
 X64_FSTP_STI       = 0xd8dd   # dd d8+i fstp    sti
-X64_FUCOMIP        = 0xe8df   # df e8+i fucomip sti
-X64_FCOMIP         = 0xf0df   # df f0+i fcomip  sti
+X64_FUCOMIP        = 0xe8df   # df e8+i fucomip st0,sti
+X64_FCOMIP         = 0xf0df   # df f0+i fcomip  st0,sti
 
 X64_FNSTSW_M16     = 0x07dd   # dd 07   fnstsw m16
 X64_FNSTSW_AX      = 0xe0df   # df e0   fnstsw ax
