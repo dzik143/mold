@@ -823,7 +823,6 @@ class X64Translator extends PipeAbstract
                   (opcodeInfoFPU[4] isnt 0) or # m80
                   (opcodeInfoFPU[5] isnt 0))   # mcustom
 
-                print 'CHUJ!'
                 # Instruction can handle memory operand, but not with given size.
                 this._error("invalid operand size for: '" + mnemonic + "'")
               endif
