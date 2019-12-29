@@ -589,6 +589,95 @@ X64_FSTENVW   = X64_FWAIT + 256 * X64_PREFIX_OPERAND_SIZE + 65536 * X64_FNSTENV 
 X64_FSAVEW    = X64_FWAIT + 256 * X64_PREFIX_OPERAND_SIZE + 65536 * X64_FNSAVE  # fstenvw m752
 
 # ------------------------------------------------------------------------------
+#                                 MMX opcodes
+# ------------------------------------------------------------------------------
+
+X64_PSHUFB        = 0x00380f  # 0f 38 00 /r  pshufb    mm,mm   | mm,m64
+X64_PHADDW        = 0x01380f  # 0f 38 01 /r  phaddw    mm,mm   | mm,m64
+X64_PHADDD        = 0x02380f  # 0f 38 02 /r  phaddd    mm,mm   | mm,m64
+X64_PHADDSW       = 0x03380f  # 0f 38 03 /r  phaddsw   mm,mm   | mm,m64
+X64_PMADDUBSW     = 0x04380f  # 0f 38 04 /r  pmaddubsw mm,mm   | mm,m64
+X64_PHSUBW        = 0x05380f  # 0f 38 05 /r  phsubw    mm,mm   | mm,m64
+X64_PHSUBD        = 0x06380f  # 0f 38 06 /r  phsubd    mm,mm   | mm,m64
+X64_PHSUBSW       = 0x07380f  # 0f 38 07 /r  phsubsw   mm,mm   | mm,m64
+X64_PSIGNB        = 0x08380f  # 0f 38 08 /r  psignb    mm,mm   | mm,m64
+X64_PSIGNW        = 0x09380f  # 0f 38 09 /r  psignw    mm,mm   | mm,m64
+X64_PSIGND        = 0x0a380f  # 0f 38 0a /r  psignd    mm,mm   | mm,m64
+X64_PMULHRSW      = 0x0b380f  # 0f 38 0b /r  pmulhrsw  mm,mm   | mm,m64
+X64_PABSB         = 0x1c380f  # 0f 38 1c /r  pabsb     mm,mm   | mm,m64
+X64_PABSW         = 0x1d380f  # 0f 38 1d /r  pabsw     mm,mm   | mm,m64
+X64_PABSD         = 0x1e380f  # 0f 38 1e /r  pabsd     mm,mm   | mm,m64
+
+X64_PUNPCKLBW     = 0x600f    # 0f 60 /r     punpcklbw mm,mm   | mm,m64
+X64_PUNPCKLWD     = 0x610f    # 0f 61 /r     punpcklwd mm,mm   | mm,m64
+X64_PUNPCKLDQ     = 0x620f    # 0f 62 /r     punpckldq mm,mm   | mm,m64
+X64_PACKSSWB      = 0x630f    # 0f 63 /r     packsswb  mm,mm   | mm,m64
+X64_PCMPGTB       = 0x640f    # 0f 64 /r     pcmpgtb   mm,mm   | mm,m64
+X64_PCMPGTW       = 0x650f    # 0f 65 /r     pcmpgtw   mm,mm   | mm,m64
+X64_PCMPGTD       = 0x660f    # 0f 66 /r     pcmpgtd   mm,mm   | mm,m64
+X64_PACKUSWB      = 0x670f    # 0f 67 /r     packuswb  mm,mm   | mm,m64
+X64_PUNPCKHBW     = 0x680f    # 0f 68 /r     punpckhbw mm,mm   | mm,m64
+X64_PUNPCKHWD     = 0x690f    # 0f 69 /r     punpckhwd mm,mm   | mm,m64
+X64_PUNPCKHDQ     = 0x6a0f    # 0f 6a /r     punpckhdq mm,mm   | mm,m64
+X64_PACKSSDW      = 0x6b0f    # 0f 6b /r     packssdw  mm,mm   | mm,m64
+X64_MOVD_MM_RM32  = 0x6e0f    # 0f 6e /r     movd              | mm,m32 | mm,r32
+X64_MOVQ_MM_M64   = 0x6f0f    # 0f 6f /r     movq      mm,mm   | mm,m64
+X64_PSRLW_MM_IMM8 = 0x02710f  # 0f 71 /2     psrlw     mm,imm8
+X64_PSRAW_MM_IMM8 = 0x04710f  # 0f 71 /4     psraw     mm,imm8
+X64_PSLLW_MM_IMM8 = 0x06710f  # 0f 71 /6     psllw     mm,imm8
+X64_PSRLD_MM_IMM8 = 0x02720f  # 0f 72 /2     psrld     mm,imm8
+X64_PSRAD_MM_IMM8 = 0x04720f  # 0f 72 /4     psrad     mm,imm8
+X64_PSLLD_MM_IMM8 = 0x06720f  # 0f 72 /6     pslld     mm,imm8
+X64_PSRLQ_MM_IMM8 = 0x02730f  # 0f 73 /2     psrlq     mm,imm8
+X64_PSLLQ_MM_IMM8 = 0x06730f  # 0f 73 /6     psllq     mm,imm8
+X64_PCMPEQB       = 0x740f    # 0f 74 /r     pcmpeqb   mm,mm   | mm,m64
+X64_PCMPEQW       = 0x750f    # 0f 75 /r     pcmpeqw   mm,mm   | mm,m64
+X64_PCMPEQD       = 0x760f    # 0f 76 /r     pcmpeqd   mm,mm   | mm,m64
+X64_EMMS          = 0x770f    # 0f 77        emms      -
+X64_MOVD_RM32_MM  = 0x7e0f    # 0f 7e /r     movd                r32,mm | m32,mm
+X64_MOVQ_M64_MM   = 0x7f0f    # 0f 7f /r     movq      mm,mm   | m64,mm
+X64_PSRLW_MM_M64  = 0xd10f    # 0f d1 /r     psrlw     mm,mm   | mm,m64
+X64_PSRLD_MM_M64  = 0xd20f    # 0f d2 /r     psrld     mm,mm   | mm,m64
+X64_PSRLQ_MM_M64  = 0xd30f    # 0f d3 /r     psrlq     mm,mm   | mm,m64
+X64_PADDQ         = 0xd40f    # 0f d4 /r     paddq     mm,mm   | mm,m64
+X64_PMULLW        = 0xd50f    # 0f d5 /r     pmullw    mm,mm   | mm,m64
+X64_PSUBUSB       = 0xd80f    # 0f d8 /r     psubusb   mm,mm   | mm,m64
+X64_PSUBUSW       = 0xd90f    # 0f d9 /r     psubusw   mm,mm   | mm,m64
+X64_PMINUB        = 0xda0f    # 0f da /r     pminub    mm,mm   | mm,m64
+X64_PAND          = 0xdb0f    # 0f db /r     pand      mm,mm   | mm,m64
+X64_PADDUSB       = 0xdc0f    # 0f dc /r     paddusb   mm,mm   | mm,m64
+X64_PADDUSW       = 0xdd0f    # 0f dd /r     paddusw   mm,mm   | mm,m64
+X64_PMAXUB        = 0xde0f    # 0f de /r     pmaxub    mm,mm   | mm,m64
+X64_PANDN         = 0xdf0f    # 0f df /r     pandn     mm,mm   | mm,m64
+X64_PAVGB         = 0xe00f    # 0f e0 /r     pavgb     mm,mm   | mm,m64
+X64_PAVGW         = 0xe30f    # 0f e3 /r     pavgw     mm,mm   | mm,m64
+X64_PMULHUW       = 0xe40f    # 0f e4 /r     pmulhuw   mm,mm   | mm,m64
+X64_PSRAW_MM_M64  = 0xe10f    # 0f e1 /r     psraw     mm,mm   | mm,m64
+X64_PSRAD_MM_M64  = 0xe20f    # 0f e2 /r     psrad     mm,mm   | mm,m64
+X64_PMULHW        = 0xe50f    # 0f e5 /r     pmulhw    mm,mm   | mm,m64
+X64_PSUBSB        = 0xe80f    # 0f e8 /r     psubsb    mm,mm   | mm,m64
+X64_PSUBSW        = 0xe90f    # 0f e9 /r     psubsw    mm,mm   | mm,m64
+X64_PMINSW        = 0xea0f    # 0f ea /r     pminsw    mm,mm   | mm,m64
+X64_POR           = 0xeb0f    # 0f eb /r     por       mm,mm   | mm,m64
+X64_PADDSB        = 0xec0f    # 0f ec /r     paddsb    mm,mm   | mm,m64
+X64_PADDSW        = 0xed0f    # 0f ed /r     paddsw    mm,mm   | mm,m64
+X64_PMAXSW        = 0xee0f    # 0f ee /r     pmaxsw    mm,mm   | mm,m64
+X64_PXOR          = 0xef0f    # 0f ef /r     pxor      mm,mm   | mm,m64
+X64_PSLLW         = 0xf10f    # 0f f1 /r     psllw     mm,mm   | mm,m64
+X64_PSLLD         = 0xf20f    # 0f f2 /r     pslld     mm,mm   | mm,m64
+X64_PSLLQ         = 0xf30f    # 0f f3 /r     psllq     mm,mm   | mm,m64
+X64_PMULUDQ       = 0xf40f    # 0f f4 /r     pmuludq   mm,mm   | mm,m64
+X64_PMADDWD       = 0xf50f    # 0f f5 /r     pmaddwd   mm,mm   | mm,m64
+X64_PSADBW        = 0xf60f    # 0f f6 /r     psadbw    mm,mm   | mm,m64
+X64_PSUBB         = 0xf80f    # 0f f8 /r     psubb     mm,mm   | mm,m64
+X64_PSUBW         = 0xf90f    # 0f f9 /r     psubw     mm,mm   | mm,m64
+X64_PSUBD         = 0xfa0f    # 0f fa /r     psubd     mm,mm   | mm,m64
+X64_PSUBQ         = 0xfb0f    # 0f fb /r     psubq     mm,mm   | mm,m64
+X64_PADDB         = 0xfc0f    # 0f fc /r     paddb     mm,mm   | mm,m64
+X64_PADDW         = 0xfd0f    # 0f fd /r     paddw     mm,mm   | mm,m64
+X64_PADDD         = 0xfe0f    # 0f fe /r     paddd     mm,mm   | mm,m64
+
+# ------------------------------------------------------------------------------
 #                                  Registers
 # ------------------------------------------------------------------------------
 
@@ -722,7 +811,8 @@ const X64_REGISTER_NAMES = [
   'r8d' , 'r9d' , 'r10d' , 'r11d' , 'r12d' , 'r13d' , 'r14d' , 'r15d', # 28-2f
   'rax' , 'rcx' , 'rdx'  , 'rbx'  , 'rsp'  , 'rbp'  , 'rsi'  , 'rdi',  # 30-37
   'r8'  , 'r9'  , 'r10'  , 'r11'  , 'r12'  , 'r13'  , 'r14'  , 'r15',  # 38-3f
-  'st0' , 'st1' , 'st2'  , 'st3'  , 'st4'  , 'st5'  , 'st6'  , 'st7'   # 40-47
+  'st0' , 'st1' , 'st2'  , 'st3'  , 'st4'  , 'st5'  , 'st6'  , 'st7',  # 40-47
+  'mm0' , 'mm1' , 'mm2'  , 'mm3'  , 'mm4'  , 'mm5'  , 'mm6'  , 'mm7'   # 48-4f
 ]
 
 # TODO: Don't build this map at runtime.
@@ -771,4 +861,8 @@ endfunction
 
 function X64_IsRegSTI(regId) -> rv
   rv = (regId // 8) is 8
+endfunction
+
+function X64_IsRegMM(regId) -> rv
+  rv = (regId // 8) is 9
 endfunction

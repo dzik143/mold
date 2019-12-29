@@ -110,12 +110,21 @@ class X64Encoder
     this.emitSizePrefixIfNeeded(reg)
 
     # Primary opcode.
-    if opcode > 255
+    if opcode > 0xffff
+      # TODO: Clean up this mess.
+      # Three bytes opcode.
+      this.emitWord(bitand(opcode, 0xffff))
+      this.emitByte(opcode // 65536)
+
+    elif opcode > 255
+      # Two bytes opcode.
       # TODO: Clean up this mess.
       # We set extra mask in unused part to avoid treating 0xf
       # as one byte opcode.
       this.emitWord(bitand(opcode, 0xffff))
+
     else
+      # One byte opcode.
       this.emitByte(opcode)
     endif
 
@@ -3421,6 +3430,692 @@ class X64Encoder
   method fisttp_m64(regBase, scale, regIndex, disp)
     global X64_FISTTP_M64
     this.emitFPU_m(X64_FISTTP_M64, regBase, scale, regIndex, disp)
+  endmethod
+
+
+  # ------------------------------------------------------------------------------
+  #                     Public API: MMX instruction set
+  # ------------------------------------------------------------------------------
+
+  # ------------------------------------------------------------------------------
+  # Original instruction set instroduced with Pentum MMX.
+  # ------------------------------------------------------------------------------
+
+  method movd_mm_r32(mmDst, regSrc)
+    global X64_MOVD_MM_RM32
+    this.emitCore_r_r(X64_MOVD_MM_RM32, mmDst, regSrc)
+  endmethod
+
+  method movd_mm_m32(mmDst, regBase, scale, regIndex, disp)
+    global X64_MOVD_MM_RM32
+    this.emitCore_r_m(X64_MOVD_MM_RM32, mmDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method movd_r32_mm(regDst, mmSrc)
+    global X64_MOVD_RM32_MM
+    this.emitCore_r_r(X64_MOVD_RM32_MM, mmSrc, regDst)
+  endmethod
+
+  method movd_m32_mm(regBase, scale, regIndex, disp, mmSrc)
+    global X64_MOVD_RM32_MM
+    this.emitCore_m_r(X64_MOVD_RM32_MM, regBase, scale, regIndex, disp, mmSrc)
+  endmethod
+
+  method movq_mm_mm(mmDst, mmSrc)
+    global X64_MOVQ_MM_M64
+    this.emitCore_r_r(X64_MOVQ_MM_M64, mmDst, mmSrc)
+  endmethod
+
+  method movq_mm_r64(mmDst, regSrc)
+    this.emitPrefix64()
+    this.movd_mm_r32(mmDst, regSrc)
+  endmethod
+
+  method movq_mm_m64(mmDst, regBase, scale, regIndex, disp)
+    global X64_MOVQ_MM_M64
+    this.emitCore_r_m(X64_MOVQ_MM_M64, mmDst, regBase, scale, regIndex, disp)
+  endmethod
+
+  method movq_r64_mm(regDst, mmSrc)
+    this.emitPrefix64()
+    this.movd_r32_mm(regDst, mmSrc)
+  endmethod
+
+  method movq_m64_mm(regBase, scale, regIndex, disp, mmSrc)
+    global X64_MOVQ_M64_MM
+    this.emitCore_m_r(X64_MOVQ_M64_MM, regBase, scale, regIndex, disp, mmSrc)
+  endmethod
+
+  method packssdw_mm_mm(mmDst, mmSrc)
+    die('not implemented: packssdw mm,mm')
+  endmethod
+
+  method packssdw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: packssdw mm,m')
+  endmethod
+
+  method packsswb_mm_mm(mmDst, mmSrc)
+    die('not implemented: packsswb mm,mm')
+  endmethod
+
+  method packsswb_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: packsswb mm,m')
+  endmethod
+
+  method packuswb_mm_mm(mmDst, mmSrc)
+    die('not implemented: packuswb mm,mm')
+  endmethod
+
+  method packuswb_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: packuswb mm,m')
+  endmethod
+
+  method paddb_mm_mm(mmDst, mmSrc)
+    die('not implemented: paddb mm,mm')
+  endmethod
+
+  method paddb_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: paddb mm,m')
+  endmethod
+
+  method paddw_mm_mm(mmDst, mmSrc)
+    die('not implemented: paddw mm,mm')
+  endmethod
+
+  method paddw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: paddw mm,m')
+  endmethod
+
+  method paddd_mm_mm(mmDst, mmSrc)
+    die('not implemented: paddd mm,mm')
+  endmethod
+
+  method paddd_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: paddd mm,m')
+  endmethod
+
+  method paddq_mm_mm(mmDst, mmSrc)
+    die('not implemented: paddq mm,mm')
+  endmethod
+
+  method paddq_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: paddq mm,m')
+  endmethod
+
+  method paddsb_mm_mm(mmDst, mmSrc)
+    die('not implemented: paddsb mm,mm')
+  endmethod
+
+  method paddsb_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: paddsb mm,m')
+  endmethod
+
+  method paddsw_mm_mm(mmDst, mmSrc)
+    die('not implemented: paddsw mm,mm')
+  endmethod
+
+  method paddsw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: paddsw mm,m')
+  endmethod
+
+  method paddusb_mm_mm(mmDst, mmSrc)
+    die('not implemented: paddusb mm,mm')
+  endmethod
+
+  method paddusb_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: paddusb mm,m')
+  endmethod
+
+  method paddusw_mm_mm(mmDst, mmSrc)
+    die('not implemented: paddusw mm,mm')
+  endmethod
+
+  method paddusw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: paddusw mm,m')
+  endmethod
+
+  method pmaddwd_mm_mm(mmDst, mmSrc)
+    die('not implemented: pmaddwd mm,mm')
+  endmethod
+
+  method pmaddwd_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pmaddwd mm,m')
+  endmethod
+
+  method pand_mm_mm(mmDst, mmSrc)
+    die('not implemented: pand mm,mm')
+  endmethod
+
+  method pand_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pand mm,m')
+  endmethod
+
+  method pandn_mm_mm(mmDst, mmSrc)
+    die('not implemented: pandn mm,mm')
+  endmethod
+
+  method pandn_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pandn mm,m')
+  endmethod
+
+  method por_mm_mm(mmDst, mmSrc)
+    die('not implemented: por mm,mm')
+  endmethod
+
+  method por_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: por mm,m')
+  endmethod
+
+  method pxor_mm_mm(mmDst, mmSrc)
+    die('not implemented: pxor mm,mm')
+  endmethod
+
+  method pxor_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pxor mm,m')
+  endmethod
+
+  method pcmpeqb_mm_mm(mmDst, mmSrc)
+    die('not implemented: pcmpeqb mm,mm')
+  endmethod
+
+  method pcmpeqb_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pcmpeqb mm,m')
+  endmethod
+
+  method pcmpeqw_mm_mm(mmDst, mmSrc)
+    die('not implemented: pcmpeqw mm,mm')
+  endmethod
+
+  method pcmpeqw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pcmpeqw mm,m')
+  endmethod
+
+  method pcmpeqd_mm_mm(mmDst, mmSrc)
+    die('not implemented: pcmpeqd mm,mm')
+  endmethod
+
+  method pcmpeqd_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pcmpeqd mm,m')
+  endmethod
+
+  method pcmpgtb_mm_mm(mmDst, mmSrc)
+    die('not implemented: pcmpgtb mm,mm')
+  endmethod
+
+  method pcmpgtb_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pcmpgtb mm,m')
+  endmethod
+
+  method pcmpgtw_mm_mm(mmDst, mmSrc)
+    die('not implemented: pcmpgtw mm,mm')
+  endmethod
+
+  method pcmpgtw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pcmpgtw mm,m')
+  endmethod
+
+  method pcmpgtd_mm_mm(mmDst, mmSrc)
+    die('not implemented: pcmpgtd mm,mm')
+  endmethod
+
+  method pcmpgtd_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pcmpgtd mm,m')
+  endmethod
+
+  method pmulhw_mm_mm(mmDst, mmSrc)
+    die('not implemented: pmulhw mm,mm')
+  endmethod
+
+  method pmulhw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pmulhw mm,m')
+  endmethod
+
+  method pmullw_mm_mm(mmDst, mmSrc)
+    die('not implemented: pmullw mm,mm')
+  endmethod
+
+  method pmullw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pmullw mm,m')
+  endmethod
+
+  method psubb_mm_mm(mmDst, mmSrc)
+    die('not implemented: psubb mm,mm')
+  endmethod
+
+  method psubb_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psubb mm,m')
+  endmethod
+
+  method psubw_mm_mm(mmDst, mmSrc)
+    die('not implemented: psubw mm,mm')
+  endmethod
+
+  method psubw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psubw mm,m')
+  endmethod
+
+  method psubd_mm_mm(mmDst, mmSrc)
+    die('not implemented: psubd mm,mm')
+  endmethod
+
+  method psubd_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psubd mm,m')
+  endmethod
+
+  method psubsb_mm_mm(mmDst, mmSrc)
+    die('not implemented: psubsb mm,mm')
+  endmethod
+
+  method psubsb_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psubsb mm,m')
+  endmethod
+
+  method psubsw_mm_mm(mmDst, mmSrc)
+    die('not implemented: psubsw mm,mm')
+  endmethod
+
+  method psubsw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psubsw mm,m')
+  endmethod
+
+  method psubusb_mm_mm(mmDst, mmSrc)
+    die('not implemented: psubusb mm,mm')
+  endmethod
+
+  method psubusb_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psubusb mm,m')
+  endmethod
+
+  method psubusw_mm_mm(mmDst, mmSrc)
+    die('not implemented: psubusw mm,mm')
+  endmethod
+
+  method psubusw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psubusw mm,m')
+  endmethod
+
+  method punpckhbw_mm_mm(mmDst, mmSrc)
+    die('not implemented: punpckhbw mm,mm')
+  endmethod
+
+  method punpckhbw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: punpckhbw mm,m')
+  endmethod
+
+  method punpckhwd_mm_mm(mmDst, mmSrc)
+    die('not implemented: punpckhwd mm,mm')
+  endmethod
+
+  method punpckhwd_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: punpckhwd mm,m')
+  endmethod
+
+  method punpckhdq_mm_mm(mmDst, mmSrc)
+    die('not implemented: punpckhdq mm,mm')
+  endmethod
+
+  method punpckhdq_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: punpckhdq mm,m')
+  endmethod
+
+  # TODO: Fasm gives invalid operands for mm,m32
+  # punpcklbw mm,mm | mm,m32
+  # punpcklwd mm,mm | mm,m32
+  # punpckldq mm,mm | mm,m32
+  method punpcklbw_mm_mm(mmDst, mmSrc)
+    die('not implemented: punpcklbw mm,mm')
+  endmethod
+
+  method punpcklwd_mm_mm(mmDst, mmSrc)
+    die('not implemented: punpcklwd mm,mm')
+  endmethod
+
+  method punpckldq_mm_mm(mmDst, mmSrc)
+    die('not implemented: punpckldq mm,mm')
+  endmethod
+
+  method psllw_mm_mm(mmDst, mmSrc)
+    die('not implemented: psllw mm,mm')
+  endmethod
+
+  method psllw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psllw mm,m')
+  endmethod
+
+  method psllw_mm_imm(mmDst, imm)
+    die('not implemented: psllw mm,imm')
+  endmethod
+
+  method pslld_mm_mm(mmDst, mmSrc)
+    die('not implemented: pslld mm,mm')
+  endmethod
+
+  method pslld_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pslld mm,m')
+  endmethod
+
+  method pslld_mm_imm(mmDst, imm)
+    die('not implemented: pslld mm,imm')
+  endmethod
+
+  method psllq_mm_mm(mmDst, mmSrc)
+    die('not implemented: psllq mm,mm')
+  endmethod
+
+  method psllq_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psllq mm,m')
+  endmethod
+
+  method psllq_mm_imm(mmDst, imm)
+    die('not implemented: psllq mm,imm')
+  endmethod
+
+  method psrad_mm_mm(mmDst, mmSrc)
+    die('not implemented: psrad mm,mm')
+  endmethod
+
+  method psrad_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psrad mm,m')
+  endmethod
+
+  method psrad_mm_imm(mmDst, imm)
+    die('not implemented: psrad mm,imm')
+  endmethod
+
+  method psraw_mm_mm(mmDst, mmSrc)
+    die('not implemented: psraw mm,mm')
+  endmethod
+
+  method psraw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psraw mm,m')
+  endmethod
+
+  method psraw_mm_imm(mmDst, imm)
+    die('not implemented: psraw mm,imm')
+  endmethod
+
+  method psrlw_mm_mm(mmDst, mmSrc)
+    die('not implemented: psrlw mm,mm')
+  endmethod
+
+  method psrlw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psrlw mm,m')
+  endmethod
+
+  method psrlw_mm_imm(mmDst, imm)
+    die('not implemented: psrlw mm,imm')
+  endmethod
+
+  method psrld_mm_mm(mmDst, mmSrc)
+    die('not implemented: psrld mm,mm')
+  endmethod
+
+  method psrld_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psrld mm,m')
+  endmethod
+
+  method psrld_mm_imm(mmDst, imm)
+    die('not implemented: psrld mm,imm')
+  endmethod
+
+  method psrlq_mm_mm(mmDst, mmSrc)
+    die('not implemented: psrlq mm,mm')
+  endmethod
+
+  method psrlq_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psrlq mm,m')
+  endmethod
+
+  method psrlq_mm_imm(mmDst, imm)
+    die('not implemented: psrlq mm,imm')
+  endmethod
+
+  method emms()
+    die('not implemented: emms -')
+  endmethod
+
+  # ------------------------------------------------------------------------------
+  # Instructions added with SSE:
+  # ------------------------------------------------------------------------------
+
+  method pshufw_mm_mm_imm(mmDst, mmSrc, imm)
+    die('not implemented: pshufw mm,mm,imm')
+  endmethod
+
+  method pshufw_mm_m_imm(mmDst, regBase, scale, regIndex, disp, imm)
+    die('not implemented: pshufw mm,m,imm')
+  endmethod
+
+  method pinsrw_mm_m_imm(mmDst, regSrc, imm)
+    die('not implemented: pinsrw mm,r,imm')
+  endmethod
+
+  method pinsrw_mm_m_imm(mmDst, regBase, scale, regIndex, disp, imm)
+    die('not implemented: pinsrw mm,m,imm')
+  endmethod
+
+  method pextrw_r_mm_imm(regDst, mmSrc, imm)
+    die('not implemented: pextrw r,mm,imm')
+  endmethod
+
+  method pmovmskb_r_mm(regDst, mmSrc)
+    die('not implemented: pmovmskb r,mm')
+  endmethod
+
+  method pminub_mm_mm(mmDst, mmSrc)
+    die('not implemented: pminub mm,mm')
+  endmethod
+
+  method pminub_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pminub mm,m')
+  endmethod
+
+  method pmaxub_mm_mm(mmDst, mmSrc)
+    die('not implemented: pmaxub mm,mm')
+  endmethod
+
+  method pmaxub_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pmaxub mm,m')
+  endmethod
+
+  method pavgb_mm_mm(mmDst, mmSrc)
+    die('not implemented: pavgb mm,mm')
+  endmethod
+
+  method pavgb_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pavgb mm,m')
+  endmethod
+
+  method pavgw_mm_mm(mmDst, mmSrc)
+    die('not implemented: pavgw mm,mm')
+  endmethod
+
+  method pavgw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pavgw mm,m')
+  endmethod
+
+  method pmulhuw_mm_mm(mmDst, mmSrc)
+    die('not implemented: pmulhuw mm,mm')
+  endmethod
+
+  method pmulhuw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pmulhuw mm,m')
+  endmethod
+
+  method pminsw_mm_mm(mmDst, mmSrc)
+    die('not implemented: pminsw mm,mm')
+  endmethod
+
+  method pminsw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pminsw mm,m')
+  endmethod
+
+  method pmaxsw_mm_mm(mmDst, mmSrc)
+    die('not implemented: pmaxsw mm,mm')
+  endmethod
+
+  method pmaxsw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pmaxsw mm,m')
+  endmethod
+
+  method psadbw_mm_mm(mmDst, mmSrc)
+    die('not implemented: psadbw mm,mm')
+  endmethod
+
+  method psadbw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psadbw mm,m')
+  endmethod
+
+  # ------------------------------------------------------------------------------
+  # Instructions added with SSE2:
+  # ------------------------------------------------------------------------------
+
+  method psubq_mm_mm(mmDst, mmSrc)
+    die('not implemented: psubq mm,mm')
+  endmethod
+
+  method psubq_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psubq mm,m')
+  endmethod
+
+  method pmuludq_mm_mm(mmDst, mmSrc)
+    die('not implemented: pmuludq mm,mm')
+  endmethod
+
+  method pmuludq_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pmuludq mm,m')
+  endmethod
+
+  # ------------------------------------------------------------------------------
+  # Instructions added with SSE3:
+  # ------------------------------------------------------------------------------
+
+  method psignb_mm_mm(mmDst, mmSrc)
+    die('not implemented: psignb mm,mm')
+  endmethod
+
+  method psignb_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psignb mm,m')
+  endmethod
+
+  method psignw_mm_mm(mmDst, mmSrc)
+    die('not implemented: psignw mm,mm')
+  endmethod
+
+  method psignw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psignw mm,m')
+  endmethod
+
+  method psignd_mm_mm(mmDst, mmSrc)
+    die('not implemented: psignd mm,mm')
+  endmethod
+
+  method psignd_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: psignd mm,m')
+  endmethod
+
+  method pshufb_mm_mm(mmDst, mmSrc)
+    die('not implemented: pshufb mm,mm')
+  endmethod
+
+  method pshufb_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pshufb mm,m')
+  endmethod
+
+  method pmulhrsw_mm_mm(mmDst, mmSrc)
+    die('not implemented: pmulhrsw mm,mm')
+  endmethod
+
+  method pmulhrsw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pmulhrsw mm,m')
+  endmethod
+
+  method pmaddubsw_mm_mm(mmDst, mmSrc)
+    die('not implemented: pmaddubsw mm,mm')
+  endmethod
+
+  method pmaddubsw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pmaddubsw mm,m')
+  endmethod
+
+  method phsubw_mm_mm(mmDst, mmSrc)
+    die('not implemented: phsubw mm,mm')
+  endmethod
+
+  method phsubw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: phsubw mm,m')
+  endmethod
+
+  method phsubsw_mm_mm(mmDst, mmSrc)
+    die('not implemented: phsubsw mm,mm')
+  endmethod
+
+  method phsubsw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: phsubsw mm,m')
+  endmethod
+
+  method phsubd_mm_mm(mmDst, mmSrc)
+    die('not implemented: phsubd mm,mm')
+  endmethod
+
+  method phsubd_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: phsubd mm,m')
+  endmethod
+
+  method phaddsw_mm_mm(mmDst, mmSrc)
+    die('not implemented: phaddsw mm,mm')
+  endmethod
+
+  method phaddsw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: phaddsw mm,m')
+  endmethod
+
+  method phaddw_mm_mm(mmDst, mmSrc)
+    die('not implemented: phaddw mm,mm')
+  endmethod
+
+  method phaddw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: phaddw mm,m')
+  endmethod
+
+  method phaddd_mm_mm(mmDst, mmSrc)
+    die('not implemented: phaddd mm,mm')
+  endmethod
+
+  method phaddd_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: phaddd mm,m')
+  endmethod
+
+  method pabsb_mm_mm(mmDst, mmSrc)
+    die('not implemented: pabsb mm,mm')
+  endmethod
+
+  method pabsb_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pabsb mm,m')
+  endmethod
+
+  method pabsw_mm_mm(mmDst, mmSrc)
+    die('not implemented: pabsw mm,mm')
+  endmethod
+
+  method pabsw_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pabsw mm,m')
+  endmethod
+
+  method pabsd_mm_mm(mmDst, mmSrc)
+    die('not implemented: pabsd mm,mm')
+  endmethod
+
+  method pabsd_mm_r(mmDst, regBase, scale, regIndex, disp)
+    die('not implemented: pabsd mm,m')
+  endmethod
+
+  method palignr_mm_mm_imm(mmDst, mmSrc, imm)
+    die('not implemented: palignr mm,mm,imm')
+  endmethod
+
+  method palignr_mm_m_imm(mmDst, regBase, scale, regIndex, disp, imm)
+    die('not implemented: palignr mm,m,imm')
   endmethod
 
   #

@@ -44,6 +44,7 @@ X64_HANDLER_SHIFT_GROUP          = 0x30000000
 X64_HANDLER_MOV_EXTEND           = 0x31000000
 X64_HANDLER_286                  = 0x32000000
 X64_HANDLER_CUSTOM_X_Y           = 0x33000000
+X64_HANDLER_MMX                  = 0x34000000
 
 # Encoding handlers: one operands (read/write).
 X64_HANDLER_CORE_ALU1            = 0x40000000
@@ -347,20 +348,115 @@ X64_OPCODES_MAP = {
   'lea':        X64_LEA         + X64_HANDLER_CUSTOM_X_Y, # rd,m
   'enter':      X64_ENTER       + X64_HANDLER_CUSTOM_X_Y, # imm16, imm8
 
-  'call':       X64_CALL_REL32  + X64_HANDLER_CUSTOM_X, #        rel16 | rel32 | r16 | r64 | m16 | m64
-  'jmp':        X64_JMP_REL32   + X64_HANDLER_CUSTOM_X, # rel8 | rel16 | rel32 | r16 | r64 | m16 | m64
-  'push':       X64_PUSH_R64    + X64_HANDLER_CUSTOM_X, # r16  | m16 | r64 | m64 | imm8 | imm16
-  'pop':        X64_POP_R64     + X64_HANDLER_CUSTOM_X, # r16  | m16 | r64 | m64
-  'bswap':      X64_BSWAP       + X64_HANDLER_CUSTOM_X, # r32  | r64
-  'cmpxchg8b':  X64_CMPXCHG8B   + X64_HANDLER_CUSTOM_X, # m64
-  'cmpxchg16b': X64_CMPXCHG16B  + X64_HANDLER_CUSTOM_X, # m128
-  'inc':        X64_INC_R32     + X64_HANDLER_CUSTOM_X, # r | m
-  'dec':        X64_DEC_R32     + X64_HANDLER_CUSTOM_X, # r | m
-  'int':        X64_INT         + X64_HANDLER_CUSTOM_X, # imm8
+  'call':       X64_CALL_REL32  + X64_HANDLER_CUSTOM_X,   #        rel16 | rel32 | r16 | r64 | m16 | m64
+  'jmp':        X64_JMP_REL32   + X64_HANDLER_CUSTOM_X,   # rel8 | rel16 | rel32 | r16 | r64 | m16 | m64
+  'push':       X64_PUSH_R64    + X64_HANDLER_CUSTOM_X,   # r16  | m16 | r64 | m64 | imm8 | imm16
+  'pop':        X64_POP_R64     + X64_HANDLER_CUSTOM_X,   # r16  | m16 | r64 | m64
+  'bswap':      X64_BSWAP       + X64_HANDLER_CUSTOM_X,   # r32  | r64
+  'cmpxchg8b':  X64_CMPXCHG8B   + X64_HANDLER_CUSTOM_X,   # m64
+  'cmpxchg16b': X64_CMPXCHG16B  + X64_HANDLER_CUSTOM_X,   # m128
+  'inc':        X64_INC_R32     + X64_HANDLER_CUSTOM_X,   # r | m
+  'dec':        X64_DEC_R32     + X64_HANDLER_CUSTOM_X,   # r | m
+  'int':        X64_INT         + X64_HANDLER_CUSTOM_X,   # imm8
 
-  'retf':       X64_RETF        + X64_HANDLER_CUSTOM, # - | imm16
-  'ret':        X64_RET         + X64_HANDLER_CUSTOM, # - | imm16
-  'nop':        X64_NOP         + X64_HANDLER_CUSTOM  # - | rd | md
+  'retf':       X64_RETF        + X64_HANDLER_CUSTOM,     # - | imm16
+  'ret':        X64_RET         + X64_HANDLER_CUSTOM,     # - | imm16
+  'nop':        X64_NOP         + X64_HANDLER_CUSTOM,     # - | rd | md
+
+  'packssdw':   X64_PACKSSDW   + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'packsswb':   X64_PACKSSWB   + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'packuswb':   X64_PACKUSWB   + X64_HANDLER_MMX, # mm,mm | mm,m64
+
+  'paddb':      X64_PADDB      + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'paddw':      X64_PADDW      + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'paddd':      X64_PADDD      + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'paddq':      X64_PADDQ      + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'paddsb':     X64_PADDSB     + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'paddsw':     X64_PADDSW     + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'paddusb':    X64_PADDUSB    + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'paddusw':    X64_PADDUSW    + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pmaddwd':    X64_PMADDWD    + X64_HANDLER_MMX, # mm,mm | mm,m64
+
+  'pand':       X64_PAND       + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pandn':      X64_PANDN      + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'por':        X64_POR        + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pxor':       X64_PXOR       + X64_HANDLER_MMX, # mm,mm | mm,m64
+
+  'pcmpeqb':    X64_PCMPEQB    + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pcmpeqw':    X64_PCMPEQW    + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pcmpeqd':    X64_PCMPEQD    + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pcmpgtb':    X64_PCMPGTB    + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pcmpgtw':    X64_PCMPGTW    + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pcmpgtd':    X64_PCMPGTD    + X64_HANDLER_MMX, # mm,mm | mm,m64
+
+  'pmulhw':     X64_PMULHW     + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pmullw':     X64_PMULLW     + X64_HANDLER_MMX, # mm,mm | mm,m64
+
+  'psubb':      X64_PSUBB      + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'psubw':      X64_PSUBW      + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'psubd':      X64_PSUBD      + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'psubsb':     X64_PSUBSB     + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'psubsw':     X64_PSUBSW     + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'psubusb':    X64_PSUBUSB    + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'psubusw':    X64_PSUBUSW    + X64_HANDLER_MMX, # mm,mm | mm,m64
+
+  'punpckhbw':  X64_PUNPCKHBW  + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'punpckhwd':  X64_PUNPCKHWD  + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'punpckhdq':  X64_PUNPCKHDQ  + X64_HANDLER_MMX, # mm,mm | mm,m64
+
+  'pminub':     X64_PMINUB     + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pmaxub':     X64_PMAXUB     + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pavgb':      X64_PAVGB      + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pavgw':      X64_PAVGW      + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pmulhuw':    X64_PMULHUW    + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pminsw':     X64_PMINSW     + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pmaxsw':     X64_PMAXSW     + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'psadbw':     X64_PSADBW     + X64_HANDLER_MMX, # mm,mm | mm,m64
+
+  'psubq':      X64_PSUBQ      + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pmuludq':    X64_PMULUDQ    + X64_HANDLER_MMX, # mm,mm | mm,m64
+
+  'psignb':     X64_PSIGNB     + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'psignw':     X64_PSIGNW     + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'psignd':     X64_PSIGND     + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pshufb':     X64_PSHUFB     + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pmulhrsw':   X64_PMULHRSW   + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pmaddubsw':  X64_PMADDUBSW  + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'phsubw':     X64_PHSUBW     + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'phsubsw':    X64_PHSUBSW    + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'phsubd':     X64_PHSUBD     + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'phaddsw':    X64_PHADDSW    + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'phaddw':     X64_PHADDW     + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'phaddd':     X64_PHADDD     + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pabsb':      X64_PABSB      + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pabsw':      X64_PABSW      + X64_HANDLER_MMX, # mm,mm | mm,m64
+  'pabsd':      X64_PABSD      + X64_HANDLER_MMX, # mm,mm | mm,m64
+
+  'emms':       X64_EMMS       + X64_HANDLER_OPCODE_ONLY_WORD, # -
+
+  'punpcklbw':  X64_PUNPCKLBW  + X64_HANDLER_MMX, # mm,mm | mm,m32
+  'punpcklwd':  X64_PUNPCKLWD  + X64_HANDLER_MMX, # mm,mm | mm,m32
+  'punpckldq':  X64_PUNPCKLDQ  + X64_HANDLER_MMX, # mm,mm | mm,m32
+
+  'psllw':      -1, # X64_PSLLW      + X64_HANDLER_MMX, # mm,mm | mm,m64 | mm,imm8
+  'pslld':      -1, # X64_PSLLD      + X64_HANDLER_MMX, # mm,mm | mm,m64 | mm,imm8
+  'psllq':      -1, # X64_PSLLQ      + X64_HANDLER_MMX, # mm,mm | mm,m64 | mm,imm8
+  'psrad':      -1, # X64_PSRAD      + X64_HANDLER_MMX, # mm,mm | mm,m64 | mm,imm8
+  'psraw':      -1, # X64_PSRAW      + X64_HANDLER_MMX, # mm,mm | mm,m64 | mm,imm8
+  'psrlw':      -1, # X64_PSRLW      + X64_HANDLER_MMX, # mm,mm | mm,m64 | mm,imm8
+  'psrld':      -1, # X64_PSRLD      + X64_HANDLER_MMX, # mm,mm | mm,m64 | mm,imm8
+  'psrlq':      -1, # X64_PSRLQ      + X64_HANDLER_MMX, # mm,mm | mm,m64 | mm,imm8
+
+  'movd':       X64_MOVD_MM_RM32 + X64_HANDLER_CUSTOM_X_Y, # mm,r32 | mm,m32 | r32,mm | m32,mm
+  'movq':       X64_MOVQ_MM_M64  + X64_HANDLER_CUSTOM_X_Y, # mm,mm  | mm,r64 | mm,m64 | r64,mm | m64,mm
+
+  'pshufw':     -1, # mm,mm,imm8  | mm,m64,imm8
+  'palignr':    -1, # mm,mm,imm8  | mm,m64,imm8
+
+  'pinsrw':     -1, # mm,r32,imm8 | mm,m16,imm8
+  'pextrw':     -1, # r32,mm,imm8 | r64,mm,imm8
+
+  'pmovmskb':   -1  # r32,mm | r64,mm
 }
 
 X64_OPCODES_MAP_FPU = [
@@ -432,11 +528,11 @@ X64_OPCODES_MAP_FPU = [
     'fidiv':    [0 , X64_FIDIV_M16  , X64_FIDIV_M32  , 0, 0, 0],
     'fidivr':   [0 , X64_FIDIVR_M16 , X64_FIDIVR_M32 , 0, 0, 0],
 
-    'fld':      [X64_FLD_STI   , 0   , X64_FLD_M32   , X64_FLD_M64   , X64_FLD_M80  , 0],
-    'fst':      [X64_FST_STI   , 0   , X64_FST_M32   , X64_FST_M64   , 0            , 0],
-    'fstp':     [X64_FSTP_STI  , 0   , X64_FSTP_M32  , X64_FSTP_M64  , X64_FSTP_M80 , 0],
-    'fcom':     [X64_FCOM_STI  , 0   , X64_FCOM_M32  , X64_FCOM_M64  , 0            , 0],
-    'fcomp':    [X64_FCOMP_STI , 0   , X64_FCOMP_M32 , X64_FCOMP_M64 , 0            , 0],
+    'fld':      [X64_FLD_STI   , 0  , X64_FLD_M32   , X64_FLD_M64   , X64_FLD_M80  , 0],
+    'fst':      [X64_FST_STI   , 0  , X64_FST_M32   , X64_FST_M64   , 0            , 0],
+    'fstp':     [X64_FSTP_STI  , 0  , X64_FSTP_M32  , X64_FSTP_M64  , X64_FSTP_M80 , 0],
+    'fcom':     [X64_FCOM_STI  , 0  , X64_FCOM_M32  , X64_FCOM_M64  , 0            , 0],
+    'fcomp':    [X64_FCOMP_STI , 0  , X64_FCOMP_M32 , X64_FCOMP_M64 , 0            , 0],
 
     'fucom':    [X64_FUCOM_STI  , 0 , 0 , 0 , 0, 0],
     'fucomp':   [X64_FUCOMP_STI , 0 , 0 , 0 , 0, 0],
@@ -907,12 +1003,13 @@ class X64Translator extends PipeAbstract
     global X64_HANDLER_OPCODE_ONLY_3BYTES
     global X64_HANDLER_CUSTOM_X, X64_HANDLER_CUSTOM_X_Y
     global X64_HANDLER_CORE_RMD_RD, X64_HANDLER_CORE_RM_R
+    global X64_HANDLER_MMX
 
     global X64_LEA, X64_MOV, X64_TEST, X64_XCHG, X64_CALL_REL32, X64_NOP
     global X64_IN, X64_OUT, X64_JMP_REL32, X64_PUSH_R64, X64_POP_R64
     global X64_RET, X64_RETF, X64_BSWAP, X64_CMPXCHG8B, X64_CMPXCHG16B
     global X64_INC_R32, X64_DEC_R32, X64_ENTER, X64_LEAVE, X64_INT
-    global X64_LSL, X64_MOVSXD
+    global X64_LSL, X64_MOVSXD, X64_MOVD_MM_RM32, X64_MOVQ_MM_M64
 
     global X64_SYNTAX_ZERO_OPERANDS, X64_SYNTAX_ONE_OPERAND_READ_ONLY
     global X64_SYNTAX_TWO_OPERANDS, X64_SYNTAX_TWO_OPERANDS_EQUAL_SIZE
@@ -1240,6 +1337,46 @@ class X64Translator extends PipeAbstract
               this._failIfOutOfRange(imm,       0, 65535)
               this._failIfOutOfRange(item.imm2, 0, 255)
               encoder.enter_imm16_imm8(imm, item.imm2)
+
+            elif opcode is X64_MOVD_MM_RM32
+              if scale is defined
+                if item.isWriteToMemory is true
+                  # movd m32, mm
+                  encoder.movd_m32_mm(regBase, scale, regIndex, disp, reg)
+                else
+                  # movd mm, m32
+                  encoder.movd_mm_m32(reg, regBase, scale, regIndex, disp)
+                endif
+
+              elif X64_IsReg32(reg) is true
+                # movd r32,mm
+                encoder.movd_r32_mm(reg, rm)
+              else
+                # movd mm,r32
+                encoder.movd_mm_r32(reg, rm)
+              endif
+
+            elif opcode is X64_MOVQ_MM_M64
+              if scale is defined
+                if item.isWriteToMemory is true
+                  # movd m64,mm
+                  encoder.movq_m64_mm(regBase, scale, regIndex, disp, reg)
+                else
+                  # movd mm,m64
+                  encoder.movq_mm_m64(reg, regBase, scale, regIndex, disp)
+                endif
+
+              elif (X64_IsRegMM(reg) is true) and (X64_IsRegMM(rm) is true)
+                # movq mm,mm
+                encoder.movq_mm_mm(reg, rm)
+
+              elif X64_IsReg64(reg) is true
+                # movd r64,mm
+                encoder.movq_r64_mm(reg, rm)
+              else
+                # movd mm,r64
+                encoder.movq_mm_r64(reg, rm)
+              endif
             endif
 
           elif handlerId is X64_HANDLER_CUSTOM_X
@@ -1356,6 +1493,16 @@ class X64Translator extends PipeAbstract
               this._failIfImmIsMissing(item)
               this._failIfOutOfRange(imm, 0, 255)
               encoder.int_imm(imm)
+            endif
+
+          elif handlerId is X64_HANDLER_MMX
+            # TODO: Validate operands.
+            if scale is defined
+              # mm,m64
+              encoder.emitCore_r_m(opcode, reg, regBase, scale, regIndex, disp)
+            else
+              # mm,mm
+              encoder.emitCore_r_r(opcode, reg, rm)
             endif
 
           elif handlerId is X64_HANDLER_CUSTOM
