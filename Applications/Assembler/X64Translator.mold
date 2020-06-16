@@ -45,6 +45,7 @@ X64_HANDLER_MOV_EXTEND           = 0x31000000
 X64_HANDLER_286                  = 0x32000000
 X64_HANDLER_CUSTOM_X_Y           = 0x33000000
 X64_HANDLER_MMX                  = 0x34000000
+X64_HANDLER_MMX_SHIFT            = 0x35000000
 
 # Encoding handlers: one operands (read/write).
 X64_HANDLER_CORE_ALU1            = 0x40000000
@@ -438,25 +439,22 @@ X64_OPCODES_MAP = {
   'punpcklwd':  X64_PUNPCKLWD  + X64_HANDLER_MMX, # mm,mm | mm,m32
   'punpckldq':  X64_PUNPCKLDQ  + X64_HANDLER_MMX, # mm,mm | mm,m32
 
-  'psllw':      -1, # X64_PSLLW      + X64_HANDLER_MMX, # mm,mm | mm,m64 | mm,imm8
-  'pslld':      -1, # X64_PSLLD      + X64_HANDLER_MMX, # mm,mm | mm,m64 | mm,imm8
-  'psllq':      -1, # X64_PSLLQ      + X64_HANDLER_MMX, # mm,mm | mm,m64 | mm,imm8
-  'psrad':      -1, # X64_PSRAD      + X64_HANDLER_MMX, # mm,mm | mm,m64 | mm,imm8
-  'psraw':      -1, # X64_PSRAW      + X64_HANDLER_MMX, # mm,mm | mm,m64 | mm,imm8
-  'psrlw':      -1, # X64_PSRLW      + X64_HANDLER_MMX, # mm,mm | mm,m64 | mm,imm8
-  'psrld':      -1, # X64_PSRLD      + X64_HANDLER_MMX, # mm,mm | mm,m64 | mm,imm8
-  'psrlq':      -1, # X64_PSRLQ      + X64_HANDLER_MMX, # mm,mm | mm,m64 | mm,imm8
+  'psrlw':      65536 * 2 + X64_PSRLW + X64_HANDLER_MMX_SHIFT, # mm,mm | mm,m64 | mm,imm8
+  'psraw':      65536 * 4 + X64_PSRAW + X64_HANDLER_MMX_SHIFT, # mm,mm | mm,m64 | mm,imm8
+  'psllw':      65536 * 6 + X64_PSLLW + X64_HANDLER_MMX_SHIFT, # mm,mm | mm,m64 | mm,imm8
+  'psrld':      65536 * 2 + X64_PSRLD + X64_HANDLER_MMX_SHIFT, # mm,mm | mm,m64 | mm,imm8
+  'psrad':      65536 * 4 + X64_PSRAD + X64_HANDLER_MMX_SHIFT, # mm,mm | mm,m64 | mm,imm8
+  'pslld':      65536 * 6 + X64_PSLLD + X64_HANDLER_MMX_SHIFT, # mm,mm | mm,m64 | mm,imm8
+  'psrlq':      65536 * 2 + X64_PSRLQ + X64_HANDLER_MMX_SHIFT, # mm,mm | mm,m64 | mm,imm8
+  'psllq':      65536 * 6 + X64_PSLLQ + X64_HANDLER_MMX_SHIFT, # mm,mm | mm,m64 | mm,imm8
 
   'movd':       X64_MOVD_MM_RM32 + X64_HANDLER_CUSTOM_X_Y, # mm,r32 | mm,m32 | r32,mm | m32,mm
   'movq':       X64_MOVQ_MM_M64  + X64_HANDLER_CUSTOM_X_Y, # mm,mm  | mm,r64 | mm,m64 | r64,mm | m64,mm
-
-  'pshufw':     -1, # mm,mm,imm8  | mm,m64,imm8
-  'palignr':    -1, # mm,mm,imm8  | mm,m64,imm8
-
-  'pinsrw':     -1, # mm,r32,imm8 | mm,m16,imm8
-  'pextrw':     -1, # r32,mm,imm8 | r64,mm,imm8
-
-  'pmovmskb':   -1  # r32,mm | r64,mm
+  'palignr':    X64_PALIGNR      + X64_HANDLER_CUSTOM,     # mm,mm,imm8  | mm,m64,imm8
+  'pshufw':     X64_PSHUFW       + X64_HANDLER_CUSTOM,     # mm,mm,imm8  | mm,m64,imm8
+  'pextrw':     X64_PEXTRW       + X64_HANDLER_CUSTOM,     # r32,mm,imm8 | r64,mm,imm8
+  'pinsrw':     X64_PINSRW       + X64_HANDLER_CUSTOM,     # mm,r32,imm8 | mm,m16,imm8
+  'pmovmskb':   X64_PMOVMSKB     + X64_HANDLER_CUSTOM      # r32,mm      | r64,mm
 }
 
 X64_OPCODES_MAP_FPU = [
@@ -608,7 +606,6 @@ X64_OPCODES_MAP_FPU = [
     'fucomip':  [X64_FUCOMIP  , 0]
   }
 ]
-
 
 class X64Translator extends PipeAbstract
   method emitCore_x_y(opcode, item)
@@ -1003,13 +1000,14 @@ class X64Translator extends PipeAbstract
     global X64_HANDLER_OPCODE_ONLY_3BYTES
     global X64_HANDLER_CUSTOM_X, X64_HANDLER_CUSTOM_X_Y
     global X64_HANDLER_CORE_RMD_RD, X64_HANDLER_CORE_RM_R
-    global X64_HANDLER_MMX
+    global X64_HANDLER_MMX, X64_HANDLER_MMX_SHIFT
 
     global X64_LEA, X64_MOV, X64_TEST, X64_XCHG, X64_CALL_REL32, X64_NOP
     global X64_IN, X64_OUT, X64_JMP_REL32, X64_PUSH_R64, X64_POP_R64
     global X64_RET, X64_RETF, X64_BSWAP, X64_CMPXCHG8B, X64_CMPXCHG16B
     global X64_INC_R32, X64_DEC_R32, X64_ENTER, X64_LEAVE, X64_INT
     global X64_LSL, X64_MOVSXD, X64_MOVD_MM_RM32, X64_MOVQ_MM_M64
+    global X64_PALIGNR, X64_PEXTRW, X64_PINSRW, X64_PMOVMSKB, X64_PSHUFW
 
     global X64_SYNTAX_ZERO_OPERANDS, X64_SYNTAX_ONE_OPERAND_READ_ONLY
     global X64_SYNTAX_TWO_OPERANDS, X64_SYNTAX_TWO_OPERANDS_EQUAL_SIZE
@@ -1500,8 +1498,30 @@ class X64Translator extends PipeAbstract
             if scale is defined
               # mm,m64
               encoder.emitCore_r_m(opcode, reg, regBase, scale, regIndex, disp)
-            else
+
+            elif rm is defined
               # mm,mm
+              encoder.emitCore_r_r(opcode, reg, rm)
+            endif
+
+          elif handlerId is X64_HANDLER_MMX_SHIFT
+            # TODO: Validate operands.
+            if imm is defined
+              # mm,imm
+              # TODO: Clean up this mess.
+              operationId = opcode // 65536
+              opcode      = bitand(opcode, 0xfff) + 0x7000
+              encoder.emitCore_r_r(opcode, operationId, reg)
+              encoder.emitByte(imm)
+
+            elif scale is defined
+              # mm,m64
+              opcode = bitand(opcode, 0xffff)
+              encoder.emitCore_r_m(opcode, reg, regBase, scale, regIndex, disp)
+
+            elif rm is defined
+              # mm,mm
+              opcode = bitand(opcode, 0xffff)
               encoder.emitCore_r_r(opcode, reg, rm)
             endif
 
@@ -1548,6 +1568,46 @@ class X64Translator extends PipeAbstract
                   encoder.nop_r(reg)
                 endif
               endif
+
+            elif opcode is X64_PALIGNR
+              # TODO: Validate operands.
+              this._validateNumberOfOperands(numberOfOperands, 3)
+              if scale is defined
+                encoder.palignr_mm_m64_imm8(reg, regBase, scale, regIndex, disp, imm)
+              else
+                encoder.palignr_mm_mm_imm8(reg, rm, imm)
+              endif
+
+            elif opcode is X64_PEXTRW
+              # TODO: Validate operands.
+              encoder.pextrw_r64_mm_imm8(reg, rm, imm)
+
+            elif opcode is X64_PINSRW
+              # TODO: Validate operands.
+              if scale is defined
+                # pinsrw mm, m16, imm8
+                encoder.pinsrw_mm_m16_imm8(reg, regBase, scale, regIndex, disp, imm)
+              else
+                # pinsrw mm, r32, imm8
+                encoder.pinsrw_mm_r32_imm8(reg, rm, imm)
+              endif
+
+            elif opcode is X64_PMOVMSKB
+              # TODO: Validate operands.
+              # pmovmskb r32, mm
+              # pmovmskb r64, mm
+              encoder.pmovmskb_r_mm(reg, rm)
+
+            elif opcode is X64_PSHUFW
+              # TODO: Validate operands.
+              if scale is defined
+                # pshufw mm, m64, imm8
+                encoder.pshufw_mm_m64_imm8(reg, regBase, scale, regIndex, disp, imm)
+              else
+                # pshufw mm, mm, imm8
+                encoder.pshufw_mm_mm_imm8(reg, rm, imm)
+              endif
+
             endif
 
           elif handlerId is X64_HANDLER_286

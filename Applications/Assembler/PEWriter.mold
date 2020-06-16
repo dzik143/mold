@@ -176,7 +176,3 @@ class PEWriter
     #endfor
   endmethod
 endclass
-
-peWriter = new PEWriter()
-peWriter.create('test.exe')
-peWriter.close()

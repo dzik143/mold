@@ -105,6 +105,7 @@ class X64Encoder
     # bytes  | byte       | byte   | bytes        | bytes
 
     global X64_SIZE16_32_64
+    global X64_PSHUFB
 
     # Emit prefixes if needed.
     this.emitSizePrefixIfNeeded(reg)
@@ -122,6 +123,12 @@ class X64Encoder
       # We set extra mask in unused part to avoid treating 0xf
       # as one byte opcode.
       this.emitWord(bitand(opcode, 0xffff))
+
+      # TODO: Clean up this mess.
+      if opcode is X64_PSHUFB
+        # emit 0f 38 00
+        this.emitByte(0)
+      endif
 
     else
       # One byte opcode.
@@ -1748,7 +1755,9 @@ class X64Encoder
     # TODO: Clean up this mess.
     # We set extra mask in unused part to avoid treating 0xf
     # as one byte opcode.
-    this.emitCore_group_m(0x1000000f, operationId, regBase, scale, regIndex, disp)
+    # 0f 00 ...
+    this.emitByte(0xf)
+    this.emitCore_group_m(0, operationId, regBase, scale, regIndex, disp)
   endmethod
 
   method emitCore_group0f_00_r(operationId, reg)
@@ -3432,7 +3441,6 @@ class X64Encoder
     this.emitFPU_m(X64_FISTTP_M64, regBase, scale, regIndex, disp)
   endmethod
 
-
   # ------------------------------------------------------------------------------
   #                     Public API: MMX instruction set
   # ------------------------------------------------------------------------------
@@ -3878,28 +3886,57 @@ class X64Encoder
   # Instructions added with SSE:
   # ------------------------------------------------------------------------------
 
-  method pshufw_mm_mm_imm(mmDst, mmSrc, imm)
-    die('not implemented: pshufw mm,mm,imm')
+  method pshufw_mm_mm_imm8(mmDst, mmSrc, imm8)
+    global X64_PSHUFW
+    # TODO: Clean up this mess.
+    # Avoid emmiting 0x48 prefix.
+    mmDst = bitand(mmDst, 7)
+    this.emitCore_r_r(X64_PSHUFW, mmDst, mmSrc)
+    this.emitByte(imm8)
   endmethod
 
-  method pshufw_mm_m_imm(mmDst, regBase, scale, regIndex, disp, imm)
-    die('not implemented: pshufw mm,m,imm')
+  method pshufw_mm_m64_imm8(mmDst, regBase, scale, regIndex, disp, imm8)
+    global X64_PSHUFW
+    # TODO: Clean up this mess.
+    # Avoid emmiting 0x48 prefix.
+    mmDst = bitand(mmDst, 7)
+    this.emitCore_r_m(X64_PSHUFW, mmDst, regBase, scale, regIndex, disp)
+    this.emitByte(imm8)
   endmethod
 
-  method pinsrw_mm_m_imm(mmDst, regSrc, imm)
-    die('not implemented: pinsrw mm,r,imm')
+  method pinsrw_mm_r32_imm8(mmDst, regSrc, imm8)
+    global X64_PINSRW
+    # TODO: Clean up this mess.
+    # Avoid emmiting 0x48 prefix.
+    mmDst = bitand(mmDst, 7)
+    this.emitCore_r_r(X64_PINSRW, mmDst, regSrc)
+    this.emitByte(imm8)
   endmethod
 
-  method pinsrw_mm_m_imm(mmDst, regBase, scale, regIndex, disp, imm)
-    die('not implemented: pinsrw mm,m,imm')
+  method pinsrw_mm_m16_imm8(mmDst, regBase, scale, regIndex, disp, imm8)
+    global X64_PINSRW
+    # TODO: Clean up this mess.
+    # Avoid emmiting 0x48 prefix.
+    mmDst = bitand(mmDst, 7)
+    this.emitCore_r_m(X64_PINSRW, mmDst, regBase, scale, regIndex, disp)
+    this.emitByte(imm8)
   endmethod
 
-  method pextrw_r_mm_imm(regDst, mmSrc, imm)
-    die('not implemented: pextrw r,mm,imm')
+  method pextrw_r64_mm_imm8(regDst, mmSrc, imm8)
+    global X64_PEXTRW
+    # TODO: Clean up this mess.
+    # Avoid emmiting 0x48 prefix.
+    regDst = bitand(regDst, 7)
+    this.emitCore_r_r(X64_PEXTRW, regDst, mmSrc)
+    this.emitByte(imm8)
   endmethod
 
   method pmovmskb_r_mm(regDst, mmSrc)
-    die('not implemented: pmovmskb r,mm')
+    global X64_PMOVMSKB
+    # TODO: Clean up this mess.
+    # Avoid emmiting 0x48 prefix.
+    regDst = bitand(regDst, 7)
+    this.emitCore_r_r(X64_PMOVMSKB, regDst, mmSrc)
   endmethod
 
   method pminub_mm_mm(mmDst, mmSrc)
@@ -4110,12 +4147,16 @@ class X64Encoder
     die('not implemented: pabsd mm,m')
   endmethod
 
-  method palignr_mm_mm_imm(mmDst, mmSrc, imm)
-    die('not implemented: palignr mm,mm,imm')
+  method palignr_mm_mm_imm8(mmDst, mmSrc, imm8)
+    global X64_PALIGNR
+    this.emitCore_r_r(X64_PALIGNR, mmDst, mmSrc)
+    this.emitByte(imm8)
   endmethod
 
-  method palignr_mm_m_imm(mmDst, regBase, scale, regIndex, disp, imm)
-    die('not implemented: palignr mm,m,imm')
+  method palignr_mm_m64_imm8(mmDst, regBase, scale, regIndex, disp, imm8)
+    global X64_PALIGNR
+    this.emitCore_r_m(X64_PALIGNR, mmDst, regBase, scale, regIndex, disp)
+    this.emitByte(imm8)
   endmethod
 
   #

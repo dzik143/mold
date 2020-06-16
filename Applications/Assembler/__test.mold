@@ -1,0 +1,23 @@
+import 'X64Compiler.mold'
+
+class Output
+  method emitByte(x)
+    __mold_printToStdOutput(hex(x) + ' ')
+  endmethod
+
+  method emitWord(x)
+    __mold_printToStdOutput(hex(x) + ' ')
+  endmethod
+
+  method emitDword(x)
+    __mold_printToStdOutput(hex(x) + ' ')
+  endmethod
+
+  method emitQword(x)
+    __mold_printToStdOutput(hex(x) + ' ')
+  endmethod
+endclass
+
+outputObj = new Output()
+compiler  = new X64Compiler()
+compiler.compile(outputObj, '1.asm')
