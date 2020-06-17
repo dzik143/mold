@@ -2,6 +2,40 @@ UNRELEASED
 ----------
   ...
 
+0.4.200617 (released on 2020-06-17)
+  1. Implemented MMX opcodes (original instruction set):
+
+    - Move       | movd, movq
+    - Add        | paddb, paddw, paddd, paddq, paddsb,
+                 | paddsw, paddusb, paddusw, pmaddwd
+
+    - Subtract   | psubb, psubw, psubd, psubsb, psubsw, psubusb, psubusw
+    - Multiple   | pmulhw, pmullw
+    - Bitwise    | pand, pandn, por, pxor
+    - Compare    | pcmpeqb, pcmpeqw, pcmpeqd, pcmpgtb, pcmpgtw, pcmpgtd
+    - Bit shift  | psllw, pslld, psllq, psrad, psraw, psrlw, psrld, psrlq
+
+    - Pack       | packssdw, packsswb, packuswb
+
+    - Unpack     | punpckhbw, punpckhwd, punpckhdq,
+                 | punpcklbw, punpcklwd, punpckldq
+
+    - State      | emms
+
+  2. Implemented MMX opcodes added with SSE:
+
+    - Move       | pshufw, pinsrw, pextrw, pmovmskb
+    - Statistics | pminub, pmaxub, pavgb, pavgw, pminsw, pmaxsw
+    - Arithmetic | pmulhuw, psadbw
+
+  3. Implemented MMX opcodes added with SSE2:
+    - psubq, pmuludq
+
+  3. Implemented MMX opcodes added with SSE3:
+    - psignb, psignw, psignd, pshufb, pmulhrsw, pmaddubsw,
+      phsubw, phsubsw, phsubd, phaddsw, phaddw, phaddd,
+      pabsb, pabsw, pabsd, palignr
+
 0.3.191218 (released on 2019-12-18)
 -----------------------------------
   1. Implemented encoding for FPU (x87) opcodes:
