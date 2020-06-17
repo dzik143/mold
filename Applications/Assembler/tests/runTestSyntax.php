@@ -118,7 +118,7 @@ function test(...$args)
 // -----------------------------------------------------------------------------
 //                                Entry point
 // -----------------------------------------------------------------------------
-
+/*
 head('CORE OPCODES');
 
 // -----------------------------------------------------------------------------
@@ -2050,7 +2050,7 @@ suite('pinsrw');
   // Good examples (should assemble without error).
   test($opcode, mm() , r32() , u8(), '');
   test($opcode, mm() , m16() , u8(), '');
-
+*/
 // ------------------------------------------------------------------------------
 // MMX: pextrw r32,mm,imm8
 // MMX: pextrw r64,mm,imm8
@@ -2066,6 +2066,14 @@ suite('pextrw');
   test($opcode, mm(), mm(), 'not enough operands');
 
   // Bad first operand type.
+  test($opcode, r8()  , mm() , u8(), "operand does not match the statement for: '$opcode'");
+  test($opcode, r16() , mm() , u8(), "operand does not match the statement for: '$opcode'");
+
+  test($opcode, m8()  , mm() , u8(), "memory operands not allowed for: '$opcode'");
+  test($opcode, m32() , mm() , u8(), "memory operands not allowed for: '$opcode'");
+  test($opcode, m64() , mm() , u8(), "memory operands not allowed for: '$opcode'");
+
+  // Bad second operand.
   test($opcode, r32() , r8()  , u8(), "operand does not match the statement for: '$opcode'");
   test($opcode, r32() , r16() , u8(), "operand does not match the statement for: '$opcode'");
   test($opcode, r32() , r32() , u8(), "operand does not match the statement for: '$opcode'");
@@ -2076,25 +2084,17 @@ suite('pextrw');
   test($opcode, r32() , m32() , u8(), "memory operands not allowed for: '$opcode'");
   test($opcode, r32() , m64() , u8(), "memory operands not allowed for: '$opcode'");
 
-  // Bad second operand type.
-  test($opcode, r8()  , mm() , u8(), "operand does not match the statement for: '$opcode'");
-  test($opcode, r16() , mm() , u8(), "operand does not match the statement for: '$opcode'");
-
-  test($opcode, m8()  , mm() , u8(), "memory operands not allowed for: '$opcode'");
-  test($opcode, m32() , mm() , u8(), "memory operands not allowed for: '$opcode'");
-  test($opcode, m64() , mm() , u8(), "memory operands not allowed for: '$opcode'");
-
   // Bad third operand type.
-  test($opcode, mm(), r32() , r8()  , "immediate operand expected for: '$opcode'");
-  test($opcode, mm(), r32() , r16() , "immediate operand expected for: '$opcode'");
-  test($opcode, mm(), r32() , r32() , "immediate operand expected for: '$opcode'");
-  test($opcode, mm(), r32() , r64() , "immediate operand expected for: '$opcode'");
-  test($opcode, mm(), r32() , m8()  , "memory operands not allowed for: '$opcode'");
-  test($opcode, mm(), r32() , m16() , "memory operands not allowed for: '$opcode'");
+  test($opcode, r32() , mm() , r8()  , "immediate operand expected for: '$opcode'");
+  test($opcode, r32() , mm() , r16() , "immediate operand expected for: '$opcode'");
+  test($opcode, r32() , mm() , r32() , "immediate operand expected for: '$opcode'");
+  test($opcode, r32() , mm() , r64() , "immediate operand expected for: '$opcode'");
+  test($opcode, r32() , mm() , m8()  , "memory operands not allowed for: '$opcode'");
+  test($opcode, r32() , mm() , m16() , "memory operands not allowed for: '$opcode'");
 
   // Good examples (should assemble without error).
-  test($opcode, mm() , r32() , u8(), '');
-  test($opcode, mm() , r64() , u8(), '');
+  test($opcode, r32() , mm() , u8(), '');
+  test($opcode, r64() , mm() , u8(), '');
 
 // ------------------------------------------------------------------------------
 // MMX: pmovmskb r32,mm
