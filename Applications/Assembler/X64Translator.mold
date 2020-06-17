@@ -1629,13 +1629,15 @@ class X64Translator extends PipeAbstract
               endif
 
             elif opcode is X64_PEXTRW
+              # pextrw r32, mm
+              # pextrw r64, mm
               this._validateNumberOfOperands(numberOfOperands, 3)
               this._failIfMemoryReadOrWrite(item)
               this._failIfImmIsMissing(item)
-              this._failIfNonMMReg(item, reg)
+              this._failIfNonMMReg(item, rm)
               this._failIfOutOfRange(imm, 0, 255)
 
-              if (X64_IsReg32(rm) is false) and (X64_IsReg64(rm) is false)
+              if (X64_IsReg32(reg) is false) and (X64_IsReg64(reg) is false)
                 # Dest operand must be r32 or r64.
                 this._errorBadSyntax(item)
               endif
