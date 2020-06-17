@@ -32,6 +32,7 @@ function r8()  {return getFromPool(['al' , 'bl' , 'cl' , 'dl']);}
 function r16() {return getFromPool(['ax' , 'bx' , 'cx' , 'dx' , 'sp' , 'bp' , 'si' , 'di']);}
 function r32() {return getFromPool(['eax', 'ebx', 'ecx', 'edx', 'esp', 'ebp', 'esi', 'edi']);}
 function r64() {return getFromPool(['rax', 'rbx', 'rcx', 'rdx', 'rsp', 'rbp', 'rsi', 'rdi']);}
+function mm()  {return getFromPool(['mm0', 'mm1', 'mm2', 'mm3', 'mm4', 'mm5', 'mm6', 'mm7']);}
 function sti() {return getFromPool(['st1', 'st2', 'st3', 'st4', 'st5', 'st6', 'st7']);}
 function st0() {return 'st0';}
 
@@ -145,6 +146,7 @@ foreach ($pool as $opcode)
 suite('zero operand opcodes');
 
 $pool = [
+  // Core
   'cbw'    , 'cwd'    , 'clc'   , 'cld'     , 'cli'     , 'cmc'    , 'cmpsb' ,
   'cmpsw'  , 'hlt'    , 'iret'  , 'lock'    , 'lodsb'   , 'lodsw'  , 'movsb' ,
   'movsw'  , 'popf'   , 'pushf' , 'rep'     , 'repe'    , 'repne'  , 'scasb' ,
@@ -154,7 +156,11 @@ $pool = [
   'wbinvd' , 'cpuid'  , 'rdmsr' , 'rdtsc'   , 'wrmsr'   , 'rsm'    , 'ud2'   ,
   'rdpmc'  , 'syscall', 'sysret', 'sysenter', 'sysexit' , 'cdqe'   , 'cqo'   ,
   'cmpsq'  , 'iretq'  , 'lodsq' , 'popfq'   , 'pushfq'  , 'rdtscp' , 'scasq' ,
-  'stosq'  , 'swapgs'];
+  'stosq'  , 'swapgs' ,
+
+  // MMX Technology
+  'emms'
+];
 
 foreach ($pool as $opcode)
 {
@@ -1737,3 +1743,491 @@ test('ffree', m64() , "operand does not match the statement for: 'ffree'");
 
 // Good examples (should assemble without error).
 test('ffree', sti(), '');
+
+// -----------------------------------------------------------------------------
+//                                MMX Opcodes
+// -----------------------------------------------------------------------------
+
+head('MMX Technology');
+
+// -----------------------------------------------------------------------------
+// MMX: opcode mm,mm
+// MMX: opcode mm,m64
+//
+// Original instruction set instroduced with Pentum MMX:
+//   packssdw  mm,mm | mm,m64
+//   packsswb  mm,mm | mm,m64
+//   packuswb  mm,mm | mm,m64
+//
+//   paddb     mm,mm | mm,m64
+//   paddw     mm,mm | mm,m64
+//   paddd     mm,mm | mm,m64
+//   paddq     mm,mm | mm,m64
+//   paddsb    mm,mm | mm,m64
+//   paddsw    mm,mm | mm,m64
+//   paddusb   mm,mm | mm,m64
+//   paddusw   mm,mm | mm,m64
+//   pmaddwd   mm,mm | mm,m64
+//
+//   pand      mm,mm | mm,m64
+//   pandn     mm,mm | mm,m64
+//   por       mm,mm | mm,m64
+//   pxor      mm,mm | mm,m64
+//
+//   pcmpeqb   mm,mm | mm,m64
+//   pcmpeqw   mm,mm | mm,m64
+//   pcmpeqd   mm,mm | mm,m64
+//   pcmpgtb   mm,mm | mm,m64
+//   pcmpgtw   mm,mm | mm,m64
+//   pcmpgtd   mm,mm | mm,m64
+//
+//   pmulhw    mm,mm | mm,m64
+//   pmullw    mm,mm | mm,m64
+//
+//   psubb     mm,mm | mm,m64
+//   psubw     mm,mm | mm,m64
+//   psubd     mm,mm | mm,m64
+//   psubsb    mm,mm | mm,m64
+//   psubsw    mm,mm | mm,m64
+//   psubusb   mm,mm | mm,m64
+//   psubusw   mm,mm | mm,m64
+//
+//   punpcklbw mm,mm | mm,m64
+//   punpcklwd mm,mm | mm,m64
+//   punpckldq mm,mm | mm,m64
+//
+//   punpckhbw mm,mm | mm,m64
+//   punpckhwd mm,mm | mm,m64
+//   punpckhdq mm,mm | mm,m64
+//
+// Instructions added with SSE:
+//   pminub   mm,mm | mm,m64
+//   pmaxub   mm,mm | mm,m64
+//   pavgb    mm,mm | mm,m64
+//   pavgw    mm,mm | mm,m64
+//   pmulhuw  mm,mm | mm,m64
+//   pminsw   mm,mm | mm,m64
+//   pmaxsw   mm,mm | mm,m64
+//   psadbw   mm,mm | mm,m64
+//
+// Instructions added with SSE2:
+//   psubq    mm,mm | mm,m64
+//   pmuludq  mm,mm | mm,m64
+//
+// Instructions added with SSE3:
+//   psignb    mm,mm | mm,m64
+//   psignw    mm,mm | mm,m64
+//   psignd    mm,mm | mm,m64
+//   pshufb    mm,mm | mm,m64
+//   pmulhrsw  mm,mm | mm,m64
+//   pmaddubsw mm,mm | mm,m64
+//   phsubw    mm,mm | mm,m64
+//   phsubsw   mm,mm | mm,m64
+//   phsubd    mm,mm | mm,m64
+//   phaddsw   mm,mm | mm,m64
+//   phaddw    mm,mm | mm,m64
+//   phaddd    mm,mm | mm,m64
+//   pabsb     mm,mm | mm,m64
+//   pabsw     mm,mm | mm,m64
+//   pabsd     mm,mm | mm,m64
+// -----------------------------------------------------------------------------
+
+$pool = [
+  'packssdw', 'packsswb', 'packuswb', 'paddb'   , 'paddw'   , 'paddd',
+  'paddq'   , 'paddsb'  , 'paddsw'  , 'paddusb' , 'paddusw' ,
+  'pmaddwd' , 'pand'    , 'pandn'   , 'por'     , 'pxor'    ,
+
+  'pcmpeqb' , 'pcmpeqw' , 'pcmpeqd' , 'pcmpgtb' , 'pcmpgtw' , 'pcmpgtd',
+  'pmulhw'  , 'pmullw'  ,
+
+  'psubb'   , 'psubw'   , 'psubd'   , 'psubsb'  , 'psubsw'  , 'psubusb',
+  'psubusw' ,
+
+  'punpckhbw' , 'punpckhwd' , 'punpckhdq',
+  'punpcklbw' , 'punpcklwd' , 'punpckldq',
+
+  'pminub' , 'pmaxub' , 'pavgb' , 'pavgw'   , 'pmulhuw' , 'pminsw',
+  'pmaxsw' , 'psadbw' , 'psubq' , 'pmuludq' ,
+
+  'psignb' , 'psignw'  , 'psignd' , 'pshufb'  , 'pmulhrsw' , 'pmaddubsw',
+  'phsubw' , 'phsubsw' , 'phsubd' , 'phaddsw' , 'phaddw'   , 'phaddd',
+  'pabsb'  , 'pabsw'   , 'pabsd'
+];
+
+foreach ($pool as $opcode) {
+  suite($opcode);
+
+  // Check number of operands.
+  test($opcode,                   'not enough operands');
+  test($opcode, mm(),             'not enough operands');
+  test($opcode, mm(), mm(), mm(), 'too many operands');
+
+  // Bad first operand type.
+  test($opcode, r8()  , mm() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r16() , mm() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , mm() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r64() , mm() , "operand does not match the statement for: '$opcode'");
+
+  test($opcode, r8()  , mm() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r16() , mm() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , mm() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r64() , mm() , "operand does not match the statement for: '$opcode'");
+
+  test($opcode, m8()  , mm() , "memory address cannot be destination operand for: '$opcode'");
+  test($opcode, m16() , mm() , "memory address cannot be destination operand for: '$opcode'");
+  test($opcode, m32() , mm() , "memory address cannot be destination operand for: '$opcode'");
+  test($opcode, m64() , mm() , "memory address cannot be destination operand for: '$opcode'");
+
+  // Bad second operand type.
+  test($opcode, mm() , i8()  , "immediate operand not allowed for: '$opcode'");
+  test($opcode, mm() , i16() , "immediate operand not allowed for: '$opcode'");
+  test($opcode, mm() , i32() , "immediate operand not allowed for: '$opcode'");
+
+  // Bad operand size (64-bit expected).
+  test($opcode, mm() , m8()  , "only 64-bit data allowed for: '$opcode'");
+  test($opcode, mm() , m16() , "only 64-bit data allowed for: '$opcode'");
+  test($opcode, mm() , m32() , "only 64-bit data allowed for: '$opcode'");
+
+  // Good examples (should assemble without error).
+  test($opcode, mm() , mm()  , '');
+  test($opcode, mm() , m64() , '');
+}
+
+// -----------------------------------------------------------------------------
+// MMX: opcode mm,mm
+// MMX: opcode mm,m64
+// MMX: opcode mm,imm8
+//
+// psllw mm,mm | mm,m64 | mm,imm8
+// pslld mm,mm | mm,m64 | mm,imm8
+// psllq mm,mm | mm,m64 | mm,imm8
+// psrad mm,mm | mm,m64 | mm,imm8
+// psraw mm,mm | mm,m64 | mm,imm8
+// psrlw mm,mm | mm,m64 | mm,imm8
+// psrld mm,mm | mm,m64 | mm,imm8
+// psrlq mm,mm | mm,m64 | mm,imm8
+// -----------------------------------------------------------------------------
+
+$pool = [
+  'psllw', 'pslld', 'psllq', 'psrad', 'psraw',
+  'psrlw', 'psrld', 'psrlq',
+];
+
+foreach ($pool as $opcode) {
+  suite($opcode);
+
+  // Check number of operands.
+  test($opcode,                   'not enough operands');
+  test($opcode, mm(),             'not enough operands');
+  test($opcode, mm(), mm(), mm(), 'too many operands');
+
+  // Bad first operand type.
+  test($opcode, r8()  , mm() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r16() , mm() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , mm() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r64() , mm() , "operand does not match the statement for: '$opcode'");
+
+  test($opcode, m8()  , mm() , "memory address cannot be destination operand for: '$opcode'");
+  test($opcode, m16() , mm() , "memory address cannot be destination operand for: '$opcode'");
+  test($opcode, m32() , mm() , "memory address cannot be destination operand for: '$opcode'");
+  test($opcode, m64() , mm() , "memory address cannot be destination operand for: '$opcode'");
+
+  // Bad second operand type.
+  test($opcode, mm(), r8()  , "operand does not match the statement for: '$opcode'");
+  test($opcode, mm(), r16() , "operand does not match the statement for: '$opcode'");
+  test($opcode, mm(), r32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, mm(), r64() , "operand does not match the statement for: '$opcode'");
+
+  // Bad operand size (64-bit expected).
+  test($opcode, mm() , m8()  , "only 64-bit data allowed for: '$opcode'");
+  test($opcode, mm() , m16() , "only 64-bit data allowed for: '$opcode'");
+  test($opcode, mm() , m32() , "only 64-bit data allowed for: '$opcode'");
+
+  test($opcode, mm() , i16() , "value out of range");
+  test($opcode, mm() , i32() , "value out of range");
+
+  // Good examples (should assemble without error).
+  test($opcode, mm() , mm()  , '');
+  test($opcode, mm() , m64() , '');
+  test($opcode, mm() , u8()  , '');
+}
+
+// -----------------------------------------------------------------------------
+// MMX: pshufw   mm,mm,imm8 | mm,m64,imm8
+// MMX: palignr  mm,mm,imm8 | mm,m64,imm8
+// -----------------------------------------------------------------------------
+
+$pool = ['pshufw', 'palignr'];
+
+foreach ($pool as $opcode) {
+  suite($opcode);
+
+  // Check number of operands.
+  test($opcode,             'not enough operands');
+  test($opcode, mm(),       'not enough operands');
+  test($opcode, mm(), mm(), 'not enough operands');
+
+  // Bad first operand type.
+  test($opcode, r8()  , mm() , u8(), "operand does not match the statement for: '$opcode'");
+  test($opcode, r16() , mm() , u8(), "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , mm() , u8(), "operand does not match the statement for: '$opcode'");
+  test($opcode, r64() , mm() , u8(), "operand does not match the statement for: '$opcode'");
+
+  test($opcode, m8()  , mm() , u8(), "memory address cannot be destination operand for: '$opcode'");
+  test($opcode, m16() , mm() , u8(), "memory address cannot be destination operand for: '$opcode'");
+  test($opcode, m32() , mm() , u8(), "memory address cannot be destination operand for: '$opcode'");
+  test($opcode, m64() , mm() , u8(), "memory address cannot be destination operand for: '$opcode'");
+
+  // Bad second operand type.
+  test($opcode, mm(), r8()  , u8(), "operand does not match the statement for: '$opcode'");
+  test($opcode, mm(), r16() , u8(), "operand does not match the statement for: '$opcode'");
+  test($opcode, mm(), r32() , u8(), "operand does not match the statement for: '$opcode'");
+  test($opcode, mm(), r64() , u8(), "operand does not match the statement for: '$opcode'");
+
+  // Bad third operand type.
+  test($opcode, mm(), mm() , r8()  , "immediate operand expected for: '$opcode'");
+  test($opcode, mm(), mm() , r16() , "immediate operand expected for: '$opcode'");
+  test($opcode, mm(), mm() , r32() , "immediate operand expected for: '$opcode'");
+  test($opcode, mm(), mm() , r64() , "immediate operand expected for: '$opcode'");
+  test($opcode, mm(), mm() , m8()  , "immediate operand expected for: '$opcode'");
+  test($opcode, mm(), mm() , m16() , "immediate operand expected for: '$opcode'");
+
+  // Bad operand size (64-bit expected).
+  test($opcode, mm() , m8()  , u8(), "only 64-bit data allowed for: '$opcode'");
+  test($opcode, mm() , m16() , u8(), "only 64-bit data allowed for: '$opcode'");
+  test($opcode, mm() , m32() , u8(), "only 64-bit data allowed for: '$opcode'");
+
+  test($opcode, mm() , mm() , i16(), "value out of range");
+  test($opcode, mm() , mm() , i32(), "value out of range");
+
+  // Good examples (should assemble without error).
+  test($opcode, mm() , mm()  , u8(), '');
+  test($opcode, mm() , m64() , u8(), '');
+}
+
+// ------------------------------------------------------------------------------
+// MMX: pinsrw mm,r32,imm8
+// MMX: pinsrw mm,m16,imm8
+// ------------------------------------------------------------------------------
+
+suite('pinsrw');
+
+  $opcode = 'pinsrw';
+
+  // Check number of operands.
+  test($opcode,             'not enough operands');
+  test($opcode, mm(),       'not enough operands');
+  test($opcode, mm(), mm(), 'not enough operands');
+
+  // Bad first operand type.
+  test($opcode, r8()  , r32() , u8(), "operand does not match the statement for: '$opcode'");
+  test($opcode, r16() , r32() , u8(), "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , r32() , u8(), "operand does not match the statement for: '$opcode'");
+  test($opcode, r64() , r32() , u8(), "operand does not match the statement for: '$opcode'");
+
+  test($opcode, m8()  , r32() , u8(), "memory address cannot be destination operand for: '$opcode'");
+  test($opcode, m16() , r32() , u8(), "memory address cannot be destination operand for: '$opcode'");
+  test($opcode, m32() , r32() , u8(), "memory address cannot be destination operand for: '$opcode'");
+  test($opcode, m64() , r32() , u8(), "memory address cannot be destination operand for: '$opcode'");
+
+  // Bad second operand type.
+  test($opcode, mm(), r8()  , u8(), "operand does not match the statement for: '$opcode'");
+  test($opcode, mm(), r16() , u8(), "operand does not match the statement for: '$opcode'");
+  test($opcode, mm(), r64() , u8(), "operand does not match the statement for: '$opcode'");
+
+  test($opcode, mm(), m8()  , u8(), "operand does not match the statement for: '$opcode'");
+  test($opcode, mm(), m32() , u8(), "operand does not match the statement for: '$opcode'");
+  test($opcode, mm(), m64() , u8(), "operand does not match the statement for: '$opcode'");
+
+  // Bad third operand type.
+  test($opcode, mm(), r32() , r8()  , "immediate operand expected for: '$opcode'");
+  test($opcode, mm(), r32() , r16() , "immediate operand expected for: '$opcode'");
+  test($opcode, mm(), r32() , r32() , "immediate operand expected for: '$opcode'");
+  test($opcode, mm(), r32() , r64() , "immediate operand expected for: '$opcode'");
+  test($opcode, mm(), r32() , m8()  , "immediate operand expected for: '$opcode'");
+  test($opcode, mm(), r32() , m16() , "immediate operand expected for: '$opcode'");
+
+  // Good examples (should assemble without error).
+  test($opcode, mm() , r32() , u8(), '');
+  test($opcode, mm() , m16() , u8(), '');
+
+// ------------------------------------------------------------------------------
+// MMX: pextrw r32,mm,imm8
+// MMX: pextrw r64,mm,imm8
+// ------------------------------------------------------------------------------
+
+suite('pextrw');
+
+  $opcode = 'pextrw';
+
+  // Check number of operands.
+  test($opcode,             'not enough operands');
+  test($opcode, mm(),       'not enough operands');
+  test($opcode, mm(), mm(), 'not enough operands');
+
+  // Bad first operand type.
+  test($opcode, r32() , r8()  , u8(), "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , r16() , u8(), "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , r32() , u8(), "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , r64() , u8(), "operand does not match the statement for: '$opcode'");
+
+  test($opcode, r32() , m8()  , u8(), "memory operands not allowed for: '$opcode'");
+  test($opcode, r32() , m16() , u8(), "memory operands not allowed for: '$opcode'");
+  test($opcode, r32() , m32() , u8(), "memory operands not allowed for: '$opcode'");
+  test($opcode, r32() , m64() , u8(), "memory operands not allowed for: '$opcode'");
+
+  // Bad second operand type.
+  test($opcode, r8()  , mm() , u8(), "operand does not match the statement for: '$opcode'");
+  test($opcode, r16() , mm() , u8(), "operand does not match the statement for: '$opcode'");
+
+  test($opcode, m8()  , mm() , u8(), "memory operands not allowed for: '$opcode'");
+  test($opcode, m32() , mm() , u8(), "memory operands not allowed for: '$opcode'");
+  test($opcode, m64() , mm() , u8(), "memory operands not allowed for: '$opcode'");
+
+  // Bad third operand type.
+  test($opcode, mm(), r32() , r8()  , "immediate operand expected for: '$opcode'");
+  test($opcode, mm(), r32() , r16() , "immediate operand expected for: '$opcode'");
+  test($opcode, mm(), r32() , r32() , "immediate operand expected for: '$opcode'");
+  test($opcode, mm(), r32() , r64() , "immediate operand expected for: '$opcode'");
+  test($opcode, mm(), r32() , m8()  , "memory operands not allowed for: '$opcode'");
+  test($opcode, mm(), r32() , m16() , "memory operands not allowed for: '$opcode'");
+
+  // Good examples (should assemble without error).
+  test($opcode, mm() , r32() , u8(), '');
+  test($opcode, mm() , r64() , u8(), '');
+
+// ------------------------------------------------------------------------------
+// MMX: pmovmskb r32,mm
+// MMX: pmovmskb r64,mm
+// ------------------------------------------------------------------------------
+
+suite('pmovmskb');
+
+  $opcode = 'pmovmskb';
+
+  // Check number of operands.
+  test($opcode,                   'not enough operands');
+  test($opcode, mm(),             'not enough operands');
+  test($opcode, mm(), mm(), mm(), 'too many operands');
+
+  // Bad first operand.
+  test($opcode, r8()  , mm(),  "operand does not match the statement for: '$opcode'");
+  test($opcode, r16() , mm(),  "operand does not match the statement for: '$opcode'");
+
+  test($opcode, m8()  , mm(), "memory operands not allowed for: '$opcode'");
+  test($opcode, m16() , mm(), "memory operands not allowed for: '$opcode'");
+  test($opcode, m32() , mm(), "memory operands not allowed for: '$opcode'");
+  test($opcode, m64() , mm(), "memory operands not allowed for: '$opcode'");
+
+  // Bad second operand.
+  test($opcode, r32() , r8()  , "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , r16() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , r32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , r64() , "operand does not match the statement for: '$opcode'");
+
+  test($opcode, r32() , m8()  , "memory operands not allowed for: '$opcode'");
+  test($opcode, r32() , m16() , "memory operands not allowed for: '$opcode'");
+  test($opcode, r32() , m32() , "memory operands not allowed for: '$opcode'");
+  test($opcode, r32() , m64() , "memory operands not allowed for: '$opcode'");
+
+  test($opcode, r32() , u8()  , "immediate operand not allowed for: '$opcode'");
+
+  // Good examples (should assemble without error).
+  test($opcode, r32(), mm(), '');
+  test($opcode, r64(), mm(), '');
+
+// ------------------------------------------------------------------------------
+// MMX: movd  mm,r32
+// MMX: movd  mm,m32
+// MMX: movd  r32,mm
+// MMX: movd  m32,mm
+// ------------------------------------------------------------------------------
+
+suite('movd');
+  $opcode = 'movd';
+
+  // Check number of operands.
+  test($opcode,                   'not enough operands');
+  test($opcode, mm(),             'not enough operands');
+  test($opcode, mm(), mm(), mm(), 'too many operands');
+
+  // Bad first operand.
+  test($opcode, r8()  , r32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r16() , r32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , r32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r64() , r32() , "operand does not match the statement for: '$opcode'");
+
+  test($opcode, m8()  , r32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, m16() , r32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, m32() , r32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, m64() , r32() , "operand does not match the statement for: '$opcode'");
+
+  // Bad second operand.
+  test($opcode, r32() , r8()  , "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , r16() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , r32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , r64() , "operand does not match the statement for: '$opcode'");
+
+  test($opcode, r32() , m8()  , "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , m16() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , m32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , m64() , "operand does not match the statement for: '$opcode'");
+
+  test($opcode, mm()  , mm()  , "operand does not match the statement for: '$opcode'");
+
+  test($opcode, r32() , i8()  , "immediate operand not allowed for: '$opcode'");
+  test($opcode, mm()  , i8()  , "immediate operand not allowed for: '$opcode'");
+
+  // Good examples (should assemble without error).
+  test($opcode, mm()  , r32() , '');
+  test($opcode, mm()  , m32() , '');
+  test($opcode, r32() , mm()  , '');
+  test($opcode, m32() , mm()  , '');
+
+// ------------------------------------------------------------------------------
+// MMX: movq  mm,mm
+// MMX: movq  mm,r64
+// MMX: movq  mm,m64
+// MMX: movq  r64,mm
+// MMX: movq  m64,mm
+// ------------------------------------------------------------------------------
+
+suite('movq');
+  $opcode = 'movq';
+
+  // Check number of operands.
+  test($opcode,                   'not enough operands');
+  test($opcode, mm(),             'not enough operands');
+  test($opcode, mm(), mm(), mm(), 'too many operands');
+
+  // Bad first operand.
+  test($opcode, r8()  , r64() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r16() , r64() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r32() , r64() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r64() , r64() , "operand does not match the statement for: '$opcode'");
+
+  test($opcode, m8()  , r64() , "operand does not match the statement for: '$opcode'");
+  test($opcode, m16() , r64() , "operand does not match the statement for: '$opcode'");
+  test($opcode, m32() , r64() , "operand does not match the statement for: '$opcode'");
+  test($opcode, m64() , r64() , "operand does not match the statement for: '$opcode'");
+
+  // Bad second operand.
+  test($opcode, r64() , r8()  , "operand does not match the statement for: '$opcode'");
+  test($opcode, r64() , r16() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r64() , r32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r64() , r64() , "operand does not match the statement for: '$opcode'");
+
+  test($opcode, r64() , m8()  , "operand does not match the statement for: '$opcode'");
+  test($opcode, r64() , m16() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r64() , m32() , "operand does not match the statement for: '$opcode'");
+  test($opcode, r64() , m64() , "operand does not match the statement for: '$opcode'");
+
+  test($opcode, r64() , i8()  , "immediate operand not allowed for: '$opcode'");
+  test($opcode, mm()  , i8()  , "immediate operand not allowed for: '$opcode'");
+
+  // Good examples (should assemble without error).
+  test($opcode, mm()  , r64() , '');
+  test($opcode, mm()  , m64() , '');
+  test($opcode, r64() , mm()  , '');
+  test($opcode, m64() , mm()  , '');
+  test($opcode, mm()  , mm()  , '');
