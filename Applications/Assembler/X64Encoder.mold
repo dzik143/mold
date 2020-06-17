@@ -3495,275 +3495,343 @@ class X64Encoder
   endmethod
 
   method packssdw_mm_mm(mmDst, mmSrc)
-    die('not implemented: packssdw mm,mm')
+    global X64_PACKSSDW
+    this.emitCore_r_r(X64_PACKSSDW, mmDst, mmSrc)
   endmethod
 
-  method packssdw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: packssdw mm,m')
+  method packssdw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PACKSSDW
+    this.emitCore_r_m(X64_PACKSSDW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method packsswb_mm_mm(mmDst, mmSrc)
-    die('not implemented: packsswb mm,mm')
+    global X64_PACKSSWB
+    this.emitCore_r_r(X64_PACKSSWB, mmDst, mmSrc)
   endmethod
 
-  method packsswb_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: packsswb mm,m')
+  method packsswb_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PACKSSWB
+    this.emitCore_r_m(X64_PACKSSWB, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method packuswb_mm_mm(mmDst, mmSrc)
-    die('not implemented: packuswb mm,mm')
+    global X64_PACKUSWB
+    this.emitCore_r_r(X64_PACKUSWB, mmDst, mmSrc)
   endmethod
 
-  method packuswb_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: packuswb mm,m')
+  method packuswb_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PACKUSWB
+    this.emitCore_r_m(X64_PACKUSWB, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method paddb_mm_mm(mmDst, mmSrc)
-    die('not implemented: paddb mm,mm')
+    global X64_PADDB
+    this.emitCore_r_r(X64_PADDB, mmDst, mmSrc)
   endmethod
 
-  method paddb_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: paddb mm,m')
+  method paddb_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PADDB
+    this.emitCore_r_m(X64_PADDB, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method paddw_mm_mm(mmDst, mmSrc)
-    die('not implemented: paddw mm,mm')
+    global X64_PADDW
+    this.emitCore_r_r(X64_PADDW, mmDst, mmSrc)
   endmethod
 
-  method paddw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: paddw mm,m')
+  method paddw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PADDW
+    this.emitCore_r_m(X64_PADDW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method paddd_mm_mm(mmDst, mmSrc)
-    die('not implemented: paddd mm,mm')
+    global X64_PADDD
+    this.emitCore_r_r(X64_PADDD, mmDst, mmSrc)
   endmethod
 
-  method paddd_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: paddd mm,m')
+  method paddd_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PADDD
+    this.emitCore_r_m(X64_PADDD, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method paddq_mm_mm(mmDst, mmSrc)
-    die('not implemented: paddq mm,mm')
+    global X64_PADDQ
+    this.emitCore_r_r(X64_PADDQ, mmDst, mmSrc)
   endmethod
 
-  method paddq_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: paddq mm,m')
+  method paddq_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PADDQ
+    this.emitCore_r_m(X64_PADDQ, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method paddsb_mm_mm(mmDst, mmSrc)
-    die('not implemented: paddsb mm,mm')
+    global X64_PADDSB
+    this.emitCore_r_r(X64_PADDSB, mmDst, mmSrc)
   endmethod
 
-  method paddsb_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: paddsb mm,m')
+  method paddsb_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PADDSB
+    this.emitCore_r_m(X64_PADDSB, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method paddsw_mm_mm(mmDst, mmSrc)
-    die('not implemented: paddsw mm,mm')
+    global X64_PADDSW
+    this.emitCore_r_r(X64_PADDSW, mmDst, mmSrc)
   endmethod
 
-  method paddsw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: paddsw mm,m')
+  method paddsw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PADDSW
+    this.emitCore_r_m(X64_PADDSW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method paddusb_mm_mm(mmDst, mmSrc)
-    die('not implemented: paddusb mm,mm')
+    global X64_PADDUSB
+    this.emitCore_r_r(X64_PADDUSB, mmDst, mmSrc)
   endmethod
 
-  method paddusb_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: paddusb mm,m')
+  method paddusb_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PADDUSB
+    this.emitCore_r_m(X64_PADDUSB, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method paddusw_mm_mm(mmDst, mmSrc)
-    die('not implemented: paddusw mm,mm')
+    global X64_PADDUSW
+    this.emitCore_r_r(X64_PADDUSW, mmDst, mmSrc)
   endmethod
 
-  method paddusw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: paddusw mm,m')
+  method paddusw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PADDUSW
+    this.emitCore_r_m(X64_PADDUSW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pmaddwd_mm_mm(mmDst, mmSrc)
-    die('not implemented: pmaddwd mm,mm')
+    global X64_PMADDWD
+    this.emitCore_r_r(X64_PMADDWD, mmDst, mmSrc)
   endmethod
 
-  method pmaddwd_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pmaddwd mm,m')
+  method pmaddwd_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PMADDWD
+    this.emitCore_r_m(X64_PMADDWD, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pand_mm_mm(mmDst, mmSrc)
-    die('not implemented: pand mm,mm')
+    global X64_PAND
+    this.emitCore_r_r(X64_PAND, mmDst, mmSrc)
   endmethod
 
-  method pand_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pand mm,m')
+  method pand_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PAND
+    this.emitCore_r_m(X64_PAND, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pandn_mm_mm(mmDst, mmSrc)
-    die('not implemented: pandn mm,mm')
+    global X64_PANDN
+    this.emitCore_r_r(X64_PANDN, mmDst, mmSrc)
   endmethod
 
-  method pandn_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pandn mm,m')
+  method pandn_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PANDN
+    this.emitCore_r_m(X64_PANDN, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method por_mm_mm(mmDst, mmSrc)
-    die('not implemented: por mm,mm')
+    global X64_POR
+    this.emitCore_r_r(X64_POR, mmDst, mmSrc)
   endmethod
 
-  method por_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: por mm,m')
+  method por_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_POR
+    this.emitCore_r_m(X64_POR, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pxor_mm_mm(mmDst, mmSrc)
-    die('not implemented: pxor mm,mm')
+    global X64_PXOR
+    this.emitCore_r_r(X64_PXOR, mmDst, mmSrc)
   endmethod
 
-  method pxor_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pxor mm,m')
+  method pxor_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PXOR
+    this.emitCore_r_m(X64_PXOR, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pcmpeqb_mm_mm(mmDst, mmSrc)
-    die('not implemented: pcmpeqb mm,mm')
+    global X64_PCMPEQB
+    this.emitCore_r_r(X64_PCMPEQB, mmDst, mmSrc)
   endmethod
 
-  method pcmpeqb_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pcmpeqb mm,m')
+  method pcmpeqb_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PCMPEQB
+    this.emitCore_r_m(X64_PCMPEQB, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pcmpeqw_mm_mm(mmDst, mmSrc)
-    die('not implemented: pcmpeqw mm,mm')
+    global X64_PCMPEQW
+    this.emitCore_r_r(X64_PCMPEQW, mmDst, mmSrc)
   endmethod
 
-  method pcmpeqw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pcmpeqw mm,m')
+  method pcmpeqw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PCMPEQW
+    this.emitCore_r_m(X64_PCMPEQW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pcmpeqd_mm_mm(mmDst, mmSrc)
-    die('not implemented: pcmpeqd mm,mm')
+    global X64_PCMPEQD
+    this.emitCore_r_r(X64_PCMPEQD, mmDst, mmSrc)
   endmethod
 
-  method pcmpeqd_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pcmpeqd mm,m')
+  method pcmpeqd_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PCMPEQD
+    this.emitCore_r_m(X64_PCMPEQD, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pcmpgtb_mm_mm(mmDst, mmSrc)
-    die('not implemented: pcmpgtb mm,mm')
+    global X64_PCMPGTB
+    this.emitCore_r_r(X64_PCMPGTB, mmDst, mmSrc)
   endmethod
 
-  method pcmpgtb_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pcmpgtb mm,m')
+  method pcmpgtb_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PCMPGTB
+    this.emitCore_r_m(X64_PCMPGTB, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pcmpgtw_mm_mm(mmDst, mmSrc)
-    die('not implemented: pcmpgtw mm,mm')
+    global X64_PCMPGTW
+    this.emitCore_r_r(X64_PCMPGTW, mmDst, mmSrc)
   endmethod
 
-  method pcmpgtw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pcmpgtw mm,m')
+  method pcmpgtw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PCMPGTW
+    this.emitCore_r_m(X64_PCMPGTW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pcmpgtd_mm_mm(mmDst, mmSrc)
-    die('not implemented: pcmpgtd mm,mm')
+    global X64_PCMPGTD
+    this.emitCore_r_r(X64_PCMPGTD, mmDst, mmSrc)
   endmethod
 
-  method pcmpgtd_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pcmpgtd mm,m')
+  method pcmpgtd_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PCMPGTD
+    this.emitCore_r_m(X64_PCMPGTD, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pmulhw_mm_mm(mmDst, mmSrc)
-    die('not implemented: pmulhw mm,mm')
+    global X64_PMULHW
+    this.emitCore_r_r(X64_PMULHW, mmDst, mmSrc)
   endmethod
 
-  method pmulhw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pmulhw mm,m')
+  method pmulhw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PMULHW
+    this.emitCore_r_m(X64_PMULHW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pmullw_mm_mm(mmDst, mmSrc)
-    die('not implemented: pmullw mm,mm')
+    global X64_PMULLW
+    this.emitCore_r_r(X64_PMULLW, mmDst, mmSrc)
   endmethod
 
-  method pmullw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pmullw mm,m')
+  method pmullw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PMULLW
+    this.emitCore_r_m(X64_PMULLW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method psubb_mm_mm(mmDst, mmSrc)
-    die('not implemented: psubb mm,mm')
+    global X64_PSUBB
+    this.emitCore_r_r(X64_PSUBB, mmDst, mmSrc)
   endmethod
 
-  method psubb_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psubb mm,m')
+  method psubb_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSUBB
+    this.emitCore_r_m(X64_PSUBB, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method psubw_mm_mm(mmDst, mmSrc)
-    die('not implemented: psubw mm,mm')
+    global X64_PSUBW
+    this.emitCore_r_r(X64_PSUBW, mmDst, mmSrc)
   endmethod
 
-  method psubw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psubw mm,m')
+  method psubw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSUBW
+    this.emitCore_r_m(X64_PSUBW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method psubd_mm_mm(mmDst, mmSrc)
-    die('not implemented: psubd mm,mm')
+    global X64_PSUBD
+    this.emitCore_r_r(X64_PSUBD, mmDst, mmSrc)
   endmethod
 
-  method psubd_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psubd mm,m')
+  method psubd_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSUBD
+    this.emitCore_r_m(X64_PSUBD, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method psubsb_mm_mm(mmDst, mmSrc)
-    die('not implemented: psubsb mm,mm')
+    global X64_PSUBSB
+    this.emitCore_r_r(X64_PSUBSB, mmDst, mmSrc)
   endmethod
 
-  method psubsb_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psubsb mm,m')
+  method psubsb_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSUBSB
+    this.emitCore_r_m(X64_PSUBSB, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method psubsw_mm_mm(mmDst, mmSrc)
-    die('not implemented: psubsw mm,mm')
+    global X64_PSUBSW
+    this.emitCore_r_r(X64_PSUBSW, mmDst, mmSrc)
   endmethod
 
-  method psubsw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psubsw mm,m')
+  method psubsw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSUBSW
+    this.emitCore_r_m(X64_PSUBSW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method psubusb_mm_mm(mmDst, mmSrc)
-    die('not implemented: psubusb mm,mm')
+    global X64_PSUBUSB
+    this.emitCore_r_r(X64_PSUBUSB, mmDst, mmSrc)
   endmethod
 
-  method psubusb_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psubusb mm,m')
+  method psubusb_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSUBUSB
+    this.emitCore_r_m(X64_PSUBUSB, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method psubusw_mm_mm(mmDst, mmSrc)
-    die('not implemented: psubusw mm,mm')
+    global X64_PSUBUSW
+    this.emitCore_r_r(X64_PSUBUSW, mmDst, mmSrc)
   endmethod
 
-  method psubusw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psubusw mm,m')
+  method psubusw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSUBUSW
+    this.emitCore_r_m(X64_PSUBUSW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method punpckhbw_mm_mm(mmDst, mmSrc)
-    die('not implemented: punpckhbw mm,mm')
+    global X64_PUNPCKHBW
+    this.emitCore_r_r(X64_PUNPCKHBW, mmDst, mmSrc)
   endmethod
 
-  method punpckhbw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: punpckhbw mm,m')
+  method punpckhbw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PUNPCKHBW
+    this.emitCore_r_m(X64_PUNPCKHBW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method punpckhwd_mm_mm(mmDst, mmSrc)
-    die('not implemented: punpckhwd mm,mm')
+    global X64_PUNPCKHWD
+    this.emitCore_r_r(X64_PUNPCKHWD, mmDst, mmSrc)
   endmethod
 
-  method punpckhwd_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: punpckhwd mm,m')
+  method punpckhwd_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PUNPCKHWD
+    this.emitCore_r_m(X64_PUNPCKHWD, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method punpckhdq_mm_mm(mmDst, mmSrc)
-    die('not implemented: punpckhdq mm,mm')
+    global X64_PUNPCKHDQ
+    this.emitCore_r_r(X64_PUNPCKHDQ, mmDst, mmSrc)
   endmethod
 
-  method punpckhdq_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: punpckhdq mm,m')
+  method punpckhdq_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PUNPCKHDQ
+    this.emitCore_r_m(X64_PUNPCKHDQ, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   # TODO: Fasm gives invalid operands for mm,m32
@@ -3771,115 +3839,159 @@ class X64Encoder
   # punpcklwd mm,mm | mm,m32
   # punpckldq mm,mm | mm,m32
   method punpcklbw_mm_mm(mmDst, mmSrc)
-    die('not implemented: punpcklbw mm,mm')
+    global X64_PUNPCKLBW
+    this.emitCore_r_r(X64_PUNPCKLBW, mmDst, mmSrc)
   endmethod
 
   method punpcklwd_mm_mm(mmDst, mmSrc)
-    die('not implemented: punpcklwd mm,mm')
+    global X64_PUNPCKLWD
+    this.emitCore_r_r(X64_PUNPCKLWD, mmDst, mmSrc)
   endmethod
 
   method punpckldq_mm_mm(mmDst, mmSrc)
-    die('not implemented: punpckldq mm,mm')
+    global X64_PUNPCKLDQ
+    this.emitCore_r_r(X64_PUNPCKLDQ, mmDst, mmSrc)
   endmethod
 
   method psllw_mm_mm(mmDst, mmSrc)
-    die('not implemented: psllw mm,mm')
+    global X64_PSLLW
+    this.emitCore_r_r(X64_PSLLW, mmDst, mmSrc)
   endmethod
 
-  method psllw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psllw mm,m')
+  method psllw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSLLW
+    this.emitCore_r_m(X64_PSLLW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method psllw_mm_imm(mmDst, imm)
-    die('not implemented: psllw mm,imm')
+    # TODO: Clean up this mess.
+    global X64_PSLLW_MM_IMM8
+    this.emitCore_r_r(X64_PSLLW_MM_IMM8, 6, mmDst)
+    this.emitByte(imm)
   endmethod
 
   method pslld_mm_mm(mmDst, mmSrc)
-    die('not implemented: pslld mm,mm')
+    global X64_PSLLD
+    this.emitCore_r_r(X64_PSLLD, mmDst, mmSrc)
   endmethod
 
-  method pslld_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pslld mm,m')
+  method pslld_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSLLD
+    this.emitCore_r_m(X64_PSLLD, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pslld_mm_imm(mmDst, imm)
-    die('not implemented: pslld mm,imm')
+    # TODO: Clean up this mess.
+    global X64_PSLLD_MM_IMM8
+    this.emitCore_r_r(X64_PSLLD_MM_IMM8, 6, mmDst)
+    this.emitByte(imm)
   endmethod
 
   method psllq_mm_mm(mmDst, mmSrc)
-    die('not implemented: psllq mm,mm')
+    global X64_PSLLQ
+    this.emitCore_r_r(X64_PSLLQ, mmDst, mmSrc)
   endmethod
 
-  method psllq_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psllq mm,m')
+  method psllq_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSLLQ
+    this.emitCore_r_m(X64_PSLLQ, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method psllq_mm_imm(mmDst, imm)
-    die('not implemented: psllq mm,imm')
+    # TODO: Clean up this mess.
+    global X64_PSLLQ_MM_IMM8
+    this.emitCore_r_r(X64_PSLLQ_MM_IMM8, 6, mmDst)
+    this.emitByte(imm)
   endmethod
 
   method psrad_mm_mm(mmDst, mmSrc)
-    die('not implemented: psrad mm,mm')
+    global X64_PSRAD
+    this.emitCore_r_r(X64_PSRAD, mmDst, mmSrc)
   endmethod
 
-  method psrad_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psrad mm,m')
+  method psrad_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSRAD
+    this.emitCore_r_m(X64_PSRAD, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method psrad_mm_imm(mmDst, imm)
-    die('not implemented: psrad mm,imm')
+    # TODO: Clean up this mess.
+    global X64_PSRAD_MM_IMM8
+    this.emitCore_r_r(X64_PSRAD_MM_IMM8, 4, mmDst)
+    this.emitByte(imm)
   endmethod
 
   method psraw_mm_mm(mmDst, mmSrc)
-    die('not implemented: psraw mm,mm')
+    global X64_PSRAW
+    this.emitCore_r_r(X64_PSRAW, mmDst, mmSrc)
   endmethod
 
-  method psraw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psraw mm,m')
+  method psraw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSRAW
+    this.emitCore_r_m(X64_PSRAW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method psraw_mm_imm(mmDst, imm)
-    die('not implemented: psraw mm,imm')
+    # TODO: Clean up this mess.
+    global X64_PSRAW_MM_IMM8
+    this.emitCore_r_r(X64_PSRAW_MM_IMM8, 4, mmDst)
+    this.emitByte(imm)
   endmethod
 
   method psrlw_mm_mm(mmDst, mmSrc)
-    die('not implemented: psrlw mm,mm')
+    global X64_PSRLW
+    this.emitCore_r_r(X64_PSRLW, mmDst, mmSrc)
   endmethod
 
-  method psrlw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psrlw mm,m')
+  method psrlw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSRLW
+    this.emitCore_r_m(X64_PSRLW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method psrlw_mm_imm(mmDst, imm)
-    die('not implemented: psrlw mm,imm')
+    # TODO: Clean up this mess.
+    global X64_PSRLW_MM_IMM8
+    this.emitCore_r_r(X64_PSRLW_MM_IMM8, 2, mmDst)
+    this.emitByte(imm)
   endmethod
 
   method psrld_mm_mm(mmDst, mmSrc)
-    die('not implemented: psrld mm,mm')
+    global X64_PSRLD
+    this.emitCore_r_r(X64_PSRLD, mmDst, mmSrc)
   endmethod
 
-  method psrld_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psrld mm,m')
+  method psrld_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSRLD
+    this.emitCore_r_m(X64_PSRLD, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method psrld_mm_imm(mmDst, imm)
-    die('not implemented: psrld mm,imm')
+    # TODO: Clean up this mess.
+    global X64_PSRLD_MM_IMM8
+    this.emitCore_r_r(X64_PSRLD_MM_IMM8, 2, mmDst)
+    this.emitByte(imm)
   endmethod
 
   method psrlq_mm_mm(mmDst, mmSrc)
-    die('not implemented: psrlq mm,mm')
+    global X64_PSRLQ
+    this.emitCore_r_r(X64_PSRLQ, mmDst, mmSrc)
   endmethod
 
-  method psrlq_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psrlq mm,m')
+  method psrlq_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSRLQ
+    this.emitCore_r_m(X64_PSRLQ, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method psrlq_mm_imm(mmDst, imm)
-    die('not implemented: psrlq mm,imm')
+    # TODO: Clean up this mess.
+    global X64_PSRLQ_MM_IMM8
+    this.emitCore_r_r(X64_PSRLQ_MM_IMM8, 2, mmDst)
+    this.emitByte(imm)
   endmethod
 
   method emms()
-    die('not implemented: emms -')
+    global X64_EMMS
+    this.emitWord(X64_EMMS)
   endmethod
 
   # ------------------------------------------------------------------------------
@@ -3940,67 +4052,83 @@ class X64Encoder
   endmethod
 
   method pminub_mm_mm(mmDst, mmSrc)
-    die('not implemented: pminub mm,mm')
+    global X64_PMINUB
+    this.emitCore_r_r(X64_PMINUB, mmDst, mmSrc)
   endmethod
 
-  method pminub_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pminub mm,m')
+  method pminub_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PMINUB
+    this.emitCore_r_m(X64_PMINUB, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pmaxub_mm_mm(mmDst, mmSrc)
-    die('not implemented: pmaxub mm,mm')
+    global X64_PMAXUB
+    this.emitCore_r_r(X64_PMAXUB, mmDst, mmSrc)
   endmethod
 
-  method pmaxub_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pmaxub mm,m')
+  method pmaxub_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PMAXUB
+    this.emitCore_r_m(X64_PMAXUB, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pavgb_mm_mm(mmDst, mmSrc)
-    die('not implemented: pavgb mm,mm')
+    global X64_PAVGB
+    this.emitCore_r_r(X64_PAVGB, mmDst, mmSrc)
   endmethod
 
-  method pavgb_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pavgb mm,m')
+  method pavgb_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PAVGB
+    this.emitCore_r_m(X64_PAVGB, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pavgw_mm_mm(mmDst, mmSrc)
-    die('not implemented: pavgw mm,mm')
+    global X64_PAVGW
+    this.emitCore_r_r(X64_PAVGW, mmDst, mmSrc)
   endmethod
 
-  method pavgw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pavgw mm,m')
+  method pavgw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PAVGW
+    this.emitCore_r_m(X64_PAVGW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pmulhuw_mm_mm(mmDst, mmSrc)
-    die('not implemented: pmulhuw mm,mm')
+    global X64_PMULHUW
+    this.emitCore_r_r(X64_PMULHUW, mmDst, mmSrc)
   endmethod
 
-  method pmulhuw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pmulhuw mm,m')
+  method pmulhuw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PMULHUW
+    this.emitCore_r_m(X64_PMULHUW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pminsw_mm_mm(mmDst, mmSrc)
-    die('not implemented: pminsw mm,mm')
+    global X64_PMINSW
+    this.emitCore_r_r(X64_PMINSW, mmDst, mmSrc)
   endmethod
 
-  method pminsw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pminsw mm,m')
+  method pminsw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PMINSW
+    this.emitCore_r_m(X64_PMINSW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pmaxsw_mm_mm(mmDst, mmSrc)
-    die('not implemented: pmaxsw mm,mm')
+    global X64_PMAXSW
+    this.emitCore_r_r(X64_PMAXSW, mmDst, mmSrc)
   endmethod
 
-  method pmaxsw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pmaxsw mm,m')
+  method pmaxsw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PMAXSW
+    this.emitCore_r_m(X64_PMAXSW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method psadbw_mm_mm(mmDst, mmSrc)
-    die('not implemented: psadbw mm,mm')
+    global X64_PSADBW
+    this.emitCore_r_r(X64_PSADBW, mmDst, mmSrc)
   endmethod
 
-  method psadbw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psadbw mm,m')
+  method psadbw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSADBW
+    this.emitCore_r_m(X64_PSADBW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   # ------------------------------------------------------------------------------
@@ -4008,19 +4136,23 @@ class X64Encoder
   # ------------------------------------------------------------------------------
 
   method psubq_mm_mm(mmDst, mmSrc)
-    die('not implemented: psubq mm,mm')
+    global X64_PSUBQ
+    this.emitCore_r_r(X64_PSUBQ, mmDst, mmSrc)
   endmethod
 
-  method psubq_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psubq mm,m')
+  method psubq_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSUBQ
+    this.emitCore_r_m(X64_PSUBQ, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pmuludq_mm_mm(mmDst, mmSrc)
-    die('not implemented: pmuludq mm,mm')
+    global X64_PMULUDQ
+    this.emitCore_r_r(X64_PMULUDQ, mmDst, mmSrc)
   endmethod
 
-  method pmuludq_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pmuludq mm,m')
+  method pmuludq_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PMULUDQ
+    this.emitCore_r_m(X64_PMULUDQ, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   # ------------------------------------------------------------------------------
@@ -4028,123 +4160,153 @@ class X64Encoder
   # ------------------------------------------------------------------------------
 
   method psignb_mm_mm(mmDst, mmSrc)
-    die('not implemented: psignb mm,mm')
+    global X64_PSIGNB
+    this.emitCore_r_r(X64_PSIGNB, mmDst, mmSrc)
   endmethod
 
-  method psignb_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psignb mm,m')
+  method psignb_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSIGNB
+    this.emitCore_r_m(X64_PSIGNB, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method psignw_mm_mm(mmDst, mmSrc)
-    die('not implemented: psignw mm,mm')
+    global X64_PSIGNW
+    this.emitCore_r_r(X64_PSIGNW, mmDst, mmSrc)
   endmethod
 
-  method psignw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psignw mm,m')
+  method psignw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSIGNW
+    this.emitCore_r_m(X64_PSIGNW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method psignd_mm_mm(mmDst, mmSrc)
-    die('not implemented: psignd mm,mm')
+    global X64_PSIGND
+    this.emitCore_r_r(X64_PSIGND, mmDst, mmSrc)
   endmethod
 
-  method psignd_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: psignd mm,m')
+  method psignd_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSIGND
+    this.emitCore_r_m(X64_PSIGND, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pshufb_mm_mm(mmDst, mmSrc)
-    die('not implemented: pshufb mm,mm')
+    global X64_PSHUFB
+    this.emitCore_r_r(X64_PSHUFB, mmDst, mmSrc)
   endmethod
 
-  method pshufb_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pshufb mm,m')
+  method pshufb_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PSHUFB
+    this.emitCore_r_m(X64_PSHUFB, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pmulhrsw_mm_mm(mmDst, mmSrc)
-    die('not implemented: pmulhrsw mm,mm')
+    global X64_PMULHRSW
+    this.emitCore_r_r(X64_PMULHRSW, mmDst, mmSrc)
   endmethod
 
-  method pmulhrsw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pmulhrsw mm,m')
+  method pmulhrsw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PMULHRSW
+    this.emitCore_r_m(X64_PMULHRSW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pmaddubsw_mm_mm(mmDst, mmSrc)
-    die('not implemented: pmaddubsw mm,mm')
+    global X64_PMADDUBSW
+    this.emitCore_r_r(X64_PMADDUBSW, mmDst, mmSrc)
   endmethod
 
-  method pmaddubsw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pmaddubsw mm,m')
+  method pmaddubsw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PMADDUBSW
+    this.emitCore_r_m(X64_PMADDUBSW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method phsubw_mm_mm(mmDst, mmSrc)
-    die('not implemented: phsubw mm,mm')
+    global X64_PHSUBW
+    this.emitCore_r_r(X64_PHSUBW, mmDst, mmSrc)
   endmethod
 
-  method phsubw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: phsubw mm,m')
+  method phsubw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PHSUBW
+    this.emitCore_r_m(X64_PHSUBW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method phsubsw_mm_mm(mmDst, mmSrc)
-    die('not implemented: phsubsw mm,mm')
+    global X64_PHSUBSW
+    this.emitCore_r_r(X64_PHSUBSW, mmDst, mmSrc)
   endmethod
 
-  method phsubsw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: phsubsw mm,m')
+  method phsubsw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PHSUBSW
+    this.emitCore_r_m(X64_PHSUBSW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method phsubd_mm_mm(mmDst, mmSrc)
-    die('not implemented: phsubd mm,mm')
+    global X64_PHSUBD
+    this.emitCore_r_r(X64_PHSUBD, mmDst, mmSrc)
   endmethod
 
-  method phsubd_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: phsubd mm,m')
+  method phsubd_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PHSUBD
+    this.emitCore_r_m(X64_PHSUBD, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method phaddsw_mm_mm(mmDst, mmSrc)
-    die('not implemented: phaddsw mm,mm')
+    global X64_PHADDSW
+    this.emitCore_r_r(X64_PHADDSW, mmDst, mmSrc)
   endmethod
 
-  method phaddsw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: phaddsw mm,m')
+  method phaddsw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PHADDSW
+    this.emitCore_r_m(X64_PHADDSW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method phaddw_mm_mm(mmDst, mmSrc)
-    die('not implemented: phaddw mm,mm')
+    global X64_PHADDW
+    this.emitCore_r_r(X64_PHADDW, mmDst, mmSrc)
   endmethod
 
-  method phaddw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: phaddw mm,m')
+  method phaddw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PHADDW
+    this.emitCore_r_m(X64_PHADDW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method phaddd_mm_mm(mmDst, mmSrc)
-    die('not implemented: phaddd mm,mm')
+    global X64_PHADDD
+    this.emitCore_r_r(X64_PHADDD, mmDst, mmSrc)
   endmethod
 
-  method phaddd_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: phaddd mm,m')
+  method phaddd_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PHADDD
+    this.emitCore_r_m(X64_PHADDD, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pabsb_mm_mm(mmDst, mmSrc)
-    die('not implemented: pabsb mm,mm')
+    global X64_PABSB
+    this.emitCore_r_r(X64_PABSB, mmDst, mmSrc)
   endmethod
 
-  method pabsb_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pabsb mm,m')
+  method pabsb_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PABSB
+    this.emitCore_r_m(X64_PABSB, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pabsw_mm_mm(mmDst, mmSrc)
-    die('not implemented: pabsw mm,mm')
+    global X64_PABSW
+    this.emitCore_r_r(X64_PABSW, mmDst, mmSrc)
   endmethod
 
-  method pabsw_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pabsw mm,m')
+  method pabsw_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PABSW
+    this.emitCore_r_m(X64_PABSW, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method pabsd_mm_mm(mmDst, mmSrc)
-    die('not implemented: pabsd mm,mm')
+    global X64_PABSD
+    this.emitCore_r_r(X64_PABSD, mmDst, mmSrc)
   endmethod
 
-  method pabsd_mm_r(mmDst, regBase, scale, regIndex, disp)
-    die('not implemented: pabsd mm,m')
+  method pabsd_mm_m(mmDst, regBase, scale, regIndex, disp)
+    global X64_PABSD
+    this.emitCore_r_m(X64_PABSD, mmDst, regBase, scale, regIndex, disp)
   endmethod
 
   method palignr_mm_mm_imm8(mmDst, mmSrc, imm8)
