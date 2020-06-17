@@ -52,7 +52,7 @@
     'mm,m,imm'  => '_mm_m_imm(mmDst, regBase, scale, regIndex, disp, imm)',
     'mm,r,imm'  => '_mm_m_imm(mmDst, regSrc, imm)',
     'r,mm,imm'  => '_r_mm_imm(regDst, mmSrc, imm)',
-    'mm,m'      => '_mm_r(mmDst, regBase, scale, regIndex, disp)',
+    'mm,m'      => '_mm_m(mmDst, regBase, scale, regIndex, disp)',
     'm,mm'      => '_m_mm(regBase, scale, regIndex, disp, mmSrc)',
 
     'xmm,xmm'     => '_xmm_xmm(xmmDst, xmmSrc)',
@@ -154,7 +154,27 @@
 
                 echo '  method ', $mnemonic, $REPLACE_MAP[$patternKey];
                 echo "\n";
-                echo "    die('not implemented: $mnemonic $patternKey')\n";
+
+                $mnemonicId = 'X64_'.strtoupper($mnemonic);
+
+                switch ($patternKey) {
+                  case 'mm,mm': {
+                    echo "    global $mnemonicId\n";
+                    echo "    this.emitCore_r_r($mnemonicId, mmDst, mmSrc)\n";
+                    break;
+                  }
+
+                  case 'mm,m': {
+                    echo "    global $mnemonicId\n";
+                    echo "    this.emitCore_r_m($mnemonicId, mmDst, regBase, scale, regIndex, disp)\n";
+                    break;
+                  }
+
+                  default: {
+                    echo "    die('not implemented: $mnemonic $patternKey')\n";
+                  }
+                }
+
                 echo "  endmethod\n\n";
               }
             }
