@@ -809,6 +809,18 @@ class X64Translator extends PipeAbstract
     endif
   endmethod
 
+  method _failIfNonMMReg(item, reg)
+    if X64_IsRegMM(reg) is false
+      this._errorBadSyntax(item)
+    endif
+  endmethod
+
+  method _failIfNon64Data(item)
+    if item.dataSize isnt 8
+      this._error("only 64-bit data allowed for: '" + item.mnemonic + "'")
+    endif
+  endmethod
+
   method _errorBadSyntax(item)
     this._error("operand does not match the statement for: '" + item.mnemonic + "'")
   endmethod
@@ -1337,7 +1349,12 @@ class X64Translator extends PipeAbstract
               encoder.enter_imm16_imm8(imm, item.imm2)
 
             elif opcode is X64_MOVD_MM_RM32
-              if scale is defined
+              this._failIfImmIsUsed(item)
+
+              if (scale is defined) and (X64_IsRegMM(reg) is true) and (dataSize is 4)
+                # movd m32, mm
+                # movd mm, m32
+
                 if item.isWriteToMemory is true
                   # movd m32, mm
                   encoder.movd_m32_mm(regBase, scale, regIndex, disp, reg)
@@ -1346,16 +1363,23 @@ class X64Translator extends PipeAbstract
                   encoder.movd_mm_m32(reg, regBase, scale, regIndex, disp)
                 endif
 
-              elif X64_IsReg32(reg) is true
+              elif (X64_IsReg32(reg) is true) and (X64_IsRegMM(rm) is true)
                 # movd r32,mm
                 encoder.movd_r32_mm(reg, rm)
-              else
+
+              elif (X64_IsRegMM(reg) is true) and (X64_IsReg32(rm) is true)
                 # movd mm,r32
                 encoder.movd_mm_r32(reg, rm)
+
+              else
+                # Syntax syntax.
+                this._errorBadSyntax(item)
               endif
 
             elif opcode is X64_MOVQ_MM_M64
-              if scale is defined
+              this._failIfImmIsUsed(item)
+
+              if (scale is defined) and (dataSize is 8) and (X64_IsRegMM(reg) is true)
                 if item.isWriteToMemory is true
                   # movd m64,mm
                   encoder.movq_m64_mm(regBase, scale, regIndex, disp, reg)
@@ -1368,12 +1392,17 @@ class X64Translator extends PipeAbstract
                 # movq mm,mm
                 encoder.movq_mm_mm(reg, rm)
 
-              elif X64_IsReg64(reg) is true
+              elif (X64_IsReg64(reg) is true) and (X64_IsRegMM(rm) is true)
                 # movd r64,mm
                 encoder.movq_r64_mm(reg, rm)
-              else
+
+              elif (X64_IsRegMM(reg) is true) and (X64_IsReg64(rm) is true)
                 # movd mm,r64
                 encoder.movq_mm_r64(reg, rm)
+
+              else
+                # Syntax error.
+                this._errorBadSyntax(item)
               endif
             endif
 
@@ -1494,21 +1523,29 @@ class X64Translator extends PipeAbstract
             endif
 
           elif handlerId is X64_HANDLER_MMX
-            # TODO: Validate operands.
+            this._failIfImmIsUsed(item)
+            this._failIfNonMMReg(item, reg)
+
             if scale is defined
               # mm,m64
+              this._failIfMemoryWrite(item)
+              this._failIfNon64Data(item)
               encoder.emitCore_r_m(opcode, reg, regBase, scale, regIndex, disp)
 
             elif rm is defined
               # mm,mm
+              this._failIfNonMMReg(item, rm)
               encoder.emitCore_r_r(opcode, reg, rm)
             endif
 
           elif handlerId is X64_HANDLER_MMX_SHIFT
-            # TODO: Validate operands.
+            this._failIfNonMMReg(item, reg)
+
             if imm is defined
               # mm,imm
               # TODO: Clean up this mess.
+              this._failIfOutOfRange(imm, 0, 255)
+
               operationId = opcode // 65536
               opcode      = bitand(opcode, 0xfff) + 0x7000
               encoder.emitCore_r_r(opcode, operationId, reg)
@@ -1516,11 +1553,15 @@ class X64Translator extends PipeAbstract
 
             elif scale is defined
               # mm,m64
+              this._failIfMemoryWrite(item)
+              this._failIfNon64Data(item)
+
               opcode = bitand(opcode, 0xffff)
               encoder.emitCore_r_m(opcode, reg, regBase, scale, regIndex, disp)
 
             elif rm is defined
               # mm,mm
+              this._failIfNonMMReg(item, rm)
               opcode = bitand(opcode, 0xffff)
               encoder.emitCore_r_r(opcode, reg, rm)
             endif
@@ -1570,41 +1611,88 @@ class X64Translator extends PipeAbstract
               endif
 
             elif opcode is X64_PALIGNR
-              # TODO: Validate operands.
               this._validateNumberOfOperands(numberOfOperands, 3)
+              this._failIfImmIsMissing(item)
+              this._failIfNonMMReg(item, reg)
+              this._failIfOutOfRange(imm, 0, 255)
+
               if scale is defined
+                # palignr mm, m64, imm8
+                this._failIfMemoryWrite(item)
+                this._failIfNon64Data(item)
                 encoder.palignr_mm_m64_imm8(reg, regBase, scale, regIndex, disp, imm)
+
               else
+                # palignr mm, mm, imm8
+                this._failIfNonMMReg(item, rm)
                 encoder.palignr_mm_mm_imm8(reg, rm, imm)
               endif
 
             elif opcode is X64_PEXTRW
-              # TODO: Validate operands.
+              this._validateNumberOfOperands(numberOfOperands, 3)
+              this._failIfMemoryReadOrWrite(item)
+              this._failIfImmIsMissing(item)
+              this._failIfNonMMReg(item, reg)
+              this._failIfOutOfRange(imm, 0, 255)
+
+              if (X64_IsReg32(rm) is false) and (X64_IsReg64(rm) is false)
+                # Dest operand must be r32 or r64.
+                this._errorBadSyntax(item)
+              endif
+
               encoder.pextrw_r64_mm_imm8(reg, rm, imm)
 
             elif opcode is X64_PINSRW
-              # TODO: Validate operands.
+              this._validateNumberOfOperands(numberOfOperands, 3)
+              this._failIfMemoryWrite(item)
+              this._failIfImmIsMissing(item)
+              this._failIfNonMMReg(item, reg)
+              this._failIfOutOfRange(imm, 0, 255)
+
               if scale is defined
                 # pinsrw mm, m16, imm8
+                if dataSize isnt 2
+                  this._errorBadSyntax(item)
+                endif
                 encoder.pinsrw_mm_m16_imm8(reg, regBase, scale, regIndex, disp, imm)
               else
                 # pinsrw mm, r32, imm8
+                if X64_IsReg32(rm) is false
+                  this._errorBadSyntax(item)
+                endif
                 encoder.pinsrw_mm_r32_imm8(reg, rm, imm)
               endif
 
             elif opcode is X64_PMOVMSKB
-              # TODO: Validate operands.
               # pmovmskb r32, mm
               # pmovmskb r64, mm
+              this._validateNumberOfOperands(numberOfOperands, 2)
+              this._failIfMemoryReadOrWrite(item)
+              this._failIfImmIsUsed(item)
+
+              if (X64_IsReg32(reg) is false) and (X64_IsReg64(reg) is false)
+                # Dest operand must be r32 or r64.
+                this._errorBadSyntax(item)
+              endif
+
+              this._failIfNonMMReg(item, rm)
+
               encoder.pmovmskb_r_mm(reg, rm)
 
             elif opcode is X64_PSHUFW
-              # TODO: Validate operands.
+              this._validateNumberOfOperands(numberOfOperands, 3)
+              this._failIfImmIsMissing(item)
+              this._failIfNonMMReg(item, reg)
+              this._failIfOutOfRange(imm, 0, 255)
+
               if scale is defined
                 # pshufw mm, m64, imm8
+                this._failIfMemoryWrite(item)
+                this._failIfNon64Data(item)
                 encoder.pshufw_mm_m64_imm8(reg, regBase, scale, regIndex, disp, imm)
               else
                 # pshufw mm, mm, imm8
+                this._failIfNonMMReg(item, rm)
                 encoder.pshufw_mm_mm_imm8(reg, rm, imm)
               endif
 
