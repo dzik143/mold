@@ -10,3 +10,14 @@ UNRELEASED:
     processing stage too (but not during runtime error).
 
 .... TODO
+
+0.1.191126 (released on 2019-11-26)
+-----------------------------------
+
+  First release with assigned version.
+
+  Implemented:
+    - Interpreter,
+    - X64 compiler,
+    - Tests,
+    - Basic -O1 optimizations.
