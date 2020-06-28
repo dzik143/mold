@@ -34,7 +34,7 @@ import 'CodeGenerator/CodeGeneratorX64.mold'
 import 'MIR/MIRQuadOptimizer.mold'
 import 'VM/VMachineStack.mold'
 
-VERSION_STRING = '0.1.191205'
+VERSION_STRING = '0.2.200627'
 
 # ------------------------------------------------------------------------------
 #                              Helper functions
@@ -45,7 +45,7 @@ function BadUsageError()
 
   print 'Mold version', VERSION_STRING
   print 'Usage:'
-  print '  mold [-c] [--asm] [--mir0] [--mir] <input.mold>'
+  print '  mold [-c] [--asm] [--mir0] [--mir] [--profiler] <input.mold>'
   exit()
 endfunction
 
@@ -60,6 +60,7 @@ endfunction
 mode = 'interpreter'
 path = ''
 optimizationLevel = 0
+isProfilerEnabled = false
 
 for idx in 1 .. argc
   if argv[idx] is '-c'
@@ -113,6 +114,10 @@ for idx in 1 .. argc
 
   elif argv[idx] is '-O3'
     optimizationLevel = 3
+
+  elif argv[idx] is '--profiler'
+    # Add extra profilling code
+    isProfilerEnabled = true
 
   elif argv[idx][0] is '-'
     # Unknown -x switch.
@@ -286,6 +291,9 @@ else
         # Generate x64 code.
         app.logDebug('Generating x64 code...')
         codeGenerator = new CodeGeneratorX64()
+
+        # TODO: Better way to pass generator options.
+        codeGenerator.isProfilerEnabled = isProfilerEnabled
         codeGenerator.run(code)
 
       else

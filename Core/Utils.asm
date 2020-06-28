@@ -355,3 +355,36 @@ __MOLD_PrintCpuContext:
 .fmtExceptionInfo  db 'Exception %x at %p', 13, 10, 13,10, 0
 .fmtFinalMsg       db 13, 10, "I'm going to die now, thanks for using me.", 13, 10
                    db "P.S. Checkout diviner Maciej!'", 13, 10, 0
+
+
+;###############################################################################
+;
+; Print profiler statistics to stdout.
+; RCX - pointer to NULL terminated {int64, cstring}.
+; RETURNS: Nothing
+;
+;###############################################################################
+
+__MOLD_PrintProfilerData:
+  push  r12
+  mov   r12, rcx
+
+.printOneEntry:
+  lea   rcx, [.fmtEntry]
+  mov   r8,  [r12]
+  mov   rdx, [r12 + 8]
+
+  or    rdx, rdx
+  jz    .done
+
+  cinvoke printf
+
+  add   r12, 16
+  jmp   .printOneEntry
+
+.done:
+
+  pop   r12
+  ret
+
+.fmtEntry db '%64s %I64d', 13, 10, 0

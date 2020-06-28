@@ -26,6 +26,7 @@ class CodeGeneratorX64
 
   method constructor()
     this.symbols = {}
+    this.isProfilerEnabled = false
   endmethod
 
   method lea(dst, src)
@@ -1116,7 +1117,28 @@ class CodeGeneratorX64
           endif
         endfor
 
-        if (currentProcName is 'start')
+        # Profiler code if needed.
+        if this.isProfilerEnabled is true
+          print '  ; leave profiler code'
+          print '  ; -------------------'
+          print '  push   rdx'
+          print '  rdtsc'
+          print '  shl    rdx, 32'
+          print '  add    rdx, rax'
+          print '  add    qword [__profilerCounterEntry_' + currentProcName + '], rdx'
+          print '  pop    rdx'
+
+          if currentProcName is 'start'
+            print ''
+            print '  ; print profiler result'
+            print '  ; ---------------------'
+            print '  lea  rcx, [__profilerCounterData]'
+            print '  call __MOLD_PrintProfilerData'
+            print ''
+          endif
+        endif
+
+        if currentProcName is 'start'
           for values oneItem in symbols
 
             if ((oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and
@@ -1141,6 +1163,18 @@ class CodeGeneratorX64
         print currentProcName + ':'
 
         arrayOfProcedures[len(arrayOfProcedures)] = currentProcName
+
+        # Profiler code if needed.
+        if this.isProfilerEnabled is true
+          print '  ; enter profiler code'
+          print '  ; -------------------'
+          print '  push   rdx'
+          print '  rdtsc'
+          print '  shl    rdx, 32'
+          print '  add    rdx, rax'
+          print '  sub    qword [__profilerCounterEntry_' + currentProcName + '], rdx'
+          print '  pop    rdx'
+        endif
 
       elif opcode is 'endp'
         print ''
@@ -1498,5 +1532,26 @@ class CodeGeneratorX64
     endfor
 
     print "name_endOfCodeSection db 'out of code section', 0"
+
+    #
+    # Generate profiler section if needed.
+    #
+
+    if this.isProfilerEnabled is true
+      print '; ------------------------------------------------------------------------------'
+      print ';                              Profile section'
+      print '; ------------------------------------------------------------------------------'
+
+      print "section '.profile' data readable writeable"
+      print '__profilerCounterData:'
+
+      for procIdx in 0 .. len(arrayOfProcedures)
+        procName = arrayOfProcedures[procIdx]
+        print '__profilerCounterEntry_' + procName, ' dq 0,', 'name_' + procName
+      endfor
+
+      print 'dq 0, 0'
+    endif
+
   endmethod
 endclass
