@@ -382,16 +382,27 @@ class CodeGeneratorX64
       originalOpcode = opcode
 
       xType = 'variant'
+      yType = 'variant'
+
       if (itemCnt > 2) and (typeof(x) is 'string')
         if (opcode isnt 'call') and (opcode isnt 'vcall') and (opcode isnt 'syscall') and (opcode isnt 'create_object') and ((opcode[0] isnt 'c') or (opcode[1] is 'm'))
-          xInfo = currentSymbols[x]
-          if xInfo is defined
-            if xInfo.type is defined
+
+          # TODO: Clean up this mess.
+          if opcode is 'load_index'
+            yInfo = currentSymbols[y]
+
+            if (yInfo is defined) and (yInfo.type is defined)
+              yType = yInfo.type
+            endif
+            opcode = opcode + '_' + yType
+
+          else
+            xInfo = currentSymbols[x]
+            if (xInfo is defined) and (xInfo.type is defined)
               xType = xInfo.type
             endif
+            opcode = opcode + '_' + xType
           endif
-
-          opcode = opcode + '_' + xType
         endif
       endif
 
@@ -1335,13 +1346,21 @@ class CodeGeneratorX64
         this.variantDestroy(dst)
         this.call1('__MOLD_VariantMapCreate', dst)
 
-      elif originalOpcode is 'store_index'
+      elif opcode is 'store_index_variant'
         # dst[x] := y
         this.call3('__MOLD_VariantStoreAtIndex', dst, x, y)
 
-      elif originalOpcode is 'load_index'
+      elif opcode is 'store_index_int32'
+        # dst[x] := y
+        this.call3('__MOLD_VariantStoreAtIndex_int32', dst, x, y)
+
+      elif opcode is 'load_index_variant'
         # dst := x[y]
         this.call3AndDestroy('__MOLD_VariantLoadFromIndex', x, y, dst)
+
+      elif opcode is 'load_index_int32'
+        # dst := x[y]
+        this.call3AndDestroy('__MOLD_VariantLoadFromIndex_int32', x, y, dst)
 
       elif originalOpcode is 'jmp'
        print '  jmp', dst

@@ -1,15 +1,11 @@
 
 UNRELEASED:
 -----------
+  Implemented:
+    - RDTSC based profiler (--profiler option)
 
-  1. Removed obsolete __mold_xxx() functions.
-  2. Generic syscall() function for internal communication with core code.
-  3. Map built-in functions to syscall mechanism.
-  4. Major clean up and performance improvement in LALR(1) parser.
-  5. Improved error reporting. Source code line is presented during AST
-    processing stage too (but not during runtime error).
-
-.... TODO
+  Improved:
+    - Faster x64 code (load/store indexes with int32 pointers)
 
 0.1.191126 (released on 2019-11-26)
 -----------------------------------

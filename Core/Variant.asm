@@ -2089,6 +2089,28 @@ proc __MOLD_StringLength cstr
     ret
 endp
 
+__MOLD_VariantLoadFromIndex_int32:
+    ; rcx = box (Variant_t)
+    ; rdx = index (int32*)
+    ; r8  = rv (Variant_t)
+
+    mov     eax, dword [rdx]              ; eax      = index
+    lea     rdx, [__TempIndexInteger]     ; rdx      = tmpIndex
+    mov     [rdx + Variant_t.value], rax  ; tmpIndex = index
+
+    jmp     __MOLD_VariantLoadFromIndex
+
+__MOLD_VariantStoreAtIndex_int32:
+    ; rcx = box (Variant_t)
+    ; rdx = index (Variant_t)
+    ; r8  = value (Variant_t)
+
+    mov     eax, dword [rdx]              ; eax      = index
+    lea     rdx, [__TempIndexInteger]     ; rdx      = tmpIndex
+    mov     [rdx + Variant_t.value], rax  ; tmpIndex = index
+
+    jmp     __MOLD_VariantStoreAtIndex
+
 proc __MOLD_StringHashDJB2
     ; rcx = String_t
     ; TODO: Store hash in String_t struct.

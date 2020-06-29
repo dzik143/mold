@@ -68,5 +68,7 @@ OneCharacterStringTempBufferHolder2 Buffer_t  2, -1, 0, OneCharacterStringTempBu
 OneCharacterStringTempBufferBytes2  StringHead_t 1
 OneCharacterStringTempPeek2         db 0, 0
 
+__TempIndexInteger Variant_t VARIANT_INTEGER, 0, 0
+
 ; TODO: Clean up this mess.
 __TrashBin Variant_t ?

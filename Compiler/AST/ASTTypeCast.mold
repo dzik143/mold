@@ -130,7 +130,8 @@ class ASTTypeCast
 
       elif opcode is AST_OPCODE_REFERENCE
         # TODO: Handle native machine indexes.
-        children[1] = AST_TypeCast(children[1], -1)
+        # No int32 to variant conversion needed anymore.
+        # children[1] = AST_TypeCast(children[1], -1)
 
       elif opcode is AST_OPCODE_FOR_VALUES_RANGE
         # TODO: Handle non-integer counter?
