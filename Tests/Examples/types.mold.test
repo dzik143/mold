@@ -141,3 +141,461 @@ typeof(false) : boolean
 typeof([])    : array
 typeof({})    : map
 -------------------------------------------------------------------------------
+
+TEST "Bad type assign: integer = string"
+x = 1234
+x = 'text'
+
+EXPECTED_ERROR:
+./temp/source.mold:2:11: error: attemp to assign string to integer
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: integer = boolean"
+x = 1234
+x = true
+
+EXPECTED_ERROR:
+./temp/source.mold:2:9: error: attemp to assign boolean to integer
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: integer = object"
+class Test
+endclass
+
+x = 1234
+x = new Test()
+
+EXPECTED_ERROR:
+./temp/source.mold:5:9: error: attemp to assign object to integer
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: integer = array"
+x = 1234
+x = [5,6,7]
+
+EXPECTED_ERROR:
+./temp/source.mold:2:11: error: attemp to assign array to integer
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: integer = map"
+x = 1234
+x = {'five': 5, 'six': 6}
+
+EXPECTED_ERROR:
+./temp/source.mold:2:25: error: attemp to assign map to integer
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: float = string"
+x = 3.14
+x = 'text'
+
+EXPECTED_ERROR:
+./temp/source.mold:2:11: error: attemp to assign string to float
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: float = boolean"
+x = 3.14
+x = true
+
+EXPECTED_ERROR:
+./temp/source.mold:2:9: error: attemp to assign boolean to float
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: float = object"
+class Test
+endclass
+
+x = 3.14
+x = new Test()
+
+EXPECTED_ERROR:
+./temp/source.mold:5:9: error: attemp to assign object to float
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: float = array"
+x = 3.14
+x = [5,6,7]
+
+EXPECTED_ERROR:
+./temp/source.mold:2:11: error: attemp to assign array to float
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: float = map"
+x = 3.14
+x = {'five': 5, 'six': 6}
+
+EXPECTED_ERROR:
+./temp/source.mold:2:25: error: attemp to assign map to float
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: string = integer"
+x = 'text'
+x = 1234
+
+EXPECTED_ERROR:
+./temp/source.mold:2:9: error: attemp to assign integer to string
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: string = float"
+x = 'text'
+x = 3.14
+
+EXPECTED_ERROR:
+./temp/source.mold:2:9: error: attemp to assign float to string
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: string = boolean"
+x = 'text'
+x = true
+
+EXPECTED_ERROR:
+./temp/source.mold:2:9: error: attemp to assign boolean to string
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: string = object"
+class Test
+endclass
+
+x = 'text'
+x = new Test()
+
+EXPECTED_ERROR:
+./temp/source.mold:5:9: error: attemp to assign object to string
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: string = array"
+x = 'text'
+x = [5,6,7]
+
+EXPECTED_ERROR:
+./temp/source.mold:2:11: error: attemp to assign array to string
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: string = map"
+x = 'text'
+x = {'five': 5, 'six': 6}
+
+EXPECTED_ERROR:
+./temp/source.mold:2:25: error: attemp to assign map to string
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: boolean = integer"
+x = true
+x = 1234
+
+EXPECTED_ERROR:
+./temp/source.mold:2:9: error: attemp to assign integer to boolean
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: boolean = float"
+x = true
+x = 3.14
+
+EXPECTED_ERROR:
+./temp/source.mold:2:9: error: attemp to assign float to boolean
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: boolean = string"
+x = true
+x = 'text'
+
+EXPECTED_ERROR:
+./temp/source.mold:2:11: error: attemp to assign string to boolean
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: boolean = object"
+class Test
+endclass
+
+x = true
+x = new Test()
+
+EXPECTED_ERROR:
+./temp/source.mold:5:9: error: attemp to assign object to boolean
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: boolean = array"
+x = true
+x = [5,6,7]
+
+EXPECTED_ERROR:
+./temp/source.mold:2:11: error: attemp to assign array to boolean
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: boolean = map"
+x = true
+x = {'five': 5, 'six': 6}
+
+EXPECTED_ERROR:
+./temp/source.mold:2:25: error: attemp to assign map to boolean
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: string = integer"
+x = 'text'
+x = 1234
+
+EXPECTED_ERROR:
+./temp/source.mold:2:9: error: attemp to assign integer to string
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: string = float"
+x = 'text'
+x = 3.14
+
+EXPECTED_ERROR:
+./temp/source.mold:2:9: error: attemp to assign float to string
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: string = boolean"
+x = 'text'
+x = true
+
+EXPECTED_ERROR:
+./temp/source.mold:2:9: error: attemp to assign boolean to string
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: string = object"
+class Test
+endclass
+
+x = 'text'
+x = new Test()
+
+EXPECTED_ERROR:
+./temp/source.mold:5:9: error: attemp to assign object to string
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: string = array"
+x = 'text'
+x = [5,6,7]
+
+EXPECTED_ERROR:
+./temp/source.mold:2:11: error: attemp to assign array to string
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: string = map"
+x = 'text'
+x = {'five': 5, 'six': 6}
+
+EXPECTED_ERROR:
+./temp/source.mold:2:25: error: attemp to assign map to string
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: boolean = integer"
+x = true
+x = 1234
+
+EXPECTED_ERROR:
+./temp/source.mold:2:9: error: attemp to assign integer to boolean
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: boolean = float"
+x = true
+x = 3.14
+
+EXPECTED_ERROR:
+./temp/source.mold:2:9: error: attemp to assign float to boolean
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: boolean = string"
+x = true
+x = 'text'
+
+EXPECTED_ERROR:
+./temp/source.mold:2:11: error: attemp to assign string to boolean
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: boolean = object"
+class Test
+endclass
+
+x = true
+x = new Test()
+
+EXPECTED_ERROR:
+./temp/source.mold:5:9: error: attemp to assign object to boolean
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: boolean = array"
+x = true
+x = [5,6,7]
+
+EXPECTED_ERROR:
+./temp/source.mold:2:11: error: attemp to assign array to boolean
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: boolean = map"
+x = true
+x = {'five': 5, 'six': 6}
+
+EXPECTED_ERROR:
+./temp/source.mold:2:25: error: attemp to assign map to boolean
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: object = integer"
+class Test
+endclass
+
+x = new Test()
+x = 1234
+
+EXPECTED_ERROR:
+./temp/source.mold:5:9: error: attemp to assign integer to object
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: object = float"
+class Test
+endclass
+
+x = new Test()
+x = 3.14
+
+EXPECTED_ERROR:
+./temp/source.mold:5:9: error: attemp to assign float to object
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: object = boolean"
+class Test
+endclass
+
+x = new Test()
+x = true
+
+EXPECTED_ERROR:
+./temp/source.mold:5:9: error: attemp to assign boolean to object
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: object = string"
+class Test
+endclass
+
+x = new Test()
+x = 'text'
+
+EXPECTED_ERROR:
+./temp/source.mold:5:11: error: attemp to assign string to object
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: object = array"
+class Test
+endclass
+
+x = new Test()
+x = [5,6,7]
+
+EXPECTED_ERROR:
+./temp/source.mold:5:11: error: attemp to assign array to object
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: object = map"
+class Test
+endclass
+
+x = new Test()
+x = {'five': 5, 'six': 6}
+
+EXPECTED_ERROR:
+./temp/source.mold:5:25: error: attemp to assign map to object
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: array = integer"
+x = [1,2,3]
+x = 1234
+
+EXPECTED_ERROR:
+./temp/source.mold:2:9: error: attemp to assign integer to array
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: array = float"
+x = [1,2,3]
+x = 3.14
+
+EXPECTED_ERROR:
+./temp/source.mold:2:9: error: attemp to assign float to array
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: array = boolean"
+x = [1,2,3]
+x = true
+
+EXPECTED_ERROR:
+./temp/source.mold:2:9: error: attemp to assign boolean to array
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: array = object"
+class Test
+endclass
+
+x = [1,2,3]
+x = new Test()
+
+EXPECTED_ERROR:
+./temp/source.mold:5:9: error: attemp to assign object to array
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: array = string"
+x = [1,2,3]
+x = 'text'
+
+EXPECTED_ERROR:
+./temp/source.mold:2:11: error: attemp to assign string to array
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: array = map"
+x = [1,2,3]
+x = {'five': 5, 'six': 6}
+
+EXPECTED_ERROR:
+./temp/source.mold:2:25: error: attemp to assign map to array
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: map = integer"
+x = {'one': 1, 'two': 2}
+x = 1234
+
+EXPECTED_ERROR:
+./temp/source.mold:2:9: error: attemp to assign integer to map
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: map = float"
+x = {'one': 1, 'two': 2}
+x = 3.14
+
+EXPECTED_ERROR:
+./temp/source.mold:2:9: error: attemp to assign float to map
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: map = boolean"
+x = {'one': 1, 'two': 2}
+x = true
+
+EXPECTED_ERROR:
+./temp/source.mold:2:9: error: attemp to assign boolean to map
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: map = object"
+class Test
+endclass
+
+x = {'one': 1, 'two': 2}
+x = new Test()
+
+EXPECTED_ERROR:
+./temp/source.mold:5:9: error: attemp to assign object to map
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: map = string"
+x = {'one': 1, 'two': 2}
+x = 'text'
+
+EXPECTED_ERROR:
+./temp/source.mold:2:11: error: attemp to assign string to map
+-------------------------------------------------------------------------------
+
+TEST "Bad type assign: map = array"
+x = {'one': 1, 'two': 2}
+x = [3, 4]
+
+EXPECTED_ERROR:
+./temp/source.mold:2:10: error: attemp to assign array to map
+-------------------------------------------------------------------------------
