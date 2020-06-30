@@ -346,33 +346,33 @@ class AST
     value       = node.token
 
     if opcode is AST_OPCODE_FUNCTION
-      rv['name']      = value['name']
-      rv['params']    = value['parameters']
-      rv['paramsCnt'] = len(value['parameters'])
-      rv['rv']        = value['rv']
+      rv.name      = value.name
+      rv.params    = value.parameters
+      rv.paramsCnt = len(value.parameters)
+      rv.rv        = value.rv
 
     elif opcode is AST_OPCODE_CLASS
-      rv['name']     = value['name']
-      rv['baseName'] = value['baseName']
+      rv.name     = value.name
+      rv.baseName = value.baseName
 
     elif opcode is AST_OPCODE_CLASS_METHOD
       newParams = ['this']
-      params    = value['parameters']
+      params    = value.parameters
       paramsCnt = len(params)
 
       for idx in 0 .. paramsCnt
         newParams[idx + 1] = params[idx]
       endfor
 
-      rv['name']      = value['name']
-      rv['params']    = newParams
-      rv['paramsCnt'] = len(newParams)
-      rv['rv']        = value['rv']
+      rv.name      = value.name
+      rv.params    = newParams
+      rv.paramsCnt = len(newParams)
+      rv.rv        = value.rv
     endif
 
-    rv['opcode'] = opcode
-    rv['value']  = value
-    rv['id']     = node.id
+    rv.opcode = opcode
+    rv.value  = value
+    rv.id     = node.id
 
     # TODO: Review it.
     rv.line     = node.line
@@ -390,8 +390,8 @@ class AST
       newChild.parent = node
     endwhile
 
-    rv['children']    = children
-    rv['childrenCnt'] = childrenCnt
+    rv.children    = children
+    rv.childrenCnt = childrenCnt
   endmethod
 
   method convert() -> rv
