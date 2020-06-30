@@ -52,6 +52,14 @@ stmt_list : stmt* [* @@ = null *] =block;
 stmt
   : lval '=' rval @EOL                   =store
   | "const" var '=' rval_imm_array @EOL  =store
+
+  | "const" var '=' imm @EOL  [* if constantsMap[@2] is defined
+                                   this._handleError(line, column, "redeclaration of a constant '" + @4 + "'")
+                                 endif
+                                 constantsMap[@2] = @4
+                                 @@ = @2
+                              *] =store
+
   | function_call @EOL
   | method_call @EOL
   | stmt_import @EOL
@@ -471,6 +479,11 @@ expr_imm
   | float
   | string
   | imm_array
+
+  | @IDENT [* @@ = constantsMap[@1]
+              if @@ is undefined
+                this._handleError(line, column, 'only constant values can be inserted into constant array')
+              endif *]
   ;
 
 imm : integer   =int

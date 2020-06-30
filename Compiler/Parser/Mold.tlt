@@ -579,6 +579,12 @@ endclass
 # -----------------------------------------------------------------------------
 
 class Parser
+  method constructor()
+    # Map of collected explicit constants.
+    # TODO: Handle per module constants.
+    this.constantsMap = {}
+  endmethod
+
   method _handleError(line, column, msg)
     die(this.filePath + ':' + str(line) + ':' + str(column) + ': error: ' + msg)
   endmethod
@@ -621,6 +627,9 @@ class Parser
     buf      = [lookupByte]
     bufSize  = 1
     inputIdx = 1
+
+    # Map of collected explicit constants.
+    constantsMap = this.constantsMap
 
     # Current parser state.
     currentAct = 0

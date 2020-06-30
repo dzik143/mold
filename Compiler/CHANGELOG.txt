@@ -7,6 +7,14 @@ UNRELEASED:
   Improved:
     - Faster x64 code (load/store indexes with int32 pointers)
 
+  New syntax:
+    - Constant primitives (strings, integer, boolean, float):
+
+      const SOME_CONST1 = 'text'
+      const SOME_CONST2 = 2
+      const SOME_CONST3 = true
+      const SOME_CONST4 = 3.14
+
 0.1.191126 (released on 2019-11-26)
 -----------------------------------
 
