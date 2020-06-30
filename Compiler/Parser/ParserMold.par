@@ -283,8 +283,7 @@ expr
   | expr "//" expr    =AST_OPCODE_IDIV
   | '(' expr ')'
   | '-' expr          =AST_OPCODE_NEG
-  | expr '[' expr ']' =AST_OPCODE_REFERENCE
-  | expr '.' member   =AST_OPCODE_REFERENCE
+  | reference
   | imm
   | logic
   | expr_logic
@@ -440,16 +439,14 @@ imm_array
 //
 
 lval
-  : var               //=loadr
-  | expr '[' expr ']' =AST_OPCODE_REFERENCE
-  | expr '.' member   =AST_OPCODE_REFERENCE
+  : var
+  | reference
   ;
 
 rval
   : expr
-  | expr '[' expr ']' =AST_OPCODE_REFERENCE
-  | expr '.' member   =AST_OPCODE_REFERENCE
-  | var               //=load
+  | reference
+  | var
   | new_call
   | function_call
   | method_call
@@ -457,6 +454,11 @@ rval
   | rval_array        =AST_DATA_ARRAY
   | rval_map          =AST_DATA_MAP
   | logic
+  ;
+
+reference
+  : expr '[' expr ']' =AST_OPCODE_REFERENCE
+  | expr '.' member   =AST_OPCODE_REFERENCE
   ;
 
 //
