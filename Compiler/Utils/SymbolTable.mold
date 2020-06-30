@@ -72,7 +72,8 @@ class SymbolTable
       'int64':   {'cnt': 0, 'pool': []},
       'float64': {'cnt': 0, 'pool': []},
       'bool32':  {'cnt': 0, 'pool': []},
-      'variant': {'cnt': 0, 'pool': []}
+      'variant': {'cnt': 0, 'pool': []},
+      'string':  {'cnt': 0, 'pool': []}
     }
 
     # TODO: Use null.
@@ -468,6 +469,8 @@ class SymbolTable
   endmethod
 
   method insertLiteral(text) -> literalEntry
+    global AST_DATA_STRING
+
     literalEntry = this.global.literals[text]
 
     if literalEntry is undefined
@@ -475,6 +478,9 @@ class SymbolTable
       name         = '__literal' + str(SymbolTable_GetNextId())
       literalEntry = this.insertConst(name, text)
       this.global.literals[text] = literalEntry
+
+      # TODO: Review it.
+      literalEntry.astType = AST_DATA_STRING
     endif
   endmethod
 

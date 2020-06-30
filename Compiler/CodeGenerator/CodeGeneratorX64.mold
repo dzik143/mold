@@ -418,7 +418,10 @@ class CodeGeneratorX64
       elif opcode is 'label'
         print dst + ':'
 
-      elif opcode is 'move_variant'
+      elif ((opcode is 'move_variant') or
+            (opcode is 'move_string') or
+            (opcode is 'conv_string_to_variant'))
+
         this.variantDestroy(dst)
         this.variantMove(dst, x)
 
@@ -622,7 +625,7 @@ class CodeGeneratorX64
       # Variant arithmetic.
       #
 
-      elif opcode is 'add_variant'
+      elif (opcode is 'add_variant') or (opcode is 'add_string')
         this.call3AndDestroy('__MOLD_VariantAdd', x, y, dst)
 
       elif opcode is 'sub_variant'
@@ -637,10 +640,10 @@ class CodeGeneratorX64
       elif opcode is 'idiv_variant'
         this.call3AndDestroy('__MOLD_VariantDivAsInteger', x, y, dst)
 
-      elif opcode is 'cmp_eq_variant'
+      elif (opcode is 'cmp_eq_variant') or (opcode is 'cmp_eq_string')
         this.call3AndDestroy('__MOLD_VariantCompareEQ', x, y, dst)
 
-      elif opcode is 'cmp_ne_variant'
+      elif (opcode is 'cmp_ne_variant') or (opcode is 'cmp_ne_string')
         this.call3AndDestroy('__MOLD_VariantCompareNE', x, y, dst)
 
       elif opcode is 'cmp_lt_variant'
@@ -1234,7 +1237,7 @@ class CodeGeneratorX64
           if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or
               (symbol.kind is SYMBOL_KIND_VAR_PARAM))
 
-            if (symbol.type is 'variant') or (symbol.type is undefined)
+            if (symbol.type is 'variant') or (symbol.type is 'string') or (symbol.type is undefined)
               varSize = 16
 
             elif (symbol.type is 'int64') or (symbol.type is 'float64')
@@ -1283,7 +1286,10 @@ class CodeGeneratorX64
 
         for values oneItem in symbols
           if oneItem.kind is SYMBOL_KIND_VAR_LOCAL
-            if (oneItem.type is 'variant') or (oneItem.type is undefined)
+            if ((oneItem.type is 'variant') or
+                (oneItem.type is 'string') or
+                (oneItem.type is undefined))
+
               # Local Variant_t variable - init to undefined.
               if oneItem.usedAsIterator is true
                 # Symbol is used as loop iterator.
@@ -1393,7 +1399,9 @@ class CodeGeneratorX64
 
     for values oneItem in globals
       if oneItem.kind is SYMBOL_KIND_VAR_GLOBAL
-        if (oneItem.type is 'variant') or (oneItem.type is undefined)
+        if ((oneItem.type is 'variant') or
+            (oneItem.type is 'string') or
+            (oneItem.type is undefined))
           print oneItem.name, ' Variant_t 0, 0, 0'
 
         elif oneItem.type is 'int64'

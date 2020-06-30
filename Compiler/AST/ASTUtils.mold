@@ -39,7 +39,7 @@ const AST_DataTypeForMIR = [
   'int32',     # integer
   'float32',   # float
   'float64',   # double
-  'variant',   # string
+  'string',    # string
   'bool32',    # boolean
   'variant',   # object
   '[error]',   # null

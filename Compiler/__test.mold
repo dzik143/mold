@@ -111,9 +111,12 @@ astTranslator.connectTo(mirCollector)
 #astTranslator.connectTo(mirOptimizer).connectTo(mirCollector)
 
 astTranslator.run(ast)
+
+print 'Going to print MIR1 code...'
 mirCollector.printQuads()
 
 # TODO: Better way to pass quads + meta + symbolTable.
+print 'Going to generate x64 code...'
 code = astTranslator.code
 code.quads = mirCollector.getQuads()
 code.symbolTable = app.getSymbolTable()
