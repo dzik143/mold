@@ -247,8 +247,8 @@ class ASTTranslator
     global AST_OPCODE_CLASS_METHOD
 
     funcProto = ast
-    funcName  = ast['fullName']
-    children  = ast['children']
+    funcName  = ast.fullName
+    children  = ast.children
 
     if children is defined
       this.app.logDebug('Emitting function ' + funcName + '...')
@@ -258,7 +258,7 @@ class ASTTranslator
       this.symbolTableForTemps = this.symbolTable
 
       if funcProto.className is defined
-        this.currentClassProto = oldSymbolTable.lookupClass(funcProto.className)['proto']
+        this.currentClassProto = oldSymbolTable.lookupClass(funcProto.className).proto
       endif
 
       this.currentFunctionProto = funcProto
@@ -313,23 +313,23 @@ class ASTTranslator
     methodProto = this.currentFunctionProto
     classProto  = this.currentClassProto
 
-    if (methodProto is false) or (methodProto['fullName'] is undefined)
+    if (methodProto is false) or (methodProto.fullName is undefined)
       this._error('super called outside of class')
 
-    elif methodProto['name'] isnt 'constructor'
+    elif methodProto.name isnt 'constructor'
       this._error('super called outside of constructor')
 
-    elif methodProto['name'] isnt 'constructor'
+    elif methodProto.name isnt 'constructor'
       this._error('super called outside of constructor')
 
-    elif classProto['baseName'] is undefined
-      this._error('class ' + classProto['name'] + ' has no base class')
+    elif classProto.baseName is undefined
+      this._error('class ' + classProto.name + ' has no base class')
 
-    elif methodProto['baseMethod'] is undefined
-      this._error('class ' + classProto['baseName'] + ' has no constructor declared')
+    elif methodProto.baseMethod is undefined
+      this._error('class ' + classProto.baseName + ' has no constructor declared')
 
-    elif methodProto['paramsCnt'] isnt paramsCnt
-      this._error('base constructor requires exactly ' + str(methodProto['paramsCnt']) + ' parameters, but ' + str(paramsCnt) + ' were passed')
+    elif methodProto.paramsCnt isnt paramsCnt
+      this._error('base constructor requires exactly ' + str(methodProto.paramsCnt) + ' parameters, but ' + str(paramsCnt) + ' were passed')
 
     else
       # Base constructor exists, inject this reference to call list.
@@ -339,9 +339,9 @@ class ASTTranslator
       endfor
 
       # TODO: Remove this fix.
-      methodProto['isConstructor'] = true
+      methodProto.isConstructor = true
 
-      this._call(rv, methodProto['baseMethod'], newParams, paramsCnt + 1)
+      this._call(rv, methodProto.baseMethod, newParams, paramsCnt + 1)
     endif
 
   endmethod
@@ -351,7 +351,7 @@ class ASTTranslator
   # ----------------------------------------------------------------------------
 
   method _getClassProto(className) -> rv
-    rv = this.symbolTable.lookupClass(className)['proto']
+    rv = this.symbolTable.lookupClass(className).proto
   endmethod
 
   method _getMethodProto(className, methodName, paramsCnt) -> rv
@@ -408,10 +408,10 @@ class ASTTranslator
     global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
     global AST_OPCODE_TYPE_CAST
 
-    opcode      = ast['opcode']
-    value       = ast['value']
-    children    = ast['children']
-    childrenCnt = ast['childrenCnt']
+    opcode      = ast.opcode
+    value       = ast.value
+    children    = ast.children
+    childrenCnt = ast.childrenCnt
 
     this._debug('_evaluateNode: ' + str(opcode) + ', ' + str(value))
 
@@ -585,11 +585,11 @@ class ASTTranslator
         this._createObject(rv, classProto)
 
         # Call constructor if any.
-        methodProto = classProto['vtable']['constructor']
+        methodProto = classProto.vtable.constructor
 
         if methodProto is defined
           params      = [rv]
-          paramsCnt   = methodProto['paramsCnt'] + 1
+          paramsCnt   = methodProto.paramsCnt + 1
           this._verifyNumberOfParameters('constructor', paramsCnt, childrenCnt)
 
           for idx in 1 .. childrenCnt
@@ -597,7 +597,7 @@ class ASTTranslator
           endfor
 
           # TODO: Remove this fix.
-          methodProto['isConstructor'] = true
+          methodProto.isConstructor = true
 
           unusedRv = this._getTempVar('variant')
           this._call(unusedRv, methodProto, params, paramsCnt)
@@ -666,9 +666,9 @@ class ASTTranslator
   endmethod
 
   method _evaluateNodeCall(rv, ast)
-    funcName      = ast['value']
-    children      = ast['children']
-    childrenCnt   = ast['childrenCnt']
+    funcName      = ast.value
+    children      = ast.children
+    childrenCnt   = ast.childrenCnt
 
     # TODO: Handle in parser?
     # Is it really needed?
@@ -702,15 +702,15 @@ class ASTTranslator
     else
       # Generic foo(x,y,z...) call.
       funcEntry = this.symbolTable.lookupFunction(funcName, childrenCnt)
-      funcProto = funcEntry['proto']
+      funcProto = funcEntry.proto
       this._call(rv, funcProto, params, paramsCnt)
     endif
   endmethod
 
   method _evaluateNodeInvokeMethod(rv, ast)
-    methodName  = ast['value']
-    children    = ast['children']
-    childrenCnt = ast['childrenCnt']
+    methodName  = ast.value
+    children    = ast.children
+    childrenCnt = ast.childrenCnt
 
     # Evaluate this and try to resolve static className
     # (compilation time) if possible.
@@ -776,10 +776,10 @@ class ASTTranslator
     this.app.setLogContext(ast)
 
     # Fetch opcode.
-    opcode      = ast['opcode']
-    value       = ast['value']
-    children    = ast['children']
-    childrenCnt = ast['childrenCnt']
+    opcode      = ast.opcode
+    value       = ast.value
+    children    = ast.children
+    childrenCnt = ast.childrenCnt
 
     this._debug('_executeNode: ' + str(opcode) + ', ' + str(value))
 
@@ -835,9 +835,9 @@ class ASTTranslator
       # x = y
       lval = children[0]
 
-      if lval['opcode'] is AST_OPCODE_VARIABLE
+      if lval.opcode is AST_OPCODE_VARIABLE
         # x = y
-        lval = lval['value']
+        lval = lval.value
         rval = this._evaluateNode(children[1])
         this._assign(lval, rval)
 
@@ -850,10 +850,10 @@ class ASTTranslator
         # Simplify it.
         this._releaseTempVar(rval)
 
-      elif lval['opcode'] is AST_OPCODE_REFERENCE
+      elif lval.opcode is AST_OPCODE_REFERENCE
         # x[i] = y
-        boxNode   = lval['children'][0]
-        indexNode = lval['children'][1]
+        boxNode   = lval.children[0]
+        indexNode = lval.children[1]
         valueNode = children[1]
 
         # TODO: Handle non-variant index and value.
@@ -869,7 +869,7 @@ class ASTTranslator
         this._releaseTempVar(rval)
 
       else
-        die('error: unexpected lvalue node ' + str(lval['opcode']) + ' ' + str(lval['value']))
+        die('error: unexpected lvalue node ' + str(lval.opcode) + ' ' + str(lval.value))
       endif
 
     elif opcode is AST_OPCODE_FOR_VALUES_RANGE
@@ -879,7 +879,7 @@ class ASTTranslator
       # for x in startIdx .. endIdx step y
       # endfor
 
-      iteratorName = children[0]['value']
+      iteratorName = children[0].value
       valueStep  = this._evaluateNode(children[3])
       valueEnd   = this._evaluateNode(children[2])
       valueStart = this._evaluateNode(children[1])
@@ -902,7 +902,7 @@ class ASTTranslator
 
     elif opcode is AST_OPCODE_FOR_VALUES
       # for values v in box
-      iteratorValue = children[0]['value']
+      iteratorValue = children[0].value
       box           = this._evaluateNode(children[1])
       loopBodyNode  = children[2]
 
@@ -917,7 +917,7 @@ class ASTTranslator
 
     elif opcode is AST_OPCODE_FOR_KEYS
       # for values v in box
-      iteratorKey  = children[0]['value']
+      iteratorKey  = children[0].value
       box          = this._evaluateNode(children[1])
       loopBodyNode = children[2]
 
@@ -932,8 +932,8 @@ class ASTTranslator
 
     elif opcode is AST_OPCODE_FOR_KEYS_VALUES
       # for keys k values v in box
-      iteratorKey   = children[0]['value']
-      iteratorValue = children[1]['value']
+      iteratorKey   = children[0].value
+      iteratorValue = children[1].value
       box           = this._evaluateNode(children[2])
       loopBodyNode  = children[3]
 
@@ -976,7 +976,7 @@ class ASTTranslator
         # Built-in global directive.
 
         for idx in 0 .. childrenCnt
-          paramName = children[idx]['value']
+          paramName = children[idx].value
           if typeof(paramName) isnt 'string'
             this._error('global directive expects string, but ' + typeof(paramName) + ' passed')
           else

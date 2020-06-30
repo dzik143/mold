@@ -142,8 +142,8 @@ class ASTSymbolsCollector
     elif opcode is AST_OPCODE_CLASS
       # Collect members.
       # TODO: Avoid redundant methodsAsArray when map iteration will work.
-      className             = node['name']
-      baseName              = node['baseName']
+      className             = node.name
+      baseName              = node.baseName
       vtable                = {}
       baseMethods           = {}
       methodsAsFlatArray    = []
@@ -153,18 +153,18 @@ class ASTSymbolsCollector
       # Import base class if any.
       if baseName is defined
         # Derived class, build class by applying derived over base one.
-        baseProto = symbolTable.lookupClass(baseName)['proto']
+        baseProto = symbolTable.lookupClass(baseName).proto
 
         # TODO: Rewrite it when map merge will be ready.
-        baseMethodsAsFlatArray    = baseProto['methodsAsFlatArray']
-        baseMethodsAsFlatArrayCnt = baseProto['methodsAsFlatArrayCnt']
-        baseMethods               = baseProto['vtable']
+        baseMethodsAsFlatArray    = baseProto.methodsAsFlatArray
+        baseMethodsAsFlatArrayCnt = baseProto.methodsAsFlatArrayCnt
+        baseMethods               = baseProto.vtable
 
         # Merge base class first.
         for idx in 0 .. baseMethodsAsFlatArrayCnt
           methodName      = baseMethodsAsFlatArray[idx]
           methodProto     = baseMethods[methodName]
-          methodParamsCnt = methodProto['paramsCnt']
+          methodParamsCnt = methodProto.paramsCnt
           methodFullName  = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
 
           vtable[methodName] = methodProto
@@ -176,14 +176,14 @@ class ASTSymbolsCollector
       # Apply current declared class.
       for idx in 0 .. childrenCnt
         child  = children[idx]
-        opcode = child['opcode']
+        opcode = child.opcode
 
         if opcode is AST_OPCODE_CLASS_METHOD
-          methodName      = child['name']
-          methodParamsCnt = child['paramsCnt']
+          methodName      = child.name
+          methodParamsCnt = child.paramsCnt
           methodFullName  = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
 
-          child['fullName']  = methodFullName
+          child.fullName  = methodFullName
 
           if vtable[methodName] is undefined
             # Method seen first time.
@@ -191,13 +191,13 @@ class ASTSymbolsCollector
             methodsAsFlatArrayCnt = methodsAsFlatArrayCnt + 1
           endif
 
-          child['className']  = className
-          child['classProto'] = classProto
+          child.className  = className
+          child.classProto = classProto
 
           if baseMethods[methodName] is defined
             # Save proto of base method if any.
-            baseMethodProto     = baseMethods[methodName]
-            child['baseMethod'] = baseMethodProto
+            baseMethodProto  = baseMethods[methodName]
+            child.baseMethod = baseMethodProto
             baseMethodProto.isOverloaded = true
           endif
 
@@ -209,13 +209,13 @@ class ASTSymbolsCollector
 
       # Declare new class.
       classProto.name                  = className
-      classProto.baseName              = node['baseName']
+      classProto.baseName              = node.baseName
       classProto.vtable                = vtable
       classProto.methodsAsFlatArray    = methodsAsFlatArray
       classProto.methodsAsFlatArrayCnt = methodsAsFlatArrayCnt
       classProto.propertyClassNames    = {}
 
-      node['proto'] = classProto
+      node.proto = classProto
 
       symbolTable.insertClass(className, classProto)
 
@@ -223,20 +223,20 @@ class ASTSymbolsCollector
       nodeBody  = children[0]
       funcProto = node
       value     = node.value
-      params    = value['parameters']
+      params    = value.parameters
 
-      funcProto['params']    = params
-      funcProto['paramsCnt'] = len(params)
-      funcProto['name']      = value['name']
-      funcProto['rv']        = value['rv']
+      funcProto.params    = params
+      funcProto.paramsCnt = len(params)
+      funcProto.name      = value.name
+      funcProto.rv        = value.rv
 
-      if node['fullName'] is defined
-        funcName = node['fullName']
+      if node.fullName is defined
+        funcName = node.fullName
       else
-        funcName = value['name']
+        funcName = value.name
       endif
 
-      funcProto['fullName'] = funcName
+      funcProto.fullName = funcName
 
       symbolTable.insertFunction(funcName, funcProto)
 

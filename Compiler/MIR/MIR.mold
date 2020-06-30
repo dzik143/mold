@@ -129,9 +129,9 @@ class MIRCode
   method endProc()
     proto = this.procedures[this.proceduresCnt]
 
-    proto['endAddr']   = this.codeCnt
-    proto['localsCnt'] = this.localMax + 1
-    proto['tempsCnt']  = this.codeCnt - proto['startAddr']
+    proto.endAddr   = this.codeCnt
+    proto.localsCnt = this.localMax + 1
+    proto.tempsCnt  = this.codeCnt - proto.startAddr
 
     this.proceduresCnt = this.proceduresCnt + 1
   endmethod
@@ -495,15 +495,15 @@ class MIRCode
 
   method createClass(proto) -> id
     id           = this.classListCnt
-    className    = proto['name']
+    className    = proto.name
     classMap     = this.classMap
     classList    = this.classList
 
     classMap[className] = id
     classList[id]       = proto
 
-    methodsList    = proto['methodsAsFlatArray']
-    methodsListCnt = proto['methodsAsFlatArrayCnt']
+    methodsList    = proto.methodsAsFlatArray
+    methodsListCnt = proto.methodsAsFlatArrayCnt
 
     for idx in 0 .. methodsListCnt
       this.createMethod(methodsList[idx])

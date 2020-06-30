@@ -226,17 +226,17 @@ class VMachineStack
         stack.push(ip)
 
         proto       = item[1]
-        ip          = proto['ptr'] - 1
+        ip          = proto.ptr - 1
         _vm_deepIdx = _vm_deepIdx + 1
         # TODO: Better handling here?
         _vm_locals             = []
         _vm_dataStack[_vm_deepIdx] = _vm_locals
 
-        if proto['isConstructor'] is true
+        if proto.isConstructor is true
           # TODO: Handle it in better way.
           # We need it to avoid eating new result (this pointer)
           # when constructor called just after.
-          _vm_retValStack[_vm_deepIdx] = stack.peekN(proto['paramsCnt'] + 2)
+          _vm_retValStack[_vm_deepIdx] = stack.peekN(proto.paramsCnt + 2)
         endif
 
       elif opcode is MIR_OPCODE_INIT_FRAME
@@ -259,9 +259,9 @@ class VMachineStack
         _vm_retValStack[_vm_deepIdx] = stack.pop()
 
       elif opcode is MIR_OPCODE_CREATE_OBJECT
-        classProto                 = item[1]
-        newObject                  = new VMachineStackObject(classProto)
-        newObject['__mold_vtable'] = classProto['vtable']
+        classProto              = item[1]
+        newObject               = new VMachineStackObject(classProto)
+        newObject.__mold_vtable = classProto.vtable
 
         stack.push(newObject)
 
@@ -271,19 +271,19 @@ class VMachineStack
         paramsCnt   = item[2]
         thiz        = stack.peekN(paramsCnt)
 
-        vtable      = thiz['__mold_vtable']
+        vtable      = thiz.__mold_vtable
         methodProto = vtable[methodName]
 
         if methodProto is undefined
           die("error: object has no method '" + methodName + "'")
         endif
 
-        if methodProto['paramsCnt'] isnt paramsCnt - 1
-          die('error: ' + methodName + ' function requires exactly ' + str(methodProto['paramsCnt']) + ' parameter(s), but ' + str(paramsCnt) + ' were passed')
+        if methodProto.paramsCnt isnt paramsCnt - 1
+          die('error: ' + methodName + ' function requires exactly ' + str(methodProto.paramsCnt) + ' parameter(s), but ' + str(paramsCnt) + ' were passed')
         endif
 
         stack.push(ip)
-        ip          = methodProto['ptr'] - 1
+        ip          = methodProto.ptr - 1
         _vm_deepIdx = _vm_deepIdx + 1
         # TODO: Better handling here?
         _vm_locals                 = []
@@ -582,7 +582,7 @@ class VMachineStack
       #  txt = 'retval.guard'
 
       elif opcode is MIR_OPCODE_CREATE_OBJECT
-        txt = 'create.object ' + item[1]['name']
+        txt = 'create.object ' + item[1].name
 
       elif opcode is MIR_OPCODE_MOVE_BACK
         txt = 'move.back'

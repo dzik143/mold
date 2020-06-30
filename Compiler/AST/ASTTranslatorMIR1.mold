@@ -353,16 +353,16 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
   method _call(rv, proto, unusedParams, paramsCnt)
     params = this.popParametersBeforeCall(paramsCnt)
-    name   = proto['fullName']
+    name   = proto.fullName
 
     if name is undefined
-      name = proto['name']
+      name = proto.name
     endif
 
     # TODO: Use emitTwoArgsOpcode() after fix.
     this._emitOneItem(['call', rv, name, params])
 
-    if proto['isConstructor'] is true
+    if proto.isConstructor is true
       # TODO: Handle it in better way.
       # We need it to avoid eating new result (this pointer)
       # when constructor called just after.
@@ -677,12 +677,12 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _emitFunctionBody(funcName, funcProto)
-    params      = funcProto['params']
-    paramsCnt   = funcProto['paramsCnt']
-    children    = funcProto['children']
-    childrenCnt = funcProto['childrenCnt']
+    params      = funcProto.params
+    paramsCnt   = funcProto.paramsCnt
+    children    = funcProto.children
+    childrenCnt = funcProto.childrenCnt
     codeAst     = children[0]
-    rvName      = funcProto['rv']
+    rvName      = funcProto.rv
 
     this.methodEmitted[funcProto.name] = true
 
@@ -707,8 +707,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
     })
 
     # Translate function code.
-    codeNodes    = codeAst['children']
-    codeNodesCnt = codeAst['childrenCnt']
+    codeNodes    = codeAst.children
+    codeNodesCnt = codeAst.childrenCnt
 
     for idx in 0 .. codeNodesCnt
       this._executeNode(codeNodes[idx])

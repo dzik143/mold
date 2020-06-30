@@ -31,18 +31,18 @@ class ASTModuleResolver
   method resolveImports(ast)
     global AST_OPCODE_CALL
 
-    program     = ast['children'][0]
-    children    = program['children']
-    childrenCnt = program['childrenCnt']
+    program     = ast.children[0]
+    children    = program.children
+    childrenCnt = program.childrenCnt
 
     newChildrenCnt = 0
     newChildren    = []
 
     for values oneChild in children
 
-      if (oneChild['opcode'] is AST_OPCODE_CALL) and (oneChild['value'] is 'import')
+      if (oneChild.opcode is AST_OPCODE_CALL) and (oneChild.value is 'import')
         # TODO: Verify parameters.
-        moduleName = oneChild['children'][0]['value']
+        moduleName = oneChild.children[0].value
 
         if this.importedModules[moduleName] is undefined
           # Load only once.
@@ -60,9 +60,9 @@ class ASTModuleResolver
           # Resolve imports recursively.
           this.resolveImports(importedAst)
 
-          importedProgram     = importedAst['children'][0]
-          importedChildren    = importedProgram['children']
-          importedChildrenCnt = importedProgram['childrenCnt']
+          importedProgram     = importedAst.children[0]
+          importedChildren    = importedProgram.children
+          importedChildrenCnt = importedProgram.childrenCnt
 
           for values oneImportedChild in importedChildren
             newChildren[newChildrenCnt] = oneImportedChild
@@ -76,7 +76,7 @@ class ASTModuleResolver
       endif
     endfor
 
-    program['childrenCnt'] = newChildrenCnt
-    program['children']    = newChildren
+    program.childrenCnt = newChildrenCnt
+    program.children    = newChildren
   endmethod
 endclass

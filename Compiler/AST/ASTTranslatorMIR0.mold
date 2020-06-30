@@ -127,8 +127,8 @@ class ASTTranslatorMIR0 extends ASTTranslator
 
     symbolInfo = this.symbolTable.lookup(name)
 
-    kind = symbolInfo['kind']
-    id   = symbolInfo['id']
+    kind = symbolInfo.kind
+    id   = symbolInfo.id
 
     if kind is SYMBOL_KIND_VAR_LOCAL
       # Local variable
@@ -162,8 +162,8 @@ class ASTTranslatorMIR0 extends ASTTranslator
     global SYMBOL_KIND_VAR_RETVAL
 
     symbolInfo = this.symbolTable.lookup(name)
-    kind       = symbolInfo['kind']
-    id         = symbolInfo['id']
+    kind       = symbolInfo.kind
+    id         = symbolInfo.id
 
     if kind is SYMBOL_KIND_VAR_LOCAL
       # Local variable
@@ -350,7 +350,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
   endmethod
 
   method _declareFunction(funcName, funcProto)
-    funcProto['labelId'] = this.code.createLabel()
+    funcProto.labelId = this.code.createLabel()
   endmethod
 
   method _declareClass(className, classProto)
@@ -360,12 +360,12 @@ class ASTTranslatorMIR0 extends ASTTranslator
   method _emitFunctionBody(funcName, funcProto)
     this._debug('Going to emit function body "' + str(funcName) + '"')
 
-    params      = funcProto['params']
-    paramsCnt   = funcProto['paramsCnt']
-    children    = funcProto['children']
-    childrenCnt = funcProto['childrenCnt']
+    params      = funcProto.params
+    paramsCnt   = funcProto.paramsCnt
+    children    = funcProto.children
+    childrenCnt = funcProto.childrenCnt
     codeAst     = children[0]
-    rvName      = funcProto['rv']
+    rvName      = funcProto.rv
 
     code = this.code
 
@@ -375,7 +375,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
 
     labelId = code.createAndEmitLabel()
 
-    funcProto['ptr'] = code.resolveLabel(labelId)
+    funcProto.ptr = code.resolveLabel(labelId)
 
     code.comment('-----------------------------------------------')
     code.comment('function ' + funcName)
@@ -392,8 +392,8 @@ class ASTTranslatorMIR0 extends ASTTranslator
     code.initFrame(paramsCnt)
 
     # Translate code.
-    codeNodes    = codeAst['children']
-    codeNodesCnt = codeAst['childrenCnt']
+    codeNodes    = codeAst.children
+    codeNodesCnt = codeAst.childrenCnt
 
     for idx in 0 .. codeNodesCnt
       this._executeNode(codeNodes[idx])

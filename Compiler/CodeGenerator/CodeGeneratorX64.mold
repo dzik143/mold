@@ -1171,9 +1171,9 @@ class CodeGeneratorX64
       elif opcode is 'proc'
         proto            = item[1]
         currentProcProto = proto
-        currentProcName  = proto['name']
-        currentProcRv    = proto['rv']
-        currentSymbols   = proto['symbols']
+        currentProcName  = proto.name
+        currentProcRv    = proto.rv
+        currentSymbols   = proto.symbols
         print currentProcName + ':'
 
         arrayOfProcedures[len(arrayOfProcedures)] = currentProcName
@@ -1205,9 +1205,9 @@ class CodeGeneratorX64
 
       elif opcode is 'init_frame'
         currentFrame = dst
-        symbols      = currentFrame['symbols']
-        params       = currentFrame['params']
-        paramsCnt    = currentFrame['paramsCnt']
+        symbols      = currentFrame.symbols
+        params       = currentFrame.params
+        paramsCnt    = currentFrame.paramsCnt
 
         # Clean up this mess.
         this.symbols = symbols
@@ -1489,8 +1489,8 @@ class CodeGeneratorX64
 
     for classIdx in 0 .. classListCnt
       classProto = classList[classIdx]
-      className  = classProto['name']
-      vtable     = classProto['vtable']
+      className  = classProto.name
+      vtable     = classProto.vtable
 
       print 'vtable_' + className + ':'
 
@@ -1501,7 +1501,7 @@ class CodeGeneratorX64
         if methodProto is undefined
           methodPtr = '__MOLD_NullMethodCalled'
         else
-          methodPtr = methodProto['fullName']
+          methodPtr = methodProto.fullName
         endif
 
         print '  dq', methodPtr, ';', methodName

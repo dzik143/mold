@@ -309,7 +309,7 @@ class SymbolTable
       endif
 
       if rv.proto.paramsCnt isnt paramsCnt
-        this._error("function '" + name + "' requires exactly " + str(rv['proto']['paramsCnt']) + ' parameters, but ' + str(paramsCnt) + ' were passed')
+        this._error("function '" + name + "' requires exactly " + str(rv.proto.paramsCnt) + ' parameters, but ' + str(paramsCnt) + ' were passed')
       endif
     endif
   endmethod
@@ -335,7 +335,7 @@ class SymbolTable
   method lookupClass(name) -> rv
     global SYMBOL_KIND_CLASS
     rv = this.lookupGlobal(name)
-    if rv['kind'] isnt SYMBOL_KIND_CLASS
+    if rv.kind isnt SYMBOL_KIND_CLASS
       this._error("'" + name + "' is not a class")
     endif
   endmethod
@@ -343,13 +343,13 @@ class SymbolTable
 /*
   TODO: Is it still needed?
   method lookupMethod(className, methodName, paramsCnt) -> rv
-    rv = this.lookupClass(className)['proto']['vtable'][methodName]
+    rv = this.lookupClass(className).proto.vtable{methodName}
 
     if rv is undefined
       this._error("class '" + className + "' has no method '" + methodName + "'")
 
-    elif rv['paramsCnt'] isnt paramsCnt
-      this._error("method '" + methodName + "' requires exactly " + str(rv['paramsCnt']) + ' parameters, but ' + str(paramsCnt) + ' were passed')
+    elif rv.paramsCnt isnt paramsCnt
+      this._error("method '" + methodName + "' requires exactly " + str(rv.paramsCnt) + ' parameters, but ' + str(paramsCnt) + ' were passed')
     endif
   endmethod
 */

@@ -123,8 +123,8 @@ class MIRQuadCollector extends PipeAbstract
       # print '[ MIRQuadCollector ]', item
 
       if opcode is 'proc'
-        print 'proc', item[1]['name']
-        this._dumpFrameInfo(item[1]['symbols'])
+        print 'proc', item[1].name
+        this._dumpFrameInfo(item[1].symbols)
         this.currentFrame = item[1]
 
       elif opcode is 'init_frame'
