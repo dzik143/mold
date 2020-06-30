@@ -45,35 +45,35 @@
 // Defining the grammar
 //
 
-program$ : stmt_list =program;
+program$ : stmt_list = AST_OPCODE_PROGRAM;
 
-stmt_list : stmt* [* @@ = null *] =block;
+stmt_list : stmt* [* @@ = null *] =AST_OPCODE_BLOCK;
 
 stmt
-  : lval '=' rval @EOL                   =store
-  | "const" var '=' rval_imm_array @EOL  =store
+  : lval '=' rval @EOL                   =AST_OPCODE_DECLARE_OR_ASSIGN
+  | "const" var '=' rval_imm_array @EOL  =AST_OPCODE_DECLARE_OR_ASSIGN
 
   | "const" var '=' imm @EOL  [* if constantsMap[@2] is defined
                                    this._handleError(line, column, "redeclaration of a constant '" + @4 + "'")
                                  endif
                                  constantsMap[@2] = @4
                                  @@ = @2
-                              *] =store
+                              *] =AST_OPCODE_DECLARE_OR_ASSIGN
 
   | function_call @EOL
   | method_call @EOL
   | stmt_import @EOL
-  | function_declaration @EOL     =function
-  | class_declaration @EOL        =class
-  | stmt_if @EOL                  =if
-  | stmt_for @EOL                 =for
-  | stmt_while @EOL               =while
+  | function_declaration @EOL     =AST_OPCODE_FUNCTION
+  | class_declaration @EOL        =AST_OPCODE_CLASS
+  | stmt_if @EOL                  =AST_OPCODE_IF
+  | stmt_for @EOL                 =AST_OPCODE_FOR_VALUES_RANGE
+  | stmt_while @EOL               =AST_OPCODE_WHILE
 //TODO  | stmt_switch @EOL              =switch
-  | stmt_for_values @EOL          =for_values
-  | stmt_for_keys @EOL            =for_keys
-  | stmt_for_keys_values @EOL     =for_keys_values
-  | stmt_for_indexes @EOL         =for_indexes
-  | stmt_for_indexes_values @EOL  =for_indexes_values
+  | stmt_for_values @EOL          =AST_OPCODE_FOR_VALUES
+  | stmt_for_keys @EOL            =AST_OPCODE_FOR_KEYS
+  | stmt_for_keys_values @EOL     =AST_OPCODE_FOR_KEYS_VALUES
+  | stmt_for_indexes @EOL         =AST_OPCODE_FOR_INDEXES
+  | stmt_for_indexes_values @EOL  =AST_OPCODE_FOR_INDEXES_VALUES
 //  | stmt_read @EOL
 //  | stmt_write @EOL
   | @EOL
@@ -84,20 +84,20 @@ stmt
 //
 
 stmt_import
-  : "import" module_name [* @@ = 'import' *] =call;
+  : "import" module_name [* @@ = 'import' *] =AST_OPCODE_CALL;
 
 module_name
-  : string =string;
+  : string =AST_DATA_STRING;
 
 //
 // Functions.
 //
 
 function_call
-  : @IDENT '(' ')'           [* @@ = @1 *]       =call //[* @@ = {'name': @1, 'parameters': []} *]
-  | @IDENT '(' call_list ')' [* @@ = @1 *]       =call //[* @@ = {'name': @1, 'parameters': @3} *]
-  | "print" call_list_line   [* @@ = 'print' *]  =call //[* @@ = {'name': 'print', 'parameters': @2} *]
-  | "global" call_list_line  [* @@ = 'global' *] =call //[* @@ = {'name': 'print', 'parameters': @2} *]
+  : @IDENT '(' ')'           [* @@ = @1 *]       =AST_OPCODE_CALL //[* @@ = {'name': @1, 'parameters': []} *]
+  | @IDENT '(' call_list ')' [* @@ = @1 *]       =AST_OPCODE_CALL //[* @@ = {'name': @1, 'parameters': @3} *]
+  | "print" call_list_line   [* @@ = 'print' *]  =AST_OPCODE_CALL //[* @@ = {'name': 'print', 'parameters': @2} *]
+  | "global" call_list_line  [* @@ = 'global' *] =AST_OPCODE_CALL //[* @@ = {'name': 'print', 'parameters': @2} *]
   ;
 
 function_begin
@@ -167,7 +167,7 @@ key_value_list
   | @EOL
   ;
 
-map_key : string =string;
+map_key : string =AST_DATA_STRING;
 map_val : rval;
 
 value_list
@@ -210,11 +210,11 @@ ident_list
 //
 
 stmt_read
-  : "read" "from" rval "values" call_list_line [* @@ = 'read' *] =call
+  : "read" "from" rval "values" call_list_line [* @@ = 'read' *] =AST_OPCODE_CALL
   ;
 
 stmt_write
-  : "write" "to" rval "values" call_list_line  [* @@ = 'write' *] =call
+  : "write" "to" rval "values" call_list_line  [* @@ = 'write' *] =AST_OPCODE_CALL
   ;
 
 //
@@ -239,8 +239,8 @@ class_declaration
   : class_begin @EOL class_body class_end;
 
 method_call
-  : expr '.' @IDENT '(' ')'           [* @@ = @3 *] =vcall
-  | expr '.' @IDENT '(' call_list ')' [* @@ = @3 *] =vcall
+  : expr '.' @IDENT '(' ')'           [* @@ = @3 *] =AST_OPCODE_INVOKE_METHOD
+  | expr '.' @IDENT '(' call_list ')' [* @@ = @3 *] =AST_OPCODE_INVOKE_METHOD
   ;
 
 method_begin
@@ -257,34 +257,34 @@ method_body
   : stmt_list;
 
 method_declaration
-  : method_begin @EOL method_body method_end =method;
+  : method_begin @EOL method_body method_end =AST_OPCODE_CLASS_METHOD;
 
 //
 // Constructor call.
 //
 
 new_call
-  : new_begin @IDENT '(' ')'          [* @@ =  @2 *] =new
-  | new_begin @IDENT '('call_list ')' [* @@ =  @2 *] =new
+  : new_begin @IDENT '(' ')'          [* @@ =  @2 *] =AST_OPCODE_CALL_NEW
+  | new_begin @IDENT '('call_list ')' [* @@ =  @2 *] =AST_OPCODE_CALL_NEW
   ;
 
 new_begin
- : "new" [* @@ = '__this_placeholder__' *] =var;
+ : "new" [* @@ = '__this_placeholder__' *] =AST_OPCODE_VARIABLE;
 
 //
 // Expressions.
 //
 
 expr
-  : expr '+' expr     =add
-  | expr '-' expr     =sub
-  | expr '*' expr     =mul
-  | expr '/' expr     =div
-  | expr "//" expr    =idiv
+  : expr '+' expr     =AST_OPCODE_ADD
+  | expr '-' expr     =AST_OPCODE_SUB
+  | expr '*' expr     =AST_OPCODE_MUL
+  | expr '/' expr     =AST_OPCODE_DIV
+  | expr "//" expr    =AST_OPCODE_IDIV
   | '(' expr ')'
-  | '-' expr          =neg
-  | expr '[' expr ']' =index
-  | expr '.' member   =index
+  | '-' expr          =AST_OPCODE_NEG
+  | expr '[' expr ']' =AST_OPCODE_REFERENCE
+  | expr '.' member   =AST_OPCODE_REFERENCE
   | imm
   | logic
   | expr_logic
@@ -297,30 +297,30 @@ expr
 
 // Logical primitive: true, false, x o y
 logic
-  : "not" logic       =not
-  | rval "is" rval    =cmpeq
-  | rval "isnt" rval  =cmpne
-  | rval "<" rval     =cmplt
-  | rval "<=" rval    =cmple
-  | rval '>' rval     =cmpgt
-  | rval ">=" rval    =cmpge
+  : "not" logic       =AST_OPCODE_BOOL_NOT
+  | rval "is" rval    =AST_OPCODE_COMPARE_EQ
+  | rval "isnt" rval  =AST_OPCODE_COMPARE_NEQ
+  | rval "<" rval     =AST_OPCODE_COMPARE_LT
+  | rval "<=" rval    =AST_OPCODE_COMPARE_LE
+  | rval '>' rval     =AST_OPCODE_COMPARE_GT
+  | rval ">=" rval    =AST_OPCODE_COMPARE_GE
   | function_call
   | method_call
-  | bool              =bool
+  | bool              =AST_DATA_BOOL
   ;
 
 // Complex logical expression built from primitves.
 expr_logic
-  : bool =bool
+  : bool =AST_DATA_BOOL
   | '(' logic ')'      [* @@ = @2 *]
   | '(' expr_logic ')' [* @@ = @2 *]
-  | expr_logic "and" expr_logic =band
-  | expr_logic "or"  expr_logic =bor
+  | expr_logic "and" expr_logic =AST_OPCODE_BOOL_AND
+  | expr_logic "or"  expr_logic =AST_OPCODE_BOOL_OR
   ;
 
 expr_logic_multiline
-  : expr_logic "and" @EOL (expr_logic | expr_logic_multiline) =band
-  | expr_logic "or"  @EOL (expr_logic | expr_logic_multiline) =bor
+  : expr_logic "and" @EOL (expr_logic | expr_logic_multiline) =AST_OPCODE_BOOL_AND
+  | expr_logic "or"  @EOL (expr_logic | expr_logic_multiline) =AST_OPCODE_BOOL_OR
   ;
 
 condition
@@ -340,9 +340,9 @@ stmt_if
   ;
 
 stmt_elif
-  : "elif" condition @EOL stmt_list "endif"                   =elif
-  | "elif" condition @EOL stmt_list "else" stmt_list "endif"  =elif
-  | "elif" condition @EOL stmt_list stmt_elif                 =elif
+  : "elif" condition @EOL stmt_list "endif"                   =AST_OPCODE_IF
+  | "elif" condition @EOL stmt_list "else" stmt_list "endif"  =AST_OPCODE_IF
+  | "elif" condition @EOL stmt_list stmt_elif                 =AST_OPCODE_IF
   ;
 
 /*
@@ -379,7 +379,7 @@ stmt_for
   : "for" var "in" rval ".." rval step?  stmt_list "endfor";
 
 step
-  : @EOL [* @@ = 1 *] =int
+  : @EOL [* @@ = 1 *] =AST_DATA_INTEGER
   | "step" rval
   ;
 
@@ -423,7 +423,7 @@ rval_array
   ;
 
 rval_imm_array
-  : imm_array =array
+  : imm_array =AST_DATA_ARRAY
   ;
 
 rval_map
@@ -441,21 +441,21 @@ imm_array
 
 lval
   : var               //=loadr
-  | expr '[' expr ']' =index
-  | expr '.' member   =index
+  | expr '[' expr ']' =AST_OPCODE_REFERENCE
+  | expr '.' member   =AST_OPCODE_REFERENCE
   ;
 
 rval
   : expr
-  | expr '[' expr ']' =index
-  | expr '.' member   =index
+  | expr '[' expr ']' =AST_OPCODE_REFERENCE
+  | expr '.' member   =AST_OPCODE_REFERENCE
   | var               //=load
   | new_call
   | function_call
   | method_call
   | imm
-  | rval_array        =array
-  | rval_map          =map
+  | rval_array        =AST_DATA_ARRAY
+  | rval_map          =AST_DATA_MAP
   | logic
   ;
 
@@ -463,9 +463,9 @@ rval
 // Basic leafs.
 //
 
-var : @IDENT =var;
+var : @IDENT =AST_OPCODE_VARIABLE;
 
-member : @IDENT =member;
+member : @IDENT =AST_DATA_STRING;
 
 expr_imm
   : expr_imm '+'  expr_imm [* @@ = @1 + @3 *]
@@ -486,9 +486,9 @@ expr_imm
               endif *]
   ;
 
-imm : integer   =int
-    | float     =float
-    | string    =string
+imm : integer   =AST_DATA_INTEGER
+    | float     =AST_DATA_DOUBLE
+    | string    =AST_DATA_STRING
     ;
 
 number

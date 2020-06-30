@@ -6,6 +6,7 @@ UNRELEASED:
 
   Improved:
     - Faster x64 code (load/store indexes with int32 pointers)
+    - Avoid creating multiple Parser() objects for each module load
 
   New syntax:
     - Constant primitives (strings, integer, boolean, float):

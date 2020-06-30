@@ -25,6 +25,7 @@ class ASTModuleResolver
   method constructor(app)
     this.app             = app
     this.importedModules = {}
+    this.parser          = new Parser()
   endmethod
 
   method resolveImports(ast)
@@ -50,8 +51,7 @@ class ASTModuleResolver
           this.app.logDebug('Resolving module [' + str(moduleName) + ']...')
 
           # Parse source into AST tree.
-          parser      = new Parser()
-          importedAst = parser.parseFile(moduleName)
+          importedAst = this.parser.parseFile(moduleName)
 
           # Convert AST to form understood by translator.
           # TODO: Remove this step.
