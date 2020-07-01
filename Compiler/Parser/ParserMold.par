@@ -245,18 +245,19 @@ new_begin
 //
 
 expr
-  : expr '+' expr  =AST_OPCODE_ADD  // x + y
+  : imm                             // 1, 3.14, 'text'
+  | var                             // x
+  | reference                       // x[y], x{y}, x.y
+  | logic
+  | expr_logic
+
+  | expr '+' expr  =AST_OPCODE_ADD  // x + y
   | expr '-' expr  =AST_OPCODE_SUB  // x - y
   | expr '*' expr  =AST_OPCODE_MUL  // x * y
   | expr '/' expr  =AST_OPCODE_DIV  // x / y
   | expr "//" expr =AST_OPCODE_IDIV // x // y
   | '-' expr       =AST_OPCODE_NEG  // -x
   | '(' expr ')'                    // (x)
-  | reference                       // x[y], x{y}, x.y
-  | imm                             // 1, 3.14, 'text'
-  | logic
-  | expr_logic
-  | var
   ;
 
 //
@@ -302,15 +303,37 @@ condition
 //
 
 stmt_if
-  : "if" condition @EOL stmt_list "endif"
-  | "if" condition @EOL stmt_list "else" stmt_list "endif"
-  | "if" condition @EOL stmt_list stmt_elif
+  : "if" condition @EOL
+      stmt_list
+    "endif"
+
+  | "if" condition @EOL
+      stmt_list
+    "else"
+      stmt_list
+    "endif"
+
+  | "if" condition @EOL
+      stmt_list
+      stmt_elif
   ;
 
 stmt_elif
-  : "elif" condition @EOL stmt_list "endif"                   =AST_OPCODE_IF
-  | "elif" condition @EOL stmt_list "else" stmt_list "endif"  =AST_OPCODE_IF
-  | "elif" condition @EOL stmt_list stmt_elif                 =AST_OPCODE_IF
+  : "elif" condition @EOL
+      stmt_list
+    "endif"
+    =AST_OPCODE_IF
+
+  | "elif" condition @EOL
+      stmt_list
+    "else"
+      stmt_list
+    "endif"
+    =AST_OPCODE_IF
+
+  | "elif" condition @EOL
+      stmt_list
+      stmt_elif =AST_OPCODE_IF
   ;
 
 /*
@@ -343,8 +366,10 @@ stmt_switch_otherwise
 // For loop.
 //
 
-stmt_for
-  : "for" var "in" rval ".." rval step?  stmt_list "endfor";
+stmt_for:
+  "for" var "in" rval ".." rval step?
+  stmt_list
+  "endfor";
 
 step
   : @EOL [* @@ = 1 *] =AST_DATA_INTEGER
@@ -359,27 +384,39 @@ step
 // for indexes idx values v in box  (array iteration over index:value pairs)
 //
 
-stmt_for_values
-  : "for" "values" var "in" rval stmt_list "endfor";
+stmt_for_values:
+  "for" "values" var "in" rval
+  stmt_list
+  "endfor";
 
-stmt_for_keys
-  : "for" "keys" var "in" rval stmt_list "endfor";
+stmt_for_keys:
+  "for" "keys" var "in" rval
+  stmt_list
+  "endfor";
 
-stmt_for_indexes
-  : "for" "indexes" var "in" rval stmt_list "endfor";
+stmt_for_indexes:
+  "for" "indexes" var "in" rval
+  stmt_list
+  "endfor";
 
-stmt_for_keys_values
-  : "for" "keys" var "values" var "in" rval stmt_list "endfor";
+stmt_for_keys_values:
+  "for" "keys" var "values" var "in" rval
+  stmt_list
+  "endfor";
 
-stmt_for_indexes_values
-  : "for" "indexes" var "values" var "in" rval stmt_list "endfor";
+stmt_for_indexes_values:
+  "for" "indexes" var "values" var "in" rval
+  stmt_list
+  "endfor";
 
 //
 // While loop.
 //
 
-stmt_while
-  : "while" condition @EOL stmt_list "endwhile";
+stmt_while:
+  "while" condition @EOL
+  stmt_list
+  "endwhile";
 
 //
 // Array initializers.
