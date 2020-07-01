@@ -2,32 +2,32 @@ TEST "Empty map"
 x = {}
 print 'typeof(x):', typeof(x)
 print 'x:', x
-print "x['key1'] =", x['key1']
-print "x['key2'] =", x['key2']
-print "x['key3'] =", x['key3']
+print "x{'key1'} =", x{'key1'}
+print "x{'key2'} =", x{'key2'}
+print "x{'key3'} =", x{'key3'}
 
 EXPECTED_OUTPUT:
 typeof(x): map
 x: {}
-x['key1'] = undefined
-x['key2'] = undefined
-x['key3'] = undefined
+x{'key1'} = undefined
+x{'key2'} = undefined
+x{'key3'} = undefined
 -------------------------------------------------------------------------------
 
 TEST "Mixed types in one map"
 x = {'key1': 'value1', 'key2': 2, 'key3': 3.14}
 print 'typeof(x):', typeof(x)
 print 'x:', x
-print "x['key1'] =", x['key1']
-print "x['key2'] =", x['key2']
-print "x['key3'] =", x['key3']
+print "x{'key1'} =", x{'key1'}
+print "x{'key2'} =", x{'key2'}
+print "x{'key3'} =", x{'key3'}
 
 EXPECTED_OUTPUT:
 typeof(x): map
 x: {'key1': 'value1', 'key2': 2, 'key3': 3.140000}
-x['key1'] = value1
-x['key2'] = 2
-x['key3'] = 3.140000
+x{'key1'} = value1
+x{'key2'} = 2
+x{'key3'} = 3.140000
 -------------------------------------------------------------------------------
 
 TEST "Set elements at runtime"
@@ -37,15 +37,15 @@ x = {}
 print 'init      :', x
 
 # Modify elements.
-x['one'] = 1
-x['two'] = 'two'
-x['pi']  = 3.14
+x{'one'} = 1
+x{'two'} = 'two'
+x{'pi'}  = 3.14
 print 'modified1 :', x
 
 # Modify elements once again.
-x['one'] = 'one'
-x['two'] = 2
-x['pi']  = 'pi'
+x{'one'} = 'one'
+x{'two'} = 2
+x{'pi'}  = 'pi'
 print 'modified2 :', x
 
 EXPECTED_OUTPUT:
@@ -61,37 +61,37 @@ x = {'key1': {'key2': {'key3': 'value'}}}
 print 'values'
 print '======'
 print "x                         :", x
-print "x['key1']                 :", x['key1']
-print "x['key1']['key2']         :", x['key1']['key2']
-print "x['key1']['key2']['key3'] :", x['key1']['key2']['key3']
+print "x{'key1'}                 :", x{'key1'}
+print "x{'key1'}{'key2'}         :", x{'key1'}{'key2'}
+print "x{'key1'}{'key2'}{'key3'} :", x{'key1'}{'key2'}{'key3'}
 
 # Print types stored in whole tree.
 print 'types'
 print '======'
 print "typeof(x)                         :", typeof(x)
-print "typeof(x['key1'])                 :", typeof(x['key1'])
-print "typeof(x['key1']['key2'])         :", typeof(x['key1']['key2'])
-print "typeof(x['key1']['key2']['key3']) :", typeof(x['key1']['key2']['key3'])
+print "typeof(x{'key1'})                 :", typeof(x{'key1'})
+print "typeof(x{'key1'}{'key2'})         :", typeof(x{'key1'}{'key2'})
+print "typeof(x{'key1'}{'key2'}{'key3'}) :", typeof(x{'key1'}{'key2'}{'key3'})
 
 # Try to modify inner element.
-x['key1']['key2']['key3'] = 'new-value'
+x{'key1'}{'key2'}{'key3'} = 'new-value'
 print 'modify'
 print '======'
-print 'value after modify:', x['key1']['key2']['key3']
+print 'value after modify:', x{'key1'}{'key2'}{'key3'}
 
 EXPECTED_OUTPUT:
 values
 ======
 x                         : {'key1': {'key2': {'key3': 'value'}}}
-x['key1']                 : {'key2': {'key3': 'value'}}
-x['key1']['key2']         : {'key3': 'value'}
-x['key1']['key2']['key3'] : value
+x{'key1'}                 : {'key2': {'key3': 'value'}}
+x{'key1'}{'key2'}         : {'key3': 'value'}
+x{'key1'}{'key2'}{'key3'} : value
 types
 ======
 typeof(x)                         : map
-typeof(x['key1'])                 : map
-typeof(x['key1']['key2'])         : map
-typeof(x['key1']['key2']['key3']) : string
+typeof(x{'key1'})                 : map
+typeof(x{'key1'}{'key2'})         : map
+typeof(x{'key1'}{'key2'}{'key3'}) : string
 modify
 ======
 value after modify: new-value
@@ -102,7 +102,7 @@ TEST "Bug: Repeated one key for different values"
 M = {}
 
 for i in 0 .. 10
-  M[str(i)] = i
+  M{str(i)} = i
 endfor
 
 print M
@@ -117,13 +117,13 @@ N = 1024*16
 
 # Insert values.
 for idx in 0 .. N
- x[str(idx)] = idx
+ x{str(idx)} = idx
 endfor
 
 # Verify values.
 acc = 0
 for idx in 0 .. N
-  acc = acc + x[str(idx)]
+  acc = acc + x{str(idx)}
 endfor
 print acc
 
@@ -138,7 +138,7 @@ N = 1024*16
 # Insert values.
 idx = N
 while idx >= 0
-  x[str(idx)] = idx
+  x{str(idx)} = idx
   idx         = idx - 1
 endwhile
 
@@ -146,7 +146,7 @@ endwhile
 # TODO: Use idx.
 acc = 0
 for jdx in 0 .. N
-  acc = acc + x[str(jdx)]
+  acc = acc + x{str(jdx)}
 endfor
 print acc
 
@@ -159,7 +159,7 @@ TEST "Keys order #1"
 x = {}
 
 for idx in 0 .. 32
-  x[str(idx)] = idx
+  x{str(idx)} = idx
 endfor
 
 print x
@@ -175,7 +175,7 @@ N = 32
 
 idx = N - 1
 while idx >= 0
-  x[str(idx)] = idx
+  x{str(idx)} = idx
   idx         = idx - 1
 endwhile
 
@@ -186,9 +186,9 @@ EXPECTED_OUTPUT:
 
 TEST "Empty string used as key"
 x = {}
-x[''] = 1234
+x{''} = 1234
 print x
-print x['']
+print x{''}
 
 EXPECTED_OUTPUT:
 {'': 1234}

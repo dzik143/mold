@@ -615,7 +615,7 @@ N = 1024*16
 # Insert values.
 idx = N
 while idx >= 0
-  x[str(idx)] = idx
+  x{str(idx)} = idx
   idx         = idx - 1
 endwhile
 
@@ -623,7 +623,7 @@ endwhile
 # TODO: Use idx.
 acc = 0
 for jdx in 0 .. N
-  acc = acc + x[str(jdx)]
+  acc = acc + x{str(jdx)}
 endfor
 print acc
 
@@ -638,14 +638,14 @@ TEST "Bug: resize inside constructor"
 class Base
   method constructor()
     for idx in 0 .. 1024*16
-      this[str(idx)] = idx
+      this{str(idx)} = idx
     endfor
   endmethod
 
   method foo()
     acc = 0
     for idx in 0 .. 1024*16
-      acc = acc + this[str(idx)]
+      acc = acc + this{str(idx)}
     endfor
     print acc
   endmethod

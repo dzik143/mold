@@ -93,8 +93,8 @@ after loop
 TEST "Bug: Crash on hash conflict"
 
 x = {}
-x['SYMBOL_KIND_VAR_RETVAL'] = 1
-print x['SYMBOL_KIND_CLASS']
+x{'SYMBOL_KIND_VAR_RETVAL'} = 1
+print x{'SYMBOL_KIND_CLASS'}
 
 EXPECTED_OUTPUT:
 undefined
@@ -173,8 +173,8 @@ x[0] = {}
 x[0] = 1234
 
 y      = {}
-y['a'] = {}
-y['a'] = 5678
+y{'a'} = {}
+y{'a'} = 5678
 
 print 'x =', x
 print 'y =', y
@@ -201,11 +201,11 @@ TEST "Bug: CSE fail #1 (insert __cse var in wrong scope)"
 box = {}
 buf = []
 
-box['len'] = 8
-bufCnt     = box['len']
+box{'len'} = 8
+bufCnt     = box{'len'}
 
 for idx in 0 .. bufCnt
-  buf[idx] = box['len']
+  buf[idx] = box{'len'}
 endfor
 
 print buf
