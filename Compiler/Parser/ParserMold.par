@@ -107,16 +107,9 @@ function_begin
   | "function" @IDENT '(' parameter_list ')' "->" @IDENT [* @@ = {'name': @2, 'parameters': @4, 'rv': @7} *]
   ;
 
-function_end
-  : "endfunction";
-
-function_body
-  : stmt_list
-  ;
 
 function_declaration
-  : function_begin @EOL function_body function_end
-  ;
+  : function_begin @EOL stmt_list "endfunction";
 
 //
 // Comma separated lists.
@@ -226,17 +219,10 @@ class_begin
   | "class" @IDENT "extends" @IDENT [* @@ = {'name': @2, 'baseName': @4} *]
   ;
 
-class_end
-  : "endclass";
-
-class_body
-  : class_body_item*;
-
-class_body_item
-  : method_declaration | @EOL;
-
-class_declaration
-  : class_begin @EOL class_body class_end;
+class_declaration:
+  class_begin @EOL
+  (method_declaration | @EOL)*
+  "endclass";
 
 method_call
   : expr '.' @IDENT '(' ')'           [* @@ = @3 *] =AST_OPCODE_INVOKE_METHOD
