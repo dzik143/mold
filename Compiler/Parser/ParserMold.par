@@ -47,69 +47,71 @@
 
 program$ : stmt_list = AST_OPCODE_PROGRAM;
 
-stmt_list : stmt* [* @@ = null *] =AST_OPCODE_BLOCK;
+stmt_list : stmt_line* [* @@ = null *] =AST_OPCODE_BLOCK;
+
+stmt_line : stmt @EOL | @EOL;
 
 stmt
-  : lval '=' rval @EOL                   =AST_OPCODE_DECLARE_OR_ASSIGN
-  | "const" var '=' rval_imm_array @EOL  =AST_OPCODE_DECLARE_OR_ASSIGN
-
-  | "const" var '=' imm @EOL  [* if constantsMap{@2} is defined
-                                   this._handleError(line, column, "redeclaration of a constant '" + @4 + "'")
-                                 endif
-                                 constantsMap{@2} = @4
-                                 @@ = @2
-                              *] =AST_OPCODE_DECLARE_OR_ASSIGN
-
-  | function_call @EOL
-  | method_call @EOL
-  | stmt_import @EOL
-  | function_declaration @EOL     =AST_OPCODE_FUNCTION
-  | class_declaration @EOL        =AST_OPCODE_CLASS
-  | stmt_if @EOL                  =AST_OPCODE_IF
-  | stmt_for @EOL                 =AST_OPCODE_FOR_VALUES_RANGE
-  | stmt_while @EOL               =AST_OPCODE_WHILE
-//TODO  | stmt_switch @EOL              =switch
-  | stmt_for_values @EOL          =AST_OPCODE_FOR_VALUES
-  | stmt_for_keys @EOL            =AST_OPCODE_FOR_KEYS
-  | stmt_for_keys_values @EOL     =AST_OPCODE_FOR_KEYS_VALUES
-  | stmt_for_indexes @EOL         =AST_OPCODE_FOR_INDEXES
-  | stmt_for_indexes_values @EOL  =AST_OPCODE_FOR_INDEXES_VALUES
-//  | stmt_read @EOL
-//  | stmt_write @EOL
-  | @EOL
+  : stmt_declare_or_assign  =AST_OPCODE_DECLARE_OR_ASSIGN
+  | function_call
+  | method_call
+  | stmt_import               =AST_OPCODE_CALL
+  | stmt_function_declaration =AST_OPCODE_FUNCTION
+  | stmt_class_declaration    =AST_OPCODE_CLASS
+  | stmt_if                   =AST_OPCODE_IF
+  | stmt_for                  =AST_OPCODE_FOR_VALUES_RANGE
+  | stmt_while                =AST_OPCODE_WHILE
+  | stmt_for_values           =AST_OPCODE_FOR_VALUES
+  | stmt_for_keys             =AST_OPCODE_FOR_KEYS
+  | stmt_for_keys_values      =AST_OPCODE_FOR_KEYS_VALUES
+  | stmt_for_indexes          =AST_OPCODE_FOR_INDEXES
+  | stmt_for_indexes_values   =AST_OPCODE_FOR_INDEXES_VALUES
+//  | stmt_switch
+//  | stmt_read
+//  | stmt_write
   ;
-
-//
-// Import module.
-//
-
-stmt_import
-  : "import" module_name [* @@ = 'import' *] =AST_OPCODE_CALL;
 
 module_name
   : string =AST_DATA_STRING;
+
+stmt_import: "import" module_name [* @@ = 'import' *];
+
+stmt_declare_or_assign
+  : lval '=' rval
+
+  | "const" var '=' rval_imm_array
+
+  | "const" var '=' imm  [* if constantsMap{@2} is defined
+                              this._handleError(line, column, "redeclaration of a constant '" + @4 + "'")
+                            endif
+                            constantsMap{@2} = @4
+                            @@ = @2
+                         *]
+  ;
 
 //
 // Functions.
 //
 
 function_call
-  : @IDENT '(' ')'           [* @@ = @1 *]       =AST_OPCODE_CALL //[* @@ = {'name': @1, 'parameters': []} *]
-  | @IDENT '(' call_list ')' [* @@ = @1 *]       =AST_OPCODE_CALL //[* @@ = {'name': @1, 'parameters': @3} *]
-  | "print" call_list_line   [* @@ = 'print' *]  =AST_OPCODE_CALL //[* @@ = {'name': 'print', 'parameters': @2} *]
-  | "global" call_list_line  [* @@ = 'global' *] =AST_OPCODE_CALL //[* @@ = {'name': 'print', 'parameters': @2} *]
+  : @IDENT '(' ')'           [* @@ = @1 *]       =AST_OPCODE_CALL
+  | @IDENT '(' call_list ')' [* @@ = @1 *]       =AST_OPCODE_CALL
+  | "print"  call_list_line  [* @@ = 'print'  *] =AST_OPCODE_CALL
+  | "global" call_list_line  [* @@ = 'global' *] =AST_OPCODE_CALL
   ;
 
-function_begin
-  : "function" @IDENT '(' ')'                            [* @@ = {'name': @2, 'parameters': []} *]
-  | "function" @IDENT '(' ')' "->" @IDENT                [* @@ = {'name': @2, 'parameters': [], 'rv': @6} *]
-  | "function" @IDENT '(' parameter_list ')'             [* @@ = {'name': @2, 'parameters': @4} *]
-  | "function" @IDENT '(' parameter_list ')' "->" @IDENT [* @@ = {'name': @2, 'parameters': @4, 'rv': @7} *]
+function_proto
+  : @IDENT '(' ')'                            [* @@ = {'name': @1, 'parameters': []} *]
+  | @IDENT '(' ')' "->" @IDENT                [* @@ = {'name': @1, 'parameters': [], 'rv': @5} *]
+  | @IDENT '(' parameter_list ')'             [* @@ = {'name': @1, 'parameters': @3} *]
+  | @IDENT '(' parameter_list ')' "->" @IDENT [* @@ = {'name': @1, 'parameters': @3, 'rv': @6} *]
   ;
 
 
-function_declaration
-  : function_begin @EOL stmt_list "endfunction";
+stmt_function_declaration:
+  "function" function_proto @EOL
+  stmt_list
+  "endfunction" [* @@ = @2 *];
 
 //
 // Comma separated lists.
@@ -219,7 +221,7 @@ class_begin
   | "class" @IDENT "extends" @IDENT [* @@ = {'name': @2, 'baseName': @4} *]
   ;
 
-class_declaration:
+stmt_class_declaration:
   class_begin @EOL
   (method_declaration | @EOL)*
   "endclass";
@@ -229,21 +231,10 @@ method_call
   | expr '.' @IDENT '(' call_list ')' [* @@ = @3 *] =AST_OPCODE_INVOKE_METHOD
   ;
 
-method_begin
-  : "method" @IDENT '(' ')'                            [* @@ = {'name': @2, 'parameters': []} *]
-  | "method" @IDENT '(' ')' "->" @IDENT                [* @@ = {'name': @2, 'parameters': [], 'rv': @6} *]
-  | "method" @IDENT '(' parameter_list ')'             [* @@ = {'name': @2, 'parameters': @4} *]
-  | "method" @IDENT '(' parameter_list ')' "->" @IDENT [* @@ = {'name': @2, 'parameters': @4, 'rv': @7} *]
-  ;
-
-method_end
-  : "endmethod";
-
-method_body
-  : stmt_list;
-
-method_declaration
-  : method_begin @EOL method_body method_end =AST_OPCODE_CLASS_METHOD;
+method_declaration:
+  "method" function_proto @EOL
+  stmt_list
+  "endmethod" [* @@ = @2 *] =AST_OPCODE_CLASS_METHOD;
 
 //
 // Constructor call.
