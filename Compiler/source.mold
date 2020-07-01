@@ -1,8 +1,0 @@
-x = {
-  'someKey': 'some value',
-  'anotherKey': 1234
-}
-
-x{'chuj'} = 1
-
-print x
