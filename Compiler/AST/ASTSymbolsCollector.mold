@@ -74,7 +74,8 @@ class ASTSymbolsCollector
     global AST_OPCODE_IF
     global AST_OPCODE_WHILE
     global AST_OPCODE_INVOKE_METHOD
-    global AST_OPCODE_REFERENCE
+    global AST_OPCODE_REFERENCE_BY_INDEX
+    global AST_OPCODE_REFERENCE_BY_KEY
     global AST_OPCODE_FUNCTION
     global AST_OPCODE_CLASS
     global AST_OPCODE_CLASS_METHOD
@@ -163,11 +164,11 @@ class ASTSymbolsCollector
         # Merge base class first.
         for idx in 0 .. baseMethodsAsFlatArrayCnt
           methodName      = baseMethodsAsFlatArray[idx]
-          methodProto     = baseMethods[methodName]
+          methodProto     = baseMethods{methodName}
           methodParamsCnt = methodProto.paramsCnt
           methodFullName  = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
 
-          vtable[methodName] = methodProto
+          vtable{methodName} = methodProto
           methodsAsFlatArray[methodsAsFlatArrayCnt] = methodName
           methodsAsFlatArrayCnt = methodsAsFlatArrayCnt + 1
         endfor
@@ -185,7 +186,7 @@ class ASTSymbolsCollector
 
           child.fullName  = methodFullName
 
-          if vtable[methodName] is undefined
+          if vtable{methodName} is undefined
             # Method seen first time.
             methodsAsFlatArray[methodsAsFlatArrayCnt] = methodName
             methodsAsFlatArrayCnt = methodsAsFlatArrayCnt + 1
@@ -194,14 +195,14 @@ class ASTSymbolsCollector
           child.className  = className
           child.classProto = classProto
 
-          if baseMethods[methodName] is defined
+          if baseMethods{methodName} is defined
             # Save proto of base method if any.
-            baseMethodProto  = baseMethods[methodName]
+            baseMethodProto  = baseMethods{methodName}
             child.baseMethod = baseMethodProto
             baseMethodProto.isOverloaded = true
           endif
 
-          vtable[methodName] = child
+          vtable{methodName} = child
 
           this._collectSymbolsFromLeftNode(symbolTable, child)
         endif
@@ -319,7 +320,8 @@ class ASTSymbolsCollector
       # Track data type.
       node.symbolInfo = symbolInfo
 
-    elif opcode is AST_OPCODE_REFERENCE
+    elif ((opcode is AST_OPCODE_REFERENCE_BY_INDEX) or
+          (opcode is AST_OPCODE_REFERENCE_BY_KEY))
        # There are two cases:
        # 1. x[i] = ...  : x is left , i is right
        # 2. ...  = x[i] : x is right, i is right
@@ -433,7 +435,7 @@ class ASTSymbolsCollector
         symbols2 = symbolTable2.exportSymbols()
 
         for values symbolInfo1 in symbols1
-          symbolInfo2 = symbols2[symbolInfo1.name]
+          symbolInfo2 = symbols2{symbolInfo1.name}
 
           if symbolInfo2 is defined
             # Symbol defined in both nodes - move into parent node.

@@ -162,12 +162,24 @@ class ASTTranslator
     this._error('_loadFromIndex() not implemented')
   endmethod
 
+  method _loadFromKey(rv, box, key)
+    this._error('_loadFromKey() not implemented')
+  endmethod
+
   method _storeAtIndex(box, idx, value)
     this._error('_storeAtIndex() not implemented')
   endmethod
 
-  method _storeAtIndexAndDrop(rv, key, value)
-    this._storeAtIndex(rv, key, value)
+  method _storeAtKey(box, key, value)
+    this._error('_storeAtKey() not implemented')
+  endmethod
+
+  method _storeAtIndexAndDrop(rv, idx, value)
+    this._error('_storeAtIndexAndDrop() not implemented')
+  endmethod
+
+  method _storeAtKeyAndDrop(rv, key, value)
+    this._error('_storeAtKeyAndDrop() not implemented')
   endmethod
 
   method _createObject(rv, classProto)
@@ -224,12 +236,12 @@ class ASTTranslator
       #if item.readHits + item.writeHits > 0
         id = item.name
 
-        if symbolsCurrent[id] is undefined
-          symbolsCurrent[id] = item
+        if symbolsCurrent{id} is undefined
+          symbolsCurrent{id} = item
         else
           # TODO: Accumulate hits?
           # TODO: Implement inner frames.
-          if symbolsCurrent[id].astType isnt item.astType
+          if symbolsCurrent{id}.astType isnt item.astType
             die('error: type conflict for variable "' + item.name + '"')
           endif
         endif
@@ -400,7 +412,9 @@ class ASTTranslator
     global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
     global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
-    global AST_OPCODE_REFERENCE, AST_OPCODE_CALL
+    global AST_OPCODE_REFERENCE_BY_INDEX
+    global AST_OPCODE_REFERENCE_BY_KEY
+    global AST_OPCODE_CALL
     global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV
     global AST_OPCODE_IDIV
     global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
@@ -543,7 +557,7 @@ class ASTTranslator
             key   = this._evaluateNode(children[idx])
             value = this._evaluateNode(children[idx + 1])
             this._convert(valueAsVariant, value, AST_GetDataType(children[idx + 1]), -1)
-            this._storeAtIndex(rv, key, valueAsVariant)
+            this._storeAtKey(rv, key, valueAsVariant)
 
             # TODO: Is it really needed?
             this._releaseTempVar(key)
@@ -613,9 +627,13 @@ class ASTTranslator
         this._releaseTempVar(left)
         this._releaseTempVar(right)
 
-        if opcode is AST_OPCODE_REFERENCE
+        if opcode is AST_OPCODE_REFERENCE_BY_INDEX
           # x[idx]
           this._loadFromIndex(rv, left, right)
+
+        elif opcode is AST_OPCODE_REFERENCE_BY_KEY
+          # x{key}
+          this._loadFromKey(rv, left, right)
 
         elif opcode is AST_OPCODE_COMPARE_EQ
           this._compareEQ(rv, left, right)
@@ -762,7 +780,9 @@ class ASTTranslator
     global AST_OPCODE_PROGRAM, AST_OPCODE_BLOCK, AST_OPCODE_DECLARE_OR_ASSIGN
     global AST_OPCODE_FOR_VALUES_RANGE, AST_OPCODE_WHILE
     global AST_OPCODE_CALL, AST_OPCODE_FUNCTION, AST_OPCODE_IF, AST_OPCODE_SWITCH
-    global AST_OPCODE_VARIABLE, AST_OPCODE_REFERENCE
+    global AST_OPCODE_VARIABLE
+    global AST_OPCODE_REFERENCE_BY_INDEX
+    global AST_OPCODE_REFERENCE_BY_KEY
     global AST_OPCODE_CLASS, AST_OPCODE_CLASS_METHOD, AST_OPCODE_INVOKE_METHOD
     global AST_OPCODE_NOP, AST_DATA_STRING, AST_OPCODE_ADD
     global SYMBOL_KIND_VAR_RETVAL
@@ -850,22 +870,27 @@ class ASTTranslator
         # Simplify it.
         this._releaseTempVar(rval)
 
-      elif lval.opcode is AST_OPCODE_REFERENCE
+      elif ((lval.opcode is AST_OPCODE_REFERENCE_BY_INDEX) or
+            (lval.opcode is AST_OPCODE_REFERENCE_BY_KEY))
         # x[i] = y
         boxNode   = lval.children[0]
         indexNode = lval.children[1]
         valueNode = children[1]
 
         # TODO: Handle non-variant index and value.
-        box   = this._evaluateNode(boxNode)
-        index = this._evaluateNode(indexNode)
-        rval  = this._evaluateNode(valueNode)
+        box      = this._evaluateNode(boxNode)
+        idxOrKey = this._evaluateNode(indexNode)
+        rval     = this._evaluateNode(valueNode)
 
-        this._storeAtIndexAndDrop(box, index, rval)
+        if lval.opcode is AST_OPCODE_REFERENCE_BY_INDEX
+          this._storeAtIndexAndDrop(box, idxOrKey, rval)
+        else
+          this._storeAtKeyAndDrop(box, idxOrKey, rval)
+        endif
 
         # TODO: Simplify it.
         this._releaseTempVar(box)
-        this._releaseTempVar(index)
+        this._releaseTempVar(idxOrKey)
         this._releaseTempVar(rval)
 
       else

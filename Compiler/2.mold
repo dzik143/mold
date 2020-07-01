@@ -1,0 +1,9 @@
+function foo()
+  acc = 0
+  for idx in 0 .. 1234567890
+    acc = acc + idx
+  endfor
+  print acc
+endfunction
+
+foo()

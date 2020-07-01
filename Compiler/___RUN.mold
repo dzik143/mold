@@ -1,0 +1,83 @@
+x = []
+undefined = x[0]
+object = 0
+
+DEBUG_AST_OPTIMIZER = true
+DEBUG_MOLD = true
+NodeId = 1000
+
+DEBUG_AST_OPTIMIZER = true
+UNICC_DEBUG         = true
+
+import 'Utils/SymbolTable.mold'
+import 'AppMold.mold'
+import 'AST/ASTSymbolsCollector.mold'
+#import 'AST/ASTPrinterText.mold'
+#import 'AST/ASTPrinterHtml.mold'
+import 'AST/ASTTranslatorMIR0.mold'
+
+#import 'AST/ASTTranslatorMIR1.mold'
+#import 'MIR/MIRQuadCollector.mold'
+#import 'MIR/MIRQuadOptimizer.mold'
+#import 'CodeGenerator/CodeGeneratorX64.mold'
+import '___RUN_VMachineStack.mold'
+
+import '1.ast'
+#import 'Parser/ParserMold.mold'
+
+#parser = new Parser()
+#ast    = parser.parseFile(argv[1])
+
+# Convert AST to form understood by translator.
+# TODO: Remove this step.
+#ast = ast.convert()
+
+
+#print '<pre>'
+
+app                 = new AppMold()
+astSymbolsCollector = app.getAstSymbolsCollector()
+#astModuleResolver   = app.getAstModuleResolver()
+#astPrinterText      = new ASTPrinterText()
+#astPrinterHtml      = new ASTPrinterHtml()
+
+#if typeof(astModuleResolver) isnt 'undefined'
+#  print 'Resolving imports...'
+#  astModuleResolver.resolveImports(ast)
+#endif
+
+print 'Building symbol table...'
+astSymbolsCollector.buildSymbolTable(ast)
+
+# Common preprocess before go-on with further AST optimization.
+#app.logDebug('Evaluating AST nodes...')
+#app.getAstEvaluator().processNode(ast)
+#
+# ------------------------------------------------------------------------------
+
+#print 'Type cast...'
+#app.getAstTypeCast().processNode(ast)
+
+#astPrinterText.printNode(ast)
+
+#print '</pre>'
+
+
+#astPrinterHtml.printNode(ast)
+
+print 'Going to translate AST (init)...'
+astTranslatorMIR0 = new ASTTranslatorMIR0(app)
+vm                = new VMachineStack()
+
+# TODO: MIR0 (stack based)
+print 'Going to translate AST to MIR0...'
+astTranslatorMIR0.run(ast)
+
+print 'Loading MIR0 code...'
+vm.loadCode(astTranslatorMIR0.code)
+
+#print 'Dumping MIR0 code....'
+#vm.dumpCode()
+
+print 'Running MIR0 code...'
+vm.run()

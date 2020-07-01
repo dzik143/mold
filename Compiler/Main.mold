@@ -34,7 +34,7 @@ import 'CodeGenerator/CodeGeneratorX64.mold'
 import 'MIR/MIRQuadOptimizer.mold'
 import 'VM/VMachineStack.mold'
 
-VERSION_STRING = '0.2.200627'
+VERSION_STRING = '0.2.200630'
 
 # ------------------------------------------------------------------------------
 #                              Helper functions
@@ -229,20 +229,24 @@ else
   if (mode is 'mir0') or (mode is 'interpreter')
     #die('error: mir0 based modes are temporary disabled')
     # Translate program to MIR0 (stack based).
+    app.logDebug('Translating AST to MIR0...')
     astTranslator = new ASTTranslatorMIR0(app)
     astTranslator.run(ast)
     code = astTranslator.code
 
     # Load MIR0 code into virtual machine.
+    app.logDebug('Loading MIR0 into VM...')
     vm = new VMachineStack()
     vm.loadCode(code)
 
     if mode is 'mir0'
       # Dump stack MIR0 only.
+      app.logDebug('Dumping code...')
       vm.dumpCode()
 
     elif mode is 'interpreter'
       # Run virtual machine (stack based).
+      app.logDebug('Running VM...')
       vm.run()
     endif
 

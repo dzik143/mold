@@ -44,9 +44,9 @@ class ASTModuleResolver
         # TODO: Verify parameters.
         moduleName = oneChild.children[0].value
 
-        if this.importedModules[moduleName] is undefined
+        if this.importedModules{moduleName} is undefined
           # Load only once.
-          this.importedModules[moduleName] = true
+          this.importedModules{moduleName} = true
 
           this.app.logDebug('Resolving module [' + str(moduleName) + ']...')
 

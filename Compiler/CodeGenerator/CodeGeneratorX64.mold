@@ -90,7 +90,7 @@ class CodeGeneratorX64
     global SYMBOL_KIND_VAR_LOCAL
     global SYMBOL_KIND_VAR_GLOBAL
 
-    xInfo = this.symbols[x]
+    xInfo = this.symbols{x}
 
     if ((xInfo is undefined) or
         (xInfo.kind is SYMBOL_KIND_VAR_LOCAL) or
@@ -389,7 +389,7 @@ class CodeGeneratorX64
 
           # TODO: Clean up this mess.
           if opcode is 'load_index'
-            yInfo = currentSymbols[y]
+            yInfo = currentSymbols{y}
 
             if (yInfo is defined) and (yInfo.type is defined)
               yType = yInfo.type
@@ -397,7 +397,7 @@ class CodeGeneratorX64
             opcode = opcode + '_' + yType
 
           else
-            xInfo = currentSymbols[x]
+            xInfo = currentSymbols{x}
             if (xInfo is defined) and (xInfo.type is defined)
               xType = xInfo.type
             endif
@@ -1496,7 +1496,7 @@ class CodeGeneratorX64
 
       for methodIdx in 0 .. methodsListCnt
         methodName  = methodsList[methodIdx]
-        methodProto = vtable[methodName]
+        methodProto = vtable{methodName}
 
         if methodProto is undefined
           methodPtr = '__MOLD_NullMethodCalled'

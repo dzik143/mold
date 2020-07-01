@@ -1,0 +1,7 @@
+x = []
+x[1] = 2
+print x
+
+y = {}
+y{'dupa'} = 2
+print y

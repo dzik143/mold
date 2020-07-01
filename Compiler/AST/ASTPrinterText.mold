@@ -133,7 +133,7 @@ class ASTPrinterText
     global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
     global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
-    global AST_OPCODE_REFERENCE, AST_OPCODE_CALL
+    global AST_OPCODE_CALL
     global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV
     global AST_OPCODE_IDIV
     global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
@@ -164,7 +164,9 @@ class ASTPrinterText
     global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
     global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
-    global AST_OPCODE_REFERENCE, AST_OPCODE_CALL
+    global AST_OPCODE_REFERENCE_BY_INDEX
+    global AST_OPCODE_REFERENCE_BY_KEY
+    global AST_OPCODE_CALL
     global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV
     global AST_OPCODE_IDIV
     global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
@@ -446,11 +448,17 @@ class ASTPrinterText
 
       __mold_printToStdOutput(value)
 
-    elif opcode is AST_OPCODE_REFERENCE
+    elif opcode is AST_OPCODE_REFERENCE_BY_INDEX
       this._printNode('', lval)
       __mold_printToStdOutput('[')
       this._printNode('', rval)
       __mold_printToStdOutput(']')
+
+    elif opcode is AST_OPCODE_REFERENCE_BY_KEY
+      this._printNode('', lval)
+      __mold_printToStdOutput('{')
+      this._printNode('', rval)
+      __mold_printToStdOutput('}')
 
     elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
       __mold_printToStdOutput(prefix)

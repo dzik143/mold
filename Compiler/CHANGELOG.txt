@@ -8,7 +8,6 @@ UNRELEASED:
     - Faster x64 code (load/store indexes with int32 pointers)
     - Avoid creating multiple Parser() objects for each module load
     - Distinguish variant and string types while generating code
-    - Better type check (bool to string assign generates error etc.)
 
   New syntax:
     - Constant primitives (strings, integer, boolean, float):
@@ -17,6 +16,13 @@ UNRELEASED:
       const SOME_CONST2 = 2
       const SOME_CONST3 = true
       const SOME_CONST4 = 3.14
+
+    - Distinguish reference by index (integer) and key (string):
+      x = [1,2,3,4]
+      print x[0]
+
+      y = {'key': 1234}
+      print y{'key'}
 
 0.1.191126 (released on 2019-11-26)
 -----------------------------------

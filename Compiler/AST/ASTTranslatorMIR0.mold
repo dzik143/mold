@@ -200,15 +200,28 @@ class ASTTranslatorMIR0 extends ASTTranslator
   endmethod
 
   method _loadFromIndex(rv, unusedBox, unusedIdx)
-    this.code.loadIndex()
+    this.code.loadFromIndex()
+  endmethod
+
+  method _loadFromKey(rv, unusedBox, unusedKey)
+    this.code.loadFromKey()
   endmethod
 
   method _storeAtIndex(unusedBox, unusedIdx, unusedValue)
-    this.code.storeIndex()
+    this.code.storeAtIndex()
+  endmethod
+
+  method _storeAtKey(unusedBox, unusedKey, unusedValue)
+    this.code.storeAtKey()
   endmethod
 
   method _storeAtIndexAndDrop(unusedBox, unusedIdx, unusedValue)
-    this.code.storeIndex()
+    this.code.storeAtIndex()
+    this.code.drop()
+  endmethod
+
+  method _storeAtKeyAndDrop(unusedBox, unusedKey, unusedValue)
+    this.code.storeAtKey()
     this.code.drop()
   endmethod
 

@@ -38,28 +38,30 @@ MIR_OPCODE_CMP_GE   = 13
 MIR_OPCODE_CMP_LT   = 14
 MIR_OPCODE_CMP_LE   = 15
 
-MIR_OPCODE_LOAD_LOCAL  = 16
-MIR_OPCODE_LOAD_PARAMN = 17
-MIR_OPCODE_LOAD_GLOBAL = 18
-MIR_OPCODE_LOAD_RETVAL = 19
-MIR_OPCODE_LOAD_INDEX  = 20
-MIR_OPCODE_LOAD_CONST  = 21
+MIR_OPCODE_LOAD_LOCAL    = 16
+MIR_OPCODE_LOAD_PARAMN   = 17
+MIR_OPCODE_LOAD_GLOBAL   = 18
+MIR_OPCODE_LOAD_RETVAL   = 19
+MIR_OPCODE_LOAD_BY_INDEX = 20
+MIR_OPCODE_LOAD_BY_KEY   = 21
+MIR_OPCODE_LOAD_CONST    = 22
 
-MIR_OPCODE_STORE_LOCAL  = 22
-MIR_OPCODE_STORE_PARAMN = 23
-MIR_OPCODE_STORE_GLOBAL = 24
-MIR_OPCODE_STORE_RETVAL = 25
-MIR_OPCODE_STORE_INDEX  = 26
+MIR_OPCODE_STORE_LOCAL    = 23
+MIR_OPCODE_STORE_PARAMN   = 24
+MIR_OPCODE_STORE_GLOBAL   = 25
+MIR_OPCODE_STORE_RETVAL   = 26
+MIR_OPCODE_STORE_BY_INDEX = 27
+MIR_OPCODE_STORE_BY_KEY   = 28
 
-MIR_OPCODE_DROP      = 27
-MIR_OPCODE_DROP_N    = 28
-MIR_OPCODE_DUP       = 29
-MIR_OPCODE_OVER      = 30
-MIR_OPCODE_MOVE_BACK = 31
+MIR_OPCODE_DROP      = 29
+MIR_OPCODE_DROP_N    = 30
+MIR_OPCODE_DUP       = 31
+MIR_OPCODE_OVER      = 32
+MIR_OPCODE_MOVE_BACK = 33
 
-MIR_OPCODE_PRINT         = 32
-MIR_OPCODE_CREATE_OBJECT = 36
-MIR_OPCODE_VCALL         = 38
+MIR_OPCODE_PRINT         = 34
+MIR_OPCODE_CREATE_OBJECT = 35
+MIR_OPCODE_VCALL         = 36
 
 MIR_OPCODE_JMP          = 39
 MIR_OPCODE_JMP_IF_TRUE  = 40
@@ -74,8 +76,8 @@ MIR_OPCODE_SYSCALL      = 48
 
 MIR_OPCODE_FOR_EACH = 100
 
-MIR_OPCODE_LOAD_ARGC        = 252
-MIR_OPCODE_LOAD_ARGV        = 253
+MIR_OPCODE_LOAD_ARGC = 252
+MIR_OPCODE_LOAD_ARGV = 253
 
 class MIRCode
   method constructor()
@@ -296,9 +298,14 @@ class MIRCode
     this.push0(MIR_OPCODE_LOAD_RETVAL)
   endmethod
 
-  method loadIndex()
-    global MIR_OPCODE_LOAD_INDEX
-    this.push0(MIR_OPCODE_LOAD_INDEX)
+  method loadFromIndex()
+    global MIR_OPCODE_LOAD_BY_INDEX
+    this.push0(MIR_OPCODE_LOAD_BY_INDEX)
+  endmethod
+
+  method loadFromKey()
+    global MIR_OPCODE_LOAD_BY_KEY
+    this.push0(MIR_OPCODE_LOAD_BY_KEY)
   endmethod
 
   method allocateLocalId() -> newId
@@ -343,9 +350,14 @@ class MIRCode
     this.push0(MIR_OPCODE_STORE_RETVAL)
   endmethod
 
-  method storeIndex()
-    global MIR_OPCODE_STORE_INDEX
-    this.push0(MIR_OPCODE_STORE_INDEX)
+  method storeAtIndex()
+    global MIR_OPCODE_STORE_BY_INDEX
+    this.push0(MIR_OPCODE_STORE_BY_INDEX)
+  endmethod
+
+  method storeAtKey()
+    global MIR_OPCODE_STORE_BY_KEY
+    this.push0(MIR_OPCODE_STORE_BY_KEY)
   endmethod
 
   method moveBack()
@@ -486,8 +498,8 @@ class MIRCode
     methodsMap  = this.methodsMap
     methodsList = this.methodsList
 
-    if methodsMap[name] is undefined
-      methodsMap[name]    = id
+    if methodsMap{name} is undefined
+      methodsMap{name}    = id
       methodsList[id]     = name
       this.methodsListCnt = id + 1
     endif
@@ -499,7 +511,7 @@ class MIRCode
     classMap     = this.classMap
     classList    = this.classList
 
-    classMap[className] = id
+    classMap{className} = id
     classList[id]       = proto
 
     methodsList    = proto.methodsAsFlatArray

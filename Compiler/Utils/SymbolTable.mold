@@ -107,11 +107,11 @@ class SymbolTable
   endmethod
 
   method insert(name, entry)
-    if this.symbols[name] is defined
+    if this.symbols{name} is defined
       this._error("redeclaration of '" + name + "'")
 
     else
-      this.symbols[name] = entry
+      this.symbols{name} = entry
       entry.writeHits = 0
       entry.readHits  = 0
       entry.loopLevel = this.loopLevel
@@ -132,7 +132,7 @@ class SymbolTable
 
     for keys id values symbolInfo in this.symbols
       if symbolInfo.name isnt entry.name
-        newSymbols[id] = symbolInfo
+        newSymbols{id} = symbolInfo
       endif
     endfor
 
@@ -155,7 +155,7 @@ class SymbolTable
     global SYMBOL_KIND_VAR_LOCAL
     global SYMBOL_KIND_VAR_GLOBAL
 
-    rv  = this.symbols[name]
+    rv  = this.symbols{name}
     tab = this
 
     while (rv is undefined) and (tab.deepIdx > 0)
@@ -471,13 +471,13 @@ class SymbolTable
   method insertLiteral(text) -> literalEntry
     global AST_DATA_STRING
 
-    literalEntry = this.global.literals[text]
+    literalEntry = this.global.literals{text}
 
     if literalEntry is undefined
       # Literal seen first time. Wrap it into new constant.
       name         = '__literal' + str(SymbolTable_GetNextId())
       literalEntry = this.insertConst(name, text)
-      this.global.literals[text] = literalEntry
+      this.global.literals{text} = literalEntry
 
       # TODO: Review it.
       literalEntry.astType = AST_DATA_STRING
@@ -559,12 +559,12 @@ class SymbolTable
       # TODO: Remove this hack.
       if (symbolInfo.writeHits > 0) or (symbolInfo.readHits > 0) or (symbolInfo.kind is SYMBOL_KIND_VAR_PARAM) or (symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL)
         # Variable is used at least once time. Keep it in table.
-        newSymbols[symbolInfo.name] = symbolInfo
+        newSymbols{symbolInfo.name} = symbolInfo
 
         # TODO: Clean up this mess.
         # Always keep return val.
         #if symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
-        #  newSymbols[symbolInfo.alias] = symbolInfo
+        #  newSymbols{symbolInfo.alias} = symbolInfo
         #endif
       else
         # Variable was never accesed for read. Remove it from table.
@@ -607,9 +607,9 @@ class SymbolTable
 
   method getTempVar(wantedType) -> rv
     # TODO: Review it.
-    if this.poolOfTempVars[wantedType].cnt > 0
+    if this.poolOfTempVars{wantedType}.cnt > 0
       # Get first free temp var from pool
-      poolObj = this.poolOfTempVars[wantedType]
+      poolObj = this.poolOfTempVars{wantedType}
       poolCnt = poolObj.cnt - 1
 
       poolObj.cnt = poolCnt
@@ -653,7 +653,7 @@ class SymbolTable
         mirType = symbolInfo.type
 
         if mirType is defined
-          poolObj = this.poolOfTempVars[mirType]
+          poolObj = this.poolOfTempVars{mirType}
           poolObj.pool[poolObj.cnt] = symbolInfo.name
           poolObj.cnt               = poolObj.cnt + 1
         endif

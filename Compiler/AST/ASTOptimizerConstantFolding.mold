@@ -115,7 +115,7 @@ class ASTOptimizerConstantFolding
       this.processNode(nodeValue)
 
       if (AST_IsImm(nodeKey) is true) and (AST_IsImm(nodeValue) is true)
-        newValue[nodeKey.value] = nodeValue.value
+        newValue{nodeKey.value} = nodeValue.value
       else
         isImm = false
       endif
@@ -144,7 +144,8 @@ class ASTOptimizerConstantFolding
     global AST_DATA_BOOL, AST_DATA_INTEGER, AST_DATA_DOUBLE, AST_DATA_STRING
     global AST_DATA_ARRAY, AST_DATA_MAP, AST_DATA_UNDEFINED
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
-    global AST_OPCODE_REFERENCE
+    global AST_OPCODE_REFERENCE_BY_INDEX
+    global AST_OPCODE_REFERENCE_BY_KEY
     global AST_OPCODE_TYPE_CAST
     global SYMBOL_KIND_CONST
 
@@ -277,7 +278,7 @@ class ASTOptimizerConstantFolding
           node.childrenCnt = len(newParams)
 
         # TODO: Review it.
-        elif ((opcode is AST_OPCODE_REFERENCE) and
+        elif (((opcode is AST_OPCODE_REFERENCE_BY_INDEX) or (opcode is AST_OPCODE_REFERENCE_BY_KEY)) and
               (x.opcode is AST_OPCODE_VARIABLE) and
               (x.symbolInfo.kind is SYMBOL_KIND_CONST) and
               (AST_IsImm(y) is true))
@@ -285,7 +286,7 @@ class ASTOptimizerConstantFolding
           # box[i]
           # Access to constant array with imm index.
           # We can resolve it at compilation time.
-          newValue = x.symbolInfo.value[y.value]
+          newValue = x.symbolInfo.value{y.value}
           if (typeof(newValue) isnt 'array') and (typeof(newValue) isnt 'map')
             x.symbolInfo.readHits = x.symbolInfo.readHits - 1
           endif
@@ -410,9 +411,13 @@ class ASTOptimizerConstantFolding
                 newValue = false
               endif
 
-            elif opcode is AST_OPCODE_REFERENCE
+            elif opcode is AST_OPCODE_REFERENCE_BY_INDEX
               # x[y]
               newValue = x.value[y.value]
+
+            elif opcode is AST_OPCODE_REFERENCE_BY_KEY
+              # x{y}
+              newValue = x.value{y.value}
             endif
           endif
 

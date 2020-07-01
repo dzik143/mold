@@ -57,7 +57,7 @@ class MIRQuadOptimizer extends PipeAbstract
   # ----------------------------------------------------------------------------
 
   method _decreaseReadAndWriteHits(src)
-    srcInfo = this.currentFrame.symbols[src]
+    srcInfo = this.currentFrame.symbols{src}
     srcInfo.writeHits = srcInfo.writeHits - 1
     srcInfo.readHits  = srcInfo.readHits - 1
   endmethod
@@ -96,7 +96,7 @@ class MIRQuadOptimizer extends PipeAbstract
 
     elif (opcode is 'jmp_if_false')
 
-      newOpcode = this.cmpXxJmpIfFalseMap[this.lastOpcode]
+      newOpcode = this.cmpXxJmpIfFalseMap{this.lastOpcode}
 
       if newOpcode is defined
         # cmp_xx       tmp, x, y
@@ -110,7 +110,7 @@ class MIRQuadOptimizer extends PipeAbstract
 
     elif (opcode is 'jmp_if_true')
 
-      newOpcode = this.cmpXxJmpIfTrueMap[this.lastOpcode]
+      newOpcode = this.cmpXxJmpIfTrueMap{this.lastOpcode}
 
       if newOpcode is defined
         # cmp_xx      tmp, x, y

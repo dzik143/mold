@@ -35,18 +35,18 @@ class ASTEvaluator
 
   method _assignValue(valuesMap, lval, rval)
     name     = lval.value
-    oldValue = valuesMap[name]
+    oldValue = valuesMap{name}
     newValue = rval
 
-    valuesMap[name]  = newValue
+    valuesMap{name}  = newValue
     lval.storedValue = newValue
   endmethod
 
   method _getValue(valuesMap, name) -> rv
-    rv = valuesMap[name]
+    rv = valuesMap{name}
     while (rv is undefined) and (valuesMap.parent is defined)
       valuesMap = valuesMap.parent
-      rv        = valuesMap[name]
+      rv        = valuesMap{name}
     endwhile
   endmethod
 
@@ -87,8 +87,8 @@ class ASTEvaluator
       # TODO: Remove this hack:
       if varId isnt '__parent'
         oldValue         = this._getValue(valuesMap, varId)
-        newValue         = newValuesMap[varId]
-        valuesMap[varId] = this._mergeValues(oldValue, newValue)
+        newValue         = newValuesMap{varId}
+        valuesMap{varId} = this._mergeValues(oldValue, newValue)
       endif
     endfor
   endmethod
@@ -104,9 +104,9 @@ class ASTEvaluator
       # TODO: Remove this hack.
       if varId isnt '__parent'
         oldValue         = this._getValue(valuesMap, varId)
-        value1           = newValuesMap1[varId]
-        value2           = newValuesMap2[varId]
-        valuesMap[varId] = this._mergeValues(value1, value2)
+        value1           = newValuesMap1{varId}
+        value2           = newValuesMap2{varId}
+        valuesMap{varId} = this._mergeValues(value1, value2)
       endif
     endfor
 
@@ -114,9 +114,9 @@ class ASTEvaluator
       # TODO: Remove this hack.
       if varId isnt '__parent'
         oldValue         = this._getValue(valuesMap, varId)
-        value1           = newValuesMap1[varId]
-        value2           = newValuesMap2[varId]
-        valuesMap[varId] = this._mergeValues(value1, value2)
+        value1           = newValuesMap1{varId}
+        value2           = newValuesMap2{varId}
+        valuesMap{varId} = this._mergeValues(value1, value2)
       endif
     endfor
   endmethod
@@ -159,7 +159,8 @@ class ASTEvaluator
     global AST_DATA_BOOL, AST_DATA_INTEGER, AST_DATA_DOUBLE, AST_DATA_STRING
     global AST_DATA_ARRAY, AST_DATA_MAP, AST_DATA_UNDEFINED, AST_DATA_OBJECT
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
-    global AST_OPCODE_REFERENCE
+    global AST_OPCODE_REFERENCE_BY_INDEX
+    global AST_OPCODE_REFERENCE_BY_KEY
     global AST_OPCODE_CALL, AST_OPCODE_INVOKE_METHOD
     global SYMBOL_KIND_VAR_GLOBAL
     global AST_OPCODE_TYPE_CAST
@@ -203,7 +204,7 @@ class ASTEvaluator
           classProto = symbolInfo.classProto
 
           if classProto is defined
-            methodProto = classProto.vtable[rval.value]
+            methodProto = classProto.vtable{rval.value}
 
             if methodProto is defined
               if methodProto.rv is undefined
@@ -221,7 +222,7 @@ class ASTEvaluator
           classProto = symbolInfo.classProto
 
           if classProto is defined
-            methodProto = classProto.vtable[rval.value]
+            methodProto = classProto.vtable{rval.value}
 
             if methodProto is defined
               if methodProto.rv is undefined
@@ -235,13 +236,10 @@ class ASTEvaluator
       if lval.opcode is AST_OPCODE_VARIABLE
         this._assignValue(valuesMap, lval, rval)
 
-      elif lval.opcode is AST_OPCODE_REFERENCE
+      elif ((lval.opcode is AST_OPCODE_REFERENCE_BY_INDEX) or
+            (lval.opcode is AST_OPCODE_REFERENCE_BY_KEY))
         # TODO: Review it.
-        boxOpcode = lval.children[0].opcode
-
-        if ((boxOpcode isnt AST_OPCODE_VARIABLE) and
-            (boxOpcode isnt AST_OPCODE_REFERENCE))
-
+        if AST_IsOkAsBox(lval.children[0]) is false
           # Error - lval should stores variable name.
           # box[i] = ...
           die('error: array or map expected')

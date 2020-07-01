@@ -390,6 +390,10 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.popTwoArgsAndEmitOpcode('load_index', rv)
   endmethod
 
+  method _loadFromKey(rv, unusedBox, unusedKey)
+    this.popTwoArgsAndEmitOpcode('load_index', rv)
+  endmethod
+
   method _storeAtIndex(unusedBox, unusedIdx, unusedValue)
     val = this.popForRead()
     idx = this.popForRead()
@@ -398,11 +402,26 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.push(box)
   endmethod
 
+  method _storeAtKey(unusedBox, unusedKey, unusedValue)
+    val = this.popForRead()
+    key = this.popForRead()
+    box = this.popForRead()
+    this.emitTwoArgsOpcode('store_index', box, key, val)
+    this.push(box)
+  endmethod
+
   method _storeAtIndexAndDrop(unusedBox, unusedIdx, unusedValue)
     val = this.popForRead()
     idx = this.popForRead()
     box = this.popForRead()
     this.emitTwoArgsOpcode('store_index', box, idx, val)
+  endmethod
+
+  method _storeAtKeyAndDrop(unusedBox, unusedKey, unusedValue)
+    val = this.popForRead()
+    key = this.popForRead()
+    box = this.popForRead()
+    this.emitTwoArgsOpcode('store_index', box, key, val)
   endmethod
 
   method _createObject(rv, classProto)
@@ -469,18 +488,18 @@ class ASTTranslatorMIR1 extends ASTTranslator
   method _invokeMethod(rv, methodName, unusedParams, paramsCnt)
     # TODO: Remove paramsCnt
     # TODO: Remove codeObj
-    methodId = this.code.methodsMap[methodName]
+    methodId = this.code.methodsMap{methodName}
 
     if methodId is undefined
       # Forward declaration.
       methodId = this.code.createMethod(methodName)
     endif
 
-    if this.mapOfCalledMethods[methodName] is undefined
+    if this.mapOfCalledMethods{methodName} is undefined
       this.arrayOfCalledMethods[len(this.arrayOfCalledMethods)] = methodName
     endif
 
-    this.mapOfCalledMethods[methodName] = true
+    this.mapOfCalledMethods{methodName} = true
 
     params = this.popParametersBeforeCall(paramsCnt)
 
@@ -684,7 +703,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     codeAst     = children[0]
     rvName      = funcProto.rv
 
-    this.methodEmitted[funcProto.name] = true
+    this.methodEmitted{funcProto.name} = true
 
     symbolTable = this.symbolTable
 
@@ -748,7 +767,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     for idx in 0 .. len(this.arrayOfCalledMethods)
       methodName = this.arrayOfCalledMethods[idx]
-      if this.methodEmitted[methodName] isnt true
+      if this.methodEmitted{methodName} isnt true
         die("error: object has no method '" + methodName + "'")
       endif
     endfor

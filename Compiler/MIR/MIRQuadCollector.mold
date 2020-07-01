@@ -117,8 +117,8 @@ class MIRQuadCollector extends PipeAbstract
     codeCnt = len(code)
 
     for idx in 0 .. codeCnt
-      item    = code[idx]
-      opcode  = item[0]
+      item   = code[idx]
+      opcode = item[0]
 
       # print '[ MIRQuadCollector ]', item
 

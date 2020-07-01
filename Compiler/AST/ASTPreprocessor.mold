@@ -136,7 +136,7 @@ class ASTPreprocessor
 
     elif opcode is AST_OPCODE_CALL
       funcName  = node.value
-      sysCallId = MOLD_SYSCALL_MAP[funcName]
+      sysCallId = MOLD_SYSCALL_MAP{funcName}
 
       if sysCallId is defined
         # One of built-in functions.

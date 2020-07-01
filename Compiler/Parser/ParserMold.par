@@ -281,8 +281,8 @@ expr
   | expr '*' expr     =AST_OPCODE_MUL
   | expr '/' expr     =AST_OPCODE_DIV
   | expr "//" expr    =AST_OPCODE_IDIV
-  | '(' expr ')'
   | '-' expr          =AST_OPCODE_NEG
+  | '(' expr ')'
   | reference
   | imm
   | logic
@@ -296,16 +296,16 @@ expr
 
 // Logical primitive: true, false, x o y
 logic
-  : "not" logic       =AST_OPCODE_BOOL_NOT
-  | rval "is" rval    =AST_OPCODE_COMPARE_EQ
-  | rval "isnt" rval  =AST_OPCODE_COMPARE_NEQ
-  | rval "<" rval     =AST_OPCODE_COMPARE_LT
-  | rval "<=" rval    =AST_OPCODE_COMPARE_LE
-  | rval '>' rval     =AST_OPCODE_COMPARE_GT
-  | rval ">=" rval    =AST_OPCODE_COMPARE_GE
+  : bool             =AST_DATA_BOOL
+  | "not" logic      =AST_OPCODE_BOOL_NOT
+  | rval "is" rval   =AST_OPCODE_COMPARE_EQ
+  | rval "isnt" rval =AST_OPCODE_COMPARE_NEQ
+  | rval "<" rval    =AST_OPCODE_COMPARE_LT
+  | rval "<=" rval   =AST_OPCODE_COMPARE_LE
+  | rval '>' rval    =AST_OPCODE_COMPARE_GT
+  | rval ">=" rval   =AST_OPCODE_COMPARE_GE
   | function_call
   | method_call
-  | bool              =AST_DATA_BOOL
   ;
 
 // Complex logical expression built from primitves.
@@ -457,16 +457,16 @@ rval
   ;
 
 reference
-  : expr '[' expr ']' =AST_OPCODE_REFERENCE
-  | expr '.' member   =AST_OPCODE_REFERENCE
+  : expr '[' expr ']' =AST_OPCODE_REFERENCE_BY_INDEX
+  | expr '{' expr '}' =AST_OPCODE_REFERENCE_BY_KEY
+  | expr '.' member   =AST_OPCODE_REFERENCE_BY_KEY
   ;
 
 //
 // Basic leafs.
 //
 
-var : @IDENT =AST_OPCODE_VARIABLE;
-
+var    : @IDENT =AST_OPCODE_VARIABLE;
 member : @IDENT =AST_DATA_STRING;
 
 expr_imm

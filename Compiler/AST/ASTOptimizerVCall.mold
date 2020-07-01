@@ -54,7 +54,7 @@ class ASTOptimizerVCall
         if (classProto is defined) and (classProto.vtable is defined)
           # We already know class proto.
           # Convert vcall to ordinary call.
-          methodProto = classProto.vtable[node.value]
+          methodProto = classProto.vtable{node.value}
 
           if methodProto is defined
             if methodProto.isOverloaded is true

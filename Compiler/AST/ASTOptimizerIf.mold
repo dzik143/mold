@@ -90,12 +90,12 @@ class ASTOptimizerIf
             caseValue    = cond.children[1].value
             caseNodeHash = AST_HashForCodeComparison(caseNode)
 
-            reusedNode = caseHashMap[caseNodeHash]
+            reusedNode = caseHashMap{caseNodeHash}
             casesCnt   = casesCnt + 1
 
             if reusedNode is undefined
               # Case code seen first time. Go on.
-              caseHashMap[caseNodeHash] = caseNode
+              caseHashMap{caseNodeHash} = caseNode
               newChildren[len(newChildren)] = caseNode
               caseNode.arrayOfValues = [caseValue]
 
