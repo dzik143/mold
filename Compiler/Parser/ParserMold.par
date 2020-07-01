@@ -31,8 +31,6 @@
 
 @FLOAT   '0-9'+ '.' '0-9'+;
 @INTEGER '0-9'+ | "0x" '0-9a-fA-F'+;
-@TRUE    "true";
-@FALSE   "false";
 
 #left '=';
 #left '+' '-';
@@ -40,10 +38,6 @@
 #left "is" "isnt" '<' '>' "<=" ">=";
 #left "and" "or";
 #left "not";
-
-//
-// Defining the grammar
-//
 
 // -----------------------------------------------------------------------------
 //                       General source code sturucture
@@ -98,9 +92,16 @@ stmt_declare_or_assign
                          *]
   ;
 
-//
-// Functions.
-//
+// -----------------------------------------------------------------------------
+//                       Function declaration and call
+// -----------------------------------------------------------------------------
+
+function_proto
+  : @IDENT '(' ')'                            [* @@ = {'name': @1, 'parameters': []} *]
+  | @IDENT '(' ')' "->" @IDENT                [* @@ = {'name': @1, 'parameters': [], 'rv': @5} *]
+  | @IDENT '(' parameter_list ')'             [* @@ = {'name': @1, 'parameters': @3} *]
+  | @IDENT '(' parameter_list ')' "->" @IDENT [* @@ = {'name': @1, 'parameters': @3, 'rv': @6} *]
+  ;
 
 stmt_call
   : "print"  call_list_line [* @@ = 'print'  *]
@@ -113,13 +114,9 @@ function_call
   : @IDENT '(' value_list? ')'
   ;
 
-function_proto
-  : @IDENT '(' ')'                            [* @@ = {'name': @1, 'parameters': []} *]
-  | @IDENT '(' ')' "->" @IDENT                [* @@ = {'name': @1, 'parameters': [], 'rv': @5} *]
-  | @IDENT '(' parameter_list ')'             [* @@ = {'name': @1, 'parameters': @3} *]
-  | @IDENT '(' parameter_list ')' "->" @IDENT [* @@ = {'name': @1, 'parameters': @3, 'rv': @6} *]
-  ;
-
+// function foo(x,y,z) -> rv
+//   code ...
+// endfunction
 stmt_function_declaration:
   "function" function_proto @EOL
   stmt_list
@@ -133,10 +130,6 @@ parameter_list
   : parameter_list ',' @EOL? @IDENT [* @1[len(@1)] = @4
                                        @@ = @1
                                     *]
-
-//  | parameter_list ',' @EOL @IDENT [* @1[len(@1)] = @4
-//                                      @@ = @1
-///                                   *]
 
   | @EOL parameter_list            [* @@ = @2 *]
   | @IDENT                         [* @@ = [@1] *]
@@ -410,19 +403,33 @@ imm_array
   : '[' imm_list ']' [* @@ = @2 *]
   ;
 
-//
-// L-value and R-value.
-//
+// -----------------------------------------------------------------------------
+//                Reference: Indirect acces by index or key
+// -----------------------------------------------------------------------------
 
-lval
-  : var
-  | reference
+reference
+  : expr '[' expr ']' =AST_OPCODE_REFERENCE_BY_INDEX // x[1234]
+  | expr '{' expr '}' =AST_OPCODE_REFERENCE_BY_KEY   // x{'key'}
+  | expr '.' member   =AST_OPCODE_REFERENCE_BY_KEY   // x.property
   ;
 
+// -----------------------------------------------------------------------------
+//                    L-values: Used on left side of x=y
+// -----------------------------------------------------------------------------
+
+lval
+  : var       // x = ...
+  | reference // x[i] = ...
+  ;
+
+// -----------------------------------------------------------------------------
+//                   R-values: Used on right side of x=y
+// -----------------------------------------------------------------------------
+
 rval
-  : expr
+  : var
+  | expr
   | reference
-  | var
   | new_call
   | imm
   | function_call     =AST_OPCODE_CALL
@@ -430,12 +437,6 @@ rval
   | rval_array        =AST_DATA_ARRAY
   | rval_map          =AST_DATA_MAP
   | logic
-  ;
-
-reference
-  : expr '[' expr ']' =AST_OPCODE_REFERENCE_BY_INDEX
-  | expr '{' expr '}' =AST_OPCODE_REFERENCE_BY_KEY
-  | expr '.' member   =AST_OPCODE_REFERENCE_BY_KEY
   ;
 
 //
@@ -495,13 +496,13 @@ string
   ;
 
 bool
-  : @TRUE   [* @@ = true *]  =AST_DATA_BOOL
-  | @FALSE  [* @@ = false *] =AST_DATA_BOOL
+  : "true"  [* @@ = true *]  =AST_DATA_BOOL
+  | "false" [* @@ = false *] =AST_DATA_BOOL
   ;
 
-//
-// Common syntax errors.
-//
+// -----------------------------------------------------------------------------
+//                            Common syntax errors
+// -----------------------------------------------------------------------------
 
 error_unterminated_string
   : @UNTERMINATED_STRING [* this._handleError(line, column, 'unterminated string') *]
