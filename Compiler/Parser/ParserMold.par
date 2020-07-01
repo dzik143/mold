@@ -45,11 +45,15 @@
 // Defining the grammar
 //
 
-program$ : stmt_list = AST_OPCODE_PROGRAM;
+program$:
+  stmt_list = AST_OPCODE_PROGRAM;
 
-stmt_list : stmt_line* [* @@ = null *] =AST_OPCODE_BLOCK;
+stmt_list:
+  stmt_line* [* @@ = null *] =AST_OPCODE_BLOCK;
 
-stmt_line : stmt @EOL | @EOL;
+stmt_line
+  : stmt @EOL
+  | @EOL;
 
 stmt
   : stmt_declare_or_assign    =AST_OPCODE_DECLARE_OR_ASSIGN
@@ -65,6 +69,7 @@ stmt
   | stmt_for_keys_values      =AST_OPCODE_FOR_KEYS_VALUES
   | stmt_for_indexes          =AST_OPCODE_FOR_INDEXES
   | stmt_for_indexes_values   =AST_OPCODE_FOR_INDEXES_VALUES
+
 //  | stmt_switch
 //  | stmt_read
 //  | stmt_write
@@ -255,7 +260,7 @@ expr
 
 // Logical primitive: true, false, x o y
 logic
-  : bool             =AST_DATA_BOOL
+  : bool
   | "not" logic      =AST_OPCODE_BOOL_NOT
   | rval "is" rval   =AST_OPCODE_COMPARE_EQ
   | rval "isnt" rval =AST_OPCODE_COMPARE_NEQ
@@ -269,7 +274,7 @@ logic
 
 // Complex logical expression built from primitves.
 expr_logic
-  : bool =AST_DATA_BOOL
+  : bool
   | '(' logic ')'      [* @@ = @2 *]
   | '(' expr_logic ')' [* @@ = @2 *]
   | expr_logic "and" expr_logic =AST_OPCODE_BOOL_AND
@@ -444,12 +449,13 @@ expr_imm
   | @IDENT [* @@ = constantsMap{@1}
               if @@ is undefined
                 this._handleError(line, column, 'only constant values can be inserted into constant array')
-              endif *]
+              endif
+           *]
   ;
 
-imm : integer   =AST_DATA_INTEGER
-    | float     =AST_DATA_DOUBLE
-    | string    =AST_DATA_STRING
+imm : integer =AST_DATA_INTEGER
+    | float   =AST_DATA_DOUBLE
+    | string  =AST_DATA_STRING
     ;
 
 number
@@ -477,8 +483,8 @@ string
   ;
 
 bool
-  : @TRUE   [* @@ = true *]
-  | @FALSE  [* @@ = false *]
+  : @TRUE   [* @@ = true *]  =AST_DATA_BOOL
+  | @FALSE  [* @@ = false *] =AST_DATA_BOOL
   ;
 
 //
