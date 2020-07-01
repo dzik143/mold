@@ -79,6 +79,10 @@ stmt
 //  | stmt_write
   ;
 
+// -----------------------------------------------------------------------------
+//                           Declare or assign: x = y
+// -----------------------------------------------------------------------------
+
 stmt_declare_or_assign
   : lval '=' rval
 
@@ -244,9 +248,11 @@ new_begin
 //
 
 expr
-  : imm                             // 1, 3.14, 'text'
-  | var                             // x
-  | reference                       // x[y], x{y}, x.y
+  : imm                                      // 1, 3.14, 'text'
+  | var                                      // x
+  | reference                                // x[y], x{y}, x.y
+  | function_call =AST_OPCODE_CALL           // foo(x,y,z)
+  | method_call   =AST_OPCODE_INVOKE_METHOD  // obj.foo(x,y,z)
   | logic
   | expr_logic
 
@@ -273,8 +279,6 @@ logic
   | rval "<=" rval   =AST_OPCODE_COMPARE_LE    // x <= y
   | rval '>' rval    =AST_OPCODE_COMPARE_GT    // x > y
   | rval ">=" rval   =AST_OPCODE_COMPARE_GE    // x >= y
-  | function_call    =AST_OPCODE_CALL          //
-  | method_call      =AST_OPCODE_INVOKE_METHOD
   ;
 
 // Complex logical expression built from primitves.
