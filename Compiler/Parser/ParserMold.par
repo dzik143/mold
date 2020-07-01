@@ -45,6 +45,10 @@
 // Defining the grammar
 //
 
+// -----------------------------------------------------------------------------
+//                       General source code sturucture
+// -----------------------------------------------------------------------------
+
 program$:
   stmt_list = AST_OPCODE_PROGRAM;
 
@@ -55,20 +59,26 @@ stmt_line
   : stmt @EOL
   | @EOL;
 
+// -----------------------------------------------------------------------------
+//                            Top level statements
+//
+// Below there are possible statements, that can be used in the global space.
+// -----------------------------------------------------------------------------
+
 stmt
-  : stmt_declare_or_assign    =AST_OPCODE_DECLARE_OR_ASSIGN
-  | stmt_call                 =AST_OPCODE_CALL
-  | stmt_vcall                =AST_OPCODE_INVOKE_METHOD
-  | stmt_function_declaration =AST_OPCODE_FUNCTION
-  | stmt_class_declaration    =AST_OPCODE_CLASS
-  | stmt_if                   =AST_OPCODE_IF
-  | stmt_for                  =AST_OPCODE_FOR_VALUES_RANGE
-  | stmt_while                =AST_OPCODE_WHILE
-  | stmt_for_values           =AST_OPCODE_FOR_VALUES
-  | stmt_for_keys             =AST_OPCODE_FOR_KEYS
-  | stmt_for_keys_values      =AST_OPCODE_FOR_KEYS_VALUES
-  | stmt_for_indexes          =AST_OPCODE_FOR_INDEXES
-  | stmt_for_indexes_values   =AST_OPCODE_FOR_INDEXES_VALUES
+  : stmt_declare_or_assign    =AST_OPCODE_DECLARE_OR_ASSIGN  // x = y
+  | stmt_call                 =AST_OPCODE_CALL               // foo(x,y,z)
+  | stmt_vcall                =AST_OPCODE_INVOKE_METHOD      // obj.foo(x,y,z)
+  | stmt_function_declaration =AST_OPCODE_FUNCTION           // function foo()
+  | stmt_class_declaration    =AST_OPCODE_CLASS              // class foo
+  | stmt_if                   =AST_OPCODE_IF                 // if x is 1
+  | stmt_for                  =AST_OPCODE_FOR_VALUES_RANGE   // for x in 0..10
+  | stmt_while                =AST_OPCODE_WHILE              // while goOn is true
+  | stmt_for_values           =AST_OPCODE_FOR_VALUES         // for values v in box
+  | stmt_for_keys             =AST_OPCODE_FOR_KEYS           // for keys k in box
+  | stmt_for_keys_values      =AST_OPCODE_FOR_KEYS_VALUES    // for keys k values v in box
+  | stmt_for_indexes          =AST_OPCODE_FOR_INDEXES        // for indexes i in box
+  | stmt_for_indexes_values   =AST_OPCODE_FOR_INDEXES_VALUES // for indexes i values v in box
 
 //  | stmt_switch
 //  | stmt_read
@@ -120,11 +130,13 @@ stmt_function_declaration:
 //
 
 parameter_list
-  : parameter_list ',' @IDENT      [* @1[len(@1)] = @3
-                                      @@ =@1 *]
+  : parameter_list ',' @EOL? @IDENT [* @1[len(@1)] = @4
+                                       @@ = @1
+                                    *]
 
-  | parameter_list ',' @EOL @IDENT [* @1[len(@1)] = @4
-                                      @@ = @1 *]
+//  | parameter_list ',' @EOL @IDENT [* @1[len(@1)] = @4
+//                                      @@ = @1
+///                                   *]
 
   | @EOL parameter_list            [* @@ = @2 *]
   | @IDENT                         [* @@ = [@1] *]
@@ -240,15 +252,15 @@ new_begin
 //
 
 expr
-  : expr '+' expr     =AST_OPCODE_ADD
-  | expr '-' expr     =AST_OPCODE_SUB
-  | expr '*' expr     =AST_OPCODE_MUL
-  | expr '/' expr     =AST_OPCODE_DIV
-  | expr "//" expr    =AST_OPCODE_IDIV
-  | '-' expr          =AST_OPCODE_NEG
-  | '(' expr ')'
-  | reference
-  | imm
+  : expr '+' expr  =AST_OPCODE_ADD  // x + y
+  | expr '-' expr  =AST_OPCODE_SUB  // x - y
+  | expr '*' expr  =AST_OPCODE_MUL  // x * y
+  | expr '/' expr  =AST_OPCODE_DIV  // x / y
+  | expr "//" expr =AST_OPCODE_IDIV // x // y
+  | '-' expr       =AST_OPCODE_NEG  // -x
+  | '(' expr ')'                    // (x)
+  | reference                       // x[y], x{y}, x.y
+  | imm                             // 1, 3.14, 'text'
   | logic
   | expr_logic
   | var
