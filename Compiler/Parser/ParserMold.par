@@ -233,8 +233,7 @@ method_declaration:
 //
 
 new_call
-  //: new_begin @IDENT '(' ')'          [* @@ =  @2 *] =AST_OPCODE_CALL_NEW
-  : new_begin @IDENT '('value_list? ')' [* @@ =  @2 *] =AST_OPCODE_CALL_NEW
+  : new_begin @IDENT '(' value_list? ')' [* @@ =  @2 *] =AST_OPCODE_CALL_NEW
   ;
 
 new_begin
@@ -266,15 +265,15 @@ expr
 
 // Logical primitive: true, false, x o y
 logic
-  : bool
-  | "not" logic      =AST_OPCODE_BOOL_NOT
-  | rval "is" rval   =AST_OPCODE_COMPARE_EQ
-  | rval "isnt" rval =AST_OPCODE_COMPARE_NEQ
-  | rval "<" rval    =AST_OPCODE_COMPARE_LT
-  | rval "<=" rval   =AST_OPCODE_COMPARE_LE
-  | rval '>' rval    =AST_OPCODE_COMPARE_GT
-  | rval ">=" rval   =AST_OPCODE_COMPARE_GE
-  | function_call    =AST_OPCODE_CALL
+  : bool                                       // true, false
+  | "not" logic      =AST_OPCODE_BOOL_NOT      // not x
+  | rval "is" rval   =AST_OPCODE_COMPARE_EQ    // x is y
+  | rval "isnt" rval =AST_OPCODE_COMPARE_NEQ   // x isnt y
+  | rval "<" rval    =AST_OPCODE_COMPARE_LT    // x < y
+  | rval "<=" rval   =AST_OPCODE_COMPARE_LE    // x <= y
+  | rval '>' rval    =AST_OPCODE_COMPARE_GT    // x > y
+  | rval ">=" rval   =AST_OPCODE_COMPARE_GE    // x >= y
+  | function_call    =AST_OPCODE_CALL          //
   | method_call      =AST_OPCODE_INVOKE_METHOD
   ;
 
