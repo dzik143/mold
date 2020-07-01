@@ -52,10 +52,9 @@ stmt_list : stmt_line* [* @@ = null *] =AST_OPCODE_BLOCK;
 stmt_line : stmt @EOL | @EOL;
 
 stmt
-  : stmt_declare_or_assign  =AST_OPCODE_DECLARE_OR_ASSIGN
-  | function_call
-  | method_call
-  | stmt_import               =AST_OPCODE_CALL
+  : stmt_declare_or_assign    =AST_OPCODE_DECLARE_OR_ASSIGN
+  | stmt_call                 =AST_OPCODE_CALL
+  | stmt_vcall                =AST_OPCODE_INVOKE_METHOD
   | stmt_function_declaration =AST_OPCODE_FUNCTION
   | stmt_class_declaration    =AST_OPCODE_CLASS
   | stmt_if                   =AST_OPCODE_IF
@@ -70,11 +69,6 @@ stmt
 //  | stmt_read
 //  | stmt_write
   ;
-
-module_name
-  : string =AST_DATA_STRING;
-
-stmt_import: "import" module_name [* @@ = 'import' *];
 
 stmt_declare_or_assign
   : lval '=' rval
@@ -93,11 +87,15 @@ stmt_declare_or_assign
 // Functions.
 //
 
+stmt_call
+  : "print"  call_list_line [* @@ = 'print'  *]
+  | "global" call_list_line [* @@ = 'global' *]
+  | "import" call_list_line [* @@ = 'import' *]
+  | function_call
+  ;
+
 function_call
-  : @IDENT '(' ')'           [* @@ = @1 *]       =AST_OPCODE_CALL
-  | @IDENT '(' call_list ')' [* @@ = @1 *]       =AST_OPCODE_CALL
-  | "print"  call_list_line  [* @@ = 'print'  *] =AST_OPCODE_CALL
-  | "global" call_list_line  [* @@ = 'global' *] =AST_OPCODE_CALL
+  : @IDENT '(' value_list? ')'
   ;
 
 function_proto
@@ -106,7 +104,6 @@ function_proto
   | @IDENT '(' parameter_list ')'             [* @@ = {'name': @1, 'parameters': @3} *]
   | @IDENT '(' parameter_list ')' "->" @IDENT [* @@ = {'name': @1, 'parameters': @3, 'rv': @6} *]
   ;
-
 
 stmt_function_declaration:
   "function" function_proto @EOL
@@ -129,24 +126,9 @@ parameter_list
   | @EOL
   ;
 
-call_list
-  : call_list ',' rval        [* @1[len(@1)] = @3
-                                 @@ =@1 *]
-
-  | call_list ',' @EOL rval   [* @1[len(@1)] = @4
-                                 @@ = @1 *]
-
-  | @EOL call_list            [* @@ = @2 *]
-  | call_list @EOL            [* @@ = @1 *]
-  | rval                      [* @@ = [@1] *]
-  | @EOL
-  ;
-
 call_list_line
-  : call_list_line ',' rval [* @1[len(@1)] = @3
-                               @@ =@1 *]
-
-  | rval                    [* @@ = [@1] *]
+  : call_list_line ',' rval
+  | rval
   ;
 
 //
@@ -226,10 +208,10 @@ stmt_class_declaration:
   (method_declaration | @EOL)*
   "endclass";
 
+stmt_vcall: method_call;
+
 method_call
-  : expr '.' @IDENT '(' ')'           [* @@ = @3 *] =AST_OPCODE_INVOKE_METHOD
-  | expr '.' @IDENT '(' call_list ')' [* @@ = @3 *] =AST_OPCODE_INVOKE_METHOD
-  ;
+  : expr '.' @IDENT '(' value_list? ')' [* @@ = @3 *];
 
 method_declaration:
   "method" function_proto @EOL
@@ -241,8 +223,8 @@ method_declaration:
 //
 
 new_call
-  : new_begin @IDENT '(' ')'          [* @@ =  @2 *] =AST_OPCODE_CALL_NEW
-  | new_begin @IDENT '('call_list ')' [* @@ =  @2 *] =AST_OPCODE_CALL_NEW
+  //: new_begin @IDENT '(' ')'          [* @@ =  @2 *] =AST_OPCODE_CALL_NEW
+  : new_begin @IDENT '('value_list? ')' [* @@ =  @2 *] =AST_OPCODE_CALL_NEW
   ;
 
 new_begin
@@ -281,8 +263,8 @@ logic
   | rval "<=" rval   =AST_OPCODE_COMPARE_LE
   | rval '>' rval    =AST_OPCODE_COMPARE_GT
   | rval ">=" rval   =AST_OPCODE_COMPARE_GE
-  | function_call
-  | method_call
+  | function_call    =AST_OPCODE_CALL
+  | method_call      =AST_OPCODE_INVOKE_METHOD
   ;
 
 // Complex logical expression built from primitves.
@@ -425,9 +407,9 @@ rval
   | reference
   | var
   | new_call
-  | function_call
-  | method_call
   | imm
+  | function_call     =AST_OPCODE_CALL
+  | method_call       =AST_OPCODE_INVOKE_METHOD
   | rval_array        =AST_DATA_ARRAY
   | rval_map          =AST_DATA_MAP
   | logic
