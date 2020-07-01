@@ -53,10 +53,10 @@ stmt
   : lval '=' rval @EOL                   =AST_OPCODE_DECLARE_OR_ASSIGN
   | "const" var '=' rval_imm_array @EOL  =AST_OPCODE_DECLARE_OR_ASSIGN
 
-  | "const" var '=' imm @EOL  [* if constantsMap[@2] is defined
+  | "const" var '=' imm @EOL  [* if constantsMap{@2} is defined
                                    this._handleError(line, column, "redeclaration of a constant '" + @4 + "'")
                                  endif
-                                 constantsMap[@2] = @4
+                                 constantsMap{@2} = @4
                                  @@ = @2
                               *] =AST_OPCODE_DECLARE_OR_ASSIGN
 
@@ -482,7 +482,7 @@ expr_imm
   | string
   | imm_array
 
-  | @IDENT [* @@ = constantsMap[@1]
+  | @IDENT [* @@ = constantsMap{@1}
               if @@ is undefined
                 this._handleError(line, column, 'only constant values can be inserted into constant array')
               endif *]
