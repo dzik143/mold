@@ -161,7 +161,7 @@ class ASTEvaluator
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
     global AST_OPCODE_REFERENCE_BY_INDEX
     global AST_OPCODE_REFERENCE_BY_KEY
-    global AST_OPCODE_CALL, AST_OPCODE_INVOKE_METHOD
+    global AST_OPCODE_CALL, AST_OPCODE_VCALL
     global SYMBOL_KIND_VAR_GLOBAL
     global AST_OPCODE_TYPE_CAST
 
@@ -196,7 +196,7 @@ class ASTEvaluator
 
       this._processNode(valuesMap, rval)
 
-      if rval.opcode is AST_OPCODE_INVOKE_METHOD
+      if rval.opcode is AST_OPCODE_VCALL
         # x = obj.foo()
         symbolInfo = rval.children[0].symbolInfo
 
@@ -214,7 +214,7 @@ class ASTEvaluator
           endif
         endif
 
-      elif rval.opcode is AST_OPCODE_INVOKE_METHOD
+      elif rval.opcode is AST_OPCODE_VCALL
         # x = obj.foo()
         symbolInfo = rval.children[0].symbolInfo
 
@@ -293,7 +293,7 @@ class ASTEvaluator
       this._processConditionalNode(valuesMap, cond)
       this._processConditionalNode(valuesMap, body)
 
-    elif (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_INVOKE_METHOD)
+    elif (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_VCALL)
       # foo(a, b, c, ...)
       # obj.foo(a,b, c, ...)
       # Parameter may be changed inside call.

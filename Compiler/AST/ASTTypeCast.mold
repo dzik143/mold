@@ -42,7 +42,7 @@ class ASTTypeCast
     global AST_OPCODE_IF
     global AST_OPCODE_WHILE
     global AST_OPCODE_FOR_VALUES_RANGE
-    global AST_OPCODE_INVOKE_METHOD
+    global AST_OPCODE_VCALL
     global AST_OPCODE_REFERENCE_BY_INDEX
     global AST_OPCODE_REFERENCE_BY_KEY
     global AST_OPCODE_FUNCTION
@@ -153,7 +153,7 @@ class ASTTypeCast
         children[0] = AST_TypeCast(children[0], AST_DATA_INTEGER)
 
       elif ((opcode is AST_OPCODE_CALL) or
-            (opcode is AST_OPCODE_INVOKE_METHOD) or
+            (opcode is AST_OPCODE_VCALL) or
             (opcode is AST_OPCODE_CALL_NEW))
 
         if node.value isnt 'global'

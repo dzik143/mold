@@ -35,7 +35,7 @@ class ASTOptimizerVCall
   endmethod
 
   method _processNode(node)
-    global AST_OPCODE_INVOKE_METHOD
+    global AST_OPCODE_VCALL
     global AST_OPCODE_BLOCK
     global AST_OPCODE_CALL
 
@@ -43,7 +43,7 @@ class ASTOptimizerVCall
     children    = node.children
     childrenCnt = node.childrenCnt
 
-    if opcode is AST_OPCODE_INVOKE_METHOD
+    if opcode is AST_OPCODE_VCALL
       # obj.foo(...)
       thiz           = children[0]
       symbolInfoThiz = thiz.symbolInfo

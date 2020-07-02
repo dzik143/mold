@@ -73,7 +73,7 @@ class ASTPrinterHtml
     global AST_OPCODE_BLOCK
     global AST_OPCODE_CALL
     global AST_OPCODE_VARIABLE
-    global AST_OPCODE_INVOKE_METHOD
+    global AST_OPCODE_VCALL
     global AST_OPCODE_FUNCTION
     global AST_OPCODE_CLASS
     global AST_OPCODE_CLASS_METHOD
@@ -121,7 +121,7 @@ class ASTPrinterHtml
     else
       if ((opcode < AST_OPCODE_PROGRAM) or
           (opcode is AST_OPCODE_CALL) or
-          (opcode is AST_OPCODE_INVOKE_METHOD) or
+          (opcode is AST_OPCODE_VCALL) or
           (opcode is AST_OPCODE_VARIABLE))
 
         value = node.value

@@ -77,7 +77,7 @@ function AST_GetOpcodeAsText(opcode) -> rv
   global AST_OPCODE_IDIV
   global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
   global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
-  global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+  global AST_OPCODE_CALL_NEW, AST_OPCODE_VCALL
   global AST_OPCODE_BLOCK, AST_OPCODE_FUNCTION, AST_OPCODE_CLASS
   global AST_OPCODE_CLASS_METHOD
   global AST_OPCODE_IF
@@ -105,7 +105,7 @@ function AST_GetOpcodeAsText(opcode) -> rv
   global AST_OPCODE_IDIV
   global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
   global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
-  global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+  global AST_OPCODE_CALL_NEW, AST_OPCODE_VCALL
 
   if opcode is AST_OPCODE_PROGRAM
     rv = 'PROGRAM'
@@ -221,7 +221,7 @@ function AST_GetOpcodeAsText(opcode) -> rv
   elif opcode is AST_OPCODE_CALL_NEW
     rv = 'CALL_NEW'
 
-  elif opcode is AST_OPCODE_INVOKE_METHOD
+  elif opcode is AST_OPCODE_VCALL
     rv = 'VCALL'
 
   else
@@ -240,7 +240,7 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   global AST_OPCODE_IDIV
   global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
   global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
-  global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+  global AST_OPCODE_CALL_NEW, AST_OPCODE_VCALL
   global AST_OPCODE_BLOCK, AST_OPCODE_FUNCTION, AST_OPCODE_CLASS
   global AST_OPCODE_CLASS_METHOD
   global AST_OPCODE_IF
@@ -270,7 +270,7 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   global AST_OPCODE_IDIV
   global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
   global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
-  global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+  global AST_OPCODE_CALL_NEW, AST_OPCODE_VCALL
   global AST_OPCODE_FOR_VALUES_RANGE, AST_OPCODE_WHILE
   global AST_OPCODE_FOR_VALUES
   global AST_OPCODE_FOR_KEYS
@@ -357,7 +357,7 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   elif opcode is AST_OPCODE_CALL_NEW
     rv = 'new'
 
-  elif opcode is AST_OPCODE_INVOKE_METHOD
+  elif opcode is AST_OPCODE_VCALL
     rv = 'vcall'
 
   elif opcode is AST_OPCODE_BLOCK
@@ -515,7 +515,7 @@ endfunction
 function AST_HasSideEffects(node) -> rv
   global AST_OPCODE_CALL
   global AST_OPCODE_CALL_NEW
-  global AST_OPCODE_INVOKE_METHOD
+  global AST_OPCODE_VCALL
 
   opcode = node.opcode
 
@@ -531,7 +531,7 @@ function AST_HasSideEffects(node) -> rv
       rv = true
     endif
 
-  elif (opcode is AST_OPCODE_CALL_NEW) or (opcode is AST_OPCODE_INVOKE_METHOD)
+  elif (opcode is AST_OPCODE_CALL_NEW) or (opcode is AST_OPCODE_VCALL)
     # TODO: Check function protos.
     rv = true
 
@@ -553,7 +553,7 @@ function AST_HashInternal(node, isCodeMode) -> rv
   global AST_DATA_MAP
   global AST_OPCODE_CALL
   global AST_OPCODE_CALL_NEW
-  global AST_OPCODE_INVOKE_METHOD
+  global AST_OPCODE_VCALL
   global AST_OPCODE_TYPE_CAST
 
   opcode      = node.opcode
@@ -570,7 +570,7 @@ function AST_HashInternal(node, isCodeMode) -> rv
     if (opcode is AST_DATA_MAP) or (opcode is AST_DATA_ARRAY)
       rv = '@' + str(node.id)
 
-    elif AST_IsVar(node)
+    elif AST_IsVar(node) is true
       if isCodeMode is true
         rv = '@' + node.value
 
@@ -605,12 +605,12 @@ function AST_HashInternal(node, isCodeMode) -> rv
         idx = idx + 2
       endwhile
 */
-    elif AST_IsPrimitiveImm(node)
+    elif AST_IsPrimitiveImm(node) is true
       rv = AST_GetOpcodeAsShortText(opcode) + str(node.value)
 
     elif ((opcode is AST_OPCODE_CALL) or
           (opcode is AST_OPCODE_CALL_NEW) or
-          (opcode is AST_OPCODE_INVOKE_METHOD))
+          (opcode is AST_OPCODE_VCALL))
 
       # TODO: Review it.
 

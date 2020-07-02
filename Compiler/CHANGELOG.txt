@@ -8,6 +8,7 @@ UNRELEASED:
     - Faster x64 code (load/store indexes with int32 pointers)
     - Avoid creating multiple Parser() objects for each module load
     - Distinguish variant and string types while generating code
+    - Major clean up the parser code
 
   New syntax:
     - Constant primitives (strings, integer, boolean, float):

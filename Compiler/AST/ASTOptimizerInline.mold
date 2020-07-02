@@ -48,7 +48,7 @@ class ASTOptimizerInline
     newOpcode   = node.opcode
 
     if node.opcode is AST_OPCODE_VARIABLE
-      if symbolTable.isset(node.value)
+      if symbolTable.isset(node.value) is true
         symbolInfo = symbolTable.lookup(node.value)
 
         if ((symbolInfo.kind is SYMBOL_KIND_VAR_PARAM) or
@@ -247,7 +247,7 @@ class ASTOptimizerInline
     global AST_OPCODE_IF
     global AST_OPCODE_WHILE
     global AST_OPCODE_DECLARE_OR_ASSIGN
-    global AST_OPCODE_INVOKE_METHOD
+    global AST_OPCODE_VCALL
 
     opcode      = node.opcode
     children    = node.children
@@ -281,7 +281,7 @@ class ASTOptimizerInline
         this._processNode_injectInlineFunctions(newChildren, symbolTable, rvalNode)
 
       elif ((childNode.opcode is AST_OPCODE_CALL) or
-            (childNode.opcode is AST_OPCODE_INVOKE_METHOD))
+            (childNode.opcode is AST_OPCODE_VCALL))
 
         # foo()
         callParams    = childNode.children

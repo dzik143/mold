@@ -138,7 +138,7 @@ class ASTPrinterText
     global AST_OPCODE_IDIV
     global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
     global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
-    global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+    global AST_OPCODE_CALL_NEW, AST_OPCODE_VCALL
     global AST_OPCODE_BLOCK, AST_OPCODE_FUNCTION, AST_OPCODE_CLASS
     global AST_OPCODE_CLASS_METHOD
     global AST_OPCODE_IF
@@ -171,7 +171,7 @@ class ASTPrinterText
     global AST_OPCODE_IDIV
     global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
     global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
-    global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+    global AST_OPCODE_CALL_NEW, AST_OPCODE_VCALL
     global AST_OPCODE_TYPE_CAST
     global SHOW_TYPE_CAST_NODES_ENABLED
 
@@ -293,7 +293,7 @@ class ASTPrinterText
         print prefix + 'endfunction'
       endif
 
-    elif opcode is AST_OPCODE_INVOKE_METHOD
+    elif opcode is AST_OPCODE_VCALL
       # TODO: Is it left or right node?
       if node.parent.opcode is AST_OPCODE_BLOCK
         # Left node - add spaces prefix.

@@ -419,7 +419,7 @@ class ASTTranslator
     global AST_OPCODE_IDIV
     global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
     global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
-    global AST_OPCODE_CALL_NEW, AST_OPCODE_INVOKE_METHOD
+    global AST_OPCODE_CALL_NEW, AST_OPCODE_VCALL
     global AST_OPCODE_TYPE_CAST
 
     opcode      = ast.opcode
@@ -576,7 +576,7 @@ class ASTTranslator
         # foo(x,y,z...).
         this._evaluateNodeCall(rv, ast)
 
-      elif opcode is AST_OPCODE_INVOKE_METHOD
+      elif opcode is AST_OPCODE_VCALL
         # obj.foo(x, y, z, ...)
         this._evaluateNodeInvokeMethod(rv, ast)
 
@@ -783,7 +783,7 @@ class ASTTranslator
     global AST_OPCODE_VARIABLE
     global AST_OPCODE_REFERENCE_BY_INDEX
     global AST_OPCODE_REFERENCE_BY_KEY
-    global AST_OPCODE_CLASS, AST_OPCODE_CLASS_METHOD, AST_OPCODE_INVOKE_METHOD
+    global AST_OPCODE_CLASS, AST_OPCODE_CLASS_METHOD, AST_OPCODE_VCALL
     global AST_OPCODE_NOP, AST_DATA_STRING, AST_OPCODE_ADD
     global SYMBOL_KIND_VAR_RETVAL
     global AST_OPCODE_FOR_VALUES
@@ -1023,7 +1023,7 @@ class ASTTranslator
     elif opcode is AST_OPCODE_CLASS
       # Do nothing.
 
-    elif opcode is AST_OPCODE_INVOKE_METHOD
+    elif opcode is AST_OPCODE_VCALL
       # TODO: Use null?
       unusedRv = this._getTempVar('variant')
       this._evaluateNodeInvokeMethod(unusedRv, ast)

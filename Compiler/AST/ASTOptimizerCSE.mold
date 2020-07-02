@@ -75,7 +75,7 @@ class ASTOptimizerCSE
     global AST_OPCODE_FUNCTION
     global AST_OPCODE_CLASS
     global AST_OPCODE_CLASS_METHOD
-    global AST_OPCODE_INVOKE_METHOD
+    global AST_OPCODE_VCALL
     global AST_OPCODE_FOR_INDEXES_VALUES
 
     # Switch symbolTable if needed.
@@ -154,7 +154,7 @@ class ASTOptimizerCSE
         this._processNode(oneChild, mapOfExpressions, symbolTable)
       endfor
 
-    elif (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_INVOKE_METHOD)
+    elif (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_VCALL)
       # TODO: Use for values oneChild indexes childIdx loop.
       for idx in 0 .. childrenCnt
         AST_Hash(children[idx])

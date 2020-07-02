@@ -73,7 +73,7 @@ class ASTSymbolsCollector
     global AST_OPCODE_CALL
     global AST_OPCODE_IF
     global AST_OPCODE_WHILE
-    global AST_OPCODE_INVOKE_METHOD
+    global AST_OPCODE_VCALL
     global AST_OPCODE_REFERENCE_BY_INDEX
     global AST_OPCODE_REFERENCE_BY_KEY
     global AST_OPCODE_FUNCTION
@@ -364,7 +364,7 @@ class ASTSymbolsCollector
         # Save value node for constant propagation.
         symbolTable.assignNode(lval.value, lval)
 
-        if AST_IsImm(rval)
+        if AST_IsImm(rval) is true
           symbolTable.assignValue(lval.value, rval.value)
         endif
 
@@ -520,8 +520,9 @@ class ASTSymbolsCollector
 
     elif ((opcode is AST_OPCODE_FOR_VALUES) or
           (opcode is AST_OPCODE_FOR_KEYS) or
+          (opcode is AST_OPCODE_FOR_KEYS_VALUES) or
           (opcode is AST_OPCODE_FOR_INDEXES) or
-          (opcode is AST_OPCODE_FOR_KEYS_VALUES))
+          (opcode is AST_OPCODE_FOR_INDEXES_VALUES))
 
       # for values v in box
       # for keys k in box
@@ -602,7 +603,7 @@ class ASTSymbolsCollector
           goOnIntoChildren = false
         endif
 
-      elif opcode is AST_OPCODE_INVOKE_METHOD
+      elif opcode is AST_OPCODE_VCALL
         isLeftNode = false
       endif
 
