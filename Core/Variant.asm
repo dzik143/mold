@@ -890,21 +890,27 @@ proc __MOLD_VariantAdd x, y, rv
 
 ; integer x double
 .case_id:
-     xchg      rcx, rdx
+     jmp       __MOLD_ErrorImplicitTypeConversion
+
+     ; OLD IMPLEMENTATION:
+     ; xchg      rcx, rdx
 
 ; double x integer
 .case_di:
-     movq      xmm0, [rcx + Variant_t.value]
-     cvtsi2sd  xmm1, [rdx + Variant_t.value]
+     jmp       __MOLD_ErrorImplicitTypeConversion
 
-     addsd     xmm0, xmm1
+     ; OLD IMPLEMENTATION
+     ;movq      xmm0, [rcx + Variant_t.value]
+     ;cvtsi2sd  xmm1, [rdx + Variant_t.value]
 
-     mov       [r8 + Variant_t.type], VARIANT_DOUBLE
-     movq      [r8 + Variant_t.value], xmm0
+     ;addsd     xmm0, xmm1
 
-     DEBUG_CHECK_VARIANT r8
+     ;mov       [r8 + Variant_t.type], VARIANT_DOUBLE
+     ;movq      [r8 + Variant_t.value], xmm0
 
-     ret
+     ;DEBUG_CHECK_VARIANT r8
+
+     ;ret
 
 ; double x double
 .case_dd:
@@ -1086,31 +1092,37 @@ proc __MOLD_VariantSub x, y, rv
 
 ; integer x double
 .case_id:
-   cvtsi2sd  xmm0, [rcx + Variant_t.value]
-   movq      xmm1, [rdx + Variant_t.value]
+   jmp       __MOLD_ErrorImplicitTypeConversion
 
-   subsd     xmm0, xmm1
+   ; OLD IMPLEMENTATION:
+   ; cvtsi2sd  xmm0, [rcx + Variant_t.value]
+   ; movq      xmm1, [rdx + Variant_t.value]
 
-   mov       [r8 + Variant_t.type], r10d   ; rv.type  = VARIANT_DOUBLE
-   movq      [r8 + Variant_t.value], xmm0
+   ; subsd     xmm0, xmm1
 
-   DEBUG_CHECK_VARIANT r8
+   ; mov       [r8 + Variant_t.type], r10d   ; rv.type  = VARIANT_DOUBLE
+   ; movq      [r8 + Variant_t.value], xmm0
 
-   ret
+   ; DEBUG_CHECK_VARIANT r8
+
+   ; ret
 
 ; double x integer
 .case_di:
-   movq      xmm0, [rcx + Variant_t.value]
-   cvtsi2sd  xmm1, [rdx + Variant_t.value]
+   jmp       __MOLD_ErrorImplicitTypeConversion
 
-   subsd     xmm0, xmm1
+   ; OLD IMPLEMENTATION
+   ; movq      xmm0, [rcx + Variant_t.value]
+   ; cvtsi2sd  xmm1, [rdx + Variant_t.value]
 
-   mov       [r8 + Variant_t.type], r9d   ; rv.type  = VARIANT_DOUBLE
-   movq      [r8 + Variant_t.value], xmm0
+   ; subsd     xmm0, xmm1
 
-   DEBUG_CHECK_VARIANT r8
+   ; mov       [r8 + Variant_t.type], r9d   ; rv.type  = VARIANT_DOUBLE
+   ; movq      [r8 + Variant_t.value], xmm0
 
-   ret
+   ; DEBUG_CHECK_VARIANT r8
+
+   ; ret
 
 ; double x double
 .case_dd:
@@ -1183,6 +1195,11 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
 
   ; integer x double
   .case_id:
+
+    ; TODO
+    ; jmp         __MOLD_ErrorImplicitTypeConversion
+
+    ; OLD IMPLEMENTATION
     cvtsi2sd  xmm0, [rcx + Variant_t.value]
     movq      xmm1, [rdx + Variant_t.value]
     opcode_dd xmm0, xmm1
@@ -1194,6 +1211,11 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
 
   ; double x integer
   .case_di:
+    ; TODO
+    ; jmp       __MOLD_ErrorImplicitTypeConversion
+
+
+    ; OLD IMPLEMENTATION:
     movq      xmm0, [rcx + Variant_t.value]
     cvtsi2sd  xmm1, [rdx + Variant_t.value]
     opcode_dd xmm0, xmm1
@@ -1467,27 +1489,33 @@ proc __MOLD_VariantDivAsInteger x, y, rv
 
 ; integer x double
 .case_id:
-   cvtsi2sd  xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
-   movq      xmm1, [rdx + Variant_t.value]  ; xmm1     = double(y.value)
-   divsd     xmm0, xmm1                     ; xmm0     = x.value / y.value
-   cvttsd2si rax, xmm0                      ; rax      = int(x.value / y.value)
-   mov       [r8 + Variant_t.value], rax    ; rv.value = int(x.value / y.value)
+   jmp       __MOLD_ErrorImplicitTypeConversion
 
-   DEBUG_CHECK_VARIANT r8
+   ; OLD IMPLEMENTATION:
+   ; cvtsi2sd  xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
+   ; movq      xmm1, [rdx + Variant_t.value]  ; xmm1     = double(y.value)
+   ; divsd     xmm0, xmm1                     ; xmm0     = x.value / y.value
+   ; cvttsd2si rax, xmm0                      ; rax      = int(x.value / y.value)
+   ; mov       [r8 + Variant_t.value], rax    ; rv.value = int(x.value / y.value)
 
-   ret
+   ; DEBUG_CHECK_VARIANT r8
+
+   ; ret
 
 ; double x integer
 .case_di:
-   movq      xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
-   cvtsi2sd  xmm1, [rdx + Variant_t.value]  ; xmm1     = double(y.value)
-   divsd     xmm0, xmm1                     ; xmm0     = x.value / y.value
-   cvttsd2si rax, xmm0                      ; rax      = int(x.value / y.value)
-   mov       [r8 + Variant_t.value], rax    ; rv.value = int(x.value / y.value)
+   jmp       __MOLD_ErrorImplicitTypeConversion
 
-   DEBUG_CHECK_VARIANT r8
+   ; OLD IMPLEMENTATION:
+   ; movq      xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
+   ; cvtsi2sd  xmm1, [rdx + Variant_t.value]  ; xmm1     = double(y.value)
+   ; divsd     xmm0, xmm1                     ; xmm0     = x.value / y.value
+   ; cvttsd2si rax, xmm0                      ; rax      = int(x.value / y.value)
+   ; mov       [r8 + Variant_t.value], rax    ; rv.value = int(x.value / y.value)
 
-   ret
+   ; DEBUG_CHECK_VARIANT r8
+
+   ; ret
 
 ; double x double
 .case_dd:
@@ -1556,27 +1584,33 @@ proc __MOLD_VariantDiv x, y, rv
 
 ; integer x double
 .case_id:
-   cvtsi2sd  xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
-   movq      xmm1, [rdx + Variant_t.value]  ; xmm1     = double(y.value)
-   mov       [r8 + Variant_t.type], r10d    ; rv.type  = VARIANT_DOUBLE
-   divsd     xmm0, xmm1                     ; xmm0     = x.value / y.value
-   movq      [r8 + Variant_t.value], xmm0   ; rv.value = x.value / y.value
+   jmp       __MOLD_ErrorImplicitTypeConversion
 
-   DEBUG_CHECK_VARIANT r8
+   ; OLD IMPLEMENTATION:
+   ; cvtsi2sd  xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
+   ; movq      xmm1, [rdx + Variant_t.value]  ; xmm1     = double(y.value)
+   ; mov       [r8 + Variant_t.type], r10d    ; rv.type  = VARIANT_DOUBLE
+   ; divsd     xmm0, xmm1                     ; xmm0     = x.value / y.value
+   ; movq      [r8 + Variant_t.value], xmm0   ; rv.value = x.value / y.value
 
-   ret
+   ; DEBUG_CHECK_VARIANT r8
+
+   ; ret
 
 ; double x integer
 .case_di:
-   movq      xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
-   cvtsi2sd  xmm1, [rdx + Variant_t.value]  ; xmm1     = double(y.value)
-   mov       [r8 + Variant_t.type], r9d     ; rv.type  = VARIANT_DOUBLE
-   divsd     xmm0, xmm1                     ; xmm0     = x.value / y.value
-   movq      [r8 + Variant_t.value], xmm0   ; rv.value = x.value / y.value
+   jmp       __MOLD_ErrorImplicitTypeConversion
 
-   DEBUG_CHECK_VARIANT r8
+   ; OLD IMPLEMENTATION:
+   ; movq      xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
+   ; cvtsi2sd  xmm1, [rdx + Variant_t.value]  ; xmm1     = double(y.value)
+   ; mov       [r8 + Variant_t.type], r9d     ; rv.type  = VARIANT_DOUBLE
+   ; divsd     xmm0, xmm1                     ; xmm0     = x.value / y.value
+   ; movq      [r8 + Variant_t.value], xmm0   ; rv.value = x.value / y.value
 
-   ret
+   ; DEBUG_CHECK_VARIANT r8
+
+   ; ret
 
 ; double x double
 .case_dd:
@@ -2108,7 +2142,6 @@ __MOLD_VariantStoreAtIndex_int32:
     mov     eax, dword [rdx]              ; eax      = index
     lea     rdx, [__TempIndexInteger]     ; rdx      = tmpIndex
     mov     [rdx + Variant_t.value], rax  ; tmpIndex = index
-
     jmp     __MOLD_VariantStoreAtIndex
 
 proc __MOLD_StringHashDJB2
@@ -3258,4 +3291,11 @@ __MOLD_ForDriver_Generic:
     cinvoke ExitProcess, -1
 
 ; TODO: Clean up this mess.
+
+__MOLD_ErrorImplicitTypeConversion:
+    cinvoke printf, .fmt
+    int 3
+
+.fmt db 'error: implicit type conversion is not supported anymore', 13, 10, 0
+
 include 'SysCall.asm'
