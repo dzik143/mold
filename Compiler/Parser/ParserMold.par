@@ -55,9 +55,9 @@ stmt_line
 
 // -----------------------------------------------------------------------------
 //                            Top level statements
-//
-// Below there are possible statements, that can be used in the global space.
 // -----------------------------------------------------------------------------
+
+// Below there are possible statements, that can be used in the global space.
 
 stmt
   : stmt_declare_or_assign    =AST_OPCODE_DECLARE_OR_ASSIGN  // x = y
@@ -109,14 +109,14 @@ function_proto
   ;
 
 stmt_call
-  : "print"  call_list_line [* @@ = 'print'  *]
-  | "global" call_list_line [* @@ = 'global' *]
-  | "import" call_list_line [* @@ = 'import' *]
+  : "print"  rval_list_one_line [* @@ = 'print'  *]
+  | "global" rval_list_one_line [* @@ = 'global' *]
+  | "import" rval_list_one_line [* @@ = 'import' *]
   | function_call
   ;
 
 function_call
-  : @IDENT '(' value_list? ')'
+  : @IDENT '(' rval_list_many_lines? ')'
   ;
 
 stmt_function_declaration:
@@ -138,9 +138,29 @@ parameter_list
   | @EOL
   ;
 
-call_list_line
-  : call_list_line ',' rval
+//
+// Single line r-values list:
+// x, y, z, ...
+//
+
+rval_list_one_line
+  : rval_list_one_line ',' rval
   | rval
+  ;
+
+//
+// Multiple lines r-values list:
+// x, y, z,
+// a, b, c, ...
+//
+
+rval_list_many_lines
+  : rval_list_many_lines ',' rval
+  | rval_list_many_lines ',' @EOL rval
+  | @EOL rval_list_many_lines
+  | rval_list_many_lines @EOL
+  | rval
+  | @EOL
   ;
 
 //
@@ -148,25 +168,15 @@ call_list_line
 //
 
 key_value_list
-  : key_value_list ',' map_key ':' map_val
-  | key_value_list ',' @EOL map_key ':' map_val
+  : key_value_list ',' map_key ':' rval
+  | key_value_list ',' @EOL map_key ':' rval
   | key_value_list @EOL
   | @EOL key_value_list
-  | map_key ':' map_val
+  | map_key ':' rval
   | @EOL
   ;
 
 map_key : string =AST_DATA_STRING;
-map_val : rval;
-
-value_list
-  : value_list ',' rval
-  | value_list ',' @EOL rval
-  | value_list @EOL
-  | @EOL value_list
-  | rval
-  | @EOL
-  ;
 
 // TODO: Handle strings and bool too.
 imm_list
@@ -188,11 +198,11 @@ imm_list
 
 // write to stdout values x,y,z
 stmt_read
-  : "read" "from" rval "values" call_list_line [* @@ = 'read' *] =AST_OPCODE_CALL;
+  : "read" "from" rval "values" rval_list_one_line [* @@ = 'read' *] =AST_OPCODE_CALL;
 
 // read from stdin values x,y,z
 stmt_write
-  : "write" "to" rval "values" call_list_line  [* @@ = 'write' *] =AST_OPCODE_CALL;
+  : "write" "to" rval "values" rval_list_one_line  [* @@ = 'write' *] =AST_OPCODE_CALL;
 
 // -----------------------------------------------------------------------------
 //                          Object-oriented related (OOP)
@@ -211,7 +221,7 @@ stmt_class_declaration:
 stmt_vcall: method_call;
 
 method_call
-  : expr '.' @IDENT '(' value_list? ')' [* @@ = @3 *];
+  : expr '.' @IDENT '(' rval_list_many_lines? ')' [* @@ = @3 *];
 
 method_declaration:
   "method" function_proto @EOL
@@ -219,7 +229,7 @@ method_declaration:
   "endmethod" [* @@ = @2 *] =AST_OPCODE_CLASS_METHOD;
 
 new_call
-  : new_begin @IDENT '(' value_list? ')' [* @@ =  @2 *] =AST_OPCODE_CALL_NEW
+  : new_begin @IDENT '(' rval_list_many_lines? ')' [* @@ =  @2 *] =AST_OPCODE_CALL_NEW
   ;
 
 new_begin
@@ -343,30 +353,35 @@ stmt_switch_otherwise
 
 // -----------------------------------------------------------------------------
 //                               For range loop
+// -----------------------------------------------------------------------------
+
+//
 // for i in 0..10 step n
 //   ...
 // endfor
-// -----------------------------------------------------------------------------
+//
 
 stmt_for:
-  "for" var "in" rval ".." rval step?
+  "for" var "in" rval ".." rval for_step?
   stmt_list
   "endfor";
 
-step
-  : @EOL [* @@ = 1 *] =AST_DATA_INTEGER
-  | "step" rval
+for_step
+  : @EOL [* @@ = 1 *] =AST_DATA_INTEGER // Implicit step by 1 (default)
+  | "step" rval                         // Explicit step
   ;
 
 // -----------------------------------------------------------------------------
 //                            For-each like loops
+// -----------------------------------------------------------------------------
+
 //
 // for values v in box              (generic iteration over values)
 // for keys k in box                (map iteration over keys)
 // for keys k values v in box       (map iteration over key:value pairs)
 // for indexes idx in box           (array iteration over indexes)
 // for indexes idx values v in box  (array iteration over index:value pairs)
-// -----------------------------------------------------------------------------
+//
 
 stmt_for_values:
   "for" "values" var "in" rval
@@ -440,7 +455,7 @@ rval
 
 rval_array
   : '[' ']'
-  | '[' value_list ']'
+  | '[' rval_list_many_lines ']'
   ;
 
 rval_imm_array
