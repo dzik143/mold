@@ -61,6 +61,7 @@ stmt_line
 
 stmt
   : stmt_declare_or_assign    =AST_OPCODE_DECLARE_OR_ASSIGN  // x = y
+  | stmt_directive            =AST_OPCODE_CALL               // import 'module'
   | stmt_call                 =AST_OPCODE_CALL               // foo(x,y,z)
   | stmt_vcall                =AST_OPCODE_VCALL              // obj.foo(x,y,z)
   | stmt_function_declaration =AST_OPCODE_FUNCTION           // function foo()
@@ -78,6 +79,16 @@ stmt
 //  | stmt_switch
 //  | stmt_read
 //  | stmt_write
+  ;
+
+// -----------------------------------------------------------------------------
+//                             Built-in directives
+// -----------------------------------------------------------------------------
+
+stmt_directive
+  : "print"  rval_list_one_line [* @@ = 'print'  *]
+  | "global" rval_list_one_line [* @@ = 'global' *]
+  | "import" rval_list_one_line [* @@ = 'import' *]
   ;
 
 // -----------------------------------------------------------------------------
@@ -108,12 +119,7 @@ function_proto
   | @IDENT '(' parameter_list ')' "->" @IDENT [* @@ = {'name': @1, 'parameters': @3, 'rv': @6} *]
   ;
 
-stmt_call
-  : "print"  rval_list_one_line [* @@ = 'print'  *]
-  | "global" rval_list_one_line [* @@ = 'global' *]
-  | "import" rval_list_one_line [* @@ = 'import' *]
-  | function_call
-  ;
+stmt_call: function_call;
 
 function_call
   : @IDENT '(' rval_list_many_lines? ')'
