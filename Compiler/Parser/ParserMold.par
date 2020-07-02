@@ -62,7 +62,7 @@ stmt_line
 stmt
   : stmt_declare_or_assign    =AST_OPCODE_DECLARE_OR_ASSIGN  // x = y
   | stmt_directive            =AST_OPCODE_CALL               // import 'module'
-  | stmt_call                 =AST_OPCODE_CALL               // foo(x,y,z)
+  | stmt_call                                                // foo(x,y,z)
   | stmt_vcall                                               // obj.foo(x,y,z)
   | stmt_function_declaration =AST_OPCODE_FUNCTION           // function foo()
   | stmt_class_declaration    =AST_OPCODE_CLASS              // class foo
@@ -119,11 +119,8 @@ function_proto
   | @IDENT '(' parameter_list ')' "->" @IDENT [* @@ = {'name': @1, 'parameters': @3, 'rv': @6} *]
   ;
 
-stmt_call: function_call;
-
-function_call
-  : @IDENT '(' rval_list_many_lines? ')'
-  ;
+stmt_call:
+  @IDENT '(' rval_list_many_lines? ')' =AST_OPCODE_CALL;
 
 stmt_function_declaration:
   "function" function_proto @EOL
@@ -244,11 +241,11 @@ new_begin
 // -----------------------------------------------------------------------------
 
 expr
-  : imm                             // 1, 3.14, 'text'
-  | var                             // x
-  | reference                       // x[y], x{y}, x.y
-  | function_call =AST_OPCODE_CALL  // foo(x,y,z)
-  | stmt_vcall                      // obj.foo(x,y,z)
+  : imm         // 1, 3.14, 'text'
+  | var         // x
+  | reference   // x[y], x{y}, x.y
+  | stmt_call   // foo(x,y,z)
+  | stmt_vcall  // obj.foo(x,y,z)
   | logic
   | expr_logic
 
@@ -450,7 +447,7 @@ rval
   | reference
   | new_call
   | imm
-  | function_call =AST_OPCODE_CALL
+  | stmt_call
   | stmt_vcall
   | rval_array    =AST_DATA_ARRAY
   | rval_map      =AST_DATA_MAP
