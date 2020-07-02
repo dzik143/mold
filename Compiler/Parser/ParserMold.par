@@ -63,7 +63,7 @@ stmt
   : stmt_declare_or_assign    =AST_OPCODE_DECLARE_OR_ASSIGN  // x = y
   | stmt_directive            =AST_OPCODE_CALL               // import 'module'
   | stmt_call                 =AST_OPCODE_CALL               // foo(x,y,z)
-  | stmt_vcall                =AST_OPCODE_VCALL              // obj.foo(x,y,z)
+  | stmt_vcall                                               // obj.foo(x,y,z)
   | stmt_function_declaration =AST_OPCODE_FUNCTION           // function foo()
   | stmt_class_declaration    =AST_OPCODE_CLASS              // class foo
   | stmt_if                   =AST_OPCODE_IF                 // if x is 1
@@ -224,10 +224,8 @@ stmt_class_declaration:
   (method_declaration | @EOL)*
   "endclass";
 
-stmt_vcall: method_call;
-
-method_call
-  : expr '.' @IDENT '(' rval_list_many_lines? ')' [* @@ = @3 *];
+stmt_vcall:
+  expr '.' @IDENT '(' rval_list_many_lines? ')' [* @@ = @3 *] =AST_OPCODE_VCALL;
 
 method_declaration:
   "method" function_proto @EOL
@@ -250,7 +248,7 @@ expr
   | var                             // x
   | reference                       // x[y], x{y}, x.y
   | function_call =AST_OPCODE_CALL  // foo(x,y,z)
-  | method_call   =AST_OPCODE_VCALL // obj.foo(x,y,z)
+  | stmt_vcall                      // obj.foo(x,y,z)
   | logic
   | expr_logic
 
@@ -453,7 +451,7 @@ rval
   | new_call
   | imm
   | function_call =AST_OPCODE_CALL
-  | method_call   =AST_OPCODE_VCALL
+  | stmt_vcall
   | rval_array    =AST_DATA_ARRAY
   | rval_map      =AST_DATA_MAP
   | logic
