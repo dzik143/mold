@@ -434,7 +434,10 @@ reference
 
 lval
   : var       // x = ...
+
   | reference // x[i] = ...
+              // x{'key'} = ...
+              // x.property = ...
   ;
 
 // -----------------------------------------------------------------------------
@@ -442,16 +445,20 @@ lval
 // -----------------------------------------------------------------------------
 
 rval
-  : var
-  | expr
-  | reference
-  | new_call
-  | imm
-  | stmt_call
-  | stmt_vcall
-  | rval_array
-  | rval_map
-  | logic
+  : var        // ... = x
+  | expr       // ... = x + y / 2
+
+  | reference  // ... = x[i]
+               // ... = x{'key'}
+               // ... = x.property
+
+  | new_call   // ... = new Foo(x, y, z)
+  | imm        // ... = 3.14
+  | stmt_call  // ... = foo(x, y, z)
+  | stmt_vcall // ... = obj.foo(x, y, z)
+  | rval_array // ... = [1, 2, 3]
+  | rval_map   // ... = {'one': 1, 'two': 2}
+  | logic      // ... = true
   ;
 
 rval_array     : '[' rval_list_many_lines? ']' =AST_DATA_ARRAY;
