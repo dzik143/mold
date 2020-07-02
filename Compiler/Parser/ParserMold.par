@@ -287,38 +287,28 @@ condition
 //                                If-else-endif
 // -----------------------------------------------------------------------------
 
-stmt_if
-  : "if" condition @EOL
-      stmt_list
-    "endif"
+//
+// if condition
+//   ...
+// elif condition
+//   ...
+// elif condition
+//   ...
+// else
+//   ...
+// endif
+//
 
-  | "if" condition @EOL
-      stmt_list
-    "else"
-      stmt_list
-    "endif"
+stmt_if:
+  "if" if_or_elif_body;
 
-  | "if" condition @EOL
-      stmt_list
-      stmt_elif
-  ;
+stmt_elif:
+  "elif" if_or_elif_body =AST_OPCODE_IF;
 
-stmt_elif
-  : "elif" condition @EOL
-      stmt_list
-    "endif"
-    =AST_OPCODE_IF
-
-  | "elif" condition @EOL
-      stmt_list
-    "else"
-      stmt_list
-    "endif"
-    =AST_OPCODE_IF
-
-  | "elif" condition @EOL
-      stmt_list
-      stmt_elif =AST_OPCODE_IF
+if_or_elif_body
+  : condition @EOL stmt_list "endif"
+  | condition @EOL stmt_list "else" stmt_list "endif"
+  | condition @EOL stmt_list stmt_elif
   ;
 
 // -----------------------------------------------------------------------------
