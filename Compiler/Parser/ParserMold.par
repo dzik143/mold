@@ -449,24 +449,14 @@ rval
   | imm
   | stmt_call
   | stmt_vcall
-  | rval_array    =AST_DATA_ARRAY
-  | rval_map      =AST_DATA_MAP
+  | rval_array
+  | rval_map
   | logic
   ;
 
-rval_array
-  : '[' ']'
-  | '[' rval_list_many_lines ']'
-  ;
-
-rval_imm_array
-  : imm_array =AST_DATA_ARRAY
-  ;
-
-rval_map
-  : '{' '}'
-  | '{' key_value_list '}'
-  ;
+rval_array     : '[' rval_list_many_lines? ']' =AST_DATA_ARRAY;
+rval_map       : '{' key_value_list? '}'       =AST_DATA_MAP;
+rval_imm_array : imm_array                     =AST_DATA_ARRAY;
 
 imm_array
   : '[' imm_list ']' [* @@ = @2 *]
@@ -504,22 +494,20 @@ imm : integer =AST_DATA_INTEGER
     | string  =AST_DATA_STRING
     ;
 
-integer
-  : @INTEGER [* @@ = ParseInteger(@1) *]
-  ;
+integer:
+  @INTEGER [* @@ = ParseInteger(@1) *];
 
-float
-  : @FLOAT [* @@ = ParseFloat(@1) *]
-  ;
+float:
+  @FLOAT [* @@ = ParseFloat(@1) *];
 
-string
-  : @STRING [* @@ = ''
-               # Remove quotas.
-               stringLen = len(@1)
-               for idx in 1 .. stringLen - 1
-                 @@ = @@ + @1[idx]
-               endfor
-            *]
+string:
+  @STRING [* @@ = ''
+             # Remove quotas.
+             stringLen = len(@1)
+             for idx in 1 .. stringLen - 1
+               @@ = @@ + @1[idx]
+             endfor
+          *]
   | error_unterminated_string
   ;
 
