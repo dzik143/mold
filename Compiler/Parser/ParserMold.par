@@ -503,11 +503,6 @@ imm : integer =AST_DATA_INTEGER
     | string  =AST_DATA_STRING
     ;
 
-number
-  : float
-  | integer
-  ;
-
 integer
   : @INTEGER [* @@ = ParseInteger(@1) *]
   ;
