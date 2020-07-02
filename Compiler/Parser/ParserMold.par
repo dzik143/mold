@@ -97,7 +97,6 @@ stmt_directive
 
 stmt_declare_or_assign
   : lval '=' rval
-  | lval '=' bool // We don't mix logic and non-logic expression.
 
   | "const" var '=' rval_imm_array
 
@@ -252,6 +251,8 @@ expr
   | reference                       // x[y], x{y}, x.y
   | function_call =AST_OPCODE_CALL  // foo(x,y,z)
   | method_call   =AST_OPCODE_VCALL // obj.foo(x,y,z)
+  | logic
+  | expr_logic
 
   | expr '+' expr  =AST_OPCODE_ADD  // x + y
   | expr '-' expr  =AST_OPCODE_SUB  // x - y
