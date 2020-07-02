@@ -7,7 +7,7 @@ TEST "sqrt(2) by Newton method"
 #        2
 #
 
-S     = 1/2.0
+S     = 1/2
 x     = 1.0
 delta = 1000000.0
 iter  = 0
@@ -21,7 +21,7 @@ function abs(x) -> rv
 endfunction
 
 while delta > 0.00001
-  newX  = x/2 * (3 - S * x*x)
+  newX  = x / 2.0 * (3.0 - S * x*x)
   delta = abs(x - newX)
   x     = newX
   iter  = iter + 1

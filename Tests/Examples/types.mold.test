@@ -1,5 +1,5 @@
-TEST "Basic types"
-
+TEST "Basic types (SKIPPED: No implicit type conversion anymore)"
+/*
 #
 # There are below built-in types:
 #   integer
@@ -89,7 +89,6 @@ print i1, "//", f1, "=", idiv_if, "(", typeof(idiv_if), ")"
 print f1, "//", i1, "=", idiv_fi, "(", typeof(idiv_fi), ")"
 print f1, "//", f2, "=", idiv_ff, "(", typeof(idiv_ff), ")"
 
-EXPECTED_OUTPUT:
 x+y
 1 + 2 = 3 ( integer )
 1 + 3.400000 = 4.400000 ( float )
@@ -118,6 +117,104 @@ x//y
 1 // 2 = 0 ( integer )
 1 // 3.400000 = 0 ( integer )
 3.400000 // 1 = 3 ( integer )
+3.400000 // 5.600000 = 0 ( integer )
+*/
+print 'OK'
+
+EXPECTED_OUTPUT:
+OK
+-------------------------------------------------------------------------------
+
+TEST "Basic types (TEMPORARY WITHOUT TYPE CONVERSION)"
+
+#
+# There are below built-in types:
+#   integer
+#   bool
+#   float
+#   string
+#
+# and below built-in operators:
+#   x+y
+#   x-y
+#   x*y
+#   x/y  (divide as float)
+#   x//y (divide as integer)
+#
+
+i1 = 1
+i2 = 2
+
+f1 = 3.4
+f2 = 5.6
+
+#
+# Create all possible combinations.
+#
+
+# x+y
+add_ii = i1 + i2
+add_ff = f1 + f2
+
+print "x+y"
+print i1, "+", i2, "=", add_ii, "(", typeof(add_ii), ")"
+print f1, "+", f2, "=", add_ff, "(", typeof(add_ff), ")"
+print ""
+
+# x-y
+sub_ii = i1 - i2
+sub_ff = f1 - f2
+
+print "x-y"
+print i1, "-", i2, "=", sub_ii, "(", typeof(sub_ii), ")"
+print f1, "-", f2, "=", sub_ff, "(", typeof(sub_ff), ")"
+print ""
+
+# x*y
+mul_ii = i1 * i2
+mul_ff = f1 * f2
+
+print "x*y"
+print i1, "*", i2, "=", mul_ii, "(", typeof(mul_ii), ")"
+print f1, "*", f2, "=", mul_ff, "(", typeof(mul_ff), ")"
+print ""
+
+# x/y
+div_ii = i1 / i2
+div_ff = f1 / f2
+
+print "x/y"
+print i1, "/", i2, "=", div_ii, "(", typeof(div_ii), ")"
+print f1, "/", f2, "=", div_ff, "(", typeof(div_ff), ")"
+print ""
+
+# x//y
+idiv_ii = i1 // i2
+idiv_ff = f1 // f2
+
+print "x//y"
+print i1, "//", i2, "=", idiv_ii, "(", typeof(idiv_ii), ")"
+print f1, "//", f2, "=", idiv_ff, "(", typeof(idiv_ff), ")"
+
+EXPECTED_OUTPUT:
+x+y
+1 + 2 = 3 ( integer )
+3.400000 + 5.600000 = 9.000000 ( float )
+
+x-y
+1 - 2 = -1 ( integer )
+3.400000 - 5.600000 = -2.200000 ( float )
+
+x*y
+1 * 2 = 2 ( integer )
+3.400000 * 5.600000 = 19.040000 ( float )
+
+x/y
+1 / 2 = 0.500000 ( float )
+3.400000 / 5.600000 = 0.607143 ( float )
+
+x//y
+1 // 2 = 0 ( integer )
 3.400000 // 5.600000 = 0 ( integer )
 -------------------------------------------------------------------------------
 

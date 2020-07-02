@@ -1262,7 +1262,7 @@ integer 1001
 TEST "Use array element in arithmetic #2 (float)"
 
 x = [1.2, 3.4, 5.6]
-acc = 1000
+acc = 1000.0
 acc = acc + x[0]
 print typeof(acc), acc
 

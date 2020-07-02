@@ -41,8 +41,8 @@ EXPECTED_OUTPUT:
 7
 -------------------------------------------------------------------------------
 
-TEST "Constant arithmetic"
-
+TEST "Constant arithmetic (SKIPPED: no implicit type conversion anymore)"
+/*
 add_ii = 1   + 3
 add_if = 1   + 3.4
 add_fi = 1.2 + 3
@@ -107,7 +107,6 @@ print idiv_fi, typeof(idiv_fi)
 print idiv_if, typeof(idiv_if)
 print idiv_ff, typeof(idiv_ff)
 
-EXPECTED_OUTPUT:
 imm + imm
 =========
 4 integer
@@ -141,6 +140,83 @@ imm // imm
 3 integer
 3 integer
 2 integer
+2 integer
+*/
+print 'OK'
+
+EXPECTED_OUTPUT:
+OK
+-------------------------------------------------------------------------------
+
+TEST "Constant arithmetic (TEMPORARY TEST WITHOUT TYPE CONVERSION)"
+add_ii = 1   + 3
+add_ff = 1.2 + 3.4
+
+sub_ii = 1   - 3
+sub_ff = 1.2 - 3.4
+
+mul_ii = 1   * 3
+mul_ff = 1.2 * 3.4
+
+div_ii = 1   / 3
+div_ff = 1.2 / 3.4
+
+idiv_ii = 3   // 1
+idiv_ff = 3.4 // 1.2
+
+print 'imm + imm'
+print '========='
+print add_ii, typeof(add_ii)
+print add_ff, typeof(add_ff)
+
+print ''
+print 'imm - imm'
+print '========='
+print sub_ii, typeof(sub_ii)
+print sub_ff, typeof(sub_ff)
+
+print ''
+print 'imm * imm'
+print '========='
+print mul_ii, typeof(mul_ii)
+print mul_ff, typeof(mul_ff)
+
+print ''
+print 'imm / imm'
+print '========='
+print div_ii, typeof(div_ii)
+print div_ff, typeof(div_ff)
+
+print ''
+print 'imm // imm'
+print '=========='
+print idiv_ii, typeof(idiv_ii)
+print idiv_ff, typeof(idiv_ff)
+
+EXPECTED_OUTPUT:
+imm + imm
+=========
+4 integer
+4.600000 float
+
+imm - imm
+=========
+-2 integer
+-2.200000 float
+
+imm * imm
+=========
+3 integer
+4.080000 float
+
+imm / imm
+=========
+0.333333 float
+0.352941 float
+
+imm // imm
+==========
+3 integer
 2 integer
 -------------------------------------------------------------------------------
 
