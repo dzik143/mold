@@ -48,14 +48,25 @@ class ASTOptimizerDeadCodeRemove
     dst.id          = src.id
     dst.opcode      = src.opcode
     dst.children    = src.children
-    dst.childrenCnt = src.childrenCnt
+
+    # TODO: Clean up this mess.
+    if src.childrenCnt is defined
+      dst.childrenCnt = src.childrenCnt
+    else
+      dst.childrenCnt = len(src.children)
+    endif
   endmethod
 
   method _processChildNodes(symbolTable, node)
     global AST_OPCODE_NOP
 
-    childrenCnt = node.childrenCnt
-    children    = node.children
+    children = node.children
+
+    if node.childrenCnt is defined
+      childrenCnt = node.childrenCnt
+    else
+      childrenCnt = len(children)
+    endif
 
     newChildren    = []
     newChildrenCnt = 0
@@ -126,6 +137,10 @@ class ASTOptimizerDeadCodeRemove
     value      = node.value
     rv         = node
     removeNode = false
+
+    if node.childrenCnt is undefined
+      node.childrenCnt = childrenCnt
+    endif
 
     #
     # Process current one node.

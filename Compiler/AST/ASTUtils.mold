@@ -903,8 +903,5 @@ function AST_IsOkAsBox(node) -> rv
 endfunction
 
 function AST_ValidateNode(ast)
-  # DEBUG ONLY
-  if ast.childrenCnt isnt len(ast.children)
-    die('error: inconsistent childrenCnt (' + str(ast.childrenCnt) + ') vs len(children) (' + str(len(ast.children)) + ') at node #' + str(ast.id))
-  endif
+  # TODO: Remove it.
 endfunction

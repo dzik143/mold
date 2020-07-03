@@ -76,7 +76,6 @@ class ASTModuleResolver
       endif
     endfor
 
-    program.childrenCnt = len(newChildren)
-    program.children    = newChildren
+    program.children = newChildren
   endmethod
 endclass

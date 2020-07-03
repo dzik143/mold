@@ -135,11 +135,10 @@ class ASTOptimizerIf
           this._processNode(currentIfNode)
         endif
 
-        node.children    = newChildren
-        node.childrenCnt = len(newChildren)
-        node.opcode      = AST_OPCODE_SWITCH
-        node.valueMin    = valueMin
-        node.valueMax    = valueMax
+        node.children = newChildren
+        node.opcode   = AST_OPCODE_SWITCH
+        node.valueMin = valueMin
+        node.valueMax = valueMax
       endif
     else
       # Process child nodes recursively.

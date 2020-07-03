@@ -388,8 +388,7 @@ class AST
       newChild.parent = node
     endwhile
 
-    rv.children    = children
-    rv.childrenCnt = childrenCnt
+    rv.children = children
   endmethod
 
   method convert() -> rv

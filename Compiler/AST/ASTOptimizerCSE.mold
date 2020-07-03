@@ -118,9 +118,8 @@ class ASTOptimizerCSE
 
         # Useless assign: x = x
         this._debug('Useless self-assign at node #' + str(node.id) + ' (' + lval.hash + ')')
-        rv.opcode      = AST_OPCODE_NOP
-        rv.children    = []
-        rv.childrenCnt = 0
+        rv.opcode   = AST_OPCODE_NOP
+        rv.children = []
 
       elif newRval isnt rval
         # Update rval if needed.
@@ -267,10 +266,9 @@ class ASTOptimizerCSE
               commonBlock = block1
             endif
 
-            matchedNode.opcode      = AST_OPCODE_VARIABLE
-            matchedNode.value       = '__cse' + str(this._getNextId())
-            matchedNode.children    = []
-            matchedNode.childrenCnt = 0
+            matchedNode.opcode   = AST_OPCODE_VARIABLE
+            matchedNode.value    = '__cse' + str(this._getNextId())
+            matchedNode.children = []
 
             commonBlock.symbolTable.lookupForWriteOrInsert(matchedNode.value)
             commonBlock.symbolTable.lookupForRead(matchedNode.value)
@@ -302,8 +300,7 @@ class ASTOptimizerCSE
               die('error: cse found, but not emited')
             endif
 
-            commonBlock.children    = newCommonBlockChildren
-            commonBlock.childrenCnt = len(newCommonBlockChildren)
+            commonBlock.children = newCommonBlockChildren
           endif
 
           # TODO: Handle already assigned variable.

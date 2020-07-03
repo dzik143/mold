@@ -74,10 +74,9 @@ class ASTOptimizerConstantFolding
         die('error: unhandled result in constant folding: ' + type)
       endif
 
-      dst.childrenCnt = 0
-      dst.children    = []
-      dst.opcode      = newOpcode
-      dst.value       = value
+      dst.children  = []
+      dst.opcode    = newOpcode
+      dst.value     = value
     endif
   endmethod
 
@@ -277,8 +276,7 @@ class ASTOptimizerConstantFolding
             endif
           endfor
 
-          node.children    = newParams
-          node.childrenCnt = len(newParams)
+          node.children = newParams
 
         # TODO: Review it.
         elif (((opcode is AST_OPCODE_REFERENCE_BY_INDEX) or (opcode is AST_OPCODE_REFERENCE_BY_KEY)) and

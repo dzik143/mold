@@ -167,8 +167,7 @@ class ASTPreprocessor
           newChildren[idx - 1] = children[idx]
         endfor
 
-        node.children    = newChildren
-        node.childrenCnt = childrenCnt - 1
+        node.children = newChildren
       endif
     endif
   endmethod

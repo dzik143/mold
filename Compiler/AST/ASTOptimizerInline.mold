@@ -187,8 +187,7 @@ class ASTOptimizerInline
       endfor
 
       # Remove original call node.
-      callNode.children    = []
-      callNode.childrenCnt = 0
+      callNode.children = []
 
       this._debug('Inject function body (' + callNode.value + ') at node #' + str(callNode.id))
 
@@ -314,8 +313,7 @@ class ASTOptimizerInline
       newChildren[len(newChildren)] = childNode
     endfor
 
-    node.children    = newChildren
-    node.childrenCnt = len(newChildren)
+    node.children = newChildren
   endmethod
 
   method processNode(node)
