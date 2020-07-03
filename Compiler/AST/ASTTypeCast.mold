@@ -65,8 +65,8 @@ class ASTTypeCast
 
     if opcode isnt AST_OPCODE_TYPE_CAST
       value       = node.value
-      childrenCnt = node.childrenCnt
       children    = node.children
+      childrenCnt = len(children)
 
       # Process child nodes recursively.
       for values oneChild in children

@@ -119,8 +119,8 @@ class ASTOptimizerDeadCodeRemove
     this._processChildNodes(symbolTable, node)
 
     opcode      = node.opcode
-    childrenCnt = node.childrenCnt
     children    = node.children
+    childrenCnt = len(children)
     x           = children[0]
 
     value      = node.value
@@ -149,8 +149,8 @@ class ASTOptimizerDeadCodeRemove
       endif
 
     elif opcode is AST_OPCODE_IF
-      childrenCnt = node.childrenCnt
       children    = node.children
+      childrenCnt = len(children)
 
       nodeCond = children[0]
       nodeBody = children[1]

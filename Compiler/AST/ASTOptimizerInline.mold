@@ -43,7 +43,7 @@ class ASTOptimizerInline
 
     newChildren = []
     children    = node.children
-    childrenCnt = node.childrenCnt
+    childrenCnt = len(children)
     newValue    = node.value
     newOpcode   = node.opcode
 
@@ -126,7 +126,7 @@ class ASTOptimizerInline
 
       bodyNode    = functionProto.children[0]
       children    = bodyNode.children
-      childrenCnt = bodyNode.childrenCnt
+      childrenCnt = len(children)
 
       symbolInfo.readHits = symbolInfo.readHits - 1
 
@@ -216,7 +216,7 @@ class ASTOptimizerInline
 
     opcode      = node.opcode
     children    = node.children
-    childrenCnt = node.childrenCnt
+    childrenCnt = len(children)
 
     if (opcode is AST_OPCODE_BOOL_AND) or (opcode is AST_OPCODE_BOOL_OR)
       # Lazy and/or. Don't touch.
@@ -251,7 +251,7 @@ class ASTOptimizerInline
 
     opcode      = node.opcode
     children    = node.children
-    childrenCnt = node.childrenCnt
+    childrenCnt = len(children)
 
     # Switch symbolTable if needed.
     if node.symbolTable is defined
@@ -285,7 +285,7 @@ class ASTOptimizerInline
 
         # foo()
         callParams    = childNode.children
-        callParamsCnt = childNode.childrenCnt
+        callParamsCnt = len(callParams)
 
         # Resolve function calls in parameters list.
         for paramIdx in 0 .. callParamsCnt
@@ -302,7 +302,7 @@ class ASTOptimizerInline
         # Resolve node itself.
         #this._processNode_injectInlineFunctions(newChildren, symbolTable, childNode)
 
-        for childIdx in 1 .. childNode.childrenCnt
+        for childIdx in 1 .. len(childNode.children)
           this._processNode(symbolTable, childNode.children[childIdx])
         endfor
 
