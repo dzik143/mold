@@ -86,7 +86,7 @@ class ASTOptimizerConstantFolding
     isImm       = true
     idx         = 0
     children    = node.children
-    childrenCnt = node.childrenCnt
+    childrenCnt = len(children)
 
     while (isImm is true) and (idx < childrenCnt)
       this.processNode(children[idx])
@@ -105,7 +105,7 @@ class ASTOptimizerConstantFolding
     isImm       = true
     idx         = 0
     children    = node.children
-    childrenCnt = node.childrenCnt
+    childrenCnt = len(children)
 
     while (isImm is true) and (idx < childrenCnt)
       nodeKey   = children[idx]
@@ -154,11 +154,14 @@ class ASTOptimizerConstantFolding
     opcode      = node.opcode
     value       = node.value
     newValue    = node._undefined_ # TODO: Clean up this mess.
-    childrenCnt = node.childrenCnt
     children    = node.children
+    childrenCnt = len(children)
     x           = children[0]
     y           = children[1]
     areArgsImm  = true
+
+    # DEBUG ONLY
+    AST_ValidateNode(node)
 
     if (opcode is AST_OPCODE_CALL) and (value is 'global')
       # Global import - do nothing.
@@ -443,6 +446,9 @@ class ASTOptimizerConstantFolding
         endif
       endif
     endif
+
+    # DEBUG ONLY
+    AST_ValidateNode(node)
   endmethod
 
   method processNodeUntilNotChanged(node) -> isAnyChangedDone
