@@ -42,7 +42,7 @@ class ASTOptimizerIf
 
     opcode      = node.opcode
     children    = node.children
-    childrenCnt = node.childrenCnt
+    childrenCnt = len(children)
     cond        = children[0]
 
     if ((opcode is AST_OPCODE_IF) and
