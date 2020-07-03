@@ -50,7 +50,7 @@ astSymbolsCollector.buildSymbolTable(ast)
 astEvaluator.processNode(ast)
 
 # Get AST optimization provider from pool.
-astOptimizationProvider = poolOfOptimizationProviders[optimizationId]
+astOptimizationProvider = poolOfOptimizationProviders{optimizationId}
 
 if typeof(astOptimizationProvider) is 'undefined'
   print 'error: enknown optimization id'
