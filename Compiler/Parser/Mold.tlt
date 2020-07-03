@@ -356,12 +356,10 @@ class AST
       rv.baseName = value.baseName
 
     elif opcode is AST_OPCODE_CLASS_METHOD
+      # TODO: Clean up this mess.
       newParams = ['this']
-      params    = value.parameters
-      paramsCnt = len(params)
-
-      for idx in 0 .. paramsCnt
-        newParams[idx + 1] = params[idx]
+      for indexes idx values oneParam in value.parameters
+        newParams[idx + 1] = oneParam
       endfor
 
       rv.name      = value.name

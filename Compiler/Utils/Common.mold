@@ -32,8 +32,8 @@ function UTILS_PadString(item, desiredLen) -> rv
     rv  = '['
     sep = ''
 
-    for idx in 0 .. len(item)
-      rv  = rv + sep + str(item[idx])
+    for values v in item
+      rv  = rv + sep + str(v)
       sep = ', '
     endfor
     rv = rv + ']'

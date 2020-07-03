@@ -174,11 +174,8 @@ class CodeGeneratorX64
     if wantDeep is deepIdx
       bufferNameBytes = name + '_bufferBytes'
       bufferData      = '"'
-      stringLen       = len(value)
 
-      for characterIdx in 0 .. stringLen
-        character = value[characterIdx]
-
+      for values character in value
         if character is '"'
           bufferData = bufferData + '", 34, "'
         else
@@ -188,7 +185,7 @@ class CodeGeneratorX64
 
       bufferData = bufferData + '"'
 
-      print bufferNameBytes, 'StringHead_t', stringLen
+      print bufferNameBytes, 'StringHead_t', len(value)
       print ' db ', bufferData, ', 0'
     endif
   endmethod
@@ -1464,8 +1461,7 @@ class CodeGeneratorX64
 
         print name + ':'
 
-        for labelIdx in 0 .. len(labels)
-          nextLabel = labels[labelIdx]
+        for indexes labelIdx values nextLabel in labels
           if nextLabel is undefined
             nextLabel = defaultLabel
           endif
@@ -1540,8 +1536,7 @@ class CodeGeneratorX64
     print 'dq 0, 0'
     print "include 'SymbolTableCommon.asm'"
 
-    for procIdx in 0 .. len(arrayOfProcedures)
-      procName = arrayOfProcedures[procIdx]
+    for values procName in arrayOfProcedures
       print 'dq ', procName, ',', 'name_' + procName
     endfor
 
@@ -1553,8 +1548,7 @@ class CodeGeneratorX64
     print 'SymbolTableNames:'
     print "include 'SymbolTableCommonNames.asm'"
 
-    for procIdx in 0 .. len(arrayOfProcedures)
-      procName = arrayOfProcedures[procIdx]
+    for values procName in arrayOfProcedures
       print 'name_' + procName, 'db', "'" + procName + "', 0"
     endfor
 
@@ -1572,8 +1566,7 @@ class CodeGeneratorX64
       print "section '.profile' data readable writeable"
       print '__profilerCounterData:'
 
-      for procIdx in 0 .. len(arrayOfProcedures)
-        procName = arrayOfProcedures[procIdx]
+      for values procName in arrayOfProcedures
         print '__profilerCounterEntry_' + procName, ' dq 0,', 'name_' + procName
       endfor
 

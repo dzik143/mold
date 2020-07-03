@@ -581,8 +581,8 @@ function AST_HashInternal(node, isCodeMode) -> rv
 
         elif typeof(node.storedValue) is 'array'
           rv = ''
-          for idx in 0 .. len(node.storedValue)
-            rv = rv + '@' + str(node.storedValue[idx].id)
+          for values item in node.storedValue
+            rv = rv + '@' + str(item.id)
           endfor
 
         else

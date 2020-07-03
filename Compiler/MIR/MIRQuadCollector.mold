@@ -49,8 +49,8 @@ class MIRQuadCollector extends PipeAbstract
       rv  = '['
       sep = ''
 
-      for idx in 0 .. len(item)
-        rv  = rv + sep + str(item[idx])
+      for values v in item
+        rv  = rv + sep + str(v)
         sep = ', '
       endfor
       rv = rv + ']'
@@ -113,11 +113,9 @@ class MIRQuadCollector extends PipeAbstract
 #  endmethod
 
   method printQuads()
-    code    = this.quads
-    codeCnt = len(code)
+    code = this.quads
 
-    for idx in 0 .. codeCnt
-      item   = code[idx]
+    for values item in code
       opcode = item[0]
 
       # print '[ MIRQuadCollector ]', item

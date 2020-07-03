@@ -32,14 +32,12 @@ class ASTPrinterHtml
 
     symbols      = symbolTable.exportSymbols()
     symbolsIndex = symbols._index
-    symbolsCnt   = len(symbolsIndex)
 
     print '<table border="1">'
     print '<tr><th>var</th><th>write</th><th>read</th><th>init value</th><th>kind</th><th>data type</th><th>loop level</th><th>class name</th></tr>'
 
-    for idx in 0 .. symbolsCnt
-      symbolInfo = symbolsIndex[idx]
-      value      = '-'
+    for values symbolInfo in symbolsIndex
+      value = '-'
 
       if symbolInfo.value is defined
         value = symbolInfo.value
@@ -150,8 +148,8 @@ class ASTPrinterHtml
 
       if typeof(node.storedValue) is 'array'
 
-        for idx in 0 .. len(node.storedValue)
-          print '@' + str(node.storedValue[idx].id), '<br>'
+        for values item in node.storedValue
+          print '@' + str(item.id), '<br>'
         endfor
 
       elif node.storedValue is undefined

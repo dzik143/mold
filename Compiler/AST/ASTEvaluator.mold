@@ -57,8 +57,8 @@ class ASTEvaluator
     # Merge in first array if any.
     if x is defined
       if typeof(x) is 'array'
-        for i in 0 .. len(x)
-          rv[len(rv)] = x[i]
+        for values item in x
+          rv[len(rv)] = item
         endfor
       else
         rv[len(rv)] = x
@@ -68,8 +68,8 @@ class ASTEvaluator
     # Merge in second array if any.
     if y is defined
       if typeof(y) is 'array'
-        for i in 0 .. len(y)
-          rv[len(rv)] = y[i]
+        for values item in y
+          rv[len(rv)] = item
         endfor
       else
         rv[len(rv)] = y
@@ -126,12 +126,18 @@ class ASTEvaluator
     rv = []
 
     if storedValue is undefined
+      # No values collected for this node yet.
+      # Nothing to do.
 
     elif typeof(storedValue) is 'array'
-      for idx in 0 .. len(storedValue)
-        rv[len(rv)] = storedValue[idx].id
+      # There are more than one possible values for this node.
+      # Node values is code flow dependent.
+      for values item in storedValue
+        rv[len(rv)] = item.id
       endfor
+
     else
+      # There is exacly one possible node value.
       rv = [storedValue.id]
     endif
   endmethod
