@@ -354,7 +354,6 @@ class ASTTranslator
 
       this._call(rv, methodProto.baseMethod, newParams, paramsCnt + 1)
     endif
-
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -525,10 +524,10 @@ class ASTTranslator
             key            = this._getTempVar('variant')
             valueAsVariant = this._getTempVar('variant')
 
-            for idx in 0 .. childrenCnt
-              this._loadImmAsVariant(key, idx)
-              value = this._evaluateNode(children[idx])
-              this._convert(valueAsVariant, value, AST_GetDataType(children[idx]), -1)
+            for indexes childIdx values childNode in children
+              this._loadImmAsVariant(key, childIdx)
+              value = this._evaluateNode(childNode)
+              this._convert(valueAsVariant, value, AST_GetDataType(childNode), -1)
               this._storeAtIndex(rv, key, valueAsVariant)
 
               # TODO: Is it really needed?
