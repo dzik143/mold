@@ -666,9 +666,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
           this.emitJmp(doneLabel)
         endif
 
-        valuesCnt = len(arrayOfValues)
-        for valueIdx in 0 .. valuesCnt
-          jmpTable[arrayOfValues[valueIdx]] = caseLabel
+        for values oneValue in arrayOfValues
+          jmpTable[oneValue] = caseLabel
         endfor
       else
         caseDefaultIdx = idx

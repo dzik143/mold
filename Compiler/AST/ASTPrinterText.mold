@@ -339,17 +339,17 @@ class ASTPrinterText
       print ''
 
       for idx in 1 .. childrenCnt
-        values = children[idx].arrayOfValues
+        arrayOfValues = children[idx].arrayOfValues
 
-        if values is defined
+        if arrayOfValues is defined
           # Render when value1, value2, ..., valueN list
           __mold_printToStdOutput(prefix)
           __mold_printToStdOutput('  when ')
           sep = ''
 
-          for valueIdx in 0 .. len(values)
+          for values oneValue in arrayOfValues
             __mold_printToStdOutput(sep)
-            __mold_printToStdOutput(values[valueIdx])
+            __mold_printToStdOutput(oneValue)
             sep = ', '
           endfor
           print ''
