@@ -820,8 +820,7 @@ class ASTTranslator
         'name': 'start',
         'params': [],
         'paramsCnt': 0,
-        'children': ast.children,
-        'childrenCnt': len(ast.children)
+        'children': ast.children
       }
 
       this.symbolTable = ast.symbolTable

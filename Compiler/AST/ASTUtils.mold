@@ -61,7 +61,6 @@ function AST_CreateNodeVariable(name) -> rv
     'id': AST_GetNextId(),
     'opcode': AST_OPCODE_VARIABLE,
     'children': [],
-    'childrenCnt': 0,
     'value': name
   }
 endfunction
@@ -868,7 +867,6 @@ function AST_TypeCast(node, dstDataType) -> rv
         'id': AST_GetNextId(),
         'opcode': AST_OPCODE_TYPE_CAST,
         'astDataType': dstDataType,
-        'childrenCnt': 1,
         'children': [node]
        }
     endif

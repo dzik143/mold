@@ -40,8 +40,7 @@ class ASTOptimizerCSE
       'id': AST_GetNextId(),
       'opcode': AST_OPCODE_VARIABLE,
       'value': '__cse' + str(this._getNextId()),
-      'children': [],
-      'childrenCnt': 0
+      'children': []
     }
   endmethod
 
@@ -284,8 +283,7 @@ class ASTOptimizerCSE
                   newCommonBlockChildren[len(newCommonBlockChildren)] = {
                     'id': AST_GetNextId(),
                     'opcode': AST_OPCODE_DECLARE_OR_ASSIGN,
-                    'children': [matchedNode, node],
-                   'childrenCnt': 2
+                    'children': [matchedNode, node]
                   }
                 endif
               endif

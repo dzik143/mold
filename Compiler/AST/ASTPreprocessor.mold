@@ -126,8 +126,7 @@ class ASTPreprocessor
             'opcode': AST_OPCODE_CALL,
             'value': '__mold_syscall',
             'sysCallId': 44, # TODO: Don't use hardcoded value ('typeof')
-            'children': [x],
-            'childrenCnt': 1
+            'children': [x]
           }
           y.opcode = AST_DATA_STRING
           y.value  = 'undefined'
