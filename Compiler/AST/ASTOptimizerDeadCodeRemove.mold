@@ -38,7 +38,7 @@ class ASTOptimizerDeadCodeRemove
     this._debug('Remove node #' + str(node.id))
     node.opcode      = AST_OPCODE_NOP
     node.children    = []
-    node._TODO_childrenCnt = 0
+    #node._TODO_childrenCnt = 0
   endmethod
 
   method _moveNode(dst, src)
@@ -48,25 +48,13 @@ class ASTOptimizerDeadCodeRemove
     dst.id          = src.id
     dst.opcode      = src.opcode
     dst.children    = src.children
-
-    # TODO: Clean up this mess.
-    if src._TODO_childrenCnt is defined
-      dst._TODO_childrenCnt = src._TODO_childrenCnt
-    else
-      dst._TODO_childrenCnt = len(src.children)
-    endif
   endmethod
 
   method _processChildNodes(symbolTable, node)
     global AST_OPCODE_NOP
 
-    children = node.children
-
-    if node._TODO_childrenCnt is defined
-      childrenCnt = node._TODO_childrenCnt
-    else
-      childrenCnt = len(children)
-    endif
+    children    = node.children
+    childrenCnt = len(children)
 
     newChildren    = []
     newChildrenCnt = 0
@@ -84,8 +72,7 @@ class ASTOptimizerDeadCodeRemove
       endif
     endfor
 
-    node.children    = newChildren
-    node._TODO_childrenCnt = newChildrenCnt
+    node.children = newChildren
   endmethod
 
   method _processNode(symbolTable, node) -> rv
@@ -134,13 +121,11 @@ class ASTOptimizerDeadCodeRemove
     childrenCnt = len(children)
     x           = children[0]
 
+    childrenCntOnEnter = len(children)
+
     value      = node.value
     rv         = node
     removeNode = false
-
-    if node._TODO_childrenCnt is undefined
-      node._TODO_childrenCnt = childrenCnt
-    endif
 
     #
     # Process current one node.
@@ -179,8 +164,8 @@ class ASTOptimizerDeadCodeRemove
         if AST_IsEmpty(nodeElse) is true
           # if cond {...} else {} - empty else branch.
           this._debug('Remove empty else node #' + str(nodeElse.id))
-          childrenCnt      = 2
-          node._TODO_childrenCnt = 2
+          node.children = [nodeCond, nodeBody]
+          childrenCnt   = 2
 
           if AST_IsEmpty(nodeBody) is true
             # if cond {} else {} - both branches empty.
@@ -194,8 +179,9 @@ class ASTOptimizerDeadCodeRemove
           this._debug('Invert condition at if node #' + str(node.id))
 
           AST_InvertBoolean(nodeCond)
-          node._TODO_childrenCnt = 2
-          node.children[1] = nodeElse
+
+          node.children = [nodeCond, nodeElse]
+
           nodeBody    = nodeElse
           childrenCnt = 2
         endif
@@ -271,7 +257,7 @@ class ASTOptimizerDeadCodeRemove
     if removeNode is true
       this._removeNode(node)
 
-    elif node._TODO_childrenCnt isnt len(node.children)
+    elif childrenCntOnEnter isnt len(node.children)
       # TODO: Review it?
       # Process child nodes recursively.
       this._processChildNodes(symbolTable, node)
@@ -282,7 +268,6 @@ class ASTOptimizerDeadCodeRemove
       symbolTable.removeUnusedSymbols()
     endif
   endmethod
-
 
   method processNode(node)
     this._processNode(node.symbolTable, node)
