@@ -65,8 +65,8 @@ class ASTOptimizerInline
       endif
 
     else
-      for idx in 0 .. childrenCnt
-        newChildren[idx] = this._resolveParamsForInline(symbolTable, namePrefix, children[idx])
+      for indexes childIdx values childNode in children
+        newChildren[childIdx] = this._resolveParamsForInline(symbolTable, namePrefix, childNode)
       endfor
     endif
 
@@ -159,17 +159,15 @@ class ASTOptimizerInline
       endif
 
       # Init ordinary call parameters.
-      for paramIdx in 0 .. paramsCnt
-        paramName          = namePrefix + params[paramIdx]
-        paramInitValueNode = callNode.children[childIdx]
-        this._injectParamInit(dst, symbolTable, paramName, paramInitValueNode)
+      for indexes paramIdx values oneParamName in params
+        paramNameWithPrefix = namePrefix + oneParamName
+        paramInitValueNode  = callNode.children[childIdx]
+        this._injectParamInit(dst, symbolTable, paramNameWithPrefix, paramInitValueNode)
         childIdx = childIdx + 1
       endfor
 
       # Inject function body.
-      for idx in 0 .. childrenCnt
-        childNode = children[idx]
-
+      for values childNode in children
         if ((childNode.opcode is AST_OPCODE_CALL) and
             (childNode.value is 'global') and
             (symbolTable.deepIdx <= 1))
@@ -259,9 +257,7 @@ class ASTOptimizerInline
     newChildren = []
 
     # Process child nodes recursively.
-    for idx in 0 .. childrenCnt
-      childNode = children[idx]
-
+    for values childNode in children
       if childNode.opcode is AST_OPCODE_DECLARE_OR_ASSIGN
         # Input:
         #   x = foo(...)
