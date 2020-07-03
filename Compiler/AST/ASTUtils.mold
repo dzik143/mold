@@ -634,8 +634,8 @@ function AST_HashInternal(node, isCodeMode) -> rv
       endif
 
       # Hash call parameters.
-      for idx in 0 .. childrenCnt
-        rv  = rv + ',' + AST_HashInternal(children[idx], isCodeMode)
+      for values childNode in children
+        rv  = rv + ',' + AST_HashInternal(childNode, isCodeMode)
       endfor
 
     elif opcode is AST_OPCODE_TYPE_CAST
@@ -643,8 +643,8 @@ function AST_HashInternal(node, isCodeMode) -> rv
 
     else
       rv = AST_GetOpcodeAsShortText(opcode) + ',' + str(childrenCnt)
-      for idx in 0 .. childrenCnt
-        rv  = rv + ',' + AST_HashInternal(children[idx], isCodeMode)
+      for values childNode in children
+        rv  = rv + ',' + AST_HashInternal(childNode, isCodeMode)
       endfor
     endif
 
