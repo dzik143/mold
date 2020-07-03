@@ -439,8 +439,8 @@ class ASTTranslator
       die('error: node #' + str(ast.id) + ' is already translated (eval)')
     endif
 
-    if childrenCnt isnt len(ast.children)
-      die('error: inconsistent childrenCnt (' + str(childrenCnt) + ') vs len(children) (' + str(len(ast.children)) + ') at node #' + str(ast.id))
+    if ast.childrenCnt isnt len(ast.children)
+      die('error: inconsistent childrenCnt (' + str(ast.childrenCnt) + ') vs len(children) (' + str(len(ast.children)) + ') at node #' + str(ast.id))
     endif
 
     ast.isTranslated = true
@@ -812,8 +812,8 @@ class ASTTranslator
       die('error: node #' + str(ast.id) + ' is already translated')
     endif
 
-    if childrenCnt isnt len(ast.children)
-      die('error: inconsistent childrenCnt (' + str(childrenCnt) + ') vs len(children) (' + str(len(ast.children)) + ') at node #' + str(ast.id))
+    if ast.childrenCnt isnt len(ast.children)
+      die('error: inconsistent childrenCnt (' + str(ast.childrenCnt) + ') vs len(children) (' + str(len(ast.children)) + ') at node #' + str(ast.id))
     endif
 
     ast.isTranslated = true
