@@ -280,14 +280,16 @@ class ASTOptimizerInline
         callParamsCnt = len(callParams)
 
         # Resolve function calls in parameters list.
-        for paramIdx in 0 .. callParamsCnt
-          this._processNode_injectInlineFunctions(newChildren, symbolTable, callParams[paramIdx])
+        for values oneParam in callParams
+          this._processNode_injectInlineFunctions(newChildren, symbolTable, oneParam)
         endfor
 
         # Resolve function call itself.
         this._processNode_injectInlineFunctions(newChildren, symbolTable, childNode)
 
-      elif (opcode is AST_OPCODE_IF) or (opcode is AST_OPCODE_WHILE)
+      elif ((opcode is AST_OPCODE_IF) or
+            (opcode is AST_OPCODE_WHILE))
+
         # Resolve condition first.
         #this._processNode_injectInlineFunctions(newChildren, symbolTable, childNode.children[0])
 
