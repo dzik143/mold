@@ -1,0 +1,116 @@
+TEST "for indexes in: empty array"
+x = []
+for indexes idx in x
+  print idx
+endfor
+print 'OK'
+
+EXPECTED_OUTPUT:
+OK
+-------------------------------------------------------------------------------
+
+TEST "for indexes in: small array"
+x = [10, 20, 30, 40, 50]
+
+for indexes idx in x
+  print idx
+endfor
+
+EXPECTED_OUTPUT:
+0
+1
+2
+3
+4
+-------------------------------------------------------------------------------
+
+TEST "for indexes in: wrong type (map) (SKIPPED!)"
+#x = {}
+#for indexes idx in x
+#  print idx
+#endfor
+print 'OK'
+
+EXPECTED_OUTPUT:
+OK
+-------------------------------------------------------------------------------
+
+TEST "for indexes in: empty string"
+x = ''
+for indexes idx in x
+  print idx
+endfor
+print 'OK'
+
+EXPECTED_OUTPUT:
+OK
+-------------------------------------------------------------------------------
+
+TEST "for indexes in: small string"
+x = 'abcdef'
+for indexes idx in x
+  print idx
+endfor
+
+EXPECTED_OUTPUT:
+0
+1
+2
+3
+4
+5
+-------------------------------------------------------------------------------
+
+TEST "for indexes in: one character string"
+text = 'abcdef'
+x = text[3]
+
+for indexes idx in x
+  print idx
+endfor
+
+EXPECTED_OUTPUT:
+0
+-------------------------------------------------------------------------------
+TEST "for indexes in: sum array indexes one-by-one"
+
+x = [3,4,5]
+
+acc = 0
+for indexes idx in x
+  acc = acc + idx
+endfor
+print acc
+
+EXPECTED_OUTPUT:
+3
+-------------------------------------------------------------------------------
+
+TEST "for indexes in: nested array"
+
+A = [[0, 1, 2],
+     [3, 4, 5],
+     [6, 7, 8]]
+
+acc = 0
+for indexes rowIdx in A
+  for indexes colIdx in A[rowIdx]
+    print 'Add', rowIdx, colIdx
+    acc = acc + rowIdx + colIdx
+  endfor
+endfor
+
+print acc
+
+EXPECTED_OUTPUT:
+Add 0 0
+Add 0 1
+Add 0 2
+Add 1 0
+Add 1 1
+Add 1 2
+Add 2 0
+Add 2 1
+Add 2 2
+18
+-------------------------------------------------------------------------------
