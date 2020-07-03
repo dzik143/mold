@@ -825,7 +825,7 @@ class ASTTranslator
         'params': [],
         'paramsCnt': 0,
         'children': ast.children,
-        'childrenCnt': ast.childrenCnt
+        'childrenCnt': len(ast.children)
       }
 
       # DEBUG ONLY

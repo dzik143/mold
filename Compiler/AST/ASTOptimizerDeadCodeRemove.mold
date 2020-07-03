@@ -269,6 +269,8 @@ class ASTOptimizerDeadCodeRemove
   endmethod
 
   method processNode(node)
+    # TODO: Review it.
+    node.childrenCnt = len(node.children)
     this._processNode(node.symbolTable, node)
   endmethod
 endclass
