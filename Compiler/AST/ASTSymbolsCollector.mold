@@ -139,34 +139,21 @@ class ASTSymbolsCollector
 
     elif opcode is AST_OPCODE_CLASS
       # Collect members.
-      # TODO: Avoid redundant methodsAsArray when map iteration will work.
-      className             = node.name
-      baseName              = node.baseName
-      vtable                = {}
-      baseMethods           = {}
-      methodsAsFlatArray    = []
-      methodsAsFlatArrayCnt = 0
-      classProto            = {}
+      className   = node.name
+      baseName    = node.baseName
+      vtable      = {}
+      baseMethods = {}
+      classProto  = {}
 
       # Import base class if any.
       if baseName is defined
         # Derived class, build class by applying derived over base one.
-        baseProto = symbolTable.lookupClass(baseName).proto
-
-        # TODO: Rewrite it when map merge will be ready.
-        baseMethodsAsFlatArray    = baseProto.methodsAsFlatArray
-        baseMethodsAsFlatArrayCnt = baseProto.methodsAsFlatArrayCnt
-        baseMethods               = baseProto.vtable
+        baseProto   = symbolTable.lookupClass(baseName).proto
+        baseMethods = baseProto.vtable
 
         # Merge base class first.
-        for values oneMethodName in baseMethodsAsFlatArray
-          methodProto     = baseMethods{oneMethodName}
-          methodParamsCnt = methodProto.paramsCnt
-          methodFullName  = '__' + className + '_' + oneMethodName + '$' + str(methodParamsCnt)
-
+        for keys oneMethodName values methodProto in baseMethods
           vtable{oneMethodName} = methodProto
-          methodsAsFlatArray[methodsAsFlatArrayCnt] = oneMethodName
-          methodsAsFlatArrayCnt = methodsAsFlatArrayCnt + 1
         endfor
       endif
 
@@ -179,14 +166,7 @@ class ASTSymbolsCollector
           methodParamsCnt = child.paramsCnt
           methodFullName  = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
 
-          child.fullName  = methodFullName
-
-          if vtable{methodName} is undefined
-            # Method seen first time.
-            methodsAsFlatArray[methodsAsFlatArrayCnt] = methodName
-            methodsAsFlatArrayCnt = methodsAsFlatArrayCnt + 1
-          endif
-
+          child.fullName   = methodFullName
           child.className  = className
           child.classProto = classProto
 
@@ -204,12 +184,10 @@ class ASTSymbolsCollector
       endfor
 
       # Declare new class.
-      classProto.name                  = className
-      classProto.baseName              = node.baseName
-      classProto.vtable                = vtable
-      classProto.methodsAsFlatArray    = methodsAsFlatArray
-      classProto.methodsAsFlatArrayCnt = methodsAsFlatArrayCnt
-      classProto.propertyClassNames    = {}
+      classProto.name               = className
+      classProto.baseName           = node.baseName
+      classProto.vtable             = vtable
+      classProto.propertyClassNames = {}
 
       node.proto = classProto
 
