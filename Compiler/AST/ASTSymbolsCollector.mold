@@ -159,14 +159,13 @@ class ASTSymbolsCollector
         baseMethods               = baseProto.vtable
 
         # Merge base class first.
-        for idx in 0 .. baseMethodsAsFlatArrayCnt
-          methodName      = baseMethodsAsFlatArray[idx]
-          methodProto     = baseMethods{methodName}
+        for values oneMethodName in baseMethodsAsFlatArray
+          methodProto     = baseMethods{oneMethodName}
           methodParamsCnt = methodProto.paramsCnt
-          methodFullName  = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
+          methodFullName  = '__' + className + '_' + oneMethodName + '$' + str(methodParamsCnt)
 
-          vtable{methodName} = methodProto
-          methodsAsFlatArray[methodsAsFlatArrayCnt] = methodName
+          vtable{oneMethodName} = methodProto
+          methodsAsFlatArray[methodsAsFlatArrayCnt] = oneMethodName
           methodsAsFlatArrayCnt = methodsAsFlatArrayCnt + 1
         endfor
       endif
