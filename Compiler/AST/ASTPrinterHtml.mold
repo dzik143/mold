@@ -103,16 +103,16 @@ class ASTPrinterHtml
         print '</td></tr>'
       endif
 
-      for idx in 0 .. childrenCnt
+      for values childNode in children
         print '<tr><td>'
-        this._printNode(children[idx])
+        this._printNode(childNode)
         print '</td></tr>'
       endfor
 
     elif opcode is AST_OPCODE_CLASS
-      for idx in 0 .. childrenCnt
+      for values childNode in children
         print '<tr><td>'
-        this._printNode(children[idx])
+        this._printNode(childNode)
         print '</td></tr>'
       endfor
 
@@ -134,9 +134,9 @@ class ASTPrinterHtml
       endif
 
       print '<tr>'
-      for idx in 0 .. childrenCnt
+      for values childNode in children
         print '<td>'
-        this._printNode(children[idx])
+        this._printNode(childNode)
         print '</td>'
       endfor
       print '</tr>'
