@@ -33,7 +33,7 @@ class ASTModuleResolver
 
     program     = ast.children[0]
     children    = program.children
-    childrenCnt = program.childrenCnt
+    childrenCnt = len(children)
 
     newChildrenCnt = 0
     newChildren    = []
@@ -62,7 +62,7 @@ class ASTModuleResolver
 
           importedProgram     = importedAst.children[0]
           importedChildren    = importedProgram.children
-          importedChildrenCnt = importedProgram.childrenCnt
+          importedChildrenCnt = len(importedChildren)
 
           for values oneImportedChild in importedChildren
             newChildren[newChildrenCnt] = oneImportedChild
@@ -76,7 +76,7 @@ class ASTModuleResolver
       endif
     endfor
 
-    program.childrenCnt = newChildrenCnt
+    program.childrenCnt = len(newChildren)
     program.children    = newChildren
   endmethod
 endclass
