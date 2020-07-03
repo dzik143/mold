@@ -3118,6 +3118,7 @@ __MOLD_ForDriver_IndexesAndValuesInArray:
 
     lea     rsi, [rcx + Array_t.items]              ; rsi      = array.items
     mov     [rdx + Variant_t.type], VARIANT_INTEGER ; idx.type = integer
+    mov     [rdx + Variant_t.value], 0              ; idx.type = integer
 
 .arrayNextItem:
 

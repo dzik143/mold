@@ -940,7 +940,9 @@ class ASTTranslator
       # TODO: Simplify it.
       this._releaseTempVar(box)
 
-    elif opcode is AST_OPCODE_FOR_KEYS
+    elif ((opcode is AST_OPCODE_FOR_KEYS) or
+          (opcode is AST_OPCODE_FOR_INDEXES))
+
       # for values v in box
       iteratorKey  = children[0].value
       box          = this._evaluateNode(children[1])
@@ -955,7 +957,9 @@ class ASTTranslator
       # TODO: Simplify it.
       this._releaseTempVar(box)
 
-    elif opcode is AST_OPCODE_FOR_KEYS_VALUES
+    elif ((opcode is AST_OPCODE_FOR_KEYS_VALUES) or
+          (opcode is AST_OPCODE_FOR_INDEXES_VALUES))
+
       # for keys k values v in box
       iteratorKey   = children[0].value
       iteratorValue = children[1].value
