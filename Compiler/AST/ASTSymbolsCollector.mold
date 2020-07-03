@@ -56,11 +56,8 @@ class ASTSymbolsCollector
       endif
 
     else
-      childrenCnt = node.childrenCnt
-      children    = node.children
-
-      for idx in 0 .. childrenCnt
-        this._updateVariableSymbolInfo(children[idx], variableName, newSymbolInfo)
+      for values item in node.children
+        this._updateVariableSymbolInfo(item, variableName, newSymbolInfo)
       endfor
     endif
   endmethod
@@ -108,13 +105,16 @@ class ASTSymbolsCollector
 
     opcode      = node.opcode
     children    = node.children
-    childrenCnt = node.childrenCnt
+    childrenCnt = len(children)
+
+    # DEBUG ONLY
+    AST_ValidateNode(node)
 
     # TODO: Remove it.
     # We use it to work-around problem with emitting [object] to
     # external source.ast file.
-    for idx in 0 .. childrenCnt
-      children[idx].parent = node
+    for values item in children
+      item.parent = node
     endfor
 
     # TODO: Clean up this mess.
@@ -125,8 +125,8 @@ class ASTSymbolsCollector
       symbolTable      = this.app.getSymbolTable()
       node.symbolTable = symbolTable
 
-      for idx in 0 .. childrenCnt
-        this._collectSymbolsFromLeftNode(node.symbolTable, children[idx])
+      for values item in children
+        this._collectSymbolsFromLeftNode(node.symbolTable, item)
       endfor
 
     elif opcode is AST_DATA_STRING
@@ -175,8 +175,7 @@ class ASTSymbolsCollector
       endif
 
       # Apply current declared class.
-      for idx in 0 .. childrenCnt
-        child  = children[idx]
+      for values child in children
         opcode = child.opcode
 
         if opcode is AST_OPCODE_CLASS_METHOD
@@ -303,9 +302,10 @@ class ASTSymbolsCollector
         endif
       endif
 
-      for idx in 0 .. childrenCnt
-        this._collectSymbolsFromLeftNode(node.symbolTable, children[idx])
+      for values item in children
+        this._collectSymbolsFromLeftNode(node.symbolTable, item)
       endfor
+
       node.symbolTable.leaveScope()
 
     elif opcode is AST_OPCODE_VARIABLE
@@ -597,8 +597,8 @@ class ASTSymbolsCollector
 
         # Import global symbol.
         if funcName is 'global'
-          for idx in 0 .. childrenCnt
-            symbolTable.importGlobal(children[idx].value)
+          for values item in children
+            symbolTable.importGlobal(item.value)
           endfor
           goOnIntoChildren = false
         endif
@@ -608,11 +608,14 @@ class ASTSymbolsCollector
       endif
 
       if goOnIntoChildren is true
-        for idx in 0 .. childrenCnt
-          this._collectSymbols(symbolTable, children[idx], isLeftNode)
+        for values item in children
+          this._collectSymbols(symbolTable, item, isLeftNode)
         endfor
       endif
     endif
+
+    # DEBUG ONLY
+    AST_ValidateNode(node)
   endmethod
 
   # ----------------------------------------------------------------------------
