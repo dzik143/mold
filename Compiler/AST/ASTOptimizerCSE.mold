@@ -87,9 +87,12 @@ class ASTOptimizerCSE
     opcode      = node.opcode
     value       = node.value
     goOn        = true
-    childrenCnt = node.childrenCnt
     children    = node.children
+    childrenCnt = len(children)
     rv          = node
+
+    # DEBUG ONLY
+    AST_ValidateNode(node)
 
     for values oneChild in children
       # TODO: Remove this hack.
@@ -173,7 +176,7 @@ class ASTOptimizerCSE
         mapOfExpressions = {}
       endif
 
-      if (node.childrenCnt > 0) and (node.hash is defined)
+      if (len(node.children) > 0) and (node.hash is defined)
         matchedNode = mapOfExpressions{node.hash}
 
         if matchedNode is node
@@ -325,6 +328,9 @@ class ASTOptimizerCSE
         endfor
       endif
     endif
+
+    # DEBUG ONLY
+    AST_ValidateNode(node)
   endmethod
 
   method processNode(node)

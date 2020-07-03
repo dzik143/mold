@@ -108,7 +108,7 @@ class ASTPrinterText
 
   method _printNode_paramsList(node, beginIdx, parenthesis)
     children    = node.children
-    childrenCnt = node.childrenCnt
+    childrenCnt = len(children)
 
     sep = ''
 
@@ -179,8 +179,8 @@ class ASTPrinterText
 
     opcode      = node.opcode
     value       = node.value
-    childrenCnt = node.childrenCnt
     children    = node.children
+    childrenCnt = len(children)
     lval        = children[0]
     rval        = children[1]
     x           = lval
@@ -212,9 +212,11 @@ class ASTPrinterText
       if typeof(node.value) is 'map'
         # Map has initializer list - just render it.
         print node.value
-      elif node.childrenCnt is 0
+
+      elif len(node.children) is 0
         # Empty map.
         print '{}'
+
       else
         # TODO: Handle non-imm maps.
         print '[map]'

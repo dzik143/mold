@@ -142,7 +142,8 @@ class ASTPreprocessor
         # One of built-in functions.
         # Verify number of passed parameters.
         paramsExpectedCnt = sysCallId // 0x1000
-        paramsPassedCnt   = node.childrenCnt
+        paramsPassedCnt   = len(node.children)
+
         if paramsExpectedCnt isnt paramsPassedCnt
           # TODO: Clean up this mess.
           # TODO: Better way to pass current line/column to error
@@ -160,7 +161,7 @@ class ASTPreprocessor
         # Treat first parameter as hard-coded integer syscall id.
         node.sysCallId = children[0].value
         newChildren    = []
-        childrenCnt    = node.childrenCnt
+        childrenCnt    = len(node.children)
 
         for idx in 1 .. childrenCnt
           newChildren[idx - 1] = children[idx]

@@ -41,7 +41,7 @@ class ASTOptimizerVCall
 
     opcode      = node.opcode
     children    = node.children
-    childrenCnt = node.childrenCnt
+    childrenCnt = len(children)
 
     if opcode is AST_OPCODE_VCALL
       # obj.foo(...)
