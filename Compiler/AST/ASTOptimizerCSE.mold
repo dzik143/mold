@@ -152,18 +152,19 @@ class ASTOptimizerCSE
         this._processNode(oneChild, mapOfExpressions, symbolTable)
       endfor
 
-    elif (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_VCALL)
+    elif ((opcode is AST_OPCODE_CALL) or
+          (opcode is AST_OPCODE_VCALL))
+
       # TODO: Use for values oneChild indexes childIdx loop.
-      for idx in 0 .. childrenCnt
-        AST_Hash(children[idx])
-        newNode = this._processNode(children[idx], mapOfExpressions, symbolTable)
-        if newNode isnt children[idx]
-          children[idx] = newNode
+      for indexes childIdx values childNode in children
+        AST_Hash(childNode)
+        newNode = this._processNode(childNode, mapOfExpressions, symbolTable)
+        if newNode isnt childNode
+          children[childIdx] = newNode
         endif
       endfor
 
     else
-
       # TODO: Review it.
       if ((opcode >= AST_OPCODE_FOR_VALUES_RANGE) and
           (opcode < AST_OPCODE_FOR_INDEXES_VALUES))
@@ -311,11 +312,10 @@ class ASTOptimizerCSE
       endif
 
       if goOn is true
-        # TODO: Use for values oneChild indexes childIdx loop.
-        for idx in 0 .. childrenCnt
-          newNode = this._processNode(children[idx], mapOfExpressions, symbolTable)
-          if newNode isnt children[idx]
-            children[idx] = newNode
+        for indexes childIdx values childNode in children
+          newNode = this._processNode(childNode, mapOfExpressions, symbolTable)
+          if newNode isnt childNode
+            children[childIdx] = newNode
           endif
         endfor
       endif
