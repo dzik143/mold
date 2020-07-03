@@ -424,7 +424,7 @@ class ASTTranslator
     opcode      = ast.opcode
     value       = ast.value
     children    = ast.children
-    childrenCnt = ast.childrenCnt
+    childrenCnt = len(children)
 
     this._debug('_evaluateNode: ' + str(opcode) + ', ' + str(value))
 
@@ -685,7 +685,7 @@ class ASTTranslator
   method _evaluateNodeCall(rv, ast)
     funcName      = ast.value
     children      = ast.children
-    childrenCnt   = ast.childrenCnt
+    childrenCnt   = len(children)
 
     # TODO: Handle in parser?
     # Is it really needed?
@@ -727,7 +727,7 @@ class ASTTranslator
   method _evaluateNodeInvokeMethod(rv, ast)
     methodName  = ast.value
     children    = ast.children
-    childrenCnt = ast.childrenCnt
+    childrenCnt = len(children)
 
     # Evaluate this and try to resolve static className
     # (compilation time) if possible.
@@ -798,7 +798,7 @@ class ASTTranslator
     opcode      = ast.opcode
     value       = ast.value
     children    = ast.children
-    childrenCnt = ast.childrenCnt
+    childrenCnt = len(children)
 
     this._debug('_executeNode: ' + str(opcode) + ', ' + str(value))
 
