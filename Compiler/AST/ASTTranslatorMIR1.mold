@@ -633,9 +633,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
     childrenCnt = len(children)
     varName     = this._evaluateNode(children[0])
 
-    # DEBUG ONLY
-    AST_ValidateNode(node)
-
     doneLabel    = this.symbolTable.createLabel()
     defaultLabel = this.symbolTable.createLabel()
     jmpTable     = []
@@ -705,9 +702,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
     codeAst     = children[0]
     rvName      = funcProto.rv
 
-    # DEBUG ONLY
-    AST_ValidateNode(funcProto)
-
     this.methodEmitted{funcProto.name} = true
 
     symbolTable = this.symbolTable
@@ -731,9 +725,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
     })
 
     # Translate function code.
-    # DEBUG ONLY
-    AST_ValidateNode(codeAst)
-
     for values item in codeAst.children
       this._executeNode(item)
     endfor

@@ -901,7 +901,3 @@ function AST_IsOkAsBox(node) -> rv
     rv = true
   endif
 endfunction
-
-function AST_ValidateNode(ast)
-  # TODO: Remove it.
-endfunction

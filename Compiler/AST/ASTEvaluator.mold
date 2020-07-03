@@ -177,9 +177,6 @@ class ASTEvaluator
     children    = node.children
     childrenCnt = len(children)
 
-    # DEBUG ONLY
-    AST_ValidateNode(node)
-
     #
     # Evaluate value.
     #
@@ -342,9 +339,6 @@ class ASTEvaluator
         this._processNode(valuesMap, childNode)
       endfor
     endif
-
-    # DEBUG ONLY
-    AST_ValidateNode(node)
   endmethod
 
   method processNode(node)

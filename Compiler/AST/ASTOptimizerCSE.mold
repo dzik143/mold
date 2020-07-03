@@ -91,9 +91,6 @@ class ASTOptimizerCSE
     childrenCnt = len(children)
     rv          = node
 
-    # DEBUG ONLY
-    AST_ValidateNode(node)
-
     for values oneChild in children
       # TODO: Remove this hack.
       oneChild.parent = node
@@ -325,9 +322,6 @@ class ASTOptimizerCSE
         endfor
       endif
     endif
-
-    # DEBUG ONLY
-    AST_ValidateNode(node)
   endmethod
 
   method processNode(node)

@@ -107,9 +107,6 @@ class ASTSymbolsCollector
     children    = node.children
     childrenCnt = len(children)
 
-    # DEBUG ONLY
-    AST_ValidateNode(node)
-
     # TODO: Remove it.
     # We use it to work-around problem with emitting [object] to
     # external source.ast file.
@@ -613,9 +610,6 @@ class ASTSymbolsCollector
         endfor
       endif
     endif
-
-    # DEBUG ONLY
-    AST_ValidateNode(node)
   endmethod
 
   # ----------------------------------------------------------------------------

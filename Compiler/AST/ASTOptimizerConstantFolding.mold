@@ -159,9 +159,6 @@ class ASTOptimizerConstantFolding
     y           = children[1]
     areArgsImm  = true
 
-    # DEBUG ONLY
-    AST_ValidateNode(node)
-
     if (opcode is AST_OPCODE_CALL) and (value is 'global')
       # Global import - do nothing.
 
@@ -444,9 +441,6 @@ class ASTOptimizerConstantFolding
         endif
       endif
     endif
-
-    # DEBUG ONLY
-    AST_ValidateNode(node)
   endmethod
 
   method processNodeUntilNotChanged(node) -> isAnyChangedDone

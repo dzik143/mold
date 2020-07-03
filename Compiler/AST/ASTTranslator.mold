@@ -439,8 +439,6 @@ class ASTTranslator
       die('error: node #' + str(ast.id) + ' is already translated (eval)')
     endif
 
-    AST_ValidateNode(ast)
-
     ast.isTranslated = true
 
     #
@@ -810,8 +808,6 @@ class ASTTranslator
       die('error: node #' + str(ast.id) + ' is already translated')
     endif
 
-    AST_ValidateNode(ast)
-
     ast.isTranslated = true
 
     #
@@ -827,9 +823,6 @@ class ASTTranslator
         'children': ast.children,
         'childrenCnt': len(ast.children)
       }
-
-      # DEBUG ONLY
-      AST_ValidateNode(funcProto)
 
       this.symbolTable = ast.symbolTable
       this.currentFunctionProto = funcProto
