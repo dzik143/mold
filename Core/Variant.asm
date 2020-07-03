@@ -3123,12 +3123,6 @@ __MOLD_ForDriver_IndexesAndValuesInArray:
 .arrayNextItem:
 
     ; ----------------------
-    ; Update index iterator
-    ; ----------------------
-
-    inc     [rdx + Variant_t.value]
-
-    ; ----------------------
     ; Update value iterator
     ; ----------------------
 
@@ -3145,6 +3139,12 @@ __MOLD_ForDriver_IndexesAndValuesInArray:
     push    rdx r8
     call    qword [rsp + 16]
     pop     r8 rdx
+
+    ; ----------------------
+    ; Update index iterator
+    ; ----------------------
+
+    inc     [rdx + Variant_t.value]
 
     ; ----------------
     ; Go to next pair
@@ -3180,7 +3180,9 @@ __MOLD_ForDriver_IndexesAndValuesInString:
     push    rsi
     push    r9
 
-    mov     [rdx + Variant_t.type], VARIANT_INTEGER ; idx.type   = integer
+    mov     [rdx + Variant_t.type], VARIANT_INTEGER ; idx.type  = integer
+    mov     [rdx + Variant_t.value], 0              ; idx.value = 0
+
     mov     [r8  + Variant_t.type], VARIANT_STRING  ; value.type = string
     mov     [r8  + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
     mov     [r8  + Variant_t.value], 0
@@ -3201,12 +3203,6 @@ __MOLD_ForDriver_IndexesAndValuesInString:
 .stringNextItem:
 
     ; ----------------------
-    ; Update index iterator
-    ; ----------------------
-
-    inc     [rdx + Variant_t.value]
-
-    ; ----------------------
     ; Update value iterator
     ; ----------------------
 
@@ -3223,6 +3219,12 @@ __MOLD_ForDriver_IndexesAndValuesInString:
     push    rdx r8
     call    qword [rsp + 16]
     pop     r8 rdx
+
+    ; ----------------------
+    ; Update index iterator
+    ; ----------------------
+
+    inc     [rdx + Variant_t.value]
 
     ; ----------------
     ; Go to next pair
