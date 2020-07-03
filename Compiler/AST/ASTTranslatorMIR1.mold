@@ -765,8 +765,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     # TODO: Clean up this mess.
     this.code.symbolTable = this.symbolTable
 
-    for idx in 0 .. len(this.arrayOfCalledMethods)
-      methodName = this.arrayOfCalledMethods[idx]
+    for values methodName in this.arrayOfCalledMethods
       if this.methodEmitted{methodName} isnt true
         die("error: object has no method '" + methodName + "'")
       endif
