@@ -380,6 +380,9 @@ class ASTTranslatorMIR0 extends ASTTranslator
     codeAst     = children[0]
     rvName      = funcProto.rv
 
+    # DEBUG ONLY
+    AST_ValidateNode(funcProto)
+
     code = this.code
 
     # TODO: Simplify it.
@@ -407,6 +410,9 @@ class ASTTranslatorMIR0 extends ASTTranslator
     # Translate code.
     codeNodes    = codeAst.children
     codeNodesCnt = codeAst.childrenCnt
+
+    # DEBUG ONLY
+    AST_ValidateNode(codeAst)
 
     for idx in 0 .. codeNodesCnt
       this._executeNode(codeNodes[idx])
