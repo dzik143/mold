@@ -501,7 +501,7 @@ function AST_IsImmWithValue(x, value) -> rv
 endfunction
 
 function AST_IsEmpty(x) -> rv
-  rv = x.childrenCnt is 0
+  rv = len(x.children) is 0
 endfunction
 
 function AST_IsImmOrVar(x) -> rv
@@ -539,7 +539,7 @@ function AST_HasSideEffects(node) -> rv
     rv          = false
     childIdx    = 0
     children    = node.children
-    childrenCnt = node.childrenCnt
+    childrenCnt = len(children)
 
     while (childIdx < childrenCnt) and (rv is false)
       rv       = AST_HasSideEffects(children[childIdx])
@@ -558,7 +558,7 @@ function AST_HashInternal(node, isCodeMode) -> rv
 
   opcode      = node.opcode
   children    = node.children
-  childrenCnt = node.childrenCnt
+  childrenCnt = len(children)
 
   if false #typeof(node.hash) is defined
     # Node already hashed - just use it.
@@ -755,7 +755,7 @@ function AST_GetDataType(node) -> rv
 
     else
       children    = node.children
-      childrenCnt = node.childrenCnt
+      childrenCnt = len(children)
 
       if AST_IsDataNode(node) is true
         rv = opcode
