@@ -1204,7 +1204,7 @@ class CodeGeneratorX64
         currentFrame = dst
         symbols      = currentFrame.symbols
         params       = currentFrame.params
-        paramsCnt    = currentFrame.paramsCnt
+        paramsCnt    = len(params)
 
         # Clean up this mess.
         this.symbols = symbols

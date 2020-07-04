@@ -308,8 +308,8 @@ class SymbolTable
         paramsCnt = paramsCnt - 1
       endif
 
-      if rv.proto.paramsCnt isnt paramsCnt
-        this._error("function '" + name + "' requires exactly " + str(rv.proto.paramsCnt) + ' parameters, but ' + str(paramsCnt) + ' were passed')
+      if len(rv.proto.params) isnt paramsCnt
+        this._error("function '" + name + "' requires exactly " + str(len(rv.proto.params)) + ' parameters, but ' + str(paramsCnt) + ' were passed')
       endif
     endif
   endmethod
