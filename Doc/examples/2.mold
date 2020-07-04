@@ -1,2 +1,50 @@
+# Duplicate item from one array to another.
+A[i] = B[j]
+
+# Swap items along two different arrays.
+# ???
+swap(A[i], B[j])
+
+swap A[i] with B[j]
+
+# Remove one item from the array.
+# The array size is decreased by one after the operation.
+delete A[i]
+remove A[i]
+
+# Clear one item already stored in the array.
+# The array *KEEPS* the size after the operation.
+A[i] = null
+
+# Remove element from one array and insert to another one.
+# Item does not exists in source array after the operation.
+# ????
+
+move(A[i], B[j]) # Tutaj ciagle trzeba sie zastanawiac, gdzie
+                 # jest cel a gdzie zrodlo
+
 move A[i] to B[j]
-copy A[i] to B[j]
+move from B[j] to A[i]
+move to A[i] from B[j]
+
+A[i] = delete B[j]
+A[i] = remove B[j]
+
+A[i] = B[j] delete
+A[i] = B[j] move
+A[i] = B[j] remove
+
+A[i] = B[j] with delete
+A[i] = B[j] with move
+A[i] = B[j] with remove
+
+A[i] = pull from B[j]
+A[i] = pull B[j]
+
+A[i] <-  B[j]
+A[i] <-- B[j]
+A[i] <== B[j]
+A[i] <<  B[j]
+A[i] <<< B[j]
+A[i] =:  B[j]
+A[i] :=  B[j]
