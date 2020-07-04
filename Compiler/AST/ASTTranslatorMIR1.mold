@@ -715,7 +715,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
       'symbols': this.symbolTable.exportSymbols(),
       'symbolTable': this.symbolTable,
       'params': params,
-      'paramsCnt': paramsCnt,
       'rv': rvName
     })
 

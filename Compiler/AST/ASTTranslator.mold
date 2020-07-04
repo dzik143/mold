@@ -320,7 +320,7 @@ class ASTTranslator
     this._debug('Globals emmited')
   endmethod
 
-  method _callSuper(rv, params, paramsCnt)
+  method _callSuper(rv, params, unusedParamsCnt)
     methodProto = this.currentFunctionProto
     classProto  = this.currentClassProto
 
@@ -339,20 +339,21 @@ class ASTTranslator
     elif methodProto.baseMethod is undefined
       this._error('class ' + classProto.baseName + ' has no constructor declared')
 
-    elif len(methodProto.params) isnt paramsCnt
-      this._error('base constructor requires exactly ' + str(len(methodProto.params)) + ' parameters, but ' + str(paramsCnt) + ' were passed')
+    elif len(methodProto.params) isnt len(params)
+      this._error('base constructor requires exactly ' + str(len(methodProto.params)) + ' parameters, but ' + str(len(params)) + ' were passed')
 
     else
       # Base constructor exists, inject this reference to call list.
       newParams = ['__mold_this']
-      for idx in 0 .. paramsCnt
-        newParams[idx + 1] = params[idx]
+
+      for indexes paramIdx values oneParam in params
+        newParams[paramIdx + 1] = oneParam
       endfor
 
       # TODO: Remove this fix.
       methodProto.isConstructor = true
 
-      this._call(rv, methodProto.baseMethod, newParams, paramsCnt + 1)
+      this._call(rv, methodProto.baseMethod, newParams, len(newParams))
     endif
   endmethod
 
@@ -598,6 +599,7 @@ class ASTTranslator
         if methodProto is defined
           params    = [rv]
           paramsCnt = len(methodProto.params) + 1
+
           this._verifyNumberOfParameters('constructor', paramsCnt, childrenCnt)
 
           for idx in 1 .. childrenCnt
@@ -818,7 +820,6 @@ class ASTTranslator
       funcProto = {
         'name': 'start',
         'params': [],
-        'paramsCnt': 0,
         'children': ast.children
       }
 
