@@ -1,0 +1,9 @@
+# https://stackoverflow.com/questions/3538156/file-i-o-in-every-programming-language
+# 1. Create a new text file called "fileio.txt"
+# 2. Write the first line "hello" to the text file.
+# 3. Append the second line "world" to the text file.
+# 4. Read the second line "world" into an input string.
+# 5. Print the input string to the console.
+
+f = access('fileio.txt', 'read')
+write to f values 'hello'

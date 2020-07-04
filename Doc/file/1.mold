@@ -1,0 +1,42 @@
+for values v in box
+endfor
+
+read f from 'test.bmp'
+  # BM Header.
+  f.popInt16(0x4d42)
+  f.popInt32(sizeOfFile)
+  f.popInt16(null)
+  f.popInt16(null)
+  f.popInt32(pixelsOffset)
+  
+  # DIB Header.
+  f.popInt32(biSize)
+  f.popInt32(biWidth)
+  f.popInt32(biHeight)
+  f.popInt16(biPlanes)
+  f.popInt16(biBitCount)
+  
+  # Pixels data.
+  f.goto(pixelsOffset)
+  f.popArrayInt32(data, biBitCount / 8 * biWidth * biHeight)
+endread
+
+write f to 'test.bmp'
+  # BM Header.
+  f.putInt16(0x4d42)
+  f.putInt32(sizeOfFile)
+  f.putInt16(null)
+  f.putInt16(null)
+  f.putInt32(pixelsOffset)
+  
+  # DIB Header.
+  f.putInt32(biSize)
+  f.putInt32(biWidth)
+  f.putInt32(biHeight)
+  f.putInt16(biPlanes)
+  f.putInt16(biBitCount)
+  
+  # Pixels data.
+  f.goto(pixelsOffset)
+  f.putArrayInt32(data, biBitCount / 8 * biWidth * biHeight)
+endread

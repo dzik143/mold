@@ -1,0 +1,69 @@
+read from 'image.bmp'
+  # BM Header
+  'BM'         
+  int32(sizeOfFile)
+  int16(null)          # resered
+  int16(null)          # reserved
+  int32(pixelsOffset)
+  
+  # DIB header.
+  int32(biSize)
+  int32(biWidth)
+  int32(biHeight)
+  int16(biPlanes)
+  int16(biBitCount)
+  
+  # Pixels data.
+  goto(pixelsOffset)
+  int32[biBitCount / 8 * biWidth * biHeight](data)
+endread
+
+struct BMPFile
+  # BM Header
+  'BM'
+  @int32 sizeOfFile 
+  @int16 null 
+  @int16 null          
+  @int32 pixelsOffset 
+  
+  # DIB header.
+  @int32 biSize          enum(12, 64, 40, 52, 56, 108, 124)
+  @int32 biWidth         range(1, 30000)
+  @int32 biHeight        range(1, 30000)
+  @int16 biPlanes        range(1, 8) optional
+  @int16 biBitCount      enum(8, 16, 24, 32) optional
+  @int32 biCompression   optional
+  @int32 biSizeImage     optional
+  @int32 biXPelsPerMeter optional
+  @int32 biYPelsPerMeter optional
+  @int32 biClrUsed       optional
+  @int8  biClrImprtant   optional
+  @int8  biClrRotation   optional
+
+  # Pixels data.
+  numberOfPixels = biBitCount / 8 * biWidth * biHeight
+
+  @int32[numberOfPixels] pixels
+endstruct
+
+
+
+read from 'image.bmp' as f
+  # BM Header
+  @int16(magic) 
+  @int32(sizeOfFile)
+  @int16(null)          # resered
+  @int16(null)          # reserved
+  @int32(pixelsOffset)
+  
+  # DIB header.
+  @int32(biSize)
+  @int32(biWidth)
+  @int32(biHeight)
+  @int16(biPlanes)
+  @int16(biBitCount)
+  
+  # Pixels data.
+  @goto(pixelsOffset)
+  @int32[biBitCount / 8 * biWidth * biHeight](data)
+endread

@@ -28,6 +28,11 @@ endfor
 for idx in 0 .. 10 reverse
 endfor
 
+# Iterate over numbers range.
+# 0, 1, 2, 3, ..., 10
+for idx = 0 .. 10 inclusive
+endfor
+
 # ------------------------------------------------------------------------------
 # Iterate over boxes (containers, which hold another items inside)
 # When to use:

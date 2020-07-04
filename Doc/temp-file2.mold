@@ -1,0 +1,43 @@
+read from <source> to <destination>
+  list of items to read
+endread
+
+read from f to buf
+  properties size, createtime, accesstime, rights
+  values int8, int16, int32, int64, float32, float64
+  content
+  line
+  ...
+endread
+
+# Example: Read whole file to one big string.
+# c = 'content of the file'
+read from f content to c
+
+# Example: Read file size and createtime.
+# stats = {
+#   size: 123,
+#   createtime 20191001123198
+# }
+read from f properties size, createtime to stats
+
+# Example: Read one byte.
+# c = <one byte>
+read from f values int8 to c
+
+# Example: Read many binary values at one call.
+# buf = [value1, value2, value3]
+read from f values int8, int32, int32 to buf
+
+# Example: Read many binary values at one call with aliases.
+# buf = {
+#   x: value1,
+#   y: value2,
+#   z: value3
+# }                                               
+read from f values int8 as x, int32 as y, int32 as z to buf
+
+# Example: Read single text line.                 
+# l = 'string with one line'
+read from f line to l
+                                                  

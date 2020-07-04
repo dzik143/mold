@@ -17,7 +17,7 @@ FILES *.HGL;
   GeneralFLAGS 16
   StringFLAGS  12
   colorkeywords on
-  
+
   BracketPairs macro endmacro files end
   Keywords1 Keywords1,default,files,macro,endmacro,end,generalflags,stringflags
   Keywords1 octonumflags,octqnumflags,octbnumflags,autowrap,leftmargin,
@@ -93,9 +93,9 @@ FILES *.log;
   GeneralFLAGS 0
   StringFLAGS  255
   colorkeywords on
-  
+
   BracketPairs [ ]
-                    
+
   RegKeywords color green      ^\[[^\]\[]+\]
   RegKeywords color lightred   \[[^\]\[]+\]
 
@@ -103,11 +103,11 @@ FILES *.log;
   RegKeywords color darkgray   skipped
   RegKeywords color lightred   error
   RegKeywords color yellow     warning
-  RegKeywords color yellow     notice  
+  RegKeywords color yellow     notice
   RegKeywords color lightred   undefined
   RegKeywords color darkgray   debug:
-  RegKeywords color white      info: 
-  
+  RegKeywords color white      info:
+
 END
 
 
@@ -278,20 +278,20 @@ END
 ;様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様
 FILES qcbuild.src
  CommentString #
- Keywords2 type, title, include, libs, cxxsrc, csrc, isrc, defines, depends, 
+ Keywords2 type, title, include, libs, cxxsrc, csrc, isrc, defines, depends,
  Keywords2 desc, purpose, license, author, qt_headers, qt_forms, qt_modules
  Keywords2 copyright, prebuild_progs, prebuild_libs
  Keywords3 .section, .endsection
 END
 
 ;様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様
-; *.SC files   
+; *.SC files
 ;様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様
-FILES *.sc         
+FILES *.sc
  CommentString #
- 
+
  StringFlags 255
- 
+
 ; regkeywords color lightred %\d,%\D[^%]*%,%
 
  regkeywords color lightred %\d,%\D[^%]*%,%
@@ -303,7 +303,7 @@ FILES *.sc
 
  Keywords2 RemoveVarFromUrl, RegisterKeyword, IndexPostData
  Keywords2 UrlPrefix, ThumbUrlPrefix, SetCookie, DownloadTool
- 
+
  Keywords1 Goto, GetTagText, ParseList, DumpUrl, Exit, GetTagTextEx, GetTagData
  Keywords1 ParseOrdTable, ParsePrefs, StrExportWord, DumpVar, ScanVar, Move
  Keywords1 ParseDoubleList, ParsePrefsUrl
@@ -311,9 +311,9 @@ FILES *.sc
 END
 
 ;様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様
-; *.lst files   
+; *.lst files
 ;様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様
-FILES *.lst         
+FILES *.lst
  CommentString #
 END
 
@@ -359,7 +359,7 @@ FILES *.ASM;*.inc;*.S??;*.A86;*.EQU;*.s
 
   RegKeywords Color green \bjn?([abcelgopzs]|[ablg]e|e?cxz|mp|po)\b
   RegKeywords Color green \bcmovn?([abcelgopzs]|[ablg]e|e?cxz|mp|po)\b
-  
+
   RegKeywords Color green \brepn?[ez]?\b, \bmov([sz]x)?\b, \bl[defgs]s\b
   RegKeywords Color green \b(cmp|sto|lod|mov|sca)s[bwd]\b
   RegKeywords Color green \br[co][lr]\b, \bsh[rl]\b, \bi?retd?\b
@@ -490,7 +490,7 @@ FILES *.py
   Keywords1 True, from, nonlocal, while
   Keywords1 and, del, global, not, with
   Keywords1 as, elif, if, or, yield
-  Keywords1 assert, else, import, pass 
+  Keywords1 assert, else, import, pass
   Keywords1 break, except, in, raise
   Keywords2 self
   Keywords3 def
@@ -1194,7 +1194,7 @@ END
 ;様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様
 ; TPL Files
 ;様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様
-FILES *.tpl                                            
+FILES *.tpl
  Keywords1 A,ABBR,ACRONYM,ADDRESS,APPLET,AREA,B,BASE,BASEFONT,BDO,BIG,BLOCKQUOTE,BODY
  Keywords1 BR,BUTTON,CAPTION,CENTER,CITE,CODE,COL,COLGROUP,DD,DEL,DFN,DIR,DIV,DL,DT,EM
  Keywords1 FIELDSET,FONT,FORM,FRAME,FRAMESET,H1,H2,H3,H4,H5,H6,HEAD,HR,HTML,I,IFRAME,IMG
@@ -1217,7 +1217,7 @@ FILES *.tpl
  RegKeyWords color lightred class[a-z]*,
  RegKeywords color lightgreen [a-z]*frame[a-z]*,margin[a-z]+,h[0-9],
  Comment <!-- -->
- 
+
  MultiLineComment 1
  Macro 1
     GoToX 0
@@ -1246,16 +1246,20 @@ FILES *.JS;*.PAC
   Keywords1 language,if,else,var,function,return, for, of, in
   Keywords1 break, continue, case, switch, while
   Keywords2 prompt,window,alert,null,location,{window,{,}
-  Keywords2 open,close,document,target,write,writeln,
+  Keywords2 document,target,write,writeln,
   Keywords2 onmousedown,captureevents,click,event,layers
   Keywords2 button,mousedown,true,false,which
 
-  Keywords1 class, extends, let, const
+  Keywords1 class, extends, let, const, static
+  Keywords1 async, await, try, catch, finally, throw
 
-  RegKeywords COLOR Yellow this.[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*
-  RegKeywords COLOR Yellow this
+  RegKeywords COLOR Yellow   this.[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*
+  RegKeywords COLOR Yellow   this
+  RegKeywords COLOR LightRed `.*`
 
-  RegKeywords COLOR LightMagenta [a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*:
+  RegKeywords COLOR LightMagenta  [a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*:
+  RegKeywords COLOR LightMagenta '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff -/\\]*':
+  RegKeywords COLOR LightMagenta "[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff -/\\]*":
 
   Macro 1
     GoToX 0
@@ -1295,20 +1299,20 @@ FILES *.coffee
 END
 
 ;様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様
-; .htaccess    
+; .htaccess
 ;様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様
 FILES .htaccess
   CommentString #
 ;  GeneralFLAGS 16
   GeneralFLAGS  465
   StringFLAGS   3
-  Keywords1 
+  Keywords1
   Keywords2 RewriteEngine, RewriteRule
   Keywords2 order, deny, allow
-  Keywords3 
+  Keywords3
   RegKeywords COLOR Yellow \@[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*
   RegKeywords COLOR Yellow \@
-  RegKeywords COLOR lightmagenta [a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*\:  
+  RegKeywords COLOR lightmagenta [a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*\:
 END
 
 ;様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様
@@ -1328,7 +1332,7 @@ FILES *.rb; *.yml
   Keywords2 button,mousedown,true,false,which
   RegKeywords COLOR Yellow \@[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*
   RegKeywords COLOR Yellow \@
-  RegKeywords COLOR lightmagenta [a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*\:  
+  RegKeywords COLOR lightmagenta [a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*\:
 END
 
 ;様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様様
@@ -1832,7 +1836,7 @@ FILES *.CSS
    RegKeywords color white      \$\([\w]+\++?\)
    RegKeywords color lightgray \$\([\w]*?\)
    RegKeywords color darkgray  \$\([\w-]*?\)
-   
+
    KeyWords COLOR lightcyan aqua
    KeyWords COLOR black black
    KeyWords COLOR lightblue blue
@@ -2086,10 +2090,11 @@ FILES *.mold;*.mold.test;mold.tlt;*.mold.rules
 ;  GeneralFLAGS  467
   GeneralFLAGS 80
   StringFLAGS   3
-  
+
 ; Types
   keywords1 undefined, defined, integer, float, string, array, map, object
-  keywords1 increase, decrease
+  keywords1 increase, decrease, o, inclusive
+  keywords1 signal, slot, endslot, emit, connect, disconnect
 
   keywords1 print, die, exit, str, strescape, len
   keywords1 true, false
@@ -2112,13 +2117,19 @@ FILES *.mold;*.mold.test;mold.tlt;*.mold.rules
   keywords1 typeof, const
   keywords1 mod
   keywords3 system, stdin, stdout
-  
-  keywords1 from, select, pull, where, limit, order, by, desc, count
-  keywords1 new, delete, range, out of
+
+  keywords1 from, select, where, limit, order, by, desc, count
+  keywords1 new, range, out of
   keywords1 values, keys, indexes, properties, reverse
-  keywords1 is storing, isnt storing, inside, 
+  keywords1 is storing, isnt storing, inside,
   keywords1 write, read, endwrite, endread, values, accept, file, content, as
   keywords1 exception, ~, join
+
+  keywords1 select, move
+  keywords1 append, insert
+  keywords1 delete
+
+  keywords1 macro, endmacro
 
   RegKeywords COLOR green \@[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*
   RegKeywords COLOR green \@
@@ -2127,7 +2138,7 @@ FILES *.mold;*.mold.test;mold.tlt;*.mold.rules
 ;  RegKeywords COLOR green int8, int16, int32, int64, float32, float64
 
   RegKeywords COLOR darkgray \$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*
-  
+
 ;regkeywords number
   regkeywords color lightcyan (?<!\w)\.\d+([eE][+-]?\d+)?[fFlL]?\b,\b\d+\.(?!\w)
   regkeywords color lightcyan \b(\d+[eE][+-]?\d+|\d+\.\d+([eE][+-]?\d+)?|0[xX]([0-9A-Fa-f]+\.?|[0-9A-Fa-f]*\.[0-9A-Fa-f]+)[pP][+-]?\d+)[fFlL]?\b
@@ -2137,7 +2148,7 @@ FILES *.mold;*.mold.test;mold.tlt;*.mold.rules
 ;TODO: multiline strings
 ;regkeywords string
   regkeywords color lightmagenta L(?=[\'\"])
-  
+
 END
 
 FILES *.mold.test
@@ -2163,7 +2174,7 @@ FILES *.mold.test
   regkeywords color green TEST
   regkeywords color green EXPECTED_OUTPUT
   regkeywords color green EXPECTED_ERROR
-  
+
 ;regkeywords number
   regkeywords color lightcyan (?<!\w)\.\d+([eE][+-]?\d+)?[fFlL]?\b,\b\d+\.(?!\w)
   regkeywords color lightcyan \b(\d+[eE][+-]?\d+|\d+\.\d+([eE][+-]?\d+)?|0[xX]([0-9A-Fa-f]+\.?|[0-9A-Fa-f]*\.[0-9A-Fa-f]+)[pP][+-]?\d+)[fFlL]?\b
@@ -2187,7 +2198,7 @@ FILES *.par
 ;  GeneralFLAGS  467
   GeneralFLAGS 80
   StringFLAGS   3
-  
+
   keywords1 print, die, exit, str, strescape, len
   keywords1 true, false
   keywords1 integer, boolean, float, double
@@ -2244,7 +2255,7 @@ FILES *.mold.test
   regkeywords color green TEST
   regkeywords color green EXPECTED_OUTPUT
   regkeywords color green EXPECTED_ERROR
-  
+
 ;regkeywords number
   regkeywords color lightcyan (?<!\w)\.\d+([eE][+-]?\d+)?[fFlL]?\b,\b\d+\.(?!\w)
   regkeywords color lightcyan \b(\d+[eE][+-]?\d+|\d+\.\d+([eE][+-]?\d+)?|0[xX]([0-9A-Fa-f]+\.?|[0-9A-Fa-f]*\.[0-9A-Fa-f]+)[pP][+-]?\d+)[fFlL]?\b

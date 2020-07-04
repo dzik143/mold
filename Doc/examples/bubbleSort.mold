@@ -1,0 +1,17 @@
+# https://pl.wikipedia.org/wiki/Sortowanie_b%C4%85belkowe
+function bubbleSort(A)
+  n    = len(A)
+  goOn = true
+
+  while goOn is true
+    goOn = false
+    for i = 1 .. n-1 inclusive
+      # if this pair is out of order
+      if A[i-1] > A[i]
+        # swap them and remember something changed
+        swap(A[i-1], A[i])
+        goOn = true
+      endif
+    endfor
+  endwhile
+endfunction

@@ -1,0 +1,72 @@
+# Typical file tasks:
+# -------------------
+
+# 1. Load whole file at-once:
+# - as one-big string,
+# - as array of bytes (binary blob),
+# - as array of integers,
+# - as array of floats,
+# - as complex struct,
+# - as array of complex structs.
+
+read from 'test.txt' content data
+
+#
+# 2. Read whole file step-by-step:
+# - byte-by-byte,
+# - char-by-char,
+# - line-by-line,
+# - chunk-by-chunk,
+# - complex struct-by-struct.
+
+read from 'test.txt' content l by line
+endread
+
+read from 'test.txt' content c by int8
+endread
+
+read from 'test.txt' content c by char('utf8')
+endread
+
+#
+# 3. Random access:
+# - open/close file,
+# - set/get pointer,
+# - read/write/eat one byte,
+# - read/write/eat one char,
+# - read/write/eat one line,
+# - read/write/eat one value as text,
+# - read-write/eat one value as binary.
+
+# Open file
+f = open('test.txt')
+
+# Read some values from opened file.
+read from f 
+  values int32 x, int64 y, float64 z
+endread
+
+# Close file
+close(f)
+
+# 4. Other:
+# - open modes (read, write),
+# - create file,
+# - delete file,
+# - truncate file,
+# - append file,
+# - check does file exist,
+# - get file stats (createtime, size, etc.).
+
+read from ...
+write to ...
+
+read from 'test.txt'
+  properties createtime, accesstime, size to ct, at, fsize
+  values int32, float64, int64 to x, y, z
+endread  
+
+read from 'test.txt'
+  properties createtime, accesstime, size to ct, at, fsize
+  values x, y, z
+endread  

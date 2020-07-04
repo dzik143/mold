@@ -1,0 +1,2 @@
+move A[i] to B[j]
+copy A[i] to B[j]

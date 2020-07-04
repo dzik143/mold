@@ -1,0 +1,58 @@
+# https://en.wikipedia.org/wiki/Merge_sort
+function mergeSort(m) -> rv
+  if len(m) <= 1
+    # Base case. A list of zero or one elements is sorted, by definition.
+    # Just return the same array as is.
+    rv = m
+
+  else
+    # Recursive case. First, divide the list into equal-sized sublists
+    # consisting of the first half and second half of the list.
+    # This assumes lists start at index 0.
+    left  = []
+    right = []
+
+    for values x indexes i in m
+      if i < len(m) / 2
+        left.push(x)
+      else
+        right.push(x)
+      endif
+    endfor
+
+    # Recursively sort both sublists.
+    left  = mergeSort(left)
+    right = mergeSort(right)
+
+    # Then merge the now-sorted sublists.
+    rv = merge(left, right)
+  endif
+endfunction
+
+# In this example, the merge function merges the left and right sublists.
+function merge(left, right) -> rv
+  rv = []
+
+  while left, right arent empty
+    if left.first <= right.first
+      rv.push(left.first)
+      left = rest(left)
+
+    else
+      rv.push(first.right)
+      right = rest(right)
+    endif
+
+    # Either left or right may have elements left; consume them.
+    # (Only one of the following loops will actually be entered.)
+    while left isnt empty
+      rv.push(left.first)
+      left = rest(left)
+    endwhile
+
+    while right isnt empty
+      rv.push(right.first)
+      rv = rest(right)
+    endwhile
+  endwhile
+endfunction

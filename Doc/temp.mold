@@ -1,0 +1,8 @@
+read from 'test.txt' values x, y, z
+
+
+read from file('test.txt') values x, y, z
+
+f = file('test.txt', 'w')
+
+read from f values x, y, z

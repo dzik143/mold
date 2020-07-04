@@ -1,0 +1,47 @@
+# ------------------------------------------------------------------------------
+# Relative indexes.
+# When to use:
+# - We want point some item(s), but we *DO NOT* known its index(es).
+# ------------------------------------------------------------------------------
+
+x[@last]        - the last item in the array            (lval, rval)
+x[@first]       - the first item in the array           (lval, rval)
+x[@random]      - random item from the array            (lval, rval)
+x[@middle]      - item just in-the-half of array        (lval, rval)
+
+x[@afterLast]   - placeholder for new item at the end   (lval)
+x[@beforeFirst] - placeholder for new item at the begin (lval)
+
+x[@all]         - all items in the array                (lval, rval)
+x[@any]         - at least one item in the array              (rval)
+
+x[@max]         - the maximum item in the array               (rval)
+x[@min]         - the minimum item in the array               (rval)
+
+# Example: We need to read values from the array.
+print x[@first]  # Print the first item
+print x[@last]   # Print the last item
+print x[@random] # Print item from random position
+print x[@max]    # Print the maximum value stored in the array
+print x[@min]    # Print the minimum value stored in the array
+
+# Example: We need to modify values already stored in the array.
+x[@first]  = 10  # Modify the first item
+x[@last]   = 20  # Modify the last item
+x[@random] = 30  # Modify item at the random position
+x[@all]    = 0   # Modify all items at once
+
+# Example: We need to insert new items to the existing array.
+x[@afterLast]    = 40 # Push new value at the end
+x[@beforeFirst]  = 50 # Push new value at the begin
+
+# Example: We need to check do all items in the array match our criteria.
+if x[@all] < 5
+  print 'All items in the array x are below five'
+endif
+
+# Example: We need to check is there at least *ONE* item that match
+# our criteria.
+if x[@any] isnt 0
+  print 'There is at least one non-zero element in the array x'
+endif

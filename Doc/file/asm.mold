@@ -1,0 +1,38 @@
+inputPath = 'input.asm'
+goOn      = true
+
+while goOn is true
+  read from inputPath 
+    linetoken
+  endread
+
+  if token is undefined
+    # End of file.
+    goOn = false
+
+  elif labelOrOpcode[len(labelOrOpcode) - 1] is ':'
+    # Label
+
+  else
+    # Opcode  
+  endif
+  
+  # Match end of line character.
+  read from inputPath
+    @eol
+  endread
+endwhile
+
+
+################################################################################
+
+read f from 'source.asm';
+  while f.eof() is false
+    line   = f.readLine()
+    tokens = line.split(', ')    
+  endwhile  
+endread
+
+access file('source.asm') as f
+
+endaccess
