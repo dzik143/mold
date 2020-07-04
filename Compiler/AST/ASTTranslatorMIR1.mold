@@ -145,11 +145,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
     for idx in 0 .. paramsCnt
       item        = this.stack.peekN(paramsCnt - idx)
       params[idx] = item
-
-      # TODO: Is it really needed at translation stage?
-      #this.symbolTable.lookup(item)
-      # TODO: Review it.
-      #this.symbolTable.releaseTempVar(item)
     endfor
 
     this.stack.eatN(paramsCnt)
