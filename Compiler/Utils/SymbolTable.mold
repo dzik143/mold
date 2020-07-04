@@ -340,20 +340,6 @@ class SymbolTable
     endif
   endmethod
 
-/*
-  TODO: Is it still needed?
-  method lookupMethod(className, methodName, paramsCnt) -> rv
-    rv = this.lookupClass(className).proto.vtable{methodName}
-
-    if rv is undefined
-      this._error("class '" + className + "' has no method '" + methodName + "'")
-
-    elif rv.paramsCnt isnt paramsCnt
-      this._error("method '" + methodName + "' requires exactly " + str(rv.paramsCnt) + ' parameters, but ' + str(paramsCnt) + ' were passed')
-    endif
-  endmethod
-*/
-
   # ----------------------------------------------------------------------------
   #                               Variable helper
   # ----------------------------------------------------------------------------

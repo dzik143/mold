@@ -199,10 +199,9 @@ class ASTSymbolsCollector
       value     = node.value
       params    = value.parameters
 
-      funcProto.params    = params
-      # TODO: funcProto.paramsCnt = len(params)
-      funcProto.name      = value.name
-      funcProto.rv        = value.rv
+      funcProto.params = params
+      funcProto.name   = value.name
+      funcProto.rv     = value.rv
 
       if node.fullName is defined
         funcName = node.fullName
