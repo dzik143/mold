@@ -374,7 +374,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
     this._debug('Going to emit function body "' + str(funcName) + '"')
 
     params      = funcProto.params
-    paramsCnt   = funcProto.paramsCnt
+    paramsCnt   = len(funcProto.params)
     children    = funcProto.children
     childrenCnt = len(children)
     codeAst     = children[0]

@@ -339,8 +339,8 @@ class ASTTranslator
     elif methodProto.baseMethod is undefined
       this._error('class ' + classProto.baseName + ' has no constructor declared')
 
-    elif methodProto.paramsCnt isnt paramsCnt
-      this._error('base constructor requires exactly ' + str(methodProto.paramsCnt) + ' parameters, but ' + str(paramsCnt) + ' were passed')
+    elif len(methodProto.params) isnt paramsCnt
+      this._error('base constructor requires exactly ' + str(len(methodProto.params)) + ' parameters, but ' + str(paramsCnt) + ' were passed')
 
     else
       # Base constructor exists, inject this reference to call list.
@@ -596,8 +596,8 @@ class ASTTranslator
         methodProto = classProto.vtable.constructor
 
         if methodProto is defined
-          params      = [rv]
-          paramsCnt   = methodProto.paramsCnt + 1
+          params    = [rv]
+          paramsCnt = len(methodProto.params) + 1
           this._verifyNumberOfParameters('constructor', paramsCnt, childrenCnt)
 
           for idx in 1 .. childrenCnt

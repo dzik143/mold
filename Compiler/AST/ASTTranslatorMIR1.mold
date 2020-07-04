@@ -696,7 +696,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
   method _emitFunctionBody(funcName, funcProto)
     params      = funcProto.params
-    paramsCnt   = funcProto.paramsCnt
+    paramsCnt   = len(funcProto.params)
     children    = funcProto.children
     childrenCnt = len(children)
     codeAst     = children[0]

@@ -163,7 +163,7 @@ class ASTSymbolsCollector
 
         if opcode is AST_OPCODE_CLASS_METHOD
           methodName      = child.name
-          methodParamsCnt = child.paramsCnt
+          methodParamsCnt = len(child.params)
           methodFullName  = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
 
           child.fullName   = methodFullName
@@ -200,7 +200,7 @@ class ASTSymbolsCollector
       params    = value.parameters
 
       funcProto.params    = params
-      funcProto.paramsCnt = len(params)
+      # TODO: funcProto.paramsCnt = len(params)
       funcProto.name      = value.name
       funcProto.rv        = value.rv
 
@@ -230,9 +230,8 @@ class ASTSymbolsCollector
           paramShift = 1
         endif
 
-        for idx in 0 .. funcProto.paramsCnt
-          paramName = funcProto.params[idx]
-          nodeBody.symbolTable.insertParam(paramName, paramShift + idx)
+        for indexes paramIdx values paramName in funcProto.params
+          nodeBody.symbolTable.insertParam(paramName, paramShift + paramIdx)
 
           # TODO: Handle non-variant parameters.
           nodeBody.symbolTable.assignType(paramName, -1)

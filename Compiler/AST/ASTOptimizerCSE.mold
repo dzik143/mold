@@ -135,8 +135,8 @@ class ASTOptimizerCSE
       # TODO: Review it.
       # This is fix for:
       #  rv = values[name]
-      #  while values['parent'] is defined
-      #  values = values['parent']
+      #  while values.parent is defined
+      #  values = values.parent]
       #  rv = values[name]
       # endwhile
       for values oneChild in children

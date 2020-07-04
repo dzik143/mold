@@ -118,7 +118,6 @@ class ASTOptimizerInline
 
     else
       params     = functionProto.params
-      paramsCnt  = functionProto.paramsCnt
       namePrefix = '__inline' + str(callNode.id) + '_'
 
       bodyNode    = functionProto.children[0]
@@ -276,8 +275,7 @@ class ASTOptimizerInline
             (childNode.opcode is AST_OPCODE_VCALL))
 
         # foo()
-        callParams    = childNode.children
-        callParamsCnt = len(callParams)
+        callParams = childNode.children
 
         # Resolve function calls in parameters list.
         for values oneParam in callParams
