@@ -26,6 +26,8 @@
 @EOL   '\r\n'+;
 @IDENT 'A-Za-z_' 'A-Za-z0-9_'* ;
 
+@SELECTOR '@' 'A-Za-z'* ;
+
 @STRING              '"' !'"\r\n'* '"'    | '\'' !'\'\r\n'* '\'' ;
 @UNTERMINATED_STRING '"' !'"'*     '\r\n' | '\'' !'\''*     '\r\n' ;
 
@@ -136,8 +138,8 @@ parameter_list
                                        @@ = @1
                                     *]
 
-  | @EOL parameter_list            [* @@ = @2 *]
-  | @IDENT                         [* @@ = [@1] *]
+  | @EOL parameter_list             [* @@ = @2 *]
+  | @IDENT                          [* @@ = [@1] *]
   | @EOL
   ;
 
@@ -183,8 +185,8 @@ map_key : string =AST_DATA_STRING;
 
 // TODO: Handle strings and bool too.
 imm_list
-  : imm_list ',' expr_imm    [* @1[len(@1)] = @3
-                                @@ = @1 *]
+  : imm_list ',' expr_imm      [* @1[len(@1)] = @3
+                                  @@ = @1 *]
 
   | imm_list ',' @EOL expr_imm [* @1[len(@1)] = @4
                                   @@ = @1 *]
@@ -423,9 +425,10 @@ stmt_while:
 // -----------------------------------------------------------------------------
 
 reference
-  : expr '[' expr ']' =AST_OPCODE_REFERENCE_BY_INDEX // x[1234]
-  | expr '{' expr '}' =AST_OPCODE_REFERENCE_BY_KEY   // x{'key'}
-  | expr '.' member   =AST_OPCODE_REFERENCE_BY_KEY   // x.property
+  : expr '[' expr ']'     =AST_OPCODE_REFERENCE_BY_INDEX // x[1234]
+  | expr '[' selector ']' =AST_OPCODE_REFERENCE_BY_INDEX // x[@selector]
+  | expr '{' expr '}'     =AST_OPCODE_REFERENCE_BY_KEY   // x{'key'}
+  | expr '.' member       =AST_OPCODE_REFERENCE_BY_KEY   // x.property
   ;
 
 // -----------------------------------------------------------------------------
@@ -473,8 +476,9 @@ imm_array
 //                                Basic leafs
 // -----------------------------------------------------------------------------
 
-var    : @IDENT =AST_OPCODE_VARIABLE;
-member : @IDENT =AST_DATA_STRING;
+selector : @SELECTOR =AST_DATA_SELECTOR;
+var      : @IDENT    =AST_OPCODE_VARIABLE;
+member   : @IDENT    =AST_DATA_STRING;
 
 expr_imm
   : expr_imm '+'  expr_imm [* @@ = @1 + @3 *]

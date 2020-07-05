@@ -18,12 +18,22 @@ UNRELEASED:
       const SOME_CONST3 = true
       const SOME_CONST4 = 3.14
 
-    - Distinguish reference by index (integer) and key (string):
+    - Distinguish reference by index (integer) and by key (string):
       x = [1,2,3,4]
       print x[0]
 
       y = {'key': 1234}
       print y{'key'}
+
+    - Implemented relative array indexes (@selectors):
+
+      x[@last]        - the last item in the array            (lval, rval)
+      x[@first]       - the first item in the array           (lval, rval)
+      x[@random]      - random item from the array            (lval, rval)
+      x[@center]      - item just in-the-half of array        (lval, rval)
+
+      x[@afterLast]   - placeholder for new item at the end   (lval)
+      x[@beforeFirst] - placeholder for new item at the begin (lval)
 
 0.1.191126 (released on 2019-11-26)
 -----------------------------------
