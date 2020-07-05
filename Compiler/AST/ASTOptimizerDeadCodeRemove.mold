@@ -35,7 +35,7 @@ class ASTOptimizerDeadCodeRemove
 
   method _removeNode(node)
     global AST_OPCODE_NOP
-    this._debug('Remove node #' + str(node.id))
+    this._debug('Remove node #' ~ str(node.id))
     node.opcode      = AST_OPCODE_NOP
     node.children    = []
     #node._TODO_childrenCnt = 0
@@ -44,7 +44,7 @@ class ASTOptimizerDeadCodeRemove
   method _moveNode(dst, src)
     global AST_OPCODE_NOP
     # TODO: Optimize it?
-    this._debug('Replacing node #' + str(dst.id) + ' by #' + str(src.id))
+    this._debug('Replacing node #' ~ str(dst.id) ~ ' by #' ~ str(src.id))
     dst.id          = src.id
     dst.opcode      = src.opcode
     dst.children    = src.children
@@ -131,18 +131,18 @@ class ASTOptimizerDeadCodeRemove
 
     if (opcode is AST_OPCODE_FOR_VALUES_RANGE) and (AST_IsEmpty(children[4]) is true)
       # empty for
-      this._debug('Empty for loop at node #' + str(node.id))
+      this._debug('Empty for loop at node #' ~ str(node.id))
       removeNode = true
 
     elif opcode is AST_OPCODE_WHILE
       if AST_IsEmpty(children[1]) is true
         # empty while
-        this._debug('Empty while loop at node #' + str(node.id))
+        this._debug('Empty while loop at node #' ~ str(node.id))
         removeNode = true
 
       elif AST_IsImmWithValue(children[0], false) is true
         # while false - never executed
-        this._debug('While false {} at node #' + str(node.id))
+        this._debug('While false {} at node #' ~ str(node.id))
         removeNode = true
       endif
 
@@ -161,20 +161,20 @@ class ASTOptimizerDeadCodeRemove
       if childrenCnt is 3
         if AST_IsEmpty(nodeElse) is true
           # if cond {...} else {} - empty else branch.
-          this._debug('Remove empty else node #' + str(nodeElse.id))
+          this._debug('Remove empty else node #' ~ str(nodeElse.id))
           node.children = [nodeCond, nodeBody]
           childrenCnt   = 2
 
           if AST_IsEmpty(nodeBody) is true
             # if cond {} else {} - both branches empty.
-            this._debug('Remove empty if body node #' + str(nodeBody.id))
+            this._debug('Remove empty if body node #' ~ str(nodeBody.id))
             removeNode = true
           endif
 
         elif AST_IsEmpty(nodeBody) is true
           # if cond {} else {...} - empty body, but else exists.
           # Invert condition.
-          this._debug('Invert condition at if node #' + str(node.id))
+          this._debug('Invert condition at if node #' ~ str(node.id))
 
           AST_InvertBoolean(nodeCond)
 
@@ -186,7 +186,7 @@ class ASTOptimizerDeadCodeRemove
 
       elif AST_IsEmpty(nodeBody) is true
         # if cond {}
-        this._debug('Empty if at node #' + str(node.id))
+        this._debug('Empty if at node #' ~ str(node.id))
         removeNode = true
       endif
 
@@ -200,17 +200,17 @@ class ASTOptimizerDeadCodeRemove
       elif AST_IsImmWithValue(nodeCond, true) is true
         # if true {...}            - always true
         # if true {...} else {...} - always true
-        this._debug('if true {...} at node #' + str(node.id))
+        this._debug('if true {...} at node #' ~ str(node.id))
         rv = nodeBody
 
       elif AST_IsImmWithValue(nodeCond, false) is true
         if childrenCnt is 3
           # if false {...} else {...} - always else branch.
-          this._debug('if false {...} else {...} at node #' + str(node.id))
+          this._debug('if false {...} else {...} at node #' ~ str(node.id))
           rv = nodeElse
         else
           # if false {...} - always false, nothing to do.
-          this._debug('if false {...} at node #' + str(node.id))
+          this._debug('if false {...} at node #' ~ str(node.id))
           removeNode = true
         endif
       endif
@@ -231,7 +231,7 @@ class ASTOptimizerDeadCodeRemove
             # rv = rval
 
           else
-            this._debug('Useless assign at node #' + str(node.id) + ' (' + x.value + ')')
+            this._debug('Useless assign at node #' ~ str(node.id) ~ ' (' ~ x.value ~ ')')
             removeNode = true
             symbolTable.decreaseWriteHits(x.value)
           endif
@@ -248,7 +248,7 @@ class ASTOptimizerDeadCodeRemove
 
     elif (opcode is AST_OPCODE_TYPE_CAST) and (x.opcode is AST_OPCODE_TYPE_CAST)
       # Nested type cast: convert(convert(...))
-      this._debug('Reduced nested type cast at node #' + str(node.id))
+      this._debug('Reduced nested type cast at node #' ~ str(node.id))
       node.children[0] = x.children[0]
     endif
 
