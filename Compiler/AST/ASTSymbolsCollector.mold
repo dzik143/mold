@@ -165,7 +165,7 @@ class ASTSymbolsCollector
           methodName      = child.name
           methodParamsCnt = len(child.params)
 
-          child.fullName   = '__' + className + '_' + methodName + '$' + str(methodParamsCnt)
+          child.fullName   = '__' ~ className ~ '_' ~ methodName ~ '$' ~ str(methodParamsCnt)
           child.className  = className
           child.classProto = classProto
 
@@ -257,7 +257,7 @@ class ASTSymbolsCollector
         else
           # Error - there is at least one branch, where return value is
           # not set.
-          die("error: unset return variable '" + funcProto.rv + "' in '" + funcName + "' function")
+          die("error: unset return variable '" ~ funcProto.rv ~ "' in '" ~ funcName ~ "' function")
         endif
       endif
 
@@ -352,7 +352,7 @@ class ASTSymbolsCollector
               # obj = new B()
               #
               # TODO: Clean up this mess.
-              this._debug('Class mismatch while assigning new object at node #' + str(node.id))
+              this._debug('Class mismatch while assigning new object at node #' ~ str(node.id))
               x = []
               symbolInfo.classProto = x[0]
             else
@@ -475,7 +475,7 @@ class ASTSymbolsCollector
       bodyNode     = children[4]
 
       if symbolTable.isset(iterNode.value) is true
-        die('error: "' + iterNode.value + '" is already defined in another context')
+        die('error: "' ~ iterNode.value ~ '" is already defined in another context')
       endif
 
       # TODO: Optimize it.
@@ -511,7 +511,7 @@ class ASTSymbolsCollector
       for idx in 0 .. iteratorsCnt
         iterNode = children[idx]
         if symbolTable.isset(iterNode.value) is true
-          die('error: "' + iterNode.value + '" is already defined in another context')
+          die('error: "' ~ iterNode.value ~ '" is already defined in another context')
         endif
 
         bodyNode.symbolTable.insertLocal(iterNode.value)
@@ -562,7 +562,7 @@ class ASTSymbolsCollector
         if ((node.symbolInfo.proto.isRecursive isnt true) and
             (symbolTable.getCurrentFunctionName() is funcName))
 
-          this._debug('Recursive call detected at node #' + str(node.id) + ' (' + funcName + ')')
+          this._debug('Recursive call detected at node #' ~ str(node.id) ~ ' (' ~ funcName ~ ')')
           node.symbolInfo.proto.isRecursive = true
         endif
 
