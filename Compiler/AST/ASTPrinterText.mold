@@ -62,7 +62,7 @@ class ASTPrinterText
       this._printNode('', x)
     endif
 
-    __mold_printToStdOutput(' ' + op + ' ')
+    __mold_printToStdOutput(' ' ~ op ~ ' ')
 
     if useParentForY is true
       # Complex node - put into parenthes.
@@ -89,7 +89,7 @@ class ASTPrinterText
         (node.opcode isnt AST_OPCODE_FUNCTION) and
         (node.opcode isnt AST_OPCODE_CLASS_METHOD))
 
-      prefix = prefix + '  '
+      prefix = prefix ~ '  '
     endif
 
     for values childNode in node.children
@@ -263,9 +263,9 @@ class ASTPrinterText
 
     elif (opcode is AST_OPCODE_CLASS_METHOD) or (opcode is AST_OPCODE_FUNCTION)
       if opcode is AST_OPCODE_CLASS_METHOD
-        __mold_printToStdOutput(prefix + 'method ')
+        __mold_printToStdOutput(prefix ~ 'method ')
       else
-        __mold_printToStdOutput(prefix + 'function ')
+        __mold_printToStdOutput(prefix ~ 'function ')
       endif
 
       __mold_printToStdOutput(node.name)
@@ -290,9 +290,9 @@ class ASTPrinterText
       this._printNode_codeBlock(prefix, node)
 
       if opcode is AST_OPCODE_CLASS_METHOD
-        print prefix + 'endmethod'
+        print prefix ~ 'endmethod'
       else
-        print prefix + 'endfunction'
+        print prefix ~ 'endfunction'
       endif
 
     elif opcode is AST_OPCODE_VCALL
@@ -313,12 +313,12 @@ class ASTPrinterText
       this._printNode_paramsList(node, 1, true)
 
     elif opcode is AST_OPCODE_IF
-      __mold_printToStdOutput(prefix + 'if ')
+      __mold_printToStdOutput(prefix ~ 'if ')
       this._printNode('', children[0])
       print ''
 
       if children[1].opcode is AST_OPCODE_IF
-        this._printNode(prefix + '  ', children[1])
+        this._printNode(prefix ~ '  ', children[1])
       else
         this._printNode(prefix, children[1])
       endif
@@ -327,16 +327,16 @@ class ASTPrinterText
         __mold_printToStdOutput(prefix)
         print 'else'
         if children[2].opcode is AST_OPCODE_IF
-          this._printNode(prefix + '  ', children[2])
+          this._printNode(prefix ~ '  ', children[2])
         else
           this._printNode(prefix, children[2])
         endif
       endif
 
-      print prefix + 'endif'
+      print prefix ~ 'endif'
 
     elif opcode is AST_OPCODE_SWITCH
-      __mold_printToStdOutput(prefix + 'switch ')
+      __mold_printToStdOutput(prefix ~ 'switch ')
       this._printNode('', children[0])
       print ''
 
@@ -356,24 +356,24 @@ class ASTPrinterText
           endfor
           print ''
         else
-          print prefix + '  otherwise'
+          print prefix ~ '  otherwise'
         endif
 
         # Emit code.
         if children[idx].opcode is AST_OPCODE_BLOCK
-          this._printNode(prefix + '  ', children[idx])
+          this._printNode(prefix ~ '  ', children[idx])
         else
-          this._printNode(prefix + '    ', children[idx])
+          this._printNode(prefix ~ '    ', children[idx])
         endif
       endfor
 
-      print prefix + 'endswitch'
+      print prefix ~ 'endswitch'
 
     elif opcode is AST_OPCODE_TYPE_CAST
       if SHOW_TYPE_CAST_NODES_ENABLED is true
         srcType  = AST_GetDataType(children[0])
         dstType  = AST_GetDataType(node)
-        funcName = 'conv_' + AST_ConvertDataTypeToMIR(srcType) + '_to_' + AST_ConvertDataTypeToMIR(dstType)
+        funcName = 'conv_' ~ AST_ConvertDataTypeToMIR(srcType) ~ '_to_' ~ AST_ConvertDataTypeToMIR(dstType)
 
         __mold_printToStdOutput(prefix)
         __mold_printToStdOutput(funcName)
@@ -445,7 +445,7 @@ class ASTPrinterText
           (symbolInfo.kind is SYMBOL_KIND_CONST) and
           (typeof(symbolInfo.value) is 'string'))
 
-        value = "'" + str(symbolInfo.value) + "'"
+        value = "'" ~ str(symbolInfo.value) ~ "'"
       endif
 
       __mold_printToStdOutput(value)
@@ -520,7 +520,7 @@ class ASTPrinterText
     elif opcode is AST_OPCODE_NOP
 
     else
-      die('error: unhandled opcode: ' + str(opcode))
+      die('error: unhandled opcode: ' ~ str(opcode))
     endif
   endmethod
 

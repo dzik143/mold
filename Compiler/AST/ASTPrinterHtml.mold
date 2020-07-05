@@ -42,7 +42,7 @@ class ASTPrinterHtml
       if symbolInfo.value is defined
         value = symbolInfo.value
         if typeof(value) is 'string'
-          value = '"' + value + '"'
+          value = '"' ~ value ~ '"'
         endif
       endif
 
@@ -56,7 +56,7 @@ class ASTPrinterHtml
       print '<td>', symbolInfo.loopLevel, '</td>'
 
       if symbolInfo.classProto is defined
-        print '<td>' + symbolInfo.classProto.name + '</td>'
+        print '<td>' ~ symbolInfo.classProto.name ~ '</td>'
       else
         print '<td>-</td>'
       endif
@@ -82,7 +82,7 @@ class ASTPrinterHtml
     childrenCnt = len(children)
 
     print '<table style="border: solid 1px">'
-    print '<tr><td>#' + str(node.id), '<b>', AST_GetOpcodeAsText(opcode), '</b></td></tr>'
+    print '<tr><td>#' ~ str(node.id), '<b>', AST_GetOpcodeAsText(opcode), '</b></td></tr>'
 
     if node.hash is defined
       print '<tr><td><small><i>', node.hash, '</i></small></td></tr>'
@@ -124,13 +124,13 @@ class ASTPrinterHtml
 
         value = node.value
         if typeof(value) is 'string'
-          value = "'" + value + "' <i>(" + AST_ConvertDataTypeToText(AST_GetDataType(node)) + ")</i>"
+          value = "'" ~ value ~ "' <i>(" ~ AST_ConvertDataTypeToText(AST_GetDataType(node)) ~ ")</i>"
         endif
 
         print '<tr><td>', value, '</td></tr>'
 
       elif opcode is AST_OPCODE_TYPE_CAST
-        print '<tr><td><i>(' + AST_ConvertDataTypeToText(node.astDataType) + ')</i></td></tr>'
+        print '<tr><td><i>(' ~ AST_ConvertDataTypeToText(node.astDataType) ~ ')</i></td></tr>'
       endif
 
       print '<tr>'
@@ -149,14 +149,14 @@ class ASTPrinterHtml
       if typeof(node.storedValue) is 'array'
 
         for values item in node.storedValue
-          print '@' + str(item.id), '<br>'
+          print '@' ~ str(item.id), '<br>'
         endfor
 
       elif node.storedValue is undefined
         print '?'
 
       else
-        print '@' + str(node.storedValue.id)
+        print '@' ~ str(node.storedValue.id)
       endif
 
       print '</td></tr>'

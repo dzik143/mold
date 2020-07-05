@@ -155,7 +155,7 @@ class ASTPreprocessor
           # TODO: Better way to pass current line/column to error
           # handler.
           this.app.setLogContext(node)
-          this.app.logError('built-in ' + funcName + ' function requires exactly ' + str(paramsExpectedCnt) + ' parameter(s), but ' + str(paramsPassedCnt) + ' were passed')
+          this.app.logError('built-in ' ~ funcName ~ ' function requires exactly ' ~ str(paramsExpectedCnt) ~ ' parameter(s), but ' ~ str(paramsPassedCnt) ~ ' were passed')
         endif
 
         # Map to related syscall routine.
