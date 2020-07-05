@@ -27,16 +27,14 @@ function merge(left, right) -> rv
   while left, right arent empty
     if left[0] <= right[0]
       # Get item from left.
-      rv[@afterLast] = left[0]
-      delete left[0]
+      move from left[0] to rv[@afterLast]
 
     else
       # Get item from right.
-      rv[@afterLast] = right[0]
-      delete right[0]
+      move from right[0] to rv[@afterLast]
     endif
   endwhile
 
   # Either left or right may have elements left; consume them.
-  rv = [...left, ...right]
+  rv = [...rv, ...left, ...right]
 endfunction

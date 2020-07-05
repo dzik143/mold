@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------
 # While loop
 # When to use:
-# - we *DONT'T KNOWN* how many steps is needed to do our work.
+# - we *DONT'T KNOW* how many steps is needed to do our work.
 # ------------------------------------------------------------------------------
 
 while goOn is true
@@ -10,7 +10,7 @@ endwhile
 # ------------------------------------------------------------------------------
 # Iterate over numbers range.
 # When to use:
-# - we *EXACTLY KNOWN* how many steps is needed to do our work.
+# - we *EXACTLY KNOW* how many steps is needed to do our work.
 # ------------------------------------------------------------------------------
 
 # Iterate over numbers range.

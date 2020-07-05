@@ -91,6 +91,10 @@ stmt_directive
   : "print"  rval_list_one_line [* @@ = 'print'  *]
   | "global" rval_list_one_line [* @@ = 'global' *]
   | "import" rval_list_one_line [* @@ = 'import' *]
+
+  // TODO: More general handlers?
+  | expr '[' "@afterlast" ']'   '=' expr [* @@ = '__mold_arrayInsertAfterLast' *]
+  | expr '[' "@beforefirst" ']' '=' expr [* @@ = '__mold_arrayInsertBeforeLast' *]
   ;
 
 // -----------------------------------------------------------------------------

@@ -4,8 +4,7 @@ Nieu¾yte:
 &
 \
 ?
-
-
+;
 
 Wykorzystane:
 
@@ -28,7 +27,8 @@ _   _foo     prywatna metoda
 >   x > y    por¢wnanie wi©kszy ni¾
 
 []  x[i]     tablice
-{}: {'x': 1} mapy
+{}  {'x'}    mapy
+:   {'x': 1} separator klucz:wartosc w mapach
 
 ;            jednolinijkowe wyra¾enie
 
@@ -39,4 +39,4 @@ _   _foo     prywatna metoda
 ,   [x, y]   separator w listach
 .   this.x   dost©p do pola
 
-@   @eol     dyrektywy w bloku I/O
+@   x[@first] selektory, relatywne indeksy w tablicy

@@ -69,7 +69,10 @@ MOLD_SYSCALL_MAP = {
   'typeof': MOLD_SYSCALL_ONE_ARG + 44,
 
   '__mold_printToStdOutput': MOLD_SYSCALL_ONE_ARG + 45,
-  '__mold_warning': MOLD_SYSCALL_ONE_ARG + 46
+  '__mold_warning': MOLD_SYSCALL_ONE_ARG + 46,
+
+  '__mold_arrayInsertAfterLast':   MOLD_SYSCALL_TWO_ARGS + 50,
+  '__mold_arrayInsertBeforeFirst': MOLD_SYSCALL_TWO_ARGS + 51
 }
 
 class ASTPreprocessor
@@ -169,27 +172,6 @@ class ASTPreprocessor
         endfor
 
         node.children = newChildren
-      endif
-
-    elif ((opcode is AST_OPCODE_REFERENCE_BY_INDEX) and
-          (children[1].opcode is AST_DATA_SELECTOR))
-
-      # box[@selector]
-      box      = children[0]
-      selector = children[1].value
-
-      if selector is '@afterlast'
-        # x[@afterlast] -> x[len(x)]
-        children[1] = {
-          'id': AST_GetNextId(),
-          'opcode': AST_OPCODE_CALL,
-          'children': [box],
-          'value': '__mold_syscall',
-          'sysCallId': 43 # TODO: Remove hard-coded value (43)
-        }
-
-      else
-        die("error: uhandled selector '" + selector + "'")
       endif
     endif
   endmethod

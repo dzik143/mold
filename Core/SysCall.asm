@@ -306,8 +306,38 @@ __MOLD_SysCall:
     mov     rdx, rdi
     jmp     __MOLD_VariantTypeOf
 
+
 ; ------------------------------------------------------------------------------
-; Error file
+; Insert item to array using relative index (@selector)
+; rcx = box (Variant_t)
+; rdx = value (Variant_t)
+; ------------------------------------------------------------------------------
+
+.arrayInsertAfterLast:
+    ; TODO: Optimize it.
+    ; TODO: Clean up this mess.
+    push    rcx
+    push    rdx
+                                         ; rcx = box      (Array_t)
+    lea     rdx, [__TempIndexInteger]    ; rdx = *tmp     (Variant_t)
+    call    __MOLD_VariantLength         ; tmp = len(box) (Variant_t)
+
+    lea     rdx, [__TempIndexInteger]    ; rdx = len(box) (Variant_t)
+    pop     r8                           ; r8  = value    (Variant_t)
+    pop     rcx                          ; rcx = box      (Array_t)
+
+    jmp     __MOLD_VariantStoreAtIndex
+
+.arraySetBySelector:
+    ; TODO
+    jmp    .error
+
+.arrayLoadBySelector:
+    ; TODO
+    jmp    .error
+
+; ------------------------------------------------------------------------------
+; Generic error handler
 ; ------------------------------------------------------------------------------
 
 .error:
@@ -372,5 +402,12 @@ __MOLD_SysCall:
 
   dq __MOLD_PrintVariant           ; 45
   dq __MOLD_PrintVariantToStdError ; 46
+  dq .error                        ; 47
+  dq .error                        ; 48
+  dq .error                        ; 49
+
+  dq .arrayInsertAfterLast  ; 50
+  dq .error                 ; 51
+  dq .error                 ; 52
 
 .jmpTableEnd:
