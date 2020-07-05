@@ -110,7 +110,7 @@ class ASTTypeCast
         yType = AST_GetDataType(y)
 
         if xType isnt yType
-          this._debug('Type mismatch at arithmetic expression node #' + str(node.id) + ' (' + str(xType) + ' vs ' + str(yType) + ')')
+          this._debug('Type mismatch at arithmetic expression node #' ~ str(node.id) ~ ' (' ~ str(xType) ~ ' vs ' ~ str(yType) ~ ')')
 
           # Type mismatch in binary arithmetic or compare: x o y
           if (xType is AST_DATA_DOUBLE) and (yType is AST_DATA_INTEGER)
