@@ -72,7 +72,9 @@ MOLD_SYSCALL_MAP = {
   '__mold_warning': MOLD_SYSCALL_ONE_ARG + 46,
 
   '__mold_arrayInsertAfterLast':   MOLD_SYSCALL_TWO_ARGS + 50,
-  '__mold_arrayInsertBeforeFirst': MOLD_SYSCALL_TWO_ARGS + 51
+  '__mold_arrayInsertBeforeFirst': MOLD_SYSCALL_TWO_ARGS + 51,
+
+  '__mold_strcat': MOLD_SYSCALL_TWO_ARGS + 60
 }
 
 class ASTPreprocessor

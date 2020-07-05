@@ -6,7 +6,7 @@ UNRELEASED:
 
   Improved:
     - Faster x64 code (load/store indexes with int32 pointers)
-    - Avoid creating multiple Parser() objects for each module load
+    - Avoid creating multiple Parser() objects per each module load
     - Distinguish variant and string types while generating code
     - Major clean up the parser code
 
@@ -34,6 +34,8 @@ UNRELEASED:
 
       x[@afterLast]   - placeholder for new item at the end   (lval)
       x[@beforeFirst] - placeholder for new item at the begin (lval)
+
+    - Use x ~ y for string concatenation
 
 0.1.191126 (released on 2019-11-26)
 -----------------------------------

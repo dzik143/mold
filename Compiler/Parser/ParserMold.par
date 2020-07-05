@@ -258,11 +258,14 @@ expr
   | logic
   | expr_logic
 
+  | expr '~' expr  [* @@ = '__mold_strcat' *] =AST_OPCODE_CALL // x ~ y
+
   | expr '+' expr  =AST_OPCODE_ADD  // x + y
   | expr '-' expr  =AST_OPCODE_SUB  // x - y
   | expr '*' expr  =AST_OPCODE_MUL  // x * y
   | expr '/' expr  =AST_OPCODE_DIV  // x / y
   | expr "//" expr =AST_OPCODE_IDIV // x // y
+
   | '-' expr       =AST_OPCODE_NEG  // -x
   | '(' expr ')'                    // (x)
   ;
