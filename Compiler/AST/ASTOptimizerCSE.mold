@@ -39,7 +39,7 @@ class ASTOptimizerCSE
       # TODO: Ask AST for id?
       'id': AST_GetNextId(),
       'opcode': AST_OPCODE_VARIABLE,
-      'value': '__cse' + str(this._getNextId()),
+      'value': '__cse' ~ str(this._getNextId()),
       'children': []
     }
   endmethod
@@ -113,7 +113,7 @@ class ASTOptimizerCSE
           (lval.value is newRval.value))
 
         # Useless assign: x = x
-        this._debug('Useless self-assign at node #' + str(node.id) + ' (' + lval.hash + ')')
+        this._debug('Useless self-assign at node #' ~ str(node.id) ~ ' (' ~ lval.hash ~ ')')
         rv.opcode   = AST_OPCODE_NOP
         rv.children = []
 
@@ -183,12 +183,12 @@ class ASTOptimizerCSE
           # more expressions from different nodes.
           node.symbolTable = symbolTable
           mapOfExpressions{node.hash} = node
-          this._debug('Expression found at node #' + str(node.id) + ', (' + node.hash + ')')
+          this._debug('Expression found at node #' ~ str(node.id) ~ ', (' ~ node.hash ~ ')')
 
         else
           # Two nodes with common subexpression found.
           # Move common subexpression to new temp var.
-          this._debug('Common subexpression at nodes (#' + str(node.id) + ', #' + str(matchedNode.id) + ') (' + node.hash + ')')
+          this._debug('Common subexpression at nodes (#' ~ str(node.id) ~ ', #' ~ str(matchedNode.id) ~ ') (' ~ node.hash ~ ')')
 
           if matchedNode.opcode is AST_OPCODE_VARIABLE
             # Common subexpression is already assigned to variable.
@@ -264,7 +264,7 @@ class ASTOptimizerCSE
             endif
 
             matchedNode.opcode   = AST_OPCODE_VARIABLE
-            matchedNode.value    = '__cse' + str(this._getNextId())
+            matchedNode.value    = '__cse' ~ str(this._getNextId())
             matchedNode.children = []
 
             commonBlock.symbolTable.lookupForWriteOrInsert(matchedNode.value)
