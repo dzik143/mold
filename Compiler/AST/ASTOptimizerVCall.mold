@@ -60,13 +60,13 @@ class ASTOptimizerVCall
             if methodProto.isOverloaded is true
               # Method is overloaded by another class.
               # Keep virtual call.
-              this._debug('Skipped vcall [' + node.value + '] at node #' + str(node.id))
+              this._debug('Skipped vcall [' ~ node.value ~ '] at node #' ~ str(node.id))
 
             else
               node.value      = methodProto.fullName
               node.opcode     = AST_OPCODE_CALL
               node.symbolInfo = this.symbolTable.lookupForCall(methodProto.fullName)
-              this._debug('Changed vcall [' + node.value + '] to ordinary call at node #' + str(node.id))
+              this._debug('Changed vcall [' ~ node.value ~ '] to ordinary call at node #' ~ str(node.id))
 
               # TODO: Optimize it.
               # Detect recursive calls. We use it in further optimizations.
@@ -74,7 +74,7 @@ class ASTOptimizerVCall
               symbolTable = blockNode.symbolTable
 
               if symbolTable.getCurrentFunctionName() is methodProto.fullName
-                this._debug('Recursive call detected at node #' + str(node.id) + ' (' + methodProto.fullName + ')')
+                this._debug('Recursive call detected at node #' ~ str(node.id) ~ ' (' ~ methodProto.fullName ~ ')')
                 node.symbolInfo.proto.isRecursive = true
               endif
             endif
