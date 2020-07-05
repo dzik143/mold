@@ -45,7 +45,7 @@ class ASTOptimizerConstantFolding
       # Crash after attemp to modify moved constant [] or {}.
 
     else
-      this._debug('Set node #' + str(dst.id) + ' to imm "' + str(value) + '" (' + type + ')')
+      this._debug('Set node #' ~ str(dst.id) ~ ' to imm "' ~ str(value) ~ '" (' ~ type ~ ')')
 
       if dst.opcode is AST_OPCODE_VARIABLE
         if dst.symbolInfo is defined
@@ -71,7 +71,7 @@ class ASTOptimizerConstantFolding
       else
         # Remove newOpcode assign.
         newOpcode = -1
-        die('error: unhandled result in constant folding: ' + type)
+        die('error: unhandled result in constant folding: ' ~ type)
       endif
 
       dst.children  = []
@@ -255,7 +255,7 @@ class ASTOptimizerConstantFolding
               # Join string imms.
               if lastWasImm is true
                 # Both previous and current params are strings - concatenate them.
-                newParams[len(newParams) - 1].value = newParams[len(newParams) - 1].value + ' ' + str(oneChild.value)
+                newParams[len(newParams) - 1].value = newParams[len(newParams) - 1].value ~ ' ' ~ str(oneChild.value)
 
               elif oneChild.opcode is AST_DATA_STRING
                 # Current param is string, but previous not.
