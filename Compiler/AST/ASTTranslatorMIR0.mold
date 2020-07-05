@@ -151,7 +151,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
       this.code.loadImm(symbolInfo.value)
 
     else
-      this._error("unexpected symbol kind '" + name + "' (" + str(kind) + ")")
+      this._error("unexpected symbol kind '" ~ name ~ "' (" ~ str(kind) ~ ")")
     endif
   endmethod
 
@@ -183,7 +183,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
 
     else
       # TODO: Handle terminal nodes.
-      this._error("unexpected symbol kind '" + name + "' (" + str(kind) + ")")
+      this._error("unexpected symbol kind '" ~ name ~ "' (" ~ str(kind) ~ ")")
     endif
   endmethod
 
@@ -371,7 +371,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
   endmethod
 
   method _emitFunctionBody(funcName, funcProto)
-    this._debug('Going to emit function body "' + str(funcName) + '"')
+    this._debug('Going to emit function body "' ~ str(funcName) ~ '"')
 
     params      = funcProto.params
     paramsCnt   = len(funcProto.params)
@@ -391,7 +391,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
     funcProto.ptr = code.resolveLabel(labelId)
 
     code.comment('-----------------------------------------------')
-    code.comment('function ' + funcName)
+    code.comment('function ' ~ funcName)
     code.comment('-----------------------------------------------')
 
     code.beginProc(funcName, params, paramsCnt, rvName)

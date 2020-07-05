@@ -252,7 +252,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     else
       # TODO: Handle terminal nodes.
-      die('error: unhandled imm type: ' + str(type))
+      die('error: unhandled imm type: ' ~ str(type))
     endif
 
     this.push(rv)
@@ -284,7 +284,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     else
       # TODO: Handle terminal nodes.
-      die('error: unhandled imm type: ' + str(type))
+      die('error: unhandled imm type: ' ~ str(type))
     endif
 
     this.push(rv)
@@ -300,7 +300,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
       this.popOneArgAndEmitOpcode('move', rv)
 
     else
-      opcode = 'conv_' + srcTypeMIR + '_to_' + dstTypeMIR
+      opcode = 'conv_' ~ srcTypeMIR ~ '_to_' ~ dstTypeMIR
       this.popOneArgAndEmitOpcode(opcode, rv)
     endif
   endmethod
@@ -544,7 +544,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     this.emitComment('')
     this.emitComment('-----------------------------')
-    this.emitComment('BEGIN: for keys ' + str(iteratorKey) + ' values ' + str(iteratorValue))
+    this.emitComment('BEGIN: for keys ' ~ str(iteratorKey) ~ ' values ' ~ str(iteratorValue))
     this.emitComment('')
 
     # Avoid direct exeution of loop body.
@@ -575,7 +575,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this._emitOneItem(['call', rv, '__MOLD_ForDriver_Generic', params])
 
     this.emitComment('')
-    this.emitComment('END: for keys ' + str(iteratorKey) + ' values ' + str(iteratorValue))
+    this.emitComment('END: for keys ' ~ str(iteratorKey) ~ ' values ' ~ str(iteratorValue))
     this.emitComment('-----------------------------')
     this.emitComment('')
   endmethod
@@ -702,7 +702,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     symbolTable = this.symbolTable
 
     this.emitComment('-----------------------------------------------')
-    this.emitComment('function ' + funcName)
+    this.emitComment('function ' ~ funcName)
     this.emitComment('-----------------------------------------------')
 
     # TODO: Simplify it.
@@ -757,7 +757,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     for values methodName in this.arrayOfCalledMethods
       if this.methodEmitted{methodName} isnt true
-        die("error: object has no method '" + methodName + "'")
+        die("error: object has no method '" ~ methodName ~ "'")
       endif
     endfor
   endmethod
