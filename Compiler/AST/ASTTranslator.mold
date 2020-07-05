@@ -242,7 +242,7 @@ class ASTTranslator
           # TODO: Accumulate hits?
           # TODO: Implement inner frames.
           if symbolsCurrent{id}.astType isnt item.astType
-            die('error: type conflict for variable "' + item.name + '"')
+            die('error: type conflict for variable "' ~ item.name ~ '"')
           endif
         endif
       #endif
@@ -251,7 +251,7 @@ class ASTTranslator
 
   method _verifyNumberOfParameters(name, paramsExpectedCnt, paramsPassedCnt)
     if paramsPassedCnt isnt paramsExpectedCnt
-      die('error: ' + name + ' function requires exactly ' + str(paramsExpectedCnt) + ' parameter(s), but ' + str(paramsPassedCnt) + ' were passed')
+      die('error: ' ~ name ~ ' function requires exactly ' ~ str(paramsExpectedCnt) ~ ' parameter(s), but ' ~ str(paramsPassedCnt) ~ ' were passed')
     endif
   endmethod
 
@@ -263,7 +263,7 @@ class ASTTranslator
     children  = ast.children
 
     if children is defined
-      this.app.logDebug('Emitting function ' + funcName + '...')
+      this.app.logDebug('Emitting function ' ~ funcName ~ '...')
 
       oldSymbolTable   = this.symbolTable
       this.symbolTable = ast.children[0].symbolTable
@@ -284,7 +284,7 @@ class ASTTranslator
       this.symbolTable = oldSymbolTable
       this.symbolTableForTemps = false
 
-      this.app.logDebug('Function emited: ' + funcName)
+      this.app.logDebug('Function emited: ' ~ funcName)
     endif
   endmethod
 
@@ -334,13 +334,13 @@ class ASTTranslator
       this._error('super called outside of constructor')
 
     elif classProto.baseName is undefined
-      this._error('class ' + classProto.name + ' has no base class')
+      this._error('class ' ~ classProto.name ~ ' has no base class')
 
     elif methodProto.baseMethod is undefined
-      this._error('class ' + classProto.baseName + ' has no constructor declared')
+      this._error('class ' ~ classProto.baseName ~ ' has no constructor declared')
 
     elif len(methodProto.params) isnt len(params)
-      this._error('base constructor requires exactly ' + str(len(methodProto.params)) + ' parameters, but ' + str(len(params)) + ' were passed')
+      this._error('base constructor requires exactly ' ~ str(len(methodProto.params)) ~ ' parameters, but ' ~ str(len(params)) ~ ' were passed')
 
     else
       # Base constructor exists, inject this reference to call list.
@@ -426,7 +426,7 @@ class ASTTranslator
     children    = ast.children
     childrenCnt = len(children)
 
-    this._debug('_evaluateNode: ' + str(opcode) + ', ' + str(value))
+    this._debug('_evaluateNode: ' ~ str(opcode) ~ ', ' ~ str(value))
 
     # TODO: Better way to pass source position to error handler.
     this.app.setLogContext(ast)
@@ -436,7 +436,7 @@ class ASTTranslator
     #
 
     if (ast.isTranslated is true) and (AST_IsImmOrVar(ast) is false)
-      die('error: node #' + str(ast.id) + ' is already translated (eval)')
+      die('error: node #' ~ str(ast.id) ~ ' is already translated (eval)')
     endif
 
     ast.isTranslated = true
@@ -666,7 +666,7 @@ class ASTTranslator
         endif
 
       else
-        die('error: unexpected rvalue node ' + str(opcode) + ' ' + str(value))
+        die('error: unexpected rvalue node ' ~ str(opcode) ~ ' ' ~ str(value))
       endif
     endif
 
@@ -797,7 +797,7 @@ class ASTTranslator
     children    = ast.children
     childrenCnt = len(children)
 
-    this._debug('_executeNode: ' + str(opcode) + ', ' + str(value))
+    this._debug('_executeNode: ' ~ str(opcode) ~ ', ' ~ str(value))
 
     #
     # DEBUG ONLY
@@ -806,7 +806,7 @@ class ASTTranslator
     # print ast.id, opcode, value
 
     if ast.isTranslated is true
-      die('error: node #' + str(ast.id) + ' is already translated')
+      die('error: node #' ~ str(ast.id) ~ ' is already translated')
     endif
 
     ast.isTranslated = true
@@ -885,7 +885,7 @@ class ASTTranslator
         this._releaseTempVar(rval)
 
       else
-        die('error: unexpected lvalue node ' + str(lval.opcode) + ' ' + str(lval.value))
+        die('error: unexpected lvalue node ' ~ str(lval.opcode) ~ ' ' ~ str(lval.value))
       endif
 
     elif opcode is AST_OPCODE_FOR_VALUES_RANGE
@@ -998,7 +998,7 @@ class ASTTranslator
         for idx in 0 .. childrenCnt
           paramName = children[idx].value
           if typeof(paramName) isnt 'string'
-            this._error('global directive expects string, but ' + typeof(paramName) + ' passed')
+            this._error('global directive expects string, but ' ~ typeof(paramName) ~ ' passed')
           else
             this._importGlobal(paramName)
           endif
@@ -1030,7 +1030,7 @@ class ASTTranslator
 
     else
       # Fatal - unknown node. Should never happen in production.
-      this._error('unknown opcode ' + str(opcode))
+      this._error('unknown opcode ' ~ str(opcode))
     endif
   endmethod
 
