@@ -55,13 +55,13 @@ class ASTOptimizerInline
             (symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL) or
             (symbolInfo.kind is SYMBOL_KIND_VAR_LOCAL))
 
-          newValue = namePrefix + node.value
+          newValue = namePrefix ~ node.value
         endif
 
       else
         # TODO: Review it.
         # We handle loop iterators here.
-        newValue = namePrefix + node.value
+        newValue = namePrefix ~ node.value
       endif
 
     else
@@ -114,11 +114,11 @@ class ASTOptimizerInline
 
     elif functionProto.isRecursive is true
       # Skip recursive call.
-      this._debug('Skipped recursive call at node #' + str(callNode.id) + ' (' + callNode.value + ')')
+      this._debug('Skipped recursive call at node #' ~ str(callNode.id) ~ ' (' ~ callNode.value ~ ')')
 
     else
       params     = functionProto.params
-      namePrefix = '__inline' + str(callNode.id) + '_'
+      namePrefix = '__inline' ~ str(callNode.id) ~ '_'
 
       bodyNode    = functionProto.children[0]
       children    = bodyNode.children
@@ -131,7 +131,7 @@ class ASTOptimizerInline
       rvFullName = rvName
 
       if rvName is defined
-        rvFullName = namePrefix + rvName
+        rvFullName = namePrefix ~ rvName
         symbolTable.insertLocal(rvFullName)
       endif
 
@@ -139,7 +139,7 @@ class ASTOptimizerInline
       if functionProto.classProto is defined
         thizParamNode  = callNode.children[0]
         thizSymbolInfo = thizParamNode.symbolInfo
-        paramName      = namePrefix + 'this'
+        paramName      = namePrefix ~ 'this'
         childIdx       = 1
 
         # TODO: Review it.
@@ -159,7 +159,7 @@ class ASTOptimizerInline
 
       # Init ordinary call parameters.
       for indexes paramIdx values oneParamName in params
-        paramNameWithPrefix = namePrefix + oneParamName
+        paramNameWithPrefix = namePrefix ~ oneParamName
         paramInitValueNode  = callNode.children[childIdx]
         this._injectParamInit(dst, symbolTable, paramNameWithPrefix, paramInitValueNode)
         childIdx = childIdx + 1
@@ -183,7 +183,7 @@ class ASTOptimizerInline
       # Remove original call node.
       callNode.children = []
 
-      this._debug('Inject function body (' + callNode.value + ') at node #' + str(callNode.id))
+      this._debug('Inject function body (' ~ callNode.value ~ ') at node #' ~ str(callNode.id))
 
       if callNode.parent.opcode is AST_OPCODE_BLOCK
         # Call is localized on left side (used as pure call without
@@ -194,7 +194,7 @@ class ASTOptimizerInline
         # Call is localized on right side (used for read).
         # Replace function call by return value.
         callNode.opcode     = AST_OPCODE_VARIABLE
-        callNode.value      = namePrefix + rvName
+        callNode.value      = namePrefix ~ rvName
         callNode.symbolInfo = symbolTable.lookupForRead(rvFullName)
       endif
     endif
