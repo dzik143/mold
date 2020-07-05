@@ -281,7 +281,7 @@ class ASTOptimizerCSE
 
                   # Push __csexx = ... before first usage.
                   isCseEmited = true
-                  newCommonBlockChildren[len(newCommonBlockChildren)] = {
+                  newCommonBlockChildren[@afterlast] = {
                     'id': AST_GetNextId(),
                     'opcode': AST_OPCODE_DECLARE_OR_ASSIGN,
                     'children': [matchedNode, node]
@@ -289,7 +289,7 @@ class ASTOptimizerCSE
                 endif
               endif
 
-              newCommonBlockChildren[len(newCommonBlockChildren)] = oneChild
+              newCommonBlockChildren[@afterlast] = oneChild
             endfor
 
             if isCseEmited is false

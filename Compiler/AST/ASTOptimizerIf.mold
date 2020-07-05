@@ -96,13 +96,13 @@ class ASTOptimizerIf
             if reusedNode is undefined
               # Case code seen first time. Go on.
               caseHashMap{caseNodeHash} = caseNode
-              newChildren[len(newChildren)] = caseNode
+              newChildren[@afterlast] = caseNode
               caseNode.arrayOfValues = [caseValue]
 
             else
               # Case code is already used for some another branch.
               # Reuse it.
-              reusedNode.arrayOfValues[len(reusedNode.arrayOfValues)] = caseValue
+              reusedNode.arrayOfValues[@afterlast] = caseValue
             endif
 
             if caseValue > valueMax
@@ -131,7 +131,7 @@ class ASTOptimizerIf
         if ((currentIfNode.opcode isnt AST_OPCODE_IF) or
             (AST_HashForCodeComparison(currentIfNode.children[1]) isnt AST_HashForCodeComparison(lastCaseNode)))
 
-          newChildren[len(newChildren)] = currentIfNode
+          newChildren[@afterlast] = currentIfNode
           this._processNode(currentIfNode)
         endif
 

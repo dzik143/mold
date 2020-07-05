@@ -58,10 +58,10 @@ class ASTEvaluator
     if x is defined
       if typeof(x) is 'array'
         for values item in x
-          rv[len(rv)] = item
+          rv[@afterlast] = item
         endfor
       else
-        rv[len(rv)] = x
+        rv[@afterlast] = x
       endif
     endif
 
@@ -69,10 +69,10 @@ class ASTEvaluator
     if y is defined
       if typeof(y) is 'array'
         for values item in y
-          rv[len(rv)] = item
+          rv[@afterlast] = item
         endfor
       else
-        rv[len(rv)] = y
+        rv[@afterlast] = y
       endif
     endif
   endmethod
@@ -133,7 +133,7 @@ class ASTEvaluator
       # There are more than one possible values for this node.
       # Node values is code flow dependent.
       for values item in storedValue
-        rv[len(rv)] = item.id
+        rv[@afterlast] = item.id
       endfor
 
     else

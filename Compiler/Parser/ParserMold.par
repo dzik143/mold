@@ -93,8 +93,8 @@ stmt_directive
   | "import" rval_list_one_line [* @@ = 'import' *]
 
   // TODO: More general handlers?
-  | expr '[' "@afterlast" ']'   '=' expr [* @@ = '__mold_arrayInsertAfterLast' *]
-  | expr '[' "@beforefirst" ']' '=' expr [* @@ = '__mold_arrayInsertBeforeLast' *]
+  | expr '[' "@afterlast" ']'   '=' rval [* @@ = '__mold_arrayInsertAfterLast' *]
+  | expr '[' "@beforefirst" ']' '=' rval [* @@ = '__mold_arrayInsertBeforeLast' *]
   ;
 
 // -----------------------------------------------------------------------------
@@ -138,8 +138,9 @@ stmt_function_declaration:
 //
 
 parameter_list
-  : parameter_list ',' @EOL? @IDENT [* @1[len(@1)] = @4
-                                       @@ = @1
+  : parameter_list ',' @EOL? @IDENT [* @@ = @1
+                                       __mold_arrayInsertAfterLast(@@, @4)
+
                                     *]
 
   | @EOL parameter_list             [* @@ = @2 *]
@@ -189,11 +190,13 @@ map_key : string =AST_DATA_STRING;
 
 // TODO: Handle strings and bool too.
 imm_list
-  : imm_list ',' expr_imm      [* @1[len(@1)] = @3
-                                  @@ = @1 *]
+  : imm_list ',' expr_imm      [* @@ = @1
+                                  __mold_arrayInsertAfterLast(@@, @3)
+                               *]
 
-  | imm_list ',' @EOL expr_imm [* @1[len(@1)] = @4
-                                  @@ = @1 *]
+  | imm_list ',' @EOL expr_imm [* @@ = @1
+                                  __mold_arrayInsertAfterLast(@@, @4)
+                               *]
 
   | imm_list @EOL [* @@ = @1 *]
   | @EOL imm_list [* @@ = @2 *]

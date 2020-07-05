@@ -1173,7 +1173,7 @@ class CodeGeneratorX64
         currentSymbols   = proto.symbols
         print currentProcName + ':'
 
-        arrayOfProcedures[len(arrayOfProcedures)] = currentProcName
+        arrayOfProcedures[@afterlast] = currentProcName
 
         # Profiler code if needed.
         if this.isProfilerEnabled is true
@@ -1223,7 +1223,7 @@ class CodeGeneratorX64
         # TODO: Use reverse.
         symbolsIndex = []
         for values v in symbols
-          symbolsIndex[len(symbolsIndex)] = v
+          symbolsIndex[@afterlast] = v
         endfor
         symbolsCnt = len(symbolsIndex)
 

@@ -84,7 +84,7 @@ class ASTOptimizerInline
 
     symbolTable.lookupForWriteOrInsert(paramName)
 
-    dst[len(dst)] = {
+    dst[@afterlast] = {
       'id': AST_GetNextId(),
       'opcode': AST_OPCODE_DECLARE_OR_ASSIGN,
       'children': [
@@ -174,8 +174,8 @@ class ASTOptimizerInline
           # Ignore global directive if we inject function body into global space.
           # It's not needed anymore.
         else
-          newNode       = this._resolveParamsForInline(bodyNode.symbolTable, namePrefix, childNode)
-          dst[len(dst)] = newNode
+          newNode         = this._resolveParamsForInline(bodyNode.symbolTable, namePrefix, childNode)
+          dst[@afterlast] = newNode
           this.symbolsCollector._collectSymbols(symbolTable, newNode, true)
         endif
       endfor
@@ -303,7 +303,7 @@ class ASTOptimizerInline
         this._processNode(symbolTable, childNode)
       endif
 
-      newChildren[len(newChildren)] = childNode
+      newChildren[@afterlast] = childNode
     endfor
 
     node.children = newChildren

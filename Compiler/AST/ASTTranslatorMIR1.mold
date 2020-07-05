@@ -491,7 +491,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     endif
 
     if this.mapOfCalledMethods{methodName} is undefined
-      this.arrayOfCalledMethods[len(this.arrayOfCalledMethods)] = methodName
+      this.arrayOfCalledMethods[@afterlast] = methodName
     endif
 
     this.mapOfCalledMethods{methodName} = true

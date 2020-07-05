@@ -249,7 +249,7 @@ class ASTOptimizerConstantFolding
 
               # Stay non-imm params as is.
               lastWasImm = false
-              newParams[len(newParams)] = oneChild
+              newParams[@afterlast] = oneChild
 
             else
               # Join string imms.
@@ -260,13 +260,13 @@ class ASTOptimizerConstantFolding
               elif oneChild.opcode is AST_DATA_STRING
                 # Current param is string, but previous not.
                 # Push new param to list.
-                newParams[len(newParams)] = oneChild
+                newParams[@afterlast] = oneChild
 
               else
                 # Both previous and current params are *NOT* strings.
                 # Convert it to string.
                 this._setToImm(oneChild, str(oneChild.value))
-                newParams[len(newParams)] = oneChild
+                newParams[@afterlast] = oneChild
               endif
 
               lastWasImm = true

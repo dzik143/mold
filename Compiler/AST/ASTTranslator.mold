@@ -300,7 +300,7 @@ class ASTTranslator
     # TODO: Clean up this mess.
     arrayOfSymbols = []
     for values oneSymbol in symbols
-      arrayOfSymbols[len(arrayOfSymbols)] = oneSymbol
+      arrayOfSymbols[@afterlast] = oneSymbol
     endfor
 
     # TODO: symbolInfo is undefined after function emmited
