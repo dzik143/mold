@@ -197,7 +197,7 @@ class ASTEvaluator
 
       else
         node.storedValue = this._getValue(valuesMap, node.value)
-        # print "GET VALUE at node #" + str(node.id), node.value, this._getArrayOfValueNodes(node)
+        # print "GET VALUE at node #" ~ str(node.id), node.value, this._getArrayOfValueNodes(node)
       endif
 
     elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
@@ -218,7 +218,7 @@ class ASTEvaluator
 
             if methodProto is defined
               if methodProto.rv is undefined
-                die('error: method "' + classProto.name + '.' + methodProto.name + '" has no return value')
+                die('error: method "' ~ classProto.name ~ '.' ~ methodProto.name ~ '" has no return value')
               endif
             endif
           endif
@@ -236,7 +236,7 @@ class ASTEvaluator
 
             if methodProto is defined
               if methodProto.rv is undefined
-                die('error: method "' + classProto.name + '.' + methodProto.name + '" has no return value')
+                die('error: method "' ~ classProto.name ~ '.' ~ methodProto.name ~ '" has no return value')
               endif
             endif
           endif
