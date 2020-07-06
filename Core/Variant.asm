@@ -835,39 +835,38 @@ proc __MOLD_VariantMul x, y, rv
    cinvoke ExitProcess, -1
 endp
 
-proc __MOLD_VariantAdd x, y, rv
-    ; rcx = [x]
-    ; rdx = [y]
-    ; r8  = [rv]
+
+__MOLD_VariantTypeDispatcherXY:
+    ; rcx = x
+    ; rdx = y
+    ; r8  = rv
+    ; r11 = jmptable
 
     DEBUG_CHECK_VARIANT rcx
     DEBUG_CHECK_VARIANT rdx
 
     mov r9d,  [rcx + Variant_t.type]  ; r9  = x.type
     mov r10d, [rdx + Variant_t.type]  ; r10 = y.type
-
-    cmp   r9, 2
-    jl    .error
-
-    cmp   r10, 2
-    jl   .error
-
-    cmp   r9, 5
-    jg    .error
-
-    cmp   r10, 5
-    jg   .error
-
     lea rax,  [r9*4  + r10 - 10]      ; rax = x.type*4 + y.type - 10
 
-    jmp [.jmpTable + rax*8]
+    cmp rax, 0xf
+    ja  .error
 
-;     i  f  d  s                    2   3   4   5       0   1   2   3
-;  +------------      2-5        2 22, 23, 24, --    0 00, 01, 02, --
-; i| ii if id --                 3 32, 33, 34, --    1 10, 11, 12, --
-; f| fi ff fd --                 4 42, 43, 44, --    2 20, 21, 22, --
-; d| di df dd --                 5 --, --, --, 55    3 --, --, --, 33
-; s| -- -- -- ss
+    jmp qword [r11 + rax*8]
+
+.error:
+    mov rdx, r9  ; rdx = x.type
+    mov r8,  r10 ; r8  = y.type
+    cinvoke printf, '__MOLD_VariantTypeDispatcherXY: error: invalid types (%d, %d)'
+    int 3
+
+proc __MOLD_VariantAdd x, y, rv
+    ; rcx = [x]
+    ; rdx = [y]
+    ; r8  = [rv]
+
+    lea   r11, [.jmpTable]
+    jmp   __MOLD_VariantTypeDispatcherXY
 
 .jmpTable dq .case_ii, .case_if, .case_id, .error
           dq .case_fi, .case_ff, .case_fd, .error
@@ -888,29 +887,11 @@ proc __MOLD_VariantAdd x, y, rv
 
     ret
 
-; integer x double
+; integer + double
+; double  + integer
 .case_id:
-     jmp       __MOLD_ErrorImplicitTypeConversion
-
-     ; OLD IMPLEMENTATION:
-     ; xchg      rcx, rdx
-
-; double x integer
 .case_di:
      jmp       __MOLD_ErrorImplicitTypeConversion
-
-     ; OLD IMPLEMENTATION
-     ;movq      xmm0, [rcx + Variant_t.value]
-     ;cvtsi2sd  xmm1, [rdx + Variant_t.value]
-
-     ;addsd     xmm0, xmm1
-
-     ;mov       [r8 + Variant_t.type], VARIANT_DOUBLE
-     ;movq      [r8 + Variant_t.value], xmm0
-
-     ;DEBUG_CHECK_VARIANT r8
-
-     ;ret
 
 ; double x double
 .case_dd:
@@ -941,26 +922,17 @@ proc __MOLD_VariantAdd x, y, rv
 endp
 
 proc __MOLD_VariantSub x, y, rv
-  ; rcx = [x]
-  ; rdx = [y]
-  ; r8  = [rv]
+    ; rcx = [x]
+    ; rdx = [y]
+    ; r8  = [rv]
 
-  DEBUG_CHECK_VARIANT rcx
-  DEBUG_CHECK_VARIANT rdx
-
-  mov r9d,  [rcx + Variant_t.type]  ; r9  = x.type
-  mov r10d, [rdx + Variant_t.type]  ; r10 = y.type
-  lea rax,  [r9*4  + r10 - 10]      ; rax = x.type*4 + y.type - 10
-
-  cmp rax, 0xf
-  ja  .error
-
-  jmp [.jmpTable + rax*8]
+    lea   r11, [.jmpTable]
+    jmp   __MOLD_VariantTypeDispatcherXY
 
 .jmpTable dq .case_ii, .case_if, .case_id, .error
           dq .case_fi, .case_ff, .case_fd, .error
           dq .case_di, .case_df, .case_dd, .error
-          dq .error,   .error,   .error,   .case_ss
+          dq .error,   .error,   .error,   .error
 
 ; integer x integer
 .case_ii:
@@ -976,39 +948,11 @@ proc __MOLD_VariantSub x, y, rv
 
   ret
 
-; integer x double
+; integer - double
+; double  - integer
 .case_id:
-   jmp       __MOLD_ErrorImplicitTypeConversion
-
-   ; OLD IMPLEMENTATION:
-   ; cvtsi2sd  xmm0, [rcx + Variant_t.value]
-   ; movq      xmm1, [rdx + Variant_t.value]
-
-   ; subsd     xmm0, xmm1
-
-   ; mov       [r8 + Variant_t.type], r10d   ; rv.type  = VARIANT_DOUBLE
-   ; movq      [r8 + Variant_t.value], xmm0
-
-   ; DEBUG_CHECK_VARIANT r8
-
-   ; ret
-
-; double x integer
 .case_di:
    jmp       __MOLD_ErrorImplicitTypeConversion
-
-   ; OLD IMPLEMENTATION
-   ; movq      xmm0, [rcx + Variant_t.value]
-   ; cvtsi2sd  xmm1, [rdx + Variant_t.value]
-
-   ; subsd     xmm0, xmm1
-
-   ; mov       [r8 + Variant_t.type], r9d   ; rv.type  = VARIANT_DOUBLE
-   ; movq      [r8 + Variant_t.value], xmm0
-
-   ; DEBUG_CHECK_VARIANT r8
-
-   ; ret
 
 ; double x double
 .case_dd:
@@ -1021,11 +965,6 @@ proc __MOLD_VariantSub x, y, rv
    DEBUG_CHECK_VARIANT r8
 
    ret
-
-; string x string
-.case_ss:
-   cinvoke printf, '__MOLD_VariantSub: string not implemented'
-   cinvoke ExitProcess, -1
 
 .error:
    cinvoke printf, '__MOLD_VariantSub: error: invalid type'
@@ -1043,23 +982,13 @@ endp
 macro DefVariantCompare name, opcode_ii, opcode_dd
 {
   proc name x, y, rv
-    ; rcx = x
-    ; rdx = y
-    ; r8  = rv
+    ; rcx = [x]
+    ; rdx = [y]
+    ; r8  = [rv]
+    mov   [r8 + Variant_t.type], VARIANT_BOOLEAN
 
-    DEBUG_CHECK_VARIANT rcx
-    DEBUG_CHECK_VARIANT rdx
-
-    mov [r8 + Variant_t.type], VARIANT_BOOLEAN
-    mov r9d,  [rcx  + Variant_t.type]  ; r9  = x.type
-    mov r10d, [rdx  + Variant_t.type]  ; r10 = y.type
-
-    lea rax,  [r9*4 + r10 - 10]        ; rax = x.type*4 + y.type - 10
-
-    cmp rax, 0xf
-    ja  .error
-
-    jmp [.jmpTable + rax*8]
+    lea   r11, [.jmpTable]
+    jmp   __MOLD_VariantTypeDispatcherXY
 
   .jmpTable dq .case_ii, .case_if, .case_id, .error
             dq .case_fi, .case_ff, .case_fd, .error
@@ -1128,19 +1057,6 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
     ; TODO: Is this code used anymore?
     cinvoke printf, 'error: string order compare not implemented'
     int 3
-
-    ;push      r8
-    ;cinvoke   strcmp
-    ;pop       r8
-
-    ;mov       rdx, rax
-    ;xor       rax, rax
-    ;test      rdx, rdx
-    ;opcode_ii al
-
-    ;mov       [r8 + Variant_t.value], rax
-    ;DEBUG_CHECK_VARIANT r8
-    ;ret
 
   .error:
     mov       [r8 + Variant_t.value], 0
@@ -1337,28 +1253,19 @@ proc __MOLD_VariantNeg x, rv
 endp
 
 proc __MOLD_VariantDivAsInteger x, y, rv
-  ; rcx = [x]
-  ; rdx = [y]
-  ; r8  = [rv]
+    ; rcx = [x]
+    ; rdx = [y]
+    ; r8  = [rv]
 
-  DEBUG_CHECK_VARIANT rcx
-  DEBUG_CHECK_VARIANT rdx
+    mov   [r8 + Variant_t.type], VARIANT_INTEGER
 
-  mov [r8 + Variant_t.type], VARIANT_INTEGER
-
-  mov r9d,  [rcx  + Variant_t.type]  ; r9  = x.type
-  mov r10d, [rdx  + Variant_t.type]  ; r10 = y.type
-  lea rax,  [r9*4 + r10 - 10]        ; rax = x.type*4 + y.type - 10
-
-  cmp rax, 0xf
-  ja  .error
-
-  jmp [.jmpTable + rax*8]
+    lea   r11, [.jmpTable]
+    jmp   __MOLD_VariantTypeDispatcherXY
 
 .jmpTable dq .case_ii, .case_if, .case_id, .error
           dq .case_fi, .case_ff, .case_fd, .error
           dq .case_di, .case_df, .case_dd, .error
-          dq .error,   .error ,  .error ,  .case_ss
+          dq .error,   .error ,  .error ,  .error
 
 ; integer x integer
 .case_ii:
@@ -1373,37 +1280,13 @@ proc __MOLD_VariantDivAsInteger x, y, rv
 
   ret
 
-; integer x double
+; integer // double
+; double  // integer
 .case_id:
-   jmp       __MOLD_ErrorImplicitTypeConversion
-
-   ; OLD IMPLEMENTATION:
-   ; cvtsi2sd  xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
-   ; movq      xmm1, [rdx + Variant_t.value]  ; xmm1     = double(y.value)
-   ; divsd     xmm0, xmm1                     ; xmm0     = x.value / y.value
-   ; cvttsd2si rax, xmm0                      ; rax      = int(x.value / y.value)
-   ; mov       [r8 + Variant_t.value], rax    ; rv.value = int(x.value / y.value)
-
-   ; DEBUG_CHECK_VARIANT r8
-
-   ; ret
-
-; double x integer
 .case_di:
    jmp       __MOLD_ErrorImplicitTypeConversion
 
-   ; OLD IMPLEMENTATION:
-   ; movq      xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
-   ; cvtsi2sd  xmm1, [rdx + Variant_t.value]  ; xmm1     = double(y.value)
-   ; divsd     xmm0, xmm1                     ; xmm0     = x.value / y.value
-   ; cvttsd2si rax, xmm0                      ; rax      = int(x.value / y.value)
-   ; mov       [r8 + Variant_t.value], rax    ; rv.value = int(x.value / y.value)
-
-   ; DEBUG_CHECK_VARIANT r8
-
-   ; ret
-
-; double x double
+; double // double
 .case_dd:
    movq      xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
    movq      xmm1, [rdx + Variant_t.value]  ; xmm1     = y.value
@@ -1414,11 +1297,6 @@ proc __MOLD_VariantDivAsInteger x, y, rv
    DEBUG_CHECK_VARIANT r8
 
    ret
-
-; string x string
-.case_ss:
-   cinvoke printf, 'add: string not implemented'
-   cinvoke ExitProcess, -1
 
 .error:
    cinvoke printf, 'error: invalid type'
@@ -1434,26 +1312,17 @@ proc __MOLD_VariantDivAsInteger x, y, rv
 endp
 
 proc __MOLD_VariantDiv x, y, rv
-  ; rcx = [x]
-  ; rdx = [y]
-  ; r8  = [rv]
+    ; rcx = [x]
+    ; rdx = [y]
+    ; r8  = [rv]
 
-  DEBUG_CHECK_VARIANT rcx
-  DEBUG_CHECK_VARIANT rdx
-
-  mov r9d,  [rcx  + Variant_t.type]  ; r9  = x.type
-  mov r10d, [rdx  + Variant_t.type]  ; r10 = y.type
-  lea rax,  [r9*4 + r10 - 10]        ; rax = x.type*4 + y.type - 10
-
-  cmp rax, 0xf
-  ja  .error
-
-  jmp [.jmpTable + rax*8]
+    lea   r11, [.jmpTable]
+    jmp   __MOLD_VariantTypeDispatcherXY
 
 .jmpTable dq .case_ii, .case_if, .case_id, .error
           dq .case_fi, .case_ff, .case_fd, .error
           dq .case_di, .case_df, .case_dd, .error
-          dq .error,   .error ,  .error ,  .case_ss
+          dq .error,   .error ,  .error ,  .error
 
 ; integer x integer
 .case_ii:
@@ -1468,35 +1337,11 @@ proc __MOLD_VariantDiv x, y, rv
 
    ret
 
-; integer x double
+; integer / double
+; double  / integer
 .case_id:
-   jmp       __MOLD_ErrorImplicitTypeConversion
-
-   ; OLD IMPLEMENTATION:
-   ; cvtsi2sd  xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
-   ; movq      xmm1, [rdx + Variant_t.value]  ; xmm1     = double(y.value)
-   ; mov       [r8 + Variant_t.type], r10d    ; rv.type  = VARIANT_DOUBLE
-   ; divsd     xmm0, xmm1                     ; xmm0     = x.value / y.value
-   ; movq      [r8 + Variant_t.value], xmm0   ; rv.value = x.value / y.value
-
-   ; DEBUG_CHECK_VARIANT r8
-
-   ; ret
-
-; double x integer
 .case_di:
    jmp       __MOLD_ErrorImplicitTypeConversion
-
-   ; OLD IMPLEMENTATION:
-   ; movq      xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
-   ; cvtsi2sd  xmm1, [rdx + Variant_t.value]  ; xmm1     = double(y.value)
-   ; mov       [r8 + Variant_t.type], r9d     ; rv.type  = VARIANT_DOUBLE
-   ; divsd     xmm0, xmm1                     ; xmm0     = x.value / y.value
-   ; movq      [r8 + Variant_t.value], xmm0   ; rv.value = x.value / y.value
-
-   ; DEBUG_CHECK_VARIANT r8
-
-   ; ret
 
 ; double x double
 .case_dd:
@@ -1509,11 +1354,6 @@ proc __MOLD_VariantDiv x, y, rv
    DEBUG_CHECK_VARIANT r8
 
    ret
-
-; string x string
-.case_ss:
-   cinvoke printf, 'add: string not implemented'
-   cinvoke ExitProcess, -1
 
 .error:
    cinvoke printf, 'error: invalid type'
