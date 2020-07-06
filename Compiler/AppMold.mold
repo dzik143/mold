@@ -89,8 +89,8 @@ class AppMold
 
   method logError(msg)
     logCtx    = this.logCtx
-    msgPrefix = str(logCtx.filePath) + ':' + str(logCtx.line) + ':' + str(logCtx.column) + ': error: '
-    die(msgPrefix + msg)
+    msgPrefix = str(logCtx.filePath) ~ ':' ~ str(logCtx.line) ~ ':' ~ str(logCtx.column) ~ ': error: '
+    die(msgPrefix ~ msg)
   endmethod
 
   method getMir1Code() -> rv

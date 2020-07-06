@@ -110,6 +110,10 @@ class ASTTranslator
     this._error('_add() not implemented')
   endmethod
 
+  method _stringJoin(rv, x, y)
+    this._error('_stringJoin() not implemented')
+  endmethod
+
   method _sub(rv, x, y)
     this._error('_sub() not implemented')
   endmethod
@@ -420,6 +424,7 @@ class ASTTranslator
     global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
     global AST_OPCODE_CALL_NEW, AST_OPCODE_VCALL
     global AST_OPCODE_TYPE_CAST
+    global AST_OPCODE_STRING_JOIN
 
     opcode      = ast.opcode
     value       = ast.value
@@ -663,6 +668,9 @@ class ASTTranslator
 
         elif opcode is AST_OPCODE_IDIV
           this._idiv(rv, left, right)
+
+        elif opcode is AST_OPCODE_STRING_JOIN
+          this._stringJoin(rv, left, right)
         endif
 
       else
@@ -787,6 +795,7 @@ class ASTTranslator
     global AST_OPCODE_FOR_KEYS_VALUES
     global AST_OPCODE_FOR_INDEXES
     global AST_OPCODE_FOR_INDEXES_VALUES
+    global AST_OPCODE_STRING_JOIN
 
     # TODO: Better way to pass source position to error handler.
     this.app.setLogContext(ast)
@@ -852,8 +861,10 @@ class ASTTranslator
         rval = this._evaluateNode(children[1])
         this._assign(lval, rval)
 
-        # Special case: x = x + y
-        if (children[1].opcode is AST_OPCODE_ADD) and (lval is children[1].children[0].value)
+        # Special case: x = x ~ y
+        if ((children[1].opcode is AST_OPCODE_STRING_JOIN) and
+            (lval is children[1].children[0].value))
+
           symbolInfo = this.symbolTable.lookup(lval)
           symbolInfo.duplicateOnFirstWrite = true
         endif

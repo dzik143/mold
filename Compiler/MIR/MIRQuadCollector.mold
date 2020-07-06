@@ -50,10 +50,10 @@ class MIRQuadCollector extends PipeAbstract
       sep = ''
 
       for values v in item
-        rv  = rv + sep + str(v)
+        rv  = rv ~ sep ~ str(v)
         sep = ', '
       endfor
-      rv = rv + ']'
+      rv = rv ~ ']'
 
     else
       # Default way.
@@ -61,7 +61,7 @@ class MIRQuadCollector extends PipeAbstract
       padCnt  = desiredLen - len(rv)
 
       for idx in 0 .. padCnt
-        rv = rv + ' '
+        rv = rv ~ ' '
       endfor
     endif
   endmethod
@@ -103,7 +103,7 @@ class MIRQuadCollector extends PipeAbstract
 #  method _getType(x) -> rv
 #    xInfo = this.currentFrame.symbols[x]
 #    if xInfo is undefined
-#      die('error: symbol not found: ' + str(x))
+#      die('error: symbol not found: ' ~ str(x))
 #    else
 #      rv = this.currentFrame.symbols[x].type
 #      if rv is undefined
@@ -135,7 +135,7 @@ class MIRQuadCollector extends PipeAbstract
         print ';', item[1]
 
       elif opcode is 'label'
-        print item[1] + ':'
+        print item[1] ~ ':'
 
       elif opcode is 'print_array_of_variants_ln'
         print '   ', this._pad(opcode, 28), item[1]
@@ -153,9 +153,9 @@ class MIRQuadCollector extends PipeAbstract
         #  srcType = this._getType(x)
 
         #  if dstType isnt srcType
-          #  opcode = opcode + '_' + srcType
+          #  opcode = opcode ~ '_' ~ srcType
           #else
-          #  opcode = 'conv_' + srcType + '_to_' + dstType
+          #  opcode = 'conv_' ~ srcType ~ '_to_' ~ dstType
         #  endif
         #else
 
@@ -165,13 +165,13 @@ class MIRQuadCollector extends PipeAbstract
 
           if typeof(x) is 'string'
             xType  = this._getType(x)
-            opcode = opcode + '_' + xType
+            opcode = opcode ~ '_' ~ xType
           endif
 
           if typeof(y) is 'string'
             yType  = this._getType(y)
             if xType isnt yType
-              opcode = opcode + '_' + yType
+              opcode = opcode ~ '_' ~ yType
             endif
           endif
         endif

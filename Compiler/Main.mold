@@ -223,7 +223,7 @@ else
     app.getAstOptimizerCSE().processNode(ast)
 
   else
-    die('error: optimization level #' + str(optimizationLevel) + ' is not implemented yet')
+    die('error: optimization level #' ~ str(optimizationLevel) ~ ' is not implemented yet')
   endif
 
   if (mode is 'mir0') or (mode is 'interpreter')

@@ -72,7 +72,7 @@ function AST_GetOpcodeAsText(opcode) -> rv
   global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
   global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
   global AST_OPCODE_CALL
-  global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV
+  global AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV
   global AST_OPCODE_IDIV
   global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
   global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
@@ -105,6 +105,7 @@ function AST_GetOpcodeAsText(opcode) -> rv
   global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
   global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
   global AST_OPCODE_CALL_NEW, AST_OPCODE_VCALL
+  global AST_OPCODE_STRING_JOIN
 
   if opcode is AST_OPCODE_PROGRAM
     rv = 'PROGRAM'
@@ -175,6 +176,9 @@ function AST_GetOpcodeAsText(opcode) -> rv
   elif opcode is AST_OPCODE_ADD
     rv = 'ADD'
 
+  elif opcode is AST_OPCODE_STRING_JOIN
+    rv = 'STRING_JOIN'
+
   elif opcode is AST_OPCODE_SUB
     rv = 'SUB'
 
@@ -235,7 +239,7 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
   global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
   global AST_OPCODE_CALL
-  global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV
+  global AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV
   global AST_OPCODE_IDIV
   global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
   global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
@@ -276,6 +280,7 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   global AST_OPCODE_FOR_KEYS_VALUES
   global AST_OPCODE_FOR_INDEXES
   global AST_OPCODE_FOR_INDEXES_VALUES
+  global AST_OPCODE_STRING_JOIN
 
   if opcode is AST_OPCODE_REFERENCE_BY_INDEX
     rv = '&i'
@@ -315,6 +320,9 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
 
   elif opcode is AST_OPCODE_ADD
     rv = '+'
+
+  elif opcode is AST_OPCODE_STRING_JOIN
+    rv = '~'
 
   elif opcode is AST_OPCODE_SUB
     rv = '-'
@@ -581,7 +589,7 @@ function AST_HashInternal(node, isCodeMode) -> rv
         elif typeof(node.storedValue) is 'array'
           rv = ''
           for values item in node.storedValue
-            rv = rv + '@' + str(item.id)
+            rv = rv ~ '@' ~ str(item.id)
           endfor
 
         else
@@ -592,7 +600,7 @@ function AST_HashInternal(node, isCodeMode) -> rv
     elif node.opcode is AST_DATA_ARRAY
       rv = AST_GetOpcodeAsShortText(opcode) ~ ',' ~ str(childrenCnt)
       for idx in 0 .. childrenCnt
-        rv  = rv + ',' + AST_Hash(children[idx])
+        rv  = rv ~ ',' ~ AST_Hash(children[idx])
       endfor
 
     elif node.opcode is AST_DATA_MAP
@@ -600,7 +608,7 @@ function AST_HashInternal(node, isCodeMode) -> rv
       idx = 0
       # TODO: Use for step/by.
       while idx < childrenCnt
-        rv  = rv + ',' + AST_Hash(children[idx]) + ',' + AST_Hash(children[idx + 1])
+        rv  = rv ~ ',' ~ AST_Hash(children[idx]) ~ ',' ~ AST_Hash(children[idx + 1])
         idx = idx + 2
       endwhile
 */
@@ -629,12 +637,12 @@ function AST_HashInternal(node, isCodeMode) -> rv
       # TODO: Clean up this mess.
       # Hash syscall id to avoid fake code duplication result.
       if node.value is '__mold_syscall'
-        rv = rv + ',' ~ str(node.sysCallId)
+        rv = rv ~ ',' ~ str(node.sysCallId)
       endif
 
       # Hash call parameters.
       for values childNode in children
-        rv  = rv + ',' ~ AST_HashInternal(childNode, isCodeMode)
+        rv  = rv ~ ',' ~ AST_HashInternal(childNode, isCodeMode)
       endfor
 
     elif opcode is AST_OPCODE_TYPE_CAST
@@ -643,7 +651,7 @@ function AST_HashInternal(node, isCodeMode) -> rv
     else
       rv = AST_GetOpcodeAsShortText(opcode) ~ ',' ~ str(childrenCnt)
       for values childNode in children
-        rv  = rv + ',' ~ AST_HashInternal(childNode, isCodeMode)
+        rv  = rv ~ ',' ~ AST_HashInternal(childNode, isCodeMode)
       endfor
     endif
 

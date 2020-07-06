@@ -74,6 +74,8 @@ MIR_OPCODE_RETVAL_GUARD = 45
 MIR_OPCODE_INIT_FRAME   = 46
 MIR_OPCODE_SYSCALL      = 48
 
+MIR_OPCODE_STRING_JOIN = 49
+
 MIR_OPCODE_FOR_EACH = 100
 
 MIR_OPCODE_LOAD_ARGC = 252
@@ -227,6 +229,11 @@ class MIRCode
   method idiv()
     global MIR_OPCODE_IDIV
     this.push0(MIR_OPCODE_IDIV)
+  endmethod
+
+  method stringJoin()
+    global MIR_OPCODE_STRING_JOIN
+    this.push0(MIR_OPCODE_STRING_JOIN)
   endmethod
 
   method loadArray()
@@ -408,7 +415,7 @@ class MIRCode
     addr = this.labels[labelId]
     if addr is undefined
       # Error - jump to invalid label id.
-      die("error: invalid label id '" + str(labelId) + "'")
+      die("error: invalid label id '" ~ str(labelId) ~ "'")
 
     elif addr is -1
       # Unresolved label, we're still waiting for emit.
@@ -477,9 +484,9 @@ class MIRCode
   method emitLabel(labelId)
     targetId = this.labels[labelId]
     if targetId is undefined
-      die("error: invalid label id '" + str(targetId) + "'")
+      die("error: invalid label id '" ~ str(targetId) ~ "'")
     elif targetId >= 0
-      die("error: label id '" + str(targetId) + "' is already emited")
+      die("error: label id '" ~ str(targetId) ~ "' is already emited")
     else
       this.labels[labelId] = this.codeCnt
       this.targetIps[this.targetIpsCnt] = this.codeCnt

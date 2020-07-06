@@ -3301,4 +3301,31 @@ __MOLD_ErrorImplicitTypeConversion:
 
 .fmt db 'error: implicit type conversion is not supported anymore', 13, 10, 0
 
+; TODO: Clean up this mess.
+proc __MOLD_VariantStringJoin x, y, rv
+    ; rcx = [x]
+    ; rdx = [y]
+    ; r8  = [rv]
+
+    DEBUG_CHECK_VARIANT rcx
+    DEBUG_CHECK_VARIANT rdx
+
+    mov r9d,  [rcx + Variant_t.type]  ; r9  = x.type
+    mov r10d, [rdx + Variant_t.type]  ; r10 = y.type
+
+    cmp r9d, VARIANT_STRING
+    jnz .error
+
+    cmp r10d, VARIANT_STRING
+    jnz .error
+
+    jmp __MOLD_VariantAdd.case_ss
+
+.error:
+    cinvoke printf, .fmtError
+    cinvoke ExitProcess, -1
+
+.fmtError db 'error: string expected (x ~ y)', 13, 10, 0
+endp
+
 include 'SysCall.asm'

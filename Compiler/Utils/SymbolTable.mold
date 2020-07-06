@@ -108,7 +108,7 @@ class SymbolTable
 
   method insert(name, entry)
     if this.symbols{name} is defined
-      this._error("redeclaration of '" + name + "'")
+      this._error("redeclaration of '" ~ name ~ "'")
 
     else
       this.symbols{name} = entry
@@ -182,7 +182,7 @@ class SymbolTable
     rv = this._lookupInternal(name)
 
     if rv is undefined
-      this._error("'" + name + "' was not declared in this scope")
+      this._error("'" ~ name ~ "' was not declared in this scope")
     endif
 
     # TODO: Use max(x, y) if ready.
@@ -246,7 +246,7 @@ class SymbolTable
     this._debug('Enter scope')
 
     if this.deepIdx >= this.deepMax
-      this._error('too deep (' + str(this.deepIdx) + ')')
+      this._error('too deep (' ~ str(this.deepIdx) ~ ')')
     endif
 
     rv = new SymbolTable(this.app)
@@ -299,7 +299,7 @@ class SymbolTable
     rv = this.lookupGlobal(name)
 
     if rv.kind isnt SYMBOL_KIND_FUNCTION
-      this._error("'" + name + "' is not a function")
+      this._error("'" ~ name ~ "' is not a function")
 
     else
       # TODO: Clean up this mess.
@@ -309,7 +309,7 @@ class SymbolTable
       endif
 
       if len(rv.proto.params) isnt paramsCnt
-        this._error("function '" + name + "' requires exactly " + str(len(rv.proto.params)) + ' parameters, but ' + str(paramsCnt) + ' were passed')
+        this._error("function '" ~ name ~ "' requires exactly " ~ str(len(rv.proto.params)) ~ ' parameters, but ' ~ str(paramsCnt) ~ ' were passed')
       endif
     endif
   endmethod
@@ -336,7 +336,7 @@ class SymbolTable
     global SYMBOL_KIND_CLASS
     rv = this.lookupGlobal(name)
     if rv.kind isnt SYMBOL_KIND_CLASS
-      this._error("'" + name + "' is not a class")
+      this._error("'" ~ name ~ "' is not a class")
     endif
   endmethod
 
@@ -377,7 +377,7 @@ class SymbolTable
         # It's a global constant. Do nothing.
       else
         # It's already declared as another kind.
-        this._error("conflicting declaration 'global " + name + "'")
+        this._error("conflicting declaration 'global " ~ name ~ "'")
       endif
 
     else
@@ -461,7 +461,7 @@ class SymbolTable
 
     if literalEntry is undefined
       # Literal seen first time. Wrap it into new constant.
-      name         = '__literal' + str(SymbolTable_GetNextId())
+      name         = '__literal' ~ str(SymbolTable_GetNextId())
       literalEntry = this.insertConst(name, text)
       this.global.literals{text} = literalEntry
 
@@ -475,7 +475,7 @@ class SymbolTable
   # ----------------------------------------------------------------------------
 
   method createConstFromValue(value) -> rv
-    rv = '__const' + str(SymbolTable_GetNextId())
+    rv = '__const' ~ str(SymbolTable_GetNextId())
     this.insertConst(rv, value)
   endmethod
 
@@ -517,14 +517,14 @@ class SymbolTable
 
       else
         # Error - type mismatch.
-        this._error('attemp to assign ' + AST_ConvertDataTypeToText(newType) + ' to ' + AST_ConvertDataTypeToText(oldType))
+        this._error('attemp to assign ' ~ AST_ConvertDataTypeToText(newType) ~ ' to ' ~ AST_ConvertDataTypeToText(oldType))
       endif
 
       if goOn is true
         symbolInfo.astType = newType
-        this._debug('Assign AST type [' + AST_ConvertDataTypeToText(newType) + '] to variable [' + str(name) + ']')
+        this._debug('Assign AST type [' ~ AST_ConvertDataTypeToText(newType) ~ '] to variable [' ~ str(name) ~ ']')
       else
-        this._debug('Ignored ineffective AST type change from [' + AST_ConvertDataTypeToText(oldType) + '] to [' + AST_ConvertDataTypeToText(newType) + '] for variable [' + str(name) + ']')
+        this._debug('Ignored ineffective AST type change from [' ~ AST_ConvertDataTypeToText(oldType) ~ '] to [' ~ AST_ConvertDataTypeToText(newType) ~ '] for variable [' ~ str(name) ~ ']')
       endif
     endif
   endmethod
@@ -554,7 +554,7 @@ class SymbolTable
         #endif
       else
         # Variable was never accesed for read. Remove it from table.
-        this._debug('Removed unused symbol [' + symbolInfo.name + ']')
+        this._debug('Removed unused symbol [' ~ symbolInfo.name ~ ']')
       endif
     endfor
 
@@ -569,7 +569,7 @@ class SymbolTable
     global SYMBOL_KIND_LABEL
 
     # TODO: Store labels in symbol table too.
-    rv = 'l' + str(SymbolTable_GetNextId())
+    rv = 'l' ~ str(SymbolTable_GetNextId())
     this.insert(rv, {
       'name': rv,
       'kind': SYMBOL_KIND_LABEL
@@ -578,7 +578,7 @@ class SymbolTable
 
   method insertJmpTable(jmpTable) -> newEntry
     global SYMBOL_KIND_JMP_TABLE
-    name = '__jmptable' + str(SymbolTable_GetNextId())
+    name = '__jmptable' ~ str(SymbolTable_GetNextId())
     newEntry = {
       'name': name,
       'kind': SYMBOL_KIND_JMP_TABLE,
@@ -600,17 +600,17 @@ class SymbolTable
 
       poolObj.cnt = poolCnt
       rv = poolObj.pool[poolCnt]
-      this._debug('Get temp var [' + rv + '] from pool (' + wantedType + ')')
+      this._debug('Get temp var [' ~ rv ~ '] from pool (' ~ wantedType ~ ')')
 
     else
       # There is no free temp vars. Allocate new one.
-      rv = 'tmp' + str(SymbolTable_GetNextId())
+      rv = 'tmp' ~ str(SymbolTable_GetNextId())
       this.insertLocal(rv)
       # TODO: Clean up this mess.
       symbolInfo        = this.lookup(rv)
       symbolInfo.isTemp = true
       symbolInfo.type   = wantedType
-      this._debug('Allocated new temp var [' + rv + '] (' + wantedType + ')')
+      this._debug('Allocated new temp var [' ~ rv ~ '] (' ~ wantedType ~ ')')
     endif
 
     #symbolInfo.refCnt = 1
@@ -644,7 +644,7 @@ class SymbolTable
           poolObj.cnt               = poolObj.cnt + 1
         endif
 
-        this._debug('Release temp var [' + symbolInfo.name + '] to pool (' + str(mirType) + ')')
+        this._debug('Release temp var [' ~ symbolInfo.name ~ '] to pool (' ~ str(mirType) ~ ')')
       #endif
     endif
   endmethod

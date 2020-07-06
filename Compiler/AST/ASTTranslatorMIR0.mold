@@ -56,6 +56,10 @@ class ASTTranslatorMIR0 extends ASTTranslator
     this.code.add()
   endmethod
 
+  method _stringJoin(rv, x, y)
+    this.code.stringJoin()
+  endmethod
+
   method _sub(rv, x, y)
     this.code.sub()
   endmethod

@@ -194,6 +194,10 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.popTwoArgsAndEmitOpcode('add', rv)
   endmethod
 
+  method _stringJoin(rv, x, y)
+    this.popTwoArgsAndEmitOpcode('string_join', rv)
+  endmethod
+
   method _sub(rv, x, y)
     this.popTwoArgsAndEmitOpcode('sub', rv)
   endmethod

@@ -135,10 +135,10 @@ class CodeGeneratorX64
         print name, 'Variant_t VARIANT_DOUBLE, 0,', value
 
       elif type is 'string'
-        print name, 'Variant_t VARIANT_STRING, 0,', name + '_buffer'
+        print name, 'Variant_t VARIANT_STRING, 0,', name ~ '_buffer'
 
       elif type is 'array'
-        print name, 'Variant_t VARIANT_ARRAY, 0,', name + '_buffer'
+        print name, 'Variant_t VARIANT_ARRAY, 0,', name ~ '_buffer'
 
       elif type is 'boolean'
         if value is true
@@ -162,8 +162,8 @@ class CodeGeneratorX64
 
   method emitStringBufferHead(name, value, wantDeep, deepIdx)
     if wantDeep is deepIdx
-      bufferName      = name + '_buffer'
-      bufferNameBytes = name + '_bufferBytes'
+      bufferName      = name ~ '_buffer'
+      bufferNameBytes = name ~ '_bufferBytes'
       print  bufferName, 'Buffer_t', len(value) + 1, ', -1, 0,', bufferNameBytes
     endif
 
@@ -172,18 +172,18 @@ class CodeGeneratorX64
 
   method emitStringBufferContent(name, value, wantDeep, deepIdx)
     if wantDeep is deepIdx
-      bufferNameBytes = name + '_bufferBytes'
+      bufferNameBytes = name ~ '_bufferBytes'
       bufferData      = '"'
 
       for values character in value
         if character is '"'
-          bufferData = bufferData + '", 34, "'
+          bufferData = bufferData ~ '", 34, "'
         else
-          bufferData = bufferData + character
+          bufferData = bufferData ~ character
         endif
       endfor
 
-      bufferData = bufferData + '"'
+      bufferData = bufferData ~ '"'
 
       print bufferNameBytes, 'StringHead_t', len(value)
       print ' db ', bufferData, ', 0'
@@ -194,8 +194,8 @@ class CodeGeneratorX64
     itemsCnt = len(items)
 
     if wantDeepIdx is deepIdx
-      bufferName      = name + '_buffer'
-      bufferNameBytes = name + '_bufferBytes'
+      bufferName      = name ~ '_buffer'
+      bufferNameBytes = name ~ '_bufferBytes'
       print bufferName, 'Buffer_t', itemsCnt * 16, ', -1, 0,',  bufferNameBytes
     endif
 
@@ -256,8 +256,8 @@ class CodeGeneratorX64
     #print '; innerValueMax:' , innerValueMax
 
     if wantDeepIdx is deepIdx
-      bufferName      = name + '_buffer'
-      bufferNameBytes = name + '_bufferBytes'
+      bufferName      = name ~ '_buffer'
+      bufferNameBytes = name ~ '_bufferBytes'
 
       print bufferNameBytes, 'dd', innerTypeForEmit, '; inner type'
       print 'db', innerSize, ' ; inner size'
@@ -283,7 +283,7 @@ class CodeGeneratorX64
 
     # Go on recursively for variant arrays.
     for itemIdx in 0 .. itemsCnt
-      this.emitConstant(name + '_' + str(itemIdx), items[itemIdx], wantDeepIdx, deepIdx)
+      this.emitConstant(name ~ '_' ~ str(itemIdx), items[itemIdx], wantDeepIdx, deepIdx)
     endfor
   endmethod
 
@@ -291,28 +291,28 @@ class CodeGeneratorX64
     print '  mov dword [', dst, '], 0'
     print '  mov rcx, qword [', x, ']'
     print '  cmp rcx, qword [', y, ']'
-    print '  set' + cc, 'byte [', dst, ']'
+    print '  set' ~ cc, 'byte [', dst, ']'
   endmethod
 
   method _cmp_cc_int32(dst, x, y, cc)
     print '  mov dword [', dst, '], 0'
     print '  mov ecx, dword [', x, ']'
     print '  cmp ecx, dword [', y, ']'
-    print '  set' + cc, 'byte [', dst, ']'
+    print '  set' ~ cc, 'byte [', dst, ']'
   endmethod
 
   method _cmp_cc_float64(dst, x, y, cc)
     print '  xor eax, eax'
     print '  movq   xmm0, [', x, ']'
     print '  comisd xmm0, [', y, ']'
-    print '  set' + cc, 'al'
+    print '  set' ~ cc, 'al'
     print '  mov dword [', dst, '], eax'
   endmethod
 
   method _jmp_if_cc_int64(dst, x, y, cc)
     print '  mov rax, qword [', x, ']'
     print '  cmp rax, qword [', y, ']'
-    print '  j' + cc, dst
+    print '  j' ~ cc, dst
   endmethod
 
   method _jmp_if_cc_int32(dst, x, y, cc)
@@ -322,7 +322,7 @@ class CodeGeneratorX64
       print '  mov eax, dword [', x, ']'
       print '  cmp eax, dword [', y, ']'
     endif
-    print '  j' + cc, dst
+    print '  j' ~ cc, dst
   endmethod
 
   method run(codeObj)
@@ -391,14 +391,14 @@ class CodeGeneratorX64
             if (yInfo is defined) and (yInfo.type is defined)
               yType = yInfo.type
             endif
-            opcode = opcode + '_' + yType
+            opcode = opcode ~ '_' ~ yType
 
           else
             xInfo = currentSymbols{x}
             if (xInfo is defined) and (xInfo.type is defined)
               xType = xInfo.type
             endif
-            opcode = opcode + '_' + xType
+            opcode = opcode ~ '_' ~ xType
           endif
         endif
       endif
@@ -413,7 +413,7 @@ class CodeGeneratorX64
         print ';', dst
 
       elif opcode is 'label'
-        print dst + ':'
+        print dst ~ ':'
 
       elif ((opcode is 'move_variant') or
             (opcode is 'move_string') or
@@ -654,6 +654,13 @@ class CodeGeneratorX64
 
       elif opcode is 'cmp_ge_variant'
         this.call3AndDestroy('__MOLD_VariantCompareLE', y, x, dst)
+
+      #
+      # build-in string operations
+      #
+
+      elif originalOpcode is 'string_join'
+        this.call3AndDestroy('__MOLD_VariantStringJoin', x, y, dst)
 
       #
       # indirect jumps
@@ -985,7 +992,7 @@ class CodeGeneratorX64
         print '  mov  rax, [rcx + Variant_t.value]'
         print '  mov  rax, [rax + Buffer_t.bytesPtr]'
         print '  mov  rax, [rax + Object_t.vtable]'
-        print '  call qword [rax + 8*' + str(methodId) + ']'
+        print '  call qword [rax + 8*' ~ str(methodId) ~ ']'
 
         if paramsCnt > 4
           print '  add rsp,', paramsCnt * 8 - 32
@@ -998,7 +1005,7 @@ class CodeGeneratorX64
       elif opcode is 'create_object'
         this.variantDestroy(dst)
         print '  lea  rcx, [', dst, ']'
-        print '  lea  rdx, [vtable_' + x + ']'
+        print '  lea  rdx, [vtable_' ~ x ~ ']'
         print '  call __MOLD_VariantObjectCreate'
 
       elif originalOpcode is 'conv_int32_to_float64'
@@ -1136,7 +1143,7 @@ class CodeGeneratorX64
           print '  rdtsc'
           print '  shl    rdx, 32'
           print '  add    rdx, rax'
-          print '  add    qword [__profilerCounterEntry_' + currentProcName + '], rdx'
+          print '  add    qword [__profilerCounterEntry_' ~ currentProcName ~ '], rdx'
           print '  pop    rdx'
 
           if currentProcName is 'start'
@@ -1171,7 +1178,7 @@ class CodeGeneratorX64
         currentProcName  = proto.name
         currentProcRv    = proto.rv
         currentSymbols   = proto.symbols
-        print currentProcName + ':'
+        print currentProcName ~ ':'
 
         arrayOfProcedures[@afterlast] = currentProcName
 
@@ -1183,7 +1190,7 @@ class CodeGeneratorX64
           print '  rdtsc'
           print '  shl    rdx, 32'
           print '  add    rdx, rax'
-          print '  sub    qword [__profilerCounterEntry_' + currentProcName + '], rdx'
+          print '  sub    qword [__profilerCounterEntry_' ~ currentProcName ~ '], rdx'
           print '  pop    rdx'
         endif
 
@@ -1246,7 +1253,7 @@ class CodeGeneratorX64
             else
               # TODO: Remove unneded assign.
               varSize = -1
-              die('error: unhandled operand type while setting up frame: ' + str(symbol.type))
+              die('error: unhandled operand type while setting up frame: ' ~ str(symbol.type))
             endif
 
             currentFrameSize = currentFrameSize + varSize
@@ -1293,7 +1300,7 @@ class CodeGeneratorX64
                 # It's only dump reference for existing box values or keys.
                 print '  ; Skipped loop iterator', oneItem.item
               else
-                print '  mov [' + oneItem.name + ' + Variant_t.type], VARIANT_UNDEFINED'
+                print '  mov [' ~ oneItem.name ~ ' + Variant_t.type], VARIANT_UNDEFINED'
               endif
             endif
 
@@ -1331,7 +1338,7 @@ class CodeGeneratorX64
             elif ((oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and
                   ((oneItem.type is 'variant') or (oneItem.type is undefined)))
 
-              print '  mov [' + oneItem.name + ' + Variant_t.type], VARIANT_UNDEFINED'
+              print '  mov [' ~ oneItem.name ~ ' + Variant_t.type], VARIANT_UNDEFINED'
             endif
 
           endfor
@@ -1369,7 +1376,7 @@ class CodeGeneratorX64
        print '  jmp', dst
 
       else
-        die('error: unhandled opcode "' + str(opcode) + '"')
+        die('error: unhandled opcode "' ~ str(opcode) ~ '"')
       endif
     endfor
 
@@ -1414,7 +1421,7 @@ class CodeGeneratorX64
           print oneItem.name, ' dd 0'
 
         else
-          die('error: unhandled global type: ' + str(oneItem.type))
+          die('error: unhandled global type: ' ~ str(oneItem.type))
         endif
       endif
     endfor
@@ -1459,7 +1466,7 @@ class CodeGeneratorX64
         labels       = symbolInfo.labels
         defaultLabel = symbolInfo.defaultLabel
 
-        print name + ':'
+        print name ~ ':'
 
         for indexes labelIdx values nextLabel in labels
           if nextLabel is undefined
@@ -1488,7 +1495,7 @@ class CodeGeneratorX64
       className  = classProto.name
       vtable     = classProto.vtable
 
-      print 'vtable_' + className + ':'
+      print 'vtable_' ~ className ~ ':'
 
       for methodIdx in 0 .. methodsListCnt
         methodName  = methodsList[methodIdx]
@@ -1537,7 +1544,7 @@ class CodeGeneratorX64
     print "include 'SymbolTableCommon.asm'"
 
     for values procName in arrayOfProcedures
-      print 'dq ', procName, ',', 'name_' + procName
+      print 'dq ', procName, ',', 'name_' ~ procName
     endfor
 
     print 'dq endOfCodeSection, name_endOfCodeSection'
@@ -1549,7 +1556,7 @@ class CodeGeneratorX64
     print "include 'SymbolTableCommonNames.asm'"
 
     for values procName in arrayOfProcedures
-      print 'name_' + procName, 'db', "'" + procName + "', 0"
+      print 'name_' ~ procName, 'db', "'" ~ procName ~ "', 0"
     endfor
 
     print "name_endOfCodeSection db 'out of code section', 0"
@@ -1567,7 +1574,7 @@ class CodeGeneratorX64
       print '__profilerCounterData:'
 
       for values procName in arrayOfProcedures
-        print '__profilerCounterEntry_' + procName, ' dq 0,', 'name_' + procName
+        print '__profilerCounterEntry_' ~ procName, ' dq 0,', 'name_' ~ procName
       endfor
 
       print 'dq 0, 0'
