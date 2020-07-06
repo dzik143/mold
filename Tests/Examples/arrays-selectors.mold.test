@@ -1,0 +1,15 @@
+TEST "x[@afterlast] (insert to empty array)"
+
+x = []
+
+x[@afterlast] = 5
+x[@afterlast] = 4
+x[@afterlast] = 3
+x[@afterlast] = 2
+x[@afterlast] = 1
+
+print x
+
+EXPECTED_OUTPUT:
+[5, 4, 3, 2, 1]
+-------------------------------------------------------------------------------

@@ -12,7 +12,7 @@ TEST "Concatenation #1"
 x  = "Hello"
 y  = " "
 z  = "Mold!"
-rv = x + y + z
+rv = x ~ y ~ z
 
 print rv
 print 'typeof(x) is', typeof(x)
@@ -32,49 +32,49 @@ TEST "Concatenation #2"
 x   = ''
 y   = 'abc'
 z   = '123456'
-xy  = x + y
-xz  = x + z
-xyz = x + y + z
+xy  = x ~ y
+xz  = x ~ z
+xyz = x ~ y ~ z
 
 print 'x         = [', x, ']'
 print 'y         = [', y, ']'
 print 'z         = [', z, ']'
-print 'x + y     = [', xy, ']'
-print 'x + z     = [', xz, ']'
-print 'x + y + z = [', xyz, ']'
+print 'x ~ y     = [', xy, ']'
+print 'x ~ z     = [', xz, ']'
+print 'x ~ y ~ z = [', xyz, ']'
 
 print ''
 print 'len(x)         =', len(x)
 print 'len(y)         =', len(y)
 print 'len(z)         =', len(z)
-print 'len(x + y)     =', len(xy)
-print 'len(x + z)     =', len(xz)
-print 'len(x + y + z) =', len(xyz)
+print 'len(x ~ y)     =', len(xy)
+print 'len(x ~ z)     =', len(xz)
+print 'len(x ~ y ~ z) =', len(xyz)
 
 EXPECTED_OUTPUT:
 x         = [  ]
 y         = [ abc ]
 z         = [ 123456 ]
-x + y     = [ abc ]
-x + z     = [ 123456 ]
-x + y + z = [ abc123456 ]
+x ~ y     = [ abc ]
+x ~ z     = [ 123456 ]
+x ~ y ~ z = [ abc123456 ]
 
 len(x)         = 0
 len(y)         = 3
 len(z)         = 6
-len(x + y)     = 3
-len(x + z)     = 6
-len(x + y + z) = 9
+len(x ~ y)     = 3
+len(x ~ z)     = 6
+len(x ~ y ~ z) = 9
 -------------------------------------------------------------------------------
 
 TEST "Concatenation #3"
 acc = 'a'
 print '(1) [', acc, ']', len(acc)
 
-acc = acc + 'x'
+acc = acc ~ 'x'
 print '(2) [', acc, ']', len(acc)
 
-acc = acc + 'ZyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyZ'
+acc = acc ~ 'ZyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyZ'
 print '(3) [', acc, ']', len(acc)
 
 EXPECTED_OUTPUT:
@@ -86,7 +86,7 @@ EXPECTED_OUTPUT:
 TEST "Concatenation #4"
 acc = ''
 for idx in 0 .. 100000
-  acc = acc + 'x'
+  acc = acc ~ 'x'
 endfor
 
 print 'len(acc)    =', len(acc)
@@ -142,8 +142,8 @@ EXPECTED_OUTPUT:
 
 TEST "Compare run-time built strings #1"
 
-text1 = 'a'  + 'bc'
-text2 = 'ab' + 'c'
+text1 = 'a'  ~ 'bc'
+text2 = 'ab' ~ 'c'
 
 if text1 is text2
   print text1, 'is equal to', text2
@@ -155,8 +155,8 @@ abc is equal to abc
 
 TEST "Compare run-time built strings #2"
 
-text1 = 'a'  + 'bc'
-text2 = 'ab' + 'cd'
+text1 = 'a'  ~ 'bc'
+text2 = 'ab' ~ 'cd'
 
 if text1 isnt text2
   print text1, 'is NOT equal to', text2
@@ -170,7 +170,7 @@ TEST "Build long string char-by-char"
 
 buf = ''
 for srcIdx in 0 .. 1024
-  buf = buf + 'x'
+  buf = buf ~ 'x'
 endfor
 
 print len(buf), '[', buf ,']'
@@ -186,12 +186,12 @@ dst = ''
 
 # Build source string.
 for idx in 0 .. 1024
-  src = src + str(idx)
+  src = src ~ str(idx)
 endfor
 
 # Copy source string char-by-char.
 for idx in 0 .. len(src)
-  dst = dst + src[idx]
+  dst = dst ~ src[idx]
 endfor
 
 # Compare strings char-by-char.
@@ -274,7 +274,7 @@ x[-1000000] = undefined
 TEST "Bug: Not increased refCnt after passing string throught str()"
 
 source = 'x'
-x      = '' + str(source[0])
+x      = '' ~ str(source[0])
 
 print 'x      = [', x, ']'
 print 'len(x) =', len(x)
@@ -284,9 +284,9 @@ x      = [ x ]
 len(x) = 1
 -------------------------------------------------------------------------------
 
-TEST "Bug: Concatenation chain: x + y + z"
+TEST "Bug: Concatenation chain: x ~ y ~ z"
 
-x = 'XxxxxxxxxxxxxxxxxxxxxxxxxxxX>>> ' + 'o' + ' <<<YyyyyyyyyyyyyyyyyyyyyyyyyyyY'
+x = 'XxxxxxxxxxxxxxxxxxxxxxxxxxxX>>> ' ~ 'o' ~ ' <<<YyyyyyyyyyyyyyyyyyyyyyyyyyyY'
 
 print 'x      =', x
 print 'len(x) =', len(x)
@@ -296,19 +296,19 @@ x      = XxxxxxxxxxxxxxxxxxxxxxxxxxxX>>> o <<<YyyyyyyyyyyyyyyyyyyyyyyyyyyY
 len(x) = 65
 -------------------------------------------------------------------------------
 
-TEST "Overlapped source and destination string: x = x + y
+TEST "Overlapped source and destination string: x = x ~ y"
 
 function final(x)
-  print x + ':final'
+  print x ~ ':final'
 endfunction
 
 function bar(x)
-  x = x + ':bar'
+  x = x ~ ':bar'
   final(x)
 endfunction
 
 function foo(x)
-  x = x + ':foo'
+  x = x ~ ':foo'
   bar(x)
   bar(x)
 endfunction
@@ -319,13 +319,15 @@ EXPECTED_OUTPUT:
 init:foo:bar:final
 init:foo:bar:final
 -------------------------------------------------------------------------------
-TEST "Overlapped source and destination string: x = y + x (SKIPPED!)
+TEST "Overlapped source and destination string: x = y ~ x (SKIPPED!)"
 
 #x = 'b'
-#x = 'a' + x
+#x = 'a' ~ x
 #print x
+print 'OK'
 
 EXPECTED_OUTPUT:
+OK
 -------------------------------------------------------------------------------
 
 TEST "Store one character at array index'
