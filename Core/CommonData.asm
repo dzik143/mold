@@ -1,7 +1,7 @@
 ;###############################################################################
 ;#                                                                             #
 ;# This file is part of Mold project.                                          #
-;# Copyright (C) 2015, 2019 Sylwester Wysocki (sw143@wp.pl)                    #
+;# Copyright (C) 2015, 2020 Sylwester Wysocki (sw143@wp.pl)                    #
 ;#                                                                             #
 ;# This program is free software: you can redistribute it and/or modify        #
 ;# it under the terms of the GNU General Public License as published by        #
