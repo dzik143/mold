@@ -450,10 +450,6 @@ class CodeGeneratorX64
         print '  movdqu xmm0, [StringBoolean]'
         print '  movdqu [', dst, '], xmm0'
 
-      elif opcode is 'neg_variant'
-        this.variantDestroy(dst)
-        this.call2('__MOLD_VariantNeg', x, dst)
-
       #
       # int64 arithmetic
       #
@@ -622,38 +618,41 @@ class CodeGeneratorX64
       # Variant arithmetic.
       #
 
+      elif opcode is 'neg_variant'
+        this.call2('__MOLD_VariantNeg', x, dst)
+
       elif (opcode is 'add_variant') or (opcode is 'add_string')
-        this.call3AndDestroy('__MOLD_VariantAdd', x, y, dst)
+        this.call3('__MOLD_VariantAdd', x, y, dst)
 
       elif opcode is 'sub_variant'
-        this.call3AndDestroy('__MOLD_VariantSub', x, y, dst)
+        this.call3('__MOLD_VariantSub', x, y, dst)
 
       elif opcode is 'mul_variant'
-        this.call3AndDestroy('__MOLD_VariantMul', x, y, dst)
+        this.call3('__MOLD_VariantMul', x, y, dst)
 
       elif opcode is 'div_variant'
-        this.call3AndDestroy('__MOLD_VariantDiv', x, y, dst)
+        this.call3('__MOLD_VariantDiv', x, y, dst)
 
       elif opcode is 'idiv_variant'
-        this.call3AndDestroy('__MOLD_VariantDivAsInteger', x, y, dst)
+        this.call3('__MOLD_VariantDivAsInteger', x, y, dst)
 
       elif (opcode is 'cmp_eq_variant') or (opcode is 'cmp_eq_string')
-        this.call3AndDestroy('__MOLD_VariantCompareEQ', x, y, dst)
+        this.call3('__MOLD_VariantCompareEQ', x, y, dst)
 
       elif (opcode is 'cmp_ne_variant') or (opcode is 'cmp_ne_string')
-        this.call3AndDestroy('__MOLD_VariantCompareNE', x, y, dst)
+        this.call3('__MOLD_VariantCompareNE', x, y, dst)
 
       elif opcode is 'cmp_lt_variant'
-        this.call3AndDestroy('__MOLD_VariantCompareLT', x, y, dst)
+        this.call3('__MOLD_VariantCompareLT', x, y, dst)
 
       elif opcode is 'cmp_le_variant'
-        this.call3AndDestroy('__MOLD_VariantCompareLE', x, y, dst)
+        this.call3('__MOLD_VariantCompareLE', x, y, dst)
 
       elif opcode is 'cmp_gt_variant'
-        this.call3AndDestroy('__MOLD_VariantCompareLT', y, x, dst)
+        this.call3('__MOLD_VariantCompareLT', y, x, dst)
 
       elif opcode is 'cmp_ge_variant'
-        this.call3AndDestroy('__MOLD_VariantCompareLE', y, x, dst)
+        this.call3('__MOLD_VariantCompareLE', y, x, dst)
 
       #
       # build-in string operations
@@ -1017,7 +1016,6 @@ class CodeGeneratorX64
         print '  movq [', dst, '], xmm0'
 
       elif originalOpcode is 'conv_int32_to_variant'
-        this.variantDestroy(dst)
         print '  mov [', dst, '+ Variant_t.type], VARIANT_INTEGER'
 
         if typeof(x) is 'integer'
@@ -1028,7 +1026,6 @@ class CodeGeneratorX64
         endif
 
       elif originalOpcode is 'conv_int64_to_variant'
-        this.variantDestroy(dst)
         if typeof(x) is 'integer'
           print '  mov rax,', x
         else
@@ -1039,7 +1036,6 @@ class CodeGeneratorX64
         print '  mov [', dst, '+ Variant_t.value], rax'
 
       elif originalOpcode is 'conv_float64_to_variant'
-        this.variantDestroy(dst)
         if typeof(x) is 'float'
           print '  db 0x48, 0xb8' # mov rax, float64
           print '  dq', x
@@ -1067,8 +1063,6 @@ class CodeGeneratorX64
         endif
 
       elif originalOpcode is 'conv_bool32_to_variant'
-        this.variantDestroy(dst)
-
         if x is true
           print '  mov eax, 1'
         elif x is false
