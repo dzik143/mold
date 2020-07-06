@@ -3,7 +3,7 @@ UNRELEASED:
 -----------
 ...
 
-0.1.200706 (released on 2020-07-06)
+0.2.200706 (released on 2020-07-06)
 -----------------------------------
   Implemented:
     - RDTSC based profiler (--profiler option)
