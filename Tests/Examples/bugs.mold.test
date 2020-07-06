@@ -159,7 +159,7 @@ ok
 TEST "Bug: Concatenation with str(len(x)) result"
 
 x = 'AaaaaaaaaaaaaaaaaaaaaaaaaaaA'
-y = 'XxxxxxxxxxxxxxxxxxxxxxxxxxxX>>> ' + str(len(x)) + ' <<<YyyyyyyyyyyyyyyyyyyyyyyyyyyY'
+y = 'XxxxxxxxxxxxxxxxxxxxxxxxxxxX>>> ' ~ str(len(x)) ~ ' <<<YyyyyyyyyyyyyyyyyyyyyyyyyyyY'
 print y
 
 EXPECTED_OUTPUT:

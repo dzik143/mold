@@ -336,10 +336,6 @@ __MOLD_SysCall:
     ; TODO
     jmp    .error
 
-.strcat:
-    mov    r8, rdi
-    jmp    __MOLD_VariantAdd
-
 ; ------------------------------------------------------------------------------
 ; Generic error handler
 ; ------------------------------------------------------------------------------
@@ -420,7 +416,5 @@ __MOLD_SysCall:
   dq .error                 ; 57
   dq .error                 ; 58
   dq .error                 ; 59
-
-  dq .strcat ; 60
 
 .jmpTableEnd:

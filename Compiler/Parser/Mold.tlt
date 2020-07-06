@@ -828,7 +828,7 @@ class Parser
         debug('reduced')
       endwhile
 
-      debug('END CONDITION: reduce=[' ~ str(bitand(currentAct, UNICC_REDUCE)) ~ '], idx=[' ~ str(currentIdx) +'], goalIdx=[' ~ str(@@goal-production) ~ ']')
+      debug('END CONDITION: reduce=[' ~ str(bitand(currentAct, UNICC_REDUCE)) ~ '], idx=[' ~ str(currentIdx) ~ '], goalIdx=[' ~ str(@@goal-production) ~ ']')
 
       if (bitand(currentAct, UNICC_REDUCE) isnt 0) and (currentIdx is @@goal-production)
         goOn = false

@@ -1,6 +1,6 @@
 TEST "Bug: Crash while concatenating argv[0] after load index"
 x = argv[0]
-y = 'x' + argv[0]
+y = 'x' ~ argv[0]
 print 'OK!'
 
 EXPECTED_OUTPUT:
