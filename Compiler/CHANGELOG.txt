@@ -1,6 +1,10 @@
 
 UNRELEASED:
 -----------
+...
+
+0.1.200706 (released on 2020-07-06)
+-----------------------------------
   Implemented:
     - RDTSC based profiler (--profiler option)
 
@@ -25,7 +29,7 @@ UNRELEASED:
       y = {'key': 1234}
       print y{'key'}
 
-    - Implemented relative array indexes (@selectors):
+    - Stub for relative array indexes (@selectors):
 
       x[@last]        - the last item in the array            (lval, rval)
       x[@first]       - the first item in the array           (lval, rval)
@@ -35,7 +39,7 @@ UNRELEASED:
       x[@afterLast]   - placeholder for new item at the end   (lval)
       x[@beforeFirst] - placeholder for new item at the begin (lval)
 
-    - Use x ~ y for string concatenation
+    - Use x ~ y for string concatenation, x + y is not correct anymore.
 
 0.1.191126 (released on 2019-11-26)
 -----------------------------------
