@@ -56,6 +56,7 @@ class ASTTypeCast
     global AST_OPCODE_BOOL_NOT
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
     global AST_OPCODE_CALL_NEW
+    global AST_OPCODE_STRING_JOIN
     global AST_DATA_BOOL
     global SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_VAR_RETVAL
     global AST_OPCODE_ADD, AST_OPCODE_MUL, AST_OPCODE_SUB, AST_OPCODE_DIV, AST_OPCODE_IDIV
@@ -130,6 +131,10 @@ class ASTTypeCast
         # TODO: Review it.
         children[0] = AST_TypeCast(children[0], AST_DATA_BOOL)
         children[1] = AST_TypeCast(children[1], AST_DATA_BOOL)
+
+      elif opcode is AST_OPCODE_STRING_JOIN
+        children[0] = AST_TypeCast(children[0], AST_DATA_STRING)
+        children[1] = AST_TypeCast(children[1], AST_DATA_STRING)
 
       elif opcode is AST_OPCODE_REFERENCE_BY_INDEX
         # TODO: Handle native machine indexes.

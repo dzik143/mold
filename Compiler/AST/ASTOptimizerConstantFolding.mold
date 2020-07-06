@@ -142,6 +142,7 @@ class ASTOptimizerConstantFolding
     global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV, AST_OPCODE_IDIV
     global AST_DATA_BOOL, AST_DATA_INTEGER, AST_DATA_DOUBLE, AST_DATA_STRING
     global AST_DATA_ARRAY, AST_DATA_MAP, AST_DATA_UNDEFINED
+    global AST_OPCODE_STRING_JOIN
     global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR
     global AST_OPCODE_REFERENCE_BY_INDEX
     global AST_OPCODE_REFERENCE_BY_KEY
@@ -348,6 +349,9 @@ class ASTOptimizerConstantFolding
             # x op y
             if opcode is AST_OPCODE_ADD
               newValue = x.value + y.value
+
+            elif opcode is AST_OPCODE_STRING_JOIN
+              newValue = x.value ~ y.value
 
             elif opcode is AST_OPCODE_SUB
               newValue = x.value - y.value

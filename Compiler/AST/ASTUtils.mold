@@ -720,6 +720,7 @@ function AST_GetDataType(node) -> rv
   global AST_OPCODE_CALL_NEW
   global AST_OPCODE_REFERENCE_BY_INDEX
   global AST_OPCODE_REFERENCE_BY_KEY
+  global AST_OPCODE_STRING_JOIN
   global SYMBOL_KIND_CONST
 
   rv = node._cachedAstDataType
@@ -783,6 +784,10 @@ function AST_GetDataType(node) -> rv
           else
             rv = x
           endif
+
+        elif opcode is AST_OPCODE_STRING_JOIN
+          # x ~ y
+          rv = AST_DATA_STRING
 
         elif opcode is AST_OPCODE_DIV
           if (x is -1) or (y is -1)
