@@ -311,13 +311,13 @@ class AST
     while node isnt null
       prefix = ''
       for i in 0 .. deepIdx
-        prefix = prefix + '..'
+        prefix = prefix ~ '..'
       endfor
 
       if (node.token isnt null)
-        print prefix + str(node.emit), node.token
+        print prefix ~ str(node.emit), node.token
       else
-        print prefix + str(node.emit)
+        print prefix ~ str(node.emit)
       endif
 
       this._printInternal(node.child, deepIdx + 1)
@@ -411,7 +411,7 @@ class Parser
   endmethod
 
   method _handleError(line, column, msg)
-    die(this.filePath + ':' + str(line) + ':' + str(column) + ': error: ' + msg)
+    die(this.filePath ~ ':' ~ str(line) ~ ':' ~ str(column) ~ ': error: ' ~ msg)
   endmethod
 
   method _parseInternal(text) -> ast
@@ -434,7 +434,7 @@ class Parser
     # Initialize Parser Control Block.
     #
 
-    debug('going to parse [' + str(len(text)) + '] bytes')
+    debug('going to parse [' ~ str(len(text)) ~ '] bytes')
 
     input    = text
     inputIdx = 0
@@ -475,7 +475,7 @@ class Parser
     while goOn is true
       debug('')
       debug('------------------------------')
-      debug('MASTER ITER #' + str(masterIter))
+      debug('MASTER ITER #' ~ str(masterIter))
 
       # Get symbol.
       currentSym = -1
@@ -542,13 +542,13 @@ class Parser
           endwhile
         endif
 
-        debug('lex done: sym=[' + str(currentSym) + ']')
+        debug('lex done: sym=[' ~ str(currentSym) ~ ']')
 
       elif buf[0] is UNICC_EOF
         currentSym = @@eof
       endif
 
-      debug('got symbol: sym=[' + str(currentSym) + ']' + ', len=[' + str(currentLen) + ']')
+      debug('got symbol: sym=[' ~ str(currentSym) ~ ']' ~ ', len=[' ~ str(currentLen) ~ ']')
 
       # Get action.
       rv        = -1
@@ -585,7 +585,7 @@ class Parser
         endif
       endif
 
-      debug('got action: rv=[' + str(rv) + '], act=[' + str(currentAct) + '], idx=[' + str(currentIdx) + ']')
+      debug('got action: rv=[' ~ str(rv) ~ '], act=[' ~ str(currentAct) ~ '], idx=[' ~ str(currentIdx) ~ ']')
 
       if rv is 0
         this._handleError(line, column, 'syntax error')
@@ -620,7 +620,7 @@ class Parser
         # TODO: Optimize it.
         newValue = ''
         for idx in 0 .. currentLen
-          newValue = newValue + buf[idx]
+          newValue = newValue ~ buf[idx]
         endfor
         @@top-value = newValue
 
@@ -681,7 +681,7 @@ class Parser
       while (innerGoOn is true) and (bitand(currentAct, UNICC_REDUCE) isnt 0)
         debug('')
         debug('------------------------------')
-        debug('REDUCE ITER #' + str(masterIter) + '.' + str(reduceIter))
+        debug('REDUCE ITER #' ~ str(masterIter) ~ '.' ~ str(reduceIter))
 
         # Set default left-hand side
         # Run reduction code
@@ -742,7 +742,7 @@ class Parser
           node.filePath = this.filePath
         endif
 
-        debug('goal symbol? (lhs=[' + str(currentLhs) + '], goal=[' + str(@@goal) + '], stackIdx=[' + str(stackIdx) + '])')
+        debug('goal symbol? (lhs=[' ~ str(currentLhs) ~ '], goal=[' ~ str(@@goal) ~ '], stackIdx=[' ~ str(stackIdx) ~ '])')
 
         # Goal symbol reduced, and stack is empty?
         if (currentLhs is @@goal) and (stackIdx is 0)
@@ -828,7 +828,7 @@ class Parser
         debug('reduced')
       endwhile
 
-      debug('END CONDITION: reduce=[' + str(bitand(currentAct, UNICC_REDUCE)) + '], idx=[' + str(currentIdx) +'], goalIdx=[' + str(@@goal-production) + ']')
+      debug('END CONDITION: reduce=[' ~ str(bitand(currentAct, UNICC_REDUCE)) ~ '], idx=[' ~ str(currentIdx) +'], goalIdx=[' ~ str(@@goal-production) ~ ']')
 
       if (bitand(currentAct, UNICC_REDUCE) isnt 0) and (currentIdx is @@goal-production)
         goOn = false
