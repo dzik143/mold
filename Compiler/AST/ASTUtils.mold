@@ -224,7 +224,7 @@ function AST_GetOpcodeAsText(opcode) -> rv
     rv = 'VCALL'
 
   else
-    rv = '[UNKNOWN: ' + str(opcode) + ']'
+    rv = '[UNKNOWN: ' ~ str(opcode) ~ ']'
   endif
 endfunction
 
@@ -399,7 +399,7 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   else
     # TODO: Handle terminal nodes.
     rv = 'error'
-    die('error: unhandled opcode: ' + str(opcode))
+    die('error: unhandled opcode: ' ~ str(opcode))
   endif
 endfunction
 
@@ -453,7 +453,7 @@ function AST_InvertBoolean(node)
     AST_InvertBoolean(node.children[0])
 
   else
-    die('error: unhandled opcode in AST_InvertBoolean: ' + str(opcode))
+    die('error: unhandled opcode in AST_InvertBoolean: ' ~ str(opcode))
   endif
 
 endfunction
@@ -567,16 +567,16 @@ function AST_HashInternal(node, isCodeMode) -> rv
     # First ask for hash at this node - calculate it from stratch
     # and save for further calls.
     if (opcode is AST_DATA_MAP) or (opcode is AST_DATA_ARRAY)
-      rv = '@' + str(node.id)
+      rv = '@' ~ str(node.id)
 
     elif AST_IsVar(node) is true
       if isCodeMode is true
-        rv = '@' + node.value
+        rv = '@' ~ node.value
 
       else
         if node.storedValue is undefined
           # TODO: Review it.
-          rv = '@' + node.value
+          rv = '@' ~ node.value
 
         elif typeof(node.storedValue) is 'array'
           rv = ''
@@ -585,18 +585,18 @@ function AST_HashInternal(node, isCodeMode) -> rv
           endfor
 
         else
-          rv = '@' + str(node.storedValue.id)
+          rv = '@' ~ str(node.storedValue.id)
         endif
       endif
 /*
     elif node.opcode is AST_DATA_ARRAY
-      rv = AST_GetOpcodeAsShortText(opcode) + ',' + str(childrenCnt)
+      rv = AST_GetOpcodeAsShortText(opcode) ~ ',' ~ str(childrenCnt)
       for idx in 0 .. childrenCnt
         rv  = rv + ',' + AST_Hash(children[idx])
       endfor
 
     elif node.opcode is AST_DATA_MAP
-      rv  = AST_GetOpcodeAsShortText(opcode) + ',' + str(childrenCnt)
+      rv  = AST_GetOpcodeAsShortText(opcode) ~ ',' ~ str(childrenCnt)
       idx = 0
       # TODO: Use for step/by.
       while idx < childrenCnt
@@ -605,7 +605,7 @@ function AST_HashInternal(node, isCodeMode) -> rv
       endwhile
 */
     elif AST_IsPrimitiveImm(node) is true
-      rv = AST_GetOpcodeAsShortText(opcode) + str(node.value)
+      rv = AST_GetOpcodeAsShortText(opcode) ~ str(node.value)
 
     elif ((opcode is AST_OPCODE_CALL) or
           (opcode is AST_OPCODE_CALL_NEW) or
@@ -617,33 +617,33 @@ function AST_HashInternal(node, isCodeMode) -> rv
         # Called function has side effect.
         # Eeach call to function is unique.
         # Avoid CSE optimization.
-        name = '@' + str(node.id)
+        name = '@' ~ str(node.id)
       else
         # Code comparision or there is no side effect.
         # The same parameters means the same result.
         name = node.value
       endif
 
-      rv = AST_GetOpcodeAsShortText(opcode) + ':' + name + ',' + str(childrenCnt)
+      rv = AST_GetOpcodeAsShortText(opcode) ~ ':' ~ name ~ ',' ~ str(childrenCnt)
 
       # TODO: Clean up this mess.
       # Hash syscall id to avoid fake code duplication result.
       if node.value is '__mold_syscall'
-        rv = rv + ',' + str(node.sysCallId)
+        rv = rv + ',' ~ str(node.sysCallId)
       endif
 
       # Hash call parameters.
       for values childNode in children
-        rv  = rv + ',' + AST_HashInternal(childNode, isCodeMode)
+        rv  = rv + ',' ~ AST_HashInternal(childNode, isCodeMode)
       endfor
 
     elif opcode is AST_OPCODE_TYPE_CAST
-      rv = 'cast,' + str(node.astDataType) + ',' + AST_HashInternal(children[0], isCodeMode)
+      rv = 'cast,' ~ str(node.astDataType) ~ ',' ~ AST_HashInternal(children[0], isCodeMode)
 
     else
-      rv = AST_GetOpcodeAsShortText(opcode) + ',' + str(childrenCnt)
+      rv = AST_GetOpcodeAsShortText(opcode) ~ ',' ~ str(childrenCnt)
       for values childNode in children
-        rv  = rv + ',' + AST_HashInternal(childNode, isCodeMode)
+        rv  = rv + ',' ~ AST_HashInternal(childNode, isCodeMode)
       endfor
     endif
 
@@ -823,10 +823,10 @@ function AST_GetDataType(node) -> rv
       # node._cachedAstDataType = rv
     endif
 
-    #print 'Detected ast type [', rv, '] at node #' + str(node.id)
+    #print 'Detected ast type [', rv, '] at node #' ~ str(node.id)
 
     if typeof(rv) isnt 'integer'
-      die('error: unset AST data type at AST_GetDataType() at node #' + str(node.id))
+      die('error: unset AST data type at AST_GetDataType() at node #' ~ str(node.id))
     endif
   endif
 endfunction
@@ -861,7 +861,7 @@ function AST_TypeCast(node, dstDataType) -> rv
 
     else
       # Types mismatch - wrap into type cast node.
-      #print '[ ASTUtils ] Type cast node #' + str(node.id), ' from', srcDataType, 'to', dstDataType
+      #print '[ ASTUtils ] Type cast node #' ~ str(node.id), ' from', srcDataType, 'to', dstDataType
 
       rv = {
         'id': AST_GetNextId(),
