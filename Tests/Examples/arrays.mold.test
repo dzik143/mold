@@ -155,7 +155,7 @@ x = []
 print x[1][1]
 
 EXPECTED_ERROR:
-error: array or map expected
+error: array or string expected
 -------------------------------------------------------------------------------
 
 TEST "Bug: Realloc array more than 2x at single insert"
