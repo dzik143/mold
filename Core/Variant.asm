@@ -1190,15 +1190,7 @@ proc __MOLD_VariantStoreAtIndex
 
     mov    eax, [rcx + Variant_t.type]
     cmp    rax, VARIANT_ARRAY
-    je     .array
-
-    cmp    rax, VARIANT_MAP
-    je     .map
-
-    cmp    rax, VARIANT_OBJECT
-    je     .map
-
-    jmp    __MOLD_PrintErrorAndDie.arrayOrStringExpected
+    jnz    .array
 
     ; --------------------------------------------------------------------------
     ;                          Integer indexed array
@@ -1267,11 +1259,48 @@ proc __MOLD_VariantStoreAtIndex
 
     ret
 
+endp
+
+;###############################################################################
+;
+; Store single item in the box using string key.
+; x{key} = ...
+;
+; rcx = box            (Variant_t) (IN)
+; rdx = key            (Variant_t) (IN)
+; r8  = value to store (Variant_t) (IN)
+;
+;###############################################################################
+
+proc __MOLD_VariantStoreAtKey
+    ; TODO: Avoid temp stack values.
+    local .keyPtr   dq ?
+    local .valuePtr dq ?
+    local .box      dq ?
+
+    DEBUG_CHECK_VARIANT rcx
+    DEBUG_CHECK_VARIANT rdx
+
+    ; TODO: Optimize it.
+    push   rcx rdx r8
+    mov    rcx, r8
+    call   __MOLD_VariantAddRef
+    pop    r8 rdx rcx
+    ; END OF TODO
+
+    mov    eax, [rcx + Variant_t.type]
+    cmp    eax, VARIANT_MAP
+    je     .map
+
+    cmp    eax, VARIANT_OBJECT
+    jnz    __MOLD_PrintErrorAndDie.mapOrObjectExpected
+
     ; --------------------------------------------------------------------------
-    ;                                 Hash map
+    ;                        Hash map or object
     ; ==========================================================================
 
 .map:
+.object:
     cmp    [rdx + Variant_t.type], VARIANT_STRING
     jnz    __MOLD_PrintErrorAndDie.stringKeyExpected
 
@@ -1790,7 +1819,7 @@ proc __MOLD_VariantMapResizeTwice
     add     rdx, rax                           ; rdx = key #n
     lea     r8, [rdx + 16]                     ; r8  = value #n
 
-    call    __MOLD_VariantStoreAtIndex         ; newBox[key] = value
+    call    __MOLD_VariantStoreAtKey           ; newBox[key] = value
 
 .emptyBucket:
 
@@ -2964,7 +2993,6 @@ __MOLD_PrintErrorAndDie:
 
     cinvoke GetStdHandle, -12
     cinvoke WriteFile, rax, rdx, r8, NumberOfBytesWritten, 0
-
     cinvoke ExitProcess, -1
 
 .fmtGeneric                  db 'error: generic', 13, 10, 0
