@@ -39,7 +39,6 @@ name__MOLD_PrintVariantWithQuotas  db '__MOLD_PrintVariantWithQuotas', 0
 name__MOLD_VariantConvertToString  db '__MOLD_VariantConvertToString', 0
 name__MOLD_PrintVariantToStdError  db '__MOLD_PrintVariantToStdError', 0
 name__MOLD_VariantTypeOf           db '__MOLD_VariantTypeOf', 0
-name__MOLD_PrintSpace              db '__MOLD_PrintSpace', 0
 name__MOLD_PrintNewLine            db '__MOLD_PrintNewLine', 0
 name__MOLD_VariantMul              db '__MOLD_VariantMul', 0
 name__MOLD_VariantAdd              db '__MOLD_VariantAdd', 0

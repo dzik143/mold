@@ -39,7 +39,6 @@ dq __MOLD_PrintVariantWithQuotas , name__MOLD_PrintVariantWithQuotas
 dq __MOLD_VariantConvertToString , name__MOLD_VariantConvertToString
 dq __MOLD_PrintVariantToStdError , name__MOLD_PrintVariantToStdError
 dq __MOLD_VariantTypeOf          , name__MOLD_VariantTypeOf
-dq __MOLD_PrintSpace             , name__MOLD_PrintSpace
 dq __MOLD_PrintNewLine           , name__MOLD_PrintNewLine
 dq __MOLD_VariantMul             , name__MOLD_VariantMul
 dq __MOLD_VariantAdd             , name__MOLD_VariantAdd
