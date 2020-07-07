@@ -1707,6 +1707,69 @@ dq .arrayLoadInt16
 dq .arrayLoadInt32
 dq .arrayLoadInt64
 
+.string:
+    mov    [r8 + Variant_t.type], VARIANT_UNDEFINED
+
+    cmp    [rdx + Variant_t.type], VARIANT_INTEGER
+    jnz    .errorIndexNotInteger
+
+    ; --------------------------------------------------------------------------
+    ; Get char at index
+    ; --------------------------------------------------------------------------
+
+    mov    rcx, [rcx + Variant_t.value]           ; rcx = string buffer (Buffer_t)
+    mov    rcx, [rcx + Buffer_t.bytesPtr]         ; rcx = string buffer (String_t)
+    mov    rdx, [rdx + Variant_t.value]           ; rdx = idx           (integer)
+
+    mov    eax, 0                                 ; rax = 0
+    cmp    rdx, [rcx + String_t.length]
+    jae    .stringOutOfRangePeek
+
+    mov    al, [rcx + String_t.text + rdx]        ; rax = str[idx] (char)
+    mov    [r8 + Variant_t.type], VARIANT_STRING  ; rv.type  = string
+    mov    [r8 + Variant_t.value], rax            ; rv.value = box[idx] (char)
+    or     [r8 + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+
+.stringOutOfRangePeek:
+
+    DEBUG_CHECK_VARIANT r8
+
+    ret
+
+.error:
+    cinvoke GetStdHandle, -12
+    cinvoke WriteFile, rax, .errorMsg, 30, NumberOfBytesWritten, 0
+    jmp     .errorFinal
+
+.errorMsg db 'error: array or map expected', 13, 10
+
+.errorIndexNotInteger:
+    cinvoke printf, 'error: not integer index'
+    jmp     .errorFinal
+
+.errorKeyNotString:
+    cinvoke printf, 'error: string key expected'
+    jmp     .errorFinal
+
+.errorFinal:
+;    int 3
+    cinvoke ExitProcess, 0
+    ret
+endp
+
+proc __MOLD_VariantLoadFromKey
+    ; TODO: Clean up this mess.
+    DEBUG_CHECK_VARIANT rcx
+    DEBUG_CHECK_VARIANT rdx
+
+    mov    eax, [rcx + Variant_t.type]
+
+    cmp    rax, VARIANT_MAP
+    je     .map
+
+    cmp    rax, VARIANT_OBJECT
+    jne    .errorMapOrObjectExpected
+
     ; ==========================================================================
     ;                           Hash map or object
     ; --------------------------------------------------------------------------
@@ -1777,36 +1840,8 @@ dq .arrayLoadInt64
 
     ret
 
-.string:
-    mov    [r8 + Variant_t.type], VARIANT_UNDEFINED
-
-    cmp    [rdx + Variant_t.type], VARIANT_INTEGER
-    jnz    .errorIndexNotInteger
-
-    ; --------------------------------------------------------------------------
-    ; Get char at index
-    ; --------------------------------------------------------------------------
-
-    mov    rcx, [rcx + Variant_t.value]           ; rcx = string buffer (Buffer_t)
-    mov    rcx, [rcx + Buffer_t.bytesPtr]         ; rcx = string buffer (String_t)
-    mov    rdx, [rdx + Variant_t.value]           ; rdx = idx           (integer)
-
-    mov    eax, 0                                 ; rax = 0
-    cmp    rdx, [rcx + String_t.length]
-    jae    .stringOutOfRangePeek
-
-    mov    al, [rcx + String_t.text + rdx]        ; rax = str[idx] (char)
-    mov    [r8 + Variant_t.type], VARIANT_STRING  ; rv.type  = string
-    mov    [r8 + Variant_t.value], rax            ; rv.value = box[idx] (char)
-    or     [r8 + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
-
-.stringOutOfRangePeek:
-
-    DEBUG_CHECK_VARIANT r8
-
-    ret
-
-.error:
+.errorMapOrObjectExpected:
+    ; TODO: Clean up this mess.
     cinvoke GetStdHandle, -12
     cinvoke WriteFile, rax, .errorMsg, 30, NumberOfBytesWritten, 0
     jmp     .errorFinal
@@ -1822,41 +1857,7 @@ dq .arrayLoadInt64
     jmp     .errorFinal
 
 .errorFinal:
-;    int 3
-    cinvoke ExitProcess, 0
-    ret
-endp
-
-proc __MOLD_StringLength cstr
-    ; rcx = cstr
-    mov     rax, 0
-
-.goOn:
-    cmp     byte [rcx + rax], 0
-    je      .done
-
-    inc     rax
-    jmp     .goOn
-
-.done:
-
-    ret
-endp
-
-proc __MOLD_VariantLoadFromKey
-    ; TODO: Clean up this mess.
-    DEBUG_CHECK_VARIANT rcx
-    DEBUG_CHECK_VARIANT rdx
-
-    mov    eax, [rcx + Variant_t.type]
-
-    cmp    rax, VARIANT_MAP
-    je     __MOLD_VariantLoadFromIndex.map
-
-    cmp    rax, VARIANT_OBJECT
-    je     __MOLD_VariantLoadFromIndex.object
-
-    jmp    __MOLD_VariantLoadFromIndex.error
+    cinvoke ExitProcess, -1
 endp
 
 __MOLD_VariantLoadFromIndex_int32:
@@ -1879,6 +1880,22 @@ __MOLD_VariantStoreAtIndex_int32:
     lea     rdx, [__TempIndexInteger]     ; rdx      = tmpIndex
     mov     [rdx + Variant_t.value], rax  ; tmpIndex = index
     jmp     __MOLD_VariantStoreAtIndex
+
+proc __MOLD_StringLength cstr
+    ; rcx = cstr
+    mov     rax, 0
+
+.goOn:
+    cmp     byte [rcx + rax], 0
+    je      .done
+
+    inc     rax
+    jmp     .goOn
+
+.done:
+
+    ret
+endp
 
 proc __MOLD_StringHashDJB2
     ; rcx = String_t
