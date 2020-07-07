@@ -390,7 +390,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _loadFromKey(rv, unusedBox, unusedKey)
-    this.popTwoArgsAndEmitOpcode('load_index', rv)
+    this.popTwoArgsAndEmitOpcode('load_key', rv)
   endmethod
 
   method _storeAtIndex(unusedBox, unusedIdx, unusedValue)

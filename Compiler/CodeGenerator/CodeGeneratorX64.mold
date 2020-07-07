@@ -1366,6 +1366,10 @@ class CodeGeneratorX64
         # dst := x[y]
         this.call3AndDestroy('__MOLD_VariantLoadFromIndex_int32', x, y, dst)
 
+      elif opcode is 'load_key_variant'
+        # dst := x[y]
+        this.call3AndDestroy('__MOLD_VariantLoadFromKey', x, y, dst)
+
       elif originalOpcode is 'jmp'
        print '  jmp', dst
 

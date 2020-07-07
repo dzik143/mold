@@ -1,6 +1,0 @@
-x = 'hello'
-y = 'dupa'
-
-z = x ~ y
-
-print z

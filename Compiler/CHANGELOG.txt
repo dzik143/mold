@@ -1,7 +1,7 @@
 
 UNRELEASED:
 -----------
-...
+
 
 0.2.200706 (released on 2020-07-06)
 -----------------------------------
@@ -29,7 +29,7 @@ UNRELEASED:
       y = {'key': 1234}
       print y{'key'}
 
-    - Stub for relative array indexes (@selectors):
+    - Stub for relative array indexes (x[@selector]).
 
       x[@last]        - the last item in the array            (lval, rval)
       x[@first]       - the first item in the array           (lval, rval)

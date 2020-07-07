@@ -1849,6 +1849,13 @@ proc __MOLD_StringLength cstr
     ret
 endp
 
+proc __MOLD_VariantLoadFromKey
+    ; TODO: Clean up this mess.
+    DEBUG_CHECK_VARIANT rcx
+    DEBUG_CHECK_VARIANT rdx
+    jmp __MOLD_VariantLoadFromIndex.map
+endp
+
 __MOLD_VariantLoadFromIndex_int32:
     ; rcx = box (Variant_t)
     ; rdx = index (int32*)
