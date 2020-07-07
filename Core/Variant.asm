@@ -117,7 +117,7 @@ struct Object_t
   buckets        MapBucket_t ?
 ends
 
-proc __MOLD_VariantCheck
+__MOLD_VariantCheck:
     ; rcx = value (Variant_t)
     push rax
 
@@ -186,8 +186,6 @@ proc __MOLD_VariantCheck
 .nullStringPointerError:
     cinvoke printf, 'PANIC! NULL String_t pointer'
     int 3
-
-endp
 
 macro DEBUG_CHECK_VARIANT x
 {
@@ -385,11 +383,9 @@ proc __MOLD_PrintVariant uses r12, v
     int 3
 endp
 
-proc __MOLD_PrintVariantLn
+__MOLD_PrintVariantLn:
   call __MOLD_PrintVariant
-  call __MOLD_PrintNewLine
-  ret
-endp
+  jmp  __MOLD_PrintNewLine
 
 proc __MOLD_PrintArrayOfVariantsLn
 
@@ -553,7 +549,7 @@ __MOLD_VariantConvertBool64ToString:
 __MOLD_VariantConvertToString_notBoolean:
 
     cmp     r10, VARIANT_TYPE_MAX
-    jbe     __MOLD_VariantConvertPrimitiveToString
+    ja      __MOLD_PrintErrorAndDie.badType
 
     ; ------------------------------------
     ; Non string value, conversion needed.
@@ -650,7 +646,7 @@ endp
 ;  Get typename
 ; -----------------------------------------------
 
-proc __MOLD_VariantTypeOf val, rv
+__MOLD_VariantTypeOf:
     ; rcx = val
     ; rdx = rv
 
@@ -661,8 +657,8 @@ proc __MOLD_VariantTypeOf val, rv
     ja   __MOLD_PrintErrorAndDie.badType
 
     shl  rax, 4
-    mov  rcx, qword [.typeUndefined + rax]
-    mov  rax, qword [.typeUndefined + rax + 8]
+    mov  rcx, qword [__MOLD_TypeNames + rax]
+    mov  rax, qword [__MOLD_TypeNames + rax + 8]
 
     mov  [rdx], rcx
     mov  [rdx + 8], rax
@@ -671,57 +667,6 @@ proc __MOLD_VariantTypeOf val, rv
 
     ret
 
-.typeUndefined Variant_t VARIANT_STRING, 0, .typeUndefinedBuffer
-.typeNull      Variant_t VARIANT_STRING, 0, .typeNullBuffer
-.typeInteger   Variant_t VARIANT_STRING, 0, .typeIntegerBuffer
-.typeFloat     Variant_t VARIANT_STRING, 0, .typeFloatBuffer
-.typeDouble    Variant_t VARIANT_STRING, 0, .typeFloatBuffer
-.typeString    Variant_t VARIANT_STRING, 0, .typeStringBuffer
-.typeBoolean   Variant_t VARIANT_STRING, 0, .typeBooleanBuffer
-.typeArray     Variant_t VARIANT_STRING, 0, .typeArrayBuffer
-.typeMap       Variant_t VARIANT_STRING, 0, .typeMapBuffer
-.typeObject    Variant_t VARIANT_STRING, 0, .typeObjectBuffer
-
-.typeUndefinedBuffer Buffer_t 10, -1, 0, .typeUndefinedData
-.typeUndefinedData   dq 9
-                     db 'undefined', 0
-
-.typeNullBuffer      Buffer_t 5, -1, 0, .typeNullData
-.typeNullData        dq 4
-                     db 'null', 0
-
-.typeIntegerBuffer   Buffer_t 8, -1, 0, .typeIntegerData
-.typeIntegerData     dq 7
-                     db 'integer', 0
-
-.typeFloatBuffer     Buffer_t 6, -1, 0, .typeFloatData
-.typeFloatData       dq 5
-                     db 'float', 0
-
-.typeDoubleBuffer    Buffer_t 7, -1, 0, .typeDoubleData
-.typeDoubleData      dq 6
-                     db 'double', 0
-
-.typeStringBuffer    Buffer_t 7, -1, 0, .typeStringData
-.typeStringData      dq 6
-                     db 'string', 0
-
-.typeBooleanBuffer   Buffer_t 8, -1, 0, .typeBooleanData
-.typeBooleanData     dq 7
-                     db 'boolean', 0
-
-.typeArrayBuffer     Buffer_t 6, -1, 0, .typeArrayData
-.typeArrayData       dq 5
-                     db 'array', 0
-
-.typeMapBuffer       Buffer_t 4, -1, 0, .typeMapData
-.typeMapData         dq 3
-                     db 'map', 0
-
-.typeObjectBuffer    Buffer_t 7, -1, 0, .typeObjectData
-.typeObjectData      dq 6
-                     db 'object', 0
-endp
 
 proc __MOLD_PrintSpace
     cinvoke printf, ' '
@@ -780,7 +725,7 @@ __MOLD_VariantTypeDispatcherXY:
 
 macro DefVariantOperatorXX name, opcode_ii, opcode_dd, rv_type
 {
-  proc name x, y, rv
+  name:
     ; rcx = [x]
     ; rdx = [y]
     ; r8  = [rv]
@@ -820,7 +765,6 @@ macro DefVariantOperatorXX name, opcode_ii, opcode_dd, rv_type
     DEBUG_CHECK_VARIANT r8
 
     ret
-  endp
 }
 
 DefVariantOperatorXX __MOLD_VariantAdd , add  , addsd, r9d
@@ -829,7 +773,7 @@ DefVariantOperatorXX __MOLD_VariantMul , imul , mulsd, r9d
 
 macro DefVariantCompare name, opcode_ii, opcode_dd
 {
-  proc name x, y, rv
+  name:
     ; rcx = [x]
     ; rdx = [y]
     ; r8  = [rv]
@@ -841,7 +785,7 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
   .jmpTable dq .case_ii, .case_if, .case_id, .error
             dq .case_fi, .case_ff, .case_fd, .error
             dq .case_di, .case_df, .case_dd, .error
-            dq .error  , .error  , .error  , .case_ss
+            dq .error  , .error  , .error  , .error
 
   ; integer x integer
   .case_ii:
@@ -858,34 +802,22 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
 
   ; integer x double
   .case_id:
-
-    ; TODO
-    ; jmp         __MOLD_ErrorImplicitTypeConversion
-
-    ; OLD IMPLEMENTATION
     cvtsi2sd  xmm0, [rcx + Variant_t.value]
     movq      xmm1, [rdx + Variant_t.value]
     opcode_dd xmm0, xmm1
     movq      [r8 + Variant_t.value], xmm0
 
     DEBUG_CHECK_VARIANT r8
-
     ret
 
   ; double x integer
   .case_di:
-    ; TODO
-    ; jmp       __MOLD_ErrorImplicitTypeConversion
-
-
-    ; OLD IMPLEMENTATION:
     movq      xmm0, [rcx + Variant_t.value]
     cvtsi2sd  xmm1, [rdx + Variant_t.value]
     opcode_dd xmm0, xmm1
     movq      [r8 + Variant_t.value], xmm0
 
     DEBUG_CHECK_VARIANT r8
-
     ret
 
   ; double x double
@@ -896,7 +828,6 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
     movq      [r8 + Variant_t.value], xmm0
 
     DEBUG_CHECK_VARIANT r8
-
     ret
 
   ; string x string
@@ -918,7 +849,6 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
   .case_df:
   .case_fd:
      jmp    __MOLD_PrintErrorAndDie.notImplemented
-  endp
 }
 
 proc __MOLD_VariantCompareEQ x, y, rv
@@ -1024,7 +954,7 @@ proc __MOLD_VariantCompareEQ x, y, rv
                   db 0xff
 endp
 
-proc __MOLD_VariantCompareNE
+__MOLD_VariantCompareNE:
     ; rcx = x
     ; rdx = y
     ; r8  = rv
@@ -1040,7 +970,6 @@ proc __MOLD_VariantCompareNE
     DEBUG_CHECK_VARIANT r8
 
     ret
-endp
 
 DefVariantCompare __MOLD_VariantDefaultCompareEQ, setz,  cmpeqsd
 DefVariantCompare __MOLD_VariantCompareLT,        setl,  cmpltsd
@@ -1057,7 +986,7 @@ DefVariantCompare __MOLD_VariantCompareLE,        setle, cmplesd
 ;DefVariantCompare __MOLD_VariantCompareGT, setg,  cmpnlesd
 ;DefVariantCompare __MOLD_VariantCompareGE, setge, cmpnltsd
 
-proc __MOLD_VariantNeg x, rv
+__MOLD_VariantNeg:
     ; rcx = [x]
     ; rdx = [rv]
 
@@ -1088,9 +1017,8 @@ proc __MOLD_VariantNeg x, rv
     DEBUG_CHECK_VARIANT rdx
 
     ret
-endp
 
-proc __MOLD_VariantDivAsInteger x, y, rv
+__MOLD_VariantDivAsInteger:
     ; rcx = [x]
     ; rdx = [y]
     ; r8  = [rv]
@@ -1129,9 +1057,9 @@ proc __MOLD_VariantDivAsInteger x, y, rv
    DEBUG_CHECK_VARIANT r8
 
    ret
-endp
 
-proc __MOLD_VariantDiv x, y, rv
+
+__MOLD_VariantDiv:
     ; rcx = [x]
     ; rdx = [y]
     ; r8  = [rv]
@@ -1163,21 +1091,7 @@ proc __MOLD_VariantDiv x, y, rv
     DEBUG_CHECK_VARIANT r8
 
     ret
-endp
 
-
-proc __MOLD_VariantCopy src, dst
-;  movdqu xmm0, [rcx]
-;  movdqu [rdx], xmm0
-
-  mov eax, [rcx + Variant_t.type]
-  mov r8, [rcx + Variant_t.value]
-
-  mov [rdx + Variant_t.type], eax
-  mov [rdx + Variant_t.value], r8
-
-  ret
-endp
 
 proc __MOLD_VariantStoreAtIndex box, index, value
     ; rcx = box (Variant_t)
@@ -1393,7 +1307,7 @@ proc __MOLD_VariantStoreAtIndex box, index, value
     ret
 endp
 
-proc __MOLD_VariantLoadFromIndex box, index, rv
+__MOLD_VariantLoadFromIndex:
     ; rcx = box (Variant_t)
     ; rdx = index (Variant_t)
     ; r8  = rv (Variant_t)
@@ -1474,10 +1388,10 @@ proc __MOLD_VariantLoadFromIndex box, index, rv
     ret
 
 .arrayLoadPrimitiveJumpTable:
-dq .arrayLoadInt8
-dq .arrayLoadInt16
-dq .arrayLoadInt32
-dq .arrayLoadInt64
+    dq .arrayLoadInt8
+    dq .arrayLoadInt16
+    dq .arrayLoadInt32
+    dq .arrayLoadInt64
 
 .string:
     mov    [r8 + Variant_t.type], VARIANT_UNDEFINED
@@ -1507,12 +1421,13 @@ dq .arrayLoadInt64
     DEBUG_CHECK_VARIANT r8
 
     ret
-endp
 
-proc __MOLD_VariantLoadFromKey
+__MOLD_VariantLoadFromKey:
     ; TODO: Clean up this mess.
     DEBUG_CHECK_VARIANT rcx
     DEBUG_CHECK_VARIANT rdx
+
+    sub    rsp, 32
 
     mov    eax, [rcx + Variant_t.type]
 
@@ -1573,10 +1488,7 @@ proc __MOLD_VariantLoadFromKey
 
 .mapBucketNotFound:
     mov    [r8 + Variant_t.type], VARIANT_UNDEFINED
-
-    DEBUG_CHECK_VARIANT r8
-
-    ret
+    jmp    .final
 
 .mapBucketFound:
     movdqu xmm0, [r10 + Map_t.buckets + rax + 16] ; xmm0 = value
@@ -1588,10 +1500,12 @@ proc __MOLD_VariantLoadFromKey
     call  __MOLD_VariantAddRef
     pop   r8
 
+.final:
+
     DEBUG_CHECK_VARIANT r8
 
+    add     rsp, 32
     ret
-endp
 
 __MOLD_VariantLoadFromIndex_int32:
     ; rcx = box (Variant_t)
@@ -1601,7 +1515,6 @@ __MOLD_VariantLoadFromIndex_int32:
     mov     eax, dword [rdx]              ; eax      = index
     lea     rdx, [__TempIndexInteger]     ; rdx      = tmpIndex
     mov     [rdx + Variant_t.value], rax  ; tmpIndex = index
-
     jmp     __MOLD_VariantLoadFromIndex
 
 __MOLD_VariantStoreAtIndex_int32:
@@ -1614,10 +1527,9 @@ __MOLD_VariantStoreAtIndex_int32:
     mov     [rdx + Variant_t.value], rax  ; tmpIndex = index
     jmp     __MOLD_VariantStoreAtIndex
 
-proc __MOLD_StringLength cstr
+__MOLD_StringLength:
     ; rcx = cstr
     mov     rax, 0
-
 .goOn:
     cmp     byte [rcx + rax], 0
     je      .done
@@ -1626,11 +1538,9 @@ proc __MOLD_StringLength cstr
     jmp     .goOn
 
 .done:
-
     ret
-endp
 
-proc __MOLD_StringHashDJB2
+__MOLD_StringHashDJB2:
     ; rcx = String_t
     ; TODO: Store hash in String_t struct.
 
@@ -1657,11 +1567,9 @@ proc __MOLD_StringHashDJB2
     jne     .goOn
 
 .done:
-
     pop     r8 rdx rcx
-
     ret
-endp
+
 
 proc __MOLD_VariantArrayCreate rv
     ; rcx = rv (Variant_t)
@@ -1697,6 +1605,7 @@ proc __MOLD_VariantMapCreate rv
 endp
 
 proc __MOLD_VariantMapResizeTwice
+
     ; --------------------------------------------------------------------------
     ; Set up stack frame
     ; --------------------------------------------------------------------------
@@ -1988,7 +1897,7 @@ proc __MOLD_VariantDestroy
     ret
 endp
 
-proc __MOLD_VariantLength value, rv
+__MOLD_VariantLength:
     ; rcx = value
     ; rdx = rv
 
@@ -2057,9 +1966,8 @@ proc __MOLD_VariantLength value, rv
 
 .object:
     jmp     __MOLD_PrintErrorAndDie.notImplemented
-endp
 
-proc __MOLD_VariantAddRef
+__MOLD_VariantAddRef:
     ; rcx = Variant_t
     ; TODO: Clean up this mess.
 
@@ -2088,9 +1996,8 @@ proc __MOLD_VariantAddRef
 
 .noRefNeeded:
     ret
-endp
 
-proc __MOLD_VariantMove
+__MOLD_VariantMove:
     ; rcx = destination
     ; rdx = source
 
@@ -2125,7 +2032,7 @@ proc __MOLD_VariantMove
 
 .noRefNeeded:
     ret
-endp
+
 
 proc __MOLD_InitArgv
 
@@ -2706,7 +2613,7 @@ __MOLD_ForDriver_Generic:
     dq __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; object (TODO: Not implemented yet)
 
 ; TODO: Clean up this mess.
-proc __MOLD_VariantStringJoin x, y, rv
+__MOLD_VariantStringJoin:
     ; rcx = [x]
     ; rdx = [y]
     ; r8  = [rv]
@@ -2834,7 +2741,6 @@ proc __MOLD_VariantStringJoin x, y, rv
     pop       rsi
 
     ret
-endp
 
 ; ##############################################################################
 ;                                Error handlers

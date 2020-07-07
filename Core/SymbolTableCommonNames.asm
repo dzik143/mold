@@ -52,7 +52,6 @@ name__MOLD_VariantCompareLE        db '__MOLD_VariantCompareLE', 0
 name__MOLD_VariantNeg              db '__MOLD_VariantNeg', 0
 name__MOLD_VariantDivAsInteger     db '__MOLD_VariantDivAsInteger', 0
 name__MOLD_VariantDiv              db '__MOLD_VariantDiv', 0
-name__MOLD_VariantCopy             db '__MOLD_VariantCopy', 0
 name__MOLD_VariantStoreAtIndex     db '__MOLD_VariantStoreAtIndex', 0
 name__MOLD_VariantLoadFromIndex    db '__MOLD_VariantLoadFromIndex', 0
 name__MOLD_StringHashDJB2          db '__MOLD_StringHashDJB2', 0

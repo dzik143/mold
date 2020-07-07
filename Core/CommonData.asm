@@ -72,3 +72,55 @@ __TempIndexInteger Variant_t VARIANT_INTEGER, 0, 0
 
 ; TODO: Clean up this mess.
 __TrashBin Variant_t ?
+
+__MOLD_TypeNames:
+.typeUndefined Variant_t VARIANT_STRING, 0, .typeUndefinedBuffer
+.typeNull      Variant_t VARIANT_STRING, 0, .typeNullBuffer
+.typeInteger   Variant_t VARIANT_STRING, 0, .typeIntegerBuffer
+.typeFloat     Variant_t VARIANT_STRING, 0, .typeFloatBuffer
+.typeDouble    Variant_t VARIANT_STRING, 0, .typeFloatBuffer
+.typeString    Variant_t VARIANT_STRING, 0, .typeStringBuffer
+.typeBoolean   Variant_t VARIANT_STRING, 0, .typeBooleanBuffer
+.typeArray     Variant_t VARIANT_STRING, 0, .typeArrayBuffer
+.typeMap       Variant_t VARIANT_STRING, 0, .typeMapBuffer
+.typeObject    Variant_t VARIANT_STRING, 0, .typeObjectBuffer
+
+.typeUndefinedBuffer Buffer_t 10, -1, 0, .typeUndefinedData
+.typeUndefinedData   dq 9
+                     db 'undefined', 0
+
+.typeNullBuffer      Buffer_t 5, -1, 0, .typeNullData
+.typeNullData        dq 4
+                     db 'null', 0
+
+.typeIntegerBuffer   Buffer_t 8, -1, 0, .typeIntegerData
+.typeIntegerData     dq 7
+                     db 'integer', 0
+
+.typeFloatBuffer     Buffer_t 6, -1, 0, .typeFloatData
+.typeFloatData       dq 5
+                     db 'float', 0
+
+.typeDoubleBuffer    Buffer_t 7, -1, 0, .typeDoubleData
+.typeDoubleData      dq 6
+                     db 'double', 0
+
+.typeStringBuffer    Buffer_t 7, -1, 0, .typeStringData
+.typeStringData      dq 6
+                     db 'string', 0
+
+.typeBooleanBuffer   Buffer_t 8, -1, 0, .typeBooleanData
+.typeBooleanData     dq 7
+                     db 'boolean', 0
+
+.typeArrayBuffer     Buffer_t 6, -1, 0, .typeArrayData
+.typeArrayData       dq 5
+                     db 'array', 0
+
+.typeMapBuffer       Buffer_t 4, -1, 0, .typeMapData
+.typeMapData         dq 3
+                     db 'map', 0
+
+.typeObjectBuffer    Buffer_t 7, -1, 0, .typeObjectData
+.typeObjectData      dq 6
+                     db 'object', 0

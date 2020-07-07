@@ -52,7 +52,6 @@ dq __MOLD_VariantCompareLE       , name__MOLD_VariantCompareLE
 dq __MOLD_VariantNeg             , name__MOLD_VariantNeg
 dq __MOLD_VariantDivAsInteger    , name__MOLD_VariantDivAsInteger
 dq __MOLD_VariantDiv             , name__MOLD_VariantDiv
-dq __MOLD_VariantCopy            , name__MOLD_VariantCopy
 dq __MOLD_VariantStoreAtIndex    , name__MOLD_VariantStoreAtIndex
 dq __MOLD_VariantLoadFromIndex   , name__MOLD_VariantLoadFromIndex
 dq __MOLD_StringHashDJB2         , name__MOLD_StringHashDJB2
