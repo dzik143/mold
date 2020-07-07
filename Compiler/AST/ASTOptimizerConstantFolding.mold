@@ -282,10 +282,15 @@ class ASTOptimizerConstantFolding
               (x.symbolInfo.kind is SYMBOL_KIND_CONST) and
               (AST_IsImm(y) is true))
 
-          # box[i]
+          # box[i] or box{key}
           # Access to constant array with imm index.
           # We can resolve it at compilation time.
-          newValue = x.symbolInfo.value{y.value}
+          if opcode is AST_OPCODE_REFERENCE_BY_INDEX
+            newValue = x.symbolInfo.value[y.value]
+          else
+            newValue = x.symbolInfo.value{y.value}
+          endif
+
           if (typeof(newValue) isnt 'array') and (typeof(newValue) isnt 'map')
             x.symbolInfo.readHits = x.symbolInfo.readHits - 1
           endif
