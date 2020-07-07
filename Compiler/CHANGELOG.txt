@@ -1,7 +1,11 @@
 
 UNRELEASED:
 -----------
+  Mantain:
+    - Core: Major clean up around error handling
 
+  Dropped syntax:
+    - x[key] is not allowed for maps anymore, use x{key} instead.
 
 0.2.200706 (released on 2020-07-06)
 -----------------------------------
@@ -12,6 +16,8 @@ UNRELEASED:
     - Faster x64 code (load/store indexes with int32 pointers)
     - Avoid creating multiple Parser() objects per each module load
     - Distinguish variant and string types while generating code
+
+  Mantain:
     - Major clean up the parser code
 
   New syntax:

@@ -405,7 +405,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     val = this.popForRead()
     key = this.popForRead()
     box = this.popForRead()
-    this.emitTwoArgsOpcode('store_index', box, key, val)
+    this.emitTwoArgsOpcode('store_key', box, key, val)
     this.push(box)
   endmethod
 
@@ -420,7 +420,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     val = this.popForRead()
     key = this.popForRead()
     box = this.popForRead()
-    this.emitTwoArgsOpcode('store_index', box, key, val)
+    this.emitTwoArgsOpcode('store_key', box, key, val)
   endmethod
 
   method _createObject(rv, classProto)

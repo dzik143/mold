@@ -73,7 +73,7 @@ class MIRQuadOptimizer extends PipeAbstract
 
     #print '[ MIRQuadOptimizer ]', item[0]
 
-    if this.lastOpcode is 'store_index'
+    if (this.lastOpcode is 'store_index') or (this.lastOpcode is 'store_key')
       this._emitOneItem(item)
 
     elif this.lastOpcode is 'call'

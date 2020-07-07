@@ -1354,6 +1354,10 @@ class CodeGeneratorX64
         # dst[x] := y
         this.call3('__MOLD_VariantStoreAtIndex', dst, x, y)
 
+      elif (opcode is 'store_key_string') or (opcode is 'store_key_variant')
+        # dst{x} := y
+        this.call3('__MOLD_VariantStoreAtKey', dst, x, y)
+
       elif opcode is 'store_index_int32'
         # dst[x] := y
         this.call3('__MOLD_VariantStoreAtIndex_int32', dst, x, y)
