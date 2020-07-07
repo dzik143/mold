@@ -238,7 +238,7 @@ proc __MOLD_PrintVariant uses r12, v
 
 .complexOrBoolean:
     cmp     eax, VARIANT_TYPE_MAX
-    ja      .error
+    ja      __MOLD_PrintErrorAndDie.badType
     jmp     [.jmpTable + rax*8 - VARIANT_BOOLEAN*8]
 
 .boolean:
@@ -380,14 +380,9 @@ proc __MOLD_PrintVariant uses r12, v
     cinvoke printf, '[object]'
     ret
 
-.error:
-    cinvoke printf, '__MOLD_VariantPrint: error: invalid type %d', rax
-    int 3
-
 .errorNonVariantItem:
     cinvoke printf, '__MOLD_VariantPrint: error: non-variant inner types not implemented'
     int 3
-
 endp
 
 proc __MOLD_PrintVariantLn
@@ -613,14 +608,6 @@ __MOLD_VariantConvertPrimitiveToString:
 .fmtMap       db '[map]', 0
 .fmtObject    db '[object]', 0
 
-.outOfMemoryError:
-    cinvoke printf, 'error: out of memory'
-
-.error:
-    cinvoke printf, '[__MOLD_VariantConvertToString: error]'
-    cinvoke ExitProcess, -1
-
-
 ; -----------------------------------------------
 ;  Print Variant_t to stderr
 ; -----------------------------------------------
@@ -671,7 +658,7 @@ proc __MOLD_VariantTypeOf val, rv
 
     mov  eax, [rcx + Variant_t.type]
     cmp  rax, VARIANT_TYPE_MAX
-    ja   .error
+    ja   __MOLD_PrintErrorAndDie.badType
 
     shl  rax, 4
     mov  rcx, qword [.typeUndefined + rax]
@@ -734,10 +721,6 @@ proc __MOLD_VariantTypeOf val, rv
 .typeObjectBuffer    Buffer_t 7, -1, 0, .typeObjectData
 .typeObjectData      dq 6
                      db 'object', 0
-
-.error:
-    cinvoke printf, '[__MOLD_VariantTypeOf: error]'
-    cinvoke ExitProcess, -1
 endp
 
 proc __MOLD_PrintSpace
@@ -759,19 +742,19 @@ proc __MOLD_VariantMul x, y, rv
   DEBUG_CHECK_VARIANT rcx
   DEBUG_CHECK_VARIANT rdx
 
-  mov r9d,  [rcx + Variant_t.type]  ; r9  = x.type
-  mov r10d, [rdx + Variant_t.type]  ; r10 = y.type
-  lea rax,  [r9*4  + r10 - 10]      ; rax = x.type*4 + y.type - 10
+  mov     r9d,  [rcx + Variant_t.type]  ; r9  = x.type
+  mov     r10d, [rdx + Variant_t.type]  ; r10 = y.type
+  lea     rax,  [r9*4  + r10 - 10]      ; rax = x.type*4 + y.type - 10
 
-  cmp rax, 0xf
-  ja  .error
+  cmp     rax, 0xf
+  ja      __MOLD_PrintErrorAndDie.badType
 
-  jmp [.jmpTable + rax*8]
+  jmp     [.jmpTable + rax*8]
 
 .jmpTable dq .case_ii, .case_if, .case_id, .error
           dq .case_fi, .case_ff, .case_fd, .error
           dq .case_di, .case_df, .case_dd, .error
-          dq .error,   .error,   .error,   .case_ss
+          dq .error,   .error,   .error,   .error
 
 ; integer x integer
 .case_ii:
@@ -819,20 +802,15 @@ proc __MOLD_VariantMul x, y, rv
 
    ret
 
-; string x string
-.case_ss:
-
 .error:
-   cinvoke printf, 'error: invalid type'
-   int 3
+   jmp       __MOLD_PrintErrorAndDie.badType
 
 .case_if:
 .case_fi:
 .case_ff:
 .case_df:
 .case_fd:
-   cinvoke printf, 'add: single precision float not implemented'
-   cinvoke ExitProcess, -1
+   jmp       __MOLD_PrintErrorAndDie.notImplemented
 endp
 
 
@@ -845,14 +823,14 @@ __MOLD_VariantTypeDispatcherXY:
     DEBUG_CHECK_VARIANT rcx
     DEBUG_CHECK_VARIANT rdx
 
-    mov r9d,  [rcx + Variant_t.type]  ; r9  = x.type
-    mov r10d, [rdx + Variant_t.type]  ; r10 = y.type
-    lea rax,  [r9*4  + r10 - 10]      ; rax = x.type*4 + y.type - 10
+    mov     r9d,  [rcx + Variant_t.type]  ; r9  = x.type
+    mov     r10d, [rdx + Variant_t.type]  ; r10 = y.type
+    lea     rax,  [r9*4  + r10 - 10]      ; rax = x.type*4 + y.type - 10
 
-    cmp rax, 0xf
-    ja  .error
+    cmp     rax, 0xf
+    ja      .error
 
-    jmp qword [r11 + rax*8]
+    jmp     qword [r11 + rax*8]
 
 .error:
     mov rdx, r9  ; rdx = x.type
@@ -891,7 +869,7 @@ proc __MOLD_VariantAdd x, y, rv
 ; double  + integer
 .case_id:
 .case_di:
-     jmp       __MOLD_ErrorImplicitTypeConversion
+     jmp       __MOLD_PrintErrorAndDie.implicitConversion
 
 ; double x double
 .case_dd:
@@ -906,19 +884,14 @@ proc __MOLD_VariantAdd x, y, rv
      ret
 
 .error:
-    mov rdx, r9  ; rdx = x.type
-    mov r8,  r10 ; r8  = y.type
-    cinvoke printf, '__MOLD_VariantAdd: error: invalid types (%d, %d)'
-    int 3
-    cinvoke ExitProcess, -1
+     jmp       __MOLD_PrintErrorAndDie.badType
 
 .case_if:
 .case_fi:
 .case_ff:
 .case_df:
 .case_fd:
-    cinvoke printf, '__MOLD_VariantAdd: single precision float not implemented'
-    cinvoke ExitProcess, -1
+    jmp        __MOLD_PrintErrorAndDie.notImplemented
 endp
 
 proc __MOLD_VariantSub x, y, rv
@@ -952,7 +925,7 @@ proc __MOLD_VariantSub x, y, rv
 ; double  - integer
 .case_id:
 .case_di:
-   jmp       __MOLD_ErrorImplicitTypeConversion
+   jmp       __MOLD_PrintErrorAndDie.implicitConversion
 
 ; double x double
 .case_dd:
@@ -967,16 +940,14 @@ proc __MOLD_VariantSub x, y, rv
    ret
 
 .error:
-   cinvoke printf, '__MOLD_VariantSub: error: invalid type'
-   cinvoke ExitProcess, -1
+   jmp      __MOLD_PrintErrorAndDie.badType
 
 .case_if:
 .case_fi:
 .case_ff:
 .case_df:
 .case_fd:
-   cinvoke printf, '__MOLD_VariantSub: single precision float not implemented'
-   cinvoke ExitProcess, -1
+   jmp      __MOLD_PrintErrorAndDie.notImplemented
 endp
 
 macro DefVariantCompare name, opcode_ii, opcode_dd
@@ -1055,11 +1026,10 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
   .case_ss:
     ; TODO: Clean up this mess.
     ; TODO: Is this code used anymore?
-    cinvoke printf, 'error: string order compare not implemented'
-    int 3
+    jmp     __MOLD_PrintErrorAndDie.notImplemented
 
   .error:
-    mov       [r8 + Variant_t.value], 0
+    mov     [r8 + Variant_t.value], 0
 
     DEBUG_CHECK_VARIANT r8
 
@@ -1070,8 +1040,7 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
   .case_ff:
   .case_df:
   .case_fd:
-     cinvoke printf, 'compare: single precision float not implemented'
-     cinvoke ExitProcess, -1
+     jmp    __MOLD_PrintErrorAndDie.notImplemented
   endp
 }
 
@@ -1217,12 +1186,12 @@ proc __MOLD_VariantNeg x, rv
 
     DEBUG_CHECK_VARIANT rcx
 
-    mov r9d,   [rcx + Variant_t.type]  ; r9  = x.type
-    mov rcx,   [rcx + Variant_t.value] ; rcx = x.value
-    cmp r9,    VARIANT_DOUBLE
-    ja  .error
+    mov     r9d,   [rcx + Variant_t.type]  ; r9  = x.type
+    mov     rcx,   [rcx + Variant_t.value] ; rcx = x.value
+    cmp     r9,    VARIANT_DOUBLE
+    ja      __MOLD_PrintErrorAndDie.badType
 
-    jmp [.jmpTable + r9*8]
+    jmp     [.jmpTable + r9*8]
 
   .jmpTable dq .error, .error, .case_i, .error, .case_d
   .signBit  dq 0x8000000000000000
@@ -1248,8 +1217,7 @@ proc __MOLD_VariantNeg x, rv
     ret
 
   .error:
-    cinvoke printf, 'neg: error'
-    cinvoke ExitProcess, -1
+    jmp __MOLD_PrintErrorAndDie.badType
 endp
 
 proc __MOLD_VariantDivAsInteger x, y, rv
@@ -1284,7 +1252,7 @@ proc __MOLD_VariantDivAsInteger x, y, rv
 ; double  // integer
 .case_id:
 .case_di:
-   jmp       __MOLD_ErrorImplicitTypeConversion
+   jmp       __MOLD_PrintErrorAndDie.implicitConversion
 
 ; double // double
 .case_dd:
@@ -1299,16 +1267,14 @@ proc __MOLD_VariantDivAsInteger x, y, rv
    ret
 
 .error:
-   cinvoke printf, 'error: invalid type'
-   int 3
+   jmp       __MOLD_PrintErrorAndDie.badType
 
 .case_if:
 .case_fi:
 .case_ff:
 .case_df:
 .case_fd:
-   cinvoke printf, 'add: single precision float not implemented'
-   cinvoke ExitProcess, -1
+    jmp     __MOLD_PrintErrorAndDie.notImplemented
 endp
 
 proc __MOLD_VariantDiv x, y, rv
@@ -1341,7 +1307,7 @@ proc __MOLD_VariantDiv x, y, rv
 ; double  / integer
 .case_id:
 .case_di:
-   jmp       __MOLD_ErrorImplicitTypeConversion
+   jmp       __MOLD_PrintErrorAndDie.implicitConversion
 
 ; double x double
 .case_dd:
@@ -1356,16 +1322,14 @@ proc __MOLD_VariantDiv x, y, rv
    ret
 
 .error:
-   cinvoke printf, 'error: invalid type'
-   int 3
+   jmp       __MOLD_PrintErrorAndDie.badType
 
 .case_if:
 .case_fi:
 .case_ff:
 .case_df:
 .case_fd:
-   cinvoke printf, 'add: single precision float not implemented'
-   cinvoke ExitProcess, -1
+   jmp       __MOLD_PrintErrorAndDie.notImplemented
 endp
 
 
@@ -1411,7 +1375,8 @@ proc __MOLD_VariantStoreAtIndex box, index, value
 
     cmp    rax, VARIANT_OBJECT
     je     .map
-    jmp    .error
+
+    jmp    __MOLD_PrintErrorAndDie.arrayOrStringExpected
 
     ; --------------------------------------------------------------------------
     ;                          Integer indexed array
@@ -1419,7 +1384,7 @@ proc __MOLD_VariantStoreAtIndex box, index, value
 
 .array:
     cmp     [rdx + Variant_t.type], VARIANT_INTEGER
-    jnz     .errorIndexNotInteger
+    jnz     __MOLD_PrintErrorAndDie.integerIndexExpected
 
     mov     r10, [rcx + Variant_t.value]         ; r10  = array buffer (Buffer_t)
     mov     rdx, [rdx + Variant_t.value]         ; rdx  = idx          (integer)
@@ -1486,7 +1451,7 @@ proc __MOLD_VariantStoreAtIndex box, index, value
 
 .map:
     cmp    [rdx + Variant_t.type], VARIANT_STRING
-    jnz    .errorKeyNotString
+    jnz    __MOLD_PrintErrorAndDie.stringKeyExpected
 
     mov    [.box], rcx
     mov    [.keyPtr], rdx
@@ -1593,33 +1558,6 @@ proc __MOLD_VariantStoreAtIndex box, index, value
     DEBUG_CHECK_VARIANT r8
 
     ret
-
-    ; --------------------------------------------------------------------------
-    ;                            Error handlers
-    ; ==========================================================================
-
-.error:
-    cinvoke GetStdHandle, -12
-    cinvoke WriteFile, rax, .errorMsgArrayOfMapExpected, 30, NumberOfBytesWritten, 0
-    jmp     .errorFinal
-
-.errorIndexNotInteger:
-    cinvoke printf, 'error: not integer index'
-    jmp     .errorFinal
-
-.errorKeyNotString:
-    cinvoke printf, 'error: string key expected'
-    jmp     .errorFinal
-
-.errorOutOfSpace:
-    cinvoke printf, 'error: out of map space'
-    jmp     .errorFinal
-
-.errorFinal:
-    cinvoke ExitProcess, 0
-    ret
-
-.errorMsgArrayOfMapExpected db 'error: array or map expected', 13, 10
 endp
 
 proc __MOLD_VariantLoadFromIndex box, index, rv
@@ -1637,7 +1575,8 @@ proc __MOLD_VariantLoadFromIndex box, index, rv
 
     cmp    rax, VARIANT_STRING
     je     .string
-    jmp    .error
+
+    jmp    __MOLD_PrintErrorAndDie.arrayOrStringExpected
 
     ; ==========================================================================
     ;                                    Array
@@ -1645,7 +1584,7 @@ proc __MOLD_VariantLoadFromIndex box, index, rv
 
 .array:
     cmp   [rdx + Variant_t.type], VARIANT_INTEGER
-    jnz   .errorIndexNotInteger
+    jnz    __MOLD_PrintErrorAndDie.integerIndexExpected
 
     mov   rdx, [rdx + Variant_t.value]              ; rdx = idx          (integer)
     mov   rcx, [rcx + Variant_t.value]              ; rcx = array buffer (Buffer_t)
@@ -1711,7 +1650,7 @@ dq .arrayLoadInt64
     mov    [r8 + Variant_t.type], VARIANT_UNDEFINED
 
     cmp    [rdx + Variant_t.type], VARIANT_INTEGER
-    jnz    .errorIndexNotInteger
+    jnz    __MOLD_PrintErrorAndDie.integerIndexExpected
 
     ; --------------------------------------------------------------------------
     ; Get char at index
@@ -1735,26 +1674,6 @@ dq .arrayLoadInt64
     DEBUG_CHECK_VARIANT r8
 
     ret
-
-.error:
-    cinvoke GetStdHandle, -12
-    cinvoke WriteFile, rax, .errorMsg, 30, NumberOfBytesWritten, 0
-    jmp     .errorFinal
-
-.errorMsg db 'error: array or map expected', 13, 10
-
-.errorIndexNotInteger:
-    cinvoke printf, 'error: not integer index'
-    jmp     .errorFinal
-
-.errorKeyNotString:
-    cinvoke printf, 'error: string key expected'
-    jmp     .errorFinal
-
-.errorFinal:
-;    int 3
-    cinvoke ExitProcess, 0
-    ret
 endp
 
 proc __MOLD_VariantLoadFromKey
@@ -1768,7 +1687,7 @@ proc __MOLD_VariantLoadFromKey
     je     .map
 
     cmp    rax, VARIANT_OBJECT
-    jne    .errorMapOrObjectExpected
+    jne    __MOLD_PrintErrorAndDie.mapOrObjectExpected
 
     ; ==========================================================================
     ;                           Hash map or object
@@ -1778,7 +1697,7 @@ proc __MOLD_VariantLoadFromKey
 .object:
 
     cmp    [rdx + Variant_t.type], VARIANT_STRING
-    jnz    .errorKeyNotString
+    jnz    __MOLD_PrintErrorAndDie.stringKeyExpected
 
     mov    r10, [rcx + Variant_t.value]         ; r10  = map  (Buffer_t)
     mov    r10, [r10 + Buffer_t.bytesPtr]       ; r10  = map  (Map_t)
@@ -1839,25 +1758,6 @@ proc __MOLD_VariantLoadFromKey
     DEBUG_CHECK_VARIANT r8
 
     ret
-
-.errorMapOrObjectExpected:
-    ; TODO: Clean up this mess.
-    cinvoke GetStdHandle, -12
-    cinvoke WriteFile, rax, .errorMsg, 30, NumberOfBytesWritten, 0
-    jmp     .errorFinal
-
-.errorMsg db 'error: array or map expected', 13, 10
-
-.errorIndexNotInteger:
-    cinvoke printf, 'error: not integer index'
-    jmp     .errorFinal
-
-.errorKeyNotString:
-    cinvoke printf, 'error: string key expected'
-    jmp     .errorFinal
-
-.errorFinal:
-    cinvoke ExitProcess, -1
 endp
 
 __MOLD_VariantLoadFromIndex_int32:
@@ -2265,7 +2165,8 @@ proc __MOLD_VariantLength value, rv
     mov     [rdx + Variant_t.type], VARIANT_INTEGER
 
     cmp     rax, VARIANT_TYPE_MAX
-    ja      .error
+    ja      __MOLD_PrintErrorAndDie.badType
+
     jmp     [.jmpTable + rax*8]
 
 .jmpTable dq .load0  , .load0 , .load1 , .load1 , .load1
@@ -2322,12 +2223,7 @@ proc __MOLD_VariantLength value, rv
     ret
 
 .object:
-
-.error:
-    cinvoke printf, 'error: unhandled type __MOLD_VariantLength'
-    cinvoke ExitProcess, -1
-    ret
-
+    jmp     __MOLD_PrintErrorAndDie.notImplemented
 endp
 
 proc __MOLD_VariantAddRef
@@ -2520,7 +2416,6 @@ __MOLD_Halt:
 proc __MOLD_NullMethodCalled
   cinvoke printf, 'error: pure virtual called'
   int 3
-  ;cinvoke ExitProcess, -1
 endp
 
 ;###############################################################################
@@ -2584,7 +2479,7 @@ __MOLD_Peek:
 __mold_peek:
 
     cmp    [rcx + Variant_t.type], VARIANT_STRING
-    jnz    .errorNotString
+    jnz    __MOLD_PrintErrorAndDie.stringExpected
 
     mov    rax, [rcx + Variant_t.value]    ; rax = string (Buffer_t)
     test   [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
@@ -2596,7 +2491,7 @@ __mold_peek:
     mov    rcx, [rax + Buffer_t.bytesPtr]  ; rcx = string (String_t)
 
     cmp    [rcx + String_t.length], rdx    ; is len(string) <= index?
-    jbe    .errorOutOfRange
+    jbe    __MOLD_PrintErrorAndDie.indexOutOfRange
 
     mov    al, [rcx + String_t.text + rdx] ; al  = string[index]
 
@@ -2606,20 +2501,13 @@ __mold_peek:
     mov    [rdi + Variant_t.type], VARIANT_INTEGER
     ret
 
-.errorNotString:
-    cinvoke printf, 'peek: not a string'
-    int 3
-
-.errorOutOfRange:
-    cinvoke printf, 'peek: out of range'
-    int 3
-
 __MOLD_Ord:
 __mold_ord:
     mov    rax, [rcx + Variant_t.value]    ; rax = string (Buffer_t)
 
     cmp    [rcx + Variant_t.type], VARIANT_STRING
-    jnz    .notString
+    jnz    __MOLD_PrintErrorAndDie.stringExpected
+
 
     test   [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
     jnz    .oneCharacterString
@@ -2634,24 +2522,6 @@ __mold_ord:
     mov    [rdi + Variant_t.value], rax
     mov    [rdi + Variant_t.type], VARIANT_INTEGER
     ret
-
-;__MOLD_ConvertStringToInteger:
-;    mov rcx, [ rcx + Variant_t.value]           ; rcx = text (Buffer_t)
-;    mov rcx, [ rcx + Buffer_t.bytesPtr ]        ; rcx = text (String_t)
-;    lea rcx, [ rcx + String_t.text ]            ; rcx = text (char*)
-;    cinvoke atoi                                ; rcx = atoi(text) (int32)
-;    mov [ rdi + Variant_t.type], VARIANT_INTEGER
-;    mov [ rdi + Variant_t.value], rax
-;    ret
-;
-;__MOLD_ConvertStringToFloat64:
-;    mov rcx, [ rcx + Variant_t.value]           ; rcx = text (Buffer_t)
-;    mov rcx, [ rcx + Buffer_t.bytesPtr ]        ; rcx = text (String_t)
-;    lea rcx, [ rcx + String_t.text ]            ; rcx = text (char*)
-;    cinvoke atof                                ; rcx = atof(text) (double)
-;    mov  [ rdi + Variant_t.type], VARIANT_DOUBLE
-;    movq [ rdi + Variant_t.value], xmm0
-;    ret
 
 ;###############################################################################
 ;
@@ -2724,7 +2594,6 @@ __MOLD_LoadFile:
 .stringPathExpectedError:
     cinvoke printf, "error: string path expected"
     cinvoke ExitProcess, -1
-
 
 ;###############################################################################
 ;
@@ -3024,35 +2893,21 @@ __MOLD_ForDriver_Generic:
 
     mov     eax, [rcx + Variant_t.type]
     cmp     eax, VARIANT_TYPE_MAX
-    ja      .errorInvalidType
+    ja      __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; TODO: Change to badType
+
     jmp     qword [.jmpTable + rax*8]
 
 .jmpTable:
-    dq .errorInvalidType ; undefined
-    dq .errorInvalidType ; null
-    dq .errorInvalidType ; integer
-    dq .errorInvalidType ; float32
-    dq .errorInvalidType ; float64
+    dq __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; undefined
+    dq __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; null
+    dq __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; integer
+    dq __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; float32
+    dq __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; float64
     dq __MOLD_ForDriver_IndexesAndValuesInString
-    dq .errorInvalidType ; boolean
+    dq __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; boolean
     dq __MOLD_ForDriver_IndexesAndValuesInArray
     dq __MOLD_ForDriver_KeysAndValuesInMap
-    dq .errorInvalidType ; object (TODO: Not implemented yet)
-
-.errorMsgArrayStringOrMapExpected db 'error: array, string or map expected', 13, 10
-
-.errorInvalidType:
-    cinvoke GetStdHandle, -12
-    cinvoke WriteFile, rax, .errorMsgArrayStringOrMapExpected, 38, NumberOfBytesWritten, 0
-    cinvoke ExitProcess, -1
-
-; TODO: Clean up this mess.
-
-__MOLD_ErrorImplicitTypeConversion:
-    cinvoke printf, .fmt
-    int 3
-
-.fmt db 'error: implicit type conversion is not supported anymore', 13, 10, 0
+    dq __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; object (TODO: Not implemented yet)
 
 ; TODO: Clean up this mess.
 proc __MOLD_VariantStringJoin x, y, rv
@@ -3067,10 +2922,10 @@ proc __MOLD_VariantStringJoin x, y, rv
     mov r10d, [rdx + Variant_t.type]  ; r10 = y.type
 
     cmp r9d, VARIANT_STRING
-    jnz .error
+    jnz __MOLD_PrintErrorAndDie.stringExpected
 
     cmp r10d, VARIANT_STRING
-    jnz .error
+    jnz __MOLD_PrintErrorAndDie.stringExpected
 
     cmp       r8, rcx
     jz        .case_ss_overlapped_source_and_destination
@@ -3183,12 +3038,82 @@ proc __MOLD_VariantStringJoin x, y, rv
     pop       rsi
 
     ret
+endp
 
-.error:
-    cinvoke printf, .fmtError
+; ##############################################################################
+;                                Error handlers
+; ##############################################################################
+
+; TODO: Clean up this mess.
+__MOLD_PrintErrorAndDie:
+
+.generic:
+    lea     rcx, [.fmtGeneric]
+    jmp     .final
+
+.integerIndexExpected:
+    lea     rcx, [.fmtIntegerIndexExcepted]
+    jmp     .final
+
+.stringKeyExpected:
+    lea     rcx, [.fmtStringKeyExpected]
+    jmp     .final
+
+.mapOrObjectExpected:
+    lea     rcx, [.fmtMapOrObjectExpected]
+    jmp     .final
+
+.arrayOrStringExpected:
+    lea     rcx, [.fmtArrayOrStringExpected]
+    jmp     .final
+
+.stringExpected:
+    lea     rcx, [.fmtStringExpected]
+    jmp     .final
+
+.indexOutOfRange:
+    lea     rcx, [.fmtIndexOutOfRange]
+    jmp     .final
+
+.badType:
+    lea     rcx, [.fmtBadType]
+    jmp     .final
+
+.notImplemented:
+    lea     rcx, [.fmtNotImplemented]
+    jmp     .final
+
+.implicitConversion:
+    lea     rcx, [.implicitConversion]
+    jmp     .final
+
+.arrayStringOrMapExpected:
+    lea     rcx, [.fmtArrayStringOrMapExpected]
+    jmp     .final
+
+.final:
+.custom:
+    ; TODO: Clean up this mess.
+    push    rcx
+    cinvoke strlen
+    mov     r8d, eax
+    pop     rdx
+
+    cinvoke GetStdHandle, -12
+    cinvoke WriteFile, rax, rdx, r8, NumberOfBytesWritten, 0
+
     cinvoke ExitProcess, -1
 
-.fmtError db 'error: string expected (x ~ y)', 13, 10, 0
-endp
+.fmtGeneric                  db 'error: generic', 13, 10, 0
+.fmtIntegerIndexExcepted     db 'error: integer index expected', 13, 10, 0
+.fmtStringKeyExpected        db 'error: string key expected', 13, 10, 0
+.fmtStringExpected           db 'error: string expected', 13, 10, 0
+.fmtMapOrObjectExpected      db 'error: map or object expected', 13, 10, 0
+.fmtArrayOrStringExpected    db 'error: array or string expected', 13, 10, 0
+.fmtArrayStringOrMapExpected db 'error: array, string or map expected', 13, 10, 0
+.fmtIndexOutOfRange          db 'error: index out of range', 13, 10, 0
+.fmtBadType                  db 'error: bad type', 13, 10, 0
+.fmtNotImplemented           db 'error: not implemented', 13, 10, 0
+.fmtImplicitConversion       db 'error: implicit type conversion not supported anymore', 13, 10, 0
 
 include 'SysCall.asm'
