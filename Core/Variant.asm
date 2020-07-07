@@ -1635,12 +1635,6 @@ proc __MOLD_VariantLoadFromIndex box, index, rv
     cmp    rax, VARIANT_ARRAY
     je     .array
 
-    cmp    rax, VARIANT_MAP
-    je     .map
-
-    cmp    rax, VARIANT_OBJECT
-    je     .object
-
     cmp    rax, VARIANT_STRING
     je     .string
     jmp    .error
@@ -1853,7 +1847,16 @@ proc __MOLD_VariantLoadFromKey
     ; TODO: Clean up this mess.
     DEBUG_CHECK_VARIANT rcx
     DEBUG_CHECK_VARIANT rdx
-    jmp __MOLD_VariantLoadFromIndex.map
+
+    mov    eax, [rcx + Variant_t.type]
+
+    cmp    rax, VARIANT_MAP
+    je     __MOLD_VariantLoadFromIndex.map
+
+    cmp    rax, VARIANT_OBJECT
+    je     __MOLD_VariantLoadFromIndex.object
+
+    jmp    __MOLD_VariantLoadFromIndex.error
 endp
 
 __MOLD_VariantLoadFromIndex_int32:
