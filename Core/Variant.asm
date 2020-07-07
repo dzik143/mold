@@ -724,100 +724,31 @@ proc __MOLD_VariantTypeOf val, rv
 endp
 
 proc __MOLD_PrintSpace
-  cinvoke printf, ' '
-  ret
+    cinvoke printf, ' '
+    ret
 endp
 
 proc __MOLD_PrintNewLine
-  cinvoke printf, .fmtEOL
-  ret
+    cinvoke printf, .fmtEOL
+    ret
 .fmtEOL db 10, 0
 endp
 
-proc __MOLD_VariantMul x, y, rv
-  ; rcx = [x]
-  ; rdx = [y]
-  ; r8  = [rv]
+__MOLD_VariantTypeDispatcherX:
+    ; rcx = x
+    ; r11 = jmptable
 
-  DEBUG_CHECK_VARIANT rcx
-  DEBUG_CHECK_VARIANT rdx
+    DEBUG_CHECK_VARIANT rcx
 
-  mov     r9d,  [rcx + Variant_t.type]  ; r9  = x.type
-  mov     r10d, [rdx + Variant_t.type]  ; r10 = y.type
-  lea     rax,  [r9*4  + r10 - 10]      ; rax = x.type*4 + y.type - 10
+    mov     r9d, [rcx + Variant_t.type]  ; rax = x.type
+    cmp     r9d, VARIANT_TYPE_MAX
+    ja      __MOLD_PrintErrorAndDie.badType
 
-  cmp     rax, 0xf
-  ja      __MOLD_PrintErrorAndDie.badType
-
-  jmp     [.jmpTable + rax*8]
-
-.jmpTable dq .case_ii, .case_if, .case_id, .error
-          dq .case_fi, .case_ff, .case_fd, .error
-          dq .case_di, .case_df, .case_dd, .error
-          dq .error,   .error,   .error,   .error
-
-; integer x integer
-.case_ii:
-  mov rcx, [rcx + Variant_t.value]  ; rcx = x.value
-  mov rdx, [rdx + Variant_t.value]  ; rdx = y.value
-
-  imul rcx, rdx                     ; rcx = x.value * y.value
-
-  mov [r8 + Variant_t.type], r9d    ; rv.type  = VARIANT_INTEGER
-  mov [r8 + Variant_t.value], rcx   ; rv.value = x.value + y.value
-
-  DEBUG_CHECK_VARIANT r8
-
-  ret
-
-; integer x double
-.case_id:
-   xchg      rcx, rdx
-
-; double x integer
-.case_di:
-   movq      xmm0, [rcx + Variant_t.value]
-   cvtsi2sd  xmm1, [rdx + Variant_t.value]
-
-   mulsd     xmm0, xmm1
-
-   mov       [r8 + Variant_t.type], VARIANT_DOUBLE
-   movq      [r8 + Variant_t.value], xmm0
-
-   DEBUG_CHECK_VARIANT r8
-
-   ret
-
-; double x double
-.case_dd:
-   movq      xmm0, [rcx + Variant_t.value]
-   movq      xmm1, [rdx + Variant_t.value]
-
-   mulsd     xmm0, xmm1
-
-   mov       [r8 + Variant_t.type], r9d   ; rv.type  = VARIANT_DOUBLE
-   movq      [r8 + Variant_t.value], xmm0
-
-   DEBUG_CHECK_VARIANT r8
-
-   ret
-
-.error:
-   jmp       __MOLD_PrintErrorAndDie.badType
-
-.case_if:
-.case_fi:
-.case_ff:
-.case_df:
-.case_fd:
-   jmp       __MOLD_PrintErrorAndDie.notImplemented
-endp
-
+    jmp     qword [r11 + r9*8]
 
 __MOLD_VariantTypeDispatcherXY:
     ; rcx = x
     ; rdx = y
-    ; r8  = rv
     ; r11 = jmptable
 
     DEBUG_CHECK_VARIANT rcx
@@ -828,15 +759,79 @@ __MOLD_VariantTypeDispatcherXY:
     lea     rax,  [r9*4  + r10 - 10]      ; rax = x.type*4 + y.type - 10
 
     cmp     rax, 0xf
-    ja      .error
+    ja      __MOLD_PrintErrorAndDie.badType
 
     jmp     qword [r11 + rax*8]
 
+proc __MOLD_VariantMul x, y, rv
+    ; rcx = [x]
+    ; rdx = [y]
+    ; r8  = [rv]
+
+    lea   r11, [.jmpTable]
+    jmp   __MOLD_VariantTypeDispatcherXY
+
+.jmpTable dq .case_ii, .case_if, .case_id, .error
+          dq .case_fi, .case_ff, .case_fd, .error
+          dq .case_di, .case_df, .case_dd, .error
+          dq .error,   .error,   .error,   .error
+
+; integer x integer
+.case_ii:
+    mov rcx, [rcx + Variant_t.value]  ; rcx = x.value
+    mov rdx, [rdx + Variant_t.value]  ; rdx = y.value
+
+    imul rcx, rdx                     ; rcx = x.value * y.value
+
+    mov [r8 + Variant_t.type], r9d    ; rv.type  = VARIANT_INTEGER
+    mov [r8 + Variant_t.value], rcx   ; rv.value = x.value + y.value
+
+    DEBUG_CHECK_VARIANT r8
+
+    ret
+
+; integer x double
+.case_id:
+    xchg      rcx, rdx
+
+; double x integer
+.case_di:
+    movq      xmm0, [rcx + Variant_t.value]
+    cvtsi2sd  xmm1, [rdx + Variant_t.value]
+
+    mulsd     xmm0, xmm1
+
+    mov       [r8 + Variant_t.type], VARIANT_DOUBLE
+    movq      [r8 + Variant_t.value], xmm0
+
+    DEBUG_CHECK_VARIANT r8
+
+    ret
+
+; double x double
+.case_dd:
+    movq      xmm0, [rcx + Variant_t.value]
+    movq      xmm1, [rdx + Variant_t.value]
+
+    mulsd     xmm0, xmm1
+
+    mov       [r8 + Variant_t.type], r9d   ; rv.type  = VARIANT_DOUBLE
+    movq      [r8 + Variant_t.value], xmm0
+
+    DEBUG_CHECK_VARIANT r8
+
+    ret
+
 .error:
-    mov rdx, r9  ; rdx = x.type
-    mov r8,  r10 ; r8  = y.type
-    cinvoke printf, '__MOLD_VariantTypeDispatcherXY: error: invalid types (%d, %d)'
-    int 3
+    jmp       __MOLD_PrintErrorAndDie.badType
+
+.case_if:
+.case_fi:
+.case_ff:
+.case_df:
+.case_fd:
+    jmp      __MOLD_PrintErrorAndDie.notImplemented
+endp
 
 proc __MOLD_VariantAdd x, y, rv
     ; rcx = [x]
@@ -869,22 +864,22 @@ proc __MOLD_VariantAdd x, y, rv
 ; double  + integer
 .case_id:
 .case_di:
-     jmp       __MOLD_PrintErrorAndDie.implicitConversion
+    jmp       __MOLD_PrintErrorAndDie.implicitConversion
 
 ; double x double
 .case_dd:
-     movq      xmm0, [rcx + Variant_t.value]
-     movq      xmm1, [rdx + Variant_t.value]
-     addsd     xmm0, xmm1
-     mov       [r8 + Variant_t.type], r9d   ; rv.type  = VARIANT_DOUBLE
-     movq      [r8 + Variant_t.value], xmm0
+    movq      xmm0, [rcx + Variant_t.value]
+    movq      xmm1, [rdx + Variant_t.value]
+    addsd     xmm0, xmm1
+    mov       [r8 + Variant_t.type], r9d   ; rv.type  = VARIANT_DOUBLE
+    movq      [r8 + Variant_t.value], xmm0
 
-     DEBUG_CHECK_VARIANT r8
+    DEBUG_CHECK_VARIANT r8
 
-     ret
+    ret
 
 .error:
-     jmp       __MOLD_PrintErrorAndDie.badType
+    jmp       __MOLD_PrintErrorAndDie.badType
 
 .case_if:
 .case_fi:
@@ -909,45 +904,45 @@ proc __MOLD_VariantSub x, y, rv
 
 ; integer x integer
 .case_ii:
-  mov rcx, [rcx + Variant_t.value]  ; rcx = x.value
-  mov rdx, [rdx + Variant_t.value]  ; rdx = y.value
+    mov rcx, [rcx + Variant_t.value]  ; rcx = x.value
+    mov rdx, [rdx + Variant_t.value]  ; rdx = y.value
 
-  sub rcx, rdx                      ; rcx      = x.value + y.value
+    sub rcx, rdx                      ; rcx      = x.value + y.value
 
-  mov [r8 + Variant_t.type], r9d    ; rv.type  = VARIANT_INTEGER
-  mov [r8 + Variant_t.value], rcx   ; rv.value = x.value + y.value
+    mov [r8 + Variant_t.type], r9d    ; rv.type  = VARIANT_INTEGER
+    mov [r8 + Variant_t.value], rcx   ; rv.value = x.value + y.value
 
-  DEBUG_CHECK_VARIANT r8
+    DEBUG_CHECK_VARIANT r8
 
-  ret
+    ret
 
 ; integer - double
 ; double  - integer
 .case_id:
 .case_di:
-   jmp       __MOLD_PrintErrorAndDie.implicitConversion
+    jmp       __MOLD_PrintErrorAndDie.implicitConversion
 
 ; double x double
 .case_dd:
-   movq      xmm0, [rcx + Variant_t.value]
-   movq      xmm1, [rdx + Variant_t.value]
-   subsd     xmm0, xmm1
-   mov       [r8 + Variant_t.type], r9d   ; rv.type  = VARIANT_DOUBLE
-   movq      [r8 + Variant_t.value], xmm0
+    movq      xmm0, [rcx + Variant_t.value]
+    movq      xmm1, [rdx + Variant_t.value]
+    subsd     xmm0, xmm1
+    mov       [r8 + Variant_t.type], r9d   ; rv.type  = VARIANT_DOUBLE
+    movq      [r8 + Variant_t.value], xmm0
 
-   DEBUG_CHECK_VARIANT r8
+    DEBUG_CHECK_VARIANT r8
 
-   ret
+    ret
 
 .error:
-   jmp      __MOLD_PrintErrorAndDie.badType
+    jmp      __MOLD_PrintErrorAndDie.badType
 
 .case_if:
 .case_fi:
 .case_ff:
 .case_df:
 .case_fd:
-   jmp      __MOLD_PrintErrorAndDie.notImplemented
+    jmp      __MOLD_PrintErrorAndDie.notImplemented
 endp
 
 macro DefVariantCompare name, opcode_ii, opcode_dd
@@ -956,10 +951,10 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
     ; rcx = [x]
     ; rdx = [y]
     ; r8  = [rv]
-    mov   [r8 + Variant_t.type], VARIANT_BOOLEAN
+    mov     [r8 + Variant_t.type], VARIANT_BOOLEAN
 
-    lea   r11, [.jmpTable]
-    jmp   __MOLD_VariantTypeDispatcherXY
+    lea     r11, [.jmpTable]
+    jmp     __MOLD_VariantTypeDispatcherXY
 
   .jmpTable dq .case_ii, .case_if, .case_id, .error
             dq .case_fi, .case_ff, .case_fd, .error
@@ -1188,6 +1183,7 @@ proc __MOLD_VariantNeg x, rv
 
     mov     r9d,   [rcx + Variant_t.type]  ; r9  = x.type
     mov     rcx,   [rcx + Variant_t.value] ; rcx = x.value
+
     cmp     r9,    VARIANT_DOUBLE
     ja      __MOLD_PrintErrorAndDie.badType
 
@@ -2594,43 +2590,6 @@ __MOLD_LoadFile:
 .stringPathExpectedError:
     cinvoke printf, "error: string path expected"
     cinvoke ExitProcess, -1
-
-;###############################################################################
-;
-; RCX - box                  (IN / VARIANT),
-; RDX - integer index        (IN / VARIANT),
-; R8  - key at given index   (OUT / VARIANT),
-; R9  - value at given index (OUT / VARIANT).
-;
-;###############################################################################
-
-;__MOLD_VariantLoadFromIndex_UnsecureByInteger:
-;;  mov     rcx, [rcx + Variant_t.value]          ; rcx = map (Buffer_t)
-;  mov     rdx, [rdx + Variant_t.value]          ; rdx = idx (int64)
-;  mov     rcx, [rcx + Buffer_t.bytesPtr]        ; rcx = map (Map_t)
-
-;  ; TODO: Optimize it.
-;  mov     rax, [rcx + Map_t.bucketsCnt]         ; rax = map.bucketsCnt
- ; lea     rcx, [rcx + Map_t.buckets]            ; rcx = map.buckets
-;  shl     rax, 5                                ; rax = map.bucketsCnt * 32
-;  lea     rax, [rax + rdx * 4]                  ; rax = map.bucketsCnt * 32 + idx * 4
-;  mov     eax, [rcx + rax]                      ; rax = map.index[idx]
-;  lea     rcx, [rcx + rax]
-
-;  ; Copy key.
-;  mov     rax, [rcx]
-;  mov     r10, [rcx + 8]
-;  mov     [r8], rax
-;  mov     [r8 + 8], r10
-
-  ; Copy value.
-;  mov     rax, [rcx + 16]
-;  mov     r10, [rcx + 16 + 8]
-;  mov     [r9], rax
-;  mov     [r9 + 8], r10
-;
-;  ret
-
 
 ;###############################################################################
 ;
