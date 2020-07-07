@@ -746,6 +746,25 @@ __MOLD_VariantTypeDispatcherX:
 
     jmp     qword [r11 + r9*8]
 
+__MOLD_VariantTypeDispatcherXX:
+    ; rcx = x
+    ; rdx = y
+    ; r11 = jmptable
+
+    DEBUG_CHECK_VARIANT rcx
+    DEBUG_CHECK_VARIANT rdx
+
+    mov     r9d,  [rcx + Variant_t.type]  ; r9  = x.type
+    mov     r10d, [rdx + Variant_t.type]  ; r10 = y.type
+    cmp     r9d, r10d
+    jnz     __MOLD_PrintErrorAndDie.implicitConversion
+
+    cmp     r9d, VARIANT_DOUBLE
+    ja      __MOLD_PrintErrorAndDie.badType
+
+    jmp     qword [r11 + r9*8 - VARIANT_INTEGER*8]
+
+
 __MOLD_VariantTypeDispatcherXY:
     ; rcx = x
     ; rdx = y
@@ -768,15 +787,15 @@ proc __MOLD_VariantMul x, y, rv
     ; rdx = [y]
     ; r8  = [rv]
 
-    lea   r11, [.jmpTable]
-    jmp   __MOLD_VariantTypeDispatcherXY
+    lea       r11, [.jmpTable]
+    jmp       __MOLD_VariantTypeDispatcherXX
 
-.jmpTable dq .case_ii, .case_if, .case_id, .error
-          dq .case_fi, .case_ff, .case_fd, .error
-          dq .case_di, .case_df, .case_dd, .error
-          dq .error,   .error,   .error,   .error
+.jmpTable:
+    dq   .case_ii                               ; integer * integer
+    dq   __MOLD_PrintErrorAndDie.notImplemented ; float   * float
+    dq   .case_dd                               ; double  * double
 
-; integer x integer
+; integer * integer
 .case_ii:
     mov rcx, [rcx + Variant_t.value]  ; rcx = x.value
     mov rdx, [rdx + Variant_t.value]  ; rdx = y.value
@@ -790,25 +809,7 @@ proc __MOLD_VariantMul x, y, rv
 
     ret
 
-; integer x double
-.case_id:
-    xchg      rcx, rdx
-
-; double x integer
-.case_di:
-    movq      xmm0, [rcx + Variant_t.value]
-    cvtsi2sd  xmm1, [rdx + Variant_t.value]
-
-    mulsd     xmm0, xmm1
-
-    mov       [r8 + Variant_t.type], VARIANT_DOUBLE
-    movq      [r8 + Variant_t.value], xmm0
-
-    DEBUG_CHECK_VARIANT r8
-
-    ret
-
-; double x double
+; double * double
 .case_dd:
     movq      xmm0, [rcx + Variant_t.value]
     movq      xmm1, [rdx + Variant_t.value]
@@ -821,16 +822,6 @@ proc __MOLD_VariantMul x, y, rv
     DEBUG_CHECK_VARIANT r8
 
     ret
-
-.error:
-    jmp       __MOLD_PrintErrorAndDie.badType
-
-.case_if:
-.case_fi:
-.case_ff:
-.case_df:
-.case_fd:
-    jmp      __MOLD_PrintErrorAndDie.notImplemented
 endp
 
 proc __MOLD_VariantAdd x, y, rv
@@ -838,35 +829,29 @@ proc __MOLD_VariantAdd x, y, rv
     ; rdx = [y]
     ; r8  = [rv]
 
-    lea   r11, [.jmpTable]
-    jmp   __MOLD_VariantTypeDispatcherXY
+    lea       r11, [.jmpTable]
+    jmp       __MOLD_VariantTypeDispatcherXX
 
-.jmpTable dq .case_ii, .case_if, .case_id, .error
-          dq .case_fi, .case_ff, .case_fd, .error
-          dq .case_di, .case_df, .case_dd, .error
-          dq .error,   .error,   .error,   .error
+.jmpTable:
+    dq   .case_ii                               ; integer + integer
+    dq   __MOLD_PrintErrorAndDie.notImplemented ; float   + float
+    dq   .case_dd                               ; double  + double
 
-; integer x integer
+; integer + integer
 .case_ii:
-    mov rcx, [rcx + Variant_t.value]  ; rcx = x.value
-    mov rdx, [rdx + Variant_t.value]  ; rdx = y.value
+    mov       rcx, [rcx + Variant_t.value]  ; rcx = x.value
+    mov       rdx, [rdx + Variant_t.value]  ; rdx = y.value
 
-    add  rcx, rdx                     ; rcx = x.value + y.value
+    add       rcx, rdx                      ; rcx = x.value + y.value
 
-    mov [r8 + Variant_t.type], r9d    ; rv.type  = VARIANT_INTEGER
-    mov [r8 + Variant_t.value], rcx   ; rv.value = x.value + y.value
+    mov       [r8 + Variant_t.type], r9d    ; rv.type = VARIANT_INTEGER
+    mov       [r8 + Variant_t.value], rcx   ; rv.value = x.value + y.value
 
     DEBUG_CHECK_VARIANT r8
 
     ret
 
-; integer + double
-; double  + integer
-.case_id:
-.case_di:
-    jmp       __MOLD_PrintErrorAndDie.implicitConversion
-
-; double x double
+; double + double
 .case_dd:
     movq      xmm0, [rcx + Variant_t.value]
     movq      xmm1, [rdx + Variant_t.value]
@@ -877,16 +862,6 @@ proc __MOLD_VariantAdd x, y, rv
     DEBUG_CHECK_VARIANT r8
 
     ret
-
-.error:
-    jmp       __MOLD_PrintErrorAndDie.badType
-
-.case_if:
-.case_fi:
-.case_ff:
-.case_df:
-.case_fd:
-    jmp        __MOLD_PrintErrorAndDie.notImplemented
 endp
 
 proc __MOLD_VariantSub x, y, rv
@@ -894,35 +869,28 @@ proc __MOLD_VariantSub x, y, rv
     ; rdx = [y]
     ; r8  = [rv]
 
-    lea   r11, [.jmpTable]
-    jmp   __MOLD_VariantTypeDispatcherXY
+    lea       r11, [.jmpTable]
+    jmp       __MOLD_VariantTypeDispatcherXX
 
-.jmpTable dq .case_ii, .case_if, .case_id, .error
-          dq .case_fi, .case_ff, .case_fd, .error
-          dq .case_di, .case_df, .case_dd, .error
-          dq .error,   .error,   .error,   .error
+.jmpTable:
+    dq   .case_ii                               ; integer - integer
+    dq   __MOLD_PrintErrorAndDie.notImplemented ; float   - float
+    dq   .case_dd                               ; double  - double
 
-; integer x integer
+; integer - integer
 .case_ii:
-    mov rcx, [rcx + Variant_t.value]  ; rcx = x.value
-    mov rdx, [rdx + Variant_t.value]  ; rdx = y.value
+    mov       rcx, [rcx + Variant_t.value]  ; rcx = x.value
+    mov       rdx, [rdx + Variant_t.value]  ; rdx = y.value
 
-    sub rcx, rdx                      ; rcx      = x.value + y.value
+    sub       rcx, rdx                      ; rcx      = x.value + y.value
 
-    mov [r8 + Variant_t.type], r9d    ; rv.type  = VARIANT_INTEGER
-    mov [r8 + Variant_t.value], rcx   ; rv.value = x.value + y.value
+    mov       [r8 + Variant_t.type], r9d    ; rv.type  = VARIANT_INTEGER
+    mov       [r8 + Variant_t.value], rcx   ; rv.value = x.value + y.value
 
     DEBUG_CHECK_VARIANT r8
-
     ret
 
-; integer - double
-; double  - integer
-.case_id:
-.case_di:
-    jmp       __MOLD_PrintErrorAndDie.implicitConversion
-
-; double x double
+; double - double
 .case_dd:
     movq      xmm0, [rcx + Variant_t.value]
     movq      xmm1, [rdx + Variant_t.value]
@@ -931,18 +899,7 @@ proc __MOLD_VariantSub x, y, rv
     movq      [r8 + Variant_t.value], xmm0
 
     DEBUG_CHECK_VARIANT r8
-
     ret
-
-.error:
-    jmp      __MOLD_PrintErrorAndDie.badType
-
-.case_if:
-.case_fi:
-.case_ff:
-.case_df:
-.case_fd:
-    jmp      __MOLD_PrintErrorAndDie.notImplemented
 endp
 
 macro DefVariantCompare name, opcode_ii, opcode_dd
@@ -3043,7 +3000,7 @@ __MOLD_PrintErrorAndDie:
     jmp     .final
 
 .implicitConversion:
-    lea     rcx, [.implicitConversion]
+    lea     rcx, [.fmtImplicitConversion]
     jmp     .final
 
 .arrayStringOrMapExpected:
