@@ -1181,12 +1181,12 @@ proc __MOLD_VariantDivAsInteger x, y, rv
     mov   [r8 + Variant_t.type], VARIANT_INTEGER
 
     lea   r11, [.jmpTable]
-    jmp   __MOLD_VariantTypeDispatcherXY
+    jmp   __MOLD_VariantTypeDispatcherXX
 
-.jmpTable dq .case_ii, .case_if, .case_id, .error
-          dq .case_fi, .case_ff, .case_fd, .error
-          dq .case_di, .case_df, .case_dd, .error
-          dq .error,   .error ,  .error ,  .error
+.jmpTable:
+    dq   .case_ii                               ; integer // integer
+    dq   __MOLD_PrintErrorAndDie.notImplemented ; float   // float
+    dq   .case_dd                               ; double  // double
 
 ; integer x integer
 .case_ii:
@@ -1201,12 +1201,6 @@ proc __MOLD_VariantDivAsInteger x, y, rv
 
   ret
 
-; integer // double
-; double  // integer
-.case_id:
-.case_di:
-   jmp       __MOLD_PrintErrorAndDie.implicitConversion
-
 ; double // double
 .case_dd:
    movq      xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
@@ -1218,16 +1212,6 @@ proc __MOLD_VariantDivAsInteger x, y, rv
    DEBUG_CHECK_VARIANT r8
 
    ret
-
-.error:
-   jmp       __MOLD_PrintErrorAndDie.badType
-
-.case_if:
-.case_fi:
-.case_ff:
-.case_df:
-.case_fd:
-    jmp     __MOLD_PrintErrorAndDie.notImplemented
 endp
 
 proc __MOLD_VariantDiv x, y, rv
@@ -1235,54 +1219,33 @@ proc __MOLD_VariantDiv x, y, rv
     ; rdx = [y]
     ; r8  = [rv]
 
-    lea   r11, [.jmpTable]
-    jmp   __MOLD_VariantTypeDispatcherXY
+    mov       [r8 + Variant_t.type], VARIANT_DOUBLE ; rv.type  = VARIANT_DOUBLE
+    lea       r11, [.jmpTable]
+    jmp       __MOLD_VariantTypeDispatcherXX
 
-.jmpTable dq .case_ii, .case_if, .case_id, .error
-          dq .case_fi, .case_ff, .case_fd, .error
-          dq .case_di, .case_df, .case_dd, .error
-          dq .error,   .error ,  .error ,  .error
+.jmpTable:
+    dq   .case_ii                               ; integer / integer
+    dq   __MOLD_PrintErrorAndDie.notImplemented ; float   / float
+    dq   .case_dd                               ; double  / double
 
-; integer x integer
+; integer / integer
 .case_ii:
-   mov       r9d, VARIANT_DOUBLE
-   cvtsi2sd  xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
-   cvtsi2sd  xmm1, [rdx + Variant_t.value]  ; xmm1     = double(y.value)
-   mov       [r8 + Variant_t.type], r9d     ; rv.type  = VARIANT_DOUBLE
-   divsd     xmm0, xmm1                     ; xmm0     = x.value / y.value
-   movq      [r8 + Variant_t.value], xmm0   ; rv.value = x.value / y.value
+    cvtsi2sd  xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
+    cvtsi2sd  xmm1, [rdx + Variant_t.value]  ; xmm1     = double(y.value)
+    jmp       .case_dd_final
 
-   DEBUG_CHECK_VARIANT r8
-
-   ret
-
-; integer / double
-; double  / integer
-.case_id:
-.case_di:
-   jmp       __MOLD_PrintErrorAndDie.implicitConversion
-
-; double x double
+; double / double
 .case_dd:
-   movq      xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
-   movq      xmm1, [rdx + Variant_t.value]  ; xmm1     = y.value
-   mov       [r8 + Variant_t.type], r9d     ; rv.type  = VARIANT_DOUBLE
-   divsd     xmm0, xmm1                     ; xmm0     = x.value / y.value
-   movq      [r8 + Variant_t.value], xmm0   ; rv.value = x.value / y.value
+    movq      xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
+    movq      xmm1, [rdx + Variant_t.value]  ; xmm1     = y.value
 
-   DEBUG_CHECK_VARIANT r8
+.case_dd_final:
+    divsd     xmm0, xmm1                     ; xmm0     = x.value / y.value
+    movq      [r8 + Variant_t.value], xmm0   ; rv.value = x.value / y.value
 
-   ret
+    DEBUG_CHECK_VARIANT r8
 
-.error:
-   jmp       __MOLD_PrintErrorAndDie.badType
-
-.case_if:
-.case_fi:
-.case_ff:
-.case_df:
-.case_fd:
-   jmp       __MOLD_PrintErrorAndDie.notImplemented
+    ret
 endp
 
 
