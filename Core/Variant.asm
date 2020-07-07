@@ -39,9 +39,9 @@ macro ASSERT2 x, opcode, y, msg
   pop  r11 r10 r9 r8 rdx rcx rax
 }
 
-; ------------------------------------------------------------------------------
+;###############################################################################
 ;                                  Constants
-; ------------------------------------------------------------------------------
+;###############################################################################
 
 ; Special cases - undefined and null.
 VARIANT_UNDEFINED EQU 0
@@ -116,6 +116,15 @@ struct Object_t
   bucketsUsedCnt dq ?
   buckets        MapBucket_t ?
 ends
+
+;###############################################################################
+;
+; DEBUG ONLY
+; Validate Variant_t object to track corrupted data.
+;
+; rcx = value (Variant_t) (IN)
+;
+;###############################################################################
 
 __MOLD_VariantCheck:
     ; rcx = value (Variant_t)
@@ -195,13 +204,16 @@ macro DEBUG_CHECK_VARIANT x
   pop  rcx
 }
 
-
-; -----------------------------------------------
-;  Print Variant_t to stdout
-; -----------------------------------------------
+;###############################################################################
+;
+; Print single Variant_t variable to stdout.
+;
+; rcx = value (Variant_t) (IN)
+;
+;###############################################################################
 
 proc __MOLD_PrintVariant uses r12, v
-    ; rcx = value
+
     DEBUG_CHECK_VARIANT rcx
 
     mov  eax, [rcx + Variant_t.type]
@@ -383,23 +395,37 @@ proc __MOLD_PrintVariant uses r12, v
     int 3
 endp
 
+;###############################################################################
+;
+; Print single Variant_t variable to stdout and append new line sequence.
+;
+; rcx - variable to print (Variant_t) (IN)
+;
+;###############################################################################
+
 __MOLD_PrintVariantLn:
   call __MOLD_PrintVariant
   jmp  __MOLD_PrintNewLine
 
-proc __MOLD_PrintArrayOfVariantsLn
+;###############################################################################
+;
+; Print any number of Variant_t variables to stdout.
+;
+;###############################################################################
 
-  local .item2 dq ?
-  local .item3 dq ?
+__MOLD_PrintArrayOfVariantsLn:
+    .item2 EQU rsp + 32
+    .item3 EQU rsp + 40
 
     jecxz   .done
 
     push    r12
     mov     r12, rcx                     ; r12 = count
+    sub     rsp, 32 + 16 + 8             ; Shadow space for putchar
 
     mov     [.item2], r8                 ; save item#2 on stack
     mov     [.item3], r9                 ; save item#3 on stack
-    sub     rsp, 32                      ; Shadow space for putchar
+
 
     ; --------------------------------------------------------------------------
     ; print 1-st item (rdx)
@@ -444,46 +470,54 @@ proc __MOLD_PrintArrayOfVariantsLn
     dec     r12
     jnz     .printNextItem
 
-    add     rsp, 32
-
 .popAndDone:
+    add     rsp, 32 + 16 + 8
     pop     r12
+
 .done:
+    jmp     __MOLD_PrintNewLine
 
-    call    __MOLD_PrintNewLine
+    restore .item2
+    restore .item3
 
-    pop     r12
-    ret
-endp
+;###############################################################################
+;
+; Print out single Variant_t, but wrap it into 'x' quotas if needed.
+;
+; rcx = variable to print (Variant_t) (IN)
+;
+;###############################################################################
 
-proc __MOLD_PrintVariantWithQuotas v
-  ; rcx = v
+__MOLD_PrintVariantWithQuotas:
+
   cmp     [rcx + Variant_t.type], VARIANT_STRING
-  jnz     .notString
+  jnz     __MOLD_PrintVariant
 
   push    rcx
+
   mov     cl, "'"
-  cinvoke putchar
-  pop     rcx
+  sub     rsp, 32
+  call    [putchar]
+
+  mov     rcx, [rsp + 32]
 
   call __MOLD_PrintVariant
 
-  push    rcx
   mov     cl, "'"
-  cinvoke putchar
+  call    [putchar]
+  add     rsp, 32
+
   pop     rcx
-
   ret
 
-.notString:
-  call    __MOLD_PrintVariant
-  ret
-
-endp
-
-; -----------------------------------------------
-;  Convert Variant_t to string
-; -----------------------------------------------
+;###############################################################################
+;
+; Convert single Variant_t to string.
+;
+; rcx = variable to convert (Variant_t) (IN)
+; rdx = result string       (Variant_t) (OUT)
+;
+;###############################################################################
 
 __MOLD_VariantConvertToString:
     ; rcx = value
@@ -604,12 +638,16 @@ __MOLD_VariantConvertPrimitiveToString:
 .fmtMap       db '[map]', 0
 .fmtObject    db '[object]', 0
 
-; -----------------------------------------------
-;  Print Variant_t to stderr
-; -----------------------------------------------
+;###############################################################################
+;
+; Print out single Variant_t variable to stderr.
+;
+; rcx = value (Variant_t) (IN)
+;
+;###############################################################################
 
 proc __MOLD_PrintVariantToStdError uses r12
-    ; rcx = value
+
     local .buf:Variant_t
 
     DEBUG_CHECK_VARIANT rcx
@@ -642,13 +680,16 @@ proc __MOLD_PrintVariantToStdError uses r12
 .fmtNewLine db 13, 10
 endp
 
-; -----------------------------------------------
-;  Get typename
-; -----------------------------------------------
+;###############################################################################
+;
+; Get human-readable type name for given variant variable.
+;
+; rcx = x  (Variant_t) (IN)
+; rdx = rv (Variant_t) (OUT)
+;
+;###############################################################################
 
 __MOLD_VariantTypeOf:
-    ; rcx = val
-    ; rdx = rv
 
     DEBUG_CHECK_VARIANT rcx
 
@@ -667,17 +708,12 @@ __MOLD_VariantTypeOf:
 
     ret
 
-
-proc __MOLD_PrintSpace
-    cinvoke printf, ' '
+__MOLD_PrintNewLine:
+    sub   rsp, 32
+    mov   cl, 10
+    call  [putchar]
+    add   rsp, 32
     ret
-endp
-
-proc __MOLD_PrintNewLine
-    cinvoke printf, .fmtEOL
-    ret
-.fmtEOL db 10, 0
-endp
 
 __MOLD_VariantTypeDispatcherX:
     ; rcx = x
@@ -851,7 +887,7 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
      jmp    __MOLD_PrintErrorAndDie.notImplemented
 }
 
-proc __MOLD_VariantCompareEQ x, y, rv
+__MOLD_VariantCompareEQ:
     ; rcx = x
     ; rdx = y
     ; r8  = rv
@@ -923,7 +959,9 @@ proc __MOLD_VariantCompareEQ x, y, rv
     lea     rdx, [rdx + String_t.text]
 
     push    r8
-    cinvoke strcmp
+    sub     rsp, 32
+    call    [strcmp]
+    add     rsp, 32
     pop     r8
 
     test    rax, rax
@@ -952,7 +990,6 @@ proc __MOLD_VariantCompareEQ x, y, rv
                   db 0xff
                   db 0xff
                   db 0xff
-endp
 
 __MOLD_VariantCompareNE:
     ; rcx = x
@@ -986,9 +1023,17 @@ DefVariantCompare __MOLD_VariantCompareLE,        setle, cmplesd
 ;DefVariantCompare __MOLD_VariantCompareGT, setg,  cmpnlesd
 ;DefVariantCompare __MOLD_VariantCompareGE, setge, cmpnltsd
 
+;###############################################################################
+;
+; Negate variant variable.
+; rv = -x
+;
+; rcx = x (Variant_t) (IN)
+; rdx = y (Variant_t) (OUT)
+;
+;###############################################################################
+
 __MOLD_VariantNeg:
-    ; rcx = [x]
-    ; rdx = [rv]
 
     mov     r10, [rcx + Variant_t.value]        ; r10 = x.value
     lea     r11, [.jmpTable]                    ; r11 = jmp table
@@ -1017,6 +1062,18 @@ __MOLD_VariantNeg:
     DEBUG_CHECK_VARIANT rdx
 
     ret
+
+;###############################################################################
+;
+; Divide two variant variables treating them as integers.
+; Result is always integer.
+; rv = x // y
+;
+; rcx = x  (Variant_t) (IN)
+; rdx = y  (Variant_t) (IN)
+; r8  = rv (Variant_t) (OUT)
+;
+;###############################################################################
 
 __MOLD_VariantDivAsInteger:
     ; rcx = [x]
@@ -1058,11 +1115,19 @@ __MOLD_VariantDivAsInteger:
 
    ret
 
+;###############################################################################
+;
+; Divide two variant variables.
+; Result is always floating point.
+; rv = x / y
+;
+; rcx = x
+; rdx = y
+; r8  = rv
+;
+;###############################################################################
 
 __MOLD_VariantDiv:
-    ; rcx = [x]
-    ; rdx = [y]
-    ; r8  = [rv]
 
     mov       [r8 + Variant_t.type], VARIANT_DOUBLE ; rv.type  = VARIANT_DOUBLE
     lea       r11, [.jmpTable]
@@ -1092,8 +1157,18 @@ __MOLD_VariantDiv:
 
     ret
 
+;###############################################################################
+;
+; Store one item in the box.
+; ... = x[i]
+;
+; rcx = box (Variant_t)
+; rdx = index (Variant_t)
+; r8  = rv (Variant_t)
+;
+;###############################################################################
 
-proc __MOLD_VariantStoreAtIndex box, index, value
+proc __MOLD_VariantStoreAtIndex
     ; rcx = box (Variant_t)
     ; rdx = index (Variant_t)
     ; r8  = value (Variant_t)
@@ -1307,11 +1382,18 @@ proc __MOLD_VariantStoreAtIndex box, index, value
     ret
 endp
 
-__MOLD_VariantLoadFromIndex:
-    ; rcx = box (Variant_t)
-    ; rdx = index (Variant_t)
-    ; r8  = rv (Variant_t)
+;###############################################################################
+;
+; Load item stored at given integer index.
+; rv = x[i]
+;
+; rcx = box (Variant_t)
+; rdx = index (Variant_t)
+; r8  = rv (Variant_t)
+;
+;###############################################################################
 
+__MOLD_VariantLoadFromIndex:
     DEBUG_CHECK_VARIANT rcx
     DEBUG_CHECK_VARIANT rdx
 
@@ -1527,6 +1609,13 @@ __MOLD_VariantStoreAtIndex_int32:
     mov     [rdx + Variant_t.value], rax  ; tmpIndex = index
     jmp     __MOLD_VariantStoreAtIndex
 
+;###############################################################################
+;
+; TODO: Is it still needed?
+; Temporary strlen()
+;
+;###############################################################################
+
 __MOLD_StringLength:
     ; rcx = cstr
     mov     rax, 0
@@ -1539,6 +1628,17 @@ __MOLD_StringLength:
 
 .done:
     ret
+
+;###############################################################################
+;
+; Calculate DJB2 string hash.
+; http://www.cse.yorku.ca/~oz/hash.html
+;
+; rcx = zero terminated string (IN)
+;
+; RETURNS: DJB2 hash (eax)
+;
+;###############################################################################
 
 __MOLD_StringHashDJB2:
     ; rcx = String_t
@@ -1570,8 +1670,15 @@ __MOLD_StringHashDJB2:
     pop     r8 rdx rcx
     ret
 
+;###############################################################################
+;
+; Create new array variable.
+;
+; rcx = pointer where to store new allocated array (Variant_t) (OUT)
+;
+;###############################################################################
 
-proc __MOLD_VariantArrayCreate rv
+__MOLD_VariantArrayCreate:
     ; rcx = rv (Variant_t)
     push    rcx
     mov     rcx, VARIANT_ARRAY_DEFAULT_BUFFER_SIZE
@@ -1584,10 +1691,17 @@ proc __MOLD_VariantArrayCreate rv
     DEBUG_CHECK_VARIANT rcx
 
     ret
-endp
 
-proc __MOLD_VariantMapCreate rv
-    ; rcx = rv (Variant_t)
+;###############################################################################
+;
+; Create new map variable.
+;
+; rcx = pointer where to store new allocated map (Variant_t) (OUT)
+;
+;###############################################################################
+
+__MOLD_VariantMapCreate:
+
     push    rcx
     mov     rcx, VARIANT_MAP_DEFAULT_BUFFER_SIZE
     call    __MOLD_MemoryAlloc
@@ -1602,15 +1716,20 @@ proc __MOLD_VariantMapCreate rv
     DEBUG_CHECK_VARIANT rcx
 
     ret
-endp
+
+;###############################################################################
+;
+; Resize the capacity of map box by two (n -> 2n).
+;
+; rcx = box (Variant_t) (IN/OUT)
+;
+;###############################################################################
 
 proc __MOLD_VariantMapResizeTwice
 
     ; --------------------------------------------------------------------------
     ; Set up stack frame
     ; --------------------------------------------------------------------------
-
-    ; rcx = box (Variant_t)
 
     local .newBox Variant_t ?
 
@@ -1717,7 +1836,16 @@ proc __MOLD_VariantMapResizeTwice
     ret
 endp
 
-proc __MOLD_VariantObjectCreate rv
+;###############################################################################
+;
+; Create new object.
+;
+; rcx = pointer to store new allocated object (Variant_t)
+; rdx = vtable (custom)
+;
+;###############################################################################
+
+__MOLD_VariantObjectCreate:
     ; rcx = rv (Variant_t)
     ; rdx = vtable
     push    rcx rdx
@@ -1735,9 +1863,17 @@ proc __MOLD_VariantObjectCreate rv
     DEBUG_CHECK_VARIANT rcx
 
     ret
-endp
 
-proc __MOLD_VariantDestroy
+;###############################################################################
+;
+; Free all resources alocated by variant variable if any.
+; Do nothing for privitives, but it's still correct.
+;
+; rcx = variable to free (Variant_t)
+;
+;###############################################################################
+
+__MOLD_VariantDestroy:
     ; rcx = object to destroy (Variant_t)
 
     DEBUG_CHECK_VARIANT rcx
@@ -1895,7 +2031,6 @@ proc __MOLD_VariantDestroy
 .oneCharacterString:
     mov    [rcx + Variant_t.value], 0
     ret
-endp
 
 __MOLD_VariantLength:
     ; rcx = value
@@ -1967,6 +2102,15 @@ __MOLD_VariantLength:
 .object:
     jmp     __MOLD_PrintErrorAndDie.notImplemented
 
+;###############################################################################
+;
+; Increase reference counter for dynamically alocatted variables.
+; Do nothing for primitives, but it still correct.
+;
+; rcx = variable to reference (Variant_t)
+;
+;###############################################################################
+
 __MOLD_VariantAddRef:
     ; rcx = Variant_t
     ; TODO: Clean up this mess.
@@ -1997,9 +2141,16 @@ __MOLD_VariantAddRef:
 .noRefNeeded:
     ret
 
+;###############################################################################
+;
+; Clone variant from one variable to another
+;
+; rcx = destination (Variant_t)
+; rdx = source      (Variant_t)
+;
+;###############################################################################
+
 __MOLD_VariantMove:
-    ; rcx = destination
-    ; rdx = source
 
     DEBUG_CHECK_VARIANT rdx
 
@@ -2033,6 +2184,11 @@ __MOLD_VariantMove:
 .noRefNeeded:
     ret
 
+;###############################################################################
+;
+; Init argv[] and argc[] built in variables.
+;
+;###############################################################################
 
 proc __MOLD_InitArgv
 
@@ -2115,8 +2271,13 @@ proc __MOLD_InitArgv
   ret
 endp
 
-proc __MOLD_Main
+;###############################################################################
+;
+; Entry point
+;
+;###############################################################################
 
+proc __MOLD_Main
   mov     rcx, 1
   mov     rdx, __MOLD_DefaultExceptionHandler
   cinvoke AddVectoredExceptionHandler
