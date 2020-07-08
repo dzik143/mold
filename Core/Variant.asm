@@ -1445,9 +1445,9 @@ endp
 ; Load item stored at given integer index.
 ; rv = x[i]
 ;
-; rcx = box (Variant_t)
-; rdx = index (Variant_t)
-; r8  = rv (Variant_t)
+; rcx = box   (Variant_t) (IN)
+; rdx = index (Variant_t) (IN)
+; r8  = rv    (Variant_t) (OUT)
 ;
 ;###############################################################################
 
@@ -1561,6 +1561,17 @@ __MOLD_VariantLoadFromIndex:
     DEBUG_CHECK_VARIANT r8
 
     ret
+
+;###############################################################################
+;
+; Load item stored at given string key.
+; rv = x{key}
+;
+; rcx = box (Variant_t) (IN)
+; rdx = key (Variant_t) (IN)
+; r8  = rv  (Variant_t) (OUT)
+;
+;###############################################################################
 
 __MOLD_VariantLoadFromKey:
     ; TODO: Clean up this mess.
