@@ -339,9 +339,7 @@ class AST
     global AST_OPCODE_CLASS_METHOD
     global null
 
-    rv          = {}
-    children    = []
-    childrenCnt = 0
+    rv          = node
     opcode      = node.emit
     value       = node.token
 
@@ -366,27 +364,24 @@ class AST
       rv.rv     = value.rv
     endif
 
-    rv.opcode = opcode
-    rv.value  = value
-    rv.id     = node.id
 
-    # TODO: Review it.
-    rv.line     = node.line
-    rv.column   = node.column
-    rv.filePath = node.filePath
+    children = []
+
+    rv.opcode   = opcode
+    rv.value    = value
+    rv.children = children
 
     node = node.child
 
     while node isnt null
-      newChild              = this._convertInternal(node)
-      children[childrenCnt] = newChild
-      childrenCnt           = childrenCnt + 1
-      node                  = node.next
-
+      newChild        = this._convertInternal(node)
       newChild.parent = node
-    endwhile
 
-    rv.children = children
+      children[@afterlast] = newChild
+
+      # Go to next child if any.
+      node = node.next
+    endwhile
   endmethod
 
   method convert() -> rv
