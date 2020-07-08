@@ -256,7 +256,7 @@ class ASTOptimizerConstantFolding
               # Join string imms.
               if lastWasImm is true
                 # Both previous and current params are strings - concatenate them.
-                newParams[len(newParams) - 1].value = newParams[len(newParams) - 1].value ~ ' ' ~ str(oneChild.value)
+                newParams[@last].value = newParams[@last].value ~ ' ' ~ str(oneChild.value)
 
               elif oneChild.opcode is AST_DATA_STRING
                 # Current param is string, but previous not.

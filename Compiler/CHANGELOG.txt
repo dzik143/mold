@@ -1,7 +1,7 @@
 
 UNRELEASED:
 -----------
-  Mantain:
+  Internal maintain:
     - Core: Major clean up around error handling
 
   Dropped syntax:
@@ -24,16 +24,15 @@ UNRELEASED:
     - Avoid creating multiple Parser() objects per each module load
     - Distinguish variant and string types while generating code
 
-  Mantain:
+  Internal maintain:
     - Major clean up the parser code
 
   New syntax:
     - Constant primitives (strings, integer, boolean, float):
-
-      const SOME_CONST1 = 'text'
-      const SOME_CONST2 = 2
-      const SOME_CONST3 = true
-      const SOME_CONST4 = 3.14
+      const a = 'text'
+      const b = 2
+      const c = true
+      const d = 3.14
 
     - Distinguish reference by index (integer) and by key (string):
       x = [1,2,3,4]

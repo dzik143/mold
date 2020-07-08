@@ -1,0 +1,5 @@
+- Relative array selectors:
+  x[@random]   - random item from the array            (lval, rval)
+  x[@center]   - item just in-the-half of array        (lval, rval)
+  x[@after i]  -
+  x[@before i] -

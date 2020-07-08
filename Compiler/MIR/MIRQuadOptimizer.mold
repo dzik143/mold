@@ -91,7 +91,7 @@ class MIRQuadOptimizer extends PipeAbstract
       # tmp := x + y
       # z   := tmp
       buffer      = this.buffer
-      lastItem    = buffer[len(buffer) - 1]
+      lastItem    = buffer[@last]
       lastItem[1] = dst
 
     elif (opcode is 'jmp_if_false')

@@ -126,7 +126,7 @@ class ASTOptimizerIf
       if casesCnt >= 3
         # TODO: Use null?
         # Handle otherwise node.
-        lastCaseNode = newChildren[len(newChildren) - 1]
+        lastCaseNode = newChildren[@last]
 
         if ((currentIfNode.opcode isnt AST_OPCODE_IF) or
             (AST_HashForCodeComparison(currentIfNode.children[1]) isnt AST_HashForCodeComparison(lastCaseNode)))
