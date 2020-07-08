@@ -7,6 +7,13 @@ UNRELEASED:
   Dropped syntax:
     - x[key] is not allowed for maps anymore, use x{key} instead.
 
+  Implemented:
+    - Relative array selectors:
+      x[@last]        - the last item in the array            (lval, rval)
+      x[@first]       - the first item in the array           (lval, rval)
+      x[@afterLast]   - placeholder for new item at the end   (lval)
+      x[@beforeFirst] - placeholder for new item at the begin (lval)
+
 0.2.200706 (released on 2020-07-06)
 -----------------------------------
   Implemented:
@@ -36,14 +43,6 @@ UNRELEASED:
       print y{'key'}
 
     - Stub for relative array indexes (x[@selector]).
-
-      x[@last]        - the last item in the array            (lval, rval)
-      x[@first]       - the first item in the array           (lval, rval)
-      x[@random]      - random item from the array            (lval, rval)
-      x[@center]      - item just in-the-half of array        (lval, rval)
-
-      x[@afterLast]   - placeholder for new item at the end   (lval)
-      x[@beforeFirst] - placeholder for new item at the begin (lval)
 
     - Use x ~ y for string concatenation, x + y is not correct anymore.
 

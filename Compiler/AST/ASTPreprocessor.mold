@@ -90,6 +90,7 @@ class ASTPreprocessor
   method _processNode(node)
     global AST_OPCODE_VARIABLE
     global AST_OPCODE_CALL
+    global AST_OPCODE_SUB
     global AST_DATA_STRING
     global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ
     global MOLD_SYSCALL_MAP
@@ -172,6 +173,41 @@ class ASTPreprocessor
         endfor
 
         node.children = newChildren
+      endif
+
+    elif ((opcode is AST_OPCODE_REFERENCE_BY_INDEX) and
+          (node.children[1].opcode is AST_DATA_SELECTOR))
+
+      # x[@selector]
+      box      = node.children[0]
+      selector = node.children[1].value
+
+      # Simplify it.
+      # TODO: Handle empty array error.
+      if selector is '@last'
+        # x[@last] -> x[len(x) - 1]
+        node.children[1] = {
+          'id': AST_GetNextId(),
+          'opcode': AST_OPCODE_SUB,
+          'children': [
+            {
+              'id': AST_GetNextId(),
+              'opcode': AST_OPCODE_CALL,
+              'value': '__mold_syscall',
+              'sysCallId': 43, # TODO: Don't use hardcoded value ('len'),
+              'children': [AST_CloneNode(box)]
+            },
+            AST_CreateNodeInteger(1)
+          ]
+        }
+
+      elif selector is '@first'
+        # x[@first] = 0
+        node.children[1] = AST_CreateNodeInteger(0)
+
+      else
+        this.app.setLogContext(node)
+        this.app.logError("unsupported selector '" ~ selector ~ "'")
       endif
     endif
   endmethod

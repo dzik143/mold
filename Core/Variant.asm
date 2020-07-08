@@ -212,7 +212,7 @@ macro DEBUG_CHECK_VARIANT x
 ;
 ;###############################################################################
 
-__MOLD_PrintVariant:
+proc __MOLD_PrintVariant uses r12, v
 
     DEBUG_CHECK_VARIANT rcx
 
@@ -256,17 +256,11 @@ __MOLD_PrintVariant:
     jz      .booleanFalse
 
 .booleanTrue:
-    sub  rsp, 32
-    lea  rcx, [.fmtTrue]
-    call [printf]
-    add  rsp, 32
+    cinvoke printf, .fmtTrue
     ret
 
 .booleanFalse:
-    sub  rsp, 32
-    lea  rcx, [.fmtFalse]
-    call [printf]
-    add  rsp, 32
+    cinvoke printf, .fmtFalse
     ret
 
 .string:
@@ -274,20 +268,13 @@ __MOLD_PrintVariant:
     jz      .ordinaryString
 
 .oneCharacterString:
-    sub  rsp, 32
-    mov  cl, dl
-    call [putchar]
-    add  rsp, 32
+    cinvoke printf, .fmtChar, dl
     ret
 
 .ordinaryString:
-    lea     rcx, [.fmtString]
     mov     rdx, [rdx + Buffer_t.bytesPtr]
     lea     rdx, [rdx + String_t.text]
-
-    sub  rsp, 32
-    call [printf]
-    add  rsp, 32
+    cinvoke printf, .fmtString, rdx
 
     ret
 
@@ -298,11 +285,7 @@ __MOLD_PrintVariant:
 .array:
     push    rdx
     mov     cl, '['
-
-    sub  rsp, 32
-    call [putchar]
-    add  rsp, 32
-
+    cinvoke putchar
     pop     rdx
 
     push    rbx
@@ -318,17 +301,11 @@ __MOLD_PrintVariant:
     or      rbx, rbx
     jz      .arrayEmpty
 
-    push    r12
     lea     r12, [.fmtEmpty]
 
 .arrayNextItem:
 
-    mov     rcx, r12
-
-    sub     rsp, 32
-    call    [printf]
-    add     rsp, 32
-
+    cinvoke printf, r12
     lea     r12, [.fmtSeparator]
 
     mov     rcx, rsi
@@ -340,12 +317,8 @@ __MOLD_PrintVariant:
 
 .arrayEmpty:
 
-    pop     r12
-
     mov     cl, ']'
-    sub     rsp, 32
-    call    [putchar]
-    add     rsp, 32
+    cinvoke putchar
 
     pop     rsi
     pop     rbx
@@ -358,11 +331,7 @@ __MOLD_PrintVariant:
 .map:
     push    rdx
     mov     cl, '{'
-
-    sub     rsp, 32
-    call    [putchar]
-    add     rsp, 32
-
+    cinvoke putchar
     pop     rdx
 
     push    rbx
@@ -383,11 +352,7 @@ __MOLD_PrintVariant:
     lea     rsi, [rdi + rax]                      ; rsi = map.index
 
 .mapNextItem:
-    mov     rcx, r12
-    sub     rsp, 32
-    call    [printf]
-    add     rsp, 32
-
+    cinvoke printf, r12
     lea     r12, [.fmtSeparator]
 
     ; Print key
@@ -399,10 +364,7 @@ __MOLD_PrintVariant:
     call     __MOLD_PrintVariantWithQuotas
 
     ; Print separator
-    lea     rcx, [.fmtAfterKey]
-    sub     rsp, 32
-    call    [printf]
-    add     rsp, 32
+    cinvoke printf, .fmtAfterKey
 
     ; Print value
     pop     rcx
@@ -416,9 +378,7 @@ __MOLD_PrintVariant:
 
 .mapEmpty:
     mov     cl, '}'
-    sub     rsp, 32
-    call    [putchar]
-    add     rsp, 32
+    cinvoke putchar
 
     pop     r12
     pop     rdi
@@ -433,6 +393,7 @@ __MOLD_PrintVariant:
 .errorNonVariantItem:
     cinvoke printf, '__MOLD_VariantPrint: error: non-variant inner types not implemented'
     int 3
+endp
 
 ;###############################################################################
 ;
@@ -1201,16 +1162,13 @@ __MOLD_VariantDiv:
 ; Store one item in the box.
 ; x[i] = ...
 ;
-; rcx = box (Variant_t)
-; rdx = index (Variant_t)
-; r8  = rv (Variant_t)
+; rcx = box   (Variant_t) (IN)
+; rdx = index (Variant_t) (IN)
+; r8  = rv    (Variant_t) (IN)
 ;
 ;###############################################################################
 
-__MOLD_VariantStoreAtIndex:
-    ; rcx = box (Variant_t)
-    ; rdx = index (Variant_t)
-    ; r8  = value (Variant_t)
+proc __MOLD_VariantStoreAtIndex
 
     DEBUG_CHECK_VARIANT rcx
     DEBUG_CHECK_VARIANT rdx
@@ -1295,6 +1253,8 @@ __MOLD_VariantStoreAtIndex:
     DEBUG_CHECK_VARIANT r8
 
     ret
+
+endp
 
 ;###############################################################################
 ;

@@ -65,6 +65,16 @@ function AST_CreateNodeVariable(name) -> rv
   }
 endfunction
 
+function AST_CreateNodeInteger(value) -> rv
+  global AST_DATA_INTEGER
+  rv = {
+    'id': AST_GetNextId(),
+    'opcode': AST_DATA_INTEGER,
+    'children': [],
+    'value': value
+  }
+endfunction
+
 function AST_GetOpcodeAsText(opcode) -> rv
   global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
   global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_NULL, AST_DATA_UNDEFINED
@@ -913,18 +923,27 @@ function AST_IsOkAsBox(node) -> rv
   endif
 endfunction
 
-function AST_Clone(node) -> rv
+function AST_CloneNode(node) -> rv
+  # TODO: Clean up this mess.
+  x = []
+  null = x[0]
+
   # Clone properties (shallow copy first).
-  rv = {}
+  # TODO: Modify rv directly when for keys loop fixed.
+  dst = {}
 
   for keys propertyId values propertyValue in node
-    rv[propertyId] = propertyValue
+    dst{propertyId} = propertyValue
   endfor
 
   # Clone children (deep copy).
   newChildren = []
   for indexes idx values oneChild in node.children
-    newChildren[idx] = AST_Clone(oneChild)
+    newChildren[idx] = AST_CloneNode(oneChild)
   endfor
+
+  rv          = dst
   rv.children = newChildren
+  rv.id       = AST_GetNextId()
+  rv.parent   = null
 endfunction
