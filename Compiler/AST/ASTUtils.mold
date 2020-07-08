@@ -912,3 +912,19 @@ function AST_IsOkAsBox(node) -> rv
     rv = true
   endif
 endfunction
+
+function AST_Clone(node) -> rv
+  # Clone properties (shallow copy first).
+  rv = {}
+
+  for keys propertyId values propertyValue in node
+    rv[propertyId] = propertyValue
+  endfor
+
+  # Clone children (deep copy).
+  newChildren = []
+  for indexes idx values oneChild in node.children
+    newChildren[idx] = AST_Clone(oneChild)
+  endfor
+  rv.children = newChildren
+endfunction
