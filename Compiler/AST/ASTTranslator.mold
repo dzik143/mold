@@ -309,7 +309,6 @@ class ASTTranslator
 
     # TODO: symbolInfo is undefined after function emmited
     # when compiled with if-to-switch optimization.
-    #for values symbolInfo in symbols
     for values symbolInfo in arrayOfSymbols
       symbolKind = symbolInfo.kind
 

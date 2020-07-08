@@ -155,7 +155,6 @@ class ASTOptimizerCSE
     elif ((opcode is AST_OPCODE_CALL) or
           (opcode is AST_OPCODE_VCALL))
 
-      # TODO: Use for values oneChild indexes childIdx loop.
       for indexes childIdx values childNode in children
         AST_Hash(childNode)
         newNode = this._processNode(childNode, mapOfExpressions, symbolTable)
