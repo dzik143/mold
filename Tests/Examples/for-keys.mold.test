@@ -1,0 +1,23 @@
+TEST "Bug: Clone map into function retval (SKIPPED!)"
+/*
+function foo(node) -> rv
+  rv = {}
+  for keys propertyId values propertyValue in node
+    print rv
+    rv{propertyId} = propertyValue
+  endfor
+endfunction
+
+src = {'one': 1, 'two': 2, 'three': 3}
+dst = foo(src)
+
+print dst
+
+{}
+{'one': 1}
+{'one': 1, 'two': 2}
+{'one': 1, 'two': 2, 'three': 3}
+*/
+
+EXPECTED_OUTPUT:
+-------------------------------------------------------------------------------
