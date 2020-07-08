@@ -119,10 +119,10 @@ stmt_declare_or_assign
 // -----------------------------------------------------------------------------
 
 function_proto
-  : @IDENT '(' ')'                            [* @@ = {'name': @1, 'parameters': []} *]
-  | @IDENT '(' ')' "->" @IDENT                [* @@ = {'name': @1, 'parameters': [], 'rv': @5} *]
-  | @IDENT '(' parameter_list ')'             [* @@ = {'name': @1, 'parameters': @3} *]
-  | @IDENT '(' parameter_list ')' "->" @IDENT [* @@ = {'name': @1, 'parameters': @3, 'rv': @6} *]
+  : @IDENT '(' ')'                            [* @@ = {'name': @1, 'params': []} *]
+  | @IDENT '(' ')' "->" @IDENT                [* @@ = {'name': @1, 'params': [], 'rv': @5} *]
+  | @IDENT '(' parameter_list ')'             [* @@ = {'name': @1, 'params': @3} *]
+  | @IDENT '(' parameter_list ')' "->" @IDENT [* @@ = {'name': @1, 'params': @3, 'rv': @6} *]
   ;
 
 stmt_call:

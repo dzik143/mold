@@ -196,7 +196,7 @@ class ASTSymbolsCollector
       nodeBody  = children[0]
       funcProto = node
       value     = node.value
-      params    = value.parameters
+      params    = value.params
 
       funcProto.params = params
       funcProto.name   = value.name
