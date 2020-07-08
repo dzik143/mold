@@ -2806,7 +2806,7 @@ __MOLD_ForDriver_Generic:
     dq __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; boolean
     dq __MOLD_ForDriver_IndexesAndValuesInArray
     dq __MOLD_ForDriver_KeysAndValuesInMap
-    dq __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; object (TODO: Not implemented yet)
+    dq __MOLD_ForDriver_KeysAndValuesInMap ; object (TODO: Not implemented yet)
 
 ; TODO: Clean up this mess.
 __MOLD_VariantStringJoin:

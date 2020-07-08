@@ -333,7 +333,7 @@ class AST
     this._printInternal(this, 0)
   endmethod
 
-  method _convertInternal(node, deepIdx) -> rv
+  method _convertInternal(node) -> rv
     global AST_OPCODE_FUNCTION
     global AST_OPCODE_CLASS
     global AST_OPCODE_CLASS_METHOD
@@ -378,7 +378,7 @@ class AST
     node = node.child
 
     while node isnt null
-      newChild              = this._convertInternal(node, deepIdx + 1)
+      newChild              = this._convertInternal(node)
       children[childrenCnt] = newChild
       childrenCnt           = childrenCnt + 1
       node                  = node.next
@@ -390,13 +390,8 @@ class AST
   endmethod
 
   method convert() -> rv
-    #print '----------------------------------'
-    #print ' Convert Abstract Syntax Tree'
-    #print '----------------------------------'
-
-    rv = this._convertInternal(this, 0)
+    rv = this._convertInternal(this)
   endmethod
-
 endclass
 
 # -----------------------------------------------------------------------------
