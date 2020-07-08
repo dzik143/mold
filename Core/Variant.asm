@@ -1237,6 +1237,9 @@ __MOLD_VariantStoreAtIndex:
     mov     r10, [rcx + Variant_t.value]         ; r10  = array buffer (Buffer_t)
     mov     rdx, [rdx + Variant_t.value]         ; rdx  = idx          (integer)
 
+    or      edx, edx
+    js      __MOLD_PrintErrorAndDie.negativeIndex
+
     ; --------------------------------------------------------------------------
     ; Check is there space for new item
     ; --------------------------------------------------------------------------
@@ -3006,6 +3009,10 @@ __MOLD_PrintErrorAndDie:
     lea     rcx, [.fmtStringExpected]
     jmp     .final
 
+.negativeIndex:
+    lea     rcx, [.fmtNegativeIndex]
+    jmp     .final
+
 .indexOutOfRange:
     lea     rcx, [.fmtIndexOutOfRange]
     jmp     .final
@@ -3045,6 +3052,7 @@ __MOLD_PrintErrorAndDie:
 .fmtMapOrObjectExpected      db 'error: map or object expected', 13, 10, 0
 .fmtArrayOrStringExpected    db 'error: array or string expected', 13, 10, 0
 .fmtArrayStringOrMapExpected db 'error: array, string or map expected', 13, 10, 0
+.fmtNegativeIndex            db 'error: negative array index', 13, 10, 0
 .fmtIndexOutOfRange          db 'error: index out of range', 13, 10, 0
 .fmtBadType                  db 'error: bad type', 13, 10, 0
 .fmtNotImplemented           db 'error: not implemented', 13, 10, 0
