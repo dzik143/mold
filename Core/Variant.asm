@@ -318,6 +318,7 @@ __MOLD_PrintVariant:
     or      rbx, rbx
     jz      .arrayEmpty
 
+    push    r12
     lea     r12, [.fmtEmpty]
 
 .arrayNextItem:
@@ -338,6 +339,8 @@ __MOLD_PrintVariant:
     jne     .arrayNextItem
 
 .arrayEmpty:
+
+    pop     r12
 
     mov     cl, ']'
     sub     rsp, 32
