@@ -325,9 +325,9 @@ class AST
     endfor
 
     if node.value isnt null
-      print prefix ~ str(node.opcode), node.value
+      print prefix ~ '#' ~ str(node.id), node.opcode, node.value
     else
-      print prefix ~ str(node.opcode)
+      print prefix ~ '#' ~ str(node.id), node.opcode
     endif
 
     for values oneChild in node.children
