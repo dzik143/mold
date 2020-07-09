@@ -348,12 +348,7 @@ class AST
     opcode = this.opcode
     value  = this.value
 
-    if (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
-      this.name   = value.name
-      this.params = value.params
-      this.rv     = value.rv
-
-    elif opcode is AST_OPCODE_CLASS
+    if opcode is AST_OPCODE_CLASS
       this.name     = value.name
       this.baseName = value.baseName
     endif

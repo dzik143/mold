@@ -162,7 +162,7 @@ class ASTSymbolsCollector
         opcode = child.opcode
 
         if opcode is AST_OPCODE_CLASS_METHOD
-          methodName      = child.name
+          methodName      = child.value.name
           methodParamsCnt = len(child.params)
 
           child.fullName   = '__' ~ className ~ '_' ~ methodName ~ '$' ~ str(methodParamsCnt)
@@ -196,9 +196,9 @@ class ASTSymbolsCollector
       nodeBody  = children[0]
       funcProto = node
       value     = node.value
-      params    = value.params
+      #params    = value.params
 
-      funcProto.params = params
+      funcProto.params = value.params
       funcProto.name   = value.name
       funcProto.rv     = value.rv
 
