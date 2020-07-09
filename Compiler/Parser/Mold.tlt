@@ -289,7 +289,7 @@ const @@prefix_productions = [
 NodeId = 0
 
 class AST
-  method constructor(emit, token, child)
+  method constructor(opcode, value, child)
     global null
     global NodeId
 
@@ -298,9 +298,9 @@ class AST
     this.prev   = null
     this.next   = null
 
-    this.emit  = emit
-    this.token = token
-    this.id    = NodeId
+    this.opcode = opcode
+    this.value  = value
+    this.id     = NodeId
 
     # TODO: Clean up this mess.
     this._convert()
@@ -309,6 +309,8 @@ class AST
   endmethod
 
   method _printInternal(node, deepIdx)
+    die('error: _printInternal() not implemented')
+/*
     global null
 
     while node isnt null
@@ -317,16 +319,17 @@ class AST
         prefix = prefix ~ '..'
       endfor
 
-      if (node.token isnt null)
-        print prefix ~ str(node.emit), node.token
+      if (node.value isnt null)
+        print prefix ~ str(node.opcode), node.value
       else
-        print prefix ~ str(node.emit)
+        print prefix ~ str(node.opcode)
       endif
 
       this._printInternal(node.child, deepIdx + 1)
 
       node = node.next
     endwhile
+*/
   endmethod
 
   method print()
@@ -342,8 +345,8 @@ class AST
     global AST_OPCODE_CLASS_METHOD
     global null
 
-    opcode = this.emit
-    value  = this.token
+    opcode = this.opcode
+    value  = this.value
 
     if opcode is AST_OPCODE_FUNCTION
       this.name   = value.name
@@ -367,17 +370,12 @@ class AST
       this.rv     = value.rv
     endif
 
-    children = []
-
-    this.opcode   = opcode
-    this.value    = value
-    this.children = children
-
+    this.children = []
     node = this.child
 
     while node isnt null
       node.parent          = node
-      children[@afterlast] = node
+      this.children[@afterlast] = node
 
       # Go to next child if any.
       node = node.next
