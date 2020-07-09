@@ -28,11 +28,6 @@ import '1.ast'
 #parser = new Parser()
 #ast    = parser.parseFile(argv[1])
 
-# Convert AST to form understood by translator.
-# TODO: Remove this step.
-#ast = ast.convert()
-
-
 #print '<pre>'
 
 app                 = new AppMold()

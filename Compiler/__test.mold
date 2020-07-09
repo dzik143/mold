@@ -33,10 +33,6 @@ import '1.ast'
 #parser = new Parser()
 #ast    = parser.parseFile(argv[1])
 
-# Convert AST to form understood by translator.
-# TODO: Remove this step.
-#ast = ast.convert()
-
 DEBUG_AST_OPTIMIZER = true
 DEBUG_MOLD = true
 

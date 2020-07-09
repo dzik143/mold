@@ -53,10 +53,6 @@ class ASTModuleResolver
           # Parse source into AST tree.
           importedAst = this.parser.parseFile(moduleName)
 
-          # Convert AST to form understood by translator.
-          # TODO: Remove this step.
-          importedAst = importedAst.convert()
-
           # Resolve imports recursively.
           this.resolveImports(importedAst)
 

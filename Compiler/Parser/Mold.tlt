@@ -289,18 +289,21 @@ const @@prefix_productions = [
 NodeId = 0
 
 class AST
-  method constructor(emit, token)
+  method constructor(emit, token, child)
     global null
     global NodeId
 
     this.parent = null
-    this.child  = null
+    this.child  = child
     this.prev   = null
     this.next   = null
 
     this.emit  = emit
     this.token = token
     this.id    = NodeId
+
+    # TODO: Clean up this mess.
+    this._convert()
 
     NodeId = NodeId + 1
   endmethod
@@ -333,59 +336,52 @@ class AST
     this._printInternal(this, 0)
   endmethod
 
-  method _convertInternal(node) -> rv
+  method _convert()
     global AST_OPCODE_FUNCTION
     global AST_OPCODE_CLASS
     global AST_OPCODE_CLASS_METHOD
     global null
 
-    rv          = node
-    opcode      = node.emit
-    value       = node.token
+    opcode = this.emit
+    value  = this.token
 
     if opcode is AST_OPCODE_FUNCTION
-      rv.name   = value.name
-      rv.params = value.params
-      rv.rv     = value.rv
+      this.name   = value.name
+      this.params = value.params
+      this.rv     = value.rv
 
     elif opcode is AST_OPCODE_CLASS
-      rv.name     = value.name
-      rv.baseName = value.baseName
+      this.name     = value.name
+      this.baseName = value.baseName
 
     elif opcode is AST_OPCODE_CLASS_METHOD
       # TODO: Clean up this mess.
+      # TODO: Use x[@beforefirst] = ... ?
       newParams = ['this']
-      for indexes idx values oneParam in value.params
-        newParams[idx + 1] = oneParam
+      for values oneParam in value.params
+        newParams[@afterlast] = oneParam
       endfor
 
-      rv.name   = value.name
-      rv.params = newParams
-      rv.rv     = value.rv
+      this.name   = value.name
+      this.params = newParams
+      this.rv     = value.rv
     endif
-
 
     children = []
 
-    rv.opcode   = opcode
-    rv.value    = value
-    rv.children = children
+    this.opcode   = opcode
+    this.value    = value
+    this.children = children
 
-    node = node.child
+    node = this.child
 
     while node isnt null
-      newChild        = this._convertInternal(node)
-      newChild.parent = node
-
-      children[@afterlast] = newChild
+      node.parent          = node
+      children[@afterlast] = node
 
       # Go to next child if any.
       node = node.next
     endwhile
-  endmethod
-
-  method convert() -> rv
-    rv = this._convertInternal(this)
   endmethod
 endclass
 
@@ -722,8 +718,7 @@ class Parser
 
         if emit isnt 0
           # Emit new AST node.
-          node                 = new AST(emit, currentRet)
-          node.child           = stackNodes[stackIdx]
+          node                 = new AST(emit, currentRet, stackNodes[stackIdx])
           stackNodes[stackIdx] = node
 
           # TODO: Review it.

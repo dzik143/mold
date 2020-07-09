@@ -29,10 +29,6 @@ path           = argv[2]
 parser = new Parser()
 ast    = parser.parseFile(path)
 
-# Convert AST to form understood by translator.
-# TODO: Remove this step.
-ast = ast.convert()
-
 app                 = new AppMold()
 astSymbolsCollector = app.getAstSymbolsCollector()
 astPrinterText      = new ASTPrinterText()

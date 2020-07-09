@@ -155,15 +155,9 @@ if mode is 'ast'
 
 elif mode is 'astjson'
   # Print AST, but in importable JSON format.
-  ast = ast.convert()
-  print ast
+  die('temporary disabled due to missing object printing')
 
 else
-  # Convert AST to understood by translator format.
-  # TODO: Remove this step.
-  app.logDebug('Converting AST...')
-  ast = ast.convert()
-
   # Resolve imports if any.
   app.logDebug('Resolving imports...')
   astModuleResolver = app.getAstModuleResolver()
