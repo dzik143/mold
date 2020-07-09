@@ -649,7 +649,7 @@ class Parser
 
             if node isnt null
               # Go left to the first node on list.
-              # [first] <- ... <- ... <- [node]
+              # [first] ... ... ... [node]
               while node.prev isnt null
                 node = node.prev
               endwhile
@@ -670,7 +670,7 @@ class Parser
 
           if lnode isnt null
             # Go right to the last node on list.
-            # [lnode] -> ... -> ... -> [last]
+            # [lnode] ... ... ... [last]
             while lnode.next isnt null
               lnode = lnode.next
             endwhile
