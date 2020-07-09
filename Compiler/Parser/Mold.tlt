@@ -317,27 +317,22 @@ class AST
   endmethod
 
   method _printInternal(node, deepIdx)
-    die('error: _printInternal() not implemented')
-/*
     global null
 
-    while node isnt null
-      prefix = ''
-      for i in 0 .. deepIdx
-        prefix = prefix ~ '..'
-      endfor
+    prefix = ''
+    for i in 0 .. deepIdx
+      prefix = prefix ~ '..'
+    endfor
 
-      if (node.value isnt null)
-        print prefix ~ str(node.opcode), node.value
-      else
-        print prefix ~ str(node.opcode)
-      endif
+    if node.value isnt null
+      print prefix ~ str(node.opcode), node.value
+    else
+      print prefix ~ str(node.opcode)
+    endif
 
-      this._printInternal(node.child, deepIdx + 1)
-
-      node = node.next
-    endwhile
-*/
+    for values oneChild in node.children
+      this._printInternal(oneChild, deepIdx + 1)
+    endfor
   endmethod
 
   method print()
@@ -643,13 +638,17 @@ class Parser
         currentProductionLength = _productions[3 * currentIdx + PRODUCTION_LENGTH_IDX]
         emit                    = _productions[3 * currentIdx + PRODUCTION_EMIT_IDX]
 
+        #
         # Drop right-hand side
-        node = null
+        #
 
+        # Pop nodes from the stack.
+        node = null
         for i in 0 .. currentProductionLength
           if stackNodes[stackIdx] isnt null
+
             if node isnt null
-              while (node.prev isnt null)
+              while node.prev isnt null
                 node = node.prev
               endwhile
 
