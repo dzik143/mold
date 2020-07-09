@@ -2499,6 +2499,7 @@ __MOLD_LoadFile:
     call    __MOLD_MemoryAlloc
 
     mov     [rdi + Variant_t.value], rax
+    mov     [rdi + Variant_t.flags], 0
     mov     [rdi + Variant_t.type], VARIANT_STRING
 
     mov     rax, [rax + Buffer_t.bytesPtr]
