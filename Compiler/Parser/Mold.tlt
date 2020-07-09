@@ -648,6 +648,8 @@ class Parser
           if stackNodes[stackIdx] isnt null
 
             if node isnt null
+              # Go left to the first node on list.
+              # [first] <- ... <- ... <- [node]
               while node.prev isnt null
                 node = node.prev
               endwhile
@@ -667,6 +669,8 @@ class Parser
           lnode = stackNodes[stackIdx]
 
           if lnode isnt null
+            # Go right to the last node on list.
+            # [lnode] -> ... -> ... -> [last]
             while lnode.next isnt null
               lnode = lnode.next
             endwhile
