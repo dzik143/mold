@@ -358,15 +358,8 @@ class AST
       this.baseName = value.baseName
 
     elif opcode is AST_OPCODE_CLASS_METHOD
-      # TODO: Clean up this mess.
-      # TODO: Use x[@beforefirst] = ... ?
-      newParams = ['this']
-      for values oneParam in value.params
-        newParams[@afterlast] = oneParam
-      endfor
-
       this.name   = value.name
-      this.params = newParams
+      this.params = value.params
       this.rv     = value.rv
     endif
 
