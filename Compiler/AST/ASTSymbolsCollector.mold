@@ -139,8 +139,8 @@ class ASTSymbolsCollector
 
     elif opcode is AST_OPCODE_CLASS
       # Collect members.
-      className   = node.name
-      baseName    = node.baseName
+      className   = node.value.name
+      baseName    = node.value.baseName
       vtable      = {}
       baseMethods = {}
       classProto  = {}
@@ -184,7 +184,7 @@ class ASTSymbolsCollector
 
       # Declare new class.
       classProto.name               = className
-      classProto.baseName           = node.baseName
+      classProto.baseName           = baseName
       classProto.vtable             = vtable
       classProto.propertyClassNames = {}
 

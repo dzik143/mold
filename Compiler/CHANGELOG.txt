@@ -3,6 +3,7 @@ UNRELEASED:
 -----------
   Internal maintain:
     - Core: Major clean up around error handling
+    - Parser: Removed AST convert step
 
   Dropped syntax:
     - x[key] is not allowed for maps anymore, use x{key} instead.
