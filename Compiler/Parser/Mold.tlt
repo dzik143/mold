@@ -293,19 +293,27 @@ class AST
     global null
     global NodeId
 
-    this.parent = null
-    this.child  = child
-    this.prev   = null
-    this.next   = null
-
     this.opcode = opcode
     this.value  = value
     this.id     = NodeId
 
-    # TODO: Clean up this mess.
-    this._convert()
+    this.children = []
+    this.parent   = null
+    this.child    = child
+    this.prev     = null
+    this.next     = null
 
     NodeId = NodeId + 1
+
+    # TODO: Clean up this mess.
+    # Collect children.
+    node = child
+    while node isnt null
+      node.parent               = node
+      this.children[@afterlast] = node
+      # Go to next child if any.
+      node = node.next
+    endwhile
   endmethod
 
   method _printInternal(node, deepIdx)
@@ -337,32 +345,6 @@ class AST
     print ' Abstract Syntax Tree'
     print '----------------------------------'
     this._printInternal(this, 0)
-  endmethod
-
-  method _convert()
-    global AST_OPCODE_FUNCTION
-    global AST_OPCODE_CLASS
-    global AST_OPCODE_CLASS_METHOD
-    global null
-
-    opcode = this.opcode
-    value  = this.value
-
-    if opcode is AST_OPCODE_CLASS
-      this.name     = value.name
-      this.baseName = value.baseName
-    endif
-
-    this.children = []
-    node = this.child
-
-    while node isnt null
-      node.parent          = node
-      this.children[@afterlast] = node
-
-      # Go to next child if any.
-      node = node.next
-    endwhile
   endmethod
 endclass
 
