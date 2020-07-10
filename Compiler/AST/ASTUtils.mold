@@ -774,6 +774,11 @@ function AST_GetDataType(node) -> rv
     elif opcode is AST_OPCODE_CALL_NEW
       rv = AST_DATA_OBJECT
 
+    elif opcode is AST_DATA_UNDEFINED
+      # TODO: Review it.
+      # Always store null as variant.
+      rv = -1
+
     else
       children    = node.children
       childrenCnt = len(children)
