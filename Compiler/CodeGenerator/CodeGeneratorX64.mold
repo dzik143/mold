@@ -351,9 +351,9 @@ class CodeGeneratorX64
 
     quads = codeObj.quads
 
-    currentProcProto    = false
-    currentProcName     = false
-    currentProcRv       = false
+    currentProcProto    = null
+    currentProcName     = null
+    currentProcRv       = null
     currentSymbols      = {}
     currentFrameSize    = 0
     currentFrameOffsets = {}

@@ -25,7 +25,7 @@ class PipeAbstract
   # ----------------------------------------------------------------------------
 
   method constructor()
-    this.outputObject     = false
+    this.outputObject     = null
     this.buffer           = []
     this.bufferingEnabled = false
   endmethod

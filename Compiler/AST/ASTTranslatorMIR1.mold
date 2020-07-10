@@ -31,11 +31,12 @@ class ASTTranslatorMIR1 extends ASTTranslator
   method constructor(app)
     super(app)
     # TODO: Remove codeObj.
-    this.app          = app
+    this.app = app
+
     # TODO: Clean up this mess.
     this.code         = app.getMir1Code()
     this.stack        = new Stack()
-    this.outputObject = false
+    this.outputObject = null
 
     # TODO: Remove this mess.
     this.arrayOfCalledMethods = []
@@ -429,7 +430,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _createObject(rv, classProto)
-    if classProto is false
+    if classProto is null
       # Dynamic code, adjust class proto at run-time.
       this._error('error: missing classProto in MIR_OPCODE_CREATE_OBJECT')
 
@@ -568,11 +569,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.emitLabel(labelForEnd)
 
     # TODO: Clean up this mess.
-    if iteratorKey is -1
+    if iteratorKey is undefined
       iteratorKey = '__TrashBin'
     endif
 
-    if iteratorValue is -1
+    if iteratorValue is undefined
       iteratorValue = '__TrashBin'
     endif
 

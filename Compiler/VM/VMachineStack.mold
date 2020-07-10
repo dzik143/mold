@@ -39,7 +39,7 @@ endclass
 
 class VMachineStack
   method constructor()
-    this.codeObj = false # use null
+    this.codeObj = null
     this.stack   = new Stack()
   endmethod
 
@@ -101,9 +101,7 @@ class VMachineStack
         # Do nothing.
 
       elif opcode is MIR_OPCODE_LOAD_NULL
-        # TODO: Use null if ready.
-        _x_ = []
-        stack.push(_x_[0])
+        stack.push(null)
 
       elif opcode is MIR_OPCODE_LOAD_IMM
         stack.push(item[1])
@@ -357,7 +355,7 @@ class VMachineStack
 
         else
           # TODO: Remove it after dead code detection.
-          rv = -1
+          rv = null
           die('error: unsupported number of syscall params:' ~ str(paramsCnt))
         endif
 
@@ -380,12 +378,12 @@ class VMachineStack
         # TODO: Optimize id.
         for keys k values v in box
           # Update key iterator.
-          if keyId isnt -1
+          if keyId is defined
             _vm_locals[keyId] = k
           endif
 
           # Update value iterator.
-          if valueId isnt -1
+          if valueId is defined
             _vm_locals[valueId] = v
           endif
 

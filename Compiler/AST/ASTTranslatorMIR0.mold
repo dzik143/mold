@@ -304,22 +304,20 @@ class ASTTranslatorMIR0 extends ASTTranslator
     loopLabelId = code.createLabel()
     endLabelId  = code.createLabel()
 
-    keyId   = -1
-    valueId = -1
+    keyId   = null
+    valueId = null
 
     # Avoid exeuting loop body directly.
     # TODO: Handle inner functions in better way.
     code.jmp(endLabelId)
 
-    # TODO: Review it.
-    if iteratorKey isnt -1
+    if iteratorKey is defined
       keySymbolInfo    = symbolTable.lookup(iteratorKey)
       keyId            = code.allocateLocalId()
       keySymbolInfo.id = keyId
     endif
 
-    # TODO: Review it.
-    if iteratorValue isnt -1
+    if iteratorValue is defined
       valueSymbolInfo    = symbolTable.lookup(iteratorValue)
       valueId            = code.allocateLocalId()
       valueSymbolInfo.id = valueId

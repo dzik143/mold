@@ -419,6 +419,7 @@ class MIRCode
     endif
 
     addr = this.labels[labelId]
+
     if addr is undefined
       # Error - jump to invalid label id.
       die("error: invalid label id '" ~ str(labelId) ~ "'")

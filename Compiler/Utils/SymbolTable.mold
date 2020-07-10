@@ -76,8 +76,7 @@ class SymbolTable
       'string':  {'cnt': 0, 'pool': []}
     }
 
-    # TODO: Use null.
-    this.parent = false
+    this.parent = null
     this.global = this
 
     # TODO: Remove it when map iteration ready.

@@ -29,10 +29,9 @@ class ASTTranslator
   method constructor(app)
     this.app = app
 
-    # TODO: Use null?
-    this.currentClassProto    = false
-    this.currentFunctionProto = false
-    this.symbolTableForTemps  = false
+    this.currentClassProto    = null
+    this.currentFunctionProto = null
+    this.symbolTableForTemps  = null
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -286,11 +285,11 @@ class ASTTranslator
       this._declareFunction(funcName, funcProto)
       this._emitFunctionBody(funcName, funcProto)
 
-      this.currentFunctionProto = false
-      this.currentClassProto    = false
+      this.currentFunctionProto = null
+      this.currentClassProto    = null
 
-      this.symbolTable = oldSymbolTable
-      this.symbolTableForTemps = false
+      this.symbolTable         = oldSymbolTable
+      this.symbolTableForTemps = null
 
       this.app.logDebug('Function emited: ' ~ funcName)
     endif
@@ -331,7 +330,7 @@ class ASTTranslator
     methodProto = this.currentFunctionProto
     classProto  = this.currentClassProto
 
-    if (methodProto is false) or (methodProto.fullName is undefined)
+    if (methodProto is undefined) or (methodProto.fullName is undefined)
       this._error('super called outside of class')
 
     elif methodProto.name isnt 'constructor'
@@ -843,7 +842,7 @@ class ASTTranslator
       this.currentFunctionProto = funcProto
       this.symbolTableForTemps = ast.children[0].symbolTable
       this._emitFunctionBody('start', funcProto)
-      this.currentFunctionProto = false
+      this.currentFunctionProto = null
 
     elif opcode is AST_OPCODE_BLOCK
       oldSymbolTable   = this.symbolTable
@@ -941,9 +940,8 @@ class ASTTranslator
       loopBodyNode  = children[2]
 
       # Enter loop scope.
-      # TODO: Use null for unused iterator?
       this._enterScope(loopBodyNode)
-      this._executeNodeForEach(-1, iteratorValue, box, loopBodyNode)
+      this._executeNodeForEach(null, iteratorValue, box, loopBodyNode)
       this._leaveScope()
 
       # TODO: Simplify it.
@@ -958,9 +956,8 @@ class ASTTranslator
       loopBodyNode = children[2]
 
       # Enter loop scope.
-      # TODO: Use null for unused iterator?
       this._enterScope(loopBodyNode)
-      this._executeNodeForEach(iteratorKey, -1, box, loopBodyNode)
+      this._executeNodeForEach(iteratorKey, null, box, loopBodyNode)
       this._leaveScope()
 
       # TODO: Simplify it.
@@ -976,7 +973,6 @@ class ASTTranslator
       loopBodyNode  = children[3]
 
       # Enter loop scope.
-      # TODO: Use null for unused iterator?
       this._enterScope(loopBodyNode)
       this._executeNodeForEach(iteratorKey, iteratorValue, box, loopBodyNode)
       this._leaveScope()
