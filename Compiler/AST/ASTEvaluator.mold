@@ -175,7 +175,6 @@ class ASTEvaluator
     global SYMBOL_KIND_VAR_GLOBAL
     global AST_OPCODE_TYPE_CAST
 
-    # TODO: Use null if ready?
     opcode      = node.opcode
     value       = node.value
     children    = node.children

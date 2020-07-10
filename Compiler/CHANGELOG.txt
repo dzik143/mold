@@ -9,6 +9,8 @@ UNRELEASED:
     - x[key] is not allowed for maps anymore, use x{key} instead.
 
   Implemented:
+    - Build-in null variable
+
     - Relative array selectors:
       x[@last]        - the last item in the array            (lval, rval)
       x[@first]       - the first item in the array           (lval, rval)

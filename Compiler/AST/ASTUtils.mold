@@ -77,7 +77,7 @@ endfunction
 
 function AST_GetOpcodeAsText(opcode) -> rv
   global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
-  global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_NULL, AST_DATA_UNDEFINED
+  global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_UNDEFINED
   global AST_DATA_ARRAY, AST_DATA_MAP, AST_OPCODE_VARIABLE
   global AST_OPCODE_PROGRAM, AST_OPCODE_NEG
   global AST_OPCODE_BOOL_AND, AST_OPCODE_BOOL_OR, AST_OPCODE_IDIV
@@ -297,6 +297,9 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
 
   elif opcode is AST_OPCODE_REFERENCE_BY_KEY
     rv = '&s'
+
+  elif opcode is AST_DATA_UNDEFINED
+    rv = 'null'
 
   elif opcode is AST_DATA_INTEGER
     rv = 'i'
@@ -924,10 +927,6 @@ function AST_IsOkAsBox(node) -> rv
 endfunction
 
 function AST_CloneNode(node) -> rv
-  # TODO: Clean up this mess.
-  x = []
-  null = x[0]
-
   # Clone properties (shallow copy first).
   # TODO: Modify rv directly when for keys loop fixed.
   dst = {}

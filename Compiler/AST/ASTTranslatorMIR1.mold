@@ -578,10 +578,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     # Emit call to loop handler.
     params = [box, iteratorKey, iteratorValue, labelForBegin]
-    # TODO: Use null
-    x = []
-    rv = x[0]
-    this._emitOneItem(['call', rv, '__MOLD_ForDriver_Generic', params])
+    this._emitOneItem(['call', null, '__MOLD_ForDriver_Generic', params])
 
     this.emitComment('')
     this.emitComment('END: for keys ' ~ str(iteratorKey) ~ ' values ' ~ str(iteratorValue))

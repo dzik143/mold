@@ -215,10 +215,6 @@ PRODUCTION_DEFINITION_IDX = 3 # Unused, comment off when needed
 #                              Helper functions
 # -----------------------------------------------------------------------------
 
-# TODO: Clean up this mess.
-_x_  = []
-null = _x_[0]
-
 function debug(msg)
   global UNICC_DEBUG
   if UNICC_DEBUG is true
@@ -292,7 +288,6 @@ NodeId = 0
 
 class AST
   method constructor(opcode, value, child)
-    global null
     global NodeId
 
     this.opcode = opcode
@@ -319,8 +314,6 @@ class AST
   endmethod
 
   method _printInternal(node, deepIdx)
-    global null
-
     prefix = ''
     for i in 0 .. deepIdx
       prefix = prefix ~ '..'
@@ -361,7 +354,6 @@ class Parser
   endmethod
 
   method _parseInternal(text) -> ast
-    global null
     global UNICC_ERROR, UNICC_REDUCE, UNICC_SHIFT
     global PRODUCTION_LHS_IDX
     global PRODUCTION_LENGTH_IDX
@@ -571,7 +563,7 @@ class Parser
         @@top-value = newValue
 
         stackNodes[stackIdx] = null
-        buf[currentLen] = nextChar
+        buf[currentLen]      = nextChar
 
         # Perform the shift on input
         if (currentSym isnt @@eof) and (currentSym isnt @@goal-value)

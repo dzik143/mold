@@ -56,7 +56,6 @@ class ASTOptimizerIf
       #   if cond2
       #     ...
 
-      # TODO: Use null?
       newChildren = [cond.children[0]]
       caseHashMap = {}
 
@@ -124,7 +123,6 @@ class ASTOptimizerIf
       endwhile
 
       if casesCnt >= 3
-        # TODO: Use null?
         # Handle otherwise node.
         lastCaseNode = newChildren[@last]
 

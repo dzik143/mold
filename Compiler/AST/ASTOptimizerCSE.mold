@@ -82,7 +82,6 @@ class ASTOptimizerCSE
       symbolTable = node.symbolTable
     endif
 
-    # TODO: Use null if ready?
     opcode      = node.opcode
     value       = node.value
     goOn        = true

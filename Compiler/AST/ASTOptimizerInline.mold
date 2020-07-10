@@ -251,7 +251,6 @@ class ASTOptimizerInline
       symbolTable = node.symbolTable
     endif
 
-    # TODO: Use null?
     # TODO: Optimize it.
     newChildren = []
 
