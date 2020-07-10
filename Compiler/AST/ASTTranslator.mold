@@ -77,6 +77,10 @@ class ASTTranslator
     this._error('_loadMap() not implemented')
   endmethod
 
+  method _loadNull(rv)
+    this._error('_loadNull() not implemented')
+  endmethod
+
   method _loadImm(rv, value)
     this._error('_loadImm() not implemented')
   endmethod
@@ -517,7 +521,11 @@ class ASTTranslator
       # Assign temp var to current node ("scratch").
       ast.tempVar = rv
 
-      if opcode is AST_DATA_ARRAY
+      if opcode is AST_DATA_UNDEFINED
+        # Built-in null variable.
+        this._loadNull(rv)
+
+      elif opcode is AST_DATA_ARRAY
         if typeof(value) is 'array'
           this._loadImm(rv, value)
 

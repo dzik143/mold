@@ -43,7 +43,7 @@ const AST_DataTypeForMIR = [
   'bool32',    # boolean
   'variant',   # object
   '[error]',   # null
-  '[error]',   # undefined
+  'variant',   # undefined
   'variant',   # array (TODO)
   'variant'    # map (TODO)
 ]

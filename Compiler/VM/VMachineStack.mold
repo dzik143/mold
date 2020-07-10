@@ -70,6 +70,7 @@ class VMachineStack
     global MIR_OPCODE_INNER_RET
     global MIR_OPCODE_SYSCALL
     global MIR_OPCODE_STRING_JOIN
+    global MIR_OPCODE_LOAD_NULL
     global argc, argv
 
     # TODO: Optimize it.
@@ -98,6 +99,11 @@ class VMachineStack
       # Dispatch opcode.
       if opcode is MIR_OPCODE_NOP
         # Do nothing.
+
+      elif opcode is MIR_OPCODE_LOAD_NULL
+        # TODO: Use null if ready.
+        _x_ = []
+        stack.push(_x_[0])
 
       elif opcode is MIR_OPCODE_LOAD_IMM
         stack.push(item[1])
@@ -421,6 +427,7 @@ class VMachineStack
     global MIR_OPCODE_INNER_RET
     global MIR_OPCODE_SYSCALL
     global MIR_OPCODE_STRING_JOIN
+    global MIR_OPCODE_LOAD_NULL
 
     codeObj     = this.code
     code        = codeObj.code
@@ -463,6 +470,9 @@ class VMachineStack
       # Dispatch opcode.
       if opcode is MIR_OPCODE_NOP
         txt = 'nop'
+
+      elif opcode is MIR_OPCODE_LOAD_NULL
+        txt = 'load.null'
 
       elif opcode is MIR_OPCODE_LOAD_IMM
         type = typeof(item[1])

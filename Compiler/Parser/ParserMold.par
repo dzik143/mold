@@ -514,6 +514,7 @@ expr_imm
 imm : integer =AST_DATA_INTEGER
     | float   =AST_DATA_DOUBLE
     | string  =AST_DATA_STRING
+    | "null"  [* @@ = null *] =AST_DATA_UNDEFINED
     ;
 
 integer:

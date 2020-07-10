@@ -729,6 +729,9 @@ class CodeGeneratorX64
       # load imm values
       #
 
+      elif originalOpcode is 'load_null'
+        this.variantDestroy(dst)
+
       elif originalOpcode is 'load_int64'
         print '  mov rax,', x
         print '  mov qword [', dst, '], rax'

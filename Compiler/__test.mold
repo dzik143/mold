@@ -27,11 +27,11 @@ import 'MIR/MIRQuadOptimizer.mold'
 import 'CodeGenerator/CodeGeneratorX64.mold'
 import 'VM/VMachineStack.mold'
 
-import '1.ast'
-#import 'Parser/ParserMold.mold'
+#import '1.ast'
+import 'Parser/ParserMold.mold'
 
-#parser = new Parser()
-#ast    = parser.parseFile(argv[1])
+parser = new Parser()
+ast    = parser.parseFile('source.mold')
 
 DEBUG_AST_OPTIMIZER = true
 DEBUG_MOLD = true

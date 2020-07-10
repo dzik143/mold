@@ -84,6 +84,10 @@ class ASTTranslatorMIR0 extends ASTTranslator
     this.code.loadMap()
   endmethod
 
+  method _loadNull(rv)
+    this.code.loadNull()
+  endmethod
+
   method _loadImm(rv, value)
     this.code.loadImm(value)
   endmethod

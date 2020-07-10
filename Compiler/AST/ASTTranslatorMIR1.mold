@@ -224,6 +224,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.push(rv)
   endmethod
 
+  method _loadNull(rv)
+    this.emitTargetOnlyOpcode('load_null', rv)
+    this.push(rv)
+  endmethod
+
   method _loadImm(rv, value)
     type = typeof(value)
 
