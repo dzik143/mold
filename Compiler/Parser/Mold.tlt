@@ -215,7 +215,9 @@ PRODUCTION_DEFINITION_IDX = 3 # Unused, comment off when needed
 #                              Helper functions
 # -----------------------------------------------------------------------------
 
-null = 0
+# TODO: Clean up this mess.
+_x_  = []
+null = _x_[0]
 
 function debug(msg)
   global UNICC_DEBUG
@@ -308,7 +310,7 @@ class AST
     # TODO: Clean up this mess.
     # Collect children.
     node = child
-    while node isnt null
+    while node is defined
       node.parent               = node
       this.children[@afterlast] = node
       # Go to next child if any.
@@ -324,7 +326,7 @@ class AST
       prefix = prefix ~ '..'
     endfor
 
-    if node.value isnt null
+    if node.value is defined
       print prefix ~ '#' ~ str(node.id), node.opcode, node.value
     else
       print prefix ~ '#' ~ str(node.id), node.opcode
@@ -407,8 +409,8 @@ class Parser
     currentRet = null
 
     stackIdx     = 0
-    stackValues  = [0]
-    stackNodes   = [0]
+    stackValues  = [null]
+    stackNodes   = [null]
     stackStates  = [0]
     stackLines   = [0]
     stackColumns = [0]
@@ -645,12 +647,12 @@ class Parser
         # Pop nodes from the stack.
         node = null
         for i in 0 .. currentProductionLength
-          if stackNodes[stackIdx] isnt null
+          if stackNodes[stackIdx] is defined
 
-            if node isnt null
+            if node is defined
               # Go left to the first node on list.
               # [first] ... ... ... [node]
-              while node.prev isnt null
+              while node.prev is defined
                 node = node.prev
               endwhile
 
@@ -665,13 +667,13 @@ class Parser
           stackIdx = stackIdx - 1
         endfor
 
-        if node isnt null
+        if node is defined
           lnode = stackNodes[stackIdx]
 
-          if lnode isnt null
+          if lnode is defined
             # Go right to the last node on list.
             # [lnode] ... ... ... [last]
-            while lnode.next isnt null
+            while lnode.next is defined
               lnode = lnode.next
             endwhile
 
