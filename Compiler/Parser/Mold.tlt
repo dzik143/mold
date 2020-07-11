@@ -202,7 +202,6 @@
 UNICC_ERROR  = 0
 UNICC_REDUCE = 1
 UNICC_SHIFT  = 2
-UNICC_EOF    = 0
 
 UNICC_DEBUG = false
 
@@ -358,7 +357,6 @@ class Parser
     global PRODUCTION_LHS_IDX
     global PRODUCTION_LENGTH_IDX
     global PRODUCTION_EMIT_IDX
-    global UNICC_EOF
 
     global _symbolsGreedy, _productions, _act, _def_prod
     global _dfa_idx, _dfa_chars, _dfa_trans, _dfa_accept, _dfa_select, _go
@@ -382,7 +380,7 @@ class Parser
 
     # Buffer first lookup byte.
     # TODO: Clean up this mess.
-    lookupByte = UNICC_EOF
+    lookupByte = @@eof
     if inputLen > 0
       lookupByte = input[0]
     endif
@@ -425,17 +423,17 @@ class Parser
         dfa_st = 0
         length = 0
         chr    = 0
-        mach   = @@prefix_dfa_select[stackStates[stackIdx]]
+        mach   = _dfa_select[stackStates[stackIdx]]
         next   = ord(buf[0])
 
-        if next is UNICC_EOF
+        if next is @@eof
           # End of file - no more data.
           currentSym = @@eof
 
         else
           # The are still some input data to read.
           # Read next token.
-          while (dfa_st &gt;= 0) and (next isnt UNICC_EOF)
+          while (dfa_st &gt;= 0) and (next isnt @@eof)
             lexInnerGoOn = true
             chr          = _dfa_idx[mach][dfa_st]
             dfa_st       = -1
@@ -464,7 +462,7 @@ class Parser
                     nextChar = input[inputIdx]
                     inputIdx = inputIdx + 1
                   else
-                    nextChar = UNICC_EOF
+                    nextChar = @@eof
                   endif
 
                   buf[bufSize] = nextChar
@@ -482,7 +480,7 @@ class Parser
 
         debug('lex done: sym=[' ~ str(currentSym) ~ ']')
 
-      elif buf[0] is UNICC_EOF
+      elif buf[0] is @@eof
         currentSym = @@eof
       endif
 
