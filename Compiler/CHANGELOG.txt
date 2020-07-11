@@ -8,6 +8,9 @@ UNRELEASED:
   Dropped syntax:
     - x[key] is not allowed for maps anymore, use x{key} instead.
 
+  New language syntax:
+    - unimplemented method foo(x,y,z) -> rv
+
   Implemented:
     - Build-in null variable
 
@@ -30,7 +33,7 @@ UNRELEASED:
   Internal maintain:
     - Major clean up the parser code
 
-  New syntax:
+  New language syntax:
     - Constant primitives (strings, integer, boolean, float):
       const a = 'text'
       const b = 2

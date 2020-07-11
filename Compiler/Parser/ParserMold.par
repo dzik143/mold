@@ -233,10 +233,13 @@ stmt_class_declaration:
 stmt_vcall:
   expr '.' @IDENT '(' rval_list_many_lines? ')' [* @@ = @3 *] =AST_OPCODE_VCALL;
 
-method_declaration:
-  "method" function_proto @EOL
-  stmt_list
-  "endmethod" [* @@ = @2 *] =AST_OPCODE_CLASS_METHOD;
+method_declaration
+  : "method" function_proto @EOL
+    stmt_list
+    "endmethod" [* @@ = @2 *] =AST_OPCODE_CLASS_METHOD
+
+  | "unimplemented" "method" function_proto @EOL [* @@ = @3 *] =AST_OPCODE_CLASS_METHOD
+  ;
 
 new_call
   : new_begin @IDENT '(' rval_list_many_lines? ')' [* @@ =  @2 *] =AST_OPCODE_CALL_NEW

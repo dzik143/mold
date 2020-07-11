@@ -91,6 +91,8 @@ class ASTPreprocessor
     global AST_OPCODE_VARIABLE
     global AST_OPCODE_CALL
     global AST_OPCODE_SUB
+    global AST_OPCODE_BLOCK
+    global AST_OPCODE_CLASS_METHOD
     global AST_DATA_STRING
     global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ
     global MOLD_SYSCALL_MAP
@@ -209,6 +211,31 @@ class ASTPreprocessor
         this.app.setLogContext(node)
         this.app.logError("unsupported selector '" ~ selector ~ "'")
       endif
+
+    elif (opcode is AST_OPCODE_CLASS_METHOD) and (len(children) is 0)
+      # Method without code (pure virtual).
+      # Build stub code for non-implemented methods.
+      # TODO: Optimize it.
+      # TODO: Use exceptions if ready?
+      className      = node.parent.value.name
+      methodName     = node.value.name
+      fullMethodName = className ~ '.' ~ methodName
+
+      children[@afterlast] = {
+        'id': AST_GetNextId(),
+        'opcode': AST_OPCODE_BLOCK,
+        'children': [
+          {
+            'id': AST_GetNextId(),
+            'opcode': AST_OPCODE_CALL,
+            'value': '__mold_syscall',
+            'sysCallId': 41, # TODO: Don't use hardcoded value ('die').
+            'children': [
+              AST_CreateNodeString('not implemented: ' ~ fullMethodName)
+            ]
+          }
+        ]
+      }
     endif
   endmethod
 

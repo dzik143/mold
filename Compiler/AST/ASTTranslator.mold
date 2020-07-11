@@ -49,153 +49,45 @@ class ASTTranslator
   endmethod
 
   # ----------------------------------------------------------------------------
-  #                            Built-in functions
-  # ----------------------------------------------------------------------------
-
-  method _loadArgsVector(rv)
-    this._error('_loadArgsVector not implemented')
-  endmethod
-
-  method _loadArgsCount(rv)
-    this._error('_callLoadArgsCount not implemented')
-  endmethod
-
-  method _syscall(rv, id, params, paramsCnt)
-    this._error('_syscall() not implemented')
-  endmethod
-
-  # ----------------------------------------------------------------------------
   #            Methods, which should be overloaded in derived class
   # ----------------------------------------------------------------------------
 
-  method _loadArray(rv)
-    this._error('_loadArray() not implemented')
-  endmethod
+  unimplemented method _loadArgsVector(rv)
+  unimplemented method _loadArgsCount(rv)
+  unimplemented method _syscall(rv, id, params, paramsCnt)
 
-  method _loadMap(rv)
-    this._error('_loadMap() not implemented')
-  endmethod
-
-  method _loadNull(rv)
-    this._error('_loadNull() not implemented')
-  endmethod
-
-  method _loadImm(rv, value)
-    this._error('_loadImm() not implemented')
-  endmethod
-
-  method _loadImmAsVariant(rv, value)
-    # TODO: Review is it really needed?
-    this._error('_loadImmAsVariant() not implemented')
-  endmethod
-
-  method _loadVariable(name)
-    this._error('_loadVariable() not implemented')
-  endmethod
-
-  method _call(rv, funcProto, params, paramsCnt)
-    this._error('_call() not implemented')
-  endmethod
-
-  method _invokeMethod(methodName, params, paramsCnt)
-    this._error('_invokeMethod() not implemented')
-  endmethod
-
-  method _callPrint(params, paramsCnt)
-    this._error('_callPrint() not implemented')
-  endmethod
-
-  method _neg(rv, value)
-    this._error('_neg() not implemented')
-  endmethod
-
-  method _add(rv, x, y)
-    this._error('_add() not implemented')
-  endmethod
-
-  method _stringJoin(rv, x, y)
-    this._error('_stringJoin() not implemented')
-  endmethod
-
-  method _sub(rv, x, y)
-    this._error('_sub() not implemented')
-  endmethod
-
-  method _mul(rv, x, y)
-    this._error('_mul() not implemented')
-  endmethod
-
-  method _div(rv, x, y)
-    this._error('_div() not implemented')
-  endmethod
-
-  method _idiv(rv, x, y)
-    this._error('_idiv() not implemented')
-  endmethod
-
-  method _compareEQ(rv, x, y)
-    this._error('_compareEQ() not implemented')
-  endmethod
-
-  method _compareNEQ(rv, x, y)
-    this._error('_compareNEQ() not implemented')
-  endmethod
-
-  method _compareLT(rv, x, y)
-    this._error('_compareLT() not implemented')
-  endmethod
-
-  method _compareLE(rv, x, y)
-    this._error('_compareLE() not implemented')
-  endmethod
-
-  method _compareGT(rv, x, y)
-    this._error('_compareGT() not implemented')
-  endmethod
-
-  method _compareGE(rv, x, y)
-    this._error('_compareGE() not implemented')
-  endmethod
-
-  method _boolAnd(rv, x, y)
-    this._error('_boolAnd() not implemented')
-  endmethod
-
-  method _boolOr(rv, x, y)
-    this._error('_boolOr() not implemented')
-  endmethod
-
-  method _loadFromIndex(rv, box, idx)
-    this._error('_loadFromIndex() not implemented')
-  endmethod
-
-  method _loadFromKey(rv, box, key)
-    this._error('_loadFromKey() not implemented')
-  endmethod
-
-  method _storeAtIndex(box, idx, value)
-    this._error('_storeAtIndex() not implemented')
-  endmethod
-
-  method _storeAtKey(box, key, value)
-    this._error('_storeAtKey() not implemented')
-  endmethod
-
-  method _storeAtIndexAndDrop(rv, idx, value)
-    this._error('_storeAtIndexAndDrop() not implemented')
-  endmethod
-
-  method _storeAtKeyAndDrop(rv, key, value)
-    this._error('_storeAtKeyAndDrop() not implemented')
-  endmethod
-
-  method _createObject(rv, classProto)
-    this._error('_createObject() not implemented')
-  endmethod
-
-  method _convert(dst, src, srcType, dstType)
-    this._error('_convert() is not implemented')
-  endmethod
+  unimplemented method _loadArray(rv)
+  unimplemented method _loadMap(rv)
+  unimplemented method _loadNull(rv)
+  unimplemented method _loadImm(rv, value)
+  unimplemented method _loadImmAsVariant(rv, value)
+  unimplemented method _loadVariable(name)
+  unimplemented method _call(rv, funcProto, params, paramsCnt)
+  unimplemented method _invokeMethod(methodName, params, paramsCnt)
+  unimplemented method _callPrint(params, paramsCnt)
+  unimplemented method _neg(rv, value)
+  unimplemented method _add(rv, x, y)
+  unimplemented method _stringJoin(rv, x, y)
+  unimplemented method _sub(rv, x, y)
+  unimplemented method _mul(rv, x, y)
+  unimplemented method _div(rv, x, y)
+  unimplemented method _idiv(rv, x, y)
+  unimplemented method _compareEQ(rv, x, y)
+  unimplemented method _compareNEQ(rv, x, y)
+  unimplemented method _compareLT(rv, x, y)
+  unimplemented method _compareLE(rv, x, y)
+  unimplemented method _compareGT(rv, x, y)
+  unimplemented method _compareGE(rv, x, y)
+  unimplemented method _boolAnd(rv, x, y)
+  unimplemented method _boolOr(rv, x, y)
+  unimplemented method _loadFromIndex(rv, box, idx)
+  unimplemented method _loadFromKey(rv, box, key)
+  unimplemented method _storeAtIndex(box, idx, value)
+  unimplemented method _storeAtKey(box, key, value)
+  unimplemented method _storeAtIndexAndDrop(rv, idx, value)
+  unimplemented method _storeAtKeyAndDrop(rv, key, value)
+  unimplemented method _createObject(rv, classProto)
+  unimplemented method _convert(dst, src, srcType, dstType)
 
   method _dropRetVal()
   endmethod
@@ -209,13 +101,13 @@ class ASTTranslator
   method _emitFunctionBody(funcName, funcProto)
   endmethod
 
-  method _declareExternalFunction(funcName, funcProto)
-    this.symbolTable.insertFunction(funcName, funcProto)
-  endmethod
-
   # ----------------------------------------------------------------------------
   #                         Internal helpers (private)
   # ----------------------------------------------------------------------------
+
+  method _declareExternalFunction(funcName, funcProto)
+    this.symbolTable.insertFunction(funcName, funcProto)
+  endmethod
 
   method _getTempVar(wantedType) -> rv
     # TODO: Clean up this mess.

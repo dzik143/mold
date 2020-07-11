@@ -75,6 +75,16 @@ function AST_CreateNodeInteger(value) -> rv
   }
 endfunction
 
+function AST_CreateNodeString(value) -> rv
+  global AST_DATA_STRING
+  rv = {
+    'id': AST_GetNextId(),
+    'opcode': AST_DATA_STRING,
+    'children': [],
+    'value': value
+  }
+endfunction
+
 function AST_GetOpcodeAsText(opcode) -> rv
   global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
   global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_UNDEFINED
