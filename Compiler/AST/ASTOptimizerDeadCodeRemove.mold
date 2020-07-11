@@ -250,6 +250,21 @@ class ASTOptimizerDeadCodeRemove
       # Nested type cast: convert(convert(...))
       this._debug('Reduced nested type cast at node #' ~ str(node.id))
       node.children[0] = x.children[0]
+
+    elif opcode is AST_OPCODE_CALL
+      symbolInfo = symbolTable.lookup(value)
+      # TODO: Use x is empty?
+      # TODO: Decrease read/call hits counter?
+      # TODO: Remove called function if no any caller left?
+      if ((symbolInfo.proto is defined) and
+          (symbolInfo.proto.children is defined) and
+          (len(symbolInfo.proto.children[0].children) is 0))
+        #
+        #print symbolInfo.proto
+        #print symbolInfo.proto.name, len(symbolInfo.proto.children[0].children)
+        this._debug('Useless function call at node #' ~ str(node.id) ~ ' (' ~ value ~ ')')
+        removeNode = true
+      endif
     endif
 
     if removeNode is true

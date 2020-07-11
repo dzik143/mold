@@ -89,17 +89,11 @@ class ASTTranslator
   unimplemented method _createObject(rv, classProto)
   unimplemented method _convert(dst, src, srcType, dstType)
 
-  method _dropRetVal()
-  endmethod
+  unimplemented method _emitFunctionBody(funcName, funcProto)
+  unimplemented method _dropRetVal()
 
-  method _declareFunction(funcName, funcProto)
-  endmethod
-
-  method _declareClass(className, classProto)
-  endmethod
-
-  method _emitFunctionBody(funcName, funcProto)
-  endmethod
+  unimplemented method _declareFunction(funcName, funcProto)
+  unimplemented method _declareClass(className, classProto)
 
   # ----------------------------------------------------------------------------
   #                         Internal helpers (private)
