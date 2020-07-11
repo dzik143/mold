@@ -305,7 +305,7 @@ class AST
     # Collect children.
     node = child
     while node is defined
-      node.parent               = node
+      node.parent               = this
       this.children[@afterlast] = node
       # Go to next child if any.
       node = node.next
