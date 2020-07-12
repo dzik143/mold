@@ -85,6 +85,23 @@ function AST_CreateNodeString(value) -> rv
   }
 endfunction
 
+function AST_GetDataTypeFromValue(value) -> rv
+  global AST_DATA_INTEGER, AST_DATA_DOUBLE, AST_DATA_BOOL
+
+  rv       = -1
+  typeName = typeof(value)
+
+  if typeName is 'integer'
+    rv = AST_DATA_INTEGER
+
+  elif typeName is 'float'
+    rv = AST_DATA_DOUBLE
+
+  elif typeName is 'boolean'
+    rv = AST_DATA_BOOL
+  endif
+endfunction
+
 function AST_GetOpcodeAsText(opcode) -> rv
   global AST_DATA_INTEGER, AST_DATA_FLOAT, AST_DATA_DOUBLE, AST_DATA_STRING
   global AST_DATA_BOOL, AST_DATA_OBJECT, AST_DATA_UNDEFINED
@@ -769,15 +786,30 @@ function AST_GetDataType(node) -> rv
 
     elif opcode is AST_OPCODE_TYPE_CAST
       rv = node.astDataType
-
-    #elif opcode is AST_OPCODE_REFERENCE
+/*
+    elif opcode is AST_OPCODE_REFERENCE_BY_INDEX
       # TODO: Handle non-variant array items.
       # TODO: This is prof-of-concept only.
-      #box = node.children[0]
-      #if box.symbolInfo.kind is SYMBOL_KIND_CONST
-      #  rv = AST_DATA_INTEGER
-      #endif
+      box = node.children[0]
+      rv  = box.innerAstDataType
 
+      if (rv is undefined) and (box.symbolInfo.kind is SYMBOL_KIND_CONST)
+        arrayOfValues = box.symbolInfo.value
+        rv            = AST_GetDataTypeFromValue(arrayOfValues[0])
+        idx           = 1
+
+        # TODO: Optimize it.
+        for values v in arrayOfValues
+          if rv isnt AST_GetDataTypeFromValue(v)
+            # At least two different types found.
+            # Fall back to varaint.
+            rv = -1
+          endif
+        endfor
+
+        box.innerAstDataType = rv
+      endif
+*/
     elif opcode is AST_OPCODE_CALL
       # TODO: Handle non-variant return values.
 
