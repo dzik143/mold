@@ -20,6 +20,8 @@ UNRELEASED:
       x[@afterLast]   - placeholder for new item at the end   (lval)
       x[@beforeFirst] - placeholder for new item at the begin (lval)
 
+   - AST optimizer: remove calls to empty functions
+
 0.2.200706 (released on 2020-07-06)
 -----------------------------------
   Implemented:
