@@ -95,6 +95,16 @@ class ASTTranslator
   unimplemented method _declareFunction(funcName, funcProto)
   unimplemented method _declareClass(className, classProto)
 
+  unimplemented method _declareVariable(name)
+  unimplemented method _assign(name, value)
+
+  unimplemented method _evaluateNodeLazyBoolAnd(rv, leftAst, rightAst)
+  unimplemented method _evaluateNodeLazyBoolOr(rv, leftAst, rightAst)
+  unimplemented method _executeNodeFor(iteratorName, valueStart, valueEnd, valueStep, bodyAst)
+  unimplemented method _executeNodeWhile(condAst, bodyAst)
+  unimplemented method _executeNodeIf(cond, codeIfTrue, codeIfFalse)
+  unimplemented method _executeNodeSwitch(node)
+
   # ----------------------------------------------------------------------------
   #                         Internal helpers (private)
   # ----------------------------------------------------------------------------
@@ -257,11 +267,6 @@ class ASTTranslator
     rv = this.symbolTable.lookupClass(className).proto
   endmethod
 
-  method _getMethodProto(className, methodName, paramsCnt) -> rv
-    rv = false
-    die('ASTTranslator::_getMethodProto() not implemented')
-  endmethod
-
   # ----------------------------------------------------------------------------
   #                             Symbols (private)
   # ----------------------------------------------------------------------------
@@ -283,14 +288,6 @@ class ASTTranslator
   method _declareAndAssign(name, value)
     #this._declareVariable(name)
     this._assign(name, value)
-  endmethod
-
-  method _declareVariable(name)
-    die('ASTTranslator::_declareVariable() not implemented')
-  endmethod
-
-  method _assign(name, value)
-    die('_assign() not implemented')
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -646,30 +643,6 @@ class ASTTranslator
     for values oneParam in params
       this._releaseTempVar(oneParam)
     endfor
-  endmethod
-
-  method _evaluateNodeLazyBoolAnd(rv, leftAst, rightAst) -> rv
-    this._error('_evaluateNodeBoolAnd() not implemented')
-  endmethod
-
-  method _evaluateNodeLazyBoolOr(rv, leftAst, rightAst) -> rv
-    this._error('_evaluateNodeBoolOr() not implemented')
-  endmethod
-
-  method _executeNodeFor(iteratorName, valueStart, valueEnd, valueStep, bodyAst)
-    this._error('_executeNodeFor() not implemented')
-  endmethod
-
-  method _executeNodeWhile(condAst, bodyAst)
-    this._error('_executeNodeWhile() not implemented')
-  endmethod
-
-  method _executeNodeIf(cond, codeIfTrue, codeIfFalse)
-    this._error('_executeNodeIf() not implemented')
-  endmethod
-
-  method _executeNodeSwitch(node)
-    this._error('switch not implemented')
   endmethod
 
   method _executeNode(ast)
