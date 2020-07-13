@@ -33,10 +33,7 @@ class ASTModuleResolver
 
     program     = ast.children[0]
     children    = program.children
-    childrenCnt = len(children)
-
-    newChildrenCnt = 0
-    newChildren    = []
+    newChildren = []
 
     for values oneChild in children
 
@@ -56,19 +53,16 @@ class ASTModuleResolver
           # Resolve imports recursively.
           this.resolveImports(importedAst)
 
-          importedProgram     = importedAst.children[0]
-          importedChildren    = importedProgram.children
-          importedChildrenCnt = len(importedChildren)
+          importedProgram  = importedAst.children[0]
+          importedChildren = importedProgram.children
 
           for values oneImportedChild in importedChildren
-            newChildren[newChildrenCnt] = oneImportedChild
-            newChildrenCnt = newChildrenCnt + 1
+            newChildren[@afterlast] = oneImportedChild
           endfor
         endif
 
       else
-        newChildren[newChildrenCnt] = oneChild
-        newChildrenCnt = newChildrenCnt + 1
+        newChildren[@afterlast] = oneChild
       endif
     endfor
 
