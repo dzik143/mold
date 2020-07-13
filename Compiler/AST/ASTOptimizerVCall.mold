@@ -39,9 +39,8 @@ class ASTOptimizerVCall
     global AST_OPCODE_BLOCK
     global AST_OPCODE_CALL
 
-    opcode      = node.opcode
-    children    = node.children
-    childrenCnt = len(children)
+    opcode   = node.opcode
+    children = node.children
 
     if opcode is AST_OPCODE_VCALL
       # obj.foo(...)

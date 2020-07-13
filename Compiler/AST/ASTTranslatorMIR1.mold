@@ -707,12 +707,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _emitFunctionBody(funcName, funcProto)
-    params      = funcProto.params
-    paramsCnt   = len(funcProto.params)
-    children    = funcProto.children
-    childrenCnt = len(children)
-    codeAst     = children[0]
-    rvName      = funcProto.rv
+    params    = funcProto.params
+    paramsCnt = len(funcProto.params)
+    children  = funcProto.children
+    codeAst   = children[0]
+    rvName    = funcProto.rv
 
     this.methodEmitted{funcProto.name} = true
 

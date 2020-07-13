@@ -77,9 +77,8 @@ class ASTPrinterHtml
     global AST_OPCODE_CLASS_METHOD
     global AST_OPCODE_TYPE_CAST
 
-    opcode      = node.opcode
-    children    = node.children
-    childrenCnt = len(children)
+    opcode   = node.opcode
+    children = node.children
 
     print '<table style="border: solid 1px">'
     print '<tr><td>#' ~ str(node.id), '<b>', AST_GetOpcodeAsText(opcode), '</b></td></tr>'

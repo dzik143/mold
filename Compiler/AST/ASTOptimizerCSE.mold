@@ -82,12 +82,11 @@ class ASTOptimizerCSE
       symbolTable = node.symbolTable
     endif
 
-    opcode      = node.opcode
-    value       = node.value
-    goOn        = true
-    children    = node.children
-    childrenCnt = len(children)
-    rv          = node
+    opcode   = node.opcode
+    value    = node.value
+    goOn     = true
+    children = node.children
+    rv       = node
 
     for values oneChild in children
       # TODO: Remove this hack.

@@ -42,10 +42,9 @@ class ASTOptimizerInline
     global SYMBOL_KIND_VAR_LOCAL
 
     newChildren = []
-    children    = node.children
-    childrenCnt = len(children)
-    newValue    = node.value
-    newOpcode   = node.opcode
+    children  = node.children
+    newValue  = node.value
+    newOpcode = node.opcode
 
     if node.opcode is AST_OPCODE_VARIABLE
       if symbolTable.isset(node.value) is true
@@ -120,9 +119,8 @@ class ASTOptimizerInline
       params     = functionProto.params
       namePrefix = '__inline' ~ str(callNode.id) ~ '_'
 
-      bodyNode    = functionProto.children[0]
-      children    = bodyNode.children
-      childrenCnt = len(children)
+      bodyNode = functionProto.children[0]
+      children = bodyNode.children
 
       symbolInfo.readHits = symbolInfo.readHits - 1
 
@@ -242,9 +240,8 @@ class ASTOptimizerInline
     global AST_OPCODE_DECLARE_OR_ASSIGN
     global AST_OPCODE_VCALL
 
-    opcode      = node.opcode
-    children    = node.children
-    childrenCnt = len(children)
+    opcode   = node.opcode
+    children = node.children
 
     # Switch symbolTable if needed.
     if node.symbolTable is defined

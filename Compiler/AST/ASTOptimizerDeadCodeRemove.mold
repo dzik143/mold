@@ -36,9 +36,8 @@ class ASTOptimizerDeadCodeRemove
   method _removeNode(node)
     global AST_OPCODE_NOP
     this._debug('Remove node #' ~ str(node.id))
-    node.opcode      = AST_OPCODE_NOP
-    node.children    = []
-    #node._TODO_childrenCnt = 0
+    node.opcode   = AST_OPCODE_NOP
+    node.children = []
   endmethod
 
   method _moveNode(dst, src)
@@ -53,8 +52,7 @@ class ASTOptimizerDeadCodeRemove
   method _processChildNodes(symbolTable, node)
     global AST_OPCODE_NOP
 
-    newChildren    = []
-    newChildrenCnt = 0
+    newChildren = []
 
     for values childNode in node.children
       newNode = this._processNode(symbolTable, childNode)
@@ -64,8 +62,7 @@ class ASTOptimizerDeadCodeRemove
       endif
 
       if newNode.opcode isnt AST_OPCODE_NOP
-        newChildren[newChildrenCnt] = newNode
-        newChildrenCnt = newChildrenCnt + 1
+        newChildren[@afterlast] = newNode
       endif
     endfor
 
@@ -119,7 +116,7 @@ class ASTOptimizerDeadCodeRemove
     childrenCnt = len(children)
     x           = children[0]
 
-    childrenCntOnEnter = len(children)
+    childrenCntOnEnter = childrenCnt
 
     value      = node.value
     rv         = node
@@ -147,9 +144,6 @@ class ASTOptimizerDeadCodeRemove
       endif
 
     elif opcode is AST_OPCODE_IF
-      children    = node.children
-      childrenCnt = len(children)
-
       nodeCond = children[0]
       nodeBody = children[1]
       nodeElse = children[2]

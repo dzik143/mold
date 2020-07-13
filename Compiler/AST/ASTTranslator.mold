@@ -594,8 +594,8 @@ class ASTTranslator
     params    = []
     paramsCnt = childrenCnt
 
-    for idx in 0 .. childrenCnt
-      params[idx] = this._evaluateNode(children[idx])
+    for indexes idx values oneChild in children
+      params[idx] = this._evaluateNode(oneChild)
     endfor
 
     # TODO: Simplify it.
@@ -735,8 +735,8 @@ class ASTTranslator
 
       this._enterScope(ast)
 
-      for idx in 0 .. childrenCnt
-        this._executeNode(children[idx])
+      for values oneChild in children
+        this._executeNode(oneChild)
       endfor
 
       this._leaveScope()
@@ -895,8 +895,8 @@ class ASTTranslator
       if value is 'global'
         # Built-in global directive.
 
-        for idx in 0 .. childrenCnt
-          paramName = children[idx].value
+        for values oneChild in children
+          paramName = oneChild.value
           if typeof(paramName) isnt 'string'
             this._error('global directive expects string, but ' ~ typeof(paramName) ~ ' passed')
           else
