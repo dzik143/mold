@@ -36,8 +36,6 @@ class ASTPrinterHtml
     print '<tr><th>var</th><th>write</th><th>read</th><th>init value</th><th>kind</th><th>data type</th><th>loop level</th><th>class name</th></tr>'
 
     for keys symbolId values symbolInfo in symbols
-      print 'SYMBOL', symbolId
-
       value = '-'
 
       if symbolInfo.value is defined

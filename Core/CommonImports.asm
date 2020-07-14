@@ -47,6 +47,7 @@ import msvcrt,\
   strcmp,  'strcmp', \
   strlen,  'strlen', \
   strcpy,  'strcpy', \
+  strncpy, 'strncpy', \
   snprintf, '_snprintf', \
   atof, 'atof', \
   atoi, 'atoi', \

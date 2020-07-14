@@ -39,6 +39,15 @@ macro ASSERT2 x, opcode, y, msg
   pop  r11 r10 r9 r8 rdx rcx rax
 }
 
+macro DEBUG_MSG msg
+{
+  push rax rcx rdx r8  r9  r10
+  cinvoke printf, '%s', msg
+  cinvoke putchar, 13
+  cinvoke putchar, 10
+  pop  r10 r9  r8  rdx rcx rax
+}
+
 ;###############################################################################
 ;                                  Constants
 ;###############################################################################
@@ -85,7 +94,7 @@ ends
 
 struct String_t
   length dq ?
-  text db ?
+  text   db ?
 ends
 
 struct Array_t
@@ -95,7 +104,7 @@ struct Array_t
   reserved2 db ?
   reserved3 db ?
   itemsCnt  dq ?
-  items Variant_t ?
+  items     Variant_t ?
 ends
 
 struct MapBucket_t
@@ -1634,6 +1643,16 @@ __MOLD_VariantLoadFromIndex_int32:
     mov     [rdx + Variant_t.value], rax  ; tmpIndex = index
     jmp     __MOLD_VariantLoadFromIndex
 
+; TODO: Clean up this mess.
+__MOLD_VariantLoadFromIndex_native:
+    push    r8
+    lea     r8, [__TrashBin]
+    call    __MOLD_VariantLoadFromIndex_int32
+    mov     rax, [__TrashBin + Variant_t.value]
+    pop     r8
+    mov     dword [r8], eax
+    ret
+
 __MOLD_VariantStoreAtIndex_int32:
     ; rcx = box (Variant_t)
     ; rdx = index (Variant_t)
@@ -2962,6 +2981,10 @@ __MOLD_PrintErrorAndDie:
     lea     rcx, [.fmtMapOrObjectExpected]
     jmp     .final
 
+.arrayExpected:
+    lea     rcx, [.fmtArrayExpected]
+    jmp     .final
+
 .arrayOrStringExpected:
     lea     rcx, [.fmtArrayOrStringExpected]
     jmp     .final
@@ -3011,6 +3034,7 @@ __MOLD_PrintErrorAndDie:
 .fmtStringKeyExpected        db 'error: string key expected', 13, 10, 0
 .fmtStringExpected           db 'error: string expected', 13, 10, 0
 .fmtMapOrObjectExpected      db 'error: map or object expected', 13, 10, 0
+.fmtArrayExpected            db 'error: array expected', 13, 10, 0
 .fmtArrayOrStringExpected    db 'error: array or string expected', 13, 10, 0
 .fmtArrayStringOrMapExpected db 'error: array, string or map expected', 13, 10, 0
 .fmtNegativeIndex            db 'error: negative array index', 13, 10, 0

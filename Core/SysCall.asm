@@ -306,6 +306,19 @@ __MOLD_SysCall:
     mov     rdx, rdi
     jmp     __MOLD_VariantTypeOf
 
+.innertypeof:
+    ; TODO: Optimize it.
+    cmp     [rcx + Variant_t.type], VARIANT_ARRAY
+    jnz     __MOLD_PrintErrorAndDie.arrayExpected
+
+    mov     rax, [rcx + Variant_t.value]    ; rax = x   (Buffer_t)
+    lea     rcx, [__TrashBin]               ; rcx = tmp (Variant_t)
+    mov     rax, [rax + Buffer_t.bytesPtr]  ; rax = x   (Array_t)
+    mov     eax, [rax + Array_t.innerType]  ; eax = x.innerType
+    mov     [rcx + Variant_t.type], eax     ; tmp.type = x.innerType
+
+    mov     rdx, rdi
+    jmp     __MOLD_VariantTypeOf
 
 ; ------------------------------------------------------------------------------
 ; Insert item to array using relative index (@selector)
@@ -330,11 +343,82 @@ __MOLD_SysCall:
 
 .arraySetBySelector:
     ; TODO
-    jmp    .error
+    jmp     .error
 
 .arrayLoadBySelector:
     ; TODO
-    jmp    .error
+    jmp     .error
+
+; TODO: Clean up this mess.
+; TODO: Optimize it.
+; TODO: Validate args.
+.substr:
+    ; Fetch args
+    cmp    [rcx + Variant_t.type], VARIANT_STRING
+    jnz    __MOLD_PrintErrorAndDie.stringExpected
+
+;    test  [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+;    jz    .fetch_args
+
+;.convert_one_character_source:
+;    mov   rax, [rcx + Variant_t.value]
+;    lea   rcx, [OneCharacterStringTemp]
+;    mov   [OneCharacterStringTempPeek], al
+
+.fetch_args:
+    mov     rcx, [rcx + Variant_t.value]   ; rcx = text     (Buffer_t)
+    mov     rcx, [rcx + Buffer_t.bytesPtr] ; rcx = text     (String_t)
+    mov     rdx, [rdx + Variant_t.value]   ; rdx = idxStart (int32)
+    mov     r8,  [r8  + Variant_t.value]   ; r8  = len      (int32)
+
+    ; Validate idxStart
+    cmp     rdx, [rcx + String_t.length]
+    ja      __MOLD_PrintErrorAndDie.indexOutOfRange
+
+    ; Calculate new length i if needed
+    or      r8, r8
+    jge     .init_output_stub
+
+.from_idx_to_end:
+    mov     r8, [rcx + String_t.length]
+    sub     r8, rdx
+
+.init_output_stub:
+    push    rcx
+    push    rdx
+    push    r8
+
+    lea     rcx, [r8 + 16]                         ; rcx      = len + 16
+
+    call    __MOLD_MemoryAlloc                     ; rax      = new Buffer_t
+    mov     [rdi + Variant_t.type], VARIANT_STRING ; rv.type  = string
+    mov     [rdi + Variant_t.flags], 0             ; rv.flags = 0
+    mov     [rdi + Variant_t.value], rax           ; rv.value = new Buffer_t
+
+    pop     r8
+    pop     rdx
+    pop     rcx
+
+    ; Fill up output data
+    push    rdi
+    mov     rdi, [rax + Buffer_t.bytesPtr]         ; rdi       = new String_t
+    mov     [rdi + String_t.length], r8            ; rv.length = len
+
+    lea     rdx, [rcx + String_t.text + rdx]
+    lea     rcx, [rdi + String_t.text]
+    push    rcx
+    cinvoke strncpy
+    pop     rcx
+
+    ; TODO: Optimize it.
+    cinvoke strlen
+    mov     [rdi + String_t.length], rax
+
+    pop     rdi
+
+    DEBUG_CHECK_VARIANT rdi
+
+    ret
 
 ; ------------------------------------------------------------------------------
 ; Generic error handler
@@ -411,8 +495,8 @@ __MOLD_SysCall:
   dq .error                 ; 52
   dq .error                 ; 53
   dq .error                 ; 54
-  dq .error                 ; 55
-  dq .error                 ; 56
+  dq .substr                ; 55
+  dq .innertypeof           ; 56
   dq .error                 ; 57
   dq .error                 ; 58
   dq .error                 ; 59

@@ -325,6 +325,16 @@ class CodeGeneratorX64
     print '  j' ~ cc, dst
   endmethod
 
+  method _getSymbolType(symbolsMap, id) -> rv
+    rv = 'variant'
+    if typeof(id) is 'string'
+      symbolInfo = symbolsMap{id}
+      if (symbolInfo is defined) and (symbolInfo.type is defined)
+        rv = symbolInfo.type
+      endif
+    endif
+  endmethod
+
   method run(codeObj)
     global SYMBOL_KIND_VAR_LOCAL, SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_CONST
     global SYMBOL_KIND_VAR_PARAM, SYMBOL_KIND_JMP_TABLE, SYMBOL_KIND_VAR_RETVAL
@@ -378,26 +388,21 @@ class CodeGeneratorX64
       # TODO: Optimize it.
       originalOpcode = opcode
 
-      xType = 'variant'
-      yType = 'variant'
+      dstType = 'variant'
+      xType   = 'variant'
+      yType   = 'variant'
 
       if (itemCnt > 2) and (typeof(x) is 'string')
         if (opcode isnt 'call') and (opcode isnt 'vcall') and (opcode isnt 'syscall') and (opcode isnt 'create_object') and ((opcode[0] isnt 'c') or (opcode[1] is 'm'))
 
           # TODO: Clean up this mess.
           if opcode is 'load_index'
-            yInfo = currentSymbols{y}
-
-            if (yInfo is defined) and (yInfo.type is defined)
-              yType = yInfo.type
-            endif
-            opcode = opcode ~ '_' ~ yType
+            dstType = this._getSymbolType(currentSymbols, dst)
+            idxType = this._getSymbolType(currentSymbols, y)
+            opcode  = opcode ~ '_' ~ dstType ~ '_by_' ~ idxType
 
           else
-            xInfo = currentSymbols{x}
-            if (xInfo is defined) and (xInfo.type is defined)
-              xType = xInfo.type
-            endif
+            xType  = this._getSymbolType(currentSymbols, x)
             opcode = opcode ~ '_' ~ xType
           endif
         endif
@@ -1365,13 +1370,17 @@ class CodeGeneratorX64
         # dst[x] := y
         this.call3('__MOLD_VariantStoreAtIndex_int32', dst, x, y)
 
-      elif opcode is 'load_index_variant'
+      elif opcode is 'load_index_variant_by_variant'
         # dst := x[y]
         this.call3AndDestroy('__MOLD_VariantLoadFromIndex', x, y, dst)
 
-      elif opcode is 'load_index_int32'
+      elif opcode is 'load_index_variant_by_int32'
         # dst := x[y]
         this.call3AndDestroy('__MOLD_VariantLoadFromIndex_int32', x, y, dst)
+
+      elif opcode is 'load_index_int32_by_int32'
+        # dst := x[y]
+        this.call3('__MOLD_VariantLoadFromIndex_native', x, y, dst)
 
       elif opcode is 'load_key_variant'
         # dst := x[y]

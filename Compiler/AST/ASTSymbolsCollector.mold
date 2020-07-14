@@ -322,6 +322,26 @@ class ASTSymbolsCollector
           # Insert new constant.
           symbolInfo  = symbolTable.insertConst(lval.value, rval.value)
           node.opcode = AST_OPCODE_NOP
+
+/*
+          TEMPORARY DISABLED DUE TO x[-10000] issue (should gives undefined)
+          # TODO: Review it.
+          # TODO: Optimize it.
+          innerType = AST_GetDataTypeFromValue(rval.value[0])
+
+          for values v in rval.value
+            if innerType isnt AST_GetDataTypeFromValue(v)
+              # At least two different types found.
+              # Fall back to varaint.
+              innerType = -1
+            endif
+          endfor
+
+          symbolInfo.astInnerType = innerType
+
+          this._debug('Assigned inner type at node #' ~ str(node.id) ~ ' (' ~ str(innerType) ~ ')')
+*/
+
         else
           # Simple lval (single variable) - insert into symbol table.
           symbolInfo = symbolTable.lookupForWriteOrInsert(lval.value)
