@@ -30,13 +30,14 @@ class ASTPrinterHtml
     global SYMBOL_KIND_CONST
     global SYMBOL_KIND_AS_TEXT
 
-    symbols      = symbolTable.exportSymbols()
-    symbolsIndex = symbols._index
+    symbols = symbolTable.exportSymbols()
 
     print '<table border="1">'
     print '<tr><th>var</th><th>write</th><th>read</th><th>init value</th><th>kind</th><th>data type</th><th>loop level</th><th>class name</th></tr>'
 
-    for values symbolInfo in symbolsIndex
+    for keys symbolId values symbolInfo in symbols
+      print 'SYMBOL', symbolId
+
       value = '-'
 
       if symbolInfo.value is defined
