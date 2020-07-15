@@ -46,20 +46,19 @@ class X64Parser extends AbstractDescentParser
   method reset()
     this.constantsMap         = {}
     this.labelsMap            = {}
-    this.constantsMap         = {}
     this.arrayOfLabelsAndRefs = []
     this.currentLabelName     = ''
   endmethod
 
   method _emitLabel(name) -> labelObj
     if name[0] is '.'
-      name = this.currentLabelName + name
+      name = this.currentLabelName ~ name
     else
       this.currentLabelName = name
     endif
 
     offset   = this.outputObject.getCurrentPosition()
-    labelObj = this.labelsMap[name]
+    labelObj = this.labelsMap{name}
 
     if labelObj is undefined
       labelObj = {
@@ -67,7 +66,7 @@ class X64Parser extends AbstractDescentParser
         'name': name,
         'codeSize': 0
       }
-      this.labelsMap[name] = labelObj
+      this.labelsMap{name} = labelObj
     endif
 
     labelObj.offset         = offset
@@ -81,23 +80,23 @@ class X64Parser extends AbstractDescentParser
     this._skipWhites()
 
     if this.lookupBuffer is ','
-      rv = '' + this._getChar()
+      rv = '' ~ this._getChar()
 
     else
       # TODO: Crash without concatenation.
       if (this.lookupBuffer is '.') or (this.lookupBuffer is '_') or (this.lookupBuffer is '-')
-        rv = '' + this._getChar()
+        rv = '' ~ this._getChar()
       else
-        rv = '' + this._matchLetterOrDigit()
+        rv = '' ~ this._matchLetterOrDigit()
       endif
 
       while (this._isLetterOrDigit(this.lookupBuffer) is true) or (this.lookupBuffer is '_')
-        rv = rv + this._getChar()
+        rv = rv ~ this._getChar()
       endwhile
     endif
 
     # Is it constant?
-    constantValue = this.constantsMap[rv]
+    constantValue = this.constantsMap{rv}
     if constantValue is defined
       #print 'resolved constant [', rv, '] to [', constantValue, ']'
       rv = constantValue
@@ -158,7 +157,7 @@ class X64Parser extends AbstractDescentParser
         # Treat as RIP relative label.
         # Convert to [rip + label - $]
         # TODO: Clean up this mess.
-        labelObj = this.labelsMap[token]
+        labelObj = this.labelsMap{token}
 
         if labelObj is undefined
           labelObj = {
@@ -166,7 +165,7 @@ class X64Parser extends AbstractDescentParser
             'name': token,
             'offset': -1
           }
-          this.labelsMap[token] = labelObj
+          this.labelsMap{token} = labelObj
         endif
 
         #print 'reference [', token, '] at [', this.outputObject.getCurrentPosition(), ']'
@@ -274,11 +273,11 @@ class X64Parser extends AbstractDescentParser
 
       elif token is 'EQU'
         # Constant definition: name EQU value
-        this.constantsMap[instruction.mnemonic] = this._getToken()
+        this.constantsMap{instruction.mnemonic} = this._getToken()
         instruction.type = 'constant'
 
       else
-        defineDataSize = PARSER_X64_DEFINE_DATA_MAP[token]
+        defineDataSize = PARSER_X64_DEFINE_DATA_MAP{token}
 
         if defineDataSize is defined
           # name db ...
@@ -287,7 +286,7 @@ class X64Parser extends AbstractDescentParser
           instruction.type = 'none'
 
         else
-          addressSize = PARSER_X64_ADDRESS_SIZE_MAP[token]
+          addressSize = PARSER_X64_ADDRESS_SIZE_MAP{token}
 
           if addressSize is defined
             # Memory address with size prefix.
@@ -312,7 +311,7 @@ class X64Parser extends AbstractDescentParser
               # Neither immediate nor register.
               # Treat as label.
               # TODO: Optimize it.
-              labelObj = this.labelsMap[token]
+              labelObj = this.labelsMap{token}
 
               if labelObj is undefined
                 labelObj = {
@@ -320,7 +319,7 @@ class X64Parser extends AbstractDescentParser
                   'name': token,
                   'offset': -1
                 }
-                this.labelsMap[token] = labelObj
+                this.labelsMap{token} = labelObj
               endif
 
               #print 'reference [', token, '] at [', this.outputObject.getCurrentPosition(), ']'
@@ -427,7 +426,7 @@ class X64Parser extends AbstractDescentParser
     if this._isDigit(token[0]) is false
       this._error('number expected')
     endif
-    rv = ParseInteger(sign + token)
+    rv = ParseInteger(sign ~ token)
   endmethod
 
   method _matchData(size)
@@ -457,7 +456,7 @@ class X64Parser extends AbstractDescentParser
 
         if token is '-'
           # TODO: Fix crash if there is no concatenation to ''
-          token = '-' + this._getToken()
+          token = '-' ~ this._getToken()
         endif
 
         if (this._isDigit(token[0]) is true) or (token[0] is '-')
@@ -484,7 +483,7 @@ class X64Parser extends AbstractDescentParser
         else
           # TODO: LABEL
           # TODO: Clean up this mess.
-          labelObj = this.labelsMap[token]
+          labelObj = this.labelsMap{token}
 
           if labelObj is undefined
             labelObj = {
@@ -492,7 +491,7 @@ class X64Parser extends AbstractDescentParser
              'name': token,
              'offset': -1
             }
-            this.labelsMap[token] = labelObj
+            this.labelsMap{token} = labelObj
           endif
 
           #print 'reference [', token, '] at [', this.outputObject.getCurrentPosition(), ']'
@@ -537,7 +536,7 @@ class X64Parser extends AbstractDescentParser
       # Non-empty line.
       # Get one token first to check what to do next.
       token          = this._getToken()
-      defineDataSize = PARSER_X64_DEFINE_DATA_MAP[token]
+      defineDataSize = PARSER_X64_DEFINE_DATA_MAP{token}
 
       if defineDataSize is defined
         this._matchData(defineDataSize)
@@ -546,7 +545,7 @@ class X64Parser extends AbstractDescentParser
         # align <boundInBytes>
         offset      = this.outputObject.getCurrentPosition()
         bound       = this._matchNumber()
-        newLabelObj = this._emitLabel('align' + str(offset))
+        newLabelObj = this._emitLabel('align' ~ str(offset))
         newLabelObj.alignTo = bound
 
       elif this.lookupBuffer is ':'

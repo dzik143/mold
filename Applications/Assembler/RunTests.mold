@@ -440,7 +440,7 @@ class X64Tester
 
   method compare(x, y)
     if x isnt y
-      die(' FAIL! (data mismatch, got: ' + hex(x) + ', expected: ' + hex(y) + ')')
+      die(' FAIL! (data mismatch, got: ' ~ hex(x) ~ ', expected: ' ~ hex(y) ~ ')')
     endif
   endmethod
 
@@ -462,12 +462,12 @@ class X64Tester
 
   method compileSourceFile(pathAsm, pathBin)
     # Open reference file to compare result.
-    __mold_printToStdOutput(pathAsm + '...')
-    this.f = FileOpenForRead('tests/' + pathBin)
+    __mold_printToStdOutput(pathAsm ~ '...')
+    this.f = FileOpenForRead('tests/' ~ pathBin)
 
     # Redirect compiler result to this object and
     # compare content byte-by-byte with reference file.
-    this.compiler.compile(this, 'tests/' + pathAsm)
+    this.compiler.compile(this, 'tests/' ~ pathAsm)
 
     # TODO: Compare number of bytes emited.
     if ord(FileReadChar(this.f)) isnt 0
@@ -483,7 +483,7 @@ endclass
 tester = new X64Tester()
 
 for values testName in arrayOfTests
-  pathAsm = testName + '.asm'
-  pathBin = testName + '.bin'
+  pathAsm = testName ~ '.asm'
+  pathBin = testName ~ '.bin'
   tester.compileSourceFile(pathAsm, pathBin)
 endfor

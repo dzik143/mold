@@ -20,7 +20,7 @@
 
 class X64SyntaxValidator
   method _error(msg)
-    die('error: ' + msg)
+    die('error: ' ~ msg)
   endmethod
 
   validate(item)

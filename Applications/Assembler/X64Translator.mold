@@ -684,7 +684,7 @@ class X64Translator extends PipeAbstract
   endmethod
 
   method _error(msg)
-    die('error: ' + msg)
+    die('error: ' ~ msg)
   endmethod
 
   method _validateNumberOfOperands(cnt, expectedCnt)
@@ -747,7 +747,7 @@ class X64Translator extends PipeAbstract
     if ((item.dataSize is 1) or
         ((item.reg isnt -1) and (item.reg // 16 is 0)) or
         ((item.rm isnt -1) and (item.rm // 16 is 0)))
-      this._error("8-bit operands not allowed for: '" + item.mnemonic + "'")
+      this._error("8-bit operands not allowed for: '" ~ item.mnemonic ~ "'")
     endif
   endmethod
 
@@ -755,7 +755,7 @@ class X64Translator extends PipeAbstract
     if (((item.scale is defined) and (item.dataSize > 1)) or
         ((item.reg isnt -1) and (item.reg // 16 > 0)) or
         ((item.rm isnt -1) and (item.rm // 16 > 0)))
-      this._error("only 8-bit operands are allowed for: '" + item.mnemonic + "'")
+      this._error("only 8-bit operands are allowed for: '" ~ item.mnemonic ~ "'")
     endif
   endmethod
 
@@ -763,43 +763,43 @@ class X64Translator extends PipeAbstract
     if (((item.scale is defined) and (item.dataSize isnt 2)) or
         ((item.reg isnt -1) and (item.reg // 16 > 1)) or
         ((item.rm isnt -1) and (item.rm // 16 > 1)))
-      this._error("only 16-bit operands are allowed for: '" + item.mnemonic + "'")
+      this._error("only 16-bit operands are allowed for: '" ~ item.mnemonic ~ "'")
     endif
   endmethod
 
   method _failIfMemoryWrite(item)
     if item.isWriteToMemory is true
-      this._error("memory address cannot be destination operand for: '" + item.mnemonic + "'")
+      this._error("memory address cannot be destination operand for: '" ~ item.mnemonic ~ "'")
     endif
   endmethod
 
   method _failIfMemoryRead(item)
     if item.isWriteToMemory is false
-      this._error("memory address cannot be used as the second operand for: '" + item.mnemonic + "'")
+      this._error("memory address cannot be used as the second operand for: '" ~ item.mnemonic ~ "'")
     endif
   endmethod
 
   method _failIfImmIsUsed(item)
     if item.imm is defined
-      this._error("immediate operand not allowed for: '" + item.mnemonic + "'")
+      this._error("immediate operand not allowed for: '" ~ item.mnemonic ~ "'")
     endif
   endmethod
 
   method _failIfMemoryReadOrWrite(item)
     if item.scale is defined
-      this._error("memory operands not allowed for: '" + item.mnemonic + "'")
+      this._error("memory operands not allowed for: '" ~ item.mnemonic ~ "'")
     endif
   endmethod
 
   method _failIfRegsAreUsed(item)
     if (item.reg isnt -1) or (item.rm isnt -1)
-      this._error("register operands not allowed for: '" + item.mnemonic + "'")
+      this._error("register operands not allowed for: '" ~ item.mnemonic ~ "'")
     endif
   endmethod
 
   method _failIfImmIsMissing(item)
     if item.imm is undefined
-      this._error("immediate operand expected for: '" + item.mnemonic + "'")
+      this._error("immediate operand expected for: '" ~ item.mnemonic ~ "'")
     endif
   endmethod
 
@@ -817,16 +817,16 @@ class X64Translator extends PipeAbstract
 
   method _failIfNon64Data(item)
     if item.dataSize isnt 8
-      this._error("only 64-bit data allowed for: '" + item.mnemonic + "'")
+      this._error("only 64-bit data allowed for: '" ~ item.mnemonic ~ "'")
     endif
   endmethod
 
   method _errorBadSyntax(item)
-    this._error("operand does not match the statement for: '" + item.mnemonic + "'")
+    this._error("operand does not match the statement for: '" ~ item.mnemonic ~ "'")
   endmethod
 
   method _errorUnrecognizedInstruction(item)
-    this._error("unrecognized instruction: '" + item.mnemonic + "'")
+    this._error("unrecognized instruction: '" ~ item.mnemonic ~ "'")
   endmethod
 
   method _errorGenericFPU(item)
@@ -834,9 +834,9 @@ class X64Translator extends PipeAbstract
 
     numberOfOperands = item.numberOfOperands
     mnemonic         = item.mnemonic
-    opcode0          = X64_OPCODES_MAP_FPU[0][mnemonic]
-    opcode1          = X64_OPCODES_MAP_FPU[1][mnemonic]
-    opcode2          = X64_OPCODES_MAP_FPU[2][mnemonic]
+    opcode0          = X64_OPCODES_MAP_FPU[0]{mnemonic}
+    opcode1          = X64_OPCODES_MAP_FPU[1]{mnemonic}
+    opcode2          = X64_OPCODES_MAP_FPU[2]{mnemonic}
 
     if opcode0 is defined
       if ((opcode1 is undefined) and (opcode2 is undefined))
@@ -893,7 +893,7 @@ class X64Translator extends PipeAbstract
 
     # Search for instruction.
     opcodesMapFPU = X64_OPCODES_MAP_FPU[numberOfOperands]
-    opcodeInfoFPU = opcodesMapFPU[mnemonic]
+    opcodeInfoFPU = opcodesMapFPU{mnemonic}
     opcode        = 0
 
     if opcodeInfoFPU is undefined
@@ -913,7 +913,7 @@ class X64Translator extends PipeAbstract
             # Memory operand without word/dword/qword/tword prefix.
             opcode = opcodeInfoFPU[5]
             if opcode is 0
-              this._error("ambiguous operand size for: '" + mnemonic + "'")
+              this._error("ambiguous operand size for: '" ~ mnemonic ~ "'")
             endif
 
           else
@@ -929,7 +929,7 @@ class X64Translator extends PipeAbstract
                   (opcodeInfoFPU[5] isnt 0))   # mcustom
 
                 # Instruction can handle memory operand, but not with given size.
-                this._error("invalid operand size for: '" + mnemonic + "'")
+                this._error("invalid operand size for: '" ~ mnemonic ~ "'")
               endif
             endif
           endif
@@ -1039,7 +1039,7 @@ class X64Translator extends PipeAbstract
       else
         # General case.
         # Search for mnemonic.
-        opcodeInfo = X64_OPCODES_MAP[mnemonic]
+        opcodeInfo = X64_OPCODES_MAP{mnemonic}
 
         if opcodeInfo is defined
           # Decode handler and opcode.
@@ -1175,7 +1175,7 @@ class X64Translator extends PipeAbstract
             endif
 
             if (regCL isnt -1) and (regCL isnt X64_CL)
-              this._error("only imm8 or the cl register can be used as the second operand for: '" + mnemonic + "'")
+              this._error("only imm8 or the cl register can be used as the second operand for: '" ~ mnemonic ~ "'")
             endif
 
           elif handlerId is X64_HANDLER_SETCC
@@ -1440,14 +1440,14 @@ class X64Translator extends PipeAbstract
               if reg isnt -1
                 # call r
                 if (X64_IsReg8(reg) is true) or (X64_IsReg32(reg) is true)
-                  this._error("8/32-bit addresses not allowed for: '" + item.mnemonic + "'")
+                  this._error("8/32-bit addresses not allowed for: '" ~ item.mnemonic ~ "'")
                 endif
                 encoder.call_r(reg)
 
               elif scale is defined
                 # call m
                 if (dataSize is 1) or (dataSize is 4)
-                  this._error("8/32-bit addresses not allowed for: '" + item.mnemonic + "'")
+                  this._error("8/32-bit addresses not allowed for: '" ~ item.mnemonic ~ "'")
                 endif
 
                 encoder.call_m(regBase, scale, regIndex, disp, dataSize)
@@ -1461,13 +1461,13 @@ class X64Translator extends PipeAbstract
               if reg isnt -1
                 # jmp r
                 if (X64_IsReg8(reg) is true) or (X64_IsReg32(reg) is true)
-                  this._error("8/32-bit addresses not allowed for: '" + item.mnemonic + "'")
+                  this._error("8/32-bit addresses not allowed for: '" ~ item.mnemonic ~ "'")
                 endif
                 encoder.jmp_r(reg)
               elif scale is defined
                 # jmp m
                 if (dataSize is 1) or (dataSize is 4)
-                  this._error("8/32-bit addresses not allowed for: '" + item.mnemonic + "'")
+                  this._error("8/32-bit addresses not allowed for: '" ~ item.mnemonic ~ "'")
                 endif
                 encoder.jmp_m(regBase, scale, regIndex, disp, dataSize)
               else
@@ -1736,12 +1736,12 @@ class X64Translator extends PipeAbstract
 
           elif handlerId is X64_HANDLER_INVALID_IN_64
             # Instruction is correct, but not allowed in native 64-bit mode.
-            this._error("invalid in 64-bit mode: '" + mnemonic + "'")
+            this._error("invalid in 64-bit mode: '" ~ mnemonic ~ "'")
 
           else
             # Error - unexpected handler id.
             # Should never happen on production.
-            this._error('unknown opcode handler: ' + str(handlerId))
+            this._error('unknown opcode handler: ' ~ str(handlerId))
           endif
 
         else

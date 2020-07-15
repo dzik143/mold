@@ -831,13 +831,13 @@ const X64_REGISTER_NAMES = [
 X64_REGISTER_NAMES_MAP = {}
 regId = 0
 for values regName in X64_REGISTER_NAMES
-  X64_REGISTER_NAMES_MAP[regName] = regId
+  X64_REGISTER_NAMES_MAP{regName} = regId
   regId = regId + 1
 endfor
-X64_REGISTER_NAMES_MAP['rip'] = X64_RIP
+X64_REGISTER_NAMES_MAP{'rip'} = X64_RIP
 
 # Special case: map 'st' to st0.
-X64_REGISTER_NAMES_MAP['st'] = X64_ST0
+X64_REGISTER_NAMES_MAP{'st'} = X64_ST0
 
 # ------------------------------------------------------------------------------
 #                                Util functions
@@ -847,7 +847,7 @@ function X64_ParseRegisterName(name) -> regId
   global X64_REGISTER_NAMES_MAP
   regId = -1
   if typeof(name) is 'string'
-    regId = X64_REGISTER_NAMES_MAP[name]
+    regId = X64_REGISTER_NAMES_MAP{name}
     if regId is undefined
       regId = -1
     endif

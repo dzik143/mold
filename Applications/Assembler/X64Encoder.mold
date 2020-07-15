@@ -2003,6 +2003,7 @@ class X64Encoder
     this.emitCore286_r_m(X64_LSS, regDst, regBase,scale, regIndex, disp)
   endmethod
 
+/* TODO
   method shld_r_r_cl(regDst, regSrc)
     die('not implemented: shld r,r,cl')
   endmethod
@@ -2034,6 +2035,7 @@ class X64Encoder
   method shrd_m_r_imm(regBase, scale, regIndex, disp, imm)
     die('not implemented: shrd m,r,imm')
   endmethod
+*/
 
   # setcc r8
   method seto_r8(regDst)

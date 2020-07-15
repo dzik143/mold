@@ -34,4 +34,4 @@ endif
 
 path     = argv[1]
 compiler = new X64Compiler()
-compiler.compileToFile(path + '.exe', path)
+compiler.compileToFile(path ~ '.exe', path)

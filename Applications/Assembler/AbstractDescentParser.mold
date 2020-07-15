@@ -34,7 +34,7 @@ class AbstractDescentParser
   # ----------------------------------------------------------------------------
 
   method _error(msg) -> rv
-    die('error: ' + this.path + ': ' + str(msg))
+    die('error: ' ~ this.path ~ ': ' ~ str(msg))
     rv = -1
   endmethod
 
@@ -80,12 +80,12 @@ class AbstractDescentParser
     if this.lookupBuffer is x
       this._getChar()
     else
-      this._error("'" + x + "' expected, but '" + str(this.lookupBuffer) + '" found')
+      this._error("'" ~ x + "' expected, but '" ~ str(this.lookupBuffer) ~ '" found')
     endif
   endmethod
 
   method _matchLetter() -> rv
-    if this._isLetter(this.lookupBuffer)
+    if this._isLetter(this.lookupBuffer) is true
       # Big (A-Z) or small letter (a-z).
       rv = this._getChar()
     else
@@ -95,7 +95,7 @@ class AbstractDescentParser
   endmethod
 
   method _matchLetterOrDigit() -> rv
-    if this._isLetterOrDigit(this.lookupBuffer)
+    if this._isLetterOrDigit(this.lookupBuffer) is true
       # Big (A-Z), small letter (a-z) or digit (0-9).
       rv = this._getChar()
     else

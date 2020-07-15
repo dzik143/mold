@@ -54,16 +54,14 @@ class X64Compiler
     tempBuffer.clear()
     parser.parseFile(pathAsm)
 
-/*
-    print ''
-    print 'Buffer before patches:'
-    for values v in buffer.data
-      __mold_printToStdOutput(hex(v))
-      __mold_printToStdOutput(' ')
-      peWriter.emitByte(v)
-    endfor
-    print ''
-*/
+    #print ''
+    #print 'Buffer before patches:'
+    #for values v in buffer.data
+    #  __mold_printToStdOutput(hex(v))
+    #  __mold_printToStdOutput(' ')
+    #  peWriter.emitByte(v)
+    #endfor
+    #print ''
 
     # Patch generated code to handle unresolved references
     # and changes related to various jmp length (rel8 vs rel32).
