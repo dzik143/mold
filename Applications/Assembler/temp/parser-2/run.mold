@@ -1,8 +1,0 @@
-import 'AST.mold'
-import 'test.mold'
-
-UNICC_DEBUG = true
-
-source = '5*1-333333'
-parser = new Parser()
-ast = parser.parseText(source)
