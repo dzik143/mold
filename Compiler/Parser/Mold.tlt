@@ -385,7 +385,6 @@ class Parser
       lookupByte = input[0]
     endif
 
-    buf      = [lookupByte]
     bufSize  = 1
     inputIdx = 1
 
@@ -404,6 +403,8 @@ class Parser
     stackStates  = [0]
     stackLines   = [0]
     stackColumns = [0]
+
+    buf = '' ~ asc(lookupByte)
 
     # Begin of main parser loop
     debug('falling into main parser loop')
@@ -465,8 +466,8 @@ class Parser
                     nextChar = @@eof
                   endif
 
-                  buf[bufSize] = nextChar
-                  bufSize      = bufSize + 1
+                  bufSize = bufSize + 1
+                  buf     = buf ~ asc(nextChar)
                 endfor
 
                 next         = ord(buf[length])
@@ -480,7 +481,7 @@ class Parser
 
         debug('lex done: sym=[' ~ str(currentSym) ~ ']')
 
-      elif buf[0] is @@eof
+      elif ord(buf[0]) is @@eof
         currentSym = @@eof
       endif
 
@@ -540,7 +541,7 @@ class Parser
         if false
 @@scan_actions
         else
-          @@top-value = buf[0]
+          @@top-value = asc(buf[0])
         endif
 
         if bitand(currentAct, UNICC_REDUCE) isnt 0
@@ -553,15 +554,10 @@ class Parser
         stackColumns[stackIdx] = column
 
         # Pop value from buffer.
-        # TODO: Optimize it.
-        newValue = ''
-        for idx in 0 .. currentLen
-          newValue = newValue ~ buf[idx]
-        endfor
-        @@top-value = newValue
+        @@top-value = __mold_syscall(55, buf, 0, currentLen)
 
         stackNodes[stackIdx] = null
-        buf[currentLen]      = nextChar
+        buf = buf ~ asc(nextChar)
 
         # Perform the shift on input
         if (currentSym isnt @@eof) and (currentSym isnt @@goal-value)
@@ -582,21 +578,22 @@ class Parser
             endfor
 
             # TODO: Optimize it,
+            # TODO: Avoid temp buffer: x = x.substr(...) bug
             newBufCnt = bufSize - currentLen
-            for idx in 0 .. newBufCnt
-              buf[idx] = buf[idx + currentLen]
-            endfor
+            tmpBuf    = __mold_syscall(55, buf, currentLen, newBufCnt)
+            bufSize   = newBufCnt
+            buf       = tmpBuf
 
-            bufSize = newBufCnt
           else
             bufSize  = 0
           endif
 
           if bufSize is 0
             # Reload one lookup byte.
-            buf[0]   = input[inputIdx]
             bufSize  = 1
             inputIdx = inputIdx + 1
+
+            buf = asc(input[inputIdx])
           endif
 
           #
@@ -704,22 +701,21 @@ class Parser
               endif
             endfor
 
-            # TODO: Optimize it,
+            # TODO: Avoid temporary buffer.
+            # TODO: Avoid temp buffer: x = x.substr(...) bug
             newBufCnt = bufSize - currentLen
-            for idx in 0 .. newBufCnt
-              buf[idx] = buf[idx + currentLen]
-            endfor
-
-            bufSize = newBufCnt
+            tmpBuf    = __mold_syscall(55, currentLen, newBufCnt)
+            bufSize   = newBufCnt
+            buf       = tmpBuf
           else
-            bufSize  = 0
+            bufSize = 0
           endif
 
           if bufSize is 0
             # Reload one lookup byte.
-            buf[0]   = input[inputIdx]
             bufSize  = 1
             inputIdx = inputIdx + 1
+            buf      = asc(input[inputIdx])
           endif
 
           #

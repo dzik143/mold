@@ -527,13 +527,8 @@ float:
   @FLOAT [* @@ = ParseFloat(@1) *];
 
 string:
-  @STRING [* @@ = ''
-             # Remove quotas.
-             stringLen = len(@1)
-             for idx in 1 .. stringLen - 1
-               @@ = @@ ~ @1[idx]
-             endfor
-          *]
+  @STRING [* # TODO: Remove hardcoded value (substr)
+             @@ = __mold_syscall(55, @1, 1, len(@1) - 2) *]
   | error_unterminated_string
   ;
 
