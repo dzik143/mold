@@ -428,7 +428,7 @@ class Parser
         next   = ord(buf[0])
 
         # Read next token. if there is still some input data to read.
-        while dfa_st &gt;= 0
+        while (dfa_st &gt;= 0) and (next isnt @@eof)
           lexInnerGoOn = true
           chr          = _dfa_idx[mach][dfa_st]
           dfa_st       = -1
@@ -451,7 +451,7 @@ class Parser
               length              = length + 1
               numberOfBytesToRead = length - bufSize + 2
 
-              for idx in 0 .. numberOfBytesToRead
+              if numberOfBytesToRead > 0
                 # Get next character from input stream
                 if inputIdx &lt; inputLen
                   nextChar = input[inputIdx]
@@ -462,7 +462,7 @@ class Parser
 
                 bufSize = bufSize + 1
                 buf     = buf ~ asc(nextChar)
-              endfor
+              endif
 
               next         = ord(buf[length])
               lexInnerGoOn = false
