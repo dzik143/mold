@@ -552,7 +552,6 @@ class Parser
         @@top-value = __mold_syscall(55, buf, 0, currentLen)
 
         stackNodes[stackIdx] = null
-        buf = buf ~ asc(nextChar)
 
         # Clean input.
         # Update counters for line and column
