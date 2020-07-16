@@ -427,53 +427,50 @@ class Parser
         mach   = _dfa_select[stackStates[stackIdx]]
         next   = ord(buf[0])
 
-        if next isnt @@eof
-          # The are still some input data to read.
-          # Read next token.
-          while (dfa_st &gt;= 0) and (next isnt @@eof)
-            lexInnerGoOn = true
-            chr          = _dfa_idx[mach][dfa_st]
-            dfa_st       = -1
+        # Read next token. if there is still some input data to read.
+        while (dfa_st &gt;= 0) and (next isnt @@eof)
+          lexInnerGoOn = true
+          chr          = _dfa_idx[mach][dfa_st]
+          dfa_st       = -1
 
-            while (lexInnerGoOn is true) and (_dfa_chars[chr] &gt; -1)
-              if (next &gt;= _dfa_chars[chr]) and (next &lt;= _dfa_chars[chr + 1])
-                dfa_st =  _dfa_trans[chr // 2]
+          while (lexInnerGoOn is true) and (_dfa_chars[chr] &gt; -1)
+            if (next &gt;= _dfa_chars[chr]) and (next &lt;= _dfa_chars[chr + 1])
+              dfa_st =  _dfa_trans[chr // 2]
 
-                if _dfa_accept[mach][dfa_st] &gt; 0
-                  currentLen = length + 1
-                  currentSym = _dfa_accept[mach][dfa_st] - 1
+              if _dfa_accept[mach][dfa_st] &gt; 0
+                currentLen = length + 1
+                currentSym = _dfa_accept[mach][dfa_st] - 1
 
-                  if (currentSym is @@eof) or (_symbolsGreedy[currentSym] is 0)
-                    # End of file or non-greedy symbol.
-                    dfa_st = -1
-                  endif
+                if (currentSym is @@eof) or (_symbolsGreedy[currentSym] is 0)
+                  # End of file or non-greedy symbol.
+                  dfa_st = -1
                 endif
-
-                # Get next char from input.
-                length              = length + 1
-                numberOfBytesToRead = length - bufSize + 2
-
-                for idx in 0 .. numberOfBytesToRead
-                  # Get next character from input stream
-                  if inputIdx &lt; inputLen
-                    nextChar = input[inputIdx]
-                    inputIdx = inputIdx + 1
-                  else
-                    nextChar = @@eof
-                  endif
-
-                  bufSize = bufSize + 1
-                  buf     = buf ~ asc(nextChar)
-                endfor
-
-                next         = ord(buf[length])
-                lexInnerGoOn = false
               endif
 
-              chr = chr + 2
-            endwhile
+              # Get next char from input.
+              length              = length + 1
+              numberOfBytesToRead = length - bufSize + 2
+
+              for idx in 0 .. numberOfBytesToRead
+                # Get next character from input stream
+                if inputIdx &lt; inputLen
+                  nextChar = input[inputIdx]
+                  inputIdx = inputIdx + 1
+                else
+                  nextChar = @@eof
+                endif
+
+                bufSize = bufSize + 1
+                buf     = buf ~ asc(nextChar)
+              endfor
+
+              next         = ord(buf[length])
+              lexInnerGoOn = false
+            endif
+
+            chr = chr + 2
           endwhile
-        endif
+        endwhile
       endif
 
       debug('got symbol: sym=[' ~ str(currentSym) ~ ']' ~ ', len=[' ~ str(currentLen) ~ ']')
