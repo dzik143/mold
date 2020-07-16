@@ -4,6 +4,7 @@ UNRELEASED:
   Internal maintain:
     - Core: Major clean up around error handling
     - Parser: Removed AST convert step
+    - Parser: Use built-in substr internally
 
   Dropped syntax:
     - x[key] is not allowed for maps anymore, use x{key} instead.
@@ -21,6 +22,7 @@ UNRELEASED:
       x[@beforeFirst] - placeholder for new item at the begin (lval)
 
    - AST optimizer: remove calls to empty functions
+   - X64 optimizer: stub for x[i] load with native type
 
 0.2.200706 (released on 2020-07-06)
 -----------------------------------
@@ -36,12 +38,6 @@ UNRELEASED:
     - Major clean up the parser code
 
   New language syntax:
-    - Constant primitives (strings, integer, boolean, float):
-      const a = 'text'
-      const b = 2
-      const c = true
-      const d = 3.14
-
     - Distinguish reference by index (integer) and by key (string):
       x = [1,2,3,4]
       print x[0]

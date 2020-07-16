@@ -603,7 +603,7 @@ class Parser
                 lnode = lnode.next
               endwhile
 
-              # print '(1) JOIN', lnode.id, '&lt;-', node.id
+              #print '(1) JOIN', lnode.id, '&lt;-', node.id
 
               node.prev  = lnode
               lnode.next = node
@@ -626,7 +626,7 @@ class Parser
               lnode = lnode.next
             endwhile
 
-            # print '(2) JOIN', lnode.id, '&lt;-', node.id
+            #print '(2) JOIN', lnode.id, '&lt;-', node.id
 
             lnode.next = node
             node.prev  = lnode

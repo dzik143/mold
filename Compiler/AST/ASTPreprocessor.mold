@@ -98,6 +98,8 @@ class ASTPreprocessor
     global MOLD_SYSCALL_MAP
     global AST_OPCODE_REFERENCE_BY_INDEX
     global AST_DATA_SELECTOR
+    global AST_OPCODE_FUNCTION
+    global AST_OPCODE_CLASS_METHOD
 
     opcode   = node.opcode
     children = node.children
@@ -212,30 +214,63 @@ class ASTPreprocessor
         this.app.logError("unsupported selector '" ~ selector ~ "'")
       endif
 
-    elif (opcode is AST_OPCODE_CLASS_METHOD) and (len(children) is 0)
-      # Method without code (pure virtual).
-      # Build stub code for non-implemented methods.
-      # TODO: Optimize it.
-      # TODO: Use exceptions if ready?
-      className      = node.parent.value.name
-      methodName     = node.value.name
-      fullMethodName = className ~ '.' ~ methodName
+    elif (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
+      # TODO: Clean up this mess.
+      funcName   = node.value
+      funcParams = []
+      funcRetVar = null
+      funcCode   = null
 
-      children[@afterlast] = {
-        'id': AST_GetNextId(),
-        'opcode': AST_OPCODE_BLOCK,
-        'children': [
-          {
-            'id': AST_GetNextId(),
-            'opcode': AST_OPCODE_CALL,
-            'value': '__mold_syscall',
-            'sysCallId': 41, # TODO: Don't use hardcoded value ('die').
-            'children': [
-              AST_CreateNodeString('not implemented: ' ~ fullMethodName)
-            ]
-          }
-        ]
+      # Collect parameter names.
+      for values oneParamNode in children[0].children
+        funcParams[@afterlast] = oneParamNode.value
+      endfor
+
+      # Collect function return variable if exists.
+      if len(children) is 3
+        # foo(x,y,z) -> rv
+        funcRetVar = children[1].value
+        funcCode   = children[2]
+      else
+        # foo(x,y,z)
+        funcCode = children[1]
+      endif
+
+      # Inject proto.
+      node.value = {
+        'name': funcName,
+        'params': funcParams,
+        'rv': funcRetVar
       }
+
+      if (opcode is AST_OPCODE_CLASS_METHOD) and (funcCode is undefined)
+        # Method without code (pure virtual).
+        # Build stub code for non-implemented methods.
+        # TODO: Optimize it.
+        # TODO: Use exceptions if ready?
+        className      = node.parent.value.name
+        methodName     = funcName
+        fullMethodName = className ~ '.' ~ methodName
+
+        funcCode = {
+          'id': AST_GetNextId(),
+          'opcode': AST_OPCODE_BLOCK,
+          'children': [
+            {
+              'id': AST_GetNextId(),
+              'opcode': AST_OPCODE_CALL,
+              'value': '__mold_syscall',
+              'sysCallId': 41, # TODO: Don't use hardcoded value ('die').
+              'children': [
+                AST_CreateNodeString('not implemented: ' ~ fullMethodName)
+              ]
+            }
+          ]
+        }
+      endif
+
+      # Inject code block.
+      node.children = [funcCode]
     endif
   endmethod
 

@@ -119,10 +119,8 @@ stmt_declare_or_assign
 // -----------------------------------------------------------------------------
 
 function_proto
-  : @IDENT '(' ')'                            [* @@ = {'name': @1, 'params': []} *]
-  | @IDENT '(' ')' "->" @IDENT                [* @@ = {'name': @1, 'params': [], 'rv': @5} *]
-  | @IDENT '(' parameter_list ')'             [* @@ = {'name': @1, 'params': @3} *]
-  | @IDENT '(' parameter_list ')' "->" @IDENT [* @@ = {'name': @1, 'params': @3, 'rv': @6} *]
+  : @IDENT '(' parameter_list ')' "->" var
+  | @IDENT '(' parameter_list ')'
   ;
 
 stmt_call:
@@ -137,15 +135,12 @@ stmt_function_declaration:
 // Comma separated lists.
 //
 
-parameter_list
-  : parameter_list ',' @EOL? @IDENT [* @@ = @1
-                                       __mold_arrayInsertAfterLast(@@, @4)
+parameter_list:
+  var? (parameter_list_separator var)* =AST_OPCODE_BLOCK;
 
-                                    *]
-
-  | @EOL parameter_list             [* @@ = @2 *]
-  | @IDENT                          [* @@ = [@1] *]
-  | @EOL
+parameter_list_separator
+  : ','
+  | ',' @EOL
   ;
 
 //
