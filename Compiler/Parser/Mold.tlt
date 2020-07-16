@@ -534,9 +534,7 @@ class Parser
         # related operations will be performed.
         # Scan actions.
         if false
-@@scan_actions
-        else
-          @@top-value = asc(buf[0])
+        @@scan_actions
         endif
 
         if bitand(currentAct, UNICC_REDUCE) isnt 0
