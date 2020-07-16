@@ -598,8 +598,15 @@ class Parser
                 node = node.prev
               endwhile
 
-              node.prev = stackNodes[stackIdx]
-              stackNodes[stackIdx].next = node
+              lnode = stackNodes[stackIdx]
+              while lnode.next is defined
+                lnode = lnode.next
+              endwhile
+
+              # print '(1) JOIN', lnode.id, '&lt;-', node.id
+
+              node.prev  = lnode
+              lnode.next = node
             endif
 
             node = stackNodes[stackIdx]
@@ -618,6 +625,8 @@ class Parser
             while lnode.next is defined
               lnode = lnode.next
             endwhile
+
+            # print '(2) JOIN', lnode.id, '&lt;-', node.id
 
             lnode.next = node
             node.prev  = lnode
