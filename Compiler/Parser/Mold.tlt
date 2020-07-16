@@ -479,45 +479,36 @@ class Parser
       # LALR: Find action for current symbol within current state.
       #
 
-      rv        = -1
-      actionIdx = 1
-      state     = stackStates[stackIdx]
-      act       = _act[state]
-      cnt       = act[0] * 3
+      state      = stackStates[stackIdx]
+      act        = _act[state]
+      cnt        = act[0] * 3
+      currentAct = -1
+      actionIdx  = 1
 
-      while (rv is -1) and (actionIdx &lt; cnt)
+      while (currentAct is -1) and (actionIdx &lt; cnt)
         if act[actionIdx] is currentSym
           currentAct = act[actionIdx + 1]
-
-          if currentAct is UNICC_ERROR
-            # Force parse error!
-            rv = 0
-          else
-            currentIdx = act[actionIdx + 2]
-            rv = 1
-          endif
+          currentIdx = act[actionIdx + 2]
         endif
-
         actionIdx = actionIdx + 3
       endwhile
 
-      if rv is -1
-        # Default production.
+      if currentAct is -1
+        # Action not found.
+        # Search default production as last try.
         currentIdx = _def_prod[state]
+
         if currentIdx &gt; -1
           # Reduce.
           currentAct = 1
-          rv = 1
+
         else
-          rv = 0
+          # Syntax error.
+          this._handleError(line, column, 'syntax error')
         endif
       endif
 
-      debug('got action: rv=[' ~ str(rv) ~ '], act=[' ~ str(currentAct) ~ '], idx=[' ~ str(currentIdx) ~ ']')
-
-      if rv is 0
-        this._handleError(line, column, 'syntax error')
-      endif
+      debug('got action: act=[' ~ str(currentAct) ~ '], idx=[' ~ str(currentIdx) ~ ']')
 
       # Shift
       if bitand(currentAct, UNICC_SHIFT) isnt 0
@@ -657,19 +648,18 @@ class Parser
 
         else
           # Get goto.
-          rv    = 0
-          goIdx = 1
-          state = stackStates[stackIdx]
-          go    = _go[state]
-          cnt   = go[0] * 3
+          rv         = 0
+          goIdx      = 1
+          state      = stackStates[stackIdx]
+          go         = _go[state]
+          cnt        = go[0] * 3
+          currentAct = -1
 
-          while (rv is 0) and (goIdx &lt; cnt)
+          while (currentAct is -1) and (goIdx &lt; cnt)
             if go[goIdx] is currentLhs
               currentAct = go[goIdx + 1]
               currentIdx = go[goIdx + 2]
-              rv         = 1
             endif
-
             goIdx = goIdx + 3
           endwhile
 
