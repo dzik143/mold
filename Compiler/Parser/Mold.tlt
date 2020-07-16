@@ -385,7 +385,6 @@ class Parser
       lookupByte = input[0]
     endif
 
-    bufSize  = 1
     inputIdx = 1
 
     # Map of collected explicit constants.
@@ -452,13 +451,12 @@ class Parser
 
               # Get next char from input.
               length              = length + 1
-              numberOfBytesToRead = length - bufSize + 2
+              numberOfBytesToRead = length - len(buf) + 2
 
               if numberOfBytesToRead > 0
                 # Get next character from input stream
                 lookupByte = input[inputIdx]
                 inputIdx   = inputIdx + 1
-                bufSize    = bufSize + 1
                 buf        = buf ~ asc(lookupByte)
               endif
 
@@ -560,9 +558,8 @@ class Parser
         #print '----------------------'
         #print 'BUF BEFORE [', buf, ']'
 
-        newBufCnt = bufSize - currentLen
+        newBufCnt = len(buf) - currentLen
         tmpBuf    = __mold_syscall(55, buf, currentLen, newBufCnt)
-        bufSize   = newBufCnt
         buf       = tmpBuf
 
         #print 'BUF AFTER  [', buf, ']'
