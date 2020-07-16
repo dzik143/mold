@@ -686,48 +686,10 @@ class Parser
 
         # Goal symbol reduced, and stack is empty?
         if (currentLhs is @@goal) and (stackIdx is 0)
-          #
-          # BEGIN OF CLEAR INPUT
-          #
-
-          if currentLen &gt; 0
-            # Update counters for line and column
-            for idx in 0 .. currentLen
-              if ord(buf[idx]) is 10
-                line   = line + 1
-                column = 1
-              else
-                column = column + 1
-              endif
-            endfor
-
-            # TODO: Avoid temporary buffer.
-            # TODO: Avoid temp buffer: x = x.substr(...) bug
-            newBufCnt = bufSize - currentLen
-            tmpBuf    = __mold_syscall(55, currentLen, newBufCnt)
-            bufSize   = newBufCnt
-            buf       = tmpBuf
-          else
-            bufSize = 0
-          endif
-
-          if bufSize is 0
-            # Reload one lookup byte.
-            bufSize  = 1
-            inputIdx = inputIdx + 1
-            buf      = asc(input[inputIdx])
-          endif
-
-          #
-          # END OF CLEAR INPUT
-          #
-
-          stackValues[stackIdx] = currentRet
-
-          ast        = stackNodes[stackIdx]
-          currentSym = -1
-          currentLen = 0
-          innerGoOn  = false
+          # Goal token matched.
+          # Don't go on anymore.
+          ast       = stackNodes[0]
+          innerGoOn = false
 
         else
           # Get goto.
