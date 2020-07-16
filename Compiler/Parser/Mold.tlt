@@ -431,41 +431,45 @@ class Parser
 
         # Read next token. if there is still some input data to read.
         while (dfa_st &gt;= 0) and (next isnt @@eof)
-          lexInnerGoOn = true
-          chr          = _dfa_idx[mach][dfa_st]
-          dfa_st       = -1
+          isMatched = false
+          chr       = _dfa_idx[mach][dfa_st]
+          dfa_st    = -1
 
-          while (lexInnerGoOn is true) and (_dfa_chars[chr] &gt; -1)
+          # Match character.
+          while (isMatched is false) and (_dfa_chars[chr] &gt; -1)
             if (next &gt;= _dfa_chars[chr]) and (next &lt;= _dfa_chars[chr + 1])
-              dfa_st =  _dfa_trans[chr // 2]
+              isMatched = true
+            else
+              chr = chr + 2
+            endif
+          endwhile
 
-              if _dfa_accept[mach][dfa_st] &gt; 0
-                currentLen = length + 1
-                currentSym = _dfa_accept[mach][dfa_st] - 1
+          if isMatched is true
+            dfa_st = _dfa_trans[chr // 2]
 
-                if (currentSym is @@eof) or (_symbolsGreedy[currentSym] is 0)
-                  # End of file or non-greedy symbol.
-                  dfa_st = -1
-                endif
+            if _dfa_accept[mach][dfa_st] &gt; 0
+              currentLen = length + 1
+              currentSym = _dfa_accept[mach][dfa_st] - 1
+
+              if (currentSym is 0) or (_symbolsGreedy[currentSym] is 0)
+                # End of file or non-greedy symbol.
+                dfa_st = -1
               endif
-
-              # Get next char from input.
-              length              = length + 1
-              numberOfBytesToRead = length - len(buf) + 2
-
-              if numberOfBytesToRead > 0
-                # Get next character from input stream
-                lookupByte = input[inputIdx]
-                inputIdx   = inputIdx + 1
-                buf        = buf ~ asc(lookupByte)
-              endif
-
-              next         = ord(buf[length])
-              lexInnerGoOn = false
             endif
 
-            chr = chr + 2
-          endwhile
+            # Get next char from input.
+            length              = length + 1
+            numberOfBytesToRead = length - len(buf) + 2
+
+            if numberOfBytesToRead > 0
+              # Get next character from input stream
+              lookupByte = input[inputIdx]
+              inputIdx   = inputIdx + 1
+              buf        = buf ~ asc(lookupByte)
+            endif
+
+            next = ord(buf[length])
+          endif
         endwhile
       endif
 
