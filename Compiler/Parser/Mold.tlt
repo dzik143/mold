@@ -418,6 +418,13 @@ class Parser
       currentSym = 0
       currentLen = 0
 
+      # Reload one lookup byte if needed.
+      if bufSize is 0
+        bufSize  = 1
+        inputIdx = inputIdx + 1
+        buf      = asc(input[inputIdx])
+      endif
+
       if _dfa_select[stackStates[stackIdx]] > -1
         debug('starting lex...')
 
@@ -564,13 +571,6 @@ class Parser
         tmpBuf    = __mold_syscall(55, buf, currentLen, newBufCnt)
         bufSize   = newBufCnt
         buf       = tmpBuf
-
-        if bufSize is 0
-          # Reload one lookup byte.
-          bufSize  = 1
-          inputIdx = inputIdx + 1
-          buf      = asc(input[inputIdx])
-        endif
 
         debug('shifted')
       endif
