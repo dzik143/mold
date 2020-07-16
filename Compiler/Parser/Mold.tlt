@@ -453,15 +453,10 @@ class Parser
 
               if numberOfBytesToRead > 0
                 # Get next character from input stream
-                if inputIdx &lt; inputLen
-                  lookupByte = input[inputIdx]
-                  inputIdx   = inputIdx + 1
-                else
-                  lookupByte = @@eof
-                endif
-
-                bufSize = bufSize + 1
-                buf     = buf ~ asc(lookupByte)
+                lookupByte = input[inputIdx]
+                inputIdx   = inputIdx + 1
+                bufSize    = bufSize + 1
+                buf        = buf ~ asc(lookupByte)
               endif
 
               next         = ord(buf[length])
