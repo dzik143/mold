@@ -526,8 +526,7 @@ class Parser
       # Shift
       if bitand(currentAct, UNICC_SHIFT) isnt 0
         debug('going to shift...')
-        #lookupByte = buf[currentLen]
-        stackIdx   = stackIdx + 1
+        stackIdx = stackIdx + 1
 
         # Execute scanner actions, if existing.
         # Here, UNICC_ON_SHIFT is set to 1, so that shifting-
@@ -564,10 +563,14 @@ class Parser
 
         # TODO: Optimize it,
         # TODO: Avoid temp buffer: x = x.substr(...) bug
+        #print 'BUF BEFORE [', buf, ']'
+
         newBufCnt = bufSize - currentLen
         tmpBuf    = __mold_syscall(55, buf, currentLen, newBufCnt)
         bufSize   = newBufCnt
         buf       = tmpBuf
+
+        #print 'BUF AFTER  [', buf, ']'
 
         debug('shifted')
       endif
