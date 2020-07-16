@@ -415,7 +415,7 @@ class Parser
       debug('MASTER ITER #' ~ str(masterIter))
 
       # Get symbol.
-      currentSym = -1
+      currentSym = 0
       currentLen = 0
 
       if _dfa_select[stackStates[stackIdx]] > -1
@@ -427,11 +427,7 @@ class Parser
         mach   = _dfa_select[stackStates[stackIdx]]
         next   = ord(buf[0])
 
-        if next is @@eof
-          # End of file - no more data.
-          currentSym = @@eof
-
-        else
+        if next isnt @@eof
           # The are still some input data to read.
           # Read next token.
           while (dfa_st &gt;= 0) and (next isnt @@eof)
@@ -478,11 +474,6 @@ class Parser
             endwhile
           endwhile
         endif
-
-        debug('lex done: sym=[' ~ str(currentSym) ~ ']')
-
-      elif ord(buf[0]) is @@eof
-        currentSym = @@eof
       endif
 
       debug('got symbol: sym=[' ~ str(currentSym) ~ ']' ~ ', len=[' ~ str(currentLen) ~ ']')
