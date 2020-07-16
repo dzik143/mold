@@ -414,7 +414,10 @@ class Parser
       debug('------------------------------')
       debug('MASTER ITER #' ~ str(masterIter))
 
-      # Get symbol.
+      #
+      # LEXER: Get next symbol from input stream.
+      #
+
       currentSym = 0
       currentLen = 0
 
@@ -470,7 +473,10 @@ class Parser
 
       debug('got symbol: sym=[' ~ str(currentSym) ~ ']' ~ ', len=[' ~ str(currentLen) ~ ']')
 
-      # Get action.
+      #
+      # LALR: Find action for current symbol within current state.
+      #
+
       rv        = -1
       actionIdx = 1
       state     = stackStates[stackIdx]
