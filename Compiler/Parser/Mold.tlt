@@ -461,14 +461,14 @@ class Parser
               if numberOfBytesToRead > 0
                 # Get next character from input stream
                 if inputIdx &lt; inputLen
-                  nextChar = input[inputIdx]
-                  inputIdx = inputIdx + 1
+                  lookupByte = input[inputIdx]
+                  inputIdx   = inputIdx + 1
                 else
-                  nextChar = @@eof
+                  lookupByte = @@eof
                 endif
 
                 bufSize = bufSize + 1
-                buf     = buf ~ asc(nextChar)
+                buf     = buf ~ asc(lookupByte)
               endif
 
               next         = ord(buf[length])
@@ -526,8 +526,8 @@ class Parser
       # Shift
       if bitand(currentAct, UNICC_SHIFT) isnt 0
         debug('going to shift...')
-        nextChar = buf[currentLen]
-        stackIdx = stackIdx + 1
+        #lookupByte = buf[currentLen]
+        stackIdx   = stackIdx + 1
 
         # Execute scanner actions, if existing.
         # Here, UNICC_ON_SHIFT is set to 1, so that shifting-
