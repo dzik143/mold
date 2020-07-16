@@ -550,49 +550,29 @@ class Parser
         stackNodes[stackIdx] = null
         buf = buf ~ asc(nextChar)
 
-        # Perform the shift on input
-        if (currentSym isnt @@eof) and (currentSym isnt @@goal-value)
-
-          #
-          # BEGIN OF CLEAR INPUT
-          #
-
-          if currentLen &gt; 0
-            # Update counters for line and column
-            for idx in 0 .. currentLen
-              if ord(buf[idx]) is 10
-                line   = line + 1
-                column = 1
-              else
-                column = column + 1
-              endif
-            endfor
-
-            # TODO: Optimize it,
-            # TODO: Avoid temp buffer: x = x.substr(...) bug
-            newBufCnt = bufSize - currentLen
-            tmpBuf    = __mold_syscall(55, buf, currentLen, newBufCnt)
-            bufSize   = newBufCnt
-            buf       = tmpBuf
-
+        # Clean input.
+        # Update counters for line and column
+        for idx in 0 .. currentLen
+          if ord(buf[idx]) is 10
+            line   = line + 1
+            column = 1
           else
-            bufSize  = 0
+            column = column + 1
           endif
+        endfor
 
-          if bufSize is 0
-            # Reload one lookup byte.
-            bufSize  = 1
-            inputIdx = inputIdx + 1
+        # TODO: Optimize it,
+        # TODO: Avoid temp buffer: x = x.substr(...) bug
+        newBufCnt = bufSize - currentLen
+        tmpBuf    = __mold_syscall(55, buf, currentLen, newBufCnt)
+        bufSize   = newBufCnt
+        buf       = tmpBuf
 
-            buf = asc(input[inputIdx])
-          endif
-
-          #
-          # END OF CLEAR INPUT
-          #
-
-          currentSym = -1
-          currentLen = 0
+        if bufSize is 0
+          # Reload one lookup byte.
+          bufSize  = 1
+          inputIdx = inputIdx + 1
+          buf      = asc(input[inputIdx])
         endif
 
         debug('shifted')
