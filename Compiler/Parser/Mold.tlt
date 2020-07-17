@@ -610,7 +610,6 @@ class Parser
             endif
 
             node = stackNodes[stackIdx]
-            stackNodes[stackIdx] = null
           endif
 
           stackIdx = stackIdx - 1
