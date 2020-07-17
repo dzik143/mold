@@ -584,9 +584,9 @@ class Parser
 
         # Pop nodes from the stack.
         node = null
-        for i in 0 .. currentProductionLength
-          if stackNodes[stackIdx] is defined
 
+        for k in 0 .. currentProductionLength
+          if stackNodes[stackIdx - k] is defined
             if node is defined
               # Go left to the first node on list.
               # [first] ... ... ... [node]
@@ -594,7 +594,7 @@ class Parser
                 node = node.prev
               endwhile
 
-              lnode = stackNodes[stackIdx]
+              lnode = stackNodes[stackIdx - k]
               while lnode.next is defined
                 lnode = lnode.next
               endwhile
@@ -605,11 +605,11 @@ class Parser
               lnode.next = node
             endif
 
-            node = stackNodes[stackIdx]
+            node = stackNodes[stackIdx - k]
           endif
-
-          stackIdx = stackIdx - 1
         endfor
+
+        stackIdx = stackIdx - currentProductionLength
 
         if node is defined
           lnode = stackNodes[stackIdx]
