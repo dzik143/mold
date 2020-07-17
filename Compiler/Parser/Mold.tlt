@@ -588,9 +588,10 @@ class Parser
           # Find first non-null node on stack.
           firstNodeIdx = stackIdx + 1
           firstNode    = stackNodes[firstNodeIdx]
+          maxNodeIdx   = stackIdx + currentProductionLength
 
           while ((firstNode is null) and
-                 (firstNodeIdx &lt; stackIdx + currentProductionLength))
+                 (firstNodeIdx &lt; maxNodeIdx))
 
             firstNode    = stackNodes[firstNodeIdx]
             firstNodeIdx = firstNodeIdx + 1
@@ -602,8 +603,7 @@ class Parser
             # ... - r1 - r2 -> r3
             prevNode = null
 
-            for kk in 0 .. currentProductionLength
-              k           = stackIdx + kk + 1
+            for k in stackIdx + 1 .. maxNodeIdx
               currentNode = stackNodes[k]
 
               if currentNode is defined
