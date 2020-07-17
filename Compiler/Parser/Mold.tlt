@@ -631,11 +631,9 @@ class Parser
               if currentNode is defined
                 if prevNode is defined
                   # Go left to the first node on list.
-                  # [first] ... ... ... [node]
                   while prevNode.next is defined
                     prevNode = prevNode.next
                   endwhile
-                  #print '(1) JOIN', lnode.id, '&lt;-', node.id
                   prevNode.next = currentNode
                 endif
 
@@ -643,32 +641,8 @@ class Parser
               endif
             endfor
 
-            # In this place we already have linked list of neighbour nodes
-            # on the right side:
-            # ... - r1 - r2 - r3
-            # Check is there neighbour available on left side.
-            #lnode = stackNodes[stackIdx]
-
-            #if lnode is defined
-            #  # There is left node on the left.
-            #  # Make sure we append after last neighbour if more than one.
-             # while lnode.next is defined
-                # It's not the last node on the left.
-                # Find the last one.
-                # lnode - ... - r1 - r2 - r3
-                #          ^
-                #     We skip this hole
-             #   lnode = lnode.next
-             # endwhile
-
-              # Join created right-node lists into it.
-              # lnode - r1 - r2 - r3
-              #       ^
-              #   Glue right to left here
-             # lnode.next = firstNode
-
-            #else
-            #endif
+            # In this place we already have linked list of neighbour nodes:
+            # lnode - r1 - r2 - r3
           endif
         endif
 
