@@ -599,11 +599,33 @@ class Parser
 
           if firstNode is defined
             # At least one non-null node found.
-            # Join right neighbour nodes into linked list:
-            # ... - r1 - r2 -> r3
-            prevNode = null
+            # Join right neighbour nodes into linked list.
+            # Check is there neighbour available on left side.
+            lnode = stackNodes[stackIdx]
 
-            for k in stackIdx + 1 .. maxNodeIdx
+            if lnode is defined
+              # There is left node on the left.
+              # Make sure we append after last neighbour if more than one.
+              while lnode.next is defined
+                # It's not the last node on the left.
+                # Find the last one.
+                # lnode - ... - r1 - r2 - r3
+                #          ^
+                #     We skip this hole
+                lnode = lnode.next
+              endwhile
+
+              prevNode = lnode
+            else
+              # There is no any node on the left.
+              # We start new list from the scratch.
+              # null - r1 - r2 - r3
+              stackNodes[stackIdx] = firstNode
+              prevNode             = null
+            endif
+
+            for kk in 0 .. currentProductionLength
+              k           = stackIdx + kk + 1
               currentNode = stackNodes[k]
 
               if currentNode is defined
@@ -625,32 +647,28 @@ class Parser
             # on the right side:
             # ... - r1 - r2 - r3
             # Check is there neighbour available on left side.
-            lnode = stackNodes[stackIdx]
+            #lnode = stackNodes[stackIdx]
 
-            if lnode is defined
-              # There is left node on the left.
-              # Make sure we append after last neighbour if more than one.
-              while lnode.next is defined
+            #if lnode is defined
+            #  # There is left node on the left.
+            #  # Make sure we append after last neighbour if more than one.
+             # while lnode.next is defined
                 # It's not the last node on the left.
                 # Find the last one.
                 # lnode - ... - r1 - r2 - r3
                 #          ^
                 #     We skip this hole
-                lnode = lnode.next
-              endwhile
+             #   lnode = lnode.next
+             # endwhile
 
               # Join created right-node lists into it.
               # lnode - r1 - r2 - r3
               #       ^
               #   Glue right to left here
-              lnode.next = firstNode
+             # lnode.next = firstNode
 
-            else
-              # There is no any node on the left.
-              # Just put right list as is.
-              # null - r1 - r2 - r3
-              stackNodes[stackIdx] = firstNode
-            endif
+            #else
+            #endif
           endif
         endif
 
