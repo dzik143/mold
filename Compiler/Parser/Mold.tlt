@@ -593,33 +593,27 @@ class Parser
           while ((firstNode is null) and
                  (firstNodeIdx &lt; maxNodeIdx))
 
-            firstNode    = stackNodes[firstNodeIdx]
             firstNodeIdx = firstNodeIdx + 1
+            firstNode    = stackNodes[firstNodeIdx]
           endwhile
 
           if firstNode is defined
             # At least one non-null node found.
             # Join right neighbour nodes into linked list.
+
             # Check is there neighbour available on left side.
             lnode = stackNodes[stackIdx]
 
             if lnode is defined
               # There is left node on the left.
-              # Make sure we append after last neighbour if more than one.
-              while lnode.next is defined
-                # It's not the last node on the left.
-                # Find the last one.
-                # lnode - ... - r1 - r2 - r3
-                #          ^
-                #     We skip this hole
-                lnode = lnode.next
-              endwhile
-
+              # Start list from it.
+              # lnode - r1 - r2 - r3 - ...
               prevNode = lnode
+
             else
               # There is no any node on the left.
-              # We start new list from the scratch.
-              # null - r1 - r2 - r3
+              # Start new list from the scratch.
+              # null - r1 - r2 - r3 - ...
               stackNodes[stackIdx] = firstNode
               prevNode             = null
             endif
@@ -630,19 +624,24 @@ class Parser
 
               if currentNode is defined
                 if prevNode is defined
-                  # Go left to the first node on list.
+                  # Make sure we append after last neighbour if more than one.
+                  # It's not the last node on the left.
+                  # Find the last one.
+                  #
+                  # prevNode - ... - currentNode - ...
+                  #             ^
+                  #      We skip this hole
+
                   while prevNode.next is defined
                     prevNode = prevNode.next
                   endwhile
                   prevNode.next = currentNode
                 endif
 
+                # Go to next node on the list.
                 prevNode = currentNode
               endif
             endfor
-
-            # In this place we already have linked list of neighbour nodes:
-            # lnode - r1 - r2 - r3
           endif
         endif
 
