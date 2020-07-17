@@ -583,38 +583,41 @@ class Parser
         # Pop nodes from the stack.
 
         # Find first non-null node.
-        firstNode   = null
-        prevNode    = null
-        currentNode = null
+        firstNode    = null
+        firstNodeIdx = 0
+        prevNode     = null
+        currentNode  = null
 
         for l in 0 .. currentProductionLength
           if stackNodes[stackIdx - l] is defined
-            firstNode = stackNodes[stackIdx - l]
+            firstNode    = stackNodes[stackIdx - l]
+            firstNodeIdx = stackIdx - l
           endif
         endfor
 
         stackIdx = stackIdx - currentProductionLength
 
-        for kk in 0 .. currentProductionLength
-          k           = stackIdx + kk + 1
-          currentNode = stackNodes[k]
-
-          if currentNode is defined
-            if prevNode is defined
-              # Go left to the first node on list.
-              # [first] ... ... ... [node]
-              while prevNode.next is defined
-                prevNode = prevNode.next
-              endwhile
-              #print '(1) JOIN', lnode.id, '&lt;-', node.id
-              prevNode.next = currentNode
-            endif
-
-            prevNode = currentNode
-          endif
-        endfor
-
         if firstNode is defined
+          for kk in 0 .. currentProductionLength
+            k           = stackIdx + kk + 1
+            currentNode = stackNodes[k]
+
+            if currentNode is defined
+              if prevNode is defined
+                # Go left to the first node on list.
+                # [first] ... ... ... [node]
+                while prevNode.next is defined
+                  prevNode = prevNode.next
+                endwhile
+                #print '(1) JOIN', lnode.id, '&lt;-', node.id
+                prevNode.next = currentNode
+              endif
+
+              prevNode = currentNode
+            endif
+          endfor
+
+          # Match left node.
           lnode = stackNodes[stackIdx]
 
           if lnode is defined
@@ -631,6 +634,7 @@ class Parser
             stackNodes[stackIdx] = firstNode
           endif
         endif
+
 
         if emit isnt 0
           # Emit new AST node.
