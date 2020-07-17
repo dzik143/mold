@@ -591,12 +591,13 @@ class Parser
           endif
         endfor
 
-        node = null
+        stackIdx = stackIdx - currentProductionLength
+        node     = null
 
         for kk in 0 .. currentProductionLength
-          k = currentProductionLength - kk - 1
+          k = stackIdx + kk + 1
 
-          if stackNodes[stackIdx - k] is defined
+          if stackNodes[k] is defined
             if node is defined
               # Go left to the first node on list.
               # [first] ... ... ... [node]
@@ -604,17 +605,13 @@ class Parser
                 node = node.next
               endwhile
 
-              rnode = stackNodes[stackIdx - k]
-
               #print '(1) JOIN', lnode.id, '&lt;-', node.id
-              node.next = rnode
+              node.next = stackNodes[k]
             endif
 
-            node = stackNodes[stackIdx - k]
+            node = stackNodes[k]
           endif
         endfor
-
-        stackIdx = stackIdx - currentProductionLength
 
         if firstNode is defined
           lnode = stackNodes[stackIdx]
