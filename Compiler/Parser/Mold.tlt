@@ -531,11 +531,12 @@ class Parser
 
         stackLines[stackIdx]   = line
         stackColumns[stackIdx] = column
+        stackNodes[stackIdx]   = null
 
         # Pop value from buffer.
         @@top-value = __mold_syscall(55, buf, 0, currentLen)
 
-        stackNodes[stackIdx] = null
+
 
         # Clean input.
         # Update counters for line and column
@@ -550,14 +551,9 @@ class Parser
 
         # TODO: Optimize it,
         # TODO: Avoid temp buffer: x = x.substr(...) bug
-        #print '----------------------'
-        #print 'BUF BEFORE [', buf, ']'
-
         newBufCnt = len(buf) - currentLen
         tmpBuf    = __mold_syscall(55, buf, currentLen, newBufCnt)
         buf       = tmpBuf
-
-        #print 'BUF AFTER  [', buf, ']'
 
         debug('shifted')
       endif
