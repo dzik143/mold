@@ -295,8 +295,6 @@ class AST
 
     this.children = []
     this.parent   = null
-    this.child    = child
-    this.prev     = null
     this.next     = null
 
     NodeId = NodeId + 1
@@ -608,15 +606,8 @@ class Parser
 
               rnode = stackNodes[stackIdx - k]
 
-              while rnode.prev is defined
-                die('prev')
-                rnode = rnode.prev
-              endwhile
-
               #print '(1) JOIN', lnode.id, '&lt;-', node.id
-
-              rnode.prev = node
-              node.next  = rnode
+              node.next = rnode
             endif
 
             node = stackNodes[stackIdx - k]
@@ -637,8 +628,7 @@ class Parser
 
             #print '(2) JOIN', lnode.id, '&lt;-', node.id
 
-            lnode.next     = firstNode
-            firstNode.prev = lnode
+            lnode.next = firstNode
           else
             stackNodes[stackIdx] = firstNode
           endif
