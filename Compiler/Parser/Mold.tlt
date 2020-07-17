@@ -583,7 +583,9 @@ class Parser
         # Pop nodes from the stack.
 
         # Find first non-null node.
-        firstNode = null
+        firstNode   = null
+        prevNode    = null
+        currentNode = null
 
         for l in 0 .. currentProductionLength
           if stackNodes[stackIdx - l] is defined
@@ -592,24 +594,23 @@ class Parser
         endfor
 
         stackIdx = stackIdx - currentProductionLength
-        node     = null
 
         for kk in 0 .. currentProductionLength
-          k = stackIdx + kk + 1
+          k           = stackIdx + kk + 1
+          currentNode = stackNodes[k]
 
-          if stackNodes[k] is defined
-            if node is defined
+          if currentNode is defined
+            if prevNode is defined
               # Go left to the first node on list.
               # [first] ... ... ... [node]
-              while node.next is defined
-                node = node.next
+              while prevNode.next is defined
+                prevNode = prevNode.next
               endwhile
-
               #print '(1) JOIN', lnode.id, '&lt;-', node.id
-              node.next = stackNodes[k]
+              prevNode.next = currentNode
             endif
 
-            node = stackNodes[k]
+            prevNode = currentNode
           endif
         endfor
 
