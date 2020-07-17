@@ -534,8 +534,6 @@ class Parser
         # Pop value from buffer.
         @@top-value = __mold_syscall(55, buf, 0, currentLen)
 
-
-
         # Clean input.
         # Update counters for line and column
         for idx in 0 .. currentLen
@@ -581,60 +579,66 @@ class Parser
         #
 
         # Pop nodes from the stack.
+        stackIdx  = stackIdx - currentProductionLength
 
-        # Find first non-null node.
-        firstNode    = null
-        firstNodeIdx = 0
-        prevNode     = null
-        currentNode  = null
+        if currentProductionLength > 1
+          # We need at least two AST nodes to connect.
+          # We can ignore all production shorter than two.
 
-        for l in 0 .. currentProductionLength
-          if stackNodes[stackIdx - l] is defined
-            firstNode    = stackNodes[stackIdx - l]
-            firstNodeIdx = stackIdx - l
-          endif
-        endfor
+          # Find first non-null node on stack.
+          firstNodeIdx = stackIdx + 1
+          firstNode    = stackNodes[firstNodeIdx]
 
-        stackIdx = stackIdx - currentProductionLength
+          while ((firstNode is null) and
+                 (firstNodeIdx &lt; stackIdx + currentProductionLength))
 
-        if firstNode is defined
-          for kk in 0 .. currentProductionLength
-            k           = stackIdx + kk + 1
-            currentNode = stackNodes[k]
+            firstNode    = stackNodes[firstNodeIdx]
+            firstNodeIdx = firstNodeIdx + 1
+          endwhile
 
-            if currentNode is defined
-              if prevNode is defined
-                # Go left to the first node on list.
-                # [first] ... ... ... [node]
-                while prevNode.next is defined
-                  prevNode = prevNode.next
-                endwhile
-                #print '(1) JOIN', lnode.id, '&lt;-', node.id
-                prevNode.next = currentNode
+          if firstNode is defined
+            # At least one non-null node found.
+            # Join neighbour nodes into linked list:
+            # ... -> node1 -> node2 -> node2
+            prevNode = null
+
+            for kk in 0 .. currentProductionLength
+              k           = stackIdx + kk + 1
+              currentNode = stackNodes[k]
+
+              if currentNode is defined
+                if prevNode is defined
+                  # Go left to the first node on list.
+                  # [first] ... ... ... [node]
+                  while prevNode.next is defined
+                    prevNode = prevNode.next
+                  endwhile
+                  #print '(1) JOIN', lnode.id, '&lt;-', node.id
+                  prevNode.next = currentNode
+                endif
+
+                prevNode = currentNode
               endif
+            endfor
 
-              prevNode = currentNode
+            # Match left node.
+            lnode = stackNodes[stackIdx]
+
+            if lnode is defined
+              # Go right to the last node on list.
+              # [lnode] ... ... ... [last]
+              while lnode.next is defined
+                lnode = lnode.next
+              endwhile
+
+              #print '(2) JOIN', lnode.id, '&lt;-', node.id
+
+              lnode.next = firstNode
+            else
+              stackNodes[stackIdx] = firstNode
             endif
-          endfor
-
-          # Match left node.
-          lnode = stackNodes[stackIdx]
-
-          if lnode is defined
-            # Go right to the last node on list.
-            # [lnode] ... ... ... [last]
-            while lnode.next is defined
-              lnode = lnode.next
-            endwhile
-
-            #print '(2) JOIN', lnode.id, '&lt;-', node.id
-
-            lnode.next = firstNode
-          else
-            stackNodes[stackIdx] = firstNode
           endif
         endif
-
 
         if emit isnt 0
           # Emit new AST node.
