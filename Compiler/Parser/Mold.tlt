@@ -221,9 +221,9 @@ function debug(msg)
   endif
 endfunction
 
-# -----------------------------------------------------------------------------
-#                                Parse tables
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+#                             LALR(1) parse tables
+# ------------------------------------------------------------------------------
 
 # Action Table
 const @@prefix_act = [
@@ -239,6 +239,15 @@ const @@prefix_go = [
 const @@prefix_def_prod = [
   @@default-productions
 ]
+
+# Production information table
+const @@prefix_productions = [
+@@productions
+]
+
+# ------------------------------------------------------------------------------
+#                                 LEXER Tables
+# ------------------------------------------------------------------------------
 
 # DFA selection table
 const @@prefix_dfa_select = [
@@ -268,11 +277,6 @@ const @@prefix_dfa_accept = [
 # Symbol information table
 const @@prefix_symbolsGreedy = [
 @@symbols
-]
-
-# Production information table
-const @@prefix_productions = [
-@@productions
 ]
 
 # -----------------------------------------------------------------------------
