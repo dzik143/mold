@@ -303,11 +303,8 @@ class Parser
     global LexerTransLUT
     global LexerAcceptLUT
 
-
-
     ast        = null
     goOn       = true
-    innerGoOn  = true
     masterIter = 1
 
     #
@@ -357,23 +354,24 @@ class Parser
       # LEXER: Get next symbol from input stream.
       # -----------------------------------------
 
-      currentSym   = 0
-      currentLen   = 0
-      mach         = LexerSelectLUT[stackStates[stackIdx]]
-      dfaIdxRow    = LexerIndexLUT[mach]
-      dfaAcceptRow = LexerAcceptLUT[mach]
+      currentSym = 0
+      currentLen = 0
+
+      mach      = LexerSelectLUT[stackStates[stackIdx]]
+      indexRow  = LexerIndexLUT[mach]
+      acceptRow = LexerAcceptLUT[mach]
 
       if mach > -1
-        dfa_st = 0
+        state  = 0
         length = 0
         chr    = 0
         next   = ord(buf[0])
 
         # Read next token. if there is still some input data to read.
-        while (dfa_st &gt;= 0) and (next isnt @@eof)
+        while (state &gt;= 0) and (next isnt @@eof)
           isMatched = false
-          chr       = dfaIdxRow[dfa_st]
-          dfa_st    = -1
+          chr       = indexRow[state]
+          state     = -1
 
           # Match character.
           while (isMatched is false) and (LexerCharsLUT[chr] &gt; -1)
@@ -385,15 +383,15 @@ class Parser
           endwhile
 
           if isMatched is true
-            dfa_st = LexerTransLUT[chr // 2]
+            state = LexerTransLUT[chr // 2]
 
-            if dfaAcceptRow[dfa_st] &gt; 0
+            if acceptRow[state] &gt; 0
               currentLen = length + 1
-              currentSym = dfaAcceptRow[dfa_st] - 1
+              currentSym = acceptRow[state] - 1
 
               if (currentSym is 0) or (SymbolsGreedyLUT[currentSym] is 0)
                 # End of file or non-greedy symbol.
-                dfa_st = -1
+                state = -1
               endif
             endif
 
@@ -502,10 +500,6 @@ class Parser
         currentProductionLength = GrammarProductionsLUT[3 * currentIdx + PRODUCTION_LENGTH_IDX]
         currentEmit             = GrammarProductionsLUT[3 * currentIdx + PRODUCTION_EMIT_IDX]
 
-        # Apply default action: @@ = @1
-        # TODO: Review it.
-        currentRet = stackValues[stackIdx - currentProductionLength + 1]
-
         # -----------------------------
         # Custom action handlers.
         # Below code is auto-generated.
@@ -516,6 +510,11 @@ class Parser
         # TODO: Use switch
         if false
           @@actions
+
+        else
+          # Apply default action: @@ = @1
+          # TODO: Review it.
+          currentRet = stackValues[stackIdx - currentProductionLength + 1]
         endif
 
         # --------------------------
