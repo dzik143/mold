@@ -290,8 +290,20 @@ class Parser
     global PRODUCTION_LENGTH_IDX
     global PRODUCTION_EMIT_IDX
 
-    global _symbolsGreedy, _productions, _act, _def_prod
-    global _dfa_idx, _dfa_chars, _dfa_trans, _dfa_accept, _dfa_select, _go
+    global GrammarProductionsLUT
+    global SymbolsGreedyLUT
+
+    global ParserActionsLUT
+    global ParserActionsDefaultLUT
+    global ParserGotoLUT
+
+    global LexerSelectLUT
+    global LexerIndexLUT
+    global LexerCharsLUT
+    global LexerTransLUT
+    global LexerAcceptLUT
+
+
 
     ast        = null
     goOn       = true
@@ -347,9 +359,9 @@ class Parser
 
       currentSym   = 0
       currentLen   = 0
-      mach         = _dfa_select[stackStates[stackIdx]]
-      dfaIdxRow    = _dfa_idx[mach]
-      dfaAcceptRow = _dfa_accept[mach]
+      mach         = LexerSelectLUT[stackStates[stackIdx]]
+      dfaIdxRow    = LexerIndexLUT[mach]
+      dfaAcceptRow = LexerAcceptLUT[mach]
 
       if mach > -1
         dfa_st = 0
@@ -364,8 +376,8 @@ class Parser
           dfa_st    = -1
 
           # Match character.
-          while (isMatched is false) and (_dfa_chars[chr] &gt; -1)
-            if (next &gt;= _dfa_chars[chr]) and (next &lt;= _dfa_chars[chr + 1])
+          while (isMatched is false) and (LexerCharsLUT[chr] &gt; -1)
+            if (next &gt;= LexerCharsLUT[chr]) and (next &lt;= LexerCharsLUT[chr + 1])
               isMatched = true
             else
               chr = chr + 2
@@ -373,13 +385,13 @@ class Parser
           endwhile
 
           if isMatched is true
-            dfa_st = _dfa_trans[chr // 2]
+            dfa_st = LexerTransLUT[chr // 2]
 
             if dfaAcceptRow[dfa_st] &gt; 0
               currentLen = length + 1
               currentSym = dfaAcceptRow[dfa_st] - 1
 
-              if (currentSym is 0) or (_symbolsGreedy[currentSym] is 0)
+              if (currentSym is 0) or (SymbolsGreedyLUT[currentSym] is 0)
                 # End of file or non-greedy symbol.
                 dfa_st = -1
               endif
@@ -406,7 +418,7 @@ class Parser
       # -------------------------------------
 
       state      = stackStates[stackIdx]
-      act        = _act[state]
+      act        = ParserActionsLUT[state]
       cnt        = act[0] * 3
       currentAct = -1
       actionIdx  = 1
@@ -422,7 +434,7 @@ class Parser
       if currentAct is -1
         # Action not found.
         # Search default production as last try.
-        currentIdx = _def_prod[state]
+        currentIdx = ParserActionsDefaultLUT[state]
 
         if currentIdx &gt; -1
           # Reduce.
@@ -486,13 +498,18 @@ class Parser
 
       while (reduceGoOn is true) and (bitand(currentAct, UNICC_REDUCE) isnt 0)
         # Fetch current production.
-        currentLhs              = _productions[3 * currentIdx + PRODUCTION_LHS_IDX]
-        currentProductionLength = _productions[3 * currentIdx + PRODUCTION_LENGTH_IDX]
-        currentEmit             = _productions[3 * currentIdx + PRODUCTION_EMIT_IDX]
+        currentLhs              = GrammarProductionsLUT[3 * currentIdx + PRODUCTION_LHS_IDX]
+        currentProductionLength = GrammarProductionsLUT[3 * currentIdx + PRODUCTION_LENGTH_IDX]
+        currentEmit             = GrammarProductionsLUT[3 * currentIdx + PRODUCTION_EMIT_IDX]
 
         # Apply default action: @@ = @1
         # TODO: Review it.
         currentRet = stackValues[stackIdx - currentProductionLength + 1]
+
+        # -----------------------------
+        # Custom action handlers.
+        # Below code is auto-generated.
+        # -----------------------------
 
         # Set default left-hand side
         # Run reduction code
@@ -597,7 +614,7 @@ class Parser
           # Get goto.
           goIdx      = 1
           state      = stackStates[stackIdx]
-          go         = _go[state]
+          go         = ParserGotoLUT[state]
           cnt        = go[0] * 3
           currentAct = -1
 
@@ -768,21 +785,21 @@ _sortArrayOfTriplesByFirst(data.parser.goto)
 //const uniqueRowsForGoto   = _buildUniqueRowsTable(data.parser.goto)
 
 // Dump tables.
-_dumpTable('_productions', data.grammar.productions)
-_dumpTable('_symbolsGreedy', data.grammar.symbols)
+_dumpTable('GrammarProductionsLUT' , data.grammar.productions)
+_dumpTable('SymbolsGreedyLUT'      , data.grammar.symbols)
 
-//_dumpTable('_actUniqueRows', uniqueRowsForAction)
-//_dumpTable('_goUniqueRows', uniqueRowsForGoto)
+//_dumpTable('_actUniqueRows' , uniqueRowsForAction)
+//_dumpTable('_goUniqueRows'  , uniqueRowsForGoto)
 
-_dumpTable('_act', data.parser.action)
-_dumpTable('_go' , data.parser.goto)
-_dumpTable('_def_prod' , data.parser['default-production'])
+_dumpTable('ParserActionsLUT'        , data.parser.action)
+_dumpTable('ParserGotoLUT'           , data.parser.goto)
+_dumpTable('ParserActionsDefaultLUT' , data.parser['default-production'])
 
-_dumpTable('_dfa_select' , data.lexer.select)
-_dumpTable('_dfa_idx'    , data.lexer.index)
-_dumpTable('_dfa_chars'  , data.lexer.chars)
-_dumpTable('_dfa_trans'  , data.lexer.transitions)
-_dumpTable('_dfa_accept' , data.lexer.accept)
+_dumpTable('LexerSelectLUT' , data.lexer.select)
+_dumpTable('LexerIndexLUT'  , data.lexer.index)
+_dumpTable('LexerCharsLUT'  , data.lexer.chars)
+_dumpTable('LexerTransLUT'  , data.lexer.transitions)
+_dumpTable('LexerAcceptLUT' , data.lexer.accept)
 
 </file>
 </generator>
