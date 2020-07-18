@@ -565,16 +565,21 @@ class Parser
         debug('------------------------------')
         debug('REDUCE ITER #' ~ str(masterIter) ~ '.' ~ str(reduceIter))
 
+        # Fetch current production.
+        currentLhs              = _productions[3 * currentIdx + PRODUCTION_LHS_IDX]
+        currentProductionLength = _productions[3 * currentIdx + PRODUCTION_LENGTH_IDX]
+        emitOpcode              = _productions[3 * currentIdx + PRODUCTION_EMIT_IDX]
+
+        # Apply default action: @@ = @1
+        # TODO: Review it.
+        currentRet = stackValues[stackIdx - currentProductionLength + 1]
+
         # Set default left-hand side
         # Run reduction code
         # TODO: Use switch
         if false
           @@actions
         endif
-
-        currentLhs              = _productions[3 * currentIdx + PRODUCTION_LHS_IDX]
-        currentProductionLength = _productions[3 * currentIdx + PRODUCTION_LENGTH_IDX]
-        emitOpcode              = _productions[3 * currentIdx + PRODUCTION_EMIT_IDX]
 
         #
         # AST: Pop nodes from stack.
