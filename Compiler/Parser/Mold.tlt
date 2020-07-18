@@ -203,23 +203,9 @@ UNICC_ERROR  = 0
 UNICC_REDUCE = 1
 UNICC_SHIFT  = 2
 
-UNICC_DEBUG = false
-
-PRODUCTION_EMIT_IDX       = 0
-PRODUCTION_LENGTH_IDX     = 1
-PRODUCTION_LHS_IDX        = 2
-PRODUCTION_DEFINITION_IDX = 3 # Unused, comment off when needed
-
-# -----------------------------------------------------------------------------
-#                              Helper functions
-# -----------------------------------------------------------------------------
-
-function debug(msg)
-  global UNICC_DEBUG
-  if UNICC_DEBUG is true
-    print 'debug:', msg
-  endif
-endfunction
+PRODUCTION_EMIT_IDX   = 0
+PRODUCTION_LENGTH_IDX = 1
+PRODUCTION_LHS_IDX    = 2
 
 # ------------------------------------------------------------------------------
 #                             LALR(1) parse tables
@@ -372,8 +358,6 @@ class Parser
     # Initialize Parser Control Block.
     #
 
-    debug('going to parse [' ~ str(len(text)) ~ '] bytes')
-
     input    = text
     inputIdx = 0
     inputLen = len(text)
@@ -407,24 +391,20 @@ class Parser
 
     buf = '' ~ asc(lookupByte)
 
+    #
     # Begin of main parser loop
-    debug('falling into main parser loop')
+    #
 
     while goOn is true
-      debug('')
-      debug('------------------------------')
-      debug('MASTER ITER #' ~ str(masterIter))
 
-      #
+      # -----------------------------------------
       # LEXER: Get next symbol from input stream.
-      #
+      # -----------------------------------------
 
       currentSym = 0
       currentLen = 0
 
       if _dfa_select[stackStates[stackIdx]] > -1
-        debug('starting lex...')
-
         dfa_st = 0
         length = 0
         chr    = 0
@@ -475,11 +455,9 @@ class Parser
         endwhile
       endif
 
-      debug('got symbol: sym=[' ~ str(currentSym) ~ ']' ~ ', len=[' ~ str(currentLen) ~ ']')
-
-      #
+      # -------------------------------------
       # LALR: Find action for current symbol.
-      #
+      # -------------------------------------
 
       state      = stackStates[stackIdx]
       act        = _act[state]
@@ -503,21 +481,17 @@ class Parser
         if currentIdx &gt; -1
           # Reduce.
           currentAct = 1
-
         else
           # Syntax error.
           this._handleError(line, column, 'syntax error')
         endif
       endif
 
-      debug('got action: act=[' ~ str(currentAct) ~ '], idx=[' ~ str(currentIdx) ~ ']')
-
-      #
+      # -----------
       # LALR: Shift
-      #
+      # -----------
 
       if bitand(currentAct, UNICC_SHIFT) isnt 0
-        debug('going to shift...')
         stackIdx = stackIdx + 1
 
         # Execute scanner actions, if existing.
@@ -556,23 +530,19 @@ class Parser
         newBufCnt = len(buf) - currentLen
         tmpBuf    = __mold_syscall(55, buf, currentLen, newBufCnt)
         buf       = tmpBuf
-
-        debug('shifted')
       endif
 
-      # Reduce
-      innerGoOn  = true
-      reduceIter = 1
+      # -------------
+      # LALR: Reduce.
+      # -------------
 
-      while (innerGoOn is true) and (bitand(currentAct, UNICC_REDUCE) isnt 0)
-        debug('')
-        debug('------------------------------')
-        debug('REDUCE ITER #' ~ str(masterIter) ~ '.' ~ str(reduceIter))
+      reduceGoOn = true
 
+      while (reduceGoOn is true) and (bitand(currentAct, UNICC_REDUCE) isnt 0)
         # Fetch current production.
         currentLhs              = _productions[3 * currentIdx + PRODUCTION_LHS_IDX]
         currentProductionLength = _productions[3 * currentIdx + PRODUCTION_LENGTH_IDX]
-        emitOpcode              = _productions[3 * currentIdx + PRODUCTION_EMIT_IDX]
+        currentEmit             = _productions[3 * currentIdx + PRODUCTION_EMIT_IDX]
 
         # Apply default action: @@ = @1
         # TODO: Review it.
@@ -585,9 +555,9 @@ class Parser
           @@actions
         endif
 
-        #
+        # --------------------------
         # AST: Pop nodes from stack.
-        #
+        # --------------------------
 
         # Pop nodes from the stack.
         stackIdx = stackIdx - currentProductionLength
@@ -655,13 +625,13 @@ class Parser
           endif
         endif
 
-        #
+        # -------------------------------
         # AST: Create new node if needed.
-        #
+        # -------------------------------
 
-        if emitOpcode isnt 0
+        if currentEmit isnt 0
           # Emit new AST node.
-          node                 = new AST(emitOpcode, currentRet, stackNodes[stackIdx])
+          node                 = new AST(currentEmit, currentRet, stackNodes[stackIdx])
           stackNodes[stackIdx] = node
 
           # Save debug information inside node.
@@ -670,18 +640,15 @@ class Parser
           node.filePath = this.filePath
         endif
 
-        debug('goal symbol? (lhs=[' ~ str(currentLhs) ~ '], goal=[' ~ str(@@goal) ~ '], stackIdx=[' ~ str(stackIdx) ~ '])')
-
         # Goal symbol reduced, and stack is empty?
         if (currentLhs is @@goal) and (stackIdx is 0)
           # Goal token matched.
           # Don't go on anymore.
-          ast       = stackNodes[0]
-          innerGoOn = false
+          ast        = stackNodes[0]
+          reduceGoOn = false
 
         else
           # Get goto.
-          rv         = 0
           goIdx      = 1
           state      = stackStates[stackIdx]
           go         = _go[state]
@@ -709,18 +676,11 @@ class Parser
             stackStates[stackIdx] = currentIdx
           endif
         endif
-
-        # Count reduce iters for debug purposes.
-        reduceIter = reduceIter + 1
-
-        debug('reduced')
       endwhile
 
-      #
+      # --------------------------
       # Check for final condition.
-      #
-
-      debug('END CONDITION: reduce=[' ~ str(bitand(currentAct, UNICC_REDUCE)) ~ '], idx=[' ~ str(currentIdx) ~ '], goalIdx=[' ~ str(@@goal-production) ~ ']')
+      # --------------------------
 
       if (bitand(currentAct, UNICC_REDUCE) isnt 0) and (currentIdx is @@goal-production)
         # All input is successfuly parsed.
