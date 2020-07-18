@@ -1,0 +1,257 @@
+<?xml version="1.0" standalone="yes"?>
+<generator name="Mold">
+  <code_localization />
+
+  <!--
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (C) 2015, 2020 Sylwester Wysocki (sw143@wp.pl)                     #
+#                                                                              #
+# This program is free software: you can redistribute it and/or modify         #
+# it under the terms of the GNU General Public License as published by         #
+# the Free Software Foundation, either version 3 of the License, or            #
+# (at your option) any later version.                                          #
+#                                                                              #
+# This program is distributed in the hope that it will be useful,              #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of               #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                #
+# GNU General Public License for more details.                                 #
+#                                                                              #
+# You should have received a copy of the GNU General Public License            #
+# along with this program. If not, see <http://www.gnu.org/licenses/>          #
+#                                                                              #
+################################################################################
+  -->
+
+  <!--
+  ****************************************************************************
+  Escape sequences
+  ****************************************************************************
+  -->
+
+  <!-- FIXME -->
+  <!-- Backslash must be double-quoted -->
+  <escape-sequence for="\" do= />
+  <!-- Escape double quotation marks -->
+  <escape-sequence for="&#x22;" do= />
+  <!-- END OF FIXME -->
+
+  <!--
+  ****************************************************************************
+  Value-stack templates
+  ****************************************************************************
+  -->
+
+  <vstack_def_type>any</vstack_def_type>
+  <vstack_term_type>any</vstack_term_type>
+  <vstack_union_att>@@value-type-id</vstack_union_att>
+  <vstack_union_def>@@attribute: null, </vstack_union_def>
+  <vstack_single>value: null</vstack_single>
+  <vstack_union_start>value: {</vstack_union_start>
+  <vstack_union_end>}</vstack_union_end>
+
+  <!--
+  ****************************************************************************
+  Semantic action templates
+  ****************************************************************************
+  -->
+  <action_start>        elif currentIdx is @@production-number
+      </action_start>
+  <action_end>
+
+</action_end>
+
+  <action_single>stackValues[stackIdx - @@offset]</action_single>
+
+  <action_union>stackValues[stackIdx - @@offset].@@attribute</action_union>
+  <action_lhs_single>     currentRet</action_lhs_single>
+  <action_lhs_union>     currentRet.@@attribute</action_lhs_union>
+
+  <action_set_lhs>     currentLhs = @@sym</action_set_lhs>
+
+  <!--
+  ****************************************************************************
+  Semantic terminal action templates
+  ****************************************************************************
+  -->
+
+  <scan_action_start>&#x09;&#x09;&#x09;&#x09;case @@symbol-number:&#x0A;&#x09;&#x09;&#x09;&#x09;{&#x0A;&#x09;&#x09;&#x09;&#x09;&#x09;</scan_action_start>
+  <scan_action_end>&#x0A;&#x09;&#x09;&#x09;&#x09;&#x09;;&#x0A;&#x09;&#x09;&#x09;&#x09;}&#x09;&#x09;&#x09;&#x09;break;
+  </scan_action_end>
+
+  <scan_action_begin_offset>@@prefix_lexem( pcb )</scan_action_begin_offset>
+  <scan_action_end_offset>currentLen</scan_action_end_offset>
+
+  <scan_action_ret_single>stackValues[stackIdx]</scan_action_ret_single>
+
+  <!-- TODO: Is it needed?
+    <scan_action_ret_union>stack[stackIdx].@@attribute</scan_action_ret_union>
+  -->
+
+  <scan_action_set_symbol>currentSym = @@sym</scan_action_set_symbol>
+
+  <!--
+  ****************************************************************************
+  Parse table templates
+  ****************************************************************************
+  -->
+
+  <defprod>
+    <col>@@production-number</col>
+    <col_sep>, </col_sep>
+  </defprod>
+
+  <acttab>
+    <row_start>  [ @@number-of-columns</row_start>
+    <row_end> ]</row_end>
+    <row_sep>,&#x0A;</row_sep>
+    <col>, @@symbol,@@action,@@index </col>
+    <col_sep></col_sep>
+  </acttab>
+
+  <gotab>
+    <row_start>  [ @@number-of-columns</row_start>
+    <row_end> ]</row_end>
+    <row_sep>,&#x0A;</row_sep>
+    <col>, @@symbol,@@action,@@index </col>
+    <col_sep></col_sep>
+  </gotab>
+
+  <!--
+  ****************************************************************************
+  Lexer
+  ****************************************************************************
+  -->
+
+  <dfa_select>
+    <col>@@machine</col>
+    <col_sep>, </col_sep>
+  </dfa_select>
+
+  <dfa_char>
+    <col>@@from, @@to</col>
+    <col_sep>, </col_sep>
+  </dfa_char>
+
+  <dfa_trans>
+    <col>@@goto</col>
+    <col_sep>, </col_sep>
+  </dfa_trans>
+
+  <dfa_idx>
+    <row_start>  [ </row_start>
+    <row_end> ]</row_end>
+    <row_sep>,&#x0A;</row_sep>
+    <col>@@index * 2</col>
+    <col_sep>, </col_sep>
+  </dfa_idx>
+
+  <dfa_accept>
+    <row_start>  [ </row_start>
+    <row_end> ]</row_end>
+    <row_sep>,&#x0A;</row_sep>
+    <col>@@accept</col>
+    <col_sep>, </col_sep>
+  </dfa_accept>
+
+  <!--
+  ****************************************************************************
+  Symbol and production information tables
+  ****************************************************************************
+  -->
+
+  <symbols>
+    <col>  @@greedy /* @@type | @@lexem | @@whitespace | @@symbol |' @@emit' | '@@symbol-name' */</col>
+    <col_sep>,&#x0A;</col_sep>
+  </symbols>
+
+  <productions>
+    <col>  @@emit-0, @@length, @@lhs /* @@production-number | '@@production' */</col>
+    <col_sep>,&#x0A;</col_sep>
+  </productions>
+
+  <!--
+  ****************************************************************************
+  Parser program
+  ****************************************************************************
+  -->
+
+<file filename="@@basename.mold"># Parser module generated by unicc from @@filename.
+# DO NOT EDIT THIS FILE MANUALLY, IT WILL GO AWAY!
+@@prologue
+
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (c) 2015, 2018 Sylwester Wysocki (sw143@wp.pl).                    #
+#                                                                              #
+# The Mold code and any derived work however based on this software are        #
+# copyright of Sylwester Wysocki. Redistribution and use of the present        #
+# software is allowed according to terms specified in the file LICENSE         #
+# which comes in the source distribution.                                      #
+#                                                                              #
+# All rights reserved.                                                         #
+#                                                                              #
+################################################################################
+
+# ------------------------------------------------------------------------------
+#                             LALR(1) parse tables
+# ------------------------------------------------------------------------------
+
+# Action Table
+const @@prefix_act = [
+@@action-table
+]
+
+# GoTo Table
+const @@prefix_go = [
+@@goto-table
+]
+
+# Default productions per state
+const @@prefix_def_prod = [
+  @@default-productions
+]
+
+# Production information table
+const @@prefix_productions = [
+@@productions
+]
+
+# ------------------------------------------------------------------------------
+#                                 LEXER Tables
+# ------------------------------------------------------------------------------
+
+# DFA selection table
+const @@prefix_dfa_select = [
+  @@dfa-select - 0
+]
+
+# DFA index table
+const @@prefix_dfa_idx = [
+@@dfa-index
+]
+
+# DFA transition chars
+const @@prefix_dfa_chars = [
+  @@dfa-char
+]
+
+# DFA transitions
+const @@prefix_dfa_trans = [
+  @@dfa-trans
+]
+
+# DFA acception states
+const @@prefix_dfa_accept = [
+@@dfa-accept
+]
+
+# Symbol information table
+const @@prefix_symbolsGreedy = [
+@@symbols
+]
+
+</file>
+</generator>

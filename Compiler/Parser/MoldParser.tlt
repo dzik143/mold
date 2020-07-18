@@ -195,6 +195,8 @@
 #                                                                              #
 ################################################################################
 
+import 'Parser/_Tables.mold'
+
 # -----------------------------------------------------------------------------
 #                                Constants
 # -----------------------------------------------------------------------------
@@ -206,64 +208,6 @@ UNICC_SHIFT  = 2
 PRODUCTION_EMIT_IDX   = 0
 PRODUCTION_LENGTH_IDX = 1
 PRODUCTION_LHS_IDX    = 2
-
-# ------------------------------------------------------------------------------
-#                             LALR(1) parse tables
-# ------------------------------------------------------------------------------
-
-# Action Table
-const @@prefix_act = [
-@@action-table
-]
-
-# GoTo Table
-const @@prefix_go = [
-@@goto-table
-]
-
-# Default productions per state
-const @@prefix_def_prod = [
-  @@default-productions
-]
-
-# Production information table
-const @@prefix_productions = [
-@@productions
-]
-
-# ------------------------------------------------------------------------------
-#                                 LEXER Tables
-# ------------------------------------------------------------------------------
-
-# DFA selection table
-const @@prefix_dfa_select = [
-  @@dfa-select - 0
-]
-
-# DFA index table
-const @@prefix_dfa_idx = [
-@@dfa-index
-]
-
-# DFA transition chars
-const @@prefix_dfa_chars = [
-  @@dfa-char
-]
-
-# DFA transitions
-const @@prefix_dfa_trans = [
-  @@dfa-trans
-]
-
-# DFA acception states
-const @@prefix_dfa_accept = [
-@@dfa-accept
-]
-
-# Symbol information table
-const @@prefix_symbolsGreedy = [
-@@symbols
-]
 
 # -----------------------------------------------------------------------------
 #                                Helper classes

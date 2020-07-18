@@ -18,7 +18,7 @@
 /*                                                                            */
 /******************************************************************************/
 
-#!language "mold";
+//#!language "mold";
 #whitespaces @WHITE;
 
 @WHITE ' ' | "/*" .* "*/" | '#' .* '\r\n'+;
@@ -186,7 +186,6 @@ map_key : string =AST_DATA_STRING;
 imm_list
   : imm_list ',' expr_imm      [* __mold_arrayInsertAfterLast(@@, @3) *]
   | imm_list ',' @EOL expr_imm [* __mold_arrayInsertAfterLast(@@, @4) *]
-
   | imm_list @EOL
   | @EOL imm_list [* @@ = @2 *]
   | expr_imm      [* @@ = [@1] *]
