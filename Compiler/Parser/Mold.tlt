@@ -474,7 +474,7 @@ class Parser
       debug('got symbol: sym=[' ~ str(currentSym) ~ ']' ~ ', len=[' ~ str(currentLen) ~ ']')
 
       #
-      # LALR: Find action for current symbol within current state.
+      # LALR: Find action for current symbol.
       #
 
       state      = stackStates[stackIdx]
@@ -508,7 +508,10 @@ class Parser
 
       debug('got action: act=[' ~ str(currentAct) ~ '], idx=[' ~ str(currentIdx) ~ ']')
 
-      # Shift
+      #
+      # LALR: Shift
+      #
+
       if bitand(currentAct, UNICC_SHIFT) isnt 0
         debug('going to shift...')
         stackIdx = stackIdx + 1
@@ -534,7 +537,6 @@ class Parser
         # Pop value from buffer.
         @@top-value = __mold_syscall(55, buf, 0, currentLen)
 
-        # Clean input.
         # Update counters for line and column
         for idx in 0 .. currentLen
           if ord(buf[idx]) is 10
@@ -545,8 +547,8 @@ class Parser
           endif
         endfor
 
-        # TODO: Optimize it,
-        # TODO: Avoid temp buffer: x = x.substr(...) bug
+        # TODO: Clean up this mess.
+        # TODO: Avoid temp buffer: x = x.substr(...) bug.
         newBufCnt = len(buf) - currentLen
         tmpBuf    = __mold_syscall(55, buf, currentLen, newBufCnt)
         buf       = tmpBuf
@@ -572,10 +574,10 @@ class Parser
 
         currentLhs              = _productions[3 * currentIdx + PRODUCTION_LHS_IDX]
         currentProductionLength = _productions[3 * currentIdx + PRODUCTION_LENGTH_IDX]
-        emit                    = _productions[3 * currentIdx + PRODUCTION_EMIT_IDX]
+        emitOpcode              = _productions[3 * currentIdx + PRODUCTION_EMIT_IDX]
 
         #
-        # Drop right-hand side
+        # AST: Pop nodes from stack.
         #
 
         # Pop nodes from the stack.
@@ -598,14 +600,14 @@ class Parser
           endwhile
 
           if firstNode is defined
-            # At least one non-null node found.
-            # Join right neighbour nodes into linked list.
+            # At at least one non-null node found.
+            # Join all neighbour nodes into one linked list.
 
             # Check is there neighbour available on left side.
             lnode = stackNodes[stackIdx]
 
             if lnode is defined
-              # There is left node on the left.
+              # There is node on the left.
               # Start list from it.
               # lnode - r1 - r2 - r3 - ...
               prevNode = lnode
@@ -618,9 +620,8 @@ class Parser
               prevNode             = null
             endif
 
-            for kk in 0 .. currentProductionLength
-              k           = stackIdx + kk + 1
-              currentNode = stackNodes[k]
+            for k in 0 .. currentProductionLength
+              currentNode = stackNodes[stackIdx + k + 1]
 
               if currentNode is defined
                 if prevNode is defined
@@ -645,12 +646,16 @@ class Parser
           endif
         endif
 
-        if emit isnt 0
+        #
+        # AST: Create new node if needed.
+        #
+
+        if emitOpcode isnt 0
           # Emit new AST node.
-          node                 = new AST(emit, currentRet, stackNodes[stackIdx])
+          node                 = new AST(emitOpcode, currentRet, stackNodes[stackIdx])
           stackNodes[stackIdx] = node
 
-          # TODO: Review it.
+          # Save debug information inside node.
           node.line     = line
           node.column   = column
           node.filePath = this.filePath
@@ -702,14 +707,20 @@ class Parser
         debug('reduced')
       endwhile
 
+      #
+      # Check for final condition.
+      #
+
       debug('END CONDITION: reduce=[' ~ str(bitand(currentAct, UNICC_REDUCE)) ~ '], idx=[' ~ str(currentIdx) ~ '], goalIdx=[' ~ str(@@goal-production) ~ ']')
 
       if (bitand(currentAct, UNICC_REDUCE) isnt 0) and (currentIdx is @@goal-production)
+        # All input is successfuly parsed.
+        # Don't go on anymore.
         goOn = false
       endif
 
+      # Avoid hung up on infinitely loop.
       masterIter = masterIter + 1
-
       if masterIter > 1000000
         die('MAX ITERS reached!')
       endif
@@ -729,7 +740,6 @@ class Parser
     this.filePath = ''
     ast           = this._parseInternal(text)
   endmethod
-
 endclass
 
 </file>
