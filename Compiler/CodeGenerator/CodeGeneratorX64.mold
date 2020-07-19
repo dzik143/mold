@@ -25,8 +25,10 @@ import 'Utils/Stack.mold'
 class CodeGeneratorX64
 
   method constructor()
-    this.symbols = {}
-    this.isProfilerEnabled = false
+    this.symbols             = {}
+    this.isProfilerEnabled   = false
+    this.mapOfEmittedBuffers = {}
+    this.isBufferEmitted     = {}
   endmethod
 
   method lea(dst, src)
@@ -124,10 +126,52 @@ class CodeGeneratorX64
     endfor
   endmethod
 
+  method _hash(x) -> rv
+    # TODO: Optimize it.
+    rv = typeof(x) ~ ':'
+
+    if typeof(x) is 'array'
+      rv = rv ~ str(len(x)) ~ ':'
+      for values item in x
+        rv = rv ~ this._hash(item)
+      endfor
+
+    else
+      rv = rv ~ str(x)
+    endif
+
+    rv = rv ~ ';'
+  endmethod
+
   method emitConstant(name, value, wantDeepIdx, deepIdx)
-    type = typeof(value)
+    type             = typeof(value)
+    isContentEmmited = false
 
     if wantDeepIdx is deepIdx
+      bufferName = null
+
+      if (type is 'array') or (type is 'string')
+        # Check did we emit another buffer with the same content.
+        hash       = this._hash(value)
+        bufferName = this.mapOfEmittedBuffers{hash}
+
+        if bufferName is defined
+          # Buffer is already emited.
+          # Just use it for another variable.
+          print '; Reuse already emitted buffer'
+          this.isBufferEmitted{name} = true
+
+        else
+          # Buffer is unique at this moment.
+          # Generate new buffer name and go on.
+          bufferName = name ~ '_buffer'
+
+          # Save buffer name for further calls.
+          this.mapOfEmittedBuffers{hash} = bufferName
+        endif
+      endif
+
+      # Dispatch type.
       if type is 'integer'
         print name, 'Variant_t VARIANT_INTEGER, 0,', value
 
@@ -135,10 +179,10 @@ class CodeGeneratorX64
         print name, 'Variant_t VARIANT_DOUBLE, 0,', value
 
       elif type is 'string'
-        print name, 'Variant_t VARIANT_STRING, 0,', name ~ '_buffer'
+        print name, 'Variant_t VARIANT_STRING, 0,', bufferName
 
       elif type is 'array'
-        print name, 'Variant_t VARIANT_ARRAY, 0,', name ~ '_buffer'
+        print name, 'Variant_t VARIANT_ARRAY, 0,', bufferName
 
       elif type is 'boolean'
         if value is true
@@ -153,6 +197,7 @@ class CodeGeneratorX64
       endif
     endif
 
+    # Emit buffer content for complex variables.
     if type is 'array'
       this.emitArrayBufferHead(name, value, wantDeepIdx, deepIdx + 1)
     elif type is 'string'
@@ -161,13 +206,15 @@ class CodeGeneratorX64
   endmethod
 
   method emitStringBufferHead(name, value, wantDeep, deepIdx)
-    if wantDeep is deepIdx
-      bufferName      = name ~ '_buffer'
-      bufferNameBytes = name ~ '_bufferBytes'
-      print  bufferName, 'Buffer_t', len(value) + 1, ', -1, 0,', bufferNameBytes
-    endif
+    if this.isBufferEmitted{name} isnt true
+      if wantDeep is deepIdx
+        bufferName      = name ~ '_buffer'
+        bufferNameBytes = name ~ '_bufferBytes'
+        print  bufferName, 'Buffer_t', len(value) + 1, ', -1, 0,', bufferNameBytes
+      endif
 
-    this.emitStringBufferContent(name, value, wantDeep, deepIdx + 1)
+      this.emitStringBufferContent(name, value, wantDeep, deepIdx + 1)
+    endif
   endmethod
 
   method emitStringBufferContent(name, value, wantDeep, deepIdx)
@@ -191,71 +238,72 @@ class CodeGeneratorX64
   endmethod
 
   method emitArrayBufferHead(name, items, wantDeepIdx, deepIdx)
-    itemsCnt = len(items)
+    if this.isBufferEmitted{name} isnt true
+      if wantDeepIdx is deepIdx
+        itemsCnt        = len(items)
+        bufferName      = name ~ '_buffer'
+        bufferNameBytes = name ~ '_bufferBytes'
+        print bufferName, 'Buffer_t', itemsCnt * 16, ', -1, 0,',  bufferNameBytes
+      endif
 
-    if wantDeepIdx is deepIdx
-      bufferName      = name ~ '_buffer'
-      bufferNameBytes = name ~ '_bufferBytes'
-      print bufferName, 'Buffer_t', itemsCnt * 16, ', -1, 0,',  bufferNameBytes
+      this.emitArrayBufferContent(name, items, wantDeepIdx, deepIdx + 1)
     endif
-
-    this.emitArrayBufferContent(name, items, wantDeepIdx, deepIdx + 1)
   endmethod
 
   method emitArrayBufferContent(name, items, wantDeepIdx, deepIdx)
-    itemsCnt  = len(items)
-
-    # TODO: Optimize it.
-    # TODO: Move innerType check to earliear stage.
-    innerType        = typeof(items[0])
-    innerSize        = 0
-    innerTypeForEmit = '0'
-    innerAsmType     = 'db'
-    innerValueMin    = items[0] # TODO: Use MAX_INTEGER like const?
-    innerValueMax    = items[0] # TODO: Use MIN_INTEGER like const?
-    innerItemIdx     = 1
-
-    goOn = true
-
-    while (goOn is true) and (innerItemIdx < itemsCnt)
-      itemValue = items[innerItemIdx]
-      itemType  = typeof(itemValue)
-
-      if itemType isnt innerType
-        # Various types in one array.
-        # Fall-back to variant storage and don't go anymore.
-        goOn = false
-
-      elif itemType is 'integer'
-        innerTypeForEmit = 'VARIANT_INTEGER'
-
-        # Track max/min values to compact array storage.
-        if (innerSize < 3) and ((itemValue < -2147483648) or (itemValue > 2147483647))
-         # 2^3 bytes = 8 bytes = 64 bit (qword)
-         innerSize    = 3
-         innerAsmType = 'dq'
-
-        elif (innerSize < 2) and ((itemValue < -32768) or (itemValue > 32767))
-         # 2^2 bytes = 4 bytes = 32 bit (dword)
-         innerSize    = 2
-         innerAsmType = 'dd'
-
-        elif (innerSize < 2) and ((itemValue < -128) or (itemValue > 127))
-         # 2^1 bytes = 2 bytes = 16 bit (word)
-         innerSize    = 1
-         innerAsmType = 'dw'
-        endif
-      endif
-
-      # Go to next item.
-      innerItemIdx = innerItemIdx + 1
-    endwhile
-
-    #print '; innerType:'     , innerType
-    #print '; innerValueMin:' , innerValueMin
-    #print '; innerValueMax:' , innerValueMax
+    itemsCnt = len(items)
 
     if wantDeepIdx is deepIdx
+      # TODO: Optimize it.
+      # TODO: Move innerType check to earliear stage.
+      innerType        = typeof(items[0])
+      innerSize        = 0
+      innerTypeForEmit = '0'
+      innerAsmType     = 'db'
+      innerValueMin    = items[0] # TODO: Use MAX_INTEGER like const?
+      innerValueMax    = items[0] # TODO: Use MIN_INTEGER like const?
+      innerItemIdx     = 1
+
+      goOn = true
+
+      while (goOn is true) and (innerItemIdx < itemsCnt)
+        itemValue = items[innerItemIdx]
+        itemType  = typeof(itemValue)
+
+        if itemType isnt innerType
+          # Various types in one array.
+          # Fall-back to variant storage and don't go anymore.
+          goOn = false
+
+        elif itemType is 'integer'
+          innerTypeForEmit = 'VARIANT_INTEGER'
+
+          # Track max/min values to compact array storage.
+          if (innerSize < 3) and ((itemValue < -2147483648) or (itemValue > 2147483647))
+           # 2^3 bytes = 8 bytes = 64 bit (qword)
+           innerSize    = 3
+           innerAsmType = 'dq'
+
+          elif (innerSize < 2) and ((itemValue < -32768) or (itemValue > 32767))
+           # 2^2 bytes = 4 bytes = 32 bit (dword)
+           innerSize    = 2
+           innerAsmType = 'dd'
+
+          elif (innerSize < 2) and ((itemValue < -128) or (itemValue > 127))
+           # 2^1 bytes = 2 bytes = 16 bit (word)
+           innerSize    = 1
+           innerAsmType = 'dw'
+          endif
+        endif
+
+        # Go to next item.
+        innerItemIdx = innerItemIdx + 1
+      endwhile
+
+      # print '; innerType:'     , innerType
+      # print '; innerValueMin:' , innerValueMin
+      # print '; innerValueMax:' , innerValueMax
+
       bufferName      = name ~ '_buffer'
       bufferNameBytes = name ~ '_bufferBytes'
 
