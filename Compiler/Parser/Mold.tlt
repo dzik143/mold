@@ -616,7 +616,7 @@ class Parser
           cnt        = len(go)
           currentAct = -1
 
-          while (currentAct is -1) and (goIdx &lt; cnt)
+          while (goIdx &lt; cnt) and (currentAct is -1)
             if go[goIdx] is currentLhs
               currentAct = go[goIdx + 1]
               currentIdx = go[goIdx + 2]
@@ -782,6 +782,14 @@ for (let idx = 0; idx &lt; data.grammar.productions.length; idx += 3) {
 // Sort actions and goto tables for binary search.
 _sortArrayOfTriplesByFirst(data.parser.action)
 _sortArrayOfTriplesByFirst(data.parser.goto)
+
+// Replace 0xffff by 0xff in LexerChars table.
+// We don't support unicode.
+data.lexer.chars.forEach((value, idx) => {
+  if (value === 0xffff) {
+    data.lexer.chars[idx] = 0xff
+  }
+})
 
 // Find repeated table rows.
 //const uniqueRowsForAction = _buildUniqueRowsTable(data.parser.action)
