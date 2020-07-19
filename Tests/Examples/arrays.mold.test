@@ -14,6 +14,26 @@ x[1] = undefined
 x[2] = undefined
 -------------------------------------------------------------------------------
 
+TEST "Nested empty arrays"
+x = [
+  [],
+  [],
+  []
+]
+print 'typeof(x):', typeof(x)
+print 'x:', x
+print 'x[0] =', x[0]
+print 'x[1] =', x[1]
+print 'x[2] =', x[2]
+
+EXPECTED_OUTPUT:
+typeof(x): array
+x: [[], [], []]
+x[0] = []
+x[1] = []
+x[2] = []
+-------------------------------------------------------------------------------
+
 TEST "Mixed types in one array"
 x = [1, 'two', 3.14]
 print 'typeof(x):', typeof(x)
@@ -189,28 +209,28 @@ TEST "Bug: crash on <bool>[0] = 1"
 false[0] = 1
 
 EXPECTED_ERROR:
-error: array or map expected
+./temp/source.mold:1:13: error: array or map expected
 -------------------------------------------------------------------------------
 
 TEST "Bug: crash on <string>[0] = 1"
 'text'[0] = 1
 
 EXPECTED_ERROR:
-error: string type cannot be modified
+./temp/source.mold:1:7: error: string type cannot be modified
 -------------------------------------------------------------------------------
 
 TEST "Bug: crash on <integer>[0] = 1"
 0[0] = 1
 
 EXPECTED_ERROR:
-error: array or map expected
+./temp/source.mold:1:9: error: array or map expected
 -------------------------------------------------------------------------------
 
 TEST "Bug: crash on <float>[0] = 1"
 1.0[0] = 1
 
 EXPECTED_ERROR:
-error: array or map expected
+./temp/source.mold:1:11: error: array or map expected
 -------------------------------------------------------------------------------
 
 TEST "Bug: Broken last item after realloc"

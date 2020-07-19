@@ -122,11 +122,11 @@ endfunction
 foo(0, 10)
 
 EXPECTED_ERROR:
-error: "idx" is already defined in another context
+./temp/source.mold:4:11: error: 'idx' cannot be used as iterator
 -------------------------------------------------------------------------------
 
-TEST "Bug: Crash when iterator used in another branch as non-integer (SKIPPED!)"
-/*
+TEST "Bug: Crash when iterator used in another branch as non-integer"
+
 function foo(x)
   if x is 1
    # idx is array in this context.
@@ -144,7 +144,7 @@ endfunction
 
 foo(1)
 foo(2)
-*/
 
-EXPECTED_OUTPUT:
+EXPECTED_ERROR:
+./temp/source.mold:12:16: error: attempted to use 'idx' as integer; it was used as array before
 -------------------------------------------------------------------------------

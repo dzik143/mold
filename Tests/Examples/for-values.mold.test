@@ -92,7 +92,7 @@ x = [3,4,5]
 acc = 0
 for values v in x
   acc = acc + v
-endfor  
+endfor
 print acc
 
 EXPECTED_OUTPUT:
@@ -110,7 +110,7 @@ for values row in A
   for values v in row
     print 'Add', v
     acc = acc + v
-  endfor  
+  endfor
 endfor
 print acc
 
@@ -178,7 +178,7 @@ TEST "for values in: process items inside call"
 function foo(item)
   for values v in item
     print 'foo(', v, ')'
-  endfor  
+  endfor
 endfunction
 
 arrayOfItems = [
@@ -203,7 +203,7 @@ class Base
   method bar(v)
     print v
   endmethod
-  
+
   method foo()
     box = [{'key1': 10}, {'key2': 20}, {'key3': 30}]
     for values v in box

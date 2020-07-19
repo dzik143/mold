@@ -117,8 +117,8 @@ print foo()
 EXPECTED_OUTPUT:
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 -------------------------------------------------------------------------------
-TEST "Bug: Fake declaration brings to uninitialized variable (SKIPPED!)"
-/*
+TEST "Bug: Fake declaration brings to uninitialized variable"
+
 function foo()
   if false
     x = 1
@@ -128,13 +128,9 @@ endfunction
 
 foo()
 foo()
-*/
 
-print 'undefined'
-print 'undefined'
-EXPECTED_OUTPUT:
-undefined
-undefined
+EXPECTED_ERROR:
+./temp/source.mold:6:14: error: 'x' was not declared in this scope
 -------------------------------------------------------------------------------
 TEST "Bug: Undefined source ptr in add/x64 code"
 
@@ -314,4 +310,35 @@ bar( next 7 )
 bar( next 8 )
 bar( next 9 )
 bar( next 10 )
+-------------------------------------------------------------------------------
+
+TEST "Bug: Overlapped parent field in interpreter (SKIPPED!)"
+/*
+class Test
+  method foo(x)
+    if x is 1
+      parent = 1111
+    else
+      parent = 9999
+    endif
+
+    this.parent =
+
+    print 'foo(', x, ') : this.parent =', this.parent
+  endmethod
+endclass
+
+obj = new Test()
+
+obj.foo(0)
+obj.foo(1)
+obj.foo(2)
+
+EXPECTED ---- OUTPUT:
+foo( 0 ) : this.parent = 9999
+foo( 1 ) : this.parent = 1111
+foo( 2 ) : this.parent = 9999
+*/
+
+EXPECTED_OUTPUT:
 -------------------------------------------------------------------------------
