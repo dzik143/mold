@@ -103,19 +103,19 @@
   </defprod>
 
   <acttab>
-    <row_start>  [ @@number-of-columns</row_start>
+    <row_start>  [ </row_start>
     <row_end> ]</row_end>
     <row_sep>,&#x0A;</row_sep>
-    <col>, @@symbol,@@action,@@index </col>
-    <col_sep></col_sep>
+    <col> @@symbol,@@action,@@index </col>
+    <col_sep>,</col_sep>
   </acttab>
 
   <gotab>
-    <row_start>  [ @@number-of-columns</row_start>
+    <row_start>  [ </row_start>
     <row_end> ]</row_end>
     <row_sep>,&#x0A;</row_sep>
-    <col>, @@symbol,@@action,@@index </col>
-    <col_sep></col_sep>
+    <col> @@symbol,@@action,@@index </col>
+    <col_sep>,</col_sep>
   </gotab>
 
   <!--
@@ -417,9 +417,9 @@ class Parser
 
       state      = stackStates[stackIdx]
       act        = ParserActionsLUT[state]
-      cnt        = act[0] * 3
+      cnt        = len(act)
       currentAct = -1
-      actionIdx  = 1
+      actionIdx  = 0
 
       while (currentAct is -1) and (actionIdx &lt; cnt)
         if act[actionIdx] is currentSym
@@ -611,10 +611,10 @@ class Parser
 
         else
           # Get goto.
-          goIdx      = 1
+          goIdx      = 0
           state      = stackStates[stackIdx]
           go         = ParserGotoLUT[state]
-          cnt        = go[0] * 3
+          cnt        = len(go)
           currentAct = -1
 
           while (currentAct is -1) and (goIdx &lt; cnt)
@@ -706,7 +706,7 @@ endclass
   }
 
 function _dumpTable(name, table) {
-  let rv = `const ${name} =`
+  let rv = `const ${name}=`
 
   if (typeof(table[0]) == 'object') {
     let rowSep = ''
@@ -748,7 +748,7 @@ function _sortArrayOfTriplesByFirst(table) {
   table.forEach((row, rowIdx) => {
     // Fetch row.
     const rowAsTriples = []
-    for (let i = 1; i &lt; row.length; i += 3) {
+    for (let i = 0; i &lt; row.length; i += 3) {
       rowAsTriples.push([row[i], row[i+1], row[i+2]])
     }
 
@@ -758,7 +758,7 @@ function _sortArrayOfTriplesByFirst(table) {
     })
 
     // Store sorted array
-    const newRow = [row[0]]
+    const newRow = []
     rowAsTriples.forEach((triple) => {
       newRow.push(triple[0])
       newRow.push(triple[1])
