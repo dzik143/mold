@@ -128,7 +128,7 @@ class ASTSymbolsCollector
 
     elif opcode is AST_DATA_STRING
       if isLeftNode is true
-        die('error: string type cannot be modified')
+        this.app.logError('string type cannot be modified')
       endif
 
       symbolInfo = symbolTable.insertLiteral(node.value)
@@ -257,7 +257,7 @@ class ASTSymbolsCollector
         else
           # Error - there is at least one branch, where return value is
           # not set.
-          die("error: unset return variable '" ~ funcProto.rv ~ "' in '" ~ funcName ~ "' function")
+          this.app.logError("unset return variable '" ~ funcProto.rv ~ "' in '" ~ funcName ~ "' function")
         endif
       endif
 
@@ -451,16 +451,23 @@ class ASTSymbolsCollector
 
             if astType1 isnt astType2
               # Type mismatch.
-              astType = -1
+              # TODO: Review it.
+              typeName1 = AST_ConvertDataTypeToText(astType1)
+              typeName2 = AST_ConvertDataTypeToText(astType2)
+              id        = symbolInfo1.name
 
-              if (astType1 is AST_DATA_DOUBLE) and (astType2 is AST_DATA_INTEGER)
-                astType = AST_DATA_DOUBLE
+              this.app.logError("attempted to use '" ~ id ~ "' as " ~ typeName2 ~ "; it was used as " ~ typeName1 ~ ' before')
 
-              elif (astType1 is AST_DATA_INTEGER) and (astType2 is AST_DATA_DOUBLE)
-                astType = AST_DATA_DOUBLE
-              endif
-
-              symbolInfo1.astType = astType
+              #astType = -1
+              #
+              #if (astType1 is AST_DATA_DOUBLE) and (astType2 is AST_DATA_INTEGER)
+              #  astType = AST_DATA_DOUBLE
+              #
+              #elif (astType1 is AST_DATA_INTEGER) and (astType2 is AST_DATA_DOUBLE)
+              #  astType = AST_DATA_DOUBLE
+              #endif
+              #
+              #symbolInfo1.astType = astType
 
             else
               classProto1 = symbolInfo1.classProto
@@ -495,7 +502,8 @@ class ASTSymbolsCollector
       bodyNode     = children[4]
 
       if symbolTable.isset(iterNode.value) is true
-        die('error: "' ~ iterNode.value ~ '" is already defined in another context')
+        this.app.setLogContext(iterNode)
+        this.app.logError("'" ~ iterNode.value ~ "' cannot be used as iterator")
       endif
 
       # TODO: Optimize it.
@@ -531,7 +539,7 @@ class ASTSymbolsCollector
       for idx in 0 .. iteratorsCnt
         iterNode = children[idx]
         if symbolTable.isset(iterNode.value) is true
-          die('error: "' ~ iterNode.value ~ '" is already defined in another context')
+          this.app.logError("'" ~ iterNode.value ~ "' is already defined in another context")
         endif
 
         bodyNode.symbolTable.insertLocal(iterNode.value)

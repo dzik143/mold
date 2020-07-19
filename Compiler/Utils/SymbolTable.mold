@@ -505,10 +505,11 @@ class SymbolTable
       elif oldType is -1
         # Type is already variant. Don't touch it.
 
-      elif (oldType is AST_DATA_INTEGER) and (newType is AST_DATA_DOUBLE)
-        # integer -> double
-        # Go on.
-        goOn = true
+      # TODO: Review it.
+      #elif (oldType is AST_DATA_INTEGER) and (newType is AST_DATA_DOUBLE)
+      #  # integer -> double
+      #  # Go on.
+      #  goOn = true
 
       elif newType is -1
         # Variant overwrite all types. Go on.

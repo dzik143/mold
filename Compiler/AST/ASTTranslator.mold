@@ -145,7 +145,9 @@ class ASTTranslator
           # TODO: Accumulate hits?
           # TODO: Implement inner frames.
           if symbolsCurrent{id}.astType isnt item.astType
-            die('error: type conflict for variable "' ~ item.name ~ '"')
+            typeName1 = AST_ConvertDataTypeToText(symbolsCurrent{id}.astType)
+            typeName2 = AST_ConvertDataTypeToText(item.astType)
+            this.app.logError("attempted to use '" ~ id ~ "' as " ~ typeName2 ~ "; it was used as " ~ typeName1 ~ ' before')
           endif
         endif
       #endif
@@ -154,7 +156,7 @@ class ASTTranslator
 
   method _verifyNumberOfParameters(name, paramsExpectedCnt, paramsPassedCnt)
     if paramsPassedCnt isnt paramsExpectedCnt
-      die('error: ' ~ name ~ ' function requires exactly ' ~ str(paramsExpectedCnt) ~ ' parameter(s), but ' ~ str(paramsPassedCnt) ~ ' were passed')
+      this.app.logError("function '" ~ name ~ "' requires exactly " ~ str(paramsExpectedCnt) ~ ' parameter(s), but ' ~ str(paramsPassedCnt) ~ ' were passed')
     endif
   endmethod
 
@@ -326,7 +328,7 @@ class ASTTranslator
     #
 
     if (ast.isTranslated is true) and (AST_IsImmOrVar(ast) is false)
-      die('error: node #' ~ str(ast.id) ~ ' is already translated (eval)')
+      this.app.logError('node #' ~ str(ast.id) ~ ' is already translated (eval)')
     endif
 
     ast.isTranslated = true
@@ -563,7 +565,7 @@ class ASTTranslator
         endif
 
       else
-        die('error: unexpected rvalue node ' ~ str(opcode) ~ ' ' ~ str(value))
+        this.app.logError('unexpected rvalue node ' ~ str(opcode) ~ ' ' ~ str(value))
       endif
     endif
 
@@ -680,7 +682,7 @@ class ASTTranslator
     # print ast.id, opcode, value
 
     if ast.isTranslated is true
-      die('error: node #' ~ str(ast.id) ~ ' is already translated')
+      this.app.logError('node #' ~ str(ast.id) ~ ' is already translated')
     endif
 
     ast.isTranslated = true
@@ -761,7 +763,7 @@ class ASTTranslator
         this._releaseTempVar(rval)
 
       else
-        die('error: unexpected lvalue node ' ~ str(lval.opcode) ~ ' ' ~ str(lval.value))
+        this.app.logError('unexpected lvalue node ' ~ str(lval.opcode) ~ ' ' ~ str(lval.value))
       endif
 
     elif opcode is AST_OPCODE_FOR_VALUES_RANGE

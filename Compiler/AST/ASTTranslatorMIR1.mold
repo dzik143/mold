@@ -262,7 +262,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     else
       # TODO: Handle terminal nodes.
-      die('error: unhandled imm type: ' ~ str(type))
+      this.app.logError('unhandled imm type: ' ~ str(type))
     endif
 
     this.push(rv)
@@ -294,7 +294,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     else
       # TODO: Handle terminal nodes.
-      die('error: unhandled imm type: ' ~ str(type))
+      this.app.logError('unhandled imm type: ' ~ str(type))
     endif
 
     this.push(rv)
@@ -773,6 +773,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     for values methodName in this.arrayOfCalledMethods
       if this.methodEmitted{methodName} isnt true
+        # TODO: Show source line.
         die("error: object has no method '" ~ methodName ~ "'")
       endif
     endfor

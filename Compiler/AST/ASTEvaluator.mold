@@ -180,6 +180,8 @@ class ASTEvaluator
     children    = node.children
     childrenCnt = len(children)
 
+    this.app.setLogContext(node)
+
     #
     # Evaluate value.
     #
@@ -217,7 +219,7 @@ class ASTEvaluator
 
             if methodProto is defined
               if methodProto.rv is undefined
-                die('error: method "' ~ classProto.name ~ '.' ~ methodProto.name ~ '" has no return value')
+                this.app.logError(' method "' ~ classProto.name ~ '.' ~ methodProto.name ~ '" has no return value')
               endif
             endif
           endif
@@ -235,7 +237,7 @@ class ASTEvaluator
 
             if methodProto is defined
               if methodProto.rv is undefined
-                die('error: method "' ~ classProto.name ~ '.' ~ methodProto.name ~ '" has no return value')
+                this.app.logError('method "' ~ classProto.name ~ '.' ~ methodProto.name ~ '" has no return value')
               endif
             endif
           endif
@@ -251,7 +253,7 @@ class ASTEvaluator
         if AST_IsOkAsBox(lval.children[0]) is false
           # Error - lval should stores variable name.
           # box[i] = ...
-          die('error: array or map expected')
+          this.app.logError('array or map expected')
         endif
 
         this._assignValue(valuesMap, lval, lval)
