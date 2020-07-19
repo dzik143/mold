@@ -358,6 +358,7 @@ class Parser
       currentLen = 0
 
       mach      = LexerSelectLUT[stackStates[stackIdx]]
+      indexBase = LexerIndexBaseLUT[mach]
       indexRow  = LexerIndexLUT[mach]
       acceptRow = LexerAcceptLUT[mach]
 
@@ -370,7 +371,7 @@ class Parser
         # Read next token. if there is still some input data to read.
         while (state &gt;= 0) and (next isnt @@eof)
           isMatched = false
-          chr       = indexRow[state]
+          chr       = indexBase + indexRow[state]
           state     = -1
 
           # Match character.
@@ -791,6 +792,21 @@ data.lexer.chars.forEach((value, idx) => {
   }
 })
 
+// Generate LexerIndexBase table to avoid emitting
+// very big numbers.
+// Final index = base index + delta
+const LexerIndexBaseLUT = []
+
+data.lexer.index.forEach((row, rowIdx) => {
+  // Base = minimal value in the row.
+  const base = row[0]
+  LexerIndexBaseLUT[rowIdx] = base
+
+  row.forEach((col, colIdx) => {
+    row[colIdx] -= base
+  })
+})
+
 // Find repeated table rows.
 //const uniqueRowsForAction = _buildUniqueRowsTable(data.parser.action)
 //const uniqueRowsForGoto   = _buildUniqueRowsTable(data.parser.goto)
@@ -806,11 +822,12 @@ _dumpTable('ParserActionsLUT'        , data.parser.action)
 _dumpTable('ParserGotoLUT'           , data.parser.goto)
 _dumpTable('ParserActionsDefaultLUT' , data.parser['default-production'])
 
-_dumpTable('LexerSelectLUT' , data.lexer.select)
-_dumpTable('LexerIndexLUT'  , data.lexer.index)
-_dumpTable('LexerCharsLUT'  , data.lexer.chars)
-_dumpTable('LexerTransLUT'  , data.lexer.transitions)
-_dumpTable('LexerAcceptLUT' , data.lexer.accept)
+_dumpTable('LexerSelectLUT'   , data.lexer.select)
+_dumpTable('LexerIndexBaseLUT', LexerIndexBaseLUT)
+_dumpTable('LexerIndexLUT'    , data.lexer.index)
+_dumpTable('LexerCharsLUT'    , data.lexer.chars)
+_dumpTable('LexerTransLUT'    , data.lexer.transitions)
+_dumpTable('LexerAcceptLUT'   , data.lexer.accept)
 
 </file>
 </generator>
