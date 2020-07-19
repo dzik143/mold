@@ -436,7 +436,7 @@ class Parser
 
         if currentIdx &gt; -1
           # Reduce.
-          currentAct = 1
+          currentAct = UNICC_REDUCE
         else
           # Syntax error.
           this._handleError(line, column, 'syntax error')
@@ -500,6 +500,10 @@ class Parser
         currentProductionLength = GrammarProductionsLUT[3 * currentIdx + PRODUCTION_LENGTH_IDX]
         currentEmit             = GrammarProductionsLUT[3 * currentIdx + PRODUCTION_EMIT_IDX]
 
+        # Apply default action: @@ = @1
+        # TODO: Review it.
+        currentRet = stackValues[stackIdx - currentProductionLength + 1]
+
         # -----------------------------
         # Custom action handlers.
         # Below code is auto-generated.
@@ -510,11 +514,6 @@ class Parser
         # TODO: Use switch
         if false
           @@actions
-
-        else
-          # Apply default action: @@ = @1
-          # TODO: Review it.
-          currentRet = stackValues[stackIdx - currentProductionLength + 1]
         endif
 
         # --------------------------
