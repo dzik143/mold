@@ -1421,16 +1421,16 @@ endp
 ; rv = x[i]
 ;
 ; rcx = box   (Variant_t) (IN)
-; rdx = index (Variant_t) (IN)
+; rdx = index (int32*)    (IN)
 ; r8  = rv    (Variant_t) (OUT)
 ;
 ;###############################################################################
 
-__MOLD_VariantLoadFromIndex:
+__MOLD_VariantLoadFromIndex_int32:
     DEBUG_CHECK_VARIANT rcx
-    DEBUG_CHECK_VARIANT rdx
 
     mov    eax, [rcx + Variant_t.type]
+    mov    edx, dword [rdx]
 
     cmp    rax, VARIANT_ARRAY
     je     .array
@@ -1445,10 +1445,6 @@ __MOLD_VariantLoadFromIndex:
     ; --------------------------------------------------------------------------
 
 .array:
-    cmp   [rdx + Variant_t.type], VARIANT_INTEGER
-    jnz    __MOLD_PrintErrorAndDie.integerIndexExpected
-
-    mov   rdx, [rdx + Variant_t.value]              ; rdx = idx          (integer)
     mov   rcx, [rcx + Variant_t.value]              ; rcx = array buffer (Buffer_t)
     mov   r9,  [rcx + Buffer_t.bytesPtr]            ; r9  = array buffer (Array_t)
 
@@ -1511,16 +1507,12 @@ __MOLD_VariantLoadFromIndex:
 .string:
     mov    [r8 + Variant_t.type], VARIANT_UNDEFINED
 
-    cmp    [rdx + Variant_t.type], VARIANT_INTEGER
-    jnz    __MOLD_PrintErrorAndDie.integerIndexExpected
-
     ; --------------------------------------------------------------------------
     ; Get char at index
     ; --------------------------------------------------------------------------
 
     mov    rcx, [rcx + Variant_t.value]           ; rcx = string buffer (Buffer_t)
     mov    rcx, [rcx + Buffer_t.bytesPtr]         ; rcx = string buffer (String_t)
-    mov    rdx, [rdx + Variant_t.value]           ; rdx = idx           (integer)
 
     mov    eax, 0                                 ; rax = 0
     cmp    rdx, [rcx + String_t.length]
@@ -1633,14 +1625,14 @@ __MOLD_VariantLoadFromKey:
     add     rsp, 32
     ret
 
-__MOLD_VariantLoadFromIndex_int32:
-    ; rcx = box (Variant_t)
-    ; rdx = index (int32*)
-    ; r8  = rv (Variant_t)
+__MOLD_VariantLoadFromIndex:
+    ; rcx = box   (Variant_t)
+    ; rdx = index (Variant_t)
+    ; r8  = rv    (Variant_t)
+    cmp     [rdx + Variant_t.type], VARIANT_INTEGER
+    jnz     __MOLD_PrintErrorAndDie.integerIndexExpected
 
-    mov     eax, dword [rdx]              ; eax      = index
-    lea     rdx, [__TempIndexInteger]     ; rdx      = tmpIndex
-    mov     [rdx + Variant_t.value], rax  ; tmpIndex = index
+    add     rdx, Variant_t.value
     jmp     __MOLD_VariantLoadFromIndex
 
 ; TODO: Clean up this mess.
