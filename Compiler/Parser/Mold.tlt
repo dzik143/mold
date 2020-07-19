@@ -419,9 +419,9 @@ class Parser
       act        = ParserActionsLUT[state]
       cnt        = len(act)
       currentAct = -1
-      actionIdx  = 0
+      actionIdx  = 1
 
-      while (currentAct is -1) and (actionIdx &lt; cnt)
+      while (actionIdx &lt; cnt) and (currentAct is -1)
         if act[actionIdx] is currentSym
           currentAct = act[actionIdx + 1]
           currentIdx = act[actionIdx + 2]
@@ -610,7 +610,7 @@ class Parser
 
         else
           # Get goto.
-          goIdx      = 0
+          goIdx      = 1
           state      = stackStates[stackIdx]
           go         = ParserGotoLUT[state]
           cnt        = len(go)
@@ -758,11 +758,16 @@ function _sortArrayOfTriplesByFirst(table) {
 
     // Store sorted array
     const newRow = []
+
+    // TODO: Why is it needed?
+    newRow.push(0)
+
     rowAsTriples.forEach((triple) => {
       newRow.push(triple[0])
       newRow.push(triple[1])
       newRow.push(triple[2])
     })
+
     table[rowIdx] = newRow
   })
 }
