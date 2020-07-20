@@ -1422,7 +1422,9 @@ class CodeGeneratorX64
         # dst := x[y]
         this.call3AndDestroy('__MOLD_VariantLoadFromIndex', x, y, dst)
 
-      elif opcode is 'load_index_variant_by_int32'
+      elif ((opcode is 'load_index_variant_by_int32') or
+            (opcode is 'load_index_string_by_int32'))
+
         # dst := x[y]
         this.call3AndDestroy('__MOLD_VariantLoadFromIndex_int32', x, y, dst)
 

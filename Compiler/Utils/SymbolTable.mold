@@ -489,8 +489,8 @@ class SymbolTable
   endmethod
 
   method assignType(name, newType)
-    global AST_DATA_INTEGER
-    global AST_DATA_DOUBLE
+    global SYMBOL_KIND_VAR_LOCAL
+    global SYMBOL_KIND_VAR_GLOBAL
 
     symbolInfo = this.lookup(name)
     oldType    = symbolInfo.astType
@@ -499,21 +499,30 @@ class SymbolTable
       goOn = false
 
       if oldType is undefined
+        # <?> = ...
         # First type assign. Go on.
         goOn = true
 
-      elif oldType is -1
-        # Type is already variant. Don't touch it.
+      elif ((symbolInfo.kind isnt SYMBOL_KIND_VAR_LOCAL) and
+            (symbolInfo.kind isnt SYMBOL_KIND_VAR_GLOBAL))
+        # Don't touch anything, which we don't sure we can change a type of.
+        # Example: don't touch function parameters and return variable.
+        # They're always variants for now.
 
-      # TODO: Review it.
-      #elif (oldType is AST_DATA_INTEGER) and (newType is AST_DATA_DOUBLE)
-      #  # integer -> double
-      #  # Go on.
-      #  goOn = true
+      elif oldType is -1
+        # <variant> = ...
+        # Type is already variant.
+        if symbolInfo.isAstTypeFrozen isnt true
+          # Change type to concrete one, but only if it's not explicit
+          # frozen to variant.
+          goOn = true
+        endif
 
       elif newType is -1
-        # Variant overwrite all types. Go on.
-        goOn = true
+        # ... = <variant>
+        # New type is variant, so potentially may handle any type internally.
+        # Do nothing now, but we need to generate extra conversion opcode
+        # in the further stages.
 
       else
         # Error - type mismatch.

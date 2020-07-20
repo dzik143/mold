@@ -484,8 +484,7 @@ class Parser
 
         # TODO: Clean up this mess.
         # TODO: Avoid temp buffer: x = x.substr(...) bug.
-        newBufCnt = len(buf) - currentLen
-        tmpBuf    = __mold_syscall(55, buf, currentLen, newBufCnt)
+        tmpBuf    = __mold_syscall(55, buf, currentLen, -1)
         buf       = tmpBuf
       endif
 

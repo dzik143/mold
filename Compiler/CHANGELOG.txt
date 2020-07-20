@@ -1,10 +1,6 @@
 
 UNRELEASED:
 -----------
-  Internal maintain:
-    - Core: Major clean up around error handling
-    - Parser: Removed AST convert step
-    - Parser: Use built-in substr internally
 
   Dropped syntax:
     - x[key] is not allowed for maps anymore, use x{key} instead.
@@ -24,6 +20,14 @@ UNRELEASED:
    - AST optimizer: remove calls to empty functions
    - X64 optimizer: stub for x[i] load with native type
 
+  Internal maintain:
+    - Core: Major clean up around error handling
+    - Parser: Removed AST convert step
+    - Parser: Use built-in substr internally
+    - Parser: Rewritten code building AST tree
+    - Translator: Better static type adjustment
+    - Translator: More static errors with source line presented
+
 0.2.200706 (released on 2020-07-06)
 -----------------------------------
   Implemented:
@@ -33,9 +37,6 @@ UNRELEASED:
     - Faster x64 code (load/store indexes with int32 pointers)
     - Avoid creating multiple Parser() objects per each module load
     - Distinguish variant and string types while generating code
-
-  Internal maintain:
-    - Major clean up the parser code
 
   New language syntax:
     - Distinguish reference by index (integer) and by key (string):
@@ -49,13 +50,28 @@ UNRELEASED:
 
     - Use x ~ y for string concatenation, x + y is not correct anymore.
 
+  Internal maintain:
+    - Major clean up the parser code
+
 0.1.191126 (released on 2019-11-26)
 -----------------------------------
 
   First release with assigned version.
 
   Implemented:
-    - Interpreter,
-    - X64 compiler,
+    - Self-hosted interpreter,
+    - Self-hosted X64 compiler,
     - Tests,
+    - Intermediate MIR language,
     - Basic -O1 optimizations.
+
+  Dropped functionalities:
+    - No more C bootstrap, code is self-hosted,
+    - no more C target, only MIR and X64 assembler are supported.
+
+unnamed version (around 2015)
+-----------------------------
+
+  - Init bootstrap in C
+  - Interpreter
+  - Compiler to C target

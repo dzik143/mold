@@ -601,6 +601,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
     loopLabel = this.symbolTable.createLabel()
     endLabel  = this.symbolTable.createLabel()
 
+    this.emitComment('')
+    this.emitComment('-----------------------------')
+    this.emitComment('BEGIN: while')
+    this.emitComment('')
+
     this.emitLabel(loopLabel)
       # if (not cond) goto end
       this._evaluateNode(condAst)
@@ -611,6 +616,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
       this.emitJmp(loopLabel)
 
     this.emitLabel(endLabel)
+
+    this.emitComment('')
+    this.emitComment('END: while')
+    this.emitComment('-----------------------------')
+    this.emitComment('')
   endmethod
 
   method _executeNodeIf(cond, codeIfTrue, codeIfFalse)

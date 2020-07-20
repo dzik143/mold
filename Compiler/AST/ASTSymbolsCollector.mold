@@ -83,6 +83,7 @@ class ASTSymbolsCollector
     global AST_OPCODE_COMPARE_LE
     global AST_OPCODE_BOOL_NOT
     global AST_OPCODE_CALL_NEW
+    global AST_DATA_UNDEFINED
     global AST_DATA_BOOL
     global AST_DATA_OBJECT
     global AST_DATA_ARRAY
@@ -383,6 +384,12 @@ class ASTSymbolsCollector
 
         # TODO: Review it.
         symbolTable.assignType(lval.value, AST_GetDataType(rval))
+
+        # TODO: Review it.
+        # Force variant for: x = null
+        if rval.opcode is AST_DATA_UNDEFINED
+          symbolInfo.isAstTypeFrozen = true
+        endif
 
         # TODO?
         # Handle overwrite one object by instance of another one.
