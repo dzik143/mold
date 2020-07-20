@@ -342,3 +342,17 @@ foo( 2 ) : this.parent = 9999
 
 EXPECTED_OUTPUT:
 -------------------------------------------------------------------------------
+
+TEST "Bug: Out of range while printing explicit variant type in translator"
+
+x = []
+
+if true
+  state = 0
+endif
+
+state = x[0]
+
+EXPECTED_ERROR:
+./temp/source.mold:5:12: error: attempted to use 'state' as integer; it was used as variant before
+-------------------------------------------------------------------------------
