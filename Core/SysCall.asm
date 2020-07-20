@@ -375,13 +375,17 @@ __MOLD_SysCall:
     cmp     rdx, [rcx + String_t.length]
     ja      __MOLD_PrintErrorAndDie.indexOutOfRange
 
-    ; Calculate new length i if needed
-    or      r8, r8
-    jge     .init_output_stub
+    ; Calculate maximum possible length
+    mov     r9, [rcx + String_t.length]    ;
+    sub     r9, rdx                        ; r9 = maximum possible length
 
-.from_idx_to_end:
-    mov     r8, [rcx + String_t.length]
-    sub     r8, rdx
+    ; Limit length to maximum possible
+    cmp     r9, r8
+    cmovbe  r8, r9
+
+    ; -1: Use maximum possible length
+    or      r8, r8                         ;
+    cmovs   r8, r9                         ;
 
 .init_output_stub:
     push    rcx
@@ -401,18 +405,14 @@ __MOLD_SysCall:
 
     ; Fill up output data
     push    rdi
+
     mov     rdi, [rax + Buffer_t.bytesPtr]         ; rdi       = new String_t
     mov     [rdi + String_t.length], r8            ; rv.length = len
 
     lea     rdx, [rcx + String_t.text + rdx]
     lea     rcx, [rdi + String_t.text]
-    push    rcx
-    cinvoke strncpy
-    pop     rcx
 
-    ; TODO: Optimize it.
-    cinvoke strlen
-    mov     [rdi + String_t.length], rax
+    cinvoke strncpy
 
     pop     rdi
 
