@@ -1,0 +1,12 @@
+A = [0..n]
+B = [0..n]
+C = [0..n]
+
+for i in 0 .. n
+  for j in 0 .. n
+    C[i,j] = 0
+    for k in 0 .. n
+      C[i,j] = C[i,j] + A[i,k] * B[k,j]
+    endfor
+  endfor
+endfor

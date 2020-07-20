@@ -20,12 +20,12 @@ endfor
 
 # Iterate over numbers range with step 2.
 # 0, 2, 4, 6, 8
-for idx in 0 .. 10 by step 2
+for idx in 0 .. 10 step by 2
 endfor
 
 # Iterate over numbers range in reverse order.
 # 9, 8, 7, 6, ... 0
-for idx in 0 .. 10 reverse
+reverse for idx in 0 .. 10
 endfor
 
 # Iterate over numbers range.

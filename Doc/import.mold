@@ -1,0 +1,8 @@
+import './AST.mold'   as ast
+import './Utils.mold' as utils
+import './IO.mold'    as io
+...
+
+x = ast::parse(...)
+y = io::foo(...)
+z = utils::bar(x, y)

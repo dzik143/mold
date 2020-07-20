@@ -1,0 +1,49 @@
+                | Rozmiar po  |
+Operacja        | wykonaniu   | Implementacja
+--------------- | ----------- | -----------------------
+x[i]            | n           | 0   * length + 1*i + 0
+--------------- - ----------- - -----------------------
+x[@last]        | n           | 1   * length + 0*i + 0
+x[@first]       | n           | 0   * length + 0*i + 0
+x[@center]      | n           | 1/2 * length + 0*i + 0
+--------------- - ----------- - -----------------------
+x[@random]      | n           | custom code
+x[@max]         | n           | custom code
+x[@min]         | n           | custom code
+--------------- - ----------- - -----------------------
+if x[@all] ...  | n           | custom code
+if x[@any] ...  | n           | custom code
+--------------- - ----------- - -----------------------
+x[@afterLast]   | n+1         | 1   * length + 0*i + 1
+x[@beforeFirst] | n+1         | 0   * length + 0*i - 1
+x[@after i]     | n+1         | 0   * length + 1*i + 1
+x[@before i]    | n+1         | 0   * length + 1*i - 1
+--------------- - ----------- - -----------------------
+remove x[i]     | n-1         | 0   * length + 1*i + 0
+... = pull x[i] | n-1         | 0   * length + 1*i + 0
+--------------- - ----------- - -----------------------
+                                0             -1    -1
+                                1   x length x 0  x  0
+                                1/2            1     1
+
+
+x[@first]       = 0        # no shift
+x[@center]      = center   # no shift
+x[@last]        = size - 1 # no shift
+
+x[@beforefirst] = 0        # shift
+x[@afterlast]   = size     # shift
+
+x[@before i]    = 0
+x[@after  i]    = 0
+
+####################
+
+0    0
+1    1
+2    2
+...  ...
+i    i
+
+0x80000000 + 0 | size + 0
+0x80000000 + i | size + i
