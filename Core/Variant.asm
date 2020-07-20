@@ -1172,15 +1172,14 @@ __MOLD_VariantDiv:
 ; x[i] = ...
 ;
 ; rcx = box   (Variant_t) (IN)
-; rdx = index (Variant_t) (IN)
+; rdx = index (int32*)    (IN)
 ; r8  = rv    (Variant_t) (IN)
 ;
 ;###############################################################################
 
-proc __MOLD_VariantStoreAtIndex
+proc __MOLD_VariantStoreAtIndex_int32
 
     DEBUG_CHECK_VARIANT rcx
-    DEBUG_CHECK_VARIANT rdx
 
     ; TODO: Optimize it.
     push   rcx rdx r8
@@ -1198,11 +1197,8 @@ proc __MOLD_VariantStoreAtIndex
     ; ==========================================================================
 
 .array:
-    cmp     [rdx + Variant_t.type], VARIANT_INTEGER
-    jnz     __MOLD_PrintErrorAndDie.integerIndexExpected
-
-    mov     r10, [rcx + Variant_t.value]         ; r10  = array buffer (Buffer_t)
-    mov     rdx, [rdx + Variant_t.value]         ; rdx  = idx          (integer)
+    mov     r10, [rcx + Variant_t.value]  ; r10  = array buffer (Buffer_t)
+    mov     edx, dword [rdx]              ; edx  = idx          (integer)
 
     or      edx, edx
     js      __MOLD_PrintErrorAndDie.negativeIndex
@@ -1211,8 +1207,8 @@ proc __MOLD_VariantStoreAtIndex
     ; Check is there space for new item
     ; --------------------------------------------------------------------------
 
-    mov     r9, rdx                              ; r9 = idx    (integer)
-    shl     r9, 4                                ; r9 = idx*16 (integer)
+    mov     r9d, edx                             ; r9 = idx    (integer)
+    shl     r9d, 4                               ; r9 = idx*16 (integer)
 
 .checkBounds:
     mov     rax, [r10 + Buffer_t.capacity]       ; rax = capacity
@@ -1231,7 +1227,7 @@ proc __MOLD_VariantStoreAtIndex
 .arrayNoReallocNeeded:
 
     mov     rcx, [r10 + Buffer_t.bytesPtr]       ; rcx  = array buffer (Array_t)
-    inc     rdx                                  ; rdx = idx + 1
+    inc     edx                                  ; edx = edx + 1
     mov     rax, [rcx + Array_t.itemsCnt]        ; eax = array.itemsCnt (integer)
     lea     r10, [rcx + Array_t.items + r9]      ; r10 = array slot to fill
 
@@ -1629,6 +1625,9 @@ __MOLD_VariantLoadFromIndex:
     ; rcx = box   (Variant_t)
     ; rdx = index (Variant_t)
     ; r8  = rv    (Variant_t)
+
+    DEBUG_CHECK_VARIANT rdx
+
     cmp     [rdx + Variant_t.type], VARIANT_INTEGER
     jnz     __MOLD_PrintErrorAndDie.integerIndexExpected
 
@@ -1645,15 +1644,18 @@ __MOLD_VariantLoadFromIndex_native:
     mov     dword [r8], eax
     ret
 
-__MOLD_VariantStoreAtIndex_int32:
-    ; rcx = box (Variant_t)
+__MOLD_VariantStoreAtIndex:
+    ; rcx = box   (Variant_t)
     ; rdx = index (Variant_t)
     ; r8  = value (Variant_t)
 
-    mov     eax, dword [rdx]              ; eax      = index
-    lea     rdx, [__TempIndexInteger]     ; rdx      = tmpIndex
-    mov     [rdx + Variant_t.value], rax  ; tmpIndex = index
-    jmp     __MOLD_VariantStoreAtIndex
+    DEBUG_CHECK_VARIANT rdx
+
+    cmp     [rdx + Variant_t.type], VARIANT_INTEGER
+    jnz     __MOLD_PrintErrorAndDie.integerIndexExpected
+
+    add     rdx, Variant_t.value
+    jmp     __MOLD_VariantStoreAtIndex_int32
 
 ;###############################################################################
 ;
