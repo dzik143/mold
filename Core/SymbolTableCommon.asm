@@ -60,7 +60,6 @@ dq __MOLD_VariantStoreAtIndex                , name__MOLD_VariantStoreAtIndex
 dq __MOLD_VariantStoreAtKey                  , name__MOLD_VariantStoreAtKey
 dq __MOLD_VariantLoadFromIndex               , name__MOLD_VariantLoadFromIndex
 dq __MOLD_VariantLoadFromKey                 , name__MOLD_VariantLoadFromKey
-dq __MOLD_StringLength                       , name__MOLD_StringLength
 dq __MOLD_StringHashDJB2                     , name__MOLD_StringHashDJB2
 dq __MOLD_VariantArrayCreate                 , name__MOLD_VariantArrayCreate
 dq __MOLD_VariantMapCreate                   , name__MOLD_VariantMapCreate

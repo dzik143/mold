@@ -60,7 +60,6 @@ name__MOLD_VariantStoreAtIndex                db '__MOLD_VariantStoreAtIndex', 0
 name__MOLD_VariantStoreAtKey                  db '__MOLD_VariantStoreAtKey', 0
 name__MOLD_VariantLoadFromIndex               db '__MOLD_VariantLoadFromIndex', 0
 name__MOLD_VariantLoadFromKey                 db '__MOLD_VariantLoadFromKey', 0
-name__MOLD_StringLength                       db '__MOLD_StringLength', 0
 name__MOLD_StringHashDJB2                     db '__MOLD_StringHashDJB2', 0
 name__MOLD_VariantArrayCreate                 db '__MOLD_VariantArrayCreate', 0
 name__MOLD_VariantMapCreate                   db '__MOLD_VariantMapCreate', 0

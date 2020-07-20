@@ -1659,26 +1659,6 @@ __MOLD_VariantStoreAtIndex:
 
 ;###############################################################################
 ;
-; TODO: Is it still needed?
-; Temporary strlen()
-;
-;###############################################################################
-
-__MOLD_StringLength:
-    ; rcx = cstr
-    mov     rax, 0
-.goOn:
-    cmp     byte [rcx + rax], 0
-    je      .done
-
-    inc     rax
-    jmp     .goOn
-
-.done:
-    ret
-
-;###############################################################################
-;
 ; Calculate DJB2 string hash.
 ; http://www.cse.yorku.ca/~oz/hash.html
 ;
