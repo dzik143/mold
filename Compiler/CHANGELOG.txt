@@ -1,6 +1,6 @@
 
-UNRELEASED:
------------
+0.3.200720 (released on 2020-07-20):
+------------------------------------
 
   Dropped syntax:
     - x[key] is not allowed for maps anymore, use x{key} instead.
