@@ -363,16 +363,16 @@ class Parser
       acceptRow = LexerAcceptLUT[mach]
 
       if mach > -1
-        state  = 0
-        length = 0
-        chr    = 0
-        next   = ord(buf[0])
+        length     = 0
+        chr        = 0
+        next       = ord(buf[0])
+        lexerState = 0
 
         # Read next token. if there is still some input data to read.
-        while (state &gt;= 0) and (next isnt @@eof)
-          isMatched = false
-          chr       = indexBase + indexRow[state]
-          state     = -1
+        while (lexerState &gt;= 0) and (next isnt @@eof)
+          isMatched  = false
+          chr        = indexBase + indexRow[lexerState]
+          lexerState = -1
 
           # Match character.
           while (isMatched is false) and (LexerCharsLUT[chr] &gt; -1)
@@ -384,15 +384,15 @@ class Parser
           endwhile
 
           if isMatched is true
-            state = LexerTransLUT[chr // 2]
+            lexerState = LexerTransLUT[chr // 2]
 
-            if acceptRow[state] &gt; 0
+            if acceptRow[lexerState] &gt; 0
               currentLen = length + 1
-              currentSym = acceptRow[state] - 1
+              currentSym = acceptRow[lexerState] - 1
 
               if (currentSym is 0) or (SymbolsGreedyLUT[currentSym] is 0)
                 # End of file or non-greedy symbol.
-                state = -1
+                lexerState = -1
               endif
             endif
 
