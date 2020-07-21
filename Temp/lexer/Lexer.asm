@@ -16,20 +16,6 @@ STA EQU 0x80 + 68 ; '*'
 PLS EQU 0x80 + 70 ; '+'
 EQ  EQU 0x80 + 71 ; '='
 
-; Potentially two character operators.
-; We can't assign token immediately.
-; We need extra code basing on the second character.
-; Example:
-; - x <  y
-; - x <= y
-
-LT  EQU 0x80 ; '<'
-GT  EQU 0x80 ; '>'
-COL EQU 0x80 ; ':'
-MNS EQU 0x80 ; '-'
-DOT EQU 0x80 ; '.'
-DV  EQU 0x80 ; '/'
-
 INR EQU 0x80 ; '!' (unassigned token yet - map to EOF)
 HSH EQU 0x80 ; '#' (unassigned token yet - map to EOF)
 USD EQU 0x80 ; '$' (unassigned token yet - map to EOF)
@@ -39,6 +25,20 @@ SEM EQU 0x80 ; ';' (unassigned token yet - map to EOF)
 QMK EQU 0x80 ; '?' (unassigned token yet - map to EOF)
 MNK EQU 0x80 ; '@' (unassigned token yet - map to EOF)
 ABS EQU 0x80 ; '|' (unassigned token yet - map to EOF)
+
+; Potentially two character operators.
+; We can't assign token immediately.
+; We need extra code basing on the second character.
+; Example:
+; - x <  y
+; - x <= y
+
+LT  EQU 5 ; '<'
+GT  EQU 5 ; '>'
+COL EQU 0x80 + 59 ; ':'
+MNS EQU 5 ; '-'
+DOT EQU 5 ; '.'
+DV  EQU 5 ; '/'
 
 ; Final complex tokens.
 TOKEN_EOF                 EQU 0
@@ -55,16 +55,11 @@ TOKEN_TEMP_OPERATOR2 EQU 0xff
 
 EOL EQU 0  ; <EOL>
 SPC EQU 1  ; <WHITE>
-DIG EQU 2  ; <DIGIT>      0-9
-LET EQU 3  ; <LETTER>     a-z A-Z
-STR EQU 4  ; <STRING>     '"
-LT  EQU 5  ; <LOWER_TO>   <
-GT  EQU 6  ; <GREATER_TO> >
-COL EQU 7  ; <COLON>      :
-MNS EQU 8  ; <MINUS_SIGN> -
-DOT EQU 9  ; <DOT>        .
-DV  EQU 10 ; <DIV>        /
-ERR EQU 11 ; <ERROR>
+DIG EQU 2  ; <DIGIT>     0-9
+LET EQU 3  ; <LETTER>    a-z A-Z
+STR EQU 4  ; <STRING>    '"
+OP2 EQU 5  ; <OPERATOR2> -> etc.
+ERR EQU 6  ; <ERROR>
 
 __MOLD_Lexer:
       call __MOLD_LexerInternal
@@ -205,13 +200,17 @@ __MOLD_LexerInternal:
     ; --------------------------------------------------------------------------
 
 .begin_from_operator2:
-      ; x <= y
-      ; x >= y
-      ; x::y
-      ; x -> rv
-      ; TODO:
-      inc   rcx
-      mov   al, TOKEN_TEMP_OPERATOR2
+      inc   rcx                            ; eat first character
+      sub   eax, 0x20                      ; rax = index in operator 2 LUT
+      lea   r9, [.operator2LUT + rax * 4]  ; r9  = pointer to LUT row
+
+      mov   al, byte [rcx]                 ; rax = second character
+      cmp   al, byte [r9]                  ; match second parameter
+      setz  dl                             ; rdx = 1 if matched, 0 otherwise
+
+      add   rcx, rdx                       ; eat second character if matched
+      mov   al, byte [r9 + rdx]            ; rax = token id
+
       ret
 
 .begin_from_eol:
@@ -267,6 +266,54 @@ __MOLD_LexerInternal:
   db    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, 255, 255, 255, 255,   0 ; 5x
   db  255,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0 ; 6x
   db    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, 255, 255, 255, 255, 255 ; 7x
+
+
+; Look up table for potentially two byte operators.
+; ASCII codes from 20 to 3f.
+; Columns:
+; - second character to test,
+; - token id if second character not matched,
+; - token id if second character matched.
+;
+; Example:
+; - First character is '-',
+; - we want TOKEN_MINUS fo single '-' (second character unmatched),
+; - or TOKEN_RARROW for -> (second character matched).
+
+.operator2LUT:
+  db 0   , 0  , 0  , 0 ; 20 space (unused)
+  db 0   , 0  , 0  , 0 ; 21 ! (unused)
+  db 0   , 0  , 0  , 0 ; 22 " (unused)
+  db 0   , 0  , 0  , 0 ; 23 # (unused)
+  db 0   , 0  , 0  , 0 ; 24 $ (unused)
+  db 0   , 0  , 0  , 0 ; 25 % (unused)
+  db 0   , 0  , 0  , 0 ; 26 & (unused)
+  db 0   , 0  , 0  , 0 ; 27 ' (unused)
+  db 0   , 0  , 0  , 0 ; 28 ( (unused)
+  db 0   , 0  , 0  , 0 ; 29 ) (unused)
+  db 0   , 0  , 0  , 0 ; 2a * (unused)
+  db 0   , 0  , 0  , 0 ; 2b + (unused)
+  db 0   , 0  , 0  , 0 ; 2c , (unused)
+  db '>' , 32 , 69 , 0 ; 2d - or ->
+  db '.' , 10 , 58 , 0 ; 2e . or ..
+  db '/' , 67 , 46 , 0 ; 2f / or //
+
+  db 0   , 0  , 0  , 0 ; 30 0 (unused)
+  db 0   , 0  , 0  , 0 ; 31 1 (unused)
+  db 0   , 0  , 0  , 0 ; 32 2 (unused)
+  db 0   , 0  , 0  , 0 ; 33 3 (unused)
+  db 0   , 0  , 0  , 0 ; 34 4 (unused)
+  db 0   , 0  , 0  , 0 ; 35 5 (unused)
+  db 0   , 0  , 0  , 0 ; 36 6 (unused)
+  db 0   , 0  , 0  , 0 ; 37 7 (unused)
+  db 0   , 0  , 0  , 0 ; 38 8 (unused)
+  db 0   , 0  , 0  , 0 ; 39 9 (unused)
+  db 0   , 0  , 0  , 0 ; 3a : (unused)
+  db 0   , 0  , 0  , 0 ; 3b ; (unused)
+  db '=' , 32 , 69 , 0 ; 3c < or <=
+  db 0   , 10 , 58 , 0 ; 3d = (unused)
+  db '=' , 67 , 46 , 0 ; 3e > or >=
+  db 0   , 0  , 0  , 0 ; 3f ? (unused)
 
 ; -----------------
 ; 128-bit keywords
