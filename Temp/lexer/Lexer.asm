@@ -1,53 +1,96 @@
-EOL EQU 0 * 8 ;
-SPC EQU 1 * 8 ;
-DIG EQU 2 * 8 ;
-LET EQU 3 * 8 ;
-STR EQU 4 * 8 ;
-OP2 EQU 5 * 8 ;
-ERR EQU 6 * 8 ;
+; One character operators.
+; Just return assigned token and don't go on anymore.
+; Example: x + y
 
-TOKEN_WHITE EQU 54
+RBC EQU 0x80 + 55 ; '}'
+LBC EQU 0x80 + 56 ; '{'
+TLD EQU 0x80 + 57 ; '~'
 
-EQ  EQU 0x80 ;+ '='
-LBR EQU 0x80 + '('
-LBS EQU 0x80 + '['
-LBC EQU 0x80 + '{'
+COM EQU 0x80 + 60 ; ','
+RBR EQU 0x80 + 61 ; ')'
+LBR EQU 0x80 + 62 ; '('
+RBS EQU 0x80 + 63 ; ']'
+LBS EQU 0x80 + 64 ; '['
 
-RBR EQU 0x80 + ')'
-RBS EQU 0x80 + ']'
-RBC EQU 0x80 + '}'
+STA EQU 0x80 + 68 ; '*'
+PLS EQU 0x80 + 70 ; '+'
+EQ  EQU 0x80 + 71 ; '='
 
-TLD EQU 0x80 + '~'
-PLS EQU 0x80 + '+'
-INR EQU 0x80 + '!'
-HSH EQU 0x80 + '#'
-USD EQU 0x80 + '$'
-PER EQU 0x80 + '%'
-AMP EQU 0x80 + '&'
-STA EQU 0x80 + '*'
-COM EQU 0x80 + ','
-SEM EQU 0x80 + ';'
-QMK EQU 0x80 + '?'
-MNK EQU 0x80 + '@'
-ABS EQU 0x80 + '|'
+; Potentially two character operators.
+; We can't assign token immediately.
+; We need extra code basing on the second character.
+; Example:
+; - x <  y
+; - x <= y
 
-LT  EQU 0x80 + '<'
-GT  EQU 0x80 + '>'
-COL EQU 0x80 + ':'
-MNS EQU 0x80 + '-'
-DOT EQU 0x80 + '.'
-DV  EQU 0x80 + '/'
+LT  EQU 0x80 ; '<'
+GT  EQU 0x80 ; '>'
+COL EQU 0x80 ; ':'
+MNS EQU 0x80 ; '-'
+DOT EQU 0x80 ; '.'
+DV  EQU 0x80 ; '/'
+
+INR EQU 0x80 ; '!' (unassigned token yet - map to EOF)
+HSH EQU 0x80 ; '#' (unassigned token yet - map to EOF)
+USD EQU 0x80 ; '$' (unassigned token yet - map to EOF)
+PER EQU 0x80 ; '%' (unassigned token yet - map to EOF)
+AMP EQU 0x80 ; '&' (unassigned token yet - map to EOF)
+SEM EQU 0x80 ; ';' (unassigned token yet - map to EOF)
+QMK EQU 0x80 ; '?' (unassigned token yet - map to EOF)
+MNK EQU 0x80 ; '@' (unassigned token yet - map to EOF)
+ABS EQU 0x80 ; '|' (unassigned token yet - map to EOF)
+
+; Final complex tokens.
+TOKEN_EOF                 EQU 0
+TOKEN_INTEGER             EQU 47
+TOKEN_FLOAT               EQU 48
+TOKEN_UNTERMINATED_STRING EQU 49
+TOKEN_STRING              EQU 50
+TOKEN_SELECTOR            EQU 51
+TOKEN_IDENT               EQU 52
+TOKEN_EOL                 EQU 53
+TOKEN_WHITE               EQU 54
+
+TOKEN_TEMP_OPERATOR2 EQU 0xff
+
+EOL EQU 0  ; <EOL>
+SPC EQU 1  ; <WHITE>
+DIG EQU 2  ; <DIGIT>      0-9
+LET EQU 3  ; <LETTER>     a-z A-Z
+STR EQU 4  ; <STRING>     '"
+LT  EQU 5  ; <LOWER_TO>   <
+GT  EQU 6  ; <GREATER_TO> >
+COL EQU 7  ; <COLON>      :
+MNS EQU 8  ; <MINUS_SIGN> -
+DOT EQU 9  ; <DOT>        .
+DV  EQU 10 ; <DIV>        /
+ERR EQU 11 ; <ERROR>
 
 __MOLD_Lexer:
+      call __MOLD_LexerInternal
+
+      push rcx
+      push r10
+
+      mov     r9, r8
+      mov     edx, eax
+      sub     r8, rcx
+      neg     r8
+
+      cinvoke printf, '<token #%d> %.*s'
+;      cinvoke putchar, 13
+      cinvoke putchar, 10
+
+      pop  r10
+      pop  rcx
+      ret
+
+__MOLD_LexerInternal:
 
       ; rcx - source (char*)
-      push  rcx
-      cinvoke putchar, 13
-      cinvoke putchar, 10
-      pop   rcx
-
       mov   eax, 0                         ; rax = 0
       mov   edx, 0                         ; rdx = 0
+      mov   r8, rcx                        ; r8  = keep original string pointer
 
       or    al, byte [rcx]                 ; rax = the first character
       jle  .done_eof_or_above127           ; accept 7-bit ascii only
@@ -56,31 +99,27 @@ __MOLD_Lexer:
     ;                  Dispatch type of the first character
     ; --------------------------------------------------------------------------
 
-      or    dl, byte [.charTypeLUT + rax]  ; rdx = type of first character
-      js    .done_operator1                ; is it one character operator?
-      jmp   qword [.jmpTableOnBegin + rdx] ; jmp to type handler
+      or    dl, byte [.charTypeLUT + rax]    ; rdx = type of first character
+      js    .done_operator1                  ; is it one character operator?
+      jmp   qword [.jmpTableOnBegin + 8*rdx] ; jmp to type handler
 
     ; --------------------------------------------------------------------------
-    ;                        Identifier or keyword
+    ;                          Identifier or keyword
     ; --------------------------------------------------------------------------
 
 .begin_from_letter:
-      mov     eax, 0                       ; rax = 0
+      mov   eax, 0                         ; rax = 0
 
 .next_ident_character:
-      inc     rcx                          ; rcx = pointer to next character
-      or      al, byte [rcx]               ; rax = next character
-      js      .done_above127               ; accept 7-bit ascii only
+      inc   rcx                            ; rcx = pointer to next character
+      or    al, byte [rcx]                 ; rax = next character
+      js    .done_above127                 ; accept 7-bit ascii only
 
-      and     al, byte [.isOkAsNextIdentCharacterLUT + rax]
-      jz      .next_ident_character        ; rax is 0 if OK
+      and   al, byte [.isOkAsNextIdentCharacterLUT + rax]
+      jz    .next_ident_character          ; rax is 0 if OK
 
 .done_identifier:
-
-      push    rcx
-      cinvoke printf, "<ident>"
-      pop     rcx
-
+      mov   al, TOKEN_IDENT
       ret
 
     ; --------------------------------------------------------------------------
@@ -90,34 +129,28 @@ __MOLD_Lexer:
 .begin_from_space:
 .next_space:
       ; Space - go on until first non-white character.
-      inc     rcx
-      cmp     al, byte [rcx]
-      jz      .next_space
+      inc   rcx                            ; rcx = pointer to next character
+      cmp   al, byte [rcx]                 ; is it still space?
+      jz    .next_space                    ; go on if another space found
 
-      push    rcx
-      cinvoke printf, '<white>'
-      pop     rcx
-
+      mov   al, TOKEN_WHITE
       ret
 
     ; --------------------------------------------------------------------------
-    ;                               String
+    ;                                 String
     ; --------------------------------------------------------------------------
 
 .begin_from_string:
       ; String - go on until end quote matched: "text" or 'text'
       ; TODO: Handle unterminated strings.
 .next_string_character:
-      inc     rcx                          ; rcx = pointer to next char
-      cmp     al, byte [rcx]               ; is quote matched or EOF?
-      jnz     .next_string_character
+      inc   rcx                            ; rcx = pointer to next char
+      cmp   al, byte [rcx]                 ; is quote matched or EOF?
+      jnz   .next_string_character
 
-      inc     rcx                          ; eat ending quote
+      inc   rcx                            ; eat ending quote
 
-      push    rcx
-      cinvoke printf, '<string>'
-      pop     rcx
-
+      mov   al, TOKEN_STRING
       ret
 
     ; --------------------------------------------------------------------------
@@ -131,10 +164,9 @@ __MOLD_Lexer:
       add   rcx, rax                       ; rcx = rcx + 1 if prefix found
       add   rcx, rax                       ; rcx = rcx + 1 if prefix found
 
-      mov   r9d, '.'                       ; we're going to search for '.'
-                                           ; separator, but only one time
+      mov   r9d, '.'
 
-.parse_next_integer:
+.next_integer:
 .next_digit:
       ; Go on until first non-digit character found.
       inc   rcx                            ; rcx = pointer to next char
@@ -149,59 +181,48 @@ __MOLD_Lexer:
 
       cmp   byte [rcx], r9l                ; is current char is '.' ?
       mov   r9d, 0xff                      ; mark dot already checked
-      jz    .parse_next_integer            ; consume one more integer after dot
+      jz    .next_integer                  ; consume one more integer after dot
 
 .done_integer:
-      push  rcx
-      cinvoke printf, '<integer>'
-      pop   rcx
+      mov   al, TOKEN_INTEGER
       ret
 
 .done_float:
-      push  rcx
-      cinvoke printf, '<float>'
-      pop   rcx
+      mov   al, TOKEN_FLOAT
       ret
 
     ; --------------------------------------------------------------------------
-    ;                              Operators
+    ;                          One character operator
     ; --------------------------------------------------------------------------
 
 .done_operator1:
-      inc     rcx                          ;
-
-      push    rcx                          ;
-      and     al, 0x7f
-      cinvoke putchar, al                  ;
-      pop     rcx
-
+      inc   rcx
+      and   al, 0x7f
       ret
+
+    ; --------------------------------------------------------------------------
+    ;                   Potentially two characters operator
+    ; --------------------------------------------------------------------------
 
 .begin_from_operator2:
       ; x <= y
       ; x >= y
       ; x::y
       ; x -> rv
-      ; TODO: Optimize it.
-      inc     rcx
-      push    rcx
-      cinvoke printf, '<operator2>'
-      pop     rcx
-
+      ; TODO:
+      inc   rcx
+      mov   al, TOKEN_TEMP_OPERATOR2
       ret
 
 .begin_from_eol:
-      inc     rcx
-      push    rcx
-      cinvoke printf, '<EOL>'
-      pop     rcx
+      inc   rcx
+      mov   al, TOKEN_EOL
       ret
 
 .done_eof_or_above127:
-      js      .done_above127
-      push    rcx
-      cinvoke printf, '<EOF>'
-      pop     rcx
+      or    al, al
+      js    .done_above127
+      mov   al, TOKEN_EOF
       ret
 
 .done_above127:
@@ -209,6 +230,7 @@ __MOLD_Lexer:
       push    rcx
       cinvoke printf, 'ERROR'
       pop     rcx
+      int 3
       ret
 
 .charTypeLUT:
@@ -216,7 +238,7 @@ __MOLD_Lexer:
   db  ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR, EOL, ERR, ERR, EOL, ERR, ERR ; 0x
   db  ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR ; 1x
   db  SPC, INR, STR, HSH, USD, PER, AMP, STR, LBR, RBR, STA, PLS, COM, MNS, DOT,  DV ; 2x
-  db  DIG, DIG, DIG, DIG, DIG, DIG, DIG, DIG, DIG, DIG, OP2, SEM,  LT,  EQ,  GT, QMK ; 3x
+  db  DIG, DIG, DIG, DIG, DIG, DIG, DIG, DIG, DIG, DIG, COL, SEM,  LT,  EQ,  GT, QMK ; 3x
   db  MNK, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET ; 4x
   db  LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LBS, ERR, RBS, ERR, ERR ; 5x
   db  ERR, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET ; 6x
@@ -246,9 +268,25 @@ __MOLD_Lexer:
   db  255,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0 ; 6x
   db    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, 255, 255, 255, 255, 255 ; 7x
 
+; -----------------
+; 128-bit keywords
+; -----------------
+
+.keywords16:
+  dq 0, 0
+
+.keywords15:
+  dq 0, 0
+
+.keywords14:
+  dq 0, 0
+
 .keywords13:
   ;   0123456789abc   d  e  f
   db 'unimplemented', 0, 0, 0
+  dq 0, 0
+
+.keywords12:
   dq 0, 0
 
 .keywords11:
@@ -256,10 +294,17 @@ __MOLD_Lexer:
   db 'endfunction', 0, 0, 0, 0, 0
   dq 0, 0
 
+.keywords10:
+  dq 0, 0
+
 .keywords9:
   ;   012345678   9  a  b  c  d  e  f
   db 'endmethod', 0, 0, 0, 0, 0, 0, 0
   dq 0, 0
+
+; ----------------
+; 64-bit keywords
+; ----------------
 
 .keywords8:
   dq 'endclass'
@@ -290,6 +335,10 @@ __MOLD_Lexer:
   dq 'write'
   dq 0
 
+; ----------------
+; 32-bit keywords
+; ----------------
+
 .keywords4:
   dd 'true'
   dd 'null'
@@ -315,4 +364,7 @@ __MOLD_Lexer:
   dd 'is'
   dd 'or'
   dd 'to'
+  dd 0
+
+.keywords1:
   dd 0
