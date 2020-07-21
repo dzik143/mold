@@ -1,45 +1,3 @@
-; One character operators.
-; Just return assigned token and don't go on anymore.
-; Example: x + y
-
-RBC EQU 0x80 + 55 ; '}'
-LBC EQU 0x80 + 56 ; '{'
-TLD EQU 0x80 + 57 ; '~'
-
-COM EQU 0x80 + 60 ; ','
-RBR EQU 0x80 + 61 ; ')'
-LBR EQU 0x80 + 62 ; '('
-RBS EQU 0x80 + 63 ; ']'
-LBS EQU 0x80 + 64 ; '['
-
-STA EQU 0x80 + 68 ; '*'
-PLS EQU 0x80 + 70 ; '+'
-EQ  EQU 0x80 + 71 ; '='
-
-INR EQU 0x80 ; '!' (unassigned token yet - map to EOF)
-HSH EQU 0x80 ; '#' (unassigned token yet - map to EOF)
-USD EQU 0x80 ; '$' (unassigned token yet - map to EOF)
-PER EQU 0x80 ; '%' (unassigned token yet - map to EOF)
-AMP EQU 0x80 ; '&' (unassigned token yet - map to EOF)
-SEM EQU 0x80 ; ';' (unassigned token yet - map to EOF)
-QMK EQU 0x80 ; '?' (unassigned token yet - map to EOF)
-MNK EQU 0x80 ; '@' (unassigned token yet - map to EOF)
-ABS EQU 0x80 ; '|' (unassigned token yet - map to EOF)
-
-; Potentially two character operators.
-; We can't assign token immediately.
-; We need extra code basing on the second character.
-; Example:
-; - x <  y
-; - x <= y
-
-LT  EQU 5 ; '<'
-GT  EQU 5 ; '>'
-COL EQU 0x80 + 59 ; ':'
-MNS EQU 5 ; '-'
-DOT EQU 5 ; '.'
-DV  EQU 5 ; '/'
-
 ; Final complex tokens.
 TOKEN_EOF                 EQU 0
 TOKEN_INTEGER             EQU 47
@@ -51,15 +9,64 @@ TOKEN_IDENT               EQU 52
 TOKEN_EOL                 EQU 53
 TOKEN_WHITE               EQU 54
 
-TOKEN_TEMP_OPERATOR2 EQU 0xff
-
 EOL EQU 0  ; <EOL>
 SPC EQU 1  ; <WHITE>
 DIG EQU 2  ; <DIGIT>     0-9
 LET EQU 3  ; <LETTER>    a-z A-Z
 STR EQU 4  ; <STRING>    '"
 OP2 EQU 5  ; <OPERATOR2> -> etc.
-ERR EQU 6  ; <ERROR>
+CMT EQU 6  ; <COMMENT>   single line comment
+ERR EQU 7  ; <ERROR>
+
+; One character operators.
+; Just return assigned token and don't go on anymore.
+; Example: x + y
+
+; Operators map
+; There are three cases handled:
+;
+; 1. One character operators.
+;    Just return assigned token and don't go on anymore.
+;    Example: x + y
+;
+; 2. Potentially two character operators.
+;    We can't assign token immediately.
+;    We need extra code basing on the second character.
+;    Example (second character is needed to determine which token to use):
+;      - x < y
+;      - x <= y
+;
+; 3. Custom handler depending on the first character.
+;    Example: number parser if we start from any digit (0-9).
+
+INR EQU 0x80      ; '!' (unassigned token yet - map to EOF)
+HSH EQU 0x80      ; '#' (unassigned token yet - map to EOF)
+USD EQU 0x80      ; '$' (unassigned token yet - map to EOF)
+PER EQU 0x80      ; '%' (unassigned token yet - map to EOF)
+AMP EQU 0x80      ; '&' (unassigned token yet - map to EOF)
+LBR EQU 0x80 + 62 ; '(' (one char operator)
+RBR EQU 0x80 + 61 ; ')' (one char operator)
+STA EQU 0x80 + 68 ; '*' (one char operator)
+PLS EQU 0x80 + 70 ; '+' (one char operator)
+COM EQU 0x80 + 60 ; ',' (one char operator)
+MNS EQU OP2       ; '-' (potentially 2-char operator handler)
+DOT EQU OP2       ; '.' (potentially 2-char operator handler)
+DV  EQU OP2       ; '/' (potentially 2-char operator handler)
+COL EQU 0x80 + 59 ; ':' (one char operator)
+SEM EQU 0x80      ; ';' (unassigned token yet - map to EOF)
+LT  EQU OP2       ; '<' (potentially 2-char operator handler)
+EQ  EQU 0x80 + 71 ; '=' (one char operator)
+GT  EQU OP2       ; '>' (potentially 2-char operator handler)
+QMK EQU 0x80      ; '?' (unassigned token yet - map to EOF)
+MNK EQU 0x80      ; '@' (unassigned token yet - map to EOF)
+LBS EQU 0x80 + 64 ; '[' (one char operator)
+BSH EQU 0x80      ; '\' (unassigned token yet - map to EOF)
+RBS EQU 0x80 + 63 ; ']' (one char operator)
+POW EQU 0x80      ; '^' (unassigned token yet - map to EOF)
+LBC EQU 0x80 + 56 ; '{' (one char operator)
+ABS EQU 0x80      ; '|' (unassigned token yet - map to EOF)
+RBC EQU 0x80 + 55 ; '}' (one char operator)
+TLD EQU 0x80 + 57 ; '~' (one char operator)
 
 __MOLD_Lexer:
       call __MOLD_LexerInternal
@@ -249,7 +256,7 @@ __MOLD_LexerInternal:
   dq .begin_from_digit     ; DIG
   dq .begin_from_letter    ; LET
   dq .begin_from_string    ; STRING
-  dq .begin_from_operator2 ; OP2 (two characters e.g. x->y)
+  dq .begin_from_operator2 ; OP2 (two character operators e.g. x >= y)
   dq .done_error           ; ERR
 
 ; Identifier:
@@ -267,7 +274,6 @@ __MOLD_LexerInternal:
   db  255,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0 ; 6x
   db    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, 255, 255, 255, 255, 255 ; 7x
 
-
 ; Look up table for potentially two byte operators.
 ; ASCII codes from 20 to 3f.
 ; Columns:
@@ -277,7 +283,7 @@ __MOLD_LexerInternal:
 ;
 ; Example:
 ; - First character is '-',
-; - we want TOKEN_MINUS fo single '-' (second character unmatched),
+; - we want TOKEN_MINUS for single '-' (second character unmatched),
 ; - or TOKEN_RARROW for -> (second character matched).
 
 .operator2LUT:
