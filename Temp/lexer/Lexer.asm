@@ -1,3 +1,5 @@
+MAX_KEYWORD_LENGTH EQU 13
+
 ; Final complex tokens.
 TOKEN_EOF                 EQU 0
 TOKEN_INTEGER             EQU 47
@@ -9,6 +11,7 @@ TOKEN_IDENT               EQU 52
 TOKEN_EOL                 EQU 53
 TOKEN_WHITE               EQU 54
 
+; Handlers for common complex tokens
 EOL EQU 0  ; <EOL>
 SPC EQU 1  ; <WHITE>
 DIG EQU 2  ; <DIGIT>     0-9
@@ -39,11 +42,11 @@ ERR EQU 7  ; <ERROR>
 ; 3. Custom handler depending on the first character.
 ;    Example: number parser if we start from any digit (0-9).
 
-INR EQU 0x80      ; '!' (unassigned token yet - map to EOF)
-HSH EQU 0x80      ; '#' (unassigned token yet - map to EOF)
-USD EQU 0x80      ; '$' (unassigned token yet - map to EOF)
-PER EQU 0x80      ; '%' (unassigned token yet - map to EOF)
-AMP EQU 0x80      ; '&' (unassigned token yet - map to EOF)
+INR EQU ERR       ; '!' (unassigned token yet - map to ERR)
+HSH EQU CMT       ; '#' (one line comment)
+USD EQU ERR       ; '$' (unassigned token yet - map to ERR)
+PER EQU ERR       ; '%' (unassigned token yet - map to ERR)
+AMP EQU ERR       ; '&' (unassigned token yet - map to ERR)
 LBR EQU 0x80 + 62 ; '(' (one char operator)
 RBR EQU 0x80 + 61 ; ')' (one char operator)
 STA EQU 0x80 + 68 ; '*' (one char operator)
@@ -53,18 +56,18 @@ MNS EQU OP2       ; '-' (potentially 2-char operator handler)
 DOT EQU OP2       ; '.' (potentially 2-char operator handler)
 DV  EQU OP2       ; '/' (potentially 2-char operator handler)
 COL EQU 0x80 + 59 ; ':' (one char operator)
-SEM EQU 0x80      ; ';' (unassigned token yet - map to EOF)
+SEM EQU ERR       ; ';' (unassigned token yet - map to ERR)
 LT  EQU OP2       ; '<' (potentially 2-char operator handler)
 EQ  EQU 0x80 + 71 ; '=' (one char operator)
 GT  EQU OP2       ; '>' (potentially 2-char operator handler)
-QMK EQU 0x80      ; '?' (unassigned token yet - map to EOF)
-MNK EQU 0x80      ; '@' (unassigned token yet - map to EOF)
+QMK EQU ERR       ; '?' (unassigned token yet - map to ERR)
+MNK EQU ERR       ; '@' (unassigned token yet - map to ERR)
 LBS EQU 0x80 + 64 ; '[' (one char operator)
-BSH EQU 0x80      ; '\' (unassigned token yet - map to EOF)
+BSH EQU ERR       ; '\' (unassigned token yet - map to ERR)
 RBS EQU 0x80 + 63 ; ']' (one char operator)
-POW EQU 0x80      ; '^' (unassigned token yet - map to EOF)
+POW EQU ERR       ; '^' (unassigned token yet - map to ERR)
 LBC EQU 0x80 + 56 ; '{' (one char operator)
-ABS EQU 0x80      ; '|' (unassigned token yet - map to EOF)
+ABS EQU ERR       ; '|' (unassigned token yet - map to ERR)
 RBC EQU 0x80 + 55 ; '}' (one char operator)
 TLD EQU 0x80 + 57 ; '~' (one char operator)
 
@@ -80,7 +83,6 @@ __MOLD_Lexer:
       neg     r8
 
       cinvoke printf, '<token #%d> %.*s'
-;      cinvoke putchar, 13
       cinvoke putchar, 10
 
       pop  r10
@@ -92,17 +94,18 @@ __MOLD_LexerInternal:
       ; rcx - source (char*)
       mov   eax, 0                         ; rax = 0
       mov   edx, 0                         ; rdx = 0
-      mov   r8, rcx                        ; r8  = keep original string pointer
+      mov   r8, rcx                        ; r8  = keep original pointer
+                                           ; we use it calculate token length
 
       or    al, byte [rcx]                 ; rax = the first character
-      jle  .done_eof_or_above127           ; accept 7-bit ascii only
+      jle  .eof_or_above127                ; accept 7-bit ascii only
 
     ; --------------------------------------------------------------------------
     ;                  Dispatch type of the first character
     ; --------------------------------------------------------------------------
 
       or    dl, byte [.charTypeLUT + rax]    ; rdx = type of first character
-      js    .done_operator1                  ; is it one character operator?
+      js    .operator1                       ; is it one character operator?
       jmp   qword [.jmpTableOnBegin + 8*rdx] ; jmp to type handler
 
     ; --------------------------------------------------------------------------
@@ -115,13 +118,83 @@ __MOLD_LexerInternal:
 .next_ident_character:
       inc   rcx                            ; rcx = pointer to next character
       or    al, byte [rcx]                 ; rax = next character
-      js    .done_above127                 ; accept 7-bit ascii only
+      js    .above127                      ; accept 7-bit ascii only
 
       and   al, byte [.isOkAsNextIdentCharacterLUT + rax]
       jz    .next_ident_character          ; rax is 0 if OK
 
+.dispatch_ident_length:
+      mov   rax, rcx                       ; rax = pointer to current character
+                                           ; r8  = pointer to the first character
+      sub   rax, r8                        ; rax = token length
+      cmp   eax, MAX_KEYWORD_LENGTH        ; is longest keyword fits into token?
+      jbe   .match_keyword                 ; search for keywords if possible
+
 .done_identifier:
       mov   al, TOKEN_IDENT
+      ret
+
+    ; --------------------------------------------------------------------------
+    ;                          Match keyword dispatcher
+    ; --------------------------------------------------------------------------
+
+.match_keyword:
+      mov   rdx, qword [r8]                     ; rdx = fetch 8-byte keyword
+
+      mov   r9,  [.keywordListIndexLUT + 8*rax] ; r9  = pointer to keyword list
+      and   rdx, [.keywordMaskLUT + 8*rax]      ; rdx = mask unused characters
+
+      ; Go to one of match_keyword_xxx routine
+      jmp   qword [.jmpTableMatchKeyword + rax*8]
+
+    ; --------------------------------------------------------------------------
+    ;                 Match 64-bit keyword (up to 8 characters)
+    ; --------------------------------------------------------------------------
+
+.match_keyword_64bit:
+      mov   al, TOKEN_IDENT                     ; fallback to IDENT if not matched
+
+      ; Match first 4-keywords chunk
+      cmp   rdx, qword [r9 + 16*0 + 0]
+      cmovz rax, qword [r9 + 16*0 + 8]
+
+      cmp   rdx, qword [r9 + 16*1 + 0]
+      cmovz rax, qword [r9 + 16*1 + 8]
+
+      cmp   rdx, qword [r9 + 16*2 + 0]
+      cmovz rax, qword [r9 + 16*2 + 8]
+
+      cmp   rdx, qword [r9 + 16*3 + 0]
+      cmovz rax, qword [r9 + 16*3 + 8]
+
+      ; Skip second chunk if possible
+      ja    .not_a_keyword_64bit
+
+      ; Match next 4-keywords chunk
+      cmp   rdx, qword [r9 + 16*4 + 0]
+      cmovz rax, qword [r9 + 16*4 + 8]
+
+      cmp   rdx, qword [r9 + 16*5 + 0]
+      cmovz rax, qword [r9 + 16*5 + 8]
+
+      cmp   rdx, qword [r9 + 16*6 + 0]
+      cmovz rax, qword [r9 + 16*6 + 8]
+
+      cmp   rdx, qword [r9 + 16*7 + 0]
+      cmovz rax, qword [r9 + 16*7 + 8]
+
+.not_a_keyword_64bit:
+.done_keyword_64bit:
+
+      ret
+
+    ; --------------------------------------------------------------------------
+    ;                Match 128-bit keyword (up to 16 characters)
+    ; --------------------------------------------------------------------------
+
+.match_keyword_128bit:
+      ; TODO: We temporary match only first 8 bytes of keyword
+      jmp .match_keyword_64bit
       ret
 
     ; --------------------------------------------------------------------------
@@ -139,12 +212,32 @@ __MOLD_LexerInternal:
       ret
 
     ; --------------------------------------------------------------------------
+    ;                           Single line comment
+    ; --------------------------------------------------------------------------
+
+.one_line_comment:
+      ; Go on until end of line.
+      ; TODO: Optimize it.
+      inc   rcx
+      inc   r8
+
+      cmp   byte [rcx], 13
+      jz    .eol
+
+      cmp   byte [rcx], 10
+      jz    .eol
+
+      jmp   .one_line_comment
+
+    ; --------------------------------------------------------------------------
     ;                                 String
     ; --------------------------------------------------------------------------
 
 .begin_from_string:
       ; String - go on until end quote matched: "text" or 'text'
       ; TODO: Handle unterminated strings.
+      ; TODO: Handle escaped chars.
+
 .next_string_character:
       inc   rcx                            ; rcx = pointer to next char
       cmp   al, byte [rcx]                 ; is quote matched or EOF?
@@ -156,7 +249,7 @@ __MOLD_LexerInternal:
       ret
 
     ; --------------------------------------------------------------------------
-    ;                               Numbers
+    ;                                 Numbers
     ; --------------------------------------------------------------------------
 
 .begin_from_digit:
@@ -197,16 +290,16 @@ __MOLD_LexerInternal:
     ;                          One character operator
     ; --------------------------------------------------------------------------
 
-.done_operator1:
-      inc   rcx
-      and   al, 0x7f
+.operator1:
+      inc   rcx                            ; eat character
+      and   al, 0x7f                       ; remove 0x80 mask
       ret
 
     ; --------------------------------------------------------------------------
     ;                   Potentially two characters operator
     ; --------------------------------------------------------------------------
 
-.begin_from_operator2:
+.operator2:
       inc   rcx                            ; eat first character
       sub   eax, 0x20                      ; rax = index in operator 2 LUT
       lea   r9, [.operator2LUT + rax * 4]  ; r9  = pointer to LUT row
@@ -220,19 +313,41 @@ __MOLD_LexerInternal:
 
       ret
 
-.begin_from_eol:
-      inc   rcx
+    ; --------------------------------------------------------------------------
+    ;                               End of line
+    ; --------------------------------------------------------------------------
+
+.eol:
+      inc   rcx                            ; eat character
+
+      cmp   byte [rcx], 13                 ; check for extra CR char.
+      setz  al                             ; rax = 1 if double <EOL>
+
+      cmp   byte [rcx], 10                 ; check for extra LF sequence
+      setz  dl                             ; rdx = 1 if LF matched
+
+      add   rcx, rax                       ; skip extra CR if found
+      add   rcx, rdx                       ; skip extra LF if found
+
       mov   al, TOKEN_EOL
       ret
 
-.done_eof_or_above127:
+    ; --------------------------------------------------------------------------
+    ;                      End of file or non 7-bit ASCII
+    ; --------------------------------------------------------------------------
+
+.eof_or_above127:
       or    al, al
-      js    .done_above127
+      js    .above127
       mov   al, TOKEN_EOF
       ret
 
-.done_above127:
-.done_error:
+    ; --------------------------------------------------------------------------
+    ;                          Generic error handler
+    ; --------------------------------------------------------------------------
+
+.above127:
+.error:
       push    rcx
       cinvoke printf, 'ERROR'
       pop     rcx
@@ -251,13 +366,14 @@ __MOLD_LexerInternal:
   db  LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LBC, ABS, RBC, TLD, ERR ; 7x
 
 .jmpTableOnBegin:
-  dq .begin_from_eol       ; EOL (CR or LF)
-  dq .begin_from_space     ; SPC
-  dq .begin_from_digit     ; DIG
-  dq .begin_from_letter    ; LET
-  dq .begin_from_string    ; STRING
-  dq .begin_from_operator2 ; OP2 (two character operators e.g. x >= y)
-  dq .done_error           ; ERR
+  dq .eol               ; EOL (CR or LF)
+  dq .begin_from_space  ; SPC
+  dq .begin_from_digit  ; DIG 0-9
+  dq .begin_from_letter ; LET a-z A-Z
+  dq .begin_from_string ; STRING "'
+  dq .operator2         ; OP2 (two character operators e.g. x >= y)
+  dq .one_line_comment  ; CMT (single line comment)
+  dq .error             ; ERR
 
 ; Identifier:
 ; - First character: ('_' | letter)
@@ -321,103 +437,188 @@ __MOLD_LexerInternal:
   db '=' , 67 , 46 , 0 ; 3e > or >=
   db 0   , 0  , 0  , 0 ; 3f ? (unused)
 
+.keywordMaskLUT:
+  dq 0x0000000000000000 ; 0 characters keyword (unused)
+  dq 0xff00000000000000 ; 1 characters keyword
+  dq 0xffff000000000000 ; 2 characters keyword
+  dq 0xffffff0000000000 ; 3 characters keyword
+  dq 0xffffffff00000000 ; 4 characters keyword
+  dq 0xffffffffff000000 ; 5 characters keyword
+  dq 0xffffffffffff0000 ; 6 characters keyword
+  dq 0xffffffffffffff00 ; 7 characters keyword
+
+  dq 0xffffffffffffffff ; 8  characters keyword
+  dq 0xffffffffffffffff ; 9  characters keyword
+  dq 0xffffffffffffffff ; 10 characters keyword
+  dq 0xffffffffffffffff ; 11 characters keyword
+  dq 0xffffffffffffffff ; 12 characters keyword
+  dq 0xffffffffffffffff ; 13 characters keyword
+  dq 0xffffffffffffffff ; 14 characters keyword
+  dq 0xffffffffffffffff ; 15 characters keyword
+
+.keywordListIndexLUT:
+  dq 0                  ; 0  characters keyword (unused)
+  dq .keywordsList1     ; 1  characters keyword
+  dq .keywordsList2     ; 2  characters keyword
+  dq .keywordsList3     ; 3  characters keyword
+  dq .keywordsList4     ; 4  characters keyword
+  dq .keywordsList5     ; 5  characters keyword
+  dq .keywordsList6     ; 6  characters keyword
+  dq .keywordsList7     ; 7  characters keyword
+  dq .keywordsList8     ; 8  characters keyword
+  dq .keywordsList9     ; 9  characters keyword
+  dq .keywordsList10    ; 10 characters keyword
+  dq .keywordsList11    ; 11 characters keyword
+  dq .keywordsList12    ; 12 characters keyword
+  dq .keywordsList13    ; 13 characters keyword
+  dq .keywordsList14    ; 14 characters keyword
+  dq .keywordsList15    ; 15 characters keyword
+  dq .keywordsList16    ; 16 characters keyword
+
+.jmpTableMatchKeyword:
+  dq 0                     ; 0  characters keyword (unused)
+  dq .match_keyword_64bit  ; 1  characters keyword
+  dq .match_keyword_64bit  ; 2  characters keyword
+  dq .match_keyword_64bit  ; 3  characters keyword
+  dq .match_keyword_64bit  ; 4  characters keyword
+  dq .match_keyword_64bit  ; 5  characters keyword
+  dq .match_keyword_64bit  ; 6  characters keyword
+  dq .match_keyword_64bit  ; 7  characters keyword
+  dq .match_keyword_64bit  ; 8  characters keyword
+  dq .match_keyword_128bit ; 9  characters keyword
+  dq .match_keyword_128bit ; 10 characters keyword
+  dq .match_keyword_128bit ; 11 characters keyword
+  dq .match_keyword_128bit ; 12 characters keyword
+  dq .match_keyword_128bit ; 13 characters keyword
+  dq .match_keyword_128bit ; 14 characters keyword
+  dq .match_keyword_128bit ; 15 characters keyword
+  dq .match_keyword_128bit ; 16 characters keyword
+
 ; -----------------
 ; 128-bit keywords
 ; -----------------
 
-.keywords16:
+.keywordsList16:
   dq 0, 0
 
-.keywords15:
+.keywordsList15:
   dq 0, 0
 
-.keywords14:
+.keywordsList14:
   dq 0, 0
 
-.keywords13:
+.keywordsList13:
   ;   0123456789abc   d  e  f
   db 'unimplemented', 0, 0, 0
   dq 0, 0
 
-.keywords12:
+.keywordsList12:
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
   dq 0, 0
 
-.keywords11:
-  ;   0123456789a   b  c  d  e  f
-  db 'endfunction', 0, 0, 0, 0, 0
+.keywordsList11:
+  dq 'endfunct', 123
+  dq 0, 0
+  dq 0, 0
   dq 0, 0
 
-.keywords10:
+.keywordsList10:
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
   dq 0, 0
 
-.keywords9:
+.keywordsList9:
   ;   012345678   9  a  b  c  d  e  f
   db 'endmethod', 0, 0, 0, 0, 0, 0, 0
+  dq 0, 0
+  dq 0, 0
   dq 0, 0
 
 ; ----------------
 ; 64-bit keywords
 ; ----------------
 
-.keywords8:
-  dq 'endclass'
-  dq 'endwhile'
-  dq 'function'
-  dq 0
+.keywordsList8:
+  dq 'endclass', 100
+  dq 'endwhile', 101
+  dq 'function', 102
+  dq 0, 0
 
-.keywords7:
-  dq 'extends'
-  dq 'indexes'
-  dq 0
+.keywordsList7:
+  dq 'extends', 103
+  dq 'indexes', 104
+  dq 0, 0
+  dq 0, 0
 
-.keywords6:
-  dq 'endfor'
-  dq 'global'
-  dq 'import'
-  dq 'method'
-  dq 'values'
-  dq 0
+.keywordsList6:
+  dq 'endfor', 105
+  dq 'global', 106
+  dq 'import', 107
+  dq 'method', 108
 
-.keywords5:
-  dq 'class'
-  dq 'const'
-  dq 'endif'
-  dq 'false'
-  dq 'print'
-  dq 'while'
-  dq 'write'
-  dq 0
+  dq 'values', 109
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
+
+.keywordsList5:
+  dq 'class', 110
+  dq 'const', 110
+  dq 'endif', 110
+  dq 'false', 110
+
+  dq 'print', 110
+  dq 'while', 110
+  dq 'write', 110
+  dq 0, 0
 
 ; ----------------
 ; 32-bit keywords
 ; ----------------
 
-.keywords4:
-  dd 'true'
-  dd 'null'
-  dd 'keys'
-  dd 'step'
-  dd 'else'
-  dd 'elif'
-  dd 'from'
-  dd 'read'
-  dd 'isnt'
-  dd 0
+.keywordsList4:
+  dd 'true', 110
+  dd 'null', 110
+  dd 'keys', 110
+  dd 'step', 110
 
-.keywords3:
-  dd 'and'
-  dd 'not'
-  dd 'for'
-  dd 'new'
-  dd 0
+  dd 'else', 110
+  dd 'elif', 110
+  dd 'from', 110
+  dd 'read', 110
 
-.keywords2:
-  dd 'if'
-  dd 'in'
-  dd 'is'
-  dd 'or'
-  dd 'to'
-  dd 0
+  dd 'isnt', 110
+  dd 0, 0
+  dd 0, 0
+  dd 0, 0
 
-.keywords1:
-  dd 0
+.keywordsList3:
+  dd 'and', 110
+  dd 'not', 110
+  dd 'for', 110
+  dd 'new', 110
+
+  dd 0, 0
+  dd 0, 0
+  dd 0, 0
+  dd 0, 0
+
+.keywordsList2:
+  dd 'if', 110
+  dd 'in', 110
+  dd 'is', 110
+  dd 'or', 110
+
+  dd 'to', 110
+  dd 0, 0
+  dd 0, 0
+  dd 0, 0
+
+.keywordsList1:
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
