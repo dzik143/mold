@@ -263,7 +263,7 @@ x = 1234
 x = new Test()
 
 EXPECTED_ERROR:
-./temp/source.mold:5:9: error: attemp to assign object to integer
+./temp/source.mold:5:8: error: attemp to assign object to integer
 -------------------------------------------------------------------------------
 
 TEST "Bad type assign: integer = array"
@@ -306,7 +306,7 @@ x = 3.14
 x = new Test()
 
 EXPECTED_ERROR:
-./temp/source.mold:5:9: error: attemp to assign object to float
+./temp/source.mold:5:8: error: attemp to assign object to float
 -------------------------------------------------------------------------------
 
 TEST "Bad type assign: float = array"
@@ -357,7 +357,7 @@ x = 'text'
 x = new Test()
 
 EXPECTED_ERROR:
-./temp/source.mold:5:9: error: attemp to assign object to string
+./temp/source.mold:5:8: error: attemp to assign object to string
 -------------------------------------------------------------------------------
 
 TEST "Bad type assign: string = array"
@@ -408,7 +408,7 @@ x = true
 x = new Test()
 
 EXPECTED_ERROR:
-./temp/source.mold:5:9: error: attemp to assign object to boolean
+./temp/source.mold:5:8: error: attemp to assign object to boolean
 -------------------------------------------------------------------------------
 
 TEST "Bad type assign: boolean = array"
@@ -459,7 +459,7 @@ x = 'text'
 x = new Test()
 
 EXPECTED_ERROR:
-./temp/source.mold:5:9: error: attemp to assign object to string
+./temp/source.mold:5:8: error: attemp to assign object to string
 -------------------------------------------------------------------------------
 
 TEST "Bad type assign: string = array"
@@ -510,7 +510,7 @@ x = true
 x = new Test()
 
 EXPECTED_ERROR:
-./temp/source.mold:5:9: error: attemp to assign object to boolean
+./temp/source.mold:5:8: error: attemp to assign object to boolean
 -------------------------------------------------------------------------------
 
 TEST "Bad type assign: boolean = array"
@@ -627,7 +627,7 @@ x = [1,2,3]
 x = new Test()
 
 EXPECTED_ERROR:
-./temp/source.mold:5:9: error: attemp to assign object to array
+./temp/source.mold:5:8: error: attemp to assign object to array
 -------------------------------------------------------------------------------
 
 TEST "Bad type assign: array = string"
@@ -678,7 +678,7 @@ x = {'one': 1, 'two': 2}
 x = new Test()
 
 EXPECTED_ERROR:
-./temp/source.mold:5:9: error: attemp to assign object to map
+./temp/source.mold:5:8: error: attemp to assign object to map
 -------------------------------------------------------------------------------
 
 TEST "Bad type assign: map = string"

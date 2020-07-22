@@ -122,7 +122,7 @@ endfunction
 foo(0, 10)
 
 EXPECTED_ERROR:
-./temp/source.mold:4:11: error: 'idx' cannot be used as iterator
+./temp/source.mold:4:10: error: 'idx' cannot be used as iterator
 -------------------------------------------------------------------------------
 
 TEST "Bug: Crash when iterator used in another branch as non-integer"

@@ -215,10 +215,10 @@ EXPECTED_ERROR:
 
 TEST "Access to global array"
 
-const values = [10,11,12]
+const tab = [10,11,12]
 function foo(idx)
-  global values
-  print 'foo(', idx, ') =', values[idx]
+  global tab
+  print 'foo(', idx, ') =', tab[idx]
 endfunction
 
 foo(0)
