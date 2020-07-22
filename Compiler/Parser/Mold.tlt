@@ -209,6 +209,8 @@ PRODUCTION_EMIT_IDX   = 0
 PRODUCTION_LENGTH_IDX = 1
 PRODUCTION_LHS_IDX    = 2
 
+SCANERLESS_MODE_ENABLED = (@@number-of-dfa-machines > 1)
+
 # -----------------------------------------------------------------------------
 #                                Helper classes
 # -----------------------------------------------------------------------------
@@ -244,7 +246,7 @@ class AST
     endwhile
   endmethod
 
-  method _printInternal(node, deepIdx)
+  method _printTreeInternal(node, deepIdx)
     prefix = ''
     for i in 0 .. deepIdx
       prefix = prefix ~ '..'
@@ -257,15 +259,15 @@ class AST
     endif
 
     for values oneChild in node.children
-      this._printInternal(oneChild, deepIdx + 1)
+      this._printTreeInternal(oneChild, deepIdx + 1)
     endfor
   endmethod
 
-  method print()
+  method printTree()
     print '----------------------------------'
     print ' Abstract Syntax Tree'
     print '----------------------------------'
-    this._printInternal(this, 0)
+    this._printTreeInternal(this, 0)
   endmethod
 endclass
 
@@ -289,6 +291,7 @@ class Parser
     global PRODUCTION_LHS_IDX
     global PRODUCTION_LENGTH_IDX
     global PRODUCTION_EMIT_IDX
+    global SCANERLESS_MODE_ENABLED
 
     global GrammarProductionsLUT
     global SymbolsGreedyLUT
@@ -357,7 +360,19 @@ class Parser
       currentSym = 0
       currentLen = 0
 
-      mach      = LexerSelectLUT[stackStates[stackIdx]]
+      if SCANERLESS_MODE_ENABLED is true
+        # Lexer (scanner) is joined with parser.
+        # There are potentialy many different lexers (DFAs) depending
+        # on current parser state.
+        mach = LexerSelectLUT[stackStates[stackIdx]]
+
+      else
+        # There is one lexer.
+        # Lexer works separately as input for parser.
+        # [source code] -> [Lexer] -> [Parser] -> [AST output]
+        mach = 0
+      endif
+
       indexBase = LexerIndexBaseLUT[mach]
       indexRow  = LexerIndexLUT[mach]
       acceptRow = LexerAcceptLUT[mach]
@@ -412,67 +427,10 @@ class Parser
         endwhile
       endif
 
-      # -------------------------------------
-      # LALR: Find action for current symbol.
-      # -------------------------------------
-
-      state      = stackStates[stackIdx]
-      act        = ParserActionsLUT[state]
-      cnt        = len(act)
-      currentAct = -1
-      actionIdx  = 1
-
-      while (actionIdx &lt; cnt) and (currentAct is -1)
-        if act[actionIdx] is currentSym
-          currentAct = act[actionIdx + 1]
-          currentIdx = act[actionIdx + 2]
-        endif
-        actionIdx = actionIdx + 3
-      endwhile
-
-      if currentAct is -1
-        # Action not found.
-        # Search default production as last try.
-        currentIdx = ParserActionsDefaultLUT[state]
-
-        if currentIdx &gt; -1
-          # Reduce.
-          currentAct = UNICC_REDUCE
-        else
-          # Syntax error.
-          this._handleError(line, column, 'syntax error')
-        endif
-      endif
-
-      # -----------
-      # LALR: Shift
-      # -----------
-
-      if bitand(currentAct, UNICC_SHIFT) isnt 0
-        stackIdx = stackIdx + 1
-
-        # Execute scanner actions, if existing.
-        # Here, UNICC_ON_SHIFT is set to 1, so that shifting-
-        # related operations will be performed.
-        # Scan actions.
-        if false
-        @@scan_actions
-        endif
-
-        if bitand(currentAct, UNICC_REDUCE) isnt 0
-          stackStates[stackIdx] = -1
-        else
-          stackStates[stackIdx] = currentIdx
-        endif
-
-        stackLines[stackIdx]   = line
-        stackColumns[stackIdx] = column
-        stackNodes[stackIdx]   = null
-
-        # Pop value from buffer.
-        @@top-value = __mold_syscall(55, buf, 0, currentLen)
-
-        # Update counters for line and column
+      if (SCANERLESS_MODE_ENABLED is false) and (currentSym is 54)
+        # Skip all white spaces in classical one scaner / one parser flow.
+        # Skip this one token and try another one on next iteration.
+        # Update counters for line and column.
         for idx in 0 .. currentLen
           if ord(buf[idx]) is 10
             line   = line + 1
@@ -482,177 +440,256 @@ class Parser
           endif
         endfor
 
-        # TODO: Clean up this mess.
-        # TODO: Avoid temp buffer: x = x.substr(...) bug.
+        # Pop token from the buffer.
         tmpBuf    = __mold_syscall(55, buf, currentLen, -1)
         buf       = tmpBuf
-      endif
 
-      # -------------
-      # LALR: Reduce.
-      # -------------
+      else
+        # Scanner-less mode or non-white token delivered from lexer.
+        # Go on.
 
-      reduceGoOn = true
+        # -------------------------------------
+        # LALR: Find action for current symbol.
+        # -------------------------------------
 
-      while (reduceGoOn is true) and (bitand(currentAct, UNICC_REDUCE) isnt 0)
-        # Fetch current production.
-        currentLhs              = GrammarProductionsLUT[3 * currentIdx + PRODUCTION_LHS_IDX]
-        currentProductionLength = GrammarProductionsLUT[3 * currentIdx + PRODUCTION_LENGTH_IDX]
-        currentEmit             = GrammarProductionsLUT[3 * currentIdx + PRODUCTION_EMIT_IDX]
+        state      = stackStates[stackIdx]
+        act        = ParserActionsLUT[state]
+        cnt        = len(act)
+        currentAct = -1
+        actionIdx  = 1
 
-        # Apply default action: @@ = @1
-        # TODO: Review it.
-        currentRet = stackValues[stackIdx - currentProductionLength + 1]
+        while (actionIdx &lt; cnt) and (currentAct is -1)
+          if act[actionIdx] is currentSym
+            currentAct = act[actionIdx + 1]
+            currentIdx = act[actionIdx + 2]
+          endif
+          actionIdx = actionIdx + 3
+        endwhile
 
-        # -----------------------------
-        # Custom action handlers.
-        # Below code is auto-generated.
-        # -----------------------------
+        if currentAct is -1
+          # Action not found.
+          # Search default production as last try.
+          currentIdx = ParserActionsDefaultLUT[state]
 
-        # Set default left-hand side
-        # Run reduction code
-        # TODO: Use switch
-        if false
-          @@actions
-        endif
-
-        # --------------------------
-        # AST: Pop nodes from stack.
-        # --------------------------
-
-        # Pop nodes from the stack.
-        stackIdx = stackIdx - currentProductionLength
-
-        if currentProductionLength > 1
-          # We need at least two AST nodes to connect.
-          # We can ignore all production shorter than two.
-
-          # Find first non-null node on stack.
-          firstNodeIdx = stackIdx + 1
-          firstNode    = stackNodes[firstNodeIdx]
-          maxNodeIdx   = stackIdx + currentProductionLength
-
-          while ((firstNode is null) and
-                 (firstNodeIdx &lt; maxNodeIdx))
-
-            firstNodeIdx = firstNodeIdx + 1
-            firstNode    = stackNodes[firstNodeIdx]
-          endwhile
-
-          if firstNode is defined
-            # At at least one non-null node found.
-            # Join all neighbour nodes into one linked list.
-
-            # Check is there neighbour available on left side.
-            lnode = stackNodes[stackIdx]
-
-            if lnode is defined
-              # There is node on the left.
-              # Start list from it.
-              # lnode - r1 - r2 - r3 - ...
-              prevNode = lnode
-
-            else
-              # There is no any node on the left.
-              # Start new list from the scratch.
-              # null - r1 - r2 - r3 - ...
-              stackNodes[stackIdx] = firstNode
-              prevNode             = null
-            endif
-
-            for k in 0 .. currentProductionLength
-              currentNode = stackNodes[stackIdx + k + 1]
-
-              if currentNode is defined
-                if prevNode is defined
-                  # Make sure we append after last neighbour if more than one.
-                  # It's not the last node on the left.
-                  # Find the last one.
-                  #
-                  # prevNode - ... - currentNode - ...
-                  #             ^
-                  #      We skip this hole
-
-                  while prevNode.next is defined
-                    prevNode = prevNode.next
-                  endwhile
-                  prevNode.next = currentNode
-                endif
-
-                # Go to next node on the list.
-                prevNode = currentNode
-              endif
-            endfor
+          if currentIdx &gt; -1
+            # Reduce.
+            currentAct = UNICC_REDUCE
+          else
+            # Syntax error.
+            this._handleError(line, column, 'syntax error')
           endif
         endif
 
-        # -------------------------------
-        # AST: Create new node if needed.
-        # -------------------------------
+        # -----------
+        # LALR: Shift
+        # -----------
 
-        if currentEmit isnt 0
-          # Emit new AST node.
-          node                 = new AST(currentEmit, currentRet, stackNodes[stackIdx])
-          stackNodes[stackIdx] = node
+        if bitand(currentAct, UNICC_SHIFT) isnt 0
+          stackIdx = stackIdx + 1
 
-          # Save debug information inside node.
-          node.line     = line
-          node.column   = column
-          node.filePath = this.filePath
-        endif
-
-        # Goal symbol reduced, and stack is empty?
-        if (currentLhs is @@goal) and (stackIdx is 0)
-          # Goal token matched.
-          # Don't go on anymore.
-          ast        = stackNodes[0]
-          reduceGoOn = false
-
-        else
-          # Get goto.
-          goIdx      = 1
-          state      = stackStates[stackIdx]
-          go         = ParserGotoLUT[state]
-          cnt        = len(go)
-          currentAct = -1
-
-          while (goIdx &lt; cnt) and (currentAct is -1)
-            if go[goIdx] is currentLhs
-              currentAct = go[goIdx + 1]
-              currentIdx = go[goIdx + 2]
-            endif
-            goIdx = goIdx + 3
-          endwhile
-
-          # Push new item to state stack.
-          stackIdx               = stackIdx + 1
-          stackNodes[stackIdx]   = null
-          stackValues[stackIdx]  = currentRet
-          stackLines[stackIdx]   = line
-          stackColumns[stackIdx] = column
+          # Execute scanner actions, if existing.
+          # Here, UNICC_ON_SHIFT is set to 1, so that shifting-
+          # related operations will be performed.
+          # Scan actions.
+          if false
+          @@scan_actions
+          endif
 
           if bitand(currentAct, UNICC_REDUCE) isnt 0
             stackStates[stackIdx] = -1
           else
             stackStates[stackIdx] = currentIdx
           endif
+
+          stackLines[stackIdx]   = line
+          stackColumns[stackIdx] = column
+          stackNodes[stackIdx]   = null
+
+          # Pop value from buffer.
+          @@top-value = __mold_syscall(55, buf, 0, currentLen)
+
+          # Update counters for line and column
+          for idx in 0 .. currentLen
+            if ord(buf[idx]) is 10
+              line   = line + 1
+              column = 1
+            else
+              column = column + 1
+            endif
+          endfor
+
+          # TODO: Clean up this mess.
+          # TODO: Avoid temp buffer: x = x.substr(...) bug.
+          tmpBuf    = __mold_syscall(55, buf, currentLen, -1)
+          buf       = tmpBuf
         endif
-      endwhile
 
-      # --------------------------
-      # Check for final condition.
-      # --------------------------
+        # -------------
+        # LALR: Reduce.
+        # -------------
 
-      if (bitand(currentAct, UNICC_REDUCE) isnt 0) and (currentIdx is @@goal-production)
-        # All input is successfuly parsed.
-        # Don't go on anymore.
-        goOn = false
-      endif
+        reduceGoOn = true
 
-      # Avoid hung up on infinitely loop.
-      masterIter = masterIter + 1
-      if masterIter > 1000000
-        die('MAX ITERS reached!')
+        while (reduceGoOn is true) and (bitand(currentAct, UNICC_REDUCE) isnt 0)
+          # Fetch current production.
+          currentLhs              = GrammarProductionsLUT[3 * currentIdx + PRODUCTION_LHS_IDX]
+          currentProductionLength = GrammarProductionsLUT[3 * currentIdx + PRODUCTION_LENGTH_IDX]
+          currentEmit             = GrammarProductionsLUT[3 * currentIdx + PRODUCTION_EMIT_IDX]
+
+          # Apply default action: @@ = @1
+          # TODO: Review it.
+          currentRet = stackValues[stackIdx - currentProductionLength + 1]
+
+          # -----------------------------
+          # Custom action handlers.
+          # Below code is auto-generated.
+          # -----------------------------
+
+          # Set default left-hand side
+          # Run reduction code
+          # TODO: Use switch
+          if false
+            @@actions
+          endif
+
+          # --------------------------
+          # AST: Pop nodes from stack.
+          # --------------------------
+
+          # Pop nodes from the stack.
+          stackIdx = stackIdx - currentProductionLength
+
+          if currentProductionLength > 1
+            # We need at least two AST nodes to connect.
+            # We can ignore all production shorter than two.
+
+            # Find first non-null node on stack.
+            firstNodeIdx = stackIdx + 1
+            firstNode    = stackNodes[firstNodeIdx]
+            maxNodeIdx   = stackIdx + currentProductionLength
+
+            while ((firstNode is null) and
+                   (firstNodeIdx &lt; maxNodeIdx))
+
+              firstNodeIdx = firstNodeIdx + 1
+              firstNode    = stackNodes[firstNodeIdx]
+            endwhile
+
+            if firstNode is defined
+              # At at least one non-null node found.
+              # Join all neighbour nodes into one linked list.
+
+              # Check is there neighbour available on left side.
+              lnode = stackNodes[stackIdx]
+
+              if lnode is defined
+                # There is node on the left.
+                # Start list from it.
+                # lnode - r1 - r2 - r3 - ...
+                prevNode = lnode
+
+              else
+                # There is no any node on the left.
+                # Start new list from the scratch.
+                # null - r1 - r2 - r3 - ...
+                stackNodes[stackIdx] = firstNode
+                prevNode             = null
+              endif
+
+              for k in 0 .. currentProductionLength
+                currentNode = stackNodes[stackIdx + k + 1]
+
+                if currentNode is defined
+                  if prevNode is defined
+                    # Make sure we append after last neighbour if more than one.
+                    # It's not the last node on the left.
+                    # Find the last one.
+                    #
+                    # prevNode - ... - currentNode - ...
+                    #             ^
+                    #      We skip this hole
+
+                    while prevNode.next is defined
+                      prevNode = prevNode.next
+                    endwhile
+                    prevNode.next = currentNode
+                  endif
+
+                  # Go to next node on the list.
+                  prevNode = currentNode
+                endif
+              endfor
+            endif
+          endif
+
+          # -------------------------------
+          # AST: Create new node if needed.
+          # -------------------------------
+
+          if currentEmit isnt 0
+            # Emit new AST node.
+            node                 = new AST(currentEmit, currentRet, stackNodes[stackIdx])
+            stackNodes[stackIdx] = node
+
+            # Save debug information inside node.
+            node.line     = line
+            node.column   = column
+            node.filePath = this.filePath
+          endif
+
+          # Goal symbol reduced, and stack is empty?
+          if (currentLhs is @@goal) and (stackIdx is 0)
+            # Goal token matched.
+            # Don't go on anymore.
+            ast        = stackNodes[0]
+            reduceGoOn = false
+
+          else
+            # Get goto.
+            goIdx      = 1
+            state      = stackStates[stackIdx]
+            go         = ParserGotoLUT[state]
+            cnt        = len(go)
+            currentAct = -1
+
+            while (goIdx &lt; cnt) and (currentAct is -1)
+              if go[goIdx] is currentLhs
+                currentAct = go[goIdx + 1]
+                currentIdx = go[goIdx + 2]
+              endif
+              goIdx = goIdx + 3
+            endwhile
+
+            # Push new item to state stack.
+            stackIdx               = stackIdx + 1
+            stackNodes[stackIdx]   = null
+            stackValues[stackIdx]  = currentRet
+            stackLines[stackIdx]   = line
+            stackColumns[stackIdx] = column
+
+            if bitand(currentAct, UNICC_REDUCE) isnt 0
+              stackStates[stackIdx] = -1
+            else
+              stackStates[stackIdx] = currentIdx
+            endif
+          endif
+        endwhile
+
+        # --------------------------
+        # Check for final condition.
+        # --------------------------
+
+        if (bitand(currentAct, UNICC_REDUCE) isnt 0) and (currentIdx is @@goal-production)
+          # All input is successfuly parsed.
+          # Don't go on anymore.
+          goOn = false
+        endif
+
+        # Avoid hung up on infinitely loop.
+        masterIter = masterIter + 1
+        if masterIter > 1000000
+          die('MAX ITERS reached!')
+        endif
       endif
     endwhile
   endmethod
