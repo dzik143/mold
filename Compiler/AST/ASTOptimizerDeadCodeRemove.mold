@@ -237,7 +237,7 @@ class ASTOptimizerDeadCodeRemove
       if symbolInfo.readHits is 0
         # Unused function.
         removeNode = true
-        symbolTable.global.remove(node.name)
+        symbolTable.globalTable.remove(node.name)
       endif
 
     elif (opcode is AST_OPCODE_TYPE_CAST) and (x.opcode is AST_OPCODE_TYPE_CAST)

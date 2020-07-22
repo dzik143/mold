@@ -9,14 +9,15 @@ import 'AST/ASTPrinterHtml.mold'
 SHOW_TYPE_CAST_NODES_ENABLED = false #true
 DEBUG_MOLD = true
 
-x = []
-undefined = x[0]
-object = 0
-import '1.ast'
-#import 'Parser/ParserMold.mold'
+#x = []
+#undefined = x[0]
+#object = 0
+#import '1.ast'
+import 'Parser/ParserMold.mold'
 
-#parser = new Parser()
-#ast    = parser.parseFile(argv[1])
+path   = 'source.mold' #argv[1]
+parser = new Parser()
+ast    = parser.parseFile(path)
 
 print '<pre>'
 

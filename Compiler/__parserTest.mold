@@ -21,8 +21,11 @@
 import 'AST/AST.mold'
 import 'Parser/ParserMold.mold'
 
+UNICC_DEBUG = false
+
+#path = argv[1]
 path = 'source.mold' #argv[1]
 
 parser = new Parser()
 ast = parser.parseFile(path)
-ast.print()
+ast.printTree()

@@ -76,8 +76,8 @@ class SymbolTable
       'string':  {'cnt': 0, 'pool': []}
     }
 
-    this.parent = null
-    this.global = this
+    this.parent      = null
+    this.globalTable = this
 
     # TODO: Remove it when map iteration ready.
     this.symbols = {}
@@ -220,7 +220,7 @@ class SymbolTable
   endmethod
 
   method lookupGlobal(name) -> rv
-    rv = this.global.lookup(name)
+    rv = this.globalTable.lookup(name)
   endmethod
 
   method decreaseReadHits(name)
@@ -252,7 +252,7 @@ class SymbolTable
     rv.parent       = this
     rv.deepIdx      = this.deepIdx + 1
     rv.procLevel    = this.procLevel
-    rv.global       = this.global
+    rv.globalTable  = this.globalTable
     rv.functionName = this.functionName
   endmethod
 
@@ -400,7 +400,7 @@ class SymbolTable
         symbolInfo.kind = SYMBOL_KIND_VAR_GLOBAL
 
         # Move into global scope.
-        this.global.insert(name, symbolInfo)
+        this.globalTable.insert(name, symbolInfo)
       endif
 
       # Import global var into current scope.
@@ -450,19 +450,19 @@ class SymbolTable
 
     # TODO: Review it
     this.insert(name, newEntry)
-    this.global.insert(name, newEntry)
+    this.globalTable.insert(name, newEntry)
   endmethod
 
   method insertLiteral(text) -> literalEntry
     global AST_DATA_STRING
 
-    literalEntry = this.global.literals{text}
+    literalEntry = this.globalTable.literals{text}
 
     if literalEntry is undefined
       # Literal seen first time. Wrap it into new constant.
       name         = '__literal' ~ str(SymbolTable_GetNextId())
       literalEntry = this.insertConst(name, text)
-      this.global.literals{text} = literalEntry
+      this.globalTable.literals{text} = literalEntry
 
       # TODO: Review it.
       literalEntry.astType = AST_DATA_STRING

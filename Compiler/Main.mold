@@ -34,7 +34,7 @@ import 'CodeGenerator/CodeGeneratorX64.mold'
 import 'MIR/MIRQuadOptimizer.mold'
 import 'VM/VMachineStack.mold'
 
-VERSION_STRING = '0.2.200720'
+VERSION_STRING = '0.2.200722'
 
 # ------------------------------------------------------------------------------
 #                              Helper functions
@@ -151,7 +151,7 @@ ast = parser.parseFile(path)
 
 if mode is 'ast'
   # Print AST only.
-  ast.print()
+  ast.printTree()
 
 elif mode is 'astjson'
   # Print AST, but in importable JSON format.
