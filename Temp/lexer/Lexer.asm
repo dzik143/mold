@@ -1,3 +1,5 @@
+use64
+
 MAX_KEYWORD_LENGTH EQU 13
 
 ; Final complex tokens.
@@ -61,11 +63,12 @@ LT  EQU OP2       ; '<' (potentially 2-char operator handler)
 EQ  EQU 0x80 + 71 ; '=' (one char operator)
 GT  EQU OP2       ; '>' (potentially 2-char operator handler)
 QMK EQU ERR       ; '?' (unassigned token yet - map to ERR)
-MNK EQU ERR       ; '@' (unassigned token yet - map to ERR)
+MNK EQU LET       ; '@' (treat first underscore as letter)
 LBS EQU 0x80 + 64 ; '[' (one char operator)
 BSH EQU ERR       ; '\' (unassigned token yet - map to ERR)
 RBS EQU 0x80 + 63 ; ']' (one char operator)
 POW EQU ERR       ; '^' (unassigned token yet - map to ERR)
+UND EQU LET       ; '_' (treat first underscore as letter)
 LBC EQU 0x80 + 56 ; '{' (one char operator)
 ABS EQU ERR       ; '|' (unassigned token yet - map to ERR)
 RBC EQU 0x80 + 55 ; '}' (one char operator)
@@ -82,8 +85,8 @@ __MOLD_Lexer:
       sub     r8, rcx
       neg     r8
 
-      cinvoke printf, '<token #%d> %.*s'
-      cinvoke putchar, 10
+      ;;cinvoke printf, '<token #%d> %.*s'
+      ;cinvoke putchar, 10
 
       pop  r10
       pop  rcx
@@ -155,32 +158,32 @@ __MOLD_LexerInternal:
       mov   al, TOKEN_IDENT                     ; fallback to IDENT if not matched
 
       ; Match first 4-keywords chunk
-      cmp   rdx, qword [r9 + 16*0 + 0]
+      cmp   rdx, qword [r9 + 16*0]
       cmovz rax, qword [r9 + 16*0 + 8]
 
-      cmp   rdx, qword [r9 + 16*1 + 0]
+      cmp   rdx, qword [r9 + 16*1]
       cmovz rax, qword [r9 + 16*1 + 8]
 
-      cmp   rdx, qword [r9 + 16*2 + 0]
+      cmp   rdx, qword [r9 + 16*2]
       cmovz rax, qword [r9 + 16*2 + 8]
 
-      cmp   rdx, qword [r9 + 16*3 + 0]
+      cmp   rdx, qword [r9 + 16*3]
       cmovz rax, qword [r9 + 16*3 + 8]
 
       ; Skip second chunk if possible
       ja    .not_a_keyword_64bit
 
       ; Match next 4-keywords chunk
-      cmp   rdx, qword [r9 + 16*4 + 0]
+      cmp   rdx, qword [r9 + 16*4]
       cmovz rax, qword [r9 + 16*4 + 8]
 
-      cmp   rdx, qword [r9 + 16*5 + 0]
+      cmp   rdx, qword [r9 + 16*5]
       cmovz rax, qword [r9 + 16*5 + 8]
 
-      cmp   rdx, qword [r9 + 16*6 + 0]
+      cmp   rdx, qword [r9 + 16*6]
       cmovz rax, qword [r9 + 16*6 + 8]
 
-      cmp   rdx, qword [r9 + 16*7 + 0]
+      cmp   rdx, qword [r9 + 16*7]
       cmovz rax, qword [r9 + 16*7 + 8]
 
 .not_a_keyword_64bit:
@@ -291,6 +294,7 @@ __MOLD_LexerInternal:
     ; --------------------------------------------------------------------------
 
 .operator1:
+      mov   eax, edx                       ; rax = token id with 0x80 mask
       inc   rcx                            ; eat character
       and   al, 0x7f                       ; remove 0x80 mask
       ret
@@ -348,9 +352,9 @@ __MOLD_LexerInternal:
 
 .above127:
 .error:
-      push    rcx
-      cinvoke printf, 'ERROR'
-      pop     rcx
+      ;push    rcx
+      ;cinvoke printf, 'ERROR'
+      ;pop     rcx
       int 3
       ret
 
@@ -361,7 +365,7 @@ __MOLD_LexerInternal:
   db  SPC, INR, STR, HSH, USD, PER, AMP, STR, LBR, RBR, STA, PLS, COM, MNS, DOT,  DV ; 2x
   db  DIG, DIG, DIG, DIG, DIG, DIG, DIG, DIG, DIG, DIG, COL, SEM,  LT,  EQ,  GT, QMK ; 3x
   db  MNK, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET ; 4x
-  db  LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LBS, ERR, RBS, ERR, ERR ; 5x
+  db  LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LBS, ERR, RBS, ERR, UND ; 5x
   db  ERR, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET ; 6x
   db  LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LET, LBC, ABS, RBC, TLD, ERR ; 7x
 
@@ -438,14 +442,14 @@ __MOLD_LexerInternal:
   db 0   , 0  , 0  , 0 ; 3f ? (unused)
 
 .keywordMaskLUT:
-  dq 0x0000000000000000 ; 0 characters keyword (unused)
-  dq 0xff00000000000000 ; 1 characters keyword
-  dq 0xffff000000000000 ; 2 characters keyword
-  dq 0xffffff0000000000 ; 3 characters keyword
-  dq 0xffffffff00000000 ; 4 characters keyword
-  dq 0xffffffffff000000 ; 5 characters keyword
-  dq 0xffffffffffff0000 ; 6 characters keyword
-  dq 0xffffffffffffff00 ; 7 characters keyword
+  dq 0xffffffffffffffff ; 0 characters keyword (unused)
+  dq 0x00ffffffffffffff ; 1 characters keyword
+  dq 0x0000ffffffffffff ; 2 characters keyword
+  dq 0x000000ffffffffff ; 3 characters keyword
+  dq 0x00000000ffffffff ; 4 characters keyword
+  dq 0x0000000000ffffff ; 5 characters keyword
+  dq 0x000000000000ffff ; 6 characters keyword
+  dq 0x00000000000000ff ; 7 characters keyword
 
   dq 0xffffffffffffffff ; 8  characters keyword
   dq 0xffffffffffffffff ; 9  characters keyword
@@ -500,16 +504,47 @@ __MOLD_LexerInternal:
 
 .keywordsList16:
   dq 0, 0
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
+
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
 
 .keywordsList15:
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
+
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
   dq 0, 0
 
 .keywordsList14:
   dq 0, 0
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
+
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
 
 .keywordsList13:
-  ;   0123456789abc   d  e  f
-  db 'unimplemented', 0, 0, 0
+  ;   01234567         89abc   d  e  f
+  dq 'unimplem', 19  ;'ented', 0, 0, 0
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
+
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
   dq 0, 0
 
 .keywordsList12:
@@ -518,8 +553,13 @@ __MOLD_LexerInternal:
   dq 0, 0
   dq 0, 0
 
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
+
 .keywordsList11:
-  dq 'endfunct', 123
+  dq 'endfunct', 30
   dq 0, 0
   dq 0, 0
   dq 0, 0
@@ -531,8 +571,8 @@ __MOLD_LexerInternal:
   dq 0, 0
 
 .keywordsList9:
-  ;   012345678   9  a  b  c  d  e  f
-  db 'endmethod', 0, 0, 0, 0, 0, 0, 0
+  ;   01234567'         8   9  a  b  c  d  e  f
+  dq 'endmetho', 86   ;'d', 0, 0, 0, 0, 0, 0, 0
   dq 0, 0
   dq 0, 0
   dq 0, 0
@@ -542,37 +582,37 @@ __MOLD_LexerInternal:
 ; ----------------
 
 .keywordsList8:
-  dq 'endclass', 100
-  dq 'endwhile', 101
-  dq 'function', 102
+  dq 'endclass', 22
+  dq 'endwhile', 95
+  dq 'function', 31
   dq 0, 0
 
 .keywordsList7:
-  dq 'extends', 103
-  dq 'indexes', 104
+  dq 'extends', 23
+  dq 'indexes', 6
   dq 0, 0
   dq 0, 0
 
 .keywordsList6:
-  dq 'endfor', 105
-  dq 'global', 106
-  dq 'import', 107
-  dq 'method', 108
+  dq 'endfor', 9
+  dq 'global', 37
+  dq 'import', 36
+  dq 'method', 21
 
-  dq 'values', 109
+  dq 'values', 27
   dq 0, 0
   dq 0, 0
   dq 0, 0
 
 .keywordsList5:
-  dq 'class', 110
-  dq 'const', 110
-  dq 'endif', 110
-  dq 'false', 110
+  dq 'class', 24
+  dq 'const', 33
+  dq 'endif', 14
+  dq 'false', 1
 
-  dq 'print', 110
-  dq 'while', 110
-  dq 'write', 110
+  dq 'print', 38
+  dq 'while', 5
+  dq 'write', 26
   dq 0, 0
 
 ; ----------------
@@ -580,42 +620,42 @@ __MOLD_LexerInternal:
 ; ----------------
 
 .keywordsList4:
-  dd 'true', 110
-  dd 'null', 110
-  dd 'keys', 110
-  dd 'step', 110
+  dq 'elif', 15
+  dq 'else', 13
+  dq 'from', 28
+  dq 'isnt', 44
 
-  dd 'else', 110
-  dd 'elif', 110
-  dd 'from', 110
-  dd 'read', 110
+  dq 'keys', 7
+  dq 'null', 3
+  dq 'read', 29
+  dq 'step', 8
 
-  dd 'isnt', 110
-  dd 0, 0
-  dd 0, 0
-  dd 0, 0
+  dq 'true', 2
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
 
 .keywordsList3:
-  dd 'and', 110
-  dd 'not', 110
-  dd 'for', 110
-  dd 'new', 110
+  dq 'and', 41
+  dq 'not', 39
+  dq 'for', 12
+  dq 'new', 18
 
-  dd 0, 0
-  dd 0, 0
-  dd 0, 0
-  dd 0, 0
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
 
 .keywordsList2:
-  dd 'if', 110
-  dd 'in', 110
-  dd 'is', 110
-  dd 'or', 110
+  dq 'if', 16
+  dq 'in', 11
+  dq 'is', 45
+  dq 'or', 40
 
-  dd 'to', 110
-  dd 0, 0
-  dd 0, 0
-  dd 0, 0
+  dq 'to', 25
+  dq 0, 0
+  dq 0, 0
+  dq 0, 0
 
 .keywordsList1:
   dq 0, 0
