@@ -106,7 +106,7 @@
     <row_start>  [ </row_start>
     <row_end> ]</row_end>
     <row_sep>,&#x0A;</row_sep>
-    <col> @@symbol,@@action,@@index </col>
+    <col> @@symbol,@@index,@@action </col>
     <col_sep>,</col_sep>
   </acttab>
 
@@ -469,8 +469,8 @@ class Parser
 
         while (actionIdx &lt; cnt) and (currentAct is -1)
           if act[actionIdx] is currentSym
-            currentAct = act[actionIdx + 1]
-            currentIdx = act[actionIdx + 2]
+            currentIdx = act[actionIdx + 1]
+            currentAct = act[actionIdx + 2]
           endif
           actionIdx = actionIdx + 3
         endwhile
@@ -678,12 +678,7 @@ class Parser
             stackValues[stackIdx]  = currentRet
             stackLines[stackIdx]   = line
             stackColumns[stackIdx] = column
-
-            if bitand(currentAct, UNICC_REDUCE) isnt 0
-              stackStates[stackIdx] = -1
-            else
-              stackStates[stackIdx] = currentIdx
-            endif
+            stackStates[stackIdx]  = currentIdx
           endif
         endwhile
 
@@ -691,7 +686,7 @@ class Parser
         # Check for final condition.
         # --------------------------
 
-        if (bitand(currentAct, UNICC_REDUCE) isnt 0) and (currentIdx is @@goal-production)
+        if currentIdx is @@goal-production
           # All input is successfuly parsed.
           # Don't go on anymore.
           goOn = false
