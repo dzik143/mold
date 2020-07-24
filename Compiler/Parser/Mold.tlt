@@ -647,8 +647,8 @@ class Parser
             node.filePath = this.filePath
           endif
 
-          # Goal symbol reduced, and stack is empty?
-          if (currentLhs is @@goal) and (stackIdx is 0)
+          # Goal symbol reduced?
+          if currentLhs is @@goal
             # Goal token matched.
             # Don't go on anymore.
             # print '(', stackIdx, ') reduce done'
