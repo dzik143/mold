@@ -114,7 +114,7 @@
     <row_start>  [ </row_start>
     <row_end> ]</row_end>
     <row_sep>,&#x0A;</row_sep>
-    <col> @@symbol,@@action,@@index </col>
+    <col> @@symbol,@@index,@@action </col>
     <col_sep>,</col_sep>
   </gotab>
 
@@ -347,6 +347,10 @@ class Parser
 
     buf = '' ~ asc(lookupByte)
 
+    # Current lexer token.
+    currentSym = 0
+    currentLen = 0
+
     #
     # Begin of main parser loop
     #
@@ -359,14 +363,13 @@ class Parser
 
       # print '------------------'
 
-      currentSym = 0
-      currentLen = 0
-
       if SCANERLESS_MODE_ENABLED is true
         # Lexer (scanner) is joined with parser.
         # There are potentialy many different lexers (DFAs) depending
         # on current parser state.
-        mach = LexerSelectLUT[stackStates[stackIdx]]
+        mach       = LexerSelectLUT[stackStates[stackIdx]]
+        currentSym = 0
+        currentLen = 0
 
       else
         # There is one lexer.
@@ -379,11 +382,13 @@ class Parser
       indexRow  = LexerIndexLUT[mach]
       acceptRow = LexerAcceptLUT[mach]
 
-      if mach > -1
+      if (mach > -1) and (currentSym is 0)
         length     = 0
         chr        = 0
         next       = ord(buf[0])
         lexerState = 0
+
+        # print '(', stackIdx, ') lexer'
 
         # Read next token. if there is still some input data to read.
         while (lexerState &gt;= 0) and (next isnt @@eof)
@@ -448,8 +453,10 @@ class Parser
         endfor
 
         # Pop token from the buffer.
-        tmpBuf    = __mold_syscall(55, buf, currentLen, -1)
-        buf       = tmpBuf
+        tmpBuf     = __mold_syscall(55, buf, currentLen, -1)
+        buf        = tmpBuf
+        currentSym = 0
+        currentLen = 0
 
       else
         # Scanner-less mode or non-white token delivered from lexer.
@@ -526,8 +533,10 @@ class Parser
 
           # TODO: Clean up this mess.
           # TODO: Avoid temp buffer: x = x.substr(...) bug.
-          tmpBuf    = __mold_syscall(55, buf, currentLen, -1)
-          buf       = tmpBuf
+          tmpBuf     = __mold_syscall(55, buf, currentLen, -1)
+          buf        = tmpBuf
+          currentSym = 0
+          currentLen = 0
         endif
 
         # -------------
@@ -651,26 +660,27 @@ class Parser
           if currentLhs is @@goal
             # Goal token matched.
             # Don't go on anymore.
-            # print '(', stackIdx, ') reduce done'
-            ast        = stackNodes[0]
             reduceGoOn = false
 
           else
             # Get goto.
-            # print '(', stackIdx, ') goto'
             goIdx      = 0
             state      = stackStates[stackIdx]
             go         = ParserGotoLUT[state]
             cnt        = len(go)
             currentAct = -1
 
+            # print '(', stackIdx, ') goto from state', state, '[ lhs =', currentLhs, ']'
+
             while (goIdx &lt; cnt) and (currentAct is -1)
               if go[goIdx] is currentLhs
-                currentAct = go[goIdx + 1]
-                currentIdx = go[goIdx + 2]
+                currentIdx = go[goIdx + 1]
+                currentAct = go[goIdx + 2]
               endif
               goIdx = goIdx + 3
             endwhile
+
+            # print '(', stackIdx, ') goto to', currentIdx, currentAct
 
             # Push new item to state stack.
             stackIdx               = stackIdx + 1
@@ -699,6 +709,8 @@ class Parser
         endif
       endif
     endwhile
+
+    ast = stackNodes[0]
   endmethod
 
   method parseFile(path) -> ast
