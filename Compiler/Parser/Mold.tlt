@@ -162,13 +162,13 @@
   -->
 
   <symbols>
-    <col>  @@greedy</col>
+    <col>&#x0A;        { /* @@symbol */ symbol: "@@symbol-name", emit: "@@emit", isTerminal: @@type, isLexem: @@lexem, isWhitespace: @@whitespace, isGreedy: @@greedy }</col>
     <col_sep>,</col_sep>
   </symbols>
 
   <productions>
-    <col>  "@@emit", @@length, @@lhs</col>
-    <col_sep>,&#x0A;</col_sep>
+    <col>&#x0A;        { /* @@production-number */ production: "@@production", emit: "@@emit", length: @@length, lhs: @@lhs }</col>
+    <col_sep>,</col_sep>
   </productions>
 
   <!--
@@ -357,6 +357,8 @@ class Parser
       # LEXER: Get next symbol from input stream.
       # -----------------------------------------
 
+      # print '------------------'
+
       currentSym = 0
       currentLen = 0
 
@@ -427,6 +429,11 @@ class Parser
         endwhile
       endif
 
+      # ------------------------------------
+      # PARSER: Match symbol agains grammar.
+      # ------------------------------------
+
+      # TODO: Remove hardcoded token id.
       if (SCANERLESS_MODE_ENABLED is false) and (currentSym is 54)
         # Skip all white spaces in classical one scaner / one parser flow.
         # Skip this one token and try another one on next iteration.
@@ -452,11 +459,13 @@ class Parser
         # LALR: Find action for current symbol.
         # -------------------------------------
 
+        # print '(', stackIdx, ') token', currentSym
+
         state      = stackStates[stackIdx]
         act        = ParserActionsLUT[state]
         cnt        = len(act)
         currentAct = -1
-        actionIdx  = 1
+        actionIdx  = 0
 
         while (actionIdx &lt; cnt) and (currentAct is -1)
           if act[actionIdx] is currentSym
@@ -485,6 +494,8 @@ class Parser
         # -----------
 
         if bitand(currentAct, UNICC_SHIFT) isnt 0
+          # print '(', stackIdx, ') shift'
+
           stackIdx = stackIdx + 1
 
           # Execute scanner actions, if existing.
@@ -495,12 +506,7 @@ class Parser
           @@scan_actions
           endif
 
-          if bitand(currentAct, UNICC_REDUCE) isnt 0
-            stackStates[stackIdx] = -1
-          else
-            stackStates[stackIdx] = currentIdx
-          endif
-
+          stackStates[stackIdx]  = currentIdx
           stackLines[stackIdx]   = line
           stackColumns[stackIdx] = column
           stackNodes[stackIdx]   = null
@@ -539,6 +545,8 @@ class Parser
           # Apply default action: @@ = @1
           # TODO: Review it.
           currentRet = stackValues[stackIdx - currentProductionLength + 1]
+
+          # print '(', stackIdx, ') reduce [production:', currentIdx, currentProductionLength, ']'
 
           # -----------------------------
           # Custom action handlers.
@@ -628,6 +636,8 @@ class Parser
 
           if currentEmit isnt 0
             # Emit new AST node.
+            # print '(', stackIdx, ') emit', currentEmit
+
             node                 = new AST(currentEmit, currentRet, stackNodes[stackIdx])
             stackNodes[stackIdx] = node
 
@@ -641,12 +651,14 @@ class Parser
           if (currentLhs is @@goal) and (stackIdx is 0)
             # Goal token matched.
             # Don't go on anymore.
+            # print '(', stackIdx, ') reduce done'
             ast        = stackNodes[0]
             reduceGoOn = false
 
           else
             # Get goto.
-            goIdx      = 1
+            # print '(', stackIdx, ') goto'
+            goIdx      = 0
             state      = stackStates[stackIdx]
             go         = ParserGotoLUT[state]
             cnt        = len(go)
@@ -741,7 +753,7 @@ endclass
     }
   }
 
-function _dumpTable(name, table) {
+function _dumpTableForMold(name, table) {
   let rv = `const ${name}=`
 
   if (typeof(table[0]) == 'object') {
@@ -758,6 +770,35 @@ function _dumpTable(name, table) {
   }
 
   console.log(rv)
+}
+
+function _dumpTableForAsm(name, table) {
+  let rv = name + ':\n'
+
+  if (typeof(table[0]) == 'object') {
+    table.forEach((row, rowIdx) => {
+      rv += '  .row' + rowIdx + ' db ' + row.toString() + '\n'
+    })
+
+    rv += '  .index dq '
+    let sep = ''
+
+    table.forEach((row, rowIdx) => {
+      rv += sep + '.row' + rowIdx
+      sep = ', '
+    })
+    rv += '\n';
+
+  } else {
+    rv += '  db ' + table.toString()
+  }
+
+  console.log(rv)
+}
+
+function _dumpTable(name, table) {
+//  _dumpTableForAsm(name, table)
+  _dumpTableForMold(name, table)
 }
 
 function _buildUniqueRowsTable(table) {
@@ -796,14 +837,17 @@ function _sortArrayOfTriplesByFirst(table) {
     // Store sorted array
     const newRow = []
 
-    // TODO: Why is it needed?
-    newRow.push(0)
+    // TODO: Why is it needed for mold parser?
+    // newRow.push(0)
 
     rowAsTriples.forEach((triple) => {
       newRow.push(triple[0])
       newRow.push(triple[1])
       newRow.push(triple[2])
     })
+
+    // -1 row terminator
+    newRow.push(-1)
 
     table[rowIdx] = newRow
   })
@@ -843,16 +887,27 @@ data.lexer.index.forEach((row, rowIdx) => {
   })
 })
 
-// Find repeated table rows.
-//const uniqueRowsForAction = _buildUniqueRowsTable(data.parser.action)
-//const uniqueRowsForGoto   = _buildUniqueRowsTable(data.parser.goto)
+// Build productions table.
+const GrammarProductionsLUT = []
+
+data.grammar.productions.forEach((item) => {
+  GrammarProductionsLUT.push(
+    (item.emit != '') ? item.emit : 0,
+    item.length,
+    item.lhs
+  )
+})
+
+// Build symbols greedy table.
+const GrammarSymbolsGreedyLUT = []
+
+data.grammar.symbols.forEach((item) => {
+  GrammarSymbolsGreedyLUT.push(item.isGreedy)
+})
 
 // Dump tables.
-_dumpTable('GrammarProductionsLUT' , data.grammar.productions)
-_dumpTable('SymbolsGreedyLUT'      , data.grammar.symbols)
-
-//_dumpTable('_actUniqueRows' , uniqueRowsForAction)
-//_dumpTable('_goUniqueRows'  , uniqueRowsForGoto)
+_dumpTable('GrammarProductionsLUT' , GrammarProductionsLUT)
+_dumpTable('SymbolsGreedyLUT'      , GrammarSymbolsGreedyLUT)
 
 _dumpTable('ParserActionsLUT'        , data.parser.action)
 _dumpTable('ParserGotoLUT'           , data.parser.goto)
