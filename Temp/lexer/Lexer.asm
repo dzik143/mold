@@ -14,18 +14,14 @@ TOKEN_EOL                 EQU 53
 TOKEN_WHITE               EQU 54
 
 ; Handlers for common complex tokens
-EOL EQU 0  ; <EOL>
-SPC EQU 1  ; <WHITE>
-DIG EQU 2  ; <DIGIT>     0-9
-LET EQU 3  ; <LETTER>    a-z A-Z
-STR EQU 4  ; <STRING>    '"
-OP2 EQU 5  ; <OPERATOR2> -> etc.
-CMT EQU 6  ; <COMMENT>   single line comment
-ERR EQU 7  ; <ERROR>
-
-; One character operators.
-; Just return assigned token and don't go on anymore.
-; Example: x + y
+EOL EQU 0  ; EOL
+SPC EQU 1  ; WHITE
+DIG EQU 2  ; DIGIT     0-9
+LET EQU 3  ; LETTER    a-z A-Z
+STR EQU 4  ; STRING    '"
+OP2 EQU 5  ; OPERATOR2 -> etc.
+CMT EQU 6  ; COMMENT   single line comment
+ERR EQU 7  ; ERROR
 
 ; Operators map
 ; There are three cases handled:
@@ -77,30 +73,33 @@ TLD EQU 0x80 + 57 ; '~' (one char operator)
 __MOLD_Lexer:
       call __MOLD_LexerInternal
 
-      push rcx
+      push rax
+      push rsi
       push r10
 
       mov     r9, r8
       mov     edx, eax
-      sub     r8, rcx
+      sub     r8, rsi
       neg     r8
 
-      ;;cinvoke printf, '<token #%d> %.*s'
+      ;cinvoke printf, '[ LEXER ] <token #%d> %.*s'
       ;cinvoke putchar, 10
+      ;int 3
 
       pop  r10
-      pop  rcx
+      pop  rsi
+      pop  rax
       ret
 
 __MOLD_LexerInternal:
 
-      ; rcx - source (char*)
+      ; rsi - source (char*)
       mov   eax, 0                         ; rax = 0
       mov   edx, 0                         ; rdx = 0
-      mov   r8, rcx                        ; r8  = keep original pointer
+      mov   r8, rsi                        ; r8  = keep original pointer
                                            ; we use it calculate token length
 
-      or    al, byte [rcx]                 ; rax = the first character
+      or    al, byte [rsi]                 ; rax = the first character
       jle  .eof_or_above127                ; accept 7-bit ascii only
 
     ; --------------------------------------------------------------------------
@@ -119,15 +118,15 @@ __MOLD_LexerInternal:
       mov   eax, 0                         ; rax = 0
 
 .next_ident_character:
-      inc   rcx                            ; rcx = pointer to next character
-      or    al, byte [rcx]                 ; rax = next character
+      inc   rsi                            ; rsi = pointer to next character
+      or    al, byte [rsi]                 ; rax = next character
       js    .above127                      ; accept 7-bit ascii only
 
       and   al, byte [.isOkAsNextIdentCharacterLUT + rax]
       jz    .next_ident_character          ; rax is 0 if OK
 
 .dispatch_ident_length:
-      mov   rax, rcx                       ; rax = pointer to current character
+      mov   rax, rsi                       ; rax = pointer to current character
                                            ; r8  = pointer to the first character
       sub   rax, r8                        ; rax = token length
       cmp   eax, MAX_KEYWORD_LENGTH        ; is longest keyword fits into token?
@@ -171,7 +170,8 @@ __MOLD_LexerInternal:
       cmovz rax, qword [r9 + 16*3 + 8]
 
       ; Skip second chunk if possible
-      ja    .not_a_keyword_64bit
+      ; TODO: Review it.
+      ; ja    .not_a_keyword_64bit
 
       ; Match next 4-keywords chunk
       cmp   rdx, qword [r9 + 16*4]
@@ -207,12 +207,13 @@ __MOLD_LexerInternal:
 .begin_from_space:
 .next_space:
       ; Space - go on until first non-white character.
-      inc   rcx                            ; rcx = pointer to next character
-      cmp   al, byte [rcx]                 ; is it still space?
+      inc   rsi                            ; rsi = pointer to next character
+      cmp   al, byte [rsi]                 ; is it still space?
       jz    .next_space                    ; go on if another space found
+      jmp   __MOLD_LexerInternal           ; and try once again from beginning
 
-      mov   al, TOKEN_WHITE
-      ret
+      ;mov   al, TOKEN_WHITE
+      ;ret
 
     ; --------------------------------------------------------------------------
     ;                           Single line comment
@@ -221,13 +222,13 @@ __MOLD_LexerInternal:
 .one_line_comment:
       ; Go on until end of line.
       ; TODO: Optimize it.
-      inc   rcx
+      inc   rsi
       inc   r8
 
-      cmp   byte [rcx], 13
+      cmp   byte [rsi], 13
       jz    .eol
 
-      cmp   byte [rcx], 10
+      cmp   byte [rsi], 10
       jz    .eol
 
       jmp   .one_line_comment
@@ -242,11 +243,11 @@ __MOLD_LexerInternal:
       ; TODO: Handle escaped chars.
 
 .next_string_character:
-      inc   rcx                            ; rcx = pointer to next char
-      cmp   al, byte [rcx]                 ; is quote matched or EOF?
+      inc   rsi                            ; rsi = pointer to next char
+      cmp   al, byte [rsi]                 ; is quote matched or EOF?
       jnz   .next_string_character
 
-      inc   rcx                            ; eat ending quote
+      inc   rsi                            ; eat ending quote
 
       mov   al, TOKEN_STRING
       ret
@@ -257,18 +258,18 @@ __MOLD_LexerInternal:
 
 .begin_from_digit:
       ; Skip two byte '0x' prefix if found.
-      cmp   word [rcx], '0x'               ; search for 0x prefix
+      cmp   word [rsi], '0x'               ; search for 0x prefix
       setz  al                             ; rax = 1 if prefix found
-      add   rcx, rax                       ; rcx = rcx + 1 if prefix found
-      add   rcx, rax                       ; rcx = rcx + 1 if prefix found
+      add   rsi, rax                       ; rsi = rsi + 1 if prefix found
+      add   rsi, rax                       ; rsi = rsi + 1 if prefix found
 
       mov   r9d, '.'
 
 .next_integer:
 .next_digit:
       ; Go on until first non-digit character found.
-      inc   rcx                            ; rcx = pointer to next char
-      mov   al, [rcx]                      ; rax = next character
+      inc   rsi                            ; rsi = pointer to next char
+      mov   al, [rsi]                      ; rax = next character
       sub   al, '0'                        ; is char between '0' and '9' ?
       cmp   al, '9' - '0'                  ;
       jbe   .next_digit                    ; Go on if another digit found
@@ -277,7 +278,7 @@ __MOLD_LexerInternal:
       cmp   r9d, 0xff                      ; don't search for dot twice
       je    .done_float                    ; 123.456.789 is not correct number
 
-      cmp   byte [rcx], r9l                ; is current char is '.' ?
+      cmp   byte [rsi], r9l                ; is current char is '.' ?
       mov   r9d, 0xff                      ; mark dot already checked
       jz    .next_integer                  ; consume one more integer after dot
 
@@ -295,7 +296,7 @@ __MOLD_LexerInternal:
 
 .operator1:
       mov   eax, edx                       ; rax = token id with 0x80 mask
-      inc   rcx                            ; eat character
+      inc   rsi                            ; eat character
       and   al, 0x7f                       ; remove 0x80 mask
       ret
 
@@ -304,15 +305,15 @@ __MOLD_LexerInternal:
     ; --------------------------------------------------------------------------
 
 .operator2:
-      inc   rcx                            ; eat first character
+      inc   rsi                            ; eat first character
       sub   eax, 0x20                      ; rax = index in operator 2 LUT
       lea   r9, [.operator2LUT + rax * 4]  ; r9  = pointer to LUT row
 
-      mov   al, byte [rcx]                 ; rax = second character
+      mov   al, byte [rsi]                 ; rax = second character
       cmp   al, byte [r9]                  ; match second parameter
       setz  dl                             ; rdx = 1 if matched, 0 otherwise
 
-      add   rcx, rdx                       ; eat second character if matched
+      add   rsi, rdx                       ; eat second character if matched
       mov   al, byte [r9 + rdx]            ; rax = token id
 
       ret
@@ -322,16 +323,16 @@ __MOLD_LexerInternal:
     ; --------------------------------------------------------------------------
 
 .eol:
-      inc   rcx                            ; eat character
+      inc   rsi                            ; eat character
 
-      cmp   byte [rcx], 13                 ; check for extra CR char.
+      cmp   byte [rsi], 13                 ; check for extra CR char.
       setz  al                             ; rax = 1 if double <EOL>
 
-      cmp   byte [rcx], 10                 ; check for extra LF sequence
+      cmp   byte [rsi], 10                 ; check for extra LF sequence
       setz  dl                             ; rdx = 1 if LF matched
 
-      add   rcx, rax                       ; skip extra CR if found
-      add   rcx, rdx                       ; skip extra LF if found
+      add   rsi, rax                       ; skip extra CR if found
+      add   rsi, rdx                       ; skip extra LF if found
 
       mov   al, TOKEN_EOL
       ret
@@ -352,9 +353,9 @@ __MOLD_LexerInternal:
 
 .above127:
 .error:
-      ;push    rcx
+      ;push    rsi
       ;cinvoke printf, 'ERROR'
-      ;pop     rcx
+      ;pop     rsi
       int 3
       ret
 
@@ -442,14 +443,14 @@ __MOLD_LexerInternal:
   db 0   , 0  , 0  , 0 ; 3f ? (unused)
 
 .keywordMaskLUT:
-  dq 0xffffffffffffffff ; 0 characters keyword (unused)
-  dq 0x00ffffffffffffff ; 1 characters keyword
-  dq 0x0000ffffffffffff ; 2 characters keyword
-  dq 0x000000ffffffffff ; 3 characters keyword
+  dq 0x0000000000000000 ; 0 characters keyword (unused)
+  dq 0x00000000000000ff ; 1 characters keyword
+  dq 0x000000000000ffff ; 2 characters keyword
+  dq 0x0000000000ffffff ; 3 characters keyword
   dq 0x00000000ffffffff ; 4 characters keyword
-  dq 0x0000000000ffffff ; 5 characters keyword
-  dq 0x000000000000ffff ; 6 characters keyword
-  dq 0x00000000000000ff ; 7 characters keyword
+  dq 0x000000ffffffffff ; 5 characters keyword
+  dq 0x0000ffffffffffff ; 6 characters keyword
+  dq 0x00ffffffffffffff ; 7 characters keyword
 
   dq 0xffffffffffffffff ; 8  characters keyword
   dq 0xffffffffffffffff ; 9  characters keyword
