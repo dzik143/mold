@@ -295,6 +295,8 @@ class SymbolTable
 
   method lookupFunction(name, paramsCnt) -> rv
     global SYMBOL_KIND_FUNCTION
+    global AST_OPCODE_CLASS_METHOD
+
     rv = this.lookupGlobal(name)
 
     if rv.kind isnt SYMBOL_KIND_FUNCTION
@@ -302,7 +304,7 @@ class SymbolTable
 
     else
       # TODO: Clean up this mess.
-      if rv.proto.classProto is defined
+      if rv.proto.opcode is AST_OPCODE_CLASS_METHOD
         # Adjust for this parameter for direct call.
         paramsCnt = paramsCnt - 1
       endif
