@@ -1189,8 +1189,8 @@ proc __MOLD_VariantStoreAtIndex_int32
     ; END OF TODO
 
     mov    eax, [rcx + Variant_t.type]
-    cmp    rax, VARIANT_ARRAY
-    jnz    .array
+    cmp    eax, VARIANT_ARRAY
+    jnz    __MOLD_PrintErrorAndDie.arrayExpected
 
     ; --------------------------------------------------------------------------
     ;                          Integer indexed array
@@ -1428,10 +1428,10 @@ __MOLD_VariantLoadFromIndex_int32:
     mov    eax, [rcx + Variant_t.type]
     mov    edx, dword [rdx]
 
-    cmp    rax, VARIANT_ARRAY
+    cmp    eax, VARIANT_ARRAY
     je     .array
 
-    cmp    rax, VARIANT_STRING
+    cmp    eax, VARIANT_STRING
     je     .string
 
     jmp    __MOLD_PrintErrorAndDie.arrayOrStringExpected
