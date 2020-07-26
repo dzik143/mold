@@ -196,9 +196,15 @@ class SymbolTable
   endmethod
 
   method lookupForCall(name) -> rv
+    global SYMBOL_KIND_FUNCTION
     # TODO: Special call counter?
     rv          = this.lookup(name)
     rv.readHits = rv.readHits + 1
+
+    # Make sure is it a function.
+    if rv.kind isnt SYMBOL_KIND_FUNCTION
+      this._error("'" ~ name ~ "' is not a function")
+    endif
   endmethod
 
   method lookupForWrite(name) -> rv
@@ -421,10 +427,12 @@ class SymbolTable
 
   method insertParam(name, paramId) -> newEntry
     global SYMBOL_KIND_VAR_PARAM
+    # TODO: Handle non-variant parameters.
     newEntry = {
       'name': name,
       'kind': SYMBOL_KIND_VAR_PARAM,
-      'id': paramId
+      'id': paramId,
+      'astType': -1
     }
     this.insert(name, newEntry)
   endmethod
@@ -510,6 +518,7 @@ class SymbolTable
         # Don't touch anything, which we don't sure we can change a type of.
         # Example: don't touch function parameters and return variable.
         # They're always variants for now.
+        # TODO: Handle non-variant call parameters.
 
       elif oldType is -1
         # <variant> = ...
