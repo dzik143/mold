@@ -287,7 +287,12 @@ class SymbolTable
 
   method useAsMapOrObject(name)
     # TODO: Review it.
-    this.assignType(name, -1)
+    this.assignTypeAndFreeze(name, -1)
+  endmethod
+
+  method useAsTypeofArg(name)
+    # TODO: Review it.
+    this.assignTypeAndFreeze(name, -1)
   endmethod
 
   method useAsNumber(name)
@@ -605,6 +610,16 @@ class SymbolTable
         this._debug('Ignored ineffective AST type change from [' ~ AST_ConvertDataTypeToText(oldType) ~ '] to [' ~ AST_ConvertDataTypeToText(newType) ~ '] for variable [' ~ str(name) ~ ']')
       endif
     endif
+  endmethod
+
+  method freezeType(name)
+    symbolInfo = this.lookup(name)
+    symbolInfo.isAstTypeFrozen = true
+  endmethod
+
+  method assignTypeAndFreeze(name, newType)
+    this.assignType(name, newType)
+    this.freezeType(name)
   endmethod
 
   method assignMirType(name, type)

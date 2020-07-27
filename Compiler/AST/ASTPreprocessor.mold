@@ -129,7 +129,7 @@ class ASTPreprocessor
           node.opcode = AST_OPCODE_COMPARE_NEQ
         endif
 
-        if (name is 'undefined')
+        if name is 'undefined'
           # TODO: Optimize it.
           children[0] = {
             'id': AST_GetNextId(),
@@ -140,6 +140,9 @@ class ASTPreprocessor
           }
           y.opcode = AST_DATA_STRING
           y.value  = 'undefined'
+
+          # TODO: Clean up this mess.
+          x.__isUsedAsTypeofArg = true
         endif
       endif
 

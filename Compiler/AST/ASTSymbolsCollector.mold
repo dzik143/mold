@@ -292,6 +292,13 @@ class ASTSymbolsCollector
       # Track data type.
       node.symbolInfo = symbolInfo
 
+      # TODO: Clean up this mess.
+      if node.__isUsedAsTypeofArg is true
+        # User called typeof(x) directly.
+        # Keep variant type.
+        symbolTable.useAsTypeofArg(node.value)
+      endif
+
     elif opcode is AST_OPCODE_REFERENCE_BY_INDEX
        # There are two cases:
        # 1. x[i] = ...  : x is left , i is right
@@ -610,9 +617,9 @@ class ASTSymbolsCollector
 
         # TODO: Review it.
         iterNode.symbolInfo = bodyNode.symbolTable.lookupForReadAndWrite(iterNode.value)
-        iterNode.symbolInfo.usedAsIterator = true
-        iterNode.symbolInfo.astType = -1
+        iterNode.symbolInfo.usedAsIterator  = true
         iterNode.symbolInfo.isAstTypeFrozen = true
+        iterNode.symbolInfo.astType = -1
       endfor
 
       # TODO: Is it always ok?
@@ -620,12 +627,12 @@ class ASTSymbolsCollector
       boxNode.symbolInfo = bodyNode.symbolTable.lookupForRead(boxNode.value)
 
       # TODO: Clean up this mess.
-      if (opcode is AST_OPCODE_FOR_INDEXES) or (opcode is AST_OPCODE_FOR_INDEXES_VALUES)
-        bodyNode.symbolTable.useAsIndex(children[0].value)
-
-      elif (opcode is AST_OPCODE_FOR_KEYS) or (opcode is AST_OPCODE_FOR_KEYS_VALUES)
-        bodyNode.symbolTable.useAsKey(children[0].value)
-      endif
+      # TODO: Handle int32 indexes.
+      #if (opcode is AST_OPCODE_FOR_INDEXES) or (opcode is AST_OPCODE_FOR_INDEXES_VALUES)
+      #  bodyNode.symbolTable.useAsIndex(children[0].value)
+      #elif (opcode is AST_OPCODE_FOR_KEYS) or (opcode is AST_OPCODE_FOR_KEYS_VALUES)
+      #  bodyNode.symbolTable.useAsKey(children[0].value)
+      #endif
 
       this._collectSymbolsFromRightNode(symbolTable, boxNode)
       this._collectSymbolsFromLeftNode(symbolTable, bodyNode)

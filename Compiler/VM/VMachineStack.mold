@@ -219,6 +219,13 @@ class VMachineStack
         idx = stack.pop()
         box = stack.pop()
 
+        # TODO: Why we need to check it here?
+        if typeof(idx) isnt 'integer'
+          # Emulate the same beheavior as compiled version.
+          # TODO: Handle source line.
+          die('runtime error: integer expected')
+        endif
+
         box[idx] = val
         stack.push(box)
 

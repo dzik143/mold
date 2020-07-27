@@ -1131,17 +1131,28 @@ class CodeGeneratorX64
         print '  mov [', dst, '+ Variant_t.value], rax'
 
       elif originalOpcode is 'conv_variant_to_bool32'
+        print '  cmp [', x, '+ Variant_t.type], VARIANT_BOOLEAN'
+        print '  jnz __MOLD_PrintErrorAndDie.booleanExpected'
         print '  mov eax, dword [', x, '+ Variant_t.value]'
         print '  mov dword [', dst, '], eax'
 
       elif originalOpcode is 'conv_variant_to_int32'
         # TODO: Handle very long arrays?
+        # TODO: Optimize it.
+        print '  cmp [', x, '+ Variant_t.type], VARIANT_INTEGER'
+        print '  jnz __MOLD_PrintErrorAndDie.integerExpected'
         print '  mov eax, dword [', x, '+ Variant_t.value]'
         print '  mov dword [', dst, '], eax'
 
-      elif ((originalOpcode is 'conv_variant_to_int64') or
-            (originalOpcode is 'conv_variant_to_float64'))
+      elif originalOpcode is 'conv_variant_to_int64'
+        print '  cmp [', x, '+ Variant_t.type], VARIANT_INTEGER'
+        print '  jnz __MOLD_PrintErrorAndDie.integerExpected'
+        print '  mov rax, qword [', x, '+ Variant_t.value]'
+        print '  mov qword [', dst, '], rax'
 
+      elif originalOpcode is 'conv_variant_to_float64'
+        print '  cmp [', x, '+ Variant_t.type], VARIANT_DOUBLE'
+        print '  jnz __MOLD_PrintErrorAndDie.floatExpected'
         print '  mov rax, qword [', x, '+ Variant_t.value]'
         print '  mov qword [', dst, '], rax'
 
