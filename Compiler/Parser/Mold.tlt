@@ -324,7 +324,7 @@ class Parser
     # TODO: Clean up this mess.
     lookupByte = @@eof
     if inputLen > 0
-      lookupByte = input[0]
+      lookupByte = ord(input[0])
     endif
 
     inputIdx = 1
@@ -424,7 +424,7 @@ class Parser
 
             if numberOfBytesToRead > 0
               # Get next character from input stream
-              lookupByte = input[inputIdx]
+              lookupByte = ord(input[inputIdx])
               inputIdx   = inputIdx + 1
               buf        = buf ~ asc(lookupByte)
             endif
