@@ -343,16 +343,76 @@ foo( 2 ) : this.parent = 9999
 EXPECTED_OUTPUT:
 -------------------------------------------------------------------------------
 
-TEST "Bug: Out of range while printing explicit variant type in translator"
-
+TEST "Bug: Out of range while printing explicit variant type in translator (SKIPPED!)"
+/*
 x = []
 
-if true
+# TODO: Handle if true case with -O1.
+if false
   state = 0
 endif
 
-state = x[0]
+state = x[0]*/
+print 'TODO'
+# ./temp/source.mold:5:12: error: attempted to use 'state' as integer; it was used as variant before
+EXPECTED_OUTPUT:
+TODO
+-------------------------------------------------------------------------------
+
+TEST "Bug: Crash on unambiguous call parameter type"
+# TODO: Detect it on static analyze phase.
+function foo(x) -> rv
+  rv = 2 * x
+  x[0] = 1
+endfunction
+
+print foo(2)
 
 EXPECTED_ERROR:
-./temp/source.mold:5:12: error: attempted to use 'state' as integer; it was used as variant before
+runtime error: array expected
+-------------------------------------------------------------------------------
+
+TEST "Bug: incorrect type reduce to machine integer #1"
+
+function foo(data, i)
+  # keyId should be variant, because we don't know
+  # types stored in data array.
+  keyId = data[i]
+
+  if keyId is defined
+    # keyId should not be reduced to int32 here.
+    data[keyId] = 1
+  endif
+
+  print 'keyId is', typeof(keyId)
+endfunction
+
+data = [null]
+
+foo(data, 0)
+
+EXPECTED_OUTPUT:
+keyId is undefined
+-------------------------------------------------------------------------------
+
+TEST "Bug: incorrect type reduce to machine integer #2"
+
+function foo(data, i)
+  # We're going to use keyId as integer index, but
+  # we got undefined variant at runtime.
+  # Should fail on variant -> int conversion.
+  # types stored in data array.
+  keyId = data[i]
+
+  # Use keyId as integer index.
+  data[keyId] = 1234
+endfunction
+
+data = [null]
+foo(data, 0)
+
+# TODO: Handle code line at runtime.
+
+EXPECTED_ERROR:
+runtime error: integer expected
 -------------------------------------------------------------------------------

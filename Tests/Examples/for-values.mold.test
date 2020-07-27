@@ -135,7 +135,7 @@ for values v in x
 endfor
 
 EXPECTED_ERROR:
-error: array, string or map expected
+runtime error: array, string or map expected
 -------------------------------------------------------------------------------
 
 TEST "for values in: iteration inside functionc call"
@@ -260,4 +260,44 @@ EXPECTED_OUTPUT:
 1 12
 <- foo( 1 )
 <- foo( 2 )
+-------------------------------------------------------------------------------
+
+TEST "Use values iterator in another branch"
+
+function foo(x)
+  print 'foo(', x, ')'
+endfunction
+
+tab = [10,20,30]
+
+if false
+  item = tab[0]
+else
+  for values item in tab
+    foo(item)
+  endfor
+endif
+
+EXPECTED_OUTPUT:
+foo( 10 )
+foo( 20 )
+foo( 30 )
+-------------------------------------------------------------------------------
+
+TEST "Bug: Loose variant type for value iterator if used as index x[value]"
+
+src = [1,2,3]
+dst = []
+
+for values i in src
+  # i should not be reduced to int32 (array index)
+  dst[i] = 4
+endfor
+
+print src
+print dst
+
+EXPECTED_OUTPUT:
+[1, 2, 3]
+[undefined, 4, 4, 4]
 -------------------------------------------------------------------------------

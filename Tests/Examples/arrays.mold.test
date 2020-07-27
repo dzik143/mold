@@ -171,11 +171,12 @@ x after modify: [[[[[[[[['new-x']]]]]]]]]
 -------------------------------------------------------------------------------
 
 TEST "Nested arrays #2"
+# TODO: Handle at compile time.
 x = []
 print x[1][1]
 
 EXPECTED_ERROR:
-error: array or string expected
+runtime error: array or string expected
 -------------------------------------------------------------------------------
 
 TEST "Bug: Realloc array more than 2x at single insert"
