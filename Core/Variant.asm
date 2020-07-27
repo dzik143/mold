@@ -2950,8 +2950,20 @@ __MOLD_PrintErrorAndDie:
     lea     rcx, [.fmtGeneric]
     jmp     .final
 
+.integerExpected:
+    lea     rcx, [.fmtIntegerExcepted]
+    jmp     .final
+
 .integerIndexExpected:
     lea     rcx, [.fmtIntegerIndexExcepted]
+    jmp     .final
+
+.booleanExpected:
+    lea     rcx, [.fmtBooleanExcepted]
+    jmp     .final
+
+.floatExpected:
+    lea     rcx, [.fmtFloatExcepted]
     jmp     .final
 
 .stringKeyExpected:
@@ -3010,18 +3022,21 @@ __MOLD_PrintErrorAndDie:
     cinvoke WriteFile, rax, rdx, r8, NumberOfBytesWritten, 0
     cinvoke ExitProcess, -1
 
-.fmtGeneric                  db 'error: generic', 13, 10, 0
-.fmtIntegerIndexExcepted     db 'error: integer index expected', 13, 10, 0
-.fmtStringKeyExpected        db 'error: string key expected', 13, 10, 0
-.fmtStringExpected           db 'error: string expected', 13, 10, 0
-.fmtMapOrObjectExpected      db 'error: map or object expected', 13, 10, 0
-.fmtArrayExpected            db 'error: array expected', 13, 10, 0
-.fmtArrayOrStringExpected    db 'error: array or string expected', 13, 10, 0
-.fmtArrayStringOrMapExpected db 'error: array, string or map expected', 13, 10, 0
-.fmtNegativeIndex            db 'error: negative array index', 13, 10, 0
-.fmtIndexOutOfRange          db 'error: index out of range', 13, 10, 0
-.fmtBadType                  db 'error: bad type', 13, 10, 0
-.fmtNotImplemented           db 'error: not implemented', 13, 10, 0
-.fmtImplicitConversion       db 'error: implicit type conversion not supported anymore', 13, 10, 0
+.fmtGeneric                  db 'runtime error: generic', 13, 10, 0
+.fmtIntegerExcepted          db 'runtime error: integer expected', 13, 10, 0
+.fmtIntegerIndexExcepted     db 'runtime error: integer index expected', 13, 10, 0
+.fmtBooleanExcepted          db 'runtime error: boolean expected', 13, 10, 0
+.fmtFloatExcepted            db 'runtime error: float expected', 13, 10, 0
+.fmtStringKeyExpected        db 'runtime error: string key expected', 13, 10, 0
+.fmtStringExpected           db 'runtime error: string expected', 13, 10, 0
+.fmtMapOrObjectExpected      db 'runtime error: map or object expected', 13, 10, 0
+.fmtArrayExpected            db 'runtime error: array expected', 13, 10, 0
+.fmtArrayOrStringExpected    db 'runtime error: array or string expected', 13, 10, 0
+.fmtArrayStringOrMapExpected db 'runtime error: array, string or map expected', 13, 10, 0
+.fmtNegativeIndex            db 'runtime error: negative array index', 13, 10, 0
+.fmtIndexOutOfRange          db 'runtime error: index out of range', 13, 10, 0
+.fmtBadType                  db 'runtime error: bad type', 13, 10, 0
+.fmtNotImplemented           db 'runtime error: not implemented', 13, 10, 0
+.fmtImplicitConversion       db 'runtime error: implicit type conversion not supported anymore', 13, 10, 0
 
 include 'SysCall.asm'
