@@ -127,6 +127,9 @@ class ASTTranslator
   endmethod
 
   method _leaveScope()
+    global AST_DATA_STRING
+    global AST_DATA_OBJECT
+
     childTable = this.symbolTable
     this.symbolTable = this.symbolTable.parent
 
@@ -141,13 +144,27 @@ class ASTTranslator
 
         if symbolsCurrent{id} is undefined
           symbolsCurrent{id} = item
+
         else
           # TODO: Accumulate hits?
           # TODO: Implement inner frames.
-          if symbolsCurrent{id}.astType isnt item.astType
-            typeName1 = AST_ConvertDataTypeToText(symbolsCurrent{id}.astType)
-            typeName2 = AST_ConvertDataTypeToText(item.astType)
-            this.app.logError("attempted to use '" ~ id ~ "' as " ~ typeName2 ~ "; it was used as " ~ typeName1 ~ ' before')
+          # TODO: Clean up this mess.
+          astType1 = symbolsCurrent{id}.astType
+          astType2 = item.astType
+
+          if astType1 isnt astType2
+            if ((astType1 is -1) and
+               ((astType2 is AST_DATA_STRING) or (astType2 >= AST_DATA_OBJECT)))
+              # variant vs string|object|map|array
+              # Do nothing.
+            elif ((astType2 is -1) and
+                 ((astType1 is AST_DATA_STRING) or (astType1 >= AST_DATA_OBJECT)))
+
+            else
+              typeName1 = AST_ConvertDataTypeToText(astType1)
+              typeName2 = AST_ConvertDataTypeToText(astType2)
+              this.app.logError("attempted to use '" ~ id ~ "' as " ~ typeName2 ~ "; it was used as " ~ typeName1 ~ ' before')
+            endif
           endif
         endif
       #endif

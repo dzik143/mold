@@ -292,8 +292,7 @@ class ASTSymbolsCollector
       # Track data type.
       node.symbolInfo = symbolInfo
 
-    elif ((opcode is AST_OPCODE_REFERENCE_BY_INDEX) or
-          (opcode is AST_OPCODE_REFERENCE_BY_KEY))
+    elif opcode is AST_OPCODE_REFERENCE_BY_INDEX
        # There are two cases:
        # 1. x[i] = ...  : x is left , i is right
        # 2. ...  = x[i] : x is right, i is right
@@ -301,14 +300,60 @@ class ASTSymbolsCollector
        # - x always save L/R context,
        # - index (i) has always R context (lookup for read).
 
-       this._collectSymbols(symbolTable, children[0], isLeftNode)
-       this._collectSymbolsFromRightNode(symbolTable, children[1])
+       nodeBox = children[0]
+       nodeIdx = children[1]
+
+       this._collectSymbols(symbolTable, nodeBox, isLeftNode)
+       this._collectSymbolsFromRightNode(symbolTable, nodeIdx)
 
        # TODO: Review it.
        # It's not needed - we already accessed box container.
-       if children[0].opcode is AST_OPCODE_VARIABLE
+       if nodeBox.opcode is AST_OPCODE_VARIABLE
          # x[i] = ... is read for x too.
          symbolTable.lookupForRead(children[0].value)
+
+         # TODO: Review it.
+         if isLeftNode is true
+           # x[i] = ...
+           symbolTable.useAsArray(nodeBox.value)
+         else
+           # ... = x[i]
+           symbolTable.useAsArrayOrString(nodeBox.value)
+         endif
+       endif
+
+       # TODO: Handle complex nodes.
+       if nodeIdx.opcode is AST_OPCODE_VARIABLE
+         symbolTable.useAsIndex(nodeIdx.value)
+       endif
+
+    elif opcode is AST_OPCODE_REFERENCE_BY_KEY
+       # There are two cases:
+       # 1. x{key} = ...    : x is left , key is right
+       # 2. ...    = x{key} : x is right, key is right
+       # Rule:
+       # - x always save L/R context,
+       # - index (i) has always R context (lookup for read).
+       nodeBox = children[0]
+       nodeKey = children[1]
+
+       this._collectSymbols(symbolTable, nodeBox, isLeftNode)
+       this._collectSymbolsFromRightNode(symbolTable, nodeKey)
+
+       # TODO: Review it.
+       # It's not needed - we already accessed box container.
+       if nodeBox.opcode is AST_OPCODE_VARIABLE
+         # x[i] = ... is read for x too.
+         symbolTable.lookupForRead(children[0].value)
+
+         # Posible improvement: Distinguish between map and object.
+         # Posible improvement: Distinguish between x.key and x{key}.
+         symbolTable.useAsMapOrObject(nodeBox.value)
+       endif
+
+       # TODO: Handle complex nodes.
+       if nodeKey.opcode is AST_OPCODE_VARIABLE
+         symbolTable.useAsKey(nodeKey.value)
        endif
 
     elif opcode is AST_OPCODE_DECLARE_OR_ASSIGN
@@ -459,22 +504,34 @@ class ASTSymbolsCollector
             if astType1 isnt astType2
               # Type mismatch.
               # TODO: Review it.
-              typeName1 = AST_ConvertDataTypeToText(astType1)
-              typeName2 = AST_ConvertDataTypeToText(astType2)
-              id        = symbolInfo1.name
+              # TODO: Clean up this mess.
+              if ((astType1 is -1) and
+                 ((astType2 is AST_DATA_STRING) or (astType2 >= AST_DATA_OBJECT)))
+                # variant vs string|object|map|array
+                # Do nothing.
+              elif ((astType2 is -1) and
+                   ((astType1 is AST_DATA_STRING) or (astType1 >= AST_DATA_OBJECT)))
+                # string|object|map|array vs variant
+                # string vs variant
+                # Do nothing.
 
-              this.app.logError("attempted to use '" ~ id ~ "' as " ~ typeName2 ~ "; it was used as " ~ typeName1 ~ ' before')
+              else
+                typeName1 = AST_ConvertDataTypeToText(astType1)
+                typeName2 = AST_ConvertDataTypeToText(astType2)
+                id        = symbolInfo1.name
+                this.app.logError("attempted to use '" ~ id ~ "' as " ~ typeName2 ~ "; it was used as " ~ typeName1 ~ ' before')
 
-              #astType = -1
-              #
-              #if (astType1 is AST_DATA_DOUBLE) and (astType2 is AST_DATA_INTEGER)
-              #  astType = AST_DATA_DOUBLE
-              #
-              #elif (astType1 is AST_DATA_INTEGER) and (astType2 is AST_DATA_DOUBLE)
-              #  astType = AST_DATA_DOUBLE
-              #endif
-              #
-              #symbolInfo1.astType = astType
+                #astType = -1
+                #
+                #if (astType1 is AST_DATA_DOUBLE) and (astType2 is AST_DATA_INTEGER)
+                #  astType = AST_DATA_DOUBLE
+                #
+                #elif (astType1 is AST_DATA_INTEGER) and (astType2 is AST_DATA_DOUBLE)
+                #  astType = AST_DATA_DOUBLE
+                #endif
+                #
+                #symbolInfo1.astType = astType
+              endif
 
             else
               classProto1 = symbolInfo1.classProto
@@ -554,9 +611,20 @@ class ASTSymbolsCollector
         # TODO: Review it.
         iterNode.symbolInfo = bodyNode.symbolTable.lookupForReadAndWrite(iterNode.value)
         iterNode.symbolInfo.usedAsIterator = true
+        iterNode.symbolInfo.astType = -1
       endfor
 
+      # TODO: Is it always ok?
+      # TODO: Check for variable node.
       boxNode.symbolInfo = bodyNode.symbolTable.lookupForRead(boxNode.value)
+
+      # TODO: Clean up this mess.
+      if (opcode is AST_OPCODE_FOR_INDEXES) or (opcode is AST_OPCODE_FOR_INDEXES_VALUES)
+        bodyNode.symbolTable.useAsIndex(children[0].value)
+
+      elif (opcode is AST_OPCODE_FOR_KEYS) or (opcode is AST_OPCODE_FOR_KEYS_VALUES)
+        bodyNode.symbolTable.useAsKey(children[0].value)
+      endif
 
       this._collectSymbolsFromRightNode(symbolTable, boxNode)
       this._collectSymbolsFromLeftNode(symbolTable, bodyNode)

@@ -691,6 +691,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
         for values oneValue in arrayOfValues
           jmpTable[oneValue] = caseLabel
         endfor
+
       else
         caseDefaultIdx = idx
       endif

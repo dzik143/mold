@@ -198,9 +198,7 @@ class SymbolTable
   method lookupForCall(name) -> rv
     global SYMBOL_KIND_FUNCTION
     # TODO: Special call counter?
-    rv          = this.lookup(name)
-    rv.readHits = rv.readHits + 1
-
+    rv = this.lookupForRead(name)
     # Make sure is it a function.
     if rv.kind isnt SYMBOL_KIND_FUNCTION
       this._error("'" ~ name ~ "' is not a function")
@@ -241,6 +239,62 @@ class SymbolTable
 
   method isset(name) -> rv
     rv = this._lookupInternal(name) is defined
+  endmethod
+
+  # ----------------------------------------------------------------------------
+  #                   Helpers to track how variables are used
+  # ----------------------------------------------------------------------------
+
+  method useAsArray(name)
+    global AST_DATA_ARRAY
+    this.assignType(name, AST_DATA_ARRAY)
+  endmethod
+
+  method useAsArrayOrString(name)
+    # TODO: Review it.
+    this.assignType(name, -1)
+  endmethod
+
+  method useAsMap(name)
+    global AST_DATA_MAP
+    this.assignType(name, AST_DATA_MAP)
+  endmethod
+
+  method useAsIndex(name)
+    global AST_DATA_INTEGER
+    this.assignType(name, AST_DATA_INTEGER)
+  endmethod
+
+  method useAsInteger(name)
+    global AST_DATA_INTEGER
+    this.assignType(name, AST_DATA_INTEGER)
+  endmethod
+
+  method useAsString(name)
+    global AST_DATA_STRING
+    this.assignType(name, AST_DATA_STRING)
+  endmethod
+
+  method useAsKey(name)
+    global AST_DATA_STRING
+    this.assignType(name, AST_DATA_STRING)
+  endmethod
+
+  method useAsObject(name)
+    global AST_DATA_OBJECT
+    this.assignType(name, AST_DATA_OBJECT)
+  endmethod
+
+  method useAsMapOrObject(name)
+    # TODO: Review it.
+    this.assignType(name, -1)
+  endmethod
+
+  method useAsNumber(name)
+    die('not implemented: useAsNumber')
+    #global AST_DATA_OBJECT
+    #print name, 'used as map object'
+    #this.assignType(name, AST_DATA_OBJECT)
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -427,6 +481,7 @@ class SymbolTable
 
   method insertParam(name, paramId) -> newEntry
     global SYMBOL_KIND_VAR_PARAM
+
     # TODO: Handle non-variant parameters.
     newEntry = {
       'name': name,
@@ -541,7 +596,10 @@ class SymbolTable
       endif
 
       if goOn is true
+        # TODO: Review it.
+        # TODO: Clean up this mess (MIR vs AST types).
         symbolInfo.astType = newType
+        symbolInfo.type    = AST_ConvertDataTypeToMIR(newType)
         this._debug('Assign AST type [' ~ AST_ConvertDataTypeToText(newType) ~ '] to variable [' ~ str(name) ~ ']')
       else
         this._debug('Ignored ineffective AST type change from [' ~ AST_ConvertDataTypeToText(oldType) ~ '] to [' ~ AST_ConvertDataTypeToText(newType) ~ '] for variable [' ~ str(name) ~ ']')

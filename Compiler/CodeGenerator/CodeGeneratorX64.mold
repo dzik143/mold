@@ -1571,7 +1571,7 @@ class CodeGeneratorX64
           methodPtr = methodProto.fullName
         endif
 
-        print '  dq', methodPtr, ';', methodName
+        print '  dq', methodPtr, ';', methodName, '(', methodIdx, ')'
       endfor
 
       print ''

@@ -147,7 +147,6 @@ class ASTTypeCast
         children[1] = AST_TypeCast(children[1], AST_DATA_STRING)
 
       elif opcode is AST_OPCODE_FOR_VALUES_RANGE
-        # TODO: Handle non-integer counter?
         children[1] = AST_TypeCast(children[1], AST_DATA_INTEGER) # idxBegin
         children[2] = AST_TypeCast(children[2], AST_DATA_INTEGER) # idxEnd
         children[3] = AST_TypeCast(children[3], AST_DATA_INTEGER) # idxStep
