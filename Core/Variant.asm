@@ -137,6 +137,10 @@ ends
 
 __MOLD_VariantCheck:
     ; rcx = value (Variant_t)
+    push rbp
+    mov  rbp, rsp
+    sub  rsp, 32
+
     push rax
 
     mov  eax, [rcx + Variant_t.type]
@@ -179,6 +183,9 @@ __MOLD_VariantCheck:
 .undefinedRetVal:
 .ok:
     pop  rax
+
+    add  rsp, 32
+    pop  rbp
     ret
 
 .wrongTypeError:
