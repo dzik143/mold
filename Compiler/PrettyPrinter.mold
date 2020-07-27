@@ -26,6 +26,11 @@ astSymbolsCollector = app.getAstSymbolsCollector()
 astPrinterText      = new ASTPrinterText()
 astPrinterHtml      = new ASTPrinterHtml()
 
+# Preprocess AST to expand built-in constructions.
+# Example: x is defined => typeof(x) isnt 'undefined'
+app.logDebug('Preprocessing AST...')
+app.getAstPreprocessor().processNode(ast)
+
 app.logDebug('Building symbol table...')
 astSymbolsCollector.buildSymbolTable(ast)
 
