@@ -852,19 +852,8 @@ function AST_GetDataType(node) -> rv
 
         elif ((opcode >= AST_OPCODE_COMPARE_EQ) and
               (opcode <= AST_OPCODE_BOOL_OR))
-
-          # TODO: Why need variant result for variant operands?
-          if ((x is -1) or
-              (y is -1) or
-              (x is AST_DATA_STRING) or
-              (y is AST_DATA_STRING) or
-              (x > AST_DATA_UNDEFINED) or
-              (y > AST_DATA_UNDEFINED))
-
-            rv = -1
-          else
-            rv = AST_DATA_BOOL
-          endif
+          # Logic result: x op y
+          rv = AST_DATA_BOOL
         endif
 
       elif childrenCnt is 1
