@@ -618,7 +618,6 @@ class ASTSymbolsCollector
         # TODO: Review it.
         iterNode.symbolInfo = bodyNode.symbolTable.lookupForReadAndWrite(iterNode.value)
         iterNode.symbolInfo.usedAsIterator  = true
-        iterNode.symbolInfo.isAstTypeFrozen = true
         iterNode.symbolInfo.astType = -1
       endfor
 
@@ -627,12 +626,17 @@ class ASTSymbolsCollector
       boxNode.symbolInfo = bodyNode.symbolTable.lookupForRead(boxNode.value)
 
       # TODO: Clean up this mess.
-      # TODO: Handle int32 indexes.
-      #if (opcode is AST_OPCODE_FOR_INDEXES) or (opcode is AST_OPCODE_FOR_INDEXES_VALUES)
-      #  bodyNode.symbolTable.useAsIndex(children[0].value)
-      #elif (opcode is AST_OPCODE_FOR_KEYS) or (opcode is AST_OPCODE_FOR_KEYS_VALUES)
-      #  bodyNode.symbolTable.useAsKey(children[0].value)
-      #endif
+      if (opcode is AST_OPCODE_FOR_INDEXES) or (opcode is AST_OPCODE_FOR_INDEXES_VALUES)
+        bodyNode.symbolTable.useAsIndex(children[0].value)
+
+      elif (opcode is AST_OPCODE_FOR_KEYS) or (opcode is AST_OPCODE_FOR_KEYS_VALUES)
+        bodyNode.symbolTable.useAsKey(children[0].value)
+      endif
+
+      # Clean up this mess.
+      for idx in 0 .. iteratorsCnt
+        children[idx].symbolInfo.isAstTypeFrozen = true
+      endfor
 
       this._collectSymbolsFromRightNode(symbolTable, boxNode)
       this._collectSymbolsFromLeftNode(symbolTable, bodyNode)
