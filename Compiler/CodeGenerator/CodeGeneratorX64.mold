@@ -373,6 +373,16 @@ class CodeGeneratorX64
     print '  j' ~ cc, dst
   endmethod
 
+  method _jmp_if_cc_variant(dst, x, y, cc)
+    # TODO: Optimize it.
+    print '  lea rcx, [', x, ']'
+    print '  lea rdx, [', y, ']'
+    print '  lea r8, [__TrashBin]'
+    print '  call __MOLD_VariantCompare' ~ cc
+    print '  cmp dword [__TrashBin], 0'
+    print '  jnz', dst
+  endmethod
+
   method _getSymbolType(symbolsMap, id) -> rv
     rv = 'variant'
     if typeof(id) is 'string'
@@ -730,53 +740,23 @@ class CodeGeneratorX64
       # jmp_if_xx_variant
       #
 
-      elif opcode is 'jmp_if_eq_variant'
-        print '  lea rcx, [', x, ']'
-        print '  lea rdx, [', y, ']'
-        print '  lea r8, [rsp + 16]' # Temp var in own shadow space
-        print '  call __MOLD_VariantCompareEQ'
-        print '  cmp dword [rsp + 16 + Variant_t.value], 0'
-        print '  jnz', dst
+      elif (opcode is 'jmp_if_eq_variant') or (opcode is 'jmp_if_eq_string')
+        this._jmp_if_cc_variant(dst, x, y, 'EQ')
 
-      elif opcode is 'jmp_if_ne_variant'
-        print '  lea rcx, [', x, ']'
-        print '  lea rdx, [', y, ']'
-        print '  lea r8, [rsp + 16]' # Temp var in own shadow space
-        print '  call __MOLD_VariantCompareNE'
-        print '  cmp dword [rsp + 16 + Variant_t.value], 0'
-        print '  jnz', dst
+      elif (opcode is 'jmp_if_ne_variant') or (opcode is 'jmp_if_ne_string')
+        this._jmp_if_cc_variant(dst, x, y, 'NE')
 
       elif opcode is 'jmp_if_lt_variant'
-        print '  lea rcx, [', x, ']'
-        print '  lea rdx, [', y, ']'
-        print '  lea r8, [rsp + 16]' # Temp var in own shadow space
-        print '  call __MOLD_VariantCompareLT'
-        print '  cmp dword [rsp + 16 + Variant_t.value], 0'
-        print '  jnz', dst
+        this._jmp_if_cc_variant(dst, x, y, 'LT')
 
       elif opcode is 'jmp_if_le_variant'
-        print '  lea rcx, [', x, ']'
-        print '  lea rdx, [', y, ']'
-        print '  lea r8, [rsp + 16]' # Temp var in own shadow space
-        print '  call __MOLD_VariantCompareLE'
-        print '  cmp dword [rsp + 16 + Variant_t.value], 0'
-        print '  jnz', dst
+        this._jmp_if_cc_variant(dst, x, y, 'LE')
 
       elif opcode is 'jmp_if_gt_variant'
-        print '  lea rcx, [', y, ']'
-        print '  lea rdx, [', x, ']'
-        print '  lea r8, [rsp + 16]' # Temp var in own shadow space
-        print '  call __MOLD_VariantCompareLT'
-        print '  cmp dword [rsp + 16 + Variant_t.value], 0'
-        print '  jnz', dst
+        this._jmp_if_cc_variant(dst, y, x, 'LT')
 
       elif opcode is 'jmp_if_ge_variant'
-        print '  lea rcx, [', y, ']'
-        print '  lea rdx, [', x, ']'
-        print '  lea r8, [rsp + 16]' # Temp var in own shadow space
-        print '  call __MOLD_VariantCompareLE'
-        print '  cmp dword [rsp + 16 + Variant_t.value], 0'
-        print '  jnz', dst
+        this._jmp_if_cc_variant(dst, y, x, 'LE')
 
       #
       # load imm values
