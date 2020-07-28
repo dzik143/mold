@@ -832,12 +832,12 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
     ; r8  = rv (int32*)    (OUT)
 
     lea     r11, [.jmpTable]
-    jmp     __MOLD_VariantTypeDispatcherXY
+    jmp     __MOLD_VariantTypeDispatcherXX
 
-  .jmpTable dq .case_ii, .case_if, .case_id, .error
-            dq .case_fi, .case_ff, .case_fd, .error
-            dq .case_di, .case_df, .case_dd, .error
-            dq .error  , .error  , .error  , .error
+  .jmpTable:
+      dq   .case_ii                               ; integer x integer
+      dq   __MOLD_PrintErrorAndDie.notImplemented ; float   x float
+      dq   .case_dd                               ; double  x double
 
   ; integer x integer
   .case_ii:
@@ -849,24 +849,6 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
     mov       dword [r8], eax
     ret
 
-  ; integer x double
-  .case_id:
-    cvtsi2sd  xmm0, [rcx + Variant_t.value]
-    movq      xmm1, [rdx + Variant_t.value]
-    opcode_dd xmm0, xmm1
-    movq      rax, xmm0
-    mov       dword [r8], eax
-    ret
-
-  ; double x integer
-  .case_di:
-    movq      xmm0, [rcx + Variant_t.value]
-    cvtsi2sd  xmm1, [rdx + Variant_t.value]
-    opcode_dd xmm0, xmm1
-    movq      rax, xmm0
-    mov       dword [r8], eax
-    ret
-
   ; double x double
   .case_dd:
     movq      xmm0, [rcx + Variant_t.value]
@@ -875,26 +857,9 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
     movq      rax, xmm0
     mov       dword [r8], eax
     ret
-
-  ; string x string
-  .case_ss:
-    ; TODO: Clean up this mess.
-    ; TODO: Is this code used anymore?
-    jmp     __MOLD_PrintErrorAndDie.notImplemented
-
-  .error:
-    mov     dword [r8], 0
-    ret
-
-  .case_if:
-  .case_fi:
-  .case_ff:
-  .case_df:
-  .case_fd:
-     jmp    __MOLD_PrintErrorAndDie.notImplemented
 }
 
-__MOLD_VariantCompareEQ:
+proc __MOLD_VariantCompareEQ
     ; rcx = x  (Variant_t) (IN)
     ; rdx = y  (Variant_t) (IN)
     ; r8  = rv (int32*)    (OUT)
@@ -904,6 +869,34 @@ __MOLD_VariantCompareEQ:
 
     mov     eax, [rcx + Variant_t.type]     ; rax = x.type
     mov     r9d, [rdx + Variant_t.type]     ; r9  = y.type
+
+    ; TODO: Clean up this mess.
+    ; TODO: Distinguish map and object.
+    mov     r10d, eax       ; r10 = x.type
+    shl     r10d, 4         ; r10 = 16 * x.type
+    add     r10d, r9d       ; r10 = 16 * x.type + y.type
+
+    ; map vs object - go on
+    cmp     r10d, 89h
+    jz      .ok
+
+    ; object vs map - go on
+    cmp     r10d, 98h
+    jz      .ok
+
+    ; TODO: Disable implicit type conversion.
+    cmp     eax, r9d
+    jnz     __MOLD_PrintErrorAndDie.implicitConversion
+
+    ;cmp     eax, r9d
+    ;jz      .ok
+
+    ;mov     rcx, [rcx + Variant_t.value]
+    ;mov     rdx, [rdx + Variant_t.value]
+
+    ;int 3
+
+.ok:
 
     ; ss        -> strcmp
     ; id        -> defaultEQ
@@ -988,8 +981,9 @@ __MOLD_VariantCompareEQ:
                   db 0xff
                   db 0xff
                   db 0xff
+endp
 
-__MOLD_VariantCompareNE:
+proc __MOLD_VariantCompareNE
     ; rcx = x  (Variant_t) (IN)
     ; rdx = y  (Variant_t) (IN)
     ; r8  = rv (int32*)    (OUT)
@@ -1003,6 +997,7 @@ __MOLD_VariantCompareNE:
     xor     dword [r8], 1
 
     ret
+endp
 
 DefVariantCompare __MOLD_VariantDefaultCompareEQ, setz,  cmpeqsd
 DefVariantCompare __MOLD_VariantCompareLT,        setl,  cmpltsd
