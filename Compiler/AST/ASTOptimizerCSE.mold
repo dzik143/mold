@@ -172,15 +172,15 @@ class ASTOptimizerCSE
       if (len(node.children) > 0) and (node.hash is defined)
         matchedNode = mapOfExpressions{node.hash}
 
-        if matchedNode is node
-          # Do nothing - it's the same node.
-
-        elif matchedNode is undefined
+        if matchedNode is undefined
           # Expression seen first time, save it in map and wait for
           # more expressions from different nodes.
           node.symbolTable = symbolTable
           mapOfExpressions{node.hash} = node
           this._debug('Expression found at node #' ~ str(node.id) ~ ', (' ~ node.hash ~ ')')
+
+        elif matchedNode is node
+          # Do nothing - it's the same node.
 
         else
           # Two nodes with common subexpression found.

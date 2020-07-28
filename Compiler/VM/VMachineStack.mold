@@ -97,7 +97,7 @@ class VMachineStack
       item   = code[ip]
       opcode = item[0]
 
-      #print 'ENTER', ip, opcode
+      # print 'ENTER', ip, opcode
 
       # Dispatch opcode.
       if opcode is MIR_OPCODE_NOP
@@ -266,7 +266,8 @@ class VMachineStack
         _vm_locals                 = []
         _vm_dataStack[_vm_deepIdx] = _vm_locals
 
-        if proto.isConstructor is true
+        if ((proto.isConstructor is defined) and
+            (proto.isConstructor is true))
           # TODO: Handle it in better way.
           # We need it to avoid eating new result (this pointer)
           # when constructor called just after.
@@ -343,6 +344,7 @@ class VMachineStack
 
       elif opcode is MIR_OPCODE_SYSCALL
         # TODO: Clean up this mess.
+        # TODO: Review it.
         # TODO: Optimize it.
         id        = item[1]
         paramsCnt = item[2]
@@ -429,7 +431,7 @@ class VMachineStack
         die("unknown opcode '" ~ str(opcode) ~ "'")
       endif
 
-      #print 'LEAVE', ip, opcode
+      # print 'LEAVE', ip, opcode
 
       ip = ip + 1
     endwhile

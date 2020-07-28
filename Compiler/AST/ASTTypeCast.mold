@@ -111,20 +111,21 @@ class ASTTypeCast
         yType = AST_GetDataType(y)
 
         if xType isnt yType
-          this._debug('Type mismatch at arithmetic expression node #' ~ str(node.id) ~ ' (' ~ str(xType) ~ ' vs ' ~ str(yType) ~ ')')
+          # TODO: Better error handler.
+          # TODO: Handle error at compilation time if possible.
+          if xType is -1
+            # variant x concrete
+            this._debug('Type mismatch at arithmetic expression node #' ~ str(node.id) ~ ' (' ~ str(xType) ~ ' vs ' ~ str(yType) ~ ')')
+            children[1] = AST_TypeCast(y, xType)
 
-          # Type mismatch in binary arithmetic or compare: x o y
-          if (xType is AST_DATA_DOUBLE) and (yType is AST_DATA_INTEGER)
-            dstType = AST_DATA_DOUBLE
+          elif yType is -1
+            # concrete x variant
+            this._debug('Type mismatch at arithmetic expression node #' ~ str(node.id) ~ ' (' ~ str(xType) ~ ' vs ' ~ str(yType) ~ ')')
+            children[0] = AST_TypeCast(x, yType)
 
-          elif (xType is AST_DATA_INTEGER) and (yType is AST_DATA_DOUBLE)
-            dstType = AST_DATA_DOUBLE
           else
-            dstType = -1
+            die('runtime error: implicit type conversion not supported anymore')
           endif
-
-          children[0] = AST_TypeCast(x, dstType)
-          children[1] = AST_TypeCast(y, dstType)
         endif
 
       elif (opcode is AST_OPCODE_BOOL_AND) or (opcode is AST_OPCODE_BOOL_OR)

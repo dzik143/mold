@@ -301,7 +301,9 @@ class ASTOptimizerConstantFolding
 
           # Dispatch opcode.
           if opcode is AST_OPCODE_CALL
+            # TODO: Why we get non-integer sysCallId here?
             if (value is '__mold_syscall') and (childrenCnt is 1)
+
               # TODO: Don't use hardcoded values.
               # TODO: Clean up this mess.
               #'ord':          MOLD_SYSCALL_ONE_ARG + 31,
@@ -429,8 +431,10 @@ class ASTOptimizerConstantFolding
           endif
 
         # TODO: Remove hardcoded value ('typeof').
+        # TODO: Why we sometimes get non-integer sysCallId here?
         elif ((opcode is AST_OPCODE_CALL) and
               (value is '__mold_syscall') and
+              (typeof(node.sysCallId) is 'integer') and
               (node.sysCallId is 44))
 
           # typeof(...) - non imm variant.

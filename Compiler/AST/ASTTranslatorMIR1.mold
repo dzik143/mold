@@ -367,7 +367,9 @@ class ASTTranslatorMIR1 extends ASTTranslator
     # TODO: Use emitTwoArgsOpcode() after fix.
     this._emitOneItem(['call', rv, name, params])
 
-    if proto.isConstructor is true
+    if ((proto.isConstructor is defined) and
+        (proto.isConstructor is true))
+
       # TODO: Handle it in better way.
       # We need it to avoid eating new result (this pointer)
       # when constructor called just after.
@@ -430,7 +432,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _createObject(rv, classProto)
-    if classProto is null
+    if classProto is undefined
       # Dynamic code, adjust class proto at run-time.
       this._error('error: missing classProto in MIR_OPCODE_CREATE_OBJECT')
 
@@ -783,7 +785,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.code.symbolTable = this.symbolTable
 
     for values methodName in this.arrayOfCalledMethods
-      if this.methodEmitted{methodName} isnt true
+      if this.methodEmitted{methodName} is undefined
         # TODO: Show source line.
         die("error: object has no method '" ~ methodName ~ "'")
       endif

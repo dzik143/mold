@@ -206,7 +206,7 @@ class CodeGeneratorX64
   endmethod
 
   method emitStringBufferHead(name, value, wantDeep, deepIdx)
-    if this.isBufferEmitted{name} isnt true
+    if this.isBufferEmitted{name} is undefined
       if wantDeep is deepIdx
         bufferName      = name ~ '_buffer'
         bufferNameBytes = name ~ '_bufferBytes'
@@ -238,7 +238,7 @@ class CodeGeneratorX64
   endmethod
 
   method emitArrayBufferHead(name, items, wantDeepIdx, deepIdx)
-    if this.isBufferEmitted{name} isnt true
+    if this.isBufferEmitted{name} is undefined
       if wantDeepIdx is deepIdx
         itemsCnt        = len(items)
         bufferName      = name ~ '_buffer'
@@ -675,7 +675,7 @@ class CodeGeneratorX64
         this._cmp_cc_float64(dst, x, y, 'a')
 
       elif opcode is 'cmp_ge_float64'
-        this._cmp_cc_float64(dst, x, y, 'ge')
+        this._cmp_cc_float64(dst, x, y, 'ae')
 
       #
       # Variant arithmetic.
@@ -1099,10 +1099,12 @@ class CodeGeneratorX64
         endif
 
       elif originalOpcode is 'conv_bool32_to_variant'
-        if x is true
-          print '  mov eax, 1'
-        elif x is false
-          print '  mov eax, 0'
+        if typeof(x) is 'boolean'
+          if x is true
+            print '  mov eax, 1'
+          elif x is false
+            print '  mov eax, 0'
+          endif
         else
           print '  mov eax, dword [', x, ']'
         endif
@@ -1163,9 +1165,9 @@ class CodeGeneratorX64
         for values oneItem in symbols
 
           if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) and
-              ((oneItem.type is 'variant') or (oneItem.type is undefined)))
+              ((oneItem.type is undefined) or (oneItem.type is 'variant')))
 
-            if oneItem.usedAsIterator is true
+            if oneItem.usedAsIterator is defined
               # Symbol is used as loop iterator.
               # It's only dump reference for existing box values or keys.
               print '  ; Skipped loop iterator', oneItem.name
@@ -1201,7 +1203,7 @@ class CodeGeneratorX64
           for values oneItem in symbols
 
             if ((oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and
-                ((oneItem.type is 'variant') or (oneItem.type is undefined)))
+                ((oneItem.type is undefined) or (oneItem.type is 'variant')))
 
               this.variantDestroy(oneItem.name)
             endif
@@ -1282,7 +1284,7 @@ class CodeGeneratorX64
           if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or
               (symbol.kind is SYMBOL_KIND_VAR_PARAM))
 
-            if (symbol.type is 'variant') or (symbol.type is 'string') or (symbol.type is undefined)
+            if (symbol.type is undefined) or (symbol.type is 'variant') or (symbol.type is 'string')
               varSize = 16
 
             elif (symbol.type is 'int64') or (symbol.type is 'float64')
@@ -1331,12 +1333,12 @@ class CodeGeneratorX64
 
         for values oneItem in symbols
           if oneItem.kind is SYMBOL_KIND_VAR_LOCAL
-            if ((oneItem.type is 'variant') or
-                (oneItem.type is 'string') or
-                (oneItem.type is undefined))
+            if ((oneItem.type is undefined) or
+                (oneItem.type is 'variant') or
+                (oneItem.type is 'string'))
 
               # Local Variant_t variable - init to undefined.
-              if oneItem.usedAsIterator is true
+              if oneItem.usedAsIterator is defined
                 # Symbol is used as loop iterator.
                 # It's only dump reference for existing box values or keys.
                 print '  ; Skipped loop iterator', oneItem.item
@@ -1357,7 +1359,7 @@ class CodeGeneratorX64
 
               print '  movdqu [', oneItem.name, '], xmm0'
 
-              if oneItem.duplicateOnFirstWrite is true
+              if oneItem.duplicateOnFirstWrite is defined
                 print '  or [', oneItem.name, ' + Variant_t.flags ], VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE'
               endif
 
@@ -1369,7 +1371,7 @@ class CodeGeneratorX64
           endif
         endfor
 
-        if (currentProcName is 'start')
+        if currentProcName is 'start'
           print ''
           for values oneItem in symbols
             # TODO: Better way to exclude external vars.
@@ -1377,7 +1379,7 @@ class CodeGeneratorX64
               # Do nothing.
 
             elif ((oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and
-                  ((oneItem.type is 'variant') or (oneItem.type is undefined)))
+                  ((oneItem.type is undefined) or (oneItem.type is 'variant')))
 
               print '  mov [' ~ oneItem.name ~ ' + Variant_t.type], VARIANT_UNDEFINED'
             endif

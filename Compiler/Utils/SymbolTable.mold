@@ -565,7 +565,7 @@ class SymbolTable
     symbolInfo = this.lookup(name)
     oldType    = symbolInfo.astType
 
-    if newType isnt oldType
+    if (oldType is undefined) or (newType isnt oldType)
       goOn = false
 
       if oldType is undefined
@@ -583,7 +583,8 @@ class SymbolTable
       elif oldType is -1
         # <variant> = ...
         # Type is already variant.
-        if symbolInfo.isAstTypeFrozen isnt true
+        if ((symbolInfo.isAstTypeFrozen is undefined) or
+            (symbolInfo.isAstTypeFrozen is false))
           # Change type to concrete one, but only if it's not explicit
           # frozen to variant.
           goOn = true
@@ -723,7 +724,10 @@ class SymbolTable
   method releaseTempVar(name)
     symbolInfo = this._lookupInternal(name)
     # TODO: Clean up this mess.
-    if (symbolInfo is defined) and (symbolInfo.isTemp is true)
+    if ((symbolInfo is defined) and
+        (symbolInfo.isTemp is defined) and
+        (symbolInfo.isTemp is true))
+
       #symbolInfo.refCnt = symbolInfo.refCnt - 1
 
       #if symbolInfo.refCnt is 0

@@ -31,6 +31,8 @@ class MIRQuadOptimizer extends PipeAbstract
     this.bufferingEnabled = true
     this.lastOpcode       = 'nop'
     this.lastDst          = '[error]'
+    this.lastSrc1         = '[error]'
+    this.lastSrc2         = '[error]'
     this.currentFrame     = {}
 
     this.cmpXxJmpIfFalseMap = {
@@ -71,7 +73,7 @@ class MIRQuadOptimizer extends PipeAbstract
     dst    = item[1]
     src    = item[2]
 
-    #print '[ MIRQuadOptimizer ]', item[0]
+    # print '[ MIRQuadOptimizer ]', item[0]
 
     if (this.lastOpcode is 'store_index') or (this.lastOpcode is 'store_key')
       this._emitOneItem(item)
@@ -86,6 +88,7 @@ class MIRQuadOptimizer extends PipeAbstract
 
     elif ((opcode is 'move') and
           (this.lastOpcode isnt 'move') and
+          (typeof(this.lastDst) is 'string') and
           (this.lastDst is src))
 
       # tmp := x + y
@@ -94,8 +97,7 @@ class MIRQuadOptimizer extends PipeAbstract
       lastItem    = buffer[@last]
       lastItem[1] = dst
 
-    elif (opcode is 'jmp_if_false')
-
+    elif opcode is 'jmp_if_false'
       newOpcode = this.cmpXxJmpIfFalseMap{this.lastOpcode}
 
       if newOpcode is defined
@@ -108,8 +110,7 @@ class MIRQuadOptimizer extends PipeAbstract
         this._emitOneItem(item)
       endif
 
-    elif (opcode is 'jmp_if_true')
-
+    elif opcode is 'jmp_if_true'
       newOpcode = this.cmpXxJmpIfTrueMap{this.lastOpcode}
 
       if newOpcode is defined

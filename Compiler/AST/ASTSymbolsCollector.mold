@@ -293,7 +293,8 @@ class ASTSymbolsCollector
       node.symbolInfo = symbolInfo
 
       # TODO: Clean up this mess.
-      if node.__isUsedAsTypeofArg is true
+      if ((node.__isUsedAsTypeofArg is defined) and
+          (node.__isUsedAsTypeofArg is true))
         # User called typeof(x) directly.
         # Keep variant type.
         symbolTable.useAsTypeofArg(node.value)
@@ -670,12 +671,13 @@ class ASTSymbolsCollector
         endif
 
         # Mark that function was called.
-        node.symbolInfo = symbolTable.lookupForCall(node.value)
-        isLeftNode      = false
+        node.symbolInfo     = symbolTable.lookupForCall(node.value)
+        isLeftNode          = false
+        currentFunctionName = symbolTable.getCurrentFunctionName()
 
         # Mark recursive calls. We use it in further optizations.
-        if ((node.symbolInfo.proto.isRecursive isnt true) and
-            (symbolTable.getCurrentFunctionName() is funcName))
+        if ((currentFunctionName is defined) and
+            (currentFunctionName is funcName))
 
           this._debug('Recursive call detected at node #' ~ str(node.id) ~ ' (' ~ funcName ~ ')')
           node.symbolInfo.proto.isRecursive = true

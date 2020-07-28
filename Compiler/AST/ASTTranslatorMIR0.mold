@@ -450,7 +450,6 @@ class ASTTranslatorMIR0 extends ASTTranslator
 
     # TODO: Review it.
     this.symbolTable = ast.symbolTable
-
     this._emitGlobals()
   endmethod
 endclass

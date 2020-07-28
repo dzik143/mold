@@ -585,7 +585,7 @@ class Parser
             firstNode    = stackNodes[firstNodeIdx]
             maxNodeIdx   = stackIdx + currentProductionLength
 
-            while ((firstNode is null) and
+            while ((firstNode is undefined) and
                    (firstNodeIdx &lt; maxNodeIdx))
 
               firstNodeIdx = firstNodeIdx + 1

@@ -344,7 +344,7 @@ class ASTTranslator
     # DEBUG ONLY
     #
 
-    if (ast.isTranslated is true) and (AST_IsImmOrVar(ast) is false)
+    if (ast.isTranslated is defined) and (AST_IsImmOrVar(ast) is false)
       this.app.logError('node #' ~ str(ast.id) ~ ' is already translated (eval)')
     endif
 
@@ -698,7 +698,7 @@ class ASTTranslator
 
     # print ast.id, opcode, value
 
-    if ast.isTranslated is true
+    if ast.isTranslated is defined
       this.app.logError('node #' ~ str(ast.id) ~ ' is already translated')
     endif
 
