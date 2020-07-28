@@ -579,7 +579,7 @@ __MOLD_VariantConvertBool64ToString:
     ; r9  = value
     ; rdx = rv (Variant_t)
 
-    mov     [rdx + Variant_t.type], VARIANT_STRING ; rv.type  = VARIANT_STRING
+    mov     [rdx + Variant_t.type],  VARIANT_STRING ; rv.type  = VARIANT_STRING
 
     lea     rax, [StringFalseBufferHolder] ; rcx = 'false'
     lea     rcx, [StringTrueBufferHolder]  ; rdx = 'true'
@@ -826,10 +826,9 @@ DefVariantOperatorXX __MOLD_VariantMul , imul , mulsd, r9d
 macro DefVariantCompare name, opcode_ii, opcode_dd
 {
   name:
-    ; rcx = [x]
-    ; rdx = [y]
-    ; r8  = [rv]
-    mov     [r8 + Variant_t.type], VARIANT_BOOLEAN
+    ; rcx = x  (Variant_t) (IN)
+    ; rdx = y  (Variant_t) (IN)
+    ; r8  = rv (int32*)    (OUT)
 
     lea     r11, [.jmpTable]
     jmp     __MOLD_VariantTypeDispatcherXY
@@ -846,10 +845,7 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
     xor       rax, rax
     cmp       rcx, rdx
     opcode_ii al
-    mov       [r8 + Variant_t.value], rax
-
-    DEBUG_CHECK_VARIANT r8
-
+    mov       dword [r8], eax
     ret
 
   ; integer x double
@@ -857,9 +853,8 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
     cvtsi2sd  xmm0, [rcx + Variant_t.value]
     movq      xmm1, [rdx + Variant_t.value]
     opcode_dd xmm0, xmm1
-    movq      [r8 + Variant_t.value], xmm0
-
-    DEBUG_CHECK_VARIANT r8
+    movq      rax, xmm0
+    mov       dword [r8], eax
     ret
 
   ; double x integer
@@ -867,9 +862,8 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
     movq      xmm0, [rcx + Variant_t.value]
     cvtsi2sd  xmm1, [rdx + Variant_t.value]
     opcode_dd xmm0, xmm1
-    movq      [r8 + Variant_t.value], xmm0
-
-    DEBUG_CHECK_VARIANT r8
+    movq      rax, xmm0
+    mov       dword [r8], eax
     ret
 
   ; double x double
@@ -877,9 +871,8 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
     movq      xmm0, [rcx + Variant_t.value]
     movq      xmm1, [rdx + Variant_t.value]
     opcode_dd xmm0, xmm1
-    movq      [r8 + Variant_t.value], xmm0
-
-    DEBUG_CHECK_VARIANT r8
+    movq      rax, xmm0
+    mov       dword [r8], eax
     ret
 
   ; string x string
@@ -889,10 +882,7 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
     jmp     __MOLD_PrintErrorAndDie.notImplemented
 
   .error:
-    mov     [r8 + Variant_t.value], 0
-
-    DEBUG_CHECK_VARIANT r8
-
+    mov     dword [r8], 0
     ret
 
   .case_if:
@@ -904,17 +894,15 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
 }
 
 __MOLD_VariantCompareEQ:
-    ; rcx = x
-    ; rdx = y
-    ; r8  = rv
+    ; rcx = x  (Variant_t) (IN)
+    ; rdx = y  (Variant_t) (IN)
+    ; r8  = rv (int32*)    (OUT)
 
     DEBUG_CHECK_VARIANT rcx
     DEBUG_CHECK_VARIANT rdx
 
     mov     eax, [rcx + Variant_t.type]     ; rax = x.type
     mov     r9d, [rdx + Variant_t.type]     ; r9  = y.type
-
-    mov     [r8 + Variant_t.type],  VARIANT_BOOLEAN
 
     ; ss        -> strcmp
     ; id        -> defaultEQ
@@ -943,11 +931,9 @@ __MOLD_VariantCompareEQ:
     or      rax, r9                        ; rax = x xor y
     setz    al                             ; rax = compareEQ(x, y)
     and     rax, 1                         ; rax = compareEQ(x, y) {0,1}
-    mov     [r8 + Variant_t.value], rax    ;
+    mov     dword [r8], eax                ; rv  = compareEQ(x, y) {0,1}
 
     emms
-
-    DEBUG_CHECK_VARIANT r8
 
     ret
 
@@ -983,17 +969,12 @@ __MOLD_VariantCompareEQ:
     test    rax, rax
     setz    al
     and     rax, 1
-    mov     [r8 + Variant_t.value], rax
-
-    DEBUG_CHECK_VARIANT r8
+    mov     dword [r8], eax
 
     ret
 
 .useDefaultEQ:
     call    __MOLD_VariantDefaultCompareEQ
-
-    DEBUG_CHECK_VARIANT r8
-
     ret
 
 .cloneLowByteMask db 0, 0, 0, 0, 0, 0, 0, 0
@@ -1008,19 +989,17 @@ __MOLD_VariantCompareEQ:
                   db 0xff
 
 __MOLD_VariantCompareNE:
-    ; rcx = x
-    ; rdx = y
-    ; r8  = rv
+    ; rcx = x  (Variant_t) (IN)
+    ; rdx = y  (Variant_t) (IN)
+    ; r8  = rv (int32*)    (OUT)
 
     DEBUG_CHECK_VARIANT rcx
     DEBUG_CHECK_VARIANT rdx
 
     call    __MOLD_VariantCompareEQ
     ; TODO: Optimize it.
-    and     [r8 + Variant_t.value], 1
-    xor     [r8 + Variant_t.value], 1
-
-    DEBUG_CHECK_VARIANT r8
+    and     dword [r8], 1
+    xor     dword [r8], 1
 
     ret
 
