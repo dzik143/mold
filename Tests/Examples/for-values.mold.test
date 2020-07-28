@@ -301,3 +301,27 @@ EXPECTED_OUTPUT:
 [1, 2, 3]
 [undefined, 4, 4, 4]
 -------------------------------------------------------------------------------
+
+TEST "IF inside for values loop"
+
+x = [
+  {'value': 10},
+  {'value': 20},
+  {'value': 30},
+  {'value': 40}
+]
+
+for values item in x
+  if item.value > 20
+    print item.value, 'is above 20'
+  else
+    print item.value, 'is NOT above 20'
+  endif
+endfor
+
+EXPECTED_OUTPUT:
+10 is NOT above 20
+20 is NOT above 20
+30 is above 20
+40 is above 20
+-------------------------------------------------------------------------------

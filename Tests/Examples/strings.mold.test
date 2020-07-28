@@ -340,3 +340,25 @@ EXPECTED_OUTPUT:
 text
 ['t']
 -------------------------------------------------------------------------------
+
+TEST "Bug: unset string flags in str(bool)"
+
+function foo(x)
+  for indexes k values v in x
+    print k, v, 'true  is', str(true)
+    print k, v, 'false is', str(false)
+  endfor
+endfunction
+
+foo([10,20,30,40])
+
+EXPECTED_OUTPUT:
+0 10 true  is true
+0 10 false is false
+1 20 true  is true
+1 20 false is false
+2 30 true  is true
+2 30 false is false
+3 40 true  is true
+3 40 false is false
+-------------------------------------------------------------------------------
