@@ -580,6 +580,7 @@ __MOLD_VariantConvertBool64ToString:
     ; rdx = rv (Variant_t)
 
     mov     [rdx + Variant_t.type],  VARIANT_STRING ; rv.type  = VARIANT_STRING
+    mov     [rdx + Variant_t.flags], 0              ; rv.flags = 0
 
     lea     rax, [StringFalseBufferHolder] ; rcx = 'false'
     lea     rcx, [StringTrueBufferHolder]  ; rdx = 'true'
