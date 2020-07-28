@@ -870,65 +870,41 @@ proc __MOLD_VariantCompareEQ
     mov     eax, [rcx + Variant_t.type]     ; rax = x.type
     mov     r9d, [rdx + Variant_t.type]     ; r9  = y.type
 
+    cmp     eax, r9d
+    jz      .types_are_equal
+
+.type_mismatch:
     ; TODO: Clean up this mess.
     ; TODO: Distinguish map and object.
     mov     r10d, eax       ; r10 = x.type
     shl     r10d, 4         ; r10 = 16 * x.type
     add     r10d, r9d       ; r10 = 16 * x.type + y.type
 
-    ; map vs object - go on
+    ; map vs object
     cmp     r10d, 89h
-    jz      .ok
+    jz      .memoryCompare
 
-    ; object vs map - go on
+    ; object vs map
     cmp     r10d, 98h
-    jz      .ok
+    jz      .memoryCompare
 
-    ; TODO: Disable implicit type conversion.
-    cmp     eax, r9d
-    jnz     __MOLD_PrintErrorAndDie.implicitConversion
+    jmp     __MOLD_PrintErrorAndDie.implicitConversion
 
-    ;cmp     eax, r9d
-    ;jz      .ok
-
-    ;mov     rcx, [rcx + Variant_t.value]
-    ;mov     rdx, [rdx + Variant_t.value]
-
-    ;int 3
-
-.ok:
-
-    ; ss        -> strcmp
-    ; id        -> defaultEQ
-    ; if        -> defaultEQ
-    ; di        -> defaultEQ
-    ; fi        -> defaultEQ
-    ; otherwise -> memcmp
-
-    shl     rax, 4                         ; rax = x.type * 16
-    or      rax, r9                        ; rax = x.type * 16 + y.type = xy
-    cmp     rax, VARIANT_STRING + 16 * VARIANT_STRING
+.types_are_equal:
+    ; string vs string
+    cmp     eax, VARIANT_STRING
     jz      .compare_ss
 
-    movq    mm0, rax                       ; mm0 = [0 , 0 , 0 , 0 , 0 , 0 , 0 , xy]
-    pshufb  mm0, qword [.cloneLowByteMask] ; mm0 = [xy, xy, xy, xy, xy, xy, xy, xy]
-    pcmpeqb mm0, qword [.useDefaultMaskEQ] ; mm0 = [eq, eq, eq, eq, eq, eq, eq, eq]
-    movq    rax, mm0
-    test    rax, rax
-    jnz     .useDefaultEQ
-
 .memoryCompare:
+    ; TODO: Optimize it.
     mov     eax, [rcx + Variant_t.type]    ; rax = x.type
     mov     r9,  [rcx + Variant_t.value]   ; r9  = x.value
     xor     eax, [rdx + Variant_t.type]    ; rax = x.type  xor y.type
     xor     r9,  [rdx + Variant_t.value]   ; r9  = x.value xor y.value
     or      rax, r9                        ; rax = x xor y
     setz    al                             ; rax = compareEQ(x, y)
-    and     rax, 1                         ; rax = compareEQ(x, y) {0,1}
+    and     eax, 1                         ; rax = compareEQ(x, y) {0,1}
     mov     dword [r8], eax                ; rv  = compareEQ(x, y) {0,1}
-
-    emms
-
     ret
 
 .compare_ss:
@@ -966,21 +942,6 @@ proc __MOLD_VariantCompareEQ
     mov     dword [r8], eax
 
     ret
-
-.useDefaultEQ:
-    call    __MOLD_VariantDefaultCompareEQ
-    ret
-
-.cloneLowByteMask db 0, 0, 0, 0, 0, 0, 0, 0
-
-.useDefaultMaskEQ db VARIANT_INTEGER + VARIANT_DOUBLE  * 16
-                  db VARIANT_INTEGER + VARIANT_FLOAT   * 16
-                  db VARIANT_DOUBLE  + VARIANT_INTEGER * 16
-                  db VARIANT_FLOAT   + VARIANT_INTEGER * 16
-                  db 0xff
-                  db 0xff
-                  db 0xff
-                  db 0xff
 endp
 
 proc __MOLD_VariantCompareNE
