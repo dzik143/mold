@@ -66,7 +66,8 @@ class VMachineStack
     global MIR_OPCODE_CREATE_OBJECT
     global MIR_OPCODE_LOAD_ARGC, MIR_OPCODE_LOAD_ARGV
     global MIR_OPCODE_MOVE_BACK
-    global MIR_OPCODE_FOR_EACH
+    global MIR_OPCODE_FOR_EACH_INDEXES
+    global MIR_OPCODE_FOR_EACH_KEYS
     global MIR_OPCODE_INNER_RET
     global MIR_OPCODE_SYSCALL
     global MIR_OPCODE_STRING_JOIN
@@ -380,7 +381,7 @@ class VMachineStack
       elif opcode is MIR_OPCODE_LOAD_ARGV
         stack.push(argv)
 
-      elif opcode is MIR_OPCODE_FOR_EACH
+      elif opcode is MIR_OPCODE_FOR_EACH_KEYS
         box     = stack.pop()
         keyId   = item[1]
         valueId = item[2]
@@ -391,6 +392,28 @@ class VMachineStack
           # Update key iterator.
           if keyId is defined
             _vm_locals[keyId] = k
+          endif
+
+          # Update value iterator.
+          if valueId is defined
+            _vm_locals[valueId] = v
+          endif
+
+          # Call function body.
+          this._call(bodyIp)
+        endfor
+
+      elif opcode is MIR_OPCODE_FOR_EACH_INDEXES
+        box     = stack.pop()
+        idxId   = item[1]
+        valueId = item[2]
+        bodyIp  = item[3]
+
+        # TODO: Optimize it.
+        for indexes i values v in box
+          # Update key iterator.
+          if idxId is defined
+            _vm_locals[idxId] = i
           endif
 
           # Update value iterator.
@@ -434,7 +457,8 @@ class VMachineStack
     global MIR_OPCODE_PRINT, MIR_OPCODE_INIT_FRAME, MIR_OPCODE_RETVAL_GUARD
     global MIR_OPCODE_MOVE_BACK
     global MIR_OPCODE_LOAD_ARGC, MIR_OPCODE_LOAD_ARGV
-    global MIR_OPCODE_FOR_EACH
+    global MIR_OPCODE_FOR_EACH_INDEXES
+    global MIR_OPCODE_FOR_EACH_KEYS
     global MIR_OPCODE_INNER_RET
     global MIR_OPCODE_SYSCALL
     global MIR_OPCODE_STRING_JOIN
@@ -646,8 +670,11 @@ class VMachineStack
       elif opcode is MIR_OPCODE_SYSCALL
         txt = 'syscall' ~ str(arg1) ~ ', ' ~ str(arg2)
 
-      elif opcode is MIR_OPCODE_FOR_EACH
-        txt = 'for.each ' ~ str(arg1) ~ ', ' ~ str(arg2) ~ ', ' ~ str(arg3)
+      elif opcode is MIR_OPCODE_FOR_EACH_INDEXES
+        txt = 'for.each.indexes ' ~ str(arg1) ~ ', ' ~ str(arg2) ~ ', ' ~ str(arg3)
+
+      elif opcode is MIR_OPCODE_FOR_EACH_KEYS
+        txt = 'for.each.keys ' ~ str(arg1) ~ ', ' ~ str(arg2) ~ ', ' ~ str(arg3)
 
       else
         # TODO: Remove unneded assign.

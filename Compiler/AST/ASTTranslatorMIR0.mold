@@ -299,6 +299,8 @@ class ASTTranslatorMIR0 extends ASTTranslator
   endmethod
 
   method _executeNodeForEach(iteratorKey, iteratorValue, box, bodyAst)
+    global AST_DATA_INTEGER
+
     symbolTable = this.symbolTable
     code        = this.code
     loopLabelId = code.createLabel()
@@ -306,6 +308,9 @@ class ASTTranslatorMIR0 extends ASTTranslator
 
     keyId   = null
     valueId = null
+
+    # TODO: Clean up this mess.
+    isIntegerKey = false
 
     # Avoid exeuting loop body directly.
     # TODO: Handle inner functions in better way.
@@ -315,6 +320,11 @@ class ASTTranslatorMIR0 extends ASTTranslator
       keySymbolInfo    = symbolTable.lookup(iteratorKey)
       keyId            = code.allocateLocalId()
       keySymbolInfo.id = keyId
+
+      # TODO: Clean up this mess.
+      if keySymbolInfo.astType is AST_DATA_INTEGER
+        isIntegerKey = true
+      endif
     endif
 
     if iteratorValue is defined
@@ -329,7 +339,12 @@ class ASTTranslatorMIR0 extends ASTTranslator
       code.innerRet()
     code.emitLabel(endLabelId)
 
-    code.forEach(keyId, valueId, code.resolveLabel(loopLabelId))
+    # TODO: Clean up this mess.
+    if isIntegerKey is true
+      code.forEachIndexes(keyId, valueId, code.resolveLabel(loopLabelId))
+    else
+      code.forEachKeys(keyId, valueId, code.resolveLabel(loopLabelId))
+    endif
   endmethod
 
   method _executeNodeWhile(condAst, bodyAst)

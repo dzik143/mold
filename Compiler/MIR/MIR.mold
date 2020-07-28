@@ -77,7 +77,8 @@ MIR_OPCODE_SYSCALL      = 48
 
 MIR_OPCODE_STRING_JOIN = 49
 
-MIR_OPCODE_FOR_EACH = 100
+MIR_OPCODE_FOR_EACH_KEYS    = 100
+MIR_OPCODE_FOR_EACH_INDEXES = 101
 
 MIR_OPCODE_LOAD_ARGC = 252
 MIR_OPCODE_LOAD_ARGV = 253
@@ -545,9 +546,14 @@ class MIRCode
     this.push2(MIR_OPCODE_RETVAL_GUARD, rvName, funcName)
   endmethod
 
-  method forEach(keyId, valueId, cb)
-    global MIR_OPCODE_FOR_EACH
-    this.push3(MIR_OPCODE_FOR_EACH, keyId, valueId, cb)
+  method forEachIndexes(idxId, valueId, cb)
+    global MIR_OPCODE_FOR_EACH_INDEXES
+    this.push3(MIR_OPCODE_FOR_EACH_INDEXES, idxId, valueId, cb)
+  endmethod
+
+  method forEachKeys(keyId, valueId, cb)
+    global MIR_OPCODE_FOR_EACH_KEYS
+    this.push3(MIR_OPCODE_FOR_EACH_KEYS, keyId, valueId, cb)
   endmethod
 
   method syscall(id, paramsCnt)
