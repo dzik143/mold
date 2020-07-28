@@ -2619,7 +2619,7 @@ __MOLD_ForDriver_KeysAndValuesInMap:
 ; Process each (idx, value) pairs in array.
 ;
 ; rcx - box (IN / Variant_t)
-; rdx - index iterator (OUT / Variant_t)
+; rdx - index iterator (OUT / uint32*)
 ; r8  - value iterator (OUT / Variant_t)
 ; r9  - body loop callback (IN / function pointer)
 ;
@@ -2638,9 +2638,8 @@ __MOLD_ForDriver_IndexesAndValuesInArray:
     or      rbx, rbx
     jz      .arrayEmpty
 
-    lea     rsi, [rcx + Array_t.items]              ; rsi       = array.items
-    mov     [rdx + Variant_t.type], VARIANT_INTEGER ; idx.type  = integer
-    mov     [rdx + Variant_t.value], 0              ; idx.value = 0
+    lea     rsi, [rcx + Array_t.items]            ; rsi = array.items
+    mov     dword [rdx], 0                        ; idx = 0
 
 .arrayNextItem:
 
@@ -2666,7 +2665,7 @@ __MOLD_ForDriver_IndexesAndValuesInArray:
     ; Update index iterator
     ; ----------------------
 
-    inc     [rdx + Variant_t.value]
+    inc     dword [rdx]
 
     ; ----------------
     ; Go to next pair
@@ -2690,7 +2689,7 @@ __MOLD_ForDriver_IndexesAndValuesInArray:
 ; Process each (idx, character) pairs in array.
 ;
 ; rcx - text to process (IN / Variant_t)
-; rdx - index iterator (OUT / Variant_t)
+; rdx - index iterator (OUT / uint32*)
 ; r8  - character iterator (OUT / Variant_t)
 ; r9  - body loop callback (IN / function address)
 ;
@@ -2702,8 +2701,7 @@ __MOLD_ForDriver_IndexesAndValuesInString:
     push    rsi
     push    r9
 
-    mov     [rdx + Variant_t.type], VARIANT_INTEGER ; idx.type  = integer
-    mov     [rdx + Variant_t.value], 0              ; idx.value = 0
+    mov     dword [rdx], 0                        ; idx.value = 0
 
     mov     [r8  + Variant_t.type], VARIANT_STRING  ; value.type = string
     mov     [r8  + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
@@ -2746,7 +2744,7 @@ __MOLD_ForDriver_IndexesAndValuesInString:
     ; Update index iterator
     ; ----------------------
 
-    inc     [rdx + Variant_t.value]
+    inc     dword [rdx]
 
     ; ----------------
     ; Go to next pair
@@ -2769,7 +2767,7 @@ __MOLD_ForDriver_IndexesAndValuesInString:
 ; Process each (key, value) pairs in generic box.
 ;
 ; rcx - any box container (IN / Variant_t)
-; rdx - index iterator (OUT / Variant_t)
+; rdx - index/key iterator (OUT / Variant_t / uint32*)
 ; r8  - value iterator (OUT / Variant_t)
 ; r9  - body loop callback (IN / function address)
 ;
