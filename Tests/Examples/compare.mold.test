@@ -1,603 +1,435 @@
-TEST "CompareEQ"
+TEST "Compare - integer"
 
-i1 = 1
-i2 = 5
-f1 = 1.0
-f2 = 2.3
-b1 = true
-b2 = false
-a1 = []
-a2 = [1,2,3]
-m1 = {}
-m2 = {'x': 1, 'y': 2, 'z': 3}
-s  = 'text'
+x = 1
+y = 5
 
-# <integer1> is ...
-print i1, 'is', i1, '=', i1 is i1
-print i1, 'is', i2, '=', i1 is i2
-print i1, 'is', f1, '=', i1 is f1
-print i1, 'is', f2, '=', i1 is f2
-print i1, 'is', b1, '=', i1 is b1
-print i1, 'is', b2, '=', i1 is b2
-print i1, 'is', s,  '=', i1 is s
-print i1, 'is', a1, '=', i1 is a1
-print i1, 'is', a2, '=', i1 is a2
-print i1, 'is', m1, '=', i1 is m1
-print i1, 'is', m2, '=', i1 is m2
+# compare x with x
+print 'x op x'
+print x, 'is  ' , x, '=', x is   x
+print x, 'isnt' , x, '=', x isnt x
+print x, '<   ' , x, '=', x <    x
+print x, '>   ' , x, '=', x >    x
+print x, '<=  ' , x, '=', x <=   x
+print x, '>=  ' , x, '=', x >=   x
 
-# <integer2> is ...
+# compare x with y
 print ''
-print i2, 'is', i1, '=', i2 is i1
-print i2, 'is', i2, '=', i2 is i2
-print i2, 'is', f1, '=', i2 is f1
-print i2, 'is', f2, '=', i2 is f2
-print i2, 'is', b1, '=', i2 is b1
-print i2, 'is', b2, '=', i2 is b2
-print i2, 'is', s,  '=', i2 is s
-print i2, 'is', a1, '=', i2 is a1
-print i2, 'is', a2, '=', i2 is a2
-print i2, 'is', m1, '=', i2 is m1
-print i2, 'is', m2, '=', i2 is m2
+print 'x op y'
+print x, 'is  ' , y, '=', x is   y
+print x, 'isnt' , y, '=', x isnt y
+print x, '<   ' , y, '=', x <    y
+print x, '>   ' , y, '=', x >    y
+print x, '<=  ' , y, '=', x <=   y
+print x, '>=  ' , y, '=', x >=   y
 
-# <float1> is ...
+# compare y with x
 print ''
-print f1, 'is', i1, '=', f1 is i1
-print f1, 'is', i2, '=', f1 is i2
-print f1, 'is', f1, '=', f1 is f1
-print f1, 'is', f2, '=', f1 is f2
-print f1, 'is', b1, '=', f1 is b1
-print f1, 'is', b2, '=', f1 is b2
-print f1, 'is', s,  '=', f1 is s
-print f1, 'is', a1, '=', f1 is a1
-print f1, 'is', a2, '=', f1 is a2
-print f1, 'is', m1, '=', f1 is m1
-print f1, 'is', m2, '=', f1 is m2
+print 'y op x'
+print y, 'is  ' , x, '=', y is   x
+print y, 'isnt' , x, '=', y isnt x
+print y, '<   ' , x, '=', y <    x
+print y, '>   ' , x, '=', y >    x
+print y, '<=  ' , x, '=', y <=   x
+print y, '>=  ' , x, '=', y >=   x
 
-# <float2> is ...
+# compare y with y
 print ''
-print f2, 'is', i1, '=', f2 is i1
-print f2, 'is', i2, '=', f2 is i2
-print f2, 'is', f1, '=', f2 is f1
-print f2, 'is', f2, '=', f2 is f2
-print f2, 'is', b1, '=', f2 is b1
-print f2, 'is', b2, '=', f2 is b2
-print f2, 'is', s,  '=', f2 is s
-print f2, 'is', a1, '=', f2 is a1
-print f2, 'is', a2, '=', f2 is a2
-print f2, 'is', m1, '=', f2 is m1
-print f2, 'is', m2, '=', f2 is m2
-
-# <boolean1> is ...
-print ''
-print b1, 'is', i1, '=', b1 is i1
-print b1, 'is', i2, '=', b1 is i2
-print b1, 'is', f1, '=', b1 is f1
-print b1, 'is', f2, '=', b1 is f2
-print b1, 'is', b1, '=', b1 is b1
-print b1, 'is', b2, '=', b1 is b2
-print b1, 'is', s,  '=', b1 is s
-print b1, 'is', a1, '=', b1 is a1
-print b1, 'is', a2, '=', b1 is a2
-print b1, 'is', m1, '=', b1 is m1
-print b1, 'is', m2, '=', b1 is m2
-
-# <boolean2> is ...
-print ''
-print b2, 'is', i1, '=', b2 is i1
-print b2, 'is', i2, '=', b2 is i2
-print b2, 'is', f1, '=', b2 is f1
-print b2, 'is', f2, '=', b2 is f2
-print b2, 'is', b1, '=', b2 is b1
-print b2, 'is', b2, '=', b2 is b2
-print b2, 'is', s,  '=', b2 is s
-print b2, 'is', a1, '=', b2 is a1
-print b2, 'is', a2, '=', b2 is a2
-print b2, 'is', m1, '=', b2 is m1
-print b2, 'is', m2, '=', b2 is m2
-
-# <string> is ...
-print ''
-print s, 'is', i1, '=', s is i1
-print s, 'is', i2, '=', s is i2
-print s, 'is', f1, '=', s is f1
-print s, 'is', f2, '=', s is f2
-print s, 'is', b1, '=', s is b1
-print s, 'is', b2, '=', s is b2
-print s, 'is', s,  '=', s is s
-print s, 'is', a1, '=', s is a1
-print s, 'is', a2, '=', s is a2
-print s, 'is', m1, '=', s is m1
-print s, 'is', m2, '=', s is m2
-
-# <array1> is ...
-print ''
-print a1, 'is', i1, '=', a1 is i1
-print a1, 'is', i2, '=', a1 is i2
-print a1, 'is', f1, '=', a1 is f1
-print a1, 'is', f2, '=', a1 is f2
-print a1, 'is', b1, '=', a1 is b1
-print a1, 'is', b2, '=', a1 is b2
-print a1, 'is', s,  '=', a1 is s
-print a1, 'is', a1, '=', a1 is a1
-print a1, 'is', a2, '=', a1 is a2
-print a1, 'is', m1, '=', a1 is m1
-print a1, 'is', m2, '=', a1 is m2
-
-# <array2> is ...
-print ''
-print a2, 'is', i1, '=', a2 is i1
-print a2, 'is', i2, '=', a2 is i2
-print a2, 'is', f1, '=', a2 is f1
-print a2, 'is', f2, '=', a2 is f2
-print a2, 'is', b1, '=', a2 is b1
-print a2, 'is', b2, '=', a2 is b2
-print a2, 'is', s,  '=', a2 is s
-print a2, 'is', a1, '=', a2 is a1
-print a2, 'is', a2, '=', a2 is a2
-print a2, 'is', m1, '=', a2 is m1
-print a2, 'is', m2, '=', a2 is m2
-
-# <map1> is ...
-print ''
-print m1, 'is', i1, '=', m1 is i1
-print m1, 'is', i2, '=', m1 is i2
-print m1, 'is', f1, '=', m1 is f1
-print m1, 'is', f2, '=', m1 is f2
-print m1, 'is', b1, '=', m1 is b1
-print m1, 'is', b2, '=', m1 is b2
-print m1, 'is', s,  '=', m1 is s
-print m1, 'is', a1, '=', m1 is a1
-print m1, 'is', a2, '=', m1 is a2
-print m1, 'is', m1, '=', m1 is m1
-print m1, 'is', m2, '=', m1 is m2
-
-# <map2> is ...
-print ''
-print m2, 'is', i1, '=', m2 is i1
-print m2, 'is', i2, '=', m2 is i2
-print m2, 'is', f1, '=', m2 is f1
-print m2, 'is', f2, '=', m2 is f2
-print m2, 'is', b1, '=', m2 is b1
-print m2, 'is', b2, '=', m2 is b2
-print m2, 'is', s,  '=', m2 is s
-print m2, 'is', a1, '=', m2 is a1
-print m2, 'is', a2, '=', m2 is a2
-print m2, 'is', m1, '=', m2 is m1
-print m2, 'is', m2, '=', m2 is m2
+print 'y op y'
+print y, 'is  ' , y, '=', y is   y
+print y, 'isnt' , y, '=', y isnt y
+print y, '<   ' , y, '=', y <    y
+print y, '>   ' , y, '=', y >    y
+print y, '<=  ' , y, '=', y <=   y
+print y, '>=  ' , y, '=', y >=   y
 
 EXPECTED_OUTPUT:
-1 is 1 = true
-1 is 5 = false
-1 is 1.000000 = true
-1 is 2.300000 = false
-1 is true = false
-1 is false = false
-1 is text = false
-1 is [] = false
-1 is [1, 2, 3] = false
-1 is {} = false
-1 is {'x': 1, 'y': 2, 'z': 3} = false
-
-5 is 1 = false
-5 is 5 = true
-5 is 1.000000 = false
-5 is 2.300000 = false
-5 is true = false
-5 is false = false
-5 is text = false
-5 is [] = false
-5 is [1, 2, 3] = false
-5 is {} = false
-5 is {'x': 1, 'y': 2, 'z': 3} = false
-
-1.000000 is 1 = true
-1.000000 is 5 = false
-1.000000 is 1.000000 = true
-1.000000 is 2.300000 = false
-1.000000 is true = false
-1.000000 is false = false
-1.000000 is text = false
-1.000000 is [] = false
-1.000000 is [1, 2, 3] = false
-1.000000 is {} = false
-1.000000 is {'x': 1, 'y': 2, 'z': 3} = false
-
-2.300000 is 1 = false
-2.300000 is 5 = false
-2.300000 is 1.000000 = false
-2.300000 is 2.300000 = true
-2.300000 is true = false
-2.300000 is false = false
-2.300000 is text = false
-2.300000 is [] = false
-2.300000 is [1, 2, 3] = false
-2.300000 is {} = false
-2.300000 is {'x': 1, 'y': 2, 'z': 3} = false
-
-true is 1 = false
-true is 5 = false
-true is 1.000000 = false
-true is 2.300000 = false
-true is true = true
-true is false = false
-true is text = false
-true is [] = false
-true is [1, 2, 3] = false
-true is {} = false
-true is {'x': 1, 'y': 2, 'z': 3} = false
-
-false is 1 = false
-false is 5 = false
-false is 1.000000 = false
-false is 2.300000 = false
-false is true = false
-false is false = true
-false is text = false
-false is [] = false
-false is [1, 2, 3] = false
-false is {} = false
-false is {'x': 1, 'y': 2, 'z': 3} = false
-
-text is 1 = false
-text is 5 = false
-text is 1.000000 = false
-text is 2.300000 = false
-text is true = false
-text is false = false
-text is text = true
-text is [] = false
-text is [1, 2, 3] = false
-text is {} = false
-text is {'x': 1, 'y': 2, 'z': 3} = false
-
-[] is 1 = false
-[] is 5 = false
-[] is 1.000000 = false
-[] is 2.300000 = false
-[] is true = false
-[] is false = false
-[] is text = false
-[] is [] = true
-[] is [1, 2, 3] = false
-[] is {} = false
-[] is {'x': 1, 'y': 2, 'z': 3} = false
-
-[1, 2, 3] is 1 = false
-[1, 2, 3] is 5 = false
-[1, 2, 3] is 1.000000 = false
-[1, 2, 3] is 2.300000 = false
-[1, 2, 3] is true = false
-[1, 2, 3] is false = false
-[1, 2, 3] is text = false
-[1, 2, 3] is [] = false
-[1, 2, 3] is [1, 2, 3] = true
-[1, 2, 3] is {} = false
-[1, 2, 3] is {'x': 1, 'y': 2, 'z': 3} = false
-
-{} is 1 = false
-{} is 5 = false
-{} is 1.000000 = false
-{} is 2.300000 = false
-{} is true = false
-{} is false = false
-{} is text = false
-{} is [] = false
-{} is [1, 2, 3] = false
-{} is {} = true
-{} is {'x': 1, 'y': 2, 'z': 3} = false
-
-{'x': 1, 'y': 2, 'z': 3} is 1 = false
-{'x': 1, 'y': 2, 'z': 3} is 5 = false
-{'x': 1, 'y': 2, 'z': 3} is 1.000000 = false
-{'x': 1, 'y': 2, 'z': 3} is 2.300000 = false
-{'x': 1, 'y': 2, 'z': 3} is true = false
-{'x': 1, 'y': 2, 'z': 3} is false = false
-{'x': 1, 'y': 2, 'z': 3} is text = false
-{'x': 1, 'y': 2, 'z': 3} is [] = false
-{'x': 1, 'y': 2, 'z': 3} is [1, 2, 3] = false
-{'x': 1, 'y': 2, 'z': 3} is {} = false
-{'x': 1, 'y': 2, 'z': 3} is {'x': 1, 'y': 2, 'z': 3} = true
--------------------------------------------------------------------------------
-TEST "CompareNE"
-
-i1 = 1
-i2 = 5
-f1 = 1.0
-f2 = 2.3
-b1 = true
-b2 = false
-a1 = []
-a2 = [1,2,3]
-m1 = {}
-m2 = {'x': 1, 'y': 2, 'z': 3}
-s  = 'text'
-
-# <integer1> isnt ...
-print i1, 'isnt', i1, '=', i1 isnt i1
-print i1, 'isnt', i2, '=', i1 isnt i2
-print i1, 'isnt', f1, '=', i1 isnt f1
-print i1, 'isnt', f2, '=', i1 isnt f2
-print i1, 'isnt', b1, '=', i1 isnt b1
-print i1, 'isnt', b2, '=', i1 isnt b2
-print i1, 'isnt', s,  '=', i1 isnt s
-print i1, 'isnt', a1, '=', i1 isnt a1
-print i1, 'isnt', a2, '=', i1 isnt a2
-print i1, 'isnt', m1, '=', i1 isnt m1
-print i1, 'isnt', m2, '=', i1 isnt m2
-
-# <integer2> isnt ...
-print ''
-print i2, 'isnt', i1, '=', i2 isnt i1
-print i2, 'isnt', i2, '=', i2 isnt i2
-print i2, 'isnt', f1, '=', i2 isnt f1
-print i2, 'isnt', f2, '=', i2 isnt f2
-print i2, 'isnt', b1, '=', i2 isnt b1
-print i2, 'isnt', b2, '=', i2 isnt b2
-print i2, 'isnt', s,  '=', i2 isnt s
-print i2, 'isnt', a1, '=', i2 isnt a1
-print i2, 'isnt', a2, '=', i2 isnt a2
-print i2, 'isnt', m1, '=', i2 isnt m1
-print i2, 'isnt', m2, '=', i2 isnt m2
-
-# <float1> isnt ...
-print ''
-print f1, 'isnt', i1, '=', f1 isnt i1
-print f1, 'isnt', i2, '=', f1 isnt i2
-print f1, 'isnt', f1, '=', f1 isnt f1
-print f1, 'isnt', f2, '=', f1 isnt f2
-print f1, 'isnt', b1, '=', f1 isnt b1
-print f1, 'isnt', b2, '=', f1 isnt b2
-print f1, 'isnt', s,  '=', f1 isnt s
-print f1, 'isnt', a1, '=', f1 isnt a1
-print f1, 'isnt', a2, '=', f1 isnt a2
-print f1, 'isnt', m1, '=', f1 isnt m1
-print f1, 'isnt', m2, '=', f1 isnt m2
-
-# <float2> isnt ...
-print ''
-print f2, 'isnt', i1, '=', f2 isnt i1
-print f2, 'isnt', i2, '=', f2 isnt i2
-print f2, 'isnt', f1, '=', f2 isnt f1
-print f2, 'isnt', f2, '=', f2 isnt f2
-print f2, 'isnt', b1, '=', f2 isnt b1
-print f2, 'isnt', b2, '=', f2 isnt b2
-print f2, 'isnt', s,  '=', f2 isnt s
-print f2, 'isnt', a1, '=', f2 isnt a1
-print f2, 'isnt', a2, '=', f2 isnt a2
-print f2, 'isnt', m1, '=', f2 isnt m1
-print f2, 'isnt', m2, '=', f2 isnt m2
-
-# <boolean1> isnt ...
-print ''
-print b1, 'isnt', i1, '=', b1 isnt i1
-print b1, 'isnt', i2, '=', b1 isnt i2
-print b1, 'isnt', f1, '=', b1 isnt f1
-print b1, 'isnt', f2, '=', b1 isnt f2
-print b1, 'isnt', b1, '=', b1 isnt b1
-print b1, 'isnt', b2, '=', b1 isnt b2
-print b1, 'isnt', s,  '=', b1 isnt s
-print b1, 'isnt', a1, '=', b1 isnt a1
-print b1, 'isnt', a2, '=', b1 isnt a2
-print b1, 'isnt', m1, '=', b1 isnt m1
-print b1, 'isnt', m2, '=', b1 isnt m2
-
-# <boolean2> isnt ...
-print ''
-print b2, 'isnt', i1, '=', b2 isnt i1
-print b2, 'isnt', i2, '=', b2 isnt i2
-print b2, 'isnt', f1, '=', b2 isnt f1
-print b2, 'isnt', f2, '=', b2 isnt f2
-print b2, 'isnt', b1, '=', b2 isnt b1
-print b2, 'isnt', b2, '=', b2 isnt b2
-print b2, 'isnt', s,  '=', b2 isnt s
-print b2, 'isnt', a1, '=', b2 isnt a1
-print b2, 'isnt', a2, '=', b2 isnt a2
-print b2, 'isnt', m1, '=', b2 isnt m1
-print b2, 'isnt', m2, '=', b2 isnt m2
-
-# <string> isnt ...
-print ''
-print s, 'isnt', i1, '=', s isnt i1
-print s, 'isnt', i2, '=', s isnt i2
-print s, 'isnt', f1, '=', s isnt f1
-print s, 'isnt', f2, '=', s isnt f2
-print s, 'isnt', b1, '=', s isnt b1
-print s, 'isnt', b2, '=', s isnt b2
-print s, 'isnt', s,  '=', s isnt s
-print s, 'isnt', a1, '=', s isnt a1
-print s, 'isnt', a2, '=', s isnt a2
-print s, 'isnt', m1, '=', s isnt m1
-print s, 'isnt', m2, '=', s isnt m2
-
-# <array1> isnt ...
-print ''
-print a1, 'isnt', i1, '=', a1 isnt i1
-print a1, 'isnt', i2, '=', a1 isnt i2
-print a1, 'isnt', f1, '=', a1 isnt f1
-print a1, 'isnt', f2, '=', a1 isnt f2
-print a1, 'isnt', b1, '=', a1 isnt b1
-print a1, 'isnt', b2, '=', a1 isnt b2
-print a1, 'isnt', s,  '=', a1 isnt s
-print a1, 'isnt', a1, '=', a1 isnt a1
-print a1, 'isnt', a2, '=', a1 isnt a2
-print a1, 'isnt', m1, '=', a1 isnt m1
-print a1, 'isnt', m2, '=', a1 isnt m2
-
-# <array2> isnt ...
-print ''
-print a2, 'isnt', i1, '=', a2 isnt i1
-print a2, 'isnt', i2, '=', a2 isnt i2
-print a2, 'isnt', f1, '=', a2 isnt f1
-print a2, 'isnt', f2, '=', a2 isnt f2
-print a2, 'isnt', b1, '=', a2 isnt b1
-print a2, 'isnt', b2, '=', a2 isnt b2
-print a2, 'isnt', s,  '=', a2 isnt s
-print a2, 'isnt', a1, '=', a2 isnt a1
-print a2, 'isnt', a2, '=', a2 isnt a2
-print a2, 'isnt', m1, '=', a2 isnt m1
-print a2, 'isnt', m2, '=', a2 isnt m2
-
-# <map1> isnt ...
-print ''
-print m1, 'isnt', i1, '=', m1 isnt i1
-print m1, 'isnt', i2, '=', m1 isnt i2
-print m1, 'isnt', f1, '=', m1 isnt f1
-print m1, 'isnt', f2, '=', m1 isnt f2
-print m1, 'isnt', b1, '=', m1 isnt b1
-print m1, 'isnt', b2, '=', m1 isnt b2
-print m1, 'isnt', s,  '=', m1 isnt s
-print m1, 'isnt', a1, '=', m1 isnt a1
-print m1, 'isnt', a2, '=', m1 isnt a2
-print m1, 'isnt', m1, '=', m1 isnt m1
-print m1, 'isnt', m2, '=', m1 isnt m2
-
-# <map2> isnt ...
-print ''
-print m2, 'isnt', i1, '=', m2 isnt i1
-print m2, 'isnt', i2, '=', m2 isnt i2
-print m2, 'isnt', f1, '=', m2 isnt f1
-print m2, 'isnt', f2, '=', m2 isnt f2
-print m2, 'isnt', b1, '=', m2 isnt b1
-print m2, 'isnt', b2, '=', m2 isnt b2
-print m2, 'isnt', s,  '=', m2 isnt s
-print m2, 'isnt', a1, '=', m2 isnt a1
-print m2, 'isnt', a2, '=', m2 isnt a2
-print m2, 'isnt', m1, '=', m2 isnt m1
-print m2, 'isnt', m2, '=', m2 isnt m2
-
-EXPECTED_OUTPUT:
+x op x
+1 is   1 = true
 1 isnt 1 = false
+1 <    1 = false
+1 >    1 = false
+1 <=   1 = true
+1 >=   1 = true
+
+x op y
+1 is   5 = false
 1 isnt 5 = true
-1 isnt 1.000000 = false
-1 isnt 2.300000 = true
-1 isnt true = true
-1 isnt false = true
-1 isnt text = true
-1 isnt [] = true
-1 isnt [1, 2, 3] = true
-1 isnt {} = true
-1 isnt {'x': 1, 'y': 2, 'z': 3} = true
+1 <    5 = true
+1 >    5 = false
+1 <=   5 = true
+1 >=   5 = false
 
+y op x
+5 is   1 = false
 5 isnt 1 = true
+5 <    1 = false
+5 >    1 = true
+5 <=   1 = false
+5 >=   1 = true
+
+y op y
+5 is   5 = true
 5 isnt 5 = false
-5 isnt 1.000000 = true
-5 isnt 2.300000 = true
-5 isnt true = true
-5 isnt false = true
-5 isnt text = true
-5 isnt [] = true
-5 isnt [1, 2, 3] = true
-5 isnt {} = true
-5 isnt {'x': 1, 'y': 2, 'z': 3} = true
+5 <    5 = false
+5 >    5 = false
+5 <=   5 = true
+5 >=   5 = true
+-------------------------------------------------------------------------------
 
-1.000000 isnt 1 = false
-1.000000 isnt 5 = true
+TEST "Compare - float'
+
+x = 1.0
+y = 2.3
+
+# compare x with x
+print 'x op x'
+print x, 'is  ' , x, '=', x is   x
+print x, 'isnt' , x, '=', x isnt x
+print x, '<   ' , x, '=', x <    x
+print x, '>   ' , x, '=', x >    x
+print x, '<=  ' , x, '=', x <=   x
+print x, '>=  ' , x, '=', x >=   x
+
+# compare x with y
+print ''
+print 'x op y'
+print x, 'is  ' , y, '=', x is   y
+print x, 'isnt' , y, '=', x isnt y
+print x, '<   ' , y, '=', x <    y
+print x, '>   ' , y, '=', x >    y
+print x, '<=  ' , y, '=', x <=   y
+print x, '>=  ' , y, '=', x >=   y
+
+# compare y with x
+print ''
+print 'y op x'
+print y, 'is  ' , x, '=', y is   x
+print y, 'isnt' , x, '=', y isnt x
+print y, '<   ' , x, '=', y <    x
+print y, '>   ' , x, '=', y >    x
+print y, '<=  ' , x, '=', y <=   x
+print y, '>=  ' , x, '=', y >=   x
+
+# compare y with y
+print ''
+print 'y op y'
+print y, 'is  ' , y, '=', y is   y
+print y, 'isnt' , y, '=', y isnt y
+print y, '<   ' , y, '=', y <    y
+print y, '>   ' , y, '=', y >    y
+print y, '<=  ' , y, '=', y <=   y
+print y, '>=  ' , y, '=', y >=   y
+
+EXPECTED_OUTPUT:
+x op x
+1.000000 is   1.000000 = true
 1.000000 isnt 1.000000 = false
+1.000000 <    1.000000 = false
+1.000000 >    1.000000 = false
+1.000000 <=   1.000000 = true
+1.000000 >=   1.000000 = true
+
+x op y
+1.000000 is   2.300000 = false
 1.000000 isnt 2.300000 = true
-1.000000 isnt true = true
-1.000000 isnt false = true
-1.000000 isnt text = true
-1.000000 isnt [] = true
-1.000000 isnt [1, 2, 3] = true
-1.000000 isnt {} = true
-1.000000 isnt {'x': 1, 'y': 2, 'z': 3} = true
+1.000000 <    2.300000 = true
+1.000000 >    2.300000 = false
+1.000000 <=   2.300000 = true
+1.000000 >=   2.300000 = false
 
-2.300000 isnt 1 = true
-2.300000 isnt 5 = true
+y op x
+2.300000 is   1.000000 = false
 2.300000 isnt 1.000000 = true
+2.300000 <    1.000000 = false
+2.300000 >    1.000000 = true
+2.300000 <=   1.000000 = false
+2.300000 >=   1.000000 = true
+
+y op y
+2.300000 is   2.300000 = true
 2.300000 isnt 2.300000 = false
-2.300000 isnt true = true
-2.300000 isnt false = true
-2.300000 isnt text = true
-2.300000 isnt [] = true
-2.300000 isnt [1, 2, 3] = true
-2.300000 isnt {} = true
-2.300000 isnt {'x': 1, 'y': 2, 'z': 3} = true
+2.300000 <    2.300000 = false
+2.300000 >    2.300000 = false
+2.300000 <=   2.300000 = true
+2.300000 >=   2.300000 = true
+-------------------------------------------------------------------------------
 
-true isnt 1 = true
-true isnt 5 = true
-true isnt 1.000000 = true
-true isnt 2.300000 = true
+TEST "Compare - string (one character)'
+
+x = 'a'
+y = 'z'
+
+# compare x with x
+print 'x op x'
+print x, 'is  ' , x, '=', x is   x
+print x, 'isnt' , x, '=', x isnt x
+
+# compare x with y
+print ''
+print 'x op y'
+print x, 'is  ' , y, '=', x is   y
+print x, 'isnt' , y, '=', x isnt y
+
+# compare y with x
+print ''
+print 'y op x'
+print y, 'is  ' , x, '=', y is   x
+print y, 'isnt' , x, '=', y isnt x
+
+# compare y with y
+print ''
+print 'y op y'
+print y, 'is  ' , y, '=', y is   y
+print y, 'isnt' , y, '=', y isnt y
+
+EXPECTED_OUTPUT:
+x op x
+a is   a = true
+a isnt a = false
+
+x op y
+a is   z = false
+a isnt z = true
+
+y op x
+z is   a = false
+z isnt a = true
+
+y op y
+z is   z = true
+z isnt z = false
+-------------------------------------------------------------------------------
+
+TEST "Compare - string (equal length)"
+
+x = 'abcd'
+y = 'abce'
+
+# compare x with x
+print 'x op x'
+print x, 'is  ' , x, '=', x is   x
+print x, 'isnt' , x, '=', x isnt x
+
+# compare x with y
+print ''
+print 'x op y'
+print x, 'is  ' , y, '=', x is   y
+print x, 'isnt' , y, '=', x isnt y
+
+# compare y with x
+print ''
+print 'y op x'
+print y, 'is  ' , x, '=', y is   x
+print y, 'isnt' , x, '=', y isnt x
+
+# compare y with y
+print ''
+print 'y op y'
+print y, 'is  ' , y, '=', y is   y
+print y, 'isnt' , y, '=', y isnt y
+
+EXPECTED_OUTPUT:
+x op x
+abcd is   abcd = true
+abcd isnt abcd = false
+
+x op y
+abcd is   abce = false
+abcd isnt abce = true
+
+y op x
+abce is   abcd = false
+abce isnt abcd = true
+
+y op y
+abce is   abce = true
+abce isnt abce = false
+-------------------------------------------------------------------------------
+
+TEST "Compare - string (different length)"
+
+x = 'abc'
+y = 'abca'
+
+# compare x with x
+print 'x op x'
+print x, 'is  ' , x, '=', x is   x
+print x, 'isnt' , x, '=', x isnt x
+
+# compare x with y
+print ''
+print 'x op y'
+print x, 'is  ' , y, '=', x is   y
+print x, 'isnt' , y, '=', x isnt y
+
+# compare y with x
+print ''
+print 'y op x'
+print y, 'is  ' , x, '=', y is   x
+print y, 'isnt' , x, '=', y isnt x
+
+# compare y with y
+print ''
+print 'y op y'
+print y, 'is  ' , y, '=', y is   y
+print y, 'isnt' , y, '=', y isnt y
+
+EXPECTED_OUTPUT:
+x op x
+abc is   abc = true
+abc isnt abc = false
+
+x op y
+abc is   abca = false
+abc isnt abca = true
+
+y op x
+abca is   abc = false
+abca isnt abc = true
+
+y op y
+abca is   abca = true
+abca isnt abca = false
+-------------------------------------------------------------------------------
+
+TEST "Compare - boolean'
+
+x = true
+y = false
+
+# compare x with x
+print 'x op x'
+print x, 'is  ' , x, '=', x is   x
+print x, 'isnt' , x, '=', x isnt x
+
+# compare x with y
+print ''
+print 'x op y'
+print x, 'is  ' , y, '=', x is   y
+print x, 'isnt' , y, '=', x isnt y
+
+# compare y with x
+print ''
+print 'y op x'
+print y, 'is  ' , x, '=', y is   x
+print y, 'isnt' , x, '=', y isnt x
+
+# compare y with y
+print ''
+print 'y op y'
+print y, 'is  ' , y, '=', y is   y
+print y, 'isnt' , y, '=', y isnt y
+
+EXPECTED_OUTPUT:
+x op x
+true is   true = true
 true isnt true = false
+
+x op y
+true is   false = false
 true isnt false = true
-true isnt text = true
-true isnt [] = true
-true isnt [1, 2, 3] = true
-true isnt {} = true
-true isnt {'x': 1, 'y': 2, 'z': 3} = true
 
-false isnt 1 = true
-false isnt 5 = true
-false isnt 1.000000 = true
-false isnt 2.300000 = true
+y op x
+false is   true = false
 false isnt true = true
+
+y op y
+false is   false = true
 false isnt false = false
-false isnt text = true
-false isnt [] = true
-false isnt [1, 2, 3] = true
-false isnt {} = true
-false isnt {'x': 1, 'y': 2, 'z': 3} = true
+-------------------------------------------------------------------------------
 
-text isnt 1 = true
-text isnt 5 = true
-text isnt 1.000000 = true
-text isnt 2.300000 = true
-text isnt true = true
-text isnt false = true
-text isnt text = false
-text isnt [] = true
-text isnt [1, 2, 3] = true
-text isnt {} = true
-text isnt {'x': 1, 'y': 2, 'z': 3} = true
+TEST "Compare - arrays (weak compare only)"
 
-[] isnt 1 = true
-[] isnt 5 = true
-[] isnt 1.000000 = true
-[] isnt 2.300000 = true
-[] isnt true = true
-[] isnt false = true
-[] isnt text = true
+x = []
+y = [1,2,3]
+
+# compare x with x
+print 'x op x'
+print x, 'is  ' , x, '=', x is   x
+print x, 'isnt' , x, '=', x isnt x
+
+# compare x with y
+print ''
+print 'x op y'
+print x, 'is  ' , y, '=', x is   y
+print x, 'isnt' , y, '=', x isnt y
+
+# compare y with x
+print ''
+print 'y op x'
+print y, 'is  ' , x, '=', y is   x
+print y, 'isnt' , x, '=', y isnt x
+
+# compare y with y
+print ''
+print 'y op y'
+print y, 'is  ' , y, '=', y is   y
+print y, 'isnt' , y, '=', y isnt y
+
+EXPECTED_OUTPUT:
+x op x
+[] is   [] = true
 [] isnt [] = false
+
+x op y
+[] is   [1, 2, 3] = false
 [] isnt [1, 2, 3] = true
-[] isnt {} = true
-[] isnt {'x': 1, 'y': 2, 'z': 3} = true
 
-[1, 2, 3] isnt 1 = true
-[1, 2, 3] isnt 5 = true
-[1, 2, 3] isnt 1.000000 = true
-[1, 2, 3] isnt 2.300000 = true
-[1, 2, 3] isnt true = true
-[1, 2, 3] isnt false = true
-[1, 2, 3] isnt text = true
+y op x
+[1, 2, 3] is   [] = false
 [1, 2, 3] isnt [] = true
-[1, 2, 3] isnt [1, 2, 3] = false
-[1, 2, 3] isnt {} = true
-[1, 2, 3] isnt {'x': 1, 'y': 2, 'z': 3} = true
 
-{} isnt 1 = true
-{} isnt 5 = true
-{} isnt 1.000000 = true
-{} isnt 2.300000 = true
-{} isnt true = true
-{} isnt false = true
-{} isnt text = true
-{} isnt [] = true
-{} isnt [1, 2, 3] = true
+y op y
+[1, 2, 3] is   [1, 2, 3] = true
+[1, 2, 3] isnt [1, 2, 3] = false
+-------------------------------------------------------------------------------
+
+TEST "Compare - maps (weak compare only)"
+
+x = {}
+y = {'x': 1, 'y': 2, 'z': 3}
+
+# compare x with x
+print 'x op x'
+print x, 'is  ' , x, '=', x is   x
+print x, 'isnt' , x, '=', x isnt x
+
+# compare x with y
+print ''
+print 'x op y'
+print x, 'is  ' , y, '=', x is   y
+print x, 'isnt' , y, '=', x isnt y
+
+# compare y with x
+print ''
+print 'y op x'
+print y, 'is  ' , x, '=', y is   x
+print y, 'isnt' , x, '=', y isnt x
+
+# compare y with y
+print ''
+print 'y op y'
+print y, 'is  ' , y, '=', y is   y
+print y, 'isnt' , y, '=', y isnt y
+
+EXPECTED_OUTPUT:
+x op x
+{} is   {} = true
 {} isnt {} = false
+
+x op y
+{} is   {'x': 1, 'y': 2, 'z': 3} = false
 {} isnt {'x': 1, 'y': 2, 'z': 3} = true
 
-{'x': 1, 'y': 2, 'z': 3} isnt 1 = true
-{'x': 1, 'y': 2, 'z': 3} isnt 5 = true
-{'x': 1, 'y': 2, 'z': 3} isnt 1.000000 = true
-{'x': 1, 'y': 2, 'z': 3} isnt 2.300000 = true
-{'x': 1, 'y': 2, 'z': 3} isnt true = true
-{'x': 1, 'y': 2, 'z': 3} isnt false = true
-{'x': 1, 'y': 2, 'z': 3} isnt text = true
-{'x': 1, 'y': 2, 'z': 3} isnt [] = true
-{'x': 1, 'y': 2, 'z': 3} isnt [1, 2, 3] = true
+y op x
+{'x': 1, 'y': 2, 'z': 3} is   {} = false
 {'x': 1, 'y': 2, 'z': 3} isnt {} = true
+
+y op y
+{'x': 1, 'y': 2, 'z': 3} is   {'x': 1, 'y': 2, 'z': 3} = true
 {'x': 1, 'y': 2, 'z': 3} isnt {'x': 1, 'y': 2, 'z': 3} = false
 -------------------------------------------------------------------------------
+
 TEST "Compare array items"
 
 const A = [-4, 1, 8]
@@ -696,4 +528,54 @@ A[0] o A[2]
 -4 >= 8 gives false
 -4 is 8 gives false
 -4 isnt 8 gives true
+-------------------------------------------------------------------------------
+
+TEST "Type mismatch: integer is float"
+
+x = 1
+y = 3.14
+print x is y
+
+EXPECTED_ERROR:
+runtime error: implicit type conversion not supported anymore
+-------------------------------------------------------------------------------
+
+TEST "Type mismatch: integer < float"
+
+x = 1
+y = 3.14
+print x < y
+
+EXPECTED_ERROR:
+runtime error: implicit type conversion not supported anymore
+-------------------------------------------------------------------------------
+
+TEST "Type mismatch: integer > float"
+
+x = 1
+y = 3.14
+print x > y
+
+EXPECTED_ERROR:
+runtime error: implicit type conversion not supported anymore
+-------------------------------------------------------------------------------
+
+TEST "Type mismatch: integer isnt string"
+
+x = 1
+y = 'text'
+print x isnt y
+
+EXPECTED_ERROR:
+runtime error: implicit type conversion not supported anymore
+-------------------------------------------------------------------------------
+
+TEST "Type mismatch: array is map"
+
+x = []
+y = {}
+print x is y
+
+EXPECTED_ERROR:
+runtime error: implicit type conversion not supported anymore
 -------------------------------------------------------------------------------
