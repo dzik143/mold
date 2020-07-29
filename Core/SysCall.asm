@@ -306,6 +306,12 @@ __MOLD_SysCall:
     mov     rdx, rdi
     jmp     __MOLD_VariantTypeOf
 
+.getTypeId:
+    mov     eax, [rcx + Variant_t.type]
+    mov     [rdi + Variant_t.type], VARIANT_INTEGER
+    mov     [rdi + Variant_t.value], rax
+    ret
+
 .innertypeof:
     ; TODO: Optimize it.
     cmp     [rcx + Variant_t.type], VARIANT_ARRAY
@@ -497,7 +503,7 @@ __MOLD_SysCall:
   dq .error                 ; 54
   dq .substr                ; 55
   dq .innertypeof           ; 56
-  dq .error                 ; 57
+  dq .getTypeId             ; 57
   dq .error                 ; 58
   dq .error                 ; 59
 

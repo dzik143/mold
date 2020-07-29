@@ -94,6 +94,7 @@ class ASTPreprocessor
     global AST_OPCODE_BLOCK
     global AST_OPCODE_CLASS_METHOD
     global AST_DATA_STRING
+    global AST_DATA_INTEGER
     global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ
     global MOLD_SYSCALL_MAP
     global AST_OPCODE_REFERENCE_BY_INDEX
@@ -135,11 +136,11 @@ class ASTPreprocessor
             'id': AST_GetNextId(),
             'opcode': AST_OPCODE_CALL,
             'value': '__mold_syscall',
-            'sysCallId': 44, # TODO: Don't use hardcoded value ('typeof')
+            'sysCallId': 57, # TODO: Don't use hardcoded value ('getTypeId')
             'children': [x]
           }
-          y.opcode = AST_DATA_STRING
-          y.value  = 'undefined'
+          y.opcode = AST_DATA_INTEGER
+          y.value  = 0
 
           # TODO: Clean up this mess.
           x.__isUsedAsTypeofArg = true

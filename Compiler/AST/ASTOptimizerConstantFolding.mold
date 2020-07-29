@@ -341,6 +341,10 @@ class ASTOptimizerConstantFolding
               elif sysCallId is 44
                 newValue = typeof(xValue)
 
+              elif sysCallId is 57
+                # getTypeId
+                newValue = __mold_syscall(57, xValue)
+
               else
                 # Unhandled syscall - do nothing.
               endif

@@ -570,14 +570,18 @@ function AST_HasSideEffects(node) -> rv
     # TODO: Check function protos.
     # TODO: Don't use hardcoded values.
     # TODO: Why we sometimes got non-integer syscall id?
+    # TODO: Clean up this mess.
+    rv = true
+
     if ((node.value is '__mold_syscall') and
-        (typeof(node.sysCallId) is 'integer') and
-        (node.sysCallId >= 31) and
-        (node.sysCallId <= 44))
-      # Built-in function without side effect.
-      rv = false
-    else
-      rv = true
+        (typeof(node.sysCallId) is 'integer'))
+
+      if (((node.sysCallId >= 31) and (node.sysCallId <= 44)) or
+           (node.sysCallId is 56) or
+           (node.sysCallId is 57))
+        # Built-in function without side effect.
+        rv = false
+      endif
     endif
 
   elif (opcode is AST_OPCODE_CALL_NEW) or (opcode is AST_OPCODE_VCALL)

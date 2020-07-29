@@ -897,11 +897,8 @@ proc __MOLD_VariantCompareEQ
 
 .memoryCompare:
     ; TODO: Optimize it.
-    mov     eax, [rcx + Variant_t.type]    ; rax = x.type
     mov     r9,  [rcx + Variant_t.value]   ; r9  = x.value
-    xor     eax, [rdx + Variant_t.type]    ; rax = x.type  xor y.type
     xor     r9,  [rdx + Variant_t.value]   ; r9  = x.value xor y.value
-    or      rax, r9                        ; rax = x xor y
     setz    al                             ; rax = compareEQ(x, y)
     and     eax, 1                         ; rax = compareEQ(x, y) {0,1}
     mov     dword [r8], eax                ; rv  = compareEQ(x, y) {0,1}
