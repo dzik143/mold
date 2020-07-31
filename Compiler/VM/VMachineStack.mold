@@ -282,7 +282,10 @@ class VMachineStack
         stack.eatN(item[1])
         stack.push(_vm_retValStack[_vm_deepIdx])
         _vm_deepIdx = _vm_deepIdx - 1
-        _vm_locals  = _vm_dataStack[_vm_deepIdx]
+
+        if _vm_deepIdx >= 0
+          _vm_locals  = _vm_dataStack[_vm_deepIdx]
+        endif
 
       elif opcode is MIR_OPCODE_INNER_RET
         ip = stack.pop()
