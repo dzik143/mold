@@ -1,4 +1,9 @@
 
+Unreleased
+------------------------------------
+  Dropped syntax:
+    - x[-1] generates runtime error
+
 0.3.200720 (released on 2020-07-20):
 ------------------------------------
 
@@ -48,7 +53,7 @@
 
     - Stub for relative array indexes (x[@selector]).
 
-    - Use x ~ y for string concatenation, x + y is not correct anymore.
+    - x ~ y for string concatenation, x + y is not correct anymore.
 
   Internal maintain:
     - Major clean up the parser code
