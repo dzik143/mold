@@ -1368,6 +1368,9 @@ __MOLD_VariantLoadFromIndex_int32:
     mov    eax, [rcx + Variant_t.type]
     mov    edx, dword [rdx]
 
+    or     edx, edx
+    js     __MOLD_PrintErrorAndDie.negativeIndex
+
     cmp    eax, VARIANT_ARRAY
     je     .array
 

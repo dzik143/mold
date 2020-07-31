@@ -1290,3 +1290,84 @@ print typeof(acc), acc
 EXPECTED_OUTPUT:
 float 1001.200000
 -------------------------------------------------------------------------------
+
+TEST "Load from negative array index (should fail) #1"
+
+x = [1,2,3]
+print x[-1000]
+
+EXPECTED_ERROR:
+runtime error: negative array index
+-------------------------------------------------------------------------------
+
+TEST "Load from negative array index (should fail) #2"
+
+function foo(x, i)
+  print 'foo(', i, ')', x[i]
+endfunction
+
+x = [10,20,30,40,50]
+
+foo(x, 0)
+foo(x, 1)
+foo(x, 10)
+foo(x, 100)
+foo(x, 1000)
+foo(x, -1)
+foo(x, 0)
+
+EXPECTED_OUTPUT:
+foo( 0 ) 10
+foo( 1 ) 20
+foo( 10 ) undefined
+foo( 100 ) undefined
+foo( 1000 ) undefined
+EXPECTED_ERROR:
+runtime error: negative array index
+-------------------------------------------------------------------------------
+
+TEST "Store to negative array index (should fail) #1"
+
+x = []
+
+print '(1) before error'
+x[-1000] = 1234
+print '(2) after error'
+
+EXPECTED_OUTPUT:
+(1) before error
+EXPECTED_ERROR:
+runtime error: negative array index
+-------------------------------------------------------------------------------
+
+TEST "Store to negative array index (should fail) #2"
+
+function foo(x, i)
+  x[i] = i * 10
+  print 'foo(', i, ')', x
+endfunction
+
+x = []
+
+foo(x, 0)
+foo(x, 1)
+foo(x, 2)
+foo(x, 5)
+foo(x, 10)
+
+print '(1) before error'
+foo(x, -1)
+print '(2) after error'
+
+foo(x, 20)
+
+EXPECTED_OUTPUT:
+foo( 0 ) [0]
+foo( 1 ) [0, 10]
+foo( 2 ) [0, 10, 20]
+foo( 5 ) [0, 10, 20, undefined, undefined, 50]
+foo( 10 ) [0, 10, 20, undefined, undefined, 50, undefined, undefined, undefined, undefined, 100]
+(1) before error
+EXPECTED_ERROR:
+runtime error: negative array index
+-------------------------------------------------------------------------------

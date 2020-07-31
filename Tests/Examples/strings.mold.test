@@ -243,32 +243,24 @@ undefined
 TEST "Bug: Crash on out of range peek #2"
 
 text = 'abc'
-print 'x[0]        =', text[0]
-print 'x[1]        =', text[1]
-print 'x[2]        =', text[2]
-print 'x[3]        =', text[3]
-print 'x[4]        =', text[4]
-print 'x[-1]       =', text[-1]
-print 'x[-2]       =', text[-2]
-print 'x[-3]       =', text[-3]
-print 'x[1000]     =', text[1000]
-print 'x[1000000]  =', text[1000000]
-print 'x[-1000]    =', text[-1000]
-print 'x[-1000000] =', text[-1000000]
+print 'x[0]          =', text[0]
+print 'x[1]          =', text[1]
+print 'x[2]          =', text[2]
+print 'x[3]          =', text[3]
+print 'x[4]          =', text[4]
+print 'x[1000]       =', text[1000]
+print 'x[1000000]    =', text[1000000]
+print 'x[2147483647] =', text[2147483647]
 
 EXPECTED_OUTPUT:
-x[0]        = a
-x[1]        = b
-x[2]        = c
-x[3]        = undefined
-x[4]        = undefined
-x[-1]       = undefined
-x[-2]       = undefined
-x[-3]       = undefined
-x[1000]     = undefined
-x[1000000]  = undefined
-x[-1000]    = undefined
-x[-1000000] = undefined
+x[0]          = a
+x[1]          = b
+x[2]          = c
+x[3]          = undefined
+x[4]          = undefined
+x[1000]       = undefined
+x[1000000]    = undefined
+x[2147483647] = undefined
 -------------------------------------------------------------------------------
 
 TEST "Bug: Not increased refCnt after passing string throught str()"
@@ -361,4 +353,40 @@ EXPECTED_OUTPUT:
 2 30 false is false
 3 40 true  is true
 3 40 false is false
+-------------------------------------------------------------------------------
+
+TEST "Load from negative character index (should fail) #1"
+
+x = 'this is some text'
+
+print '(1) before error'
+print x[-1000]
+print '(2) after error'
+
+EXPECTED_OUTPUT:
+(1) before error
+EXPECTED_ERROR:
+runtime error: negative array index
+-------------------------------------------------------------------------------
+
+TEST "Load from negative character index (should fail) #2"
+
+function foo(x, i)
+  print 'foo(', i, ')', x[i]
+endfunction
+
+x = 'Hello, Mold!'
+
+foo(x, 0)
+foo(x, 1)
+foo(x, 10)
+foo(x, -1)
+foo(x, 0)
+
+EXPECTED_OUTPUT:
+foo( 0 ) H
+foo( 1 ) e
+foo( 10 ) d
+EXPECTED_ERROR:
+runtime error: negative array index
 -------------------------------------------------------------------------------
