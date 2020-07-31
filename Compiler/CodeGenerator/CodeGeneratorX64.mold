@@ -18,10 +18,6 @@
 #                                                                              #
 ################################################################################
 
-import 'Utils/SymbolTable.mold'
-import 'MIR/MIR.mold'
-import 'Utils/Stack.mold'
-
 class CodeGeneratorX64
 
   method constructor()
