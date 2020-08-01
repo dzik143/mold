@@ -631,7 +631,8 @@ class ASTTranslator
 
     else
       # Generic foo(x,y,z...) call.
-      funcEntry = this.symbolTable.lookupFunction(funcName, childrenCnt)
+      isRetValUsed = rv is defined
+      funcEntry = this.symbolTable.lookupFunction(funcName, childrenCnt, isRetValUsed)
       funcProto = funcEntry.proto
       this._call(rv, funcProto, params, paramsCnt)
     endif
@@ -896,12 +897,17 @@ class ASTTranslator
           endif
         endfor
 
+      #elif value is '__mold_syscall'
+        # TODO: Clean up this mess.
+        # TODO: Handle syscall without return value.
+      #  unusedRv = this._getTempVar('variant')
+      #  this._evaluateNodeCall(unusedRv, ast)
+      #  this._dropRetVal()
+      #  this._releaseTempVar(unusedRv)
+
       else
-        # TODO: Use null?
-        unusedRv = this._getTempVar('variant')
-        this._evaluateNodeCall(unusedRv, ast)
-        this._dropRetVal()
-        this._releaseTempVar(unusedRv)
+        # Ordinary call wihout return value.
+        this._evaluateNodeCall(null, ast)
       endif
 
     elif opcode is AST_OPCODE_SWITCH

@@ -974,25 +974,23 @@ class CodeGeneratorX64
           this.pushParametersBeforeCall(params)
           this.lea('rdi', rv)
           this.mov('[rdi + Variant_t.type]', 'VARIANT_UNDEFINED')
-
-          if opcode is 'syscall'
-            # Syscall
-            if typeof(name) is 'integer'
-              print '  mov eax, ', name
-            else
-              print '  mov eax, dword [', name, '+ Variant_t.value]'
-            endif
-
-            this.call('__MOLD_SysCall')
-
-          else
-            # Pure function.
-            this.call(name)
-          endif
-
         else
           # No return value.
           this.pushParametersBeforeCall(params)
+        endif
+
+        if opcode is 'syscall'
+          # Syscall
+          if typeof(name) is 'integer'
+            print '  mov eax, ', name
+          else
+            print '  mov eax, dword [', name, '+ Variant_t.value]'
+          endif
+
+          this.call('__MOLD_SysCall')
+
+        else
+          # Ordinary function.
           this.call(name)
         endif
 

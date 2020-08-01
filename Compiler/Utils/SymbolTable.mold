@@ -195,14 +195,9 @@ class SymbolTable
     rv.readHits = rv.readHits + 1
   endmethod
 
-  method lookupForCall(name) -> rv
-    global SYMBOL_KIND_FUNCTION
-    # TODO: Special call counter?
-    rv = this.lookupForRead(name)
-    # Make sure is it a function.
-    if rv.kind isnt SYMBOL_KIND_FUNCTION
-      this._error("'" ~ name ~ "' is not a function")
-    endif
+  method lookupForCall(name, paramsCnt, isRetValUsed) -> rv
+    rv = this.lookupFunction(name, paramsCnt, isRetValUsed)
+    rv.readHits = rv.readHits + 1
   endmethod
 
   method lookupForWrite(name) -> rv
@@ -358,16 +353,16 @@ class SymbolTable
     this.insertGlobal(name, newEntry)
   endmethod
 
-  method lookupFunction(name, paramsCnt) -> rv
+  method lookupFunction(name, paramsCnt, isRetValUsed) -> rv
     global SYMBOL_KIND_FUNCTION
     global AST_OPCODE_CLASS_METHOD
 
-    rv = this.lookupGlobal(name)
+    rv = this.lookup(name)
 
     if rv.kind isnt SYMBOL_KIND_FUNCTION
       this._error("'" ~ name ~ "' is not a function")
 
-    else
+    elif rv.proto.builtIn is undefined
       # TODO: Clean up this mess.
       if rv.proto.opcode is AST_OPCODE_CLASS_METHOD
         # Adjust for this parameter for direct call.
@@ -376,7 +371,14 @@ class SymbolTable
 
       if len(rv.proto.params) isnt paramsCnt
         this._error("function '" ~ name ~ "' requires exactly " ~ str(len(rv.proto.params)) ~ ' parameters, but ' ~ str(paramsCnt) ~ ' were passed')
+
+      elif (isRetValUsed is true) and (rv.proto.rv is undefined)
+        this._error("function '" ~ name ~ "' does not return a value")
+
+      elif (isRetValUsed is false) and (rv.proto.rv is defined)
+        this._error("unused return value of '" ~ name ~ "' function")
       endif
+
     endif
   endmethod
 
@@ -410,7 +412,7 @@ class SymbolTable
   #                               Variable helper
   # ----------------------------------------------------------------------------
 
-  method insertLocal(name) -> newEntry
+  method insertLocal(name)
     global SYMBOL_KIND_VAR_LOCAL
 
     if this.deepIdx < 1
@@ -507,7 +509,7 @@ class SymbolTable
     this.insert(name, newEntry)
     #this.symbols[name] = newEntry
     # TODO: Is it really needed?
-    this.lookupForRead(name)
+    unused = this.lookupForRead(name)
   endmethod
 
   method insertConst(name, value) -> newEntry
@@ -544,8 +546,8 @@ class SymbolTable
   # ----------------------------------------------------------------------------
 
   method createConstFromValue(value) -> rv
-    rv = '__const' ~ str(SymbolTable_GetNextId())
-    this.insertConst(rv, value)
+    rv     = '__const' ~ str(SymbolTable_GetNextId())
+    unused = this.insertConst(rv, value)
   endmethod
 
   method assignValue(name, value)
@@ -711,14 +713,13 @@ class SymbolTable
   endmethod
 
   method getTempVarForWrite(wantedType) -> rv
-    rv = this.getTempVar(wantedType)
-    this.lookupForWrite(rv)
+    rv     = this.getTempVar(wantedType)
+    unused = this.lookupForWrite(rv)
   endmethod
 
   method getTempVarForReadAndWrite(wantedType) -> rv
-    rv = this.getTempVar(wantedType)
-    this.lookupForRead(rv)
-    this.lookupForWrite(rv)
+    rv     = this.getTempVar(wantedType)
+    unused = this.lookupForReadAndWrite(rv)
   endmethod
 
   method releaseTempVar(name)

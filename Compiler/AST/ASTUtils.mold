@@ -601,7 +601,7 @@ function AST_HasSideEffects(node) -> rv
   endif
 endfunction
 
-function AST_HashInternal(node, isCodeMode) -> rv
+function AST_GetHashInternal(node, isCodeMode) -> rv
   global AST_DATA_ARRAY
   global AST_DATA_MAP
   global AST_OPCODE_CALL
@@ -646,7 +646,7 @@ function AST_HashInternal(node, isCodeMode) -> rv
     elif node.opcode is AST_DATA_ARRAY
       rv = AST_GetOpcodeAsShortText(opcode) ~ ',' ~ str(childrenCnt)
       for idx in 0 .. childrenCnt
-        rv  = rv ~ ',' ~ AST_Hash(children[idx])
+        rv  = rv ~ ',' ~ AST_GetHash(children[idx])
       endfor
 
     elif node.opcode is AST_DATA_MAP
@@ -654,7 +654,7 @@ function AST_HashInternal(node, isCodeMode) -> rv
       idx = 0
       # TODO: Use for step/by.
       while idx < childrenCnt
-        rv  = rv ~ ',' ~ AST_Hash(children[idx]) ~ ',' ~ AST_Hash(children[idx + 1])
+        rv  = rv ~ ',' ~ AST_GetHash(children[idx]) ~ ',' ~ AST_GetHash(children[idx + 1])
         idx = idx + 2
       endwhile
 */
@@ -688,16 +688,16 @@ function AST_HashInternal(node, isCodeMode) -> rv
 
       # Hash call parameters.
       for values childNode in children
-        rv  = rv ~ ',' ~ AST_HashInternal(childNode, isCodeMode)
+        rv  = rv ~ ',' ~ AST_GetHashInternal(childNode, isCodeMode)
       endfor
 
     elif opcode is AST_OPCODE_TYPE_CAST
-      rv = 'cast,' ~ str(node.astDataType) ~ ',' ~ AST_HashInternal(children[0], isCodeMode)
+      rv = 'cast,' ~ str(node.astDataType) ~ ',' ~ AST_GetHashInternal(children[0], isCodeMode)
 
     else
       rv = AST_GetOpcodeAsShortText(opcode) ~ ',' ~ str(childrenCnt)
       for values childNode in children
-        rv  = rv ~ ',' ~ AST_HashInternal(childNode, isCodeMode)
+        rv  = rv ~ ',' ~ AST_GetHashInternal(childNode, isCodeMode)
       endfor
     endif
 
@@ -707,12 +707,16 @@ function AST_HashInternal(node, isCodeMode) -> rv
   endif
 endfunction
 
-function AST_Hash(node) -> rv
-  rv = AST_HashInternal(node, false)
+function AST_PrefetchHash(node)
+  unused = AST_GetHashInternal(node, false)
 endfunction
 
-function AST_HashForCodeComparison(node) -> rv
-  rv = AST_HashInternal(node, true)
+function AST_GetHash(node) -> rv
+  rv = AST_GetHashInternal(node, false)
+endfunction
+
+function AST_GetHashForCodeComparison(node) -> rv
+  rv = AST_GetHashInternal(node, true)
 endfunction
 
 function AST_IsDataNode(node) -> rv

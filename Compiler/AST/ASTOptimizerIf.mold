@@ -59,7 +59,7 @@ class ASTOptimizerIf
       newChildren = [cond.children[0]]
       caseHashMap = {}
 
-      exprHash  = AST_Hash(cond.children[0])
+      exprHash  = AST_GetHash(cond.children[0])
       valueMin  = 2147483647  # TODO: Use MAX_INTEGER etc.?
       valueMax  = -2147483647 # TODO: Use MIN_INTEGER etc.?
 
@@ -80,14 +80,14 @@ class ASTOptimizerIf
 
           if ((cond.opcode is AST_OPCODE_COMPARE_EQ) and
               (cond.children[1].opcode is AST_DATA_INTEGER) and
-              (AST_Hash(cond.children[0]) is exprHash))
+              (AST_GetHash(cond.children[0]) is exprHash))
 
             # TODO: Handle values ranges.
             # x is imm
             # Convert into switch with choice map.
             caseNode     = currentIfNode.children[1]
             caseValue    = cond.children[1].value
-            caseNodeHash = AST_HashForCodeComparison(caseNode)
+            caseNodeHash = AST_GetHashForCodeComparison(caseNode)
 
             reusedNode = caseHashMap{caseNodeHash}
             casesCnt   = casesCnt + 1
@@ -127,7 +127,7 @@ class ASTOptimizerIf
         lastCaseNode = newChildren[@last]
 
         if ((currentIfNode.opcode isnt AST_OPCODE_IF) or
-            (AST_HashForCodeComparison(currentIfNode.children[1]) isnt AST_HashForCodeComparison(lastCaseNode)))
+            (AST_GetHashForCodeComparison(currentIfNode.children[1]) isnt AST_GetHashForCodeComparison(lastCaseNode)))
 
           newChildren[@afterlast] = currentIfNode
           this._processNode(currentIfNode)

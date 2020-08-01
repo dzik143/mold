@@ -197,10 +197,20 @@ class ASTTranslatorMIR0 extends ASTTranslator
 
   method _syscall(rv, id, params, paramsCnt)
     this.code.syscall(id, paramsCnt)
+
+    # TODO: Clean up this mess.
+    if rv is undefined
+      this.code.drop()
+    endif
   endmethod
 
   method _call(rv, proto, params, paramsCnt)
     this.code.call(proto)
+
+    # TODO: Clean up this mess.
+    if rv is undefined
+      this.code.drop()
+    endif
   endmethod
 
   method _callPrint(params, paramsCnt)
@@ -238,27 +248,29 @@ class ASTTranslatorMIR0 extends ASTTranslator
   endmethod
 
   method _evaluateNodeLazyBoolAnd(rv, leftAst, rightAst)
+    # x and y
     endLabelId = this.code.createLabel()
 
     this.code.loadImm(false)         # [false]
-    this._evaluateNode(leftAst)      # [false x]
+    x = this._evaluateNode(leftAst)  # [false x]
     this.code.jmpIfFalse(endLabelId) # [false]
 
     # Evaluate right node only if left is true.
-    this._evaluateNode(rightAst)     # [y]
+    y = this._evaluateNode(rightAst) # [y]
     this.code.moveBack()             # []
     this.code.emitLabel(endLabelId)
   endmethod
 
   method _evaluateNodeLazyBoolOr(rv, leftAst, rightAst)
+    # x or y
     endLabelId = this.code.createLabel()
 
     this.code.loadImm(true)         # [true]
-    this._evaluateNode(leftAst)     # [true x]
+    x = this._evaluateNode(leftAst) # [true x]
     this.code.jmpIfTrue(endLabelId) # [true]
 
     # Evaluate right node only if left is false.
-    this._evaluateNode(rightAst)    # [y]
+    y = this._evaluateNode(rightAst)# [y]
     this.code.moveBack()            # []
     this.code.emitLabel(endLabelId)
   endmethod
@@ -354,7 +366,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
 
     code.emitLabel(loopLabelId)
       # if (!cond) goto end
-      this._evaluateNode(condAst)
+      cond = this._evaluateNode(condAst)
       code.jmpIfFalse(endLabelId)
 
       # Loop body

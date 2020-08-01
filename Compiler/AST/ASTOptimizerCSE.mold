@@ -51,6 +51,11 @@ class ASTOptimizerCSE
     endif
   endmethod
 
+  method _processInnerNode(node, mapOfExpressions, symbolTable)
+    # Ignore temporary inner node.
+    unused = this._processNode(node, mapOfExpressions, symbolTable)
+  endmethod
+
   method _processNode(node, mapOfExpressions, symbolTable) -> rv
     global AST_OPCODE_PROGRAM
     global AST_OPCODE_BLOCK
@@ -98,11 +103,11 @@ class ASTOptimizerCSE
       rval = children[1]
 
       if lval.opcode is AST_OPCODE_VARIABLE
-        AST_Hash(lval)
+        AST_PrefetchHash(lval)
       endif
 
       # TODO: Clean up this mess.
-      AST_Hash(rval)
+      AST_PrefetchHash(rval)
 
       newRval = this._processNode(rval, mapOfExpressions, symbolTable)
 
@@ -126,7 +131,7 @@ class ASTOptimizerCSE
       # Start new expression table from scratch.
       for values oneChild in children
         mapOfExpressions = {}
-        this._processNode(oneChild, mapOfExpressions, symbolTable)
+        this._processInnerNode(oneChild, mapOfExpressions, symbolTable)
       endfor
 
     elif opcode is AST_OPCODE_WHILE
@@ -139,7 +144,7 @@ class ASTOptimizerCSE
       # endwhile
       for values oneChild in children
         mapOfExpressions = {}
-        this._processNode(oneChild, mapOfExpressions, symbolTable)
+        this._processInnerNode(oneChild, mapOfExpressions, symbolTable)
       endfor
 
     elif (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
@@ -147,14 +152,14 @@ class ASTOptimizerCSE
       # Start new expression table from scratch.
       mapOfExpressions = {}
       for values oneChild in children
-        this._processNode(oneChild, mapOfExpressions, symbolTable)
+        this._processInnerNode(oneChild, mapOfExpressions, symbolTable)
       endfor
 
     elif ((opcode is AST_OPCODE_CALL) or
           (opcode is AST_OPCODE_VCALL))
 
       for indexes childIdx values childNode in children
-        AST_Hash(childNode)
+        AST_PrefetchHash(childNode)
         newNode = this._processNode(childNode, mapOfExpressions, symbolTable)
         if newNode isnt childNode
           children[childIdx] = newNode
@@ -322,6 +327,6 @@ class ASTOptimizerCSE
   method processNode(node)
     mapOfExpressions = {}
     symbolTable      = node.symbolTable
-    this._processNode(node, mapOfExpressions, symbolTable)
+    this._processInnerNode(node, mapOfExpressions, symbolTable)
   endmethod
 endclass

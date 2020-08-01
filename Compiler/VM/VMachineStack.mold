@@ -343,7 +343,7 @@ class VMachineStack
         endfor
         print ''
 
-        stack.eatN(paramsCnt - 1)
+        stack.eatN(paramsCnt)
 
       elif opcode is MIR_OPCODE_SYSCALL
         # TODO: Clean up this mess.
@@ -377,8 +377,11 @@ class VMachineStack
         endif
 
         stack.eatN(paramsCnt)
+
         stack.push(rv)
-        str(id)
+        # TODO: Clean up this mess.
+        unused = str(id)
+        #str(id)
 
       elif opcode is MIR_OPCODE_LOAD_ARGC
         stack.push(argc)
@@ -673,7 +676,7 @@ class VMachineStack
         txt = 'load.argv'
 
       elif opcode is MIR_OPCODE_SYSCALL
-        txt = 'syscall' ~ str(arg1) ~ ', ' ~ str(arg2)
+        txt = 'syscall ' ~ str(arg1) ~ ', ' ~ str(arg2)
 
       elif opcode is MIR_OPCODE_FOR_EACH_INDEXES
         txt = 'for.each.indexes ' ~ str(arg1) ~ ', ' ~ str(arg2) ~ ', ' ~ str(arg3)

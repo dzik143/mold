@@ -92,6 +92,8 @@ class ASTOptimizerDeadCodeRemove
     global AST_OPCODE_TYPE_CAST
     global SYMBOL_KIND_CONST, SYMBOL_KIND_VAR_RETVAL
 
+    this.app.setLogContext(node)
+
     # TODO: Use should/assert/etc when ready.
     if symbolTable is undefined
       die('error: unset symbol table at ASTOptimizerDeadCodeRemove::_processNode()')
@@ -277,6 +279,6 @@ class ASTOptimizerDeadCodeRemove
   endmethod
 
   method processNode(node)
-    this._processNode(node.symbolTable, node)
+    newNode = this._processNode(node.symbolTable, node)
   endmethod
 endclass

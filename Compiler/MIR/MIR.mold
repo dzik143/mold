@@ -530,7 +530,7 @@ class MIRCode
     classList[id]       = proto
 
     for keys methodName in proto.vtable
-      this.createMethod(methodName)
+      methodId = this.createMethod(methodName)
     endfor
 
     this.classListCnt = id + 1

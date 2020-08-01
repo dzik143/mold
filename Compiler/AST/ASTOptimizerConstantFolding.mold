@@ -88,10 +88,10 @@ class ASTOptimizerConstantFolding
     childrenCnt = len(children)
 
     while (isImm is true) and (idx < childrenCnt)
-      this.processNode(children[idx])
+      isChanged     = this.processNode(children[idx])
       newValue[idx] = children[idx].value
-      isImm = AST_IsImm(children[idx])
-      idx   = idx + 1
+      isImm         = AST_IsImm(children[idx])
+      idx           = idx + 1
     endwhile
 
     if isImm is true
@@ -110,8 +110,8 @@ class ASTOptimizerConstantFolding
       nodeKey   = children[idx]
       nodeValue = children[idx + 1]
 
-      this.processNode(nodeKey)
-      this.processNode(nodeValue)
+      isKeyChanged   = this.processNode(nodeKey)
+      isValueChanged = this.processNode(nodeValue)
 
       if (AST_IsImm(nodeKey) is true) and (AST_IsImm(nodeValue) is true)
         newValue{nodeKey.value} = nodeValue.value
@@ -185,7 +185,7 @@ class ASTOptimizerConstantFolding
         endif
 
         for idx in startIdx .. childrenCnt
-          this.processNodeUntilNotChanged(children[idx])
+          isChildChanged = this.processNodeUntilNotChanged(children[idx])
 
           if AST_IsImm(children[idx]) is false
             # There is at least one non-imm arg.

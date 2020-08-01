@@ -390,7 +390,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   method _callPrint(unusedParams, paramsCnt)
     params = this.popParametersBeforeCall(paramsCnt)
     this.emitTargetOnlyOpcode('print_array_of_variants_ln', params)
-    this.push('<print:unused_rv>')
+    #this.push('<print:unused_rv>')
   endmethod
 
   method _loadFromIndex(rv, unusedBox, unusedIdx)
@@ -610,7 +610,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     this.emitLabel(loopLabel)
       # if (not cond) goto end
-      this._evaluateNode(condAst)
+      cond = this._evaluateNode(condAst)
       this.emitOneArgOpcode('jmp_if_false', endLabel, this.popForRead())
 
       # Loop body
@@ -711,7 +711,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   method _declareFunction(funcName, funcProto)
     # TODO: More elegant way.
     if funcProto.name isnt funcProto.fullName
-      this.code.createMethod(funcProto.name)
+      methodId = this.code.createMethod(funcProto.name)
     endif
   endmethod
 

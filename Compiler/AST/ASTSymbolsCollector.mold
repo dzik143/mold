@@ -671,8 +671,15 @@ class ASTSymbolsCollector
         endif
 
         # Mark that function was called.
-        node.symbolInfo     = symbolTable.lookupForCall(node.value)
+        # TODO: Use not x.
+        if isLeftNode is true
+          isRetValUsed = false
+        else
+          isRetValUsed = true
+        endif
+
         isLeftNode          = false
+        node.symbolInfo     = symbolTable.lookupForCall(node.value, childrenCnt, isRetValUsed)
         currentFunctionName = symbolTable.getCurrentFunctionName()
 
         # Mark recursive calls. We use it in further optizations.
@@ -692,6 +699,7 @@ class ASTSymbolsCollector
         endif
 
       elif opcode is AST_OPCODE_VCALL
+        node.isUsedAsLeftValue = isLeftNode
         isLeftNode = false
       endif
 
