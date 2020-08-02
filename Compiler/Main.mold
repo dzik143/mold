@@ -35,7 +35,7 @@ import 'CodeGenerator/CodeGeneratorX64.mold'
 import 'MIR/MIRQuadOptimizer.mold'
 import 'VM/VMachineStack.mold'
 
-VERSION_STRING = '0.3.200730'
+VERSION_STRING = '0.3.200802'
 
 # ------------------------------------------------------------------------------
 #                              Helper functions

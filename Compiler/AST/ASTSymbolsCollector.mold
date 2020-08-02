@@ -245,9 +245,16 @@ class ASTSymbolsCollector
           # Return value is set inside all branches. Go on.
           # Change variable kind to RETVAL and force variant type.
           # TODO: Handle non-variant return values.
-          symbolInfo         = nodeBody.symbolTable.lookup(funcProto.rv)
-          symbolInfo.kind    = SYMBOL_KIND_VAR_RETVAL
-          symbolInfo.astType = -1
+          symbolInfo      = nodeBody.symbolTable.lookup(funcProto.rv)
+          symbolInfo.kind = SYMBOL_KIND_VAR_RETVAL
+
+          if opcode is AST_OPCODE_CLASS_METHOD
+            # TODO: Handle non-variant returns in vcalls.
+            symbolInfo.astType      = -1
+            funcProto.astTypeRetVal = -1
+          else
+            funcProto.astTypeRetVal = symbolInfo.astType
+          endif
 
           # TODO: Clean up this mess.
           #symbolInfo.name     = '__rv'
@@ -666,7 +673,8 @@ class ASTSymbolsCollector
           # One of built-in function - declaration is not needed.
           if symbolTable.isset(funcName) is false
             # TODO: Fill up proto?
-            symbolTable.insertFunction(funcName, {'builtIn': true})
+            # TODO: Handle non-variant ret-val.
+            symbolTable.insertFunction(funcName, {'builtIn': true, 'astTypeRetVal': -1})
           endif
         endif
 

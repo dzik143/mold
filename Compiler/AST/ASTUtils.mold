@@ -808,7 +808,22 @@ function AST_GetDataType(node) -> rv
       endif
 
     elif opcode is AST_OPCODE_CALL
-      # TODO: Handle non-variant return values.
+      # TODO: Clean up this mess.
+      /*
+      if ((node.value is '__mold_syscall') and
+          (typeof(node.sysCallId) is 'integer') and
+          (node.sysCallId is 43))
+        rv = AST_DATA_INTEGER
+      else
+      */
+
+      rv = node.symbolInfo.proto.astTypeRetVal
+
+      if rv is undefined
+        # TODO: Review it.
+        # Fall back to variant in recursive calls.
+        rv = -1
+      endif
 
     elif opcode is AST_OPCODE_CALL_NEW
       rv = AST_DATA_OBJECT

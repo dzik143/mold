@@ -87,12 +87,14 @@ class CodeGeneratorX64
     #TODO
     global SYMBOL_KIND_VAR_LOCAL
     global SYMBOL_KIND_VAR_GLOBAL
+    global SYMBOL_KIND_VAR_RETVAL
 
     xInfo = this.symbols{x}
 
     if ((xInfo is undefined) or
         (xInfo.kind is SYMBOL_KIND_VAR_LOCAL) or
-        (xInfo.kind is SYMBOL_KIND_VAR_GLOBAL))
+        (xInfo.kind is SYMBOL_KIND_VAR_GLOBAL) or
+        (xInfo.kind is SYMBOL_KIND_VAR_RETVAL))
 
       print '  lea  rcx, [', x, ']'
       print '  call __MOLD_VariantDestroy'
@@ -969,7 +971,6 @@ class CodeGeneratorX64
         if rv is defined
           # Function has return value.
           # TODO: Clean up this mess.
-          this.variantDestroy(rv)
           this.push('rdi')
           this.pushParametersBeforeCall(params)
           this.lea('rdi', rv)
@@ -1009,7 +1010,6 @@ class CodeGeneratorX64
         paramsCnt = len(params)
 
         if rv is defined
-          this.variantDestroy(rv)
           this.push('rdi')
           this.pushParametersBeforeCall(params)
           print '  lea  rdi, [', rv, ']'
