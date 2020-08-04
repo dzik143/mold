@@ -2873,6 +2873,22 @@ __MOLD_VariantStringJoin:
 
     ret
 
+__MOLD_VCall:
+  ; rcx - this (Variant_t)
+  ; rax - method id (int32)
+  mov  r10, [rcx + Variant_t.value]     ; r10 = this (Buffer_t)
+  shl  eax, 3                           ; rax = method id * 8
+  mov  r10, [r10 + Buffer_t.bytesPtr]   ; r10 = this (Object_t)
+  mov  r10, [r10 + Object_t.vtable]     ; r10 = this.vtable
+
+  sub  eax, dword [r10]                 ; eax = 8*id - offsetStart
+  js   __MOLD_NullMethodCalled          ; is method out of range?
+
+  cmp  eax, dword [r10 + 4]             ; 8*id  offsetEnd > 0
+  ja   __MOLD_NullMethodCalled          ; is method out of range?
+
+  jmp  qword [8 + r10 + rax]            ; call this.vtable[id]
+
 ; ##############################################################################
 ;                                Error handlers
 ; ##############################################################################

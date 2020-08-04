@@ -1028,10 +1028,8 @@ class CodeGeneratorX64
           this.pushParametersBeforeCall(params)
         endif
 
-        print '  mov  rax, [rcx + Variant_t.value]'
-        print '  mov  rax, [rax + Buffer_t.bytesPtr]'
-        print '  mov  rax, [rax + Object_t.vtable]'
-        print '  call qword [rax + 8*' ~ str(methodId) ~ ']'
+        print '  mov  eax,', methodId
+        print '  call __MOLD_VCall'
 
         if paramsCnt > 4
           print '  add rsp,', paramsCnt * 8 - 32
@@ -1578,7 +1576,28 @@ class CodeGeneratorX64
 
       print 'vtable_' ~ className ~ ':'
 
-      for methodIdx in 0 .. methodsListCnt
+      # Find first and last used entry.
+      firstUsedMethodIdx = 0
+      lastUsedMethodIdx  = 0
+
+      for indexes methodIdx values methodName in methodsList
+        if vtable{methodName} is defined
+          # Update index of last used method always, on all occerencies.
+          lastUsedMethodIdx = methodIdx + 1
+
+          # Save index of first used method once, on first occurence.
+          if firstUsedMethodIdx is 0
+            firstUsedMethodIdx = methodIdx
+          endif
+        endif
+      endfor
+
+      print '.offset dd 8 *', firstUsedMethodIdx
+      print '.length dd 8 *', lastUsedMethodIdx - firstUsedMethodIdx
+
+      print '.entries:'
+
+      for methodIdx in firstUsedMethodIdx .. lastUsedMethodIdx
         methodName  = methodsList[methodIdx]
         methodProto = vtable{methodName}
 
