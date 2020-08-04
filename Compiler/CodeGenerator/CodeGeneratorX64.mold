@@ -1579,15 +1579,17 @@ class CodeGeneratorX64
       # Find first and last used entry.
       firstUsedMethodIdx = 0
       lastUsedMethodIdx  = 0
+      firstMethodFound   = false
 
       for indexes methodIdx values methodName in methodsList
         if vtable{methodName} is defined
           # Update index of last used method always, on all occerencies.
-          lastUsedMethodIdx = methodIdx + 1
+          lastUsedMethodIdx = methodIdx
 
           # Save index of first used method once, on first occurence.
-          if firstUsedMethodIdx is 0
+          if firstMethodFound is false
             firstUsedMethodIdx = methodIdx
+            firstMethodFound   = true
           endif
         endif
       endfor
@@ -1595,20 +1597,23 @@ class CodeGeneratorX64
       print '.offset dd 8 *', firstUsedMethodIdx
       print '.length dd 8 *', lastUsedMethodIdx - firstUsedMethodIdx
 
-      print '.entries:'
+      if firstMethodFound is true
+        print '.entries:'
 
-      for methodIdx in firstUsedMethodIdx .. lastUsedMethodIdx
-        methodName  = methodsList[methodIdx]
-        methodProto = vtable{methodName}
+        for methodIdx in firstUsedMethodIdx .. lastUsedMethodIdx + 1
+        #for methodIdx in firstUsedMethodIdx .. methodsListCnt
+          methodName  = methodsList[methodIdx]
+          methodProto = vtable{methodName}
 
-        if methodProto is undefined
-          methodPtr = '__MOLD_NullMethodCalled'
-        else
-          methodPtr = methodProto.fullName
-        endif
+          if methodProto is undefined
+            methodPtr = '__MOLD_NullMethodCalled'
+          else
+            methodPtr = methodProto.fullName
+          endif
 
-        print '  dq', methodPtr, ';', methodName, '(', methodIdx, ')'
-      endfor
+          print '  dq', methodPtr, ';', methodName, '(', methodIdx, ')'
+        endfor
+      endif
 
       print ''
     endfor

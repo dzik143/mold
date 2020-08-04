@@ -2286,7 +2286,11 @@ __MOLD_Halt:
   ret
 
 proc __MOLD_NullMethodCalled
+  push    rax
+  push    r10
   cinvoke printf, 'error: pure virtual called'
+  pop     r10
+  pop     rax
   int 3
 endp
 
