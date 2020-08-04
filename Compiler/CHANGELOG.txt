@@ -2,7 +2,11 @@
 Unreleased
 ------------------------------------
   Dropped syntax:
-    - x[-1] generates runtime error
+    - negative array indexes (x[-1] generates runtime error)
+
+  Internal maintain:
+    - Better type guess
+    - Non-variant params and return value in ordinary calls
 
 0.3.200720 (released on 2020-07-20):
 ------------------------------------

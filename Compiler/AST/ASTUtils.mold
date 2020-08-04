@@ -773,9 +773,12 @@ function AST_GetDataType(node) -> rv
   global AST_OPCODE_STRING_JOIN
   global SYMBOL_KIND_CONST
 
-  rv = node._cachedAstDataType
+  rv = -1
 
-  if rv is undefined
+  if node._cachedAstDataType is defined
+    rv = node._cachedAstDataType
+
+  else
     opcode = node.opcode
     rv     = -1
 
@@ -817,12 +820,9 @@ function AST_GetDataType(node) -> rv
       else
       */
 
-      rv = node.symbolInfo.proto.astTypeRetVal
-
-      if rv is undefined
-        # TODO: Review it.
-        # Fall back to variant in recursive calls.
-        rv = -1
+      if ((node.symbolInfo is defined) and
+          (node.symbolInfo.proto.astTypeRetVal is defined))
+        rv = node.symbolInfo.proto.astTypeRetVal
       endif
 
     elif opcode is AST_OPCODE_CALL_NEW
@@ -882,10 +882,10 @@ function AST_GetDataType(node) -> rv
         endif
 
       elif childrenCnt is 1
-        x = AST_GetDataType(children[0])
+        xType = AST_GetDataType(children[0])
 
         if opcode is AST_OPCODE_NEG
-          rv = x
+          rv = xType
 
         elif opcode is AST_OPCODE_BOOL_NOT
           rv = AST_DATA_BOOL

@@ -149,8 +149,16 @@ class ASTTranslator
           # TODO: Accumulate hits?
           # TODO: Implement inner frames.
           # TODO: Clean up this mess.
-          astType1 = symbolsCurrent{id}.astType
-          astType2 = item.astType
+          astType1 = -1
+          astType2 = -1
+
+          if symbolsCurrent{id}.astType is defined
+            astType1 = symbolsCurrent{id}.astType
+          endif
+
+          if item.astType is defined
+            astType2 = item.astType
+          endif
 
           if astType1 isnt astType2
             if ((astType1 is -1) and

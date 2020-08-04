@@ -93,6 +93,17 @@ class SymbolTable
     this.app.logError(msg)
   endmethod
 
+  method _errorTypeMismatch(oldType, newType)
+    this._error('attemp to assign ' ~ AST_ConvertDataTypeToText(newType) ~ ' to ' ~ AST_ConvertDataTypeToText(oldType))
+  endmethod
+
+  method _errorIfUsedAsNumber(name)
+    symbolInfo = this.lookup(name)
+    if symbolInfo.usedAsNumber is defined
+      this._error("'" ~ name ~ "' was used as number before")
+    endif
+  endmethod
+
   # ----------------------------------------------------------------------------
   #                               Generic calls
   # ----------------------------------------------------------------------------
@@ -242,17 +253,20 @@ class SymbolTable
 
   method useAsArray(name)
     global AST_DATA_ARRAY
-    this.assignType(name, AST_DATA_ARRAY)
+    this._errorIfUsedAsNumber(name)
+    this.assignTypeAndFreeze(name, AST_DATA_ARRAY)
   endmethod
 
   method useAsArrayOrString(name)
     # TODO: Review it.
-    this.assignType(name, -1)
+    this._errorIfUsedAsNumber(name)
+    this.assignTypeAndFreeze(name, -1)
   endmethod
 
   method useAsMap(name)
     global AST_DATA_MAP
-    this.assignType(name, AST_DATA_MAP)
+    this._errorIfUsedAsNumber(name)
+    this.assignTypeAndFreeze(name, AST_DATA_MAP)
   endmethod
 
   method useAsIndex(name)
@@ -265,23 +279,32 @@ class SymbolTable
     this.assignType(name, AST_DATA_INTEGER)
   endmethod
 
+  method useAsFloat(name)
+    global AST_DATA_DOUBLE
+    this.assignType(name, AST_DATA_DOUBLE)
+  endmethod
+
   method useAsString(name)
     global AST_DATA_STRING
+    this._errorIfUsedAsNumber(name)
     this.assignType(name, AST_DATA_STRING)
   endmethod
 
   method useAsKey(name)
     global AST_DATA_STRING
+    this._errorIfUsedAsNumber(name)
     this.assignType(name, AST_DATA_STRING)
   endmethod
 
   method useAsObject(name)
     global AST_DATA_OBJECT
+    this._errorIfUsedAsNumber(name)
     this.assignType(name, AST_DATA_OBJECT)
   endmethod
 
   method useAsMapOrObject(name)
     # TODO: Review it.
+    this._errorIfUsedAsNumber(name)
     this.assignTypeAndFreeze(name, -1)
   endmethod
 
@@ -291,10 +314,8 @@ class SymbolTable
   endmethod
 
   method useAsNumber(name)
-    die('not implemented: useAsNumber')
-    #global AST_DATA_OBJECT
-    #print name, 'used as map object'
-    #this.assignType(name, AST_DATA_OBJECT)
+    symbolInfo = this.lookup(name)
+    symbolInfo.usedAsNumber = true
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -333,6 +354,7 @@ class SymbolTable
     if this.deepIdx < 1
       this._error('unmatched scope leave')
     endif
+
     # TODO: Review it.
     #this.vacuum()
     rv = this.parent
@@ -563,6 +585,7 @@ class SymbolTable
   method assignType(name, newType)
     global SYMBOL_KIND_VAR_LOCAL
     global SYMBOL_KIND_VAR_GLOBAL
+    global SYMBOL_KIND_VAR_PARAM
 
     symbolInfo = this.lookup(name)
     oldType    = symbolInfo.astType
@@ -576,7 +599,8 @@ class SymbolTable
         goOn = true
 
       elif ((symbolInfo.kind isnt SYMBOL_KIND_VAR_LOCAL) and
-            (symbolInfo.kind isnt SYMBOL_KIND_VAR_GLOBAL))
+            (symbolInfo.kind isnt SYMBOL_KIND_VAR_GLOBAL) and
+            (symbolInfo.kind isnt SYMBOL_KIND_VAR_PARAM))
         # Don't touch anything, which we don't sure we can change a type of.
         # Example: don't touch function parameters and return variable.
         # They're always variants for now.
@@ -600,7 +624,7 @@ class SymbolTable
 
       else
         # Error - type mismatch.
-        this._error('attemp to assign ' ~ AST_ConvertDataTypeToText(newType) ~ ' to ' ~ AST_ConvertDataTypeToText(oldType))
+        this._errorTypeMismatch(oldType, newType)
       endif
 
       if goOn is true

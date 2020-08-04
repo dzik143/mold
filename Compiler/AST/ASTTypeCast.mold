@@ -157,17 +157,33 @@ class ASTTypeCast
         # switch expr
         children[0] = AST_TypeCast(children[0], AST_DATA_INTEGER)
 
-      elif ((opcode is AST_OPCODE_CALL) or
-            (opcode is AST_OPCODE_VCALL) or
-            (opcode is AST_OPCODE_CALL_NEW))
+      elif opcode is AST_OPCODE_CALL
+        funcProto     = node.symbolInfo.proto
+        astTypeParams = funcProto.astTypeParams
 
-        if node.value isnt 'global'
+        if astTypeParams is defined
+          for idx in 0 .. childrenCnt
+            # Adjust argument type.
+            # TODO: Handle non-variant params.
+            children[idx] = AST_TypeCast(children[idx], astTypeParams[idx])
+          endfor
+
+        elif node.value isnt 'global'
           for idx in 0 .. childrenCnt
             # Adjust argument type.
             # TODO: Handle non-variant params.
             children[idx] = AST_TypeCast(children[idx], -1)
           endfor
         endif
+
+      elif ((opcode is AST_OPCODE_VCALL) or
+            (opcode is AST_OPCODE_CALL_NEW))
+
+        for idx in 0 .. childrenCnt
+          # Adjust argument type.
+          # TODO: Handle non-variant params.
+          children[idx] = AST_TypeCast(children[idx], -1)
+        endfor
 
       else
         # Always cast compare result to machine type.

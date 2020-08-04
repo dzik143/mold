@@ -241,6 +241,7 @@ class CodeGeneratorX64
         itemsCnt        = len(items)
         bufferName      = name ~ '_buffer'
         bufferNameBytes = name ~ '_bufferBytes'
+
         print bufferName, 'Buffer_t', itemsCnt * 16, ', -1, 0,',  bufferNameBytes
       endif
 
@@ -261,6 +262,7 @@ class CodeGeneratorX64
       innerValueMin    = items[0] # TODO: Use MAX_INTEGER like const?
       innerValueMax    = items[0] # TODO: Use MIN_INTEGER like const?
       innerItemIdx     = 1
+      itemValue        = null
 
       goOn = true
 
@@ -423,6 +425,13 @@ class CodeGeneratorX64
     currentSymbols      = {}
     currentFrameSize    = 0
     currentFrameOffsets = {}
+
+    dst = null
+    x   = null
+    y   = null
+
+    opcode         = ''
+    originalOpcode = ''
 
     symbols = {}
 
@@ -627,7 +636,7 @@ class CodeGeneratorX64
 
       elif opcode is 'neg_float64'
         print '  mov rax, qword [', x, ']'
-        print '  xor rax, 0x8000000000000000'
+        print '  xor rax, qword [__MOLD_VariantNeg.signBit]'
         print '  mov qword [', dst, '], rax'
 
       elif opcode is 'add_float64'
@@ -1034,7 +1043,7 @@ class CodeGeneratorX64
       elif opcode is 'create_object'
         this.variantDestroy(dst)
         print '  lea  rcx, [', dst, ']'
-        print '  lea  rdx, [vtable_' ~ x ~ ']'
+        print '  lea  rdx, [vtable_' ~ str(x) ~ ']'
         print '  call __MOLD_VariantObjectCreate'
 
       elif originalOpcode is 'conv_int32_to_float64'
@@ -1345,16 +1354,36 @@ class CodeGeneratorX64
             # Call parameter - copy to local var.
             if (oneItem.readHits > 0) or (oneItem.writeHits > 0)
               if paramIdx < 4
-                print '  movdqu xmm0', ', [', regParams[paramIdx], ']'
+                srcPtr = regParams[paramIdx]
               else
                 print '  mov    rax, [rbp + 16 + 8 *', paramsPassedCnt - paramIdx - 1, ']'
-                print '  movdqu xmm0', ', [rax]'
+                srcPtr = 'rax'
               endif
 
-              print '  movdqu [', oneItem.name, '], xmm0'
+              if ((oneItem.type is undefined) or
+                  (oneItem.type is 'variant') or
+                  (oneItem.type is 'string'))
 
-              if oneItem.duplicateOnFirstWrite is defined
-                print '  or [', oneItem.name, ' + Variant_t.flags ], VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE'
+                  print '  movdqu xmm0', ', [', srcPtr, ']'
+                  print '  movdqu [', oneItem.name, '], xmm0'
+
+                if oneItem.duplicateOnFirstWrite is defined
+                  print '  or [', oneItem.name, ' + Variant_t.flags ], VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE'
+                endif
+
+              elif ((oneItem.type is 'int32') or
+                    (oneItem.type is 'bool32'))
+                print '  mov eax, dword [', srcPtr, ']'
+                print '  mov dword [', oneItem.name, '], eax'
+
+              elif ((oneItem.type is 'int64') or
+                    (oneItem.type is 'bool64') or
+                    (oneItem.type is 'float64'))
+                print '  mov rax, qword [', srcPtr, ']'
+                print '  mov qword [', oneItem.name, '], rax'
+
+              else
+                die("error: unhandled type for param '" ~ oneItem.name ~ "': " ~ oneItem.type)
               endif
 
             else

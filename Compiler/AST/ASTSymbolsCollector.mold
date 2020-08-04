@@ -80,7 +80,10 @@ class ASTSymbolsCollector
     global AST_OPCODE_TYPE_CAST
     global AST_OPCODE_COMPARE_EQ
     global AST_OPCODE_COMPARE_NEQ
+    global AST_OPCODE_COMPARE_LT
     global AST_OPCODE_COMPARE_LE
+    global AST_OPCODE_COMPARE_GT
+    global AST_OPCODE_COMPARE_GE
     global AST_OPCODE_BOOL_NOT
     global AST_OPCODE_CALL_NEW
     global AST_DATA_UNDEFINED
@@ -91,6 +94,10 @@ class ASTSymbolsCollector
     global SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_VAR_RETVAL, SYMBOL_KIND_CONST
     global AST_OPCODE_MUL, AST_OPCODE_SUB, AST_OPCODE_DIV, AST_OPCODE_IDIV
     global AST_DATA_DOUBLE, AST_DATA_INTEGER
+
+    global AST_OPCODE_ADD, AST_OPCODE_SUB, AST_OPCODE_MUL, AST_OPCODE_DIV
+    global AST_OPCODE_IDIV, AST_OPCODE_NEG
+    global AST_OPCODE_STRING_JOIN
 
     global AST_OPCODE_FOR_VALUES_RANGE
     global AST_OPCODE_FOR_VALUES
@@ -197,7 +204,6 @@ class ASTSymbolsCollector
       nodeBody  = children[0]
       funcProto = node
       value     = node.value
-      #params    = value.params
 
       funcProto.params = value.params
       funcProto.name   = value.name
@@ -210,6 +216,7 @@ class ASTSymbolsCollector
       endif
 
       funcProto.fullName = funcName
+      astTypeParams      = []
 
       symbolTable.insertFunction(funcName, funcProto)
 
@@ -225,19 +232,31 @@ class ASTSymbolsCollector
           symbolInfo = nodeBody.symbolTable.insertParam('this', 0)
           symbolInfo.classProto = funcProto.classProto
           nodeBody.symbolTable.assignType('this', AST_DATA_OBJECT)
-
           paramShift = 1
+          astTypeParams[@afterlast] = -1
         endif
 
         for indexes paramIdx values paramName in funcProto.params
           nodeBody.symbolTable.insertParam(paramName, paramShift + paramIdx)
 
           # TODO: Handle non-variant parameters.
-          nodeBody.symbolTable.assignType(paramName, -1)
+          if opcode is AST_OPCODE_CLASS_METHOD
+            nodeBody.symbolTable.assignType(paramName, -1)
+            nodeBody.symbolTable.freezeType(paramName)
+          endif
         endfor
       endif
 
       this._collectSymbolsFromLeftNode(nodeBody.symbolTable, nodeBody)
+
+      # Save adjusted parameters type.
+      # TODO: Handle non-variant params for vcall too.
+      for indexes paramIdx values paramName in funcProto.params
+        symbolInfo = nodeBody.symbolTable.lookup(paramName)
+        astTypeParams[@afterlast] = symbolInfo.astType
+      endfor
+
+      funcProto.astTypeParams = astTypeParams
 
       # Verify is return value set after function end if needed.
       if funcProto.rv is defined
@@ -513,8 +532,16 @@ class ASTSymbolsCollector
             symbolInfo1.writeHits = writeHits
 
             # Merge AST data type.
-            astType1 = symbolTable1.astType
-            astType2 = symbolTable2.astType
+            astType1 = -1
+            astType2 = -1
+
+            if symbolTable1.astType is defined
+              astType1 = symbolTable1.astType
+            endif
+
+            if symbolTable2.astType is defined
+              astType2 = symbolTable2.astType
+            endif
 
             if astType1 isnt astType2
               # Type mismatch.
@@ -529,7 +556,6 @@ class ASTSymbolsCollector
                 # string|object|map|array vs variant
                 # string vs variant
                 # Do nothing.
-
               else
                 typeName1 = AST_ConvertDataTypeToText(astType1)
                 typeName2 = AST_ConvertDataTypeToText(astType2)
@@ -555,11 +581,9 @@ class ASTSymbolsCollector
               if classProto1 isnt classProto2
                 # Object class mismatch. Keep virtual call.
                 # TODO: Clean up this mess.
-                x = []
-                symbolInfo1.classProto = x[0]
+                symbolInfo1.classProto = null
               endif
             endif
-
             # TODO: Optimize it.
             this._updateVariableSymbolInfo(children[1], symbolInfo1.name, symbolInfo1)
             this._updateVariableSymbolInfo(children[2], symbolInfo1.name, symbolInfo1)
@@ -662,6 +686,9 @@ class ASTSymbolsCollector
     else
       goOnIntoChildren = true
 
+      x = children[0]
+      y = children[1]
+
       if opcode is AST_OPCODE_CALL
         funcName = node.value
 
@@ -715,6 +742,85 @@ class ASTSymbolsCollector
         for values item in children
           this._collectSymbols(symbolTable, item, isLeftNode)
         endfor
+      endif
+
+      if ((opcode is AST_OPCODE_ADD) or
+            (opcode is AST_OPCODE_SUB) or
+            (opcode is AST_OPCODE_MUL) or
+            (opcode is AST_OPCODE_DIV) or
+            (opcode is AST_OPCODE_IDIV) or
+            (opcode is AST_OPCODE_COMPARE_LT) or
+            (opcode is AST_OPCODE_COMPARE_LE) or
+            (opcode is AST_OPCODE_COMPARE_GT) or
+            (opcode is AST_OPCODE_COMPARE_GE))
+
+        # Numbers operators:
+        # x + y
+        # x - y
+        # x * y
+        # x / y
+        # x // y
+        xType = AST_GetDataType(x)
+        yType = AST_GetDataType(y)
+
+        if x.opcode is AST_OPCODE_VARIABLE
+          if yType is AST_DATA_INTEGER
+            symbolTable.useAsInteger(x.value)
+
+          elif yType is AST_DATA_DOUBLE
+            symbolTable.useAsFloat(x.value)
+
+          else
+            symbolTable.useAsNumber(x.value)
+          endif
+        endif
+
+        if y.opcode is AST_OPCODE_VARIABLE
+          if xType is AST_DATA_INTEGER
+            symbolTable.useAsInteger(y.value)
+
+          elif xType is AST_DATA_DOUBLE
+            symbolTable.useAsFloat(y.value)
+
+          else
+            symbolTable.useAsNumber(y.value)
+          endif
+        endif
+
+      elif opcode is AST_OPCODE_NEG
+        if x.opcode is AST_OPCODE_VARIABLE
+          symbolTable.useAsNumber(x.value)
+        endif
+
+      elif ((opcode is AST_OPCODE_COMPARE_EQ) or
+            (opcode is AST_OPCODE_COMPARE_NEQ))
+
+        # Compare operators:
+        # x is y
+        # x isnt y
+        xType = AST_GetDataType(x)
+        yType = AST_GetDataType(y)
+
+        # TODO: Review it.
+        if x.opcode is AST_OPCODE_VARIABLE
+          symbolTable.assignType(x.value, yType)
+        endif
+
+        if y.opcode is AST_OPCODE_VARIABLE
+          symbolTable.assignType(y.value, xType)
+        endif
+
+/*
+      TODO
+      elif opcode is AST_OPCODE_STRING_JOIN
+        if x.opcode is AST_OPCODE_VARIABLE
+          symbolTable.useAsString(x.value)
+        endif
+
+        if y.opcode is AST_OPCODE_VARIABLE
+          symbolTable.useAsString(y.value)
+        endif
+*/
       endif
     endif
   endmethod
