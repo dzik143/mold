@@ -537,7 +537,7 @@ y = 3.14
 print x is y
 
 EXPECTED_ERROR:
-runtime error: implicit type conversion not supported anymore
+./temp/source.mold:4:13: error: attemp to assign float to integer
 -------------------------------------------------------------------------------
 
 TEST "Type mismatch: integer < float"
@@ -547,7 +547,7 @@ y = 3.14
 print x < y
 
 EXPECTED_ERROR:
-runtime error: implicit type conversion not supported anymore
+./temp/source.mold:4:12: error: attemp to assign float to integer
 -------------------------------------------------------------------------------
 
 TEST "Type mismatch: integer > float"
@@ -557,7 +557,7 @@ y = 3.14
 print x > y
 
 EXPECTED_ERROR:
-runtime error: implicit type conversion not supported anymore
+./temp/source.mold:4:12: error: attemp to assign float to integer
 -------------------------------------------------------------------------------
 
 TEST "Type mismatch: integer isnt string"
@@ -567,7 +567,7 @@ y = 'text'
 print x isnt y
 
 EXPECTED_ERROR:
-runtime error: implicit type conversion not supported anymore
+./temp/source.mold:4:15: error: attemp to assign string to integer
 -------------------------------------------------------------------------------
 
 TEST "Type mismatch: array is map"
@@ -577,5 +577,5 @@ y = {}
 print x is y
 
 EXPECTED_ERROR:
-runtime error: implicit type conversion not supported anymore
+./temp/source.mold:4:13: error: attemp to assign map to array
 -------------------------------------------------------------------------------
