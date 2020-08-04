@@ -153,6 +153,9 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
   method emitProcBegin(procMeta)
     this.emitTargetOnlyOpcode('proc', procMeta)
+  endmethod
+
+  method emitInitFrame(procMeta)
     this.emitTargetOnlyOpcode('init_frame', procMeta)
   endmethod
 
@@ -736,22 +739,38 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.symbolTable = codeAst.symbolTable
 
     # TODO: Simplify it.
-    this.emitProcBegin({
+    procMeta = {
       'name': funcName,
       'symbols': this.symbolTable.exportSymbols(),
       'symbolTable': this.symbolTable,
       'params': params,
       'rv': rvName
-    })
+    }
 
-    # Translate function code.
-    for values item in codeAst.children
-      this._executeNode(item)
-    endfor
+    # Emit function head.
+    this.emitProcBegin(procMeta)
 
-    this.emitRet()
+    # Emit function code if any.
+    if len(codeAst.children) > 0
+      # Init frame only if there is any code to emit.
+      this.emitInitFrame(procMeta)
+
+      # Translate function code.
+      for values item in codeAst.children
+        this._executeNode(item)
+      endfor
+
+      this.emitRet()
+
+    else
+      # Emit single ret opcode if there is no any code.
+      this.emitZeroArgsOpcode('inner_ret')
+    endif
+
+    # Emit function finish / clean up.
     this.emitProcEnd()
 
+    # Exit from function scope.
     this.symbolTable = oldSymbolTable
   endmethod
 
