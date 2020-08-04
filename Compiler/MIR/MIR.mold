@@ -529,10 +529,6 @@ class MIRCode
     classMap{className} = id
     classList[id]       = proto
 
-    for keys methodName in proto.vtable
-      methodId = this.createMethod(methodName)
-    endfor
-
     this.classListCnt = id + 1
   endmethod
 

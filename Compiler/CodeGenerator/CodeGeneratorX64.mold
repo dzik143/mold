@@ -432,6 +432,7 @@ class CodeGeneratorX64
 
     opcode         = ''
     originalOpcode = ''
+    paramsCnt      = 0
 
     symbols = {}
 

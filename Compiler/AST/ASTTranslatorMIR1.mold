@@ -709,10 +709,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _declareFunction(funcName, funcProto)
-    # TODO: More elegant way.
-    if funcProto.name isnt funcProto.fullName
-      methodId = this.code.createMethod(funcProto.name)
-    endif
+    # Do nothing.
   endmethod
 
   method _declareClass(className, classProto)
