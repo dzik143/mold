@@ -153,7 +153,7 @@ __MOLD_VariantCheck:
     cmp  rax, VARIANT_TYPE_MAX
     jg   .wrongTypeError
 
-    cmp  rax, VARIANT_STRING
+    cmp  eax, VARIANT_STRING
     jz   .checkString
 
     jmp  .ok
@@ -544,7 +544,7 @@ __MOLD_VariantConvertToString:
     mov     r9, [rcx + Variant_t.value]            ; r9  = value.value
     mov     r10d, [rcx + Variant_t.type]           ; r10 = value.type
 
-    cmp     r10, VARIANT_STRING
+    cmp     r10d, VARIANT_STRING
     jnz     .notString
 
     ; -----------------------------------------------
@@ -556,18 +556,8 @@ __MOLD_VariantConvertToString:
     xchg    rcx, rdx
     jmp     __MOLD_VariantMove
 
-    ;mov     [rdx + Variant_t.type], VARIANT_STRING ; rv.type  = VARIANT_STRING
-    ;mov     [rdx + Variant_t.value], r9
-
-    ;DEBUG_CHECK_VARIANT rdx
-
-    ;mov     rcx, rdx
-    ;call    __MOLD_VariantAddRef
-    ;ret
-
 .notString:
-
-    cmp     r10, VARIANT_BOOLEAN
+    cmp     r10d, VARIANT_BOOLEAN
     jnz     __MOLD_VariantConvertToString_notBoolean
 
     ; ---------------------------------
@@ -598,8 +588,7 @@ __MOLD_VariantConvertBool64ToString:
 
 
 __MOLD_VariantConvertToString_notBoolean:
-
-    cmp     r10, VARIANT_TYPE_MAX
+    cmp     r10d, VARIANT_TYPE_MAX
     ja      __MOLD_PrintErrorAndDie.badType
 
     ; ------------------------------------
@@ -615,7 +604,7 @@ __MOLD_VariantConvertPrimitiveToString:
     push    rdx
 
     push    rdx r9 r10
-    mov     rcx, 32                                ; rcx = buffer size needed
+    mov     ecx, 32                                ; rcx = buffer size needed
     call    __MOLD_MemoryAlloc                     ; rax = new Buffer_t
     pop     r10 r9 rdx
 
@@ -626,7 +615,7 @@ __MOLD_VariantConvertPrimitiveToString:
     push    rax
 
     lea     rax, [rax + String_t.text]             ; rcx = new string buffer
-    mov     rdx, 31                                ; rdx = capacity of buffer
+    mov     edx, 31                                ; rdx = capacity of buffer
     mov     r8, [.fmtTable + r10*8]                ; r8  = fmt
 
     cinvoke snprintf, rax, 31, r8
@@ -711,7 +700,7 @@ __MOLD_VariantTypeOf:
     DEBUG_CHECK_VARIANT rcx
 
     mov  eax, [rcx + Variant_t.type]
-    cmp  rax, VARIANT_TYPE_MAX
+    cmp  eax, VARIANT_TYPE_MAX
     ja   __MOLD_PrintErrorAndDie.badType
 
     shl  rax, 4
@@ -1479,10 +1468,10 @@ __MOLD_VariantLoadFromKey:
 
     mov    eax, [rcx + Variant_t.type]
 
-    cmp    rax, VARIANT_MAP
+    cmp    eax, VARIANT_MAP
     je     .map
 
-    cmp    rax, VARIANT_OBJECT
+    cmp    eax, VARIANT_OBJECT
     jne    __MOLD_PrintErrorAndDie.mapOrObjectExpected
 
     ; ==========================================================================
@@ -1843,16 +1832,16 @@ __MOLD_VariantDestroy:
     mov    eax, [rcx + Variant_t.type]
     mov    [rcx + Variant_t.type], VARIANT_UNDEFINED
 
-    cmp    rax, VARIANT_ARRAY
+    cmp    eax, VARIANT_ARRAY
     jz     .freeArray
 
-    cmp    rax, VARIANT_MAP
+    cmp    eax, VARIANT_MAP
     jz     .freeMap
 
-    cmp    rax, VARIANT_STRING
+    cmp    eax, VARIANT_STRING
     jz     .freeString
 
-    cmp    rax, VARIANT_OBJECT
+    cmp    eax, VARIANT_OBJECT
     jz     .freeObject
 
 .nothingToDo:
@@ -2000,29 +1989,35 @@ __MOLD_VariantLength:
 
     DEBUG_CHECK_VARIANT rcx
 
+    lea     r8, [.jmpTable]
     mov     eax, [rcx + Variant_t.type]
     mov     [rdx + Variant_t.type], VARIANT_INTEGER
+    add     r8, rax
+    add     r8, rax
 
-    cmp     rax, VARIANT_TYPE_MAX
+    cmp     eax, VARIANT_TYPE_MAX
     ja      __MOLD_PrintErrorAndDie.badType
 
-    jmp     [.jmpTable + rax*8]
+    jmp     r8
 
-.jmpTable dq .load0  , .load0 , .load1 , .load1 , .load1
-          dq .string , .load1 , .array , .map   , .object
+.jmpTable:
+    jmp short .load0  ; undefined (0)
+    jmp short .load0  ; null (1)
+    jmp short .load1  ; integer (2)
+    jmp short .load1  ; float (3)
+    jmp short .load1  ; double (4)
+    jmp short .string ; string (5)
+    jmp short .load1  ; boolean (6)
+    jmp short .array  ; array (7)
+    jmp short .map    ; map (8)
+    jmp short .object ; object (9)
 
 .load0:
     mov     [rdx + Variant_t.value], 0
-
-    DEBUG_CHECK_VARIANT rdx
-
     ret
 
 .load1:
     mov     [rdx + Variant_t.value], 1
-
-    DEBUG_CHECK_VARIANT rdx
-
     ret
 
 .string:
@@ -2036,33 +2031,16 @@ __MOLD_VariantLength:
 
 .oneCharacterString:
     mov     [rdx + Variant_t.value], rax
-
-    DEBUG_CHECK_VARIANT rdx
-
     ret
 
 .array:
+.map:
+.object:
     mov     rcx, [rcx + Variant_t.value]
     mov     rcx, [rcx + Buffer_t.bytesPtr]
     mov     rax, [rcx + Array_t.itemsCnt]
     mov     [rdx + Variant_t.value], rax
-
-    DEBUG_CHECK_VARIANT rdx
-
     ret
-
-.map:
-    mov     rcx, [rcx + Variant_t.value]
-    mov     rcx, [rcx + Buffer_t.bytesPtr]
-    mov     rax, [rcx + Map_t.bucketsUsedCnt]
-    mov     [rdx + Variant_t.value], rax
-
-    DEBUG_CHECK_VARIANT rdx
-
-    ret
-
-.object:
-    jmp     __MOLD_PrintErrorAndDie.notImplemented
 
 ;###############################################################################
 ;
