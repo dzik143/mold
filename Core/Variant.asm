@@ -114,15 +114,15 @@ ends
 
 struct Map_t
   reserved       dq ?
-  bucketsCnt     dq ?
   bucketsUsedCnt dq ?
+  bucketsCnt     dq ?
   buckets        MapBucket_t ?
 ends
 
 struct Object_t
   vtable         dq ?
-  bucketsCnt     dq ?
   bucketsUsedCnt dq ?
+  bucketsCnt     dq ?
   buckets        MapBucket_t ?
 ends
 
@@ -1063,9 +1063,9 @@ __MOLD_VariantDiv:
     jmp       __MOLD_VariantTypeDispatcherXX
 
 .jmpTable:
-    jmp short  .case_ii                      ; integer / integer
-    jmp short  .not_implemented              ; float   / float
-    jmp short  .case_dd                      ; double  / double
+    jmp short .case_ii                       ; integer / integer
+    jmp short .not_implemented               ; float   / float
+    jmp short .case_dd                       ; double  / double
 
 ; integer / integer
 .case_ii:
@@ -1587,14 +1587,13 @@ __MOLD_VariantStoreAtIndex:
 ;
 ; rcx = zero terminated string (IN)
 ;
-; RETURNS: DJB2 hash (eax)
+; RETURNS: DJB2 hash (rax)
 ;
 ;###############################################################################
 
 __MOLD_StringHashDJB2:
     ; rcx = String_t
     ; TODO: Store hash in String_t struct.
-
     push    rcx rdx r8
 
     mov     r8,  [rcx + String_t.length]
@@ -2070,7 +2069,6 @@ __MOLD_VariantAddRef:
     jb    .noRefNeeded
 
 .addRef:
-
     push  rcx
     mov   rcx, [rcx + Variant_t.value]
     call  __MOLD_MemoryAddRef
@@ -2223,6 +2221,8 @@ proc __MOLD_Main
   cinvoke AddVectoredExceptionHandler
 
   call    __MOLD_InitArgv
+
+  ldmxcsr dword [__MOLD_mxcsr]
 
   xor     rbp, rbp
   call    start
@@ -2935,31 +2935,79 @@ __MOLD_PrintErrorAndDie:
 
 .final:
 .custom:
-    ; TODO: Clean up this mess.
-    push    rcx
-    cinvoke strlen
-    mov     r8d, eax
-    pop     rdx
 
-    cinvoke GetStdHandle, -12
-    cinvoke WriteFile, rax, rdx, r8, NumberOfBytesWritten, 0
-    cinvoke ExitProcess, -1
+    ; Build message on stack.
+    mov     rbx, rcx         ; rbx = save original message (char*)
+    mov     rdi, rsp         ; rdi = message end   (char*)
 
-.fmtGeneric                  db 'runtime error: generic', 13, 10, 0
-.fmtIntegerExcepted          db 'runtime error: integer expected', 13, 10, 0
-.fmtIntegerIndexExcepted     db 'runtime error: integer index expected', 13, 10, 0
-.fmtBooleanExcepted          db 'runtime error: boolean expected', 13, 10, 0
-.fmtFloatExcepted            db 'runtime error: float expected', 13, 10, 0
-.fmtStringKeyExpected        db 'runtime error: string key expected', 13, 10, 0
-.fmtStringExpected           db 'runtime error: string expected', 13, 10, 0
-.fmtMapOrObjectExpected      db 'runtime error: map or object expected', 13, 10, 0
-.fmtArrayExpected            db 'runtime error: array expected', 13, 10, 0
-.fmtArrayOrStringExpected    db 'runtime error: array or string expected', 13, 10, 0
-.fmtArrayStringOrMapExpected db 'runtime error: array, string or map expected', 13, 10, 0
-.fmtNegativeIndex            db 'runtime error: negative array index', 13, 10, 0
-.fmtIndexOutOfRange          db 'runtime error: index out of range', 13, 10, 0
-.fmtBadType                  db 'runtime error: bad type', 13, 10, 0
-.fmtNotImplemented           db 'runtime error: not implemented', 13, 10, 0
-.fmtImplicitConversion       db 'runtime error: implicit type conversion not supported anymore', 13, 10, 0
+    ; Message prefix.
+    lea     rsi, [.fmtBeforeText]
+    call    .pushText
+
+    ; Message content.
+    mov     rsi, rbx
+    call    .pushText
+
+    ; Message postfix.
+    lea     rsi, [.fmtAfterText]
+    call    .pushText
+
+    ; Param #1: get std error handle.
+    mov     ecx, -12
+    call    [GetStdHandle]   ; rax = std error handle
+    mov     rcx, rax         ; rcx = std error handle (param #1)
+
+    ; Parma #2: Message.
+    mov     rdx, rsp         ; rdx = first message byte (param #2)
+
+    ; Param #3: Message length.
+    mov     r8, rdi          ; r8 = last message byte (char*)
+    sub     r8, rsp          ; r8 = last - first = message length (param #3)
+
+    ; Param #4: number of bytes written (out)
+    mov     r9, rdi          ; r9 = number of bytes written (param #4)
+
+    ; Param #5: null overlapped on stack.
+    sub     rsp, 64
+    push    0
+
+    ; Write message from rsp to std error.
+    sub     rsp, 32
+    call    [WriteFile]
+    add     rsp, 64 + 32 + 8
+
+    mov     ecx, -1
+    call    [ExitProcess]
+
+.pushText:
+; Helper function to concat string from rsi to rdi
+; rsi = source string with one byte size prefix
+; rdi = target string
+    cld
+    movzx   rcx, byte [rsi]
+    inc     rsi
+    rep     movsb
+    ret
+
+                                   ; 0         1         2         3         4         5
+                                   ; 012345678901234567890123456789012345678901234567890
+.fmtBeforeText               db 15 , 'runtime error: '
+.fmtGeneric                  db  7 , 'generic'
+.fmtIntegerExcepted          db 16 , 'integer expected'
+.fmtIntegerIndexExcepted     db 22 , 'integer index expected'
+.fmtBooleanExcepted          db 16 , 'boolean expected'
+.fmtFloatExcepted            db 14 , 'float expected'
+.fmtStringKeyExpected        db 19 , 'string key expected'
+.fmtStringExpected           db 15 , 'string expected'
+.fmtMapOrObjectExpected      db 22 , 'map or object expected'
+.fmtArrayExpected            db 14 , 'array expected'
+.fmtArrayOrStringExpected    db 24 , 'array or string expected'
+.fmtArrayStringOrMapExpected db 29 , 'array, string or map expected'
+.fmtNegativeIndex            db 20 , 'negative array index'
+.fmtIndexOutOfRange          db 18 , 'index out of range'
+.fmtBadType                  db  8 , 'bad type'
+.fmtNotImplemented           db 15 , 'not implemented'
+.fmtImplicitConversion       db 46 , 'implicit type conversion not supported anymore'
+.fmtAfterText                db  2 , 13, 10
 
 include 'SysCall.asm'
