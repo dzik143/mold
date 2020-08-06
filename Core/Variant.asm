@@ -732,19 +732,6 @@ __MOLD_PrintNewLine:
     add   rsp, 32
     ret
 
-__MOLD_VariantTypeDispatcherX:
-    ; rcx = x
-    ; r11 = jmptable
-
-    DEBUG_CHECK_VARIANT rcx
-
-    mov     r9d,  [rcx + Variant_t.type]  ; r9  = x.type
-
-.final:
-    cmp     r9d, VARIANT_DOUBLE
-    ja      __MOLD_PrintErrorAndDie.badType
-    jmp     qword [r11 + r9*8 - VARIANT_INTEGER*8]
-
 __MOLD_VariantTypeDispatcherXX:
     ; rcx = x
     ; rdx = y
@@ -759,22 +746,18 @@ __MOLD_VariantTypeDispatcherXX:
     jnz     __MOLD_PrintErrorAndDie.implicitConversion
     jmp     __MOLD_VariantTypeDispatcherX.final
 
-__MOLD_VariantTypeDispatcherXY:
+__MOLD_VariantTypeDispatcherX:
     ; rcx = x
-    ; rdx = y
     ; r11 = jmptable
 
     DEBUG_CHECK_VARIANT rcx
-    DEBUG_CHECK_VARIANT rdx
 
     mov     r9d,  [rcx + Variant_t.type]  ; r9  = x.type
-    mov     r10d, [rdx + Variant_t.type]  ; r10 = y.type
-    lea     rax,  [r9*4  + r10 - 10]      ; rax = x.type*4 + y.type - 10
 
-    cmp     rax, 0xf
+.final:
+    cmp     r9d, VARIANT_DOUBLE
     ja      __MOLD_PrintErrorAndDie.badType
-
-    jmp     qword [r11 + rax*8]
+    jmp     qword [r11 + r9*8 - VARIANT_INTEGER*8]
 
 macro DefVariantOperatorXX name, opcode_ii, opcode_dd, rv_type
 {

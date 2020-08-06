@@ -42,9 +42,8 @@ dq __MOLD_VariantConvertToString             , name__MOLD_VariantConvertToString
 dq __MOLD_PrintVariantToStdError             , name__MOLD_PrintVariantToStdError
 dq __MOLD_VariantTypeOf                      , name__MOLD_VariantTypeOf
 dq __MOLD_PrintNewLine                       , name__MOLD_PrintNewLine
-dq __MOLD_VariantTypeDispatcherX             , name__MOLD_VariantTypeDispatcherX
 dq __MOLD_VariantTypeDispatcherXX            , name__MOLD_VariantTypeDispatcherXX
-dq __MOLD_VariantTypeDispatcherXY            , name__MOLD_VariantTypeDispatcherXY
+dq __MOLD_VariantTypeDispatcherX             , name__MOLD_VariantTypeDispatcherX
 dq __MOLD_VariantAdd                         , name__MOLD_VariantAdd
 dq __MOLD_VariantSub                         , name__MOLD_VariantSub
 dq __MOLD_VariantMul                         , name__MOLD_VariantMul

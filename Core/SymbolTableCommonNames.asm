@@ -42,9 +42,8 @@ name__MOLD_VariantConvertToString             db '__MOLD_VariantConvertToString'
 name__MOLD_PrintVariantToStdError             db '__MOLD_PrintVariantToStdError', 0
 name__MOLD_VariantTypeOf                      db '__MOLD_VariantTypeOf', 0
 name__MOLD_PrintNewLine                       db '__MOLD_PrintNewLine', 0
-name__MOLD_VariantTypeDispatcherX             db '__MOLD_VariantTypeDispatcherX', 0
 name__MOLD_VariantTypeDispatcherXX            db '__MOLD_VariantTypeDispatcherXX', 0
-name__MOLD_VariantTypeDispatcherXY            db '__MOLD_VariantTypeDispatcherXY', 0
+name__MOLD_VariantTypeDispatcherX             db '__MOLD_VariantTypeDispatcherX', 0
 name__MOLD_VariantAdd                         db '__MOLD_VariantAdd', 0
 name__MOLD_VariantSub                         db '__MOLD_VariantSub', 0
 name__MOLD_VariantMul                         db '__MOLD_VariantMul', 0
