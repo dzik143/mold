@@ -152,6 +152,7 @@ __MOLD_PrintStackTraceItem:
 ;###############################################################################
 
 __MOLD_PrintStackTrace:
+    push    rbp
     push    r12
     mov     r12, 16                     ; r12 = max frames to print
 
@@ -184,6 +185,7 @@ __MOLD_PrintStackTrace:
     ; --------------------------------------------------------------------------
 
     pop     r12
+    pop     rbp
     ret
 
 .fmtStackTraceItem db '%p <%s>', 13, 10, 0

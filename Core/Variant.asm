@@ -755,9 +755,12 @@ __MOLD_VariantTypeDispatcherX:
     mov     r9d,  [rcx + Variant_t.type]  ; r9  = x.type
 
 .final:
+    add     r11, r9
+    add     r11, r9
+    sub     r11, VARIANT_INTEGER * 2
     cmp     r9d, VARIANT_DOUBLE
     ja      __MOLD_PrintErrorAndDie.badType
-    jmp     qword [r11 + r9*8 - VARIANT_INTEGER*8]
+    jmp     r11
 
 macro DefVariantOperatorXX name, opcode_ii, opcode_dd, rv_type
 {
@@ -770,9 +773,9 @@ macro DefVariantOperatorXX name, opcode_ii, opcode_dd, rv_type
     jmp       __MOLD_VariantTypeDispatcherXX
 
   .jmpTable:
-      dq   .case_ii                               ; integer x integer
-      dq   __MOLD_PrintErrorAndDie.notImplemented ; float   x float
-      dq   .case_dd                               ; double  x double
+      jmp short  .case_ii              ; integer x integer
+      jmp short  .not_implemented      ; float   x float
+      jmp short  .case_dd              ; double  x double
 
   ; integer x integer
   .case_ii:
@@ -801,6 +804,9 @@ macro DefVariantOperatorXX name, opcode_ii, opcode_dd, rv_type
     DEBUG_CHECK_VARIANT r8
 
     ret
+
+.not_implemented:
+    jmp __MOLD_PrintErrorAndDie.notImplemented
 }
 
 DefVariantOperatorXX __MOLD_VariantAdd , add  , addsd, r9d
@@ -818,9 +824,9 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
     jmp     __MOLD_VariantTypeDispatcherXX
 
   .jmpTable:
-      dq   .case_ii                               ; integer x integer
-      dq   __MOLD_PrintErrorAndDie.notImplemented ; float   x float
-      dq   .case_dd                               ; double  x double
+      jmp short  .case_ii                   ; integer x integer
+      jmp short  .not_implemented           ; float   x float
+      jmp short  .case_dd                   ; double  x double
 
   ; integer x integer
   .case_ii:
@@ -840,6 +846,9 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
     movq      rax, xmm0
     mov       dword [r8], eax
     ret
+
+.not_implemented:
+    jmp __MOLD_PrintErrorAndDie.notImplemented
 }
 
 proc __MOLD_VariantCompareEQ
@@ -934,7 +943,7 @@ proc __MOLD_VariantCompareNE
 
     call    __MOLD_VariantCompareEQ
     ; TODO: Optimize it.
-    and     dword [r8], 1
+;    and     dword [r8], 1
     xor     dword [r8], 1
 
     ret
@@ -972,9 +981,9 @@ __MOLD_VariantNeg:
     jmp     __MOLD_VariantTypeDispatcherX       ; dispatch code
 
 .jmpTable:
-    dq   .case_i                                ; -integer
-    dq   __MOLD_PrintErrorAndDie.notImplemented ; -float
-    dq   .case_d                                ; -double
+    jmp short  .case_i                    ; -integer
+    jmp short  .not_implemented           ; -float
+    jmp short  .case_d                    ; -double
 
 .signBit dq 0x8000000000000000
 
@@ -990,10 +999,10 @@ __MOLD_VariantNeg:
 .final:
     mov     [rdx + Variant_t.type ], r9d  ; rv.type  =  x.type
     mov     [rdx + Variant_t.value], r10  ; rv.value = -x.value
-
-    DEBUG_CHECK_VARIANT rdx
-
     ret
+
+.not_implemented:
+    jmp __MOLD_PrintErrorAndDie.notImplemented
 
 ;###############################################################################
 ;
@@ -1018,9 +1027,9 @@ __MOLD_VariantDivAsInteger:
     jmp   __MOLD_VariantTypeDispatcherXX
 
 .jmpTable:
-    dq   .case_ii                               ; integer // integer
-    dq   __MOLD_PrintErrorAndDie.notImplemented ; float   // float
-    dq   .case_dd                               ; double  // double
+    jmp short  .case_ii             ; integer // integer
+    jmp short  .not_implemented     ; float   // float
+    jmp short  .case_dd             ; double  // double
 
 ; integer x integer
 .case_ii:
@@ -1030,8 +1039,6 @@ __MOLD_VariantDivAsInteger:
   idiv rcx                          ; eax     = x.value // y.value
 
   mov [r8 + Variant_t.value], rax  ; rv.value = x.value // y.value
-
-  DEBUG_CHECK_VARIANT r8
 
   ret
 
@@ -1043,9 +1050,10 @@ __MOLD_VariantDivAsInteger:
    cvttsd2si rax, xmm0                      ; rax      = int(x.value / y.value)
    mov       [r8 + Variant_t.value], rax    ; rv.value = int(x.value / y.value)
 
-   DEBUG_CHECK_VARIANT r8
-
    ret
+
+.not_implemented:
+    jmp __MOLD_PrintErrorAndDie.notImplemented
 
 ;###############################################################################
 ;
@@ -1066,9 +1074,9 @@ __MOLD_VariantDiv:
     jmp       __MOLD_VariantTypeDispatcherXX
 
 .jmpTable:
-    dq   .case_ii                               ; integer / integer
-    dq   __MOLD_PrintErrorAndDie.notImplemented ; float   / float
-    dq   .case_dd                               ; double  / double
+    jmp short  .case_ii                      ; integer / integer
+    jmp short  .not_implemented              ; float   / float
+    jmp short  .case_dd                      ; double  / double
 
 ; integer / integer
 .case_ii:
@@ -1084,10 +1092,10 @@ __MOLD_VariantDiv:
 .case_dd_final:
     divsd     xmm0, xmm1                     ; xmm0     = x.value / y.value
     movq      [r8 + Variant_t.value], xmm0   ; rv.value = x.value / y.value
-
-    DEBUG_CHECK_VARIANT r8
-
     ret
+
+.not_implemented:
+    jmp __MOLD_PrintErrorAndDie.notImplemented
 
 ;###############################################################################
 ;
