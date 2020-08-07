@@ -140,6 +140,7 @@ __MOLD_PrintStackTraceItem:
     lea     rcx, [.fmt]
     cinvoke printf
     ret
+
 .fmt db '%p <%s>', 13, 10, 0
 
 ;###############################################################################
@@ -266,7 +267,6 @@ __MOLD_PrintCpuContext:
                   db 'XMM2 %p %p XMM3 %p %p', 13, 10
                   db 'XMM4 %p %p XMM5 %p %p', 13, 10
                   db 'XMM6 %p %p XMM7 %p %p', 13, 10
-
                   db 13, 10, 0
 
 ;###############################################################################
@@ -299,11 +299,28 @@ __MOLD_PrintCpuContext:
     mov     r13, [rcx + 8]                ; r13 = cpu context (CONTEXT *)
 
     ; --------------------------------------------------------------------------
+    ; Map common exception codes to runtime error handlers
+    ; --------------------------------------------------------------------------
+
+    mov     edx, [r12 + EXCEPTION_RECORD.ExceptionCode]
+
+    cmp     edx, 0xc000008e ; Float
+    jz      __MOLD_PrintErrorAndDie.divideByZero
+
+    cmp     edx, 0xc0000091
+    jz      __MOLD_PrintErrorAndDie.floatOverflow
+
+    cmp     edx, 0xc0000093
+    jz      __MOLD_PrintErrorAndDie.floatUnderflow
+
+    cmp     edx, 0xc0000094 ; Integer
+    jz      __MOLD_PrintErrorAndDie.divideByZero
+
+    ; --------------------------------------------------------------------------
     ; Dump exception info
     ; --------------------------------------------------------------------------
 
     mov     r8,  [r13 + CPU_CONTEXT.Rip]
-    mov     edx, [r12 + EXCEPTION_RECORD.ExceptionCode]
     lea     rcx, [.fmtExceptionInfo]
     cinvoke printf
 

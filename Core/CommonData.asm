@@ -21,6 +21,17 @@
 argc Variant_t VARIANT_UNDEFINED
 argv Variant_t VARIANT_UNDEFINED
 
+; https://software.intel.com/content/www/us/en/develop/articles/x87-and-sse-floating-point-assists-in-ia-32-flush-to-zero-ftz-and-denormals-are-zero-daz.html
+
+;               fedcba9876543210
+; default:      0001111110000000 (0x1f80)
+__MOLD_mxcsr dd 0001000000000000b
+;               |||PUOZDI|PUOZDI
+;               |||masks |flags
+;               |RC      |     -
+;               FZ       DAZ
+;
+
 NumberOfBytesWritten dd ?
 NumberOfBytesReaded  dd ?
 
