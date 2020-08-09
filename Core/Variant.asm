@@ -588,11 +588,17 @@ __MOLD_VariantConvertPrimitiveToString:
     mov     rax, [rax + Buffer_t.bytesPtr]
     push    rax
 
-    lea     rax, [rax + String_t.text]             ; rcx = new string buffer
+    lea     rcx, [rax + String_t.text]             ; rcx = new string buffer
     mov     edx, 31                                ; rdx = capacity of buffer
     mov     r8, [.fmtTable + r10*8]                ; r8  = fmt
 
-    cinvoke snprintf, rax, 31, r8
+    sub     rsp, 32
+    call    [snprintf]                             ;
+    add     rsp, 32                                ;
+                                                   ;
+    ; TODO: Review it.
+    mov     edx, 31                                ; rdx = 32 - 1
+    and     rax, rdx                               ; rax = length mod 32
 
     pop     rcx
     mov     [rcx + String_t.length], rax
@@ -2190,7 +2196,7 @@ endp
 ;###############################################################################
 
 proc __MOLD_Main
-  mov     rcx, 1
+  mov     ecx, 1
   mov     rdx, __MOLD_DefaultExceptionHandler
   cinvoke AddVectoredExceptionHandler
 
