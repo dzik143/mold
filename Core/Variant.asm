@@ -911,8 +911,6 @@ proc __MOLD_VariantCompareNE
     DEBUG_CHECK_VARIANT rdx
 
     call    __MOLD_VariantCompareEQ
-    ; TODO: Optimize it.
-;    and     dword [r8], 1
     xor     dword [r8], 1
 
     ret

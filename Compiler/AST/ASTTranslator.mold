@@ -362,7 +362,12 @@ class ASTTranslator
     # END OF DEBUG ONLY
     #
 
-    if opcode is AST_OPCODE_VARIABLE
+    if opcode is AST_DATA_STRING
+      # TODO: Clean up this mess
+      rv = this.symbolTable.lookupLiteralForRead(ast.value).name
+      this._loadImm(rv, ast.value)
+
+    elif opcode is AST_OPCODE_VARIABLE
       # Load variable.
       # We don't need to create extra temp ("scratch") variable.
       # Just read it directly.
@@ -484,7 +489,7 @@ class ASTTranslator
           this._releaseTempVar(valueAsVariant)
         endif
 
-      elif (opcode < AST_OPCODE_PROGRAM)
+      elif opcode < AST_OPCODE_PROGRAM
         # Imm data node, just return value.
         this._loadImm(rv, value)
 

@@ -563,6 +563,11 @@ class SymbolTable
     endif
   endmethod
 
+  method lookupLiteralForRead(text) -> literalEntry
+    literalEntry = this.insertLiteral(text)
+    literalEntry.readHits = literalEntry.readHits + 1
+  endmethod
+
   # ----------------------------------------------------------------------------
   #                               Constant helpers
   # ----------------------------------------------------------------------------

@@ -282,7 +282,6 @@ __MOLD_PrintCpuContext:
 ;###############################################################################
 
  __MOLD_DefaultExceptionHandler:
-
     push    rbp
     push    r12
     push    r13
@@ -407,3 +406,90 @@ __MOLD_PrintProfilerData:
   ret
 
 .fmtEntry db '%64s %I64d', 13, 10, 0
+
+;###############################################################################
+;
+; Print array of items pointed in format list.
+;
+; RCX - format list (IN)
+;
+;###############################################################################
+
+FMT_TEXT8          EQU 0
+FMT_VARIANT_LOCAL  EQU 1
+FMT_VARIANT_GLOBAL EQU 2
+FMT_VARIANT_RETVAL EQU 3
+FMT_EOL            EQU 4
+FMT_TERMINATOR     EQU 5
+
+__MOLD_PrintFormatFromMemory:
+    push    rsi
+    sub     rsp, 32              ; shadow space for inner calls
+
+    mov     rsi, rcx             ; rsi = format bytes
+    jmp     .fetch_first_param   ;
+
+.fetch_next_param:
+    ; TODO: Simplify it.
+    ; TODO: Clean up this mess.
+    mov     al, byte [rsi]       ;
+    mov     cl, ' '              ; Separate items by space
+    cmp     al, FMT_EOL          ;
+    jae     .fetch_first_param   ;
+    call    [putchar]            ;
+
+.fetch_first_param:
+    xor     eax, eax             ; rax = 0
+    lodsb                        ; rax = item type (int8)
+    lea     rcx, [.jmpTable + rax*2]
+    jmp     rcx                  ; dispatch item type
+
+.jmpTable:
+    jmp short .text8             ; 0 inline text with 8-byte size prefix
+    jmp short .variantLocal      ; 1 local variant on stack [RBP - n*4]
+    jmp short .variantGlobal     ; 2 global variant (absolute address)
+    jmp short .variantRetVal     ; 3 retval variant
+    jmp short .eol               ; 4 line break (EOL)
+    jmp short .done              ; 5 terminator
+
+.text8:
+    lodsb                        ; rax = text length (int8)
+    mov     r8, rsi              ; rsi = text8 struct ptr
+    mov     rdx, rax             ; rdx = text length (int8)
+    add     rsi, rax             ; rsi = skip text in format stream
+
+    ; TODO: Clean up this mess.
+    cinvoke printf, '%.*s'       ; print inline text with given length
+    jmp     .fetch_next_param    ;
+
+.variantLocal:
+    movsx   rax, word [rsi]      ; rax = rbp offset
+    lea     rcx, [rbp + rax]     ; rcx = [rbp - item offset]
+    call    __MOLD_PrintVariant  ; print variant item from stack
+
+    add     rsi, 2               ; rsi = next item in format buffer
+    jmp     .fetch_next_param
+
+.variantGlobal:
+    lodsq                        ; rax = absolute variant address
+    mov     rcx, rax             ; rax = absolute variant address
+    call    __MOLD_PrintVariant  ; print variant item by absolute address
+    jmp     .fetch_next_param
+
+.variantRetVal:
+    mov     rcx, rdi             ; rcx = current return value
+    call    __MOLD_PrintVariant  ; print variant item by absolute address
+    jmp     .fetch_next_param
+
+.eol:
+    mov     cl, 10               ; begin new line
+    call    [putchar]            ;
+    jmp     .fetch_first_param   ;
+
+.done:
+    mov     cl, 10               ; append end of line
+    call    [putchar]            ;
+
+    add     rsp, 32              ; clean shadow space
+    pop     rsi                  ;
+    ret                          ;

@@ -34,7 +34,8 @@ import kernel32, \
   GetFileSize,'GetFileSize', \
   ReadFile,'ReadFile', \
   GetLastError,'GetLastError', \
-  AddVectoredExceptionHandler, 'AddVectoredExceptionHandler'
+  AddVectoredExceptionHandler, 'AddVectoredExceptionHandler', \
+  VirtualProtect, 'VirtualProtect'
 
 import msvcrt,\
   printf,  'printf', \

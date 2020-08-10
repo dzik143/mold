@@ -215,20 +215,22 @@ class CodeGeneratorX64
     endif
   endmethod
 
+  method escapeString(text) -> rv
+    rv = '"'
+    for values character in text
+      if character is '"'
+        rv = rv ~ '", 34, "'
+      else
+        rv = rv ~ character
+      endif
+    endfor
+    rv = rv ~ '"'
+  endmethod
+
   method emitStringBufferContent(name, value, wantDeep, deepIdx)
     if wantDeep is deepIdx
       bufferNameBytes = name ~ '_bufferBytes'
-      bufferData      = '"'
-
-      for values character in value
-        if character is '"'
-          bufferData = bufferData ~ '", 34, "'
-        else
-          bufferData = bufferData ~ character
-        endif
-      endfor
-
-      bufferData = bufferData ~ '"'
+      bufferData      = this.escapeString(value)
 
       print bufferNameBytes, 'StringHead_t', len(value)
       print ' db ', bufferData, ', 0'
@@ -437,7 +439,11 @@ class CodeGeneratorX64
     symbols = {}
 
     # TODO: Remove it.
-    arrayOfProcedures = []
+    arrayOfProcedures     = []
+    arrayOfMessageFormats = []
+
+    # TODO: Clean up this mess.
+    fakeSymbolInfoForEOL = {'name': '__EOL'}
 
     #
     # Translate code section.
@@ -929,20 +935,33 @@ class CodeGeneratorX64
 
         if paramsCnt is 1
           this.call1('__MOLD_PrintVariantLn', params[0])
+
         else
-          newParams = [paramsCnt]
-          for idx in 0 .. paramsCnt
-            newParams[idx + 1] = params[idx]
+          # Build msg format.
+          # TODO: Handle more item types.
+          encodedFormat = []
+          itemToPush    = null
+
+          for values oneParam in params
+            symbolInfo = currentSymbols{oneParam}
+
+            if symbolInfo is defined
+              encodedFormat[@afterlast] = symbolInfo
+
+            elif oneParam is '__EOL'
+              # TODO: Clean up this mess.
+              encodedFormat[@afterlast] = fakeSymbolInfoForEOL
+
+            else
+              encodedFormat[@afterlast] = codeObj.symbolTable.lookup(oneParam)
+            endif
           endfor
-          paramsCnt = paramsCnt + 1
 
-          this.pushParametersBeforeCall(newParams)
+          arrayOfMessageFormats[@afterlast] = encodedFormat
+          messageFormatId                   = len(arrayOfMessageFormats) - 1
 
-          this.call('__MOLD_PrintArrayOfVariantsLn')
-
-          if paramsCnt > 4
-            print '  add rsp,', paramsCnt * 8 - 32
-          endif
+          print '  lea rcx, [__fmt' ~ str(messageFormatId), ']'
+          print '  call __MOLD_PrintFormatFromMemory'
         endif
 
       elif opcode is 'str_int64'
@@ -1302,6 +1321,7 @@ class CodeGeneratorX64
             endif
 
             currentFrameSize = currentFrameSize + varSize
+            symbol.rbpOffset = 8 + currentFrameSize
 
             print ' ', symbol.name, 'EQU rbp -', 8 + currentFrameSize, ';', varSize, 'bytes'
 
@@ -1515,6 +1535,47 @@ class CodeGeneratorX64
     print '; ------------------------------------------------------------------------------'
     print "section '.rdata' data readable"
 
+    # Build print formats.
+    print ''
+    print '; Encoded print formats'
+    print '; ---------------------'
+
+    for indexes formatId values encodedFormat in arrayOfMessageFormats
+      print '__fmt' ~ str(formatId) ~ ':'
+
+      for values symbolInfo in encodedFormat
+        if symbolInfo.name is '__EOL'
+          print '  db FMT_EOL'
+
+        elif symbolInfo.kind is SYMBOL_KIND_CONST
+          msgContent = str(symbolInfo.value)
+          msgLength  = len(msgContent)
+
+          symbolInfo.readHits = symbolInfo.readHits - 1
+
+          if msgLength > 0
+            print '  db FMT_TEXT8,', msgLength, ', ', this.escapeString(msgContent)
+          endif
+
+        elif symbolInfo.rbpOffset is defined
+          print '  db FMT_VARIANT_LOCAL'
+          print '  dw -', symbolInfo.rbpOffset
+
+        elif symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
+          print '  db FMT_VARIANT_RETVAL'
+
+        elif (symbolInfo.kind is SYMBOL_KIND_VAR_GLOBAL) or (symbolInfo.kind is SYMBOL_KIND_CONST)
+          print '  db FMT_VARIANT_GLOBAL'
+          print '  dq', symbolInfo.name
+
+        else
+          die('error: unhandled format item: ' ~ symbolInfo.name)
+        endif
+      endfor
+      print '  db FMT_TERMINATOR'
+      print ''
+    endfor
+
     print ''
     print '; Constants'
     print '; ---------'
@@ -1526,7 +1587,7 @@ class CodeGeneratorX64
       print '; iter', deepIdx
 
       for values symbolInfo in globals
-        if symbolInfo.kind is SYMBOL_KIND_CONST
+        if (symbolInfo.kind is SYMBOL_KIND_CONST) and (symbolInfo.readHits > 0)
           name  = symbolInfo.name
           value = symbolInfo.value
           this.emitConstant(name, value, deepIdx, 0)

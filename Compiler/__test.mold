@@ -59,8 +59,9 @@ app.logDebug('Building symbol table...')
 astSymbolsCollector.buildSymbolTable(ast)
 
 # ------------------------------------------------------------------------------
-/*
+
 # TODO: More generic way to apply selected optimizations.
+
 app.logDebug('VCall optimization...')
 app.getAstOptimizerVCall().processNode(ast)
 
@@ -83,7 +84,7 @@ app.getAstOptimizerDeadCodeRemove().processNode(ast)
 
 app.logDebug('Common subexpression elimination (CSE)...')
 app.getAstOptimizerCSE().processNode(ast)
-*/
+
 # ------------------------------------------------------------------------------
 
 print 'Type cast...'
@@ -103,8 +104,8 @@ astTranslator = new ASTTranslatorMIR1(app)
 print 'Going to translate AST to MIR1...'
 mirCollector = new MIRQuadCollector()
 mirOptimizer = new MIRQuadOptimizer()
-astTranslator.connectTo(mirCollector)
-#astTranslator.connectTo(mirOptimizer).connectTo(mirCollector)
+#astTranslator.connectTo(mirCollector)
+astTranslator.connectTo(mirOptimizer).connectTo(mirCollector)
 
 astTranslator.run(ast)
 

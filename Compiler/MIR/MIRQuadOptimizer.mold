@@ -73,7 +73,7 @@ class MIRQuadOptimizer extends PipeAbstract
     dst    = item[1]
     src    = item[2]
 
-    # print '[ MIRQuadOptimizer ]', item[0]
+    # print '[ MIRQuadOptimizer ]', opcode
 
     if (this.lastOpcode is 'store_index') or (this.lastOpcode is 'store_key')
       this._emitOneItem(item)
@@ -85,6 +85,16 @@ class MIRQuadOptimizer extends PipeAbstract
     elif this.lastOpcode is 'vcall'
       # Temporary fix for x = x.foo().
       this._emitOneItem(item)
+
+    elif ((opcode is 'print_array_of_variants_ln') and
+          (this.lastOpcode is 'print_array_of_variants_ln'))
+      # TODO: Use if x,y are ... ?
+      this.lastDst[@afterlast] = '__EOL'
+      for values oneItem in dst
+        this.lastDst[@afterlast] = oneItem
+      endfor
+
+      dst = this.lastDst
 
     elif ((opcode is 'move') and
           (this.lastOpcode isnt 'move') and

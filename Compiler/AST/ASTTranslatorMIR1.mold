@@ -257,7 +257,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
       # TODO: Review it: this.emitOneArgOpcode('conv_bool32_to_variant', rv, value)
       this.emitOneArgOpcode('load_bool32', rv, value)
 
-    elif (type is 'string') or (type is 'array')
+    elif type is 'string'
+      # Do nothing.
+      # Just push __literalxxx to the stack.
+
+    elif type is 'array'
       # TODO: Review it.
       # TODO: Avoid move here?
       newConst = this.symbolTable.createConstFromValue(value)
