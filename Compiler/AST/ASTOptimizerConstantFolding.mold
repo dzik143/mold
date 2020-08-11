@@ -232,7 +232,9 @@ class ASTOptimizerConstantFolding
                   (typeof(symbolInfo.value) is 'float') or
                   (typeof(symbolInfo.value) is 'boolean'))
 
+                # TODO: Review it.
                 newValue = symbolInfo.value
+                #symbolInfo.kind = SYMBOL_KIND_CONST
               endif
             endif
           endif

@@ -168,7 +168,7 @@ class ASTTypeCast
             children[idx] = AST_TypeCast(children[idx], astTypeParams[idx])
           endfor
 
-        elif node.value isnt 'global'
+        elif (node.value isnt 'global') and (node.value isnt 'print')
           for idx in 0 .. childrenCnt
             # Adjust argument type.
             # TODO: Handle non-variant params.

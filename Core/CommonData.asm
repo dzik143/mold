@@ -81,9 +81,6 @@ OneCharacterStringTempPeek2         db 0, 0
 
 __TempIndexInteger Variant_t VARIANT_INTEGER, 0, 0
 
-; TODO: Clean up this mess.
-__TrashBin Variant_t ?
-
 __MOLD_TypeNames:
 .typeUndefined Variant_t VARIANT_STRING, 0, .typeUndefinedBuffer
 .typeNull      Variant_t VARIANT_STRING, 0, .typeNullBuffer
@@ -135,3 +132,7 @@ __MOLD_TypeNames:
 .typeObjectBuffer    Buffer_t 7, -1, 0, .typeObjectData
 .typeObjectData      dq 6
                      db 'object', 0
+
+; TODO: Clean up this mess.
+__TrashBin Variant_t ?
+__MOLD_TempFmt dq ?

@@ -415,12 +415,38 @@ __MOLD_PrintProfilerData:
 ;
 ;###############################################################################
 
-FMT_TEXT8          EQU 0
-FMT_VARIANT_LOCAL  EQU 1
-FMT_VARIANT_GLOBAL EQU 2
-FMT_VARIANT_RETVAL EQU 3
-FMT_EOL            EQU 4
-FMT_TERMINATOR     EQU 5
+FMT_TERMINATOR        EQU 0
+FMT_RESERVED1         EQU 1
+
+FMT_LOCAL_int32       EQU 2
+FMT_LOCAL_float32     EQU 3
+FMT_LOCAL_float64     EQU 4
+FMT_LOCAL_string      EQU 5
+FMT_LOCAL_bool32      EQU 6
+
+FMT_GLOBAL_int32      EQU 7
+FMT_GLOBAL_float32    EQU 8
+FMT_GLOBAL_float64    EQU 9
+FMT_GLOBAL_string     EQU 10
+FMT_GLOBAL_bool32     EQU 11
+
+FMT_RETVAL_int32      EQU 12
+FMT_RETVAL_float32    EQU 13
+FMT_RETVAL_float64    EQU 14
+FMT_RETVAL_string     EQU 15
+FMT_RETVAL_bool32     EQU 16
+
+FMT_LOCAL_variant     EQU 17
+FMT_GLOBAL_variant    EQU 18
+FMT_RETVAL_variant    EQU 19
+
+FMT_EOL               EQU 20
+FMT_TEXT8             EQU 21
+
+__MOLD_PrintFormatFromRegister:
+    lea     rax, [__MOLD_TempFmt]
+    mov     qword [rax], rcx
+    mov     rcx, rax
 
 __MOLD_PrintFormatFromMemory:
     push    rsi
@@ -441,16 +467,36 @@ __MOLD_PrintFormatFromMemory:
 .fetch_first_param:
     xor     eax, eax             ; rax = 0
     lodsb                        ; rax = item type (int8)
-    lea     rcx, [.jmpTable + rax*2]
-    jmp     rcx                  ; dispatch item type
+    jmp     qword [.jmpTable + rax*8] ; dispatch item type
 
 .jmpTable:
-    jmp short .text8             ; 0 inline text with 8-byte size prefix
-    jmp short .variantLocal      ; 1 local variant on stack [RBP - n*4]
-    jmp short .variantGlobal     ; 2 global variant (absolute address)
-    jmp short .variantRetVal     ; 3 retval variant
-    jmp short .eol               ; 4 line break (EOL)
-    jmp short .done              ; 5 terminator
+    dq .done              ; 0 terminator
+
+    dq .notImplemented    ; 1
+    dq .int32Local        ; 2
+    dq .notImplemented    ; 3
+    dq .float64Local      ; 4
+    dq .variantLocal      ; 5 (string)
+    dq .bool32Local       ; 6
+
+    dq .int32Global       ; 7
+    dq .notImplemented    ; 8
+    dq .float64Global     ; 9
+    dq .variantGlobal     ; 10 (string)
+    dq .bool32Global      ; 11
+
+    dq .int32Retval       ; 12
+    dq .notImplemented    ; 13
+    dq .float64Retval     ; 14
+    dq .notImplemented    ; 15
+    dq .bool32GRetval     ; 16
+
+    dq .variantLocal      ; 17 local variant on stack [RBP - n*4]
+    dq .variantGlobal     ; 18 global variant (absolute address)
+    dq .variantRetVal     ; 19 retval variant
+
+    dq .eol               ; 20 line break (EOL)
+    dq .text8             ; 21 inline text with 8-byte size prefix
 
 .text8:
     lodsb                        ; rax = text length (int8)
@@ -481,6 +527,48 @@ __MOLD_PrintFormatFromMemory:
     call    __MOLD_PrintVariant  ; print variant item by absolute address
     jmp     .fetch_next_param
 
+.float64Global:
+    sub     eax, 5
+    mov     rdx, qword [rsi]
+    add     rsi, 6
+    mov     rdx, qword [rdx]
+    jmp     .generic_final
+
+.int32Global:
+.bool32Global:
+    sub     eax, 5
+    mov     rdx, qword [rsi]
+    add     rsi, 6
+    mov     edx, dword [rdx]
+    jmp     .generic_final
+
+.float64Local:
+    movsx   rdx, word [rsi]
+    lea     rdx, [rbp + rdx]
+    mov     rdx, qword [rdx]
+    jmp     .generic_final
+
+.int32Local:
+.bool32Local:
+    movsx   rdx, word [rsi]      ; rdx = rbp offset
+    lea     rdx, [rbp + rdx]     ; rdx = [rbp - item offset]
+    movsxd  rdx, dword [rdx]     ; rdx = primitive value
+
+.generic_final:
+    lea     rcx, [__TrashBin]
+    mov     dword [rcx + Variant_t.type], eax
+    mov     qword [rcx + Variant_t.value], rdx
+
+    add     rsi, 2
+    call    __MOLD_PrintVariant
+    jmp     .fetch_next_param
+
+
+.int32Retval:
+.float64Retval:
+.bool32GRetval:
+    jmp     .notImplemented
+
 .eol:
     mov     cl, 10               ; begin new line
     call    [putchar]            ;
@@ -493,3 +581,6 @@ __MOLD_PrintFormatFromMemory:
     add     rsp, 32              ; clean shadow space
     pop     rsi                  ;
     ret                          ;
+
+.notImplemented:
+    jmp     __MOLD_PrintErrorAndDie.notImplemented

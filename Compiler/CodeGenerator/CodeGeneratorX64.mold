@@ -937,10 +937,12 @@ class CodeGeneratorX64
         params    = dst
         paramsCnt = len(params)
 
-        if paramsCnt is 1
-          this.call1('__MOLD_PrintVariantLn', params[0])
+        # TODO: Fall back to single param
+        #if paramsCnt is 1
+        #  this.call1('__MOLD_PrintVariantLn', params[0])
+        #
+        #else
 
-        else
           # Build msg format.
           # TODO: Handle more item types.
           encodedFormat = []
@@ -966,7 +968,7 @@ class CodeGeneratorX64
 
           print '  lea rcx, [__fmt' ~ str(messageFormatId), ']'
           print '  call __MOLD_PrintFormatFromMemory'
-        endif
+        #endif
 
       elif opcode is 'str_int64'
         this.variantDestroy(dst)
@@ -1505,7 +1507,7 @@ class CodeGeneratorX64
     globals = codeObj.symbolTable.exportSymbols()
 
     for values oneItem in globals
-      if oneItem.kind is SYMBOL_KIND_VAR_GLOBAL
+      if (oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and (oneItem.writeHits > 0)
         if ((oneItem.type is 'variant') or
             (oneItem.type is 'string') or
             (oneItem.type is undefined))
@@ -1548,6 +1550,12 @@ class CodeGeneratorX64
       print '__fmt' ~ str(formatId) ~ ':'
 
       for values symbolInfo in encodedFormat
+        if symbolInfo.type is defined
+          type = symbolInfo.type
+        else
+          type = 'variant'
+        endif
+
         if symbolInfo.name is '__EOL'
           print '  db FMT_EOL'
 
@@ -1562,14 +1570,14 @@ class CodeGeneratorX64
           endif
 
         elif symbolInfo.rbpOffset is defined
-          print '  db FMT_VARIANT_LOCAL'
+          print '  db FMT_LOCAL_' ~ type
           print '  dw -', symbolInfo.rbpOffset
 
         elif symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
-          print '  db FMT_VARIANT_RETVAL'
+          print '  db FMT_RETVAL_' ~ type
 
         elif (symbolInfo.kind is SYMBOL_KIND_VAR_GLOBAL) or (symbolInfo.kind is SYMBOL_KIND_CONST)
-          print '  db FMT_VARIANT_GLOBAL'
+          print '  db FMT_GLOBAL_' ~ type
           print '  dq', symbolInfo.name
 
         else
