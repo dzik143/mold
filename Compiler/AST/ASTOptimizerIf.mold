@@ -64,10 +64,10 @@ class ASTOptimizerIf
       valueMax  = -2147483647 # TODO: Use MIN_INTEGER etc.?
 
       # Go into else if node.
-      goOn           = true
-      currentIfNode  = node
-      cond           = currentIfNode.children[0]
-      casesCnt       = 0
+      goOn          = true
+      currentIfNode = node
+      cond          = currentIfNode.children[0]
+      casesCnt      = 0
 
       while goOn is true
         # if x is 1
@@ -95,8 +95,8 @@ class ASTOptimizerIf
             if reusedNode is undefined
               # Case code seen first time. Go on.
               caseHashMap{caseNodeHash} = caseNode
-              newChildren[@afterlast] = caseNode
-              caseNode.arrayOfValues = [caseValue]
+              newChildren[@afterlast]   = caseNode
+              caseNode.arrayOfValues    = [caseValue]
 
             else
               # Case code is already used for some another branch.

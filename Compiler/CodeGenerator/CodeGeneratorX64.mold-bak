@@ -742,18 +742,32 @@ class CodeGeneratorX64
       # indirect jumps
       #
 
+#      elif opcode is 'jmp_by_table_variant'
+#        print '  mov rax, [', x, '+ Variant_t.value]'
+#        print '  jmp qword [', dst, '+ rax * 8]'
+
       elif opcode is 'jmp_by_table_int32'
-        symbolInfo = codeObj.symbolTable.lookup(dst)
-
+        print ''
+        print '  ; switch', x
         print '  mov eax, dword [', x, ']'
-        print '  sub eax,', symbolInfo.valueMin
-        print '  cmp eax,', symbolInfo.valueMax - symbolInfo.valueMin
-        print '  ja', symbolInfo.defaultLabel
-
-        print '  movsx rax, word [', dst, '+ rax * 2]'
-        print '  lea rax, [', symbolInfo.defaultLabel, '+ rax]'
+        print '  lea rax, [', dst, '+ rax * 4 + rax]'
         print '  jmp rax'
 
+        symbolInfo   = codeObj.symbolTable.lookup(dst)
+        labels       = symbolInfo.labels
+        defaultLabel = symbolInfo.defaultLabel
+
+        print dst ~ ':'
+
+        # TODO: Avoid emmiting unused head.
+        for indexes labelIdx values nextLabel in labels
+          if nextLabel is undefined
+            nextLabel = defaultLabel
+          endif
+          print '  jmp near ', nextLabel, ';', labelIdx
+        endfor
+
+        print ''
       #
       # jmp_if_xx_variant
       #
@@ -1600,6 +1614,7 @@ class CodeGeneratorX64
     endfor
 
     # Jump tables
+/*
     print ''
     print '; Jump tables'
     print '; -----------'
@@ -1612,20 +1627,16 @@ class CodeGeneratorX64
 
         print name ~ ':'
 
-        # TODO: Remove out-of-range labels at earlier stage.
-        for labelIdx in symbolInfo.valueMin .. symbolInfo.valueMax + 1
-          nextLabel = labels[labelIdx]
+        for indexes labelIdx values nextLabel in labels
           if nextLabel is undefined
-            print '  dw 0 ;', labelIdx, 'otherwise'
-          else
-            print '  dw ', nextLabel, '-', defaultLabel, ';', labelIdx
+            nextLabel = defaultLabel
           endif
-        endfor
 
-        print '  dw 0 ; explicit default case'
-        print ''
+          print '  dq ', nextLabel, ';', labelIdx
+        endfor
       endif
     endfor
+*/
 
     # Build vtables.
     print ''

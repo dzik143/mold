@@ -670,10 +670,13 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     symbolInfo = this.symbolTable.insertJmpTable(jmpTable)
     symbolInfo.defaultLabel = defaultLabel
+    symbolInfo.valueMin     = node.valueMin
+    symbolInfo.valueMax     = node.valueMax
 
-    # Handle out-of-range
-    this.emitTwoArgsOpcode('jmp_if_lt', defaultLabel, varName, node.valueMin)
-    this.emitTwoArgsOpcode('jmp_if_gt', defaultLabel, varName, node.valueMax)
+    this.emitComment('')
+    this.emitComment('-----------------------------')
+    this.emitComment('BEGIN: switch ' ~ varName)
+    this.emitComment('')
 
     # Value is in-range, use jump table.
     this.emitJmpByTable(symbolInfo.name, varName)
@@ -713,6 +716,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
     endif
 
     this.emitLabel(doneLabel)
+
+    this.emitComment('')
+    this.emitComment('END: switch ' ~ varName)
+    this.emitComment('-----------------------------')
+    this.emitComment('')
   endmethod
 
   method _declareFunction(funcName, funcProto)
