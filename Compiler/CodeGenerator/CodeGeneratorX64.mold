@@ -1293,26 +1293,31 @@ class CodeGeneratorX64
 
         # Calculate frame size.
         currentFrameSize = 0
-        paramsPassedCnt  = 0
-        symbolsCnt       = len(symbols)
+        paramsPassedCnt  = paramsCnt
 
+        # Pass #1: Allocate variant varibles on stack before all others.
         # TODO: Clean up this mess.
-        # TODO: Use reverse.
-        symbolsIndex = []
-        for values v in symbols
-          symbolsIndex[@afterlast] = v
-        endfor
-        symbolsCnt = len(symbolsIndex)
-
-        # TODO: Use reverse when ready.
-        for symbolIdx in 0 .. symbolsCnt
-          symbol = symbolsIndex[symbolsCnt - symbolIdx - 1]
-
+        # TODO: Don't repeat code.
+        for values symbol in symbols
           if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or
               (symbol.kind is SYMBOL_KIND_VAR_PARAM))
 
             if (symbol.type is undefined) or (symbol.type is 'variant') or (symbol.type is 'string')
-              varSize = 16
+              varSize          = 16
+              currentFrameSize = currentFrameSize + varSize
+              symbol.rbpOffset = 8 + currentFrameSize
+              print ' ', symbol.name, 'EQU rbp -', 8 + currentFrameSize, ';', varSize, 'bytes'
+            endif
+          endif
+        endfor
+
+        # Pass #2: Allocate primitive values on stack.
+        for values symbol in symbols
+          if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or
+              (symbol.kind is SYMBOL_KIND_VAR_PARAM))
+
+            if (symbol.type is undefined) or (symbol.type is 'variant') or (symbol.type is 'string')
+              varSize = 0
 
             elif (symbol.type is 'int64') or (symbol.type is 'float64')
               varSize = 8
@@ -1326,22 +1331,24 @@ class CodeGeneratorX64
               die('error: unhandled operand type while setting up frame: ' ~ str(symbol.type))
             endif
 
-            currentFrameSize = currentFrameSize + varSize
-            symbol.rbpOffset = 8 + currentFrameSize
-
-            print ' ', symbol.name, 'EQU rbp -', 8 + currentFrameSize, ';', varSize, 'bytes'
-
-          elif symbol.kind is SYMBOL_KIND_VAR_RETVAL
-            # TODO: Pass variant return values on stack?
-            print ' ', symbol.name, 'EQU rdi'
-          endif
-
-          # TODO: Dirty fix to handle real number of stack parameters if 'this'
-          # pointer is used.
-          if symbol.kind is SYMBOL_KIND_VAR_PARAM
-            paramsPassedCnt = paramsPassedCnt + 1
+            if varSize > 0
+              currentFrameSize = currentFrameSize + varSize
+              symbol.rbpOffset = 8 + currentFrameSize
+              print ' ', symbol.name, 'EQU rbp -', 8 + currentFrameSize, ';', varSize, 'bytes'
+            endif
           endif
         endfor
+
+        if currentFrame.rv is defined
+          # TODO: Pass variant return values on stack?
+          print ' ', currentFrame.rv, 'EQU rdi'
+        endif
+
+        if symbols{'this'} is defined
+          # TODO: Dirty fix to handle real number of stack parameters if 'this'
+          # pointer is used.
+          paramsPassedCnt = paramsPassedCnt + 1
+        endif
 
         # Align to 16-bytes and add 32-byte shadow space.
         # TODO: Optimize it.
