@@ -142,8 +142,8 @@ class ASTSymbolsCollector
       symbolInfo = symbolTable.insertLiteral(node.value)
       symbolTable.lookupLiteralForRead(node.value)
 
-      node.opcode     = AST_OPCODE_VARIABLE
-      node.value      = symbolInfo.name
+      #node.opcode     = AST_OPCODE_VARIABLE
+      #node.value      = symbolInfo.name
       node.symbolInfo = symbolInfo
 
     elif opcode is AST_OPCODE_CLASS

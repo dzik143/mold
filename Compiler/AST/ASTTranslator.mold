@@ -440,18 +440,25 @@ class ASTTranslator
         this._loadNull(rv)
 
       elif opcode is AST_DATA_ARRAY
-        if typeof(value) is 'array'
-          this._loadImm(rv, value)
+        # TODO: Why typeof(value) is 'string' here?
+        # print '; AST_DATA_ARRAY', value, typeof(value), value[0], valueType
 
+        if ast.initList is defined
+          this._loadImm(rv, ast.initList)
         else
           this._loadArray(rv)
+        endif
 
-          if childrenCnt > 0
-            # TODO: Handle non-variant indexes and values.
-            key            = this._getTempVar('variant')
-            valueAsVariant = this._getTempVar('variant')
+        if childrenCnt > 0
+          # TODO: Handle non-variant indexes and values.
+          key            = this._getTempVar('variant')
+          valueAsVariant = this._getTempVar('variant')
 
-            for indexes childIdx values childNode in children
+          for indexes childIdx values childNode in children
+            if childNode.movedToInitList is defined
+              # Do nothing.
+              # We'll emit it inside static init list.
+            else
               this._loadImmAsVariant(key, childIdx)
               value = this._evaluateNode(childNode)
               this._convert(valueAsVariant, value, AST_GetDataType(childNode), -1)
@@ -459,12 +466,12 @@ class ASTTranslator
 
               # TODO: Is it really needed?
               this._releaseTempVar(value)
-            endfor
+            endif
+          endfor
 
-            # TODO: Is it really needed?
-            this._releaseTempVar(key)
-            this._releaseTempVar(valueAsVariant)
-          endif
+          # TODO: Is it really needed?
+          this._releaseTempVar(key)
+          this._releaseTempVar(valueAsVariant)
         endif
 
       elif opcode is AST_DATA_MAP

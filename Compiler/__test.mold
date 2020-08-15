@@ -1,7 +1,3 @@
-x = []
-undefined = x[0]
-object = 0
-
 NodeId = 1000
 
 

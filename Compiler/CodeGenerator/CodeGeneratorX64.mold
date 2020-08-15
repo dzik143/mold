@@ -190,8 +190,12 @@ class CodeGeneratorX64
         endif
 
         print name, 'Variant_t VARIANT_BOOLEAN, 0,', valueAsInteger
+
+      elif type is 'undefined'
+        print name, 'Variant_t VARIANT_UNDEFINED, 0, 0'
+
       else
-        print name, 'Variant_t [error: unhandled type], ???'
+        print name, 'Variant_t [error: unhandled type]', type
       endif
     endif
 
@@ -321,7 +325,13 @@ class CodeGeneratorX64
 
         for itemIdx in 0 .. itemsCnt
           __mold_printToStdOutput(sep)
-          __mold_printToStdOutput(items[itemIdx])
+
+          if items[itemIdx] is defined
+            __mold_printToStdOutput(items[itemIdx])
+          else
+            __mold_printToStdOutput('0')
+          endif
+
           sep = ', '
         endfor
         print ''
@@ -1448,7 +1458,11 @@ class CodeGeneratorX64
 
       elif originalOpcode is 'create_array'
         this.variantDestroy(dst)
-        this.call1('__MOLD_VariantArrayCreate', dst)
+        if x is defined
+          this.call2('__MOLD_VariantArrayCreateFromInitList', dst, x)
+        else
+          this.call1('__MOLD_VariantArrayCreate', dst)
+        endif
 
       elif originalOpcode is 'create_map'
         this.variantDestroy(dst)
@@ -1548,6 +1562,8 @@ class CodeGeneratorX64
     print '; ------------------------------------------------------------------------------'
     print "section '.rdata' data readable"
 
+    print '  dq ?'
+
     # Build print formats.
     print ''
     print '; Encoded print formats'
@@ -1598,8 +1614,6 @@ class CodeGeneratorX64
     print ''
     print '; Constants'
     print '; ---------'
-
-    print 'db ?'
 
     # TODO: Optimize it.
     for deepIdx in 0 .. 16

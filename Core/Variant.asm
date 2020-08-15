@@ -202,7 +202,7 @@ macro DEBUG_CHECK_VARIANT x
 ;
 ;###############################################################################
 
-proc __MOLD_PrintVariant uses r12, v
+__MOLD_PrintVariant:
 
     DEBUG_CHECK_VARIANT rcx
 
@@ -273,45 +273,48 @@ proc __MOLD_PrintVariant uses r12, v
     ; ------------------------------------------
 
 .array:
-    push    rdx
-    mov     cl, '['
-    cinvoke putchar
-    pop     rdx
+
+    push    rbp
+    mov     rbp, rsp
+    sub     rsp, 32 + 16
 
     push    rbx
-    push    rsi
 
-    mov     rdx, [rdx + Buffer_t.bytesPtr]
-    mov     rbx, [rdx + Array_t.itemsCnt]
-    lea     rsi, [rdx + Array_t.items]
+    push    rcx
+    mov     cl, '['
+    cinvoke putchar
+    pop     rcx
 
-    cmp     [rdx + Array_t.innerType], 0
-    jnz     .errorNonVariantItem
+    lea     rbx, [.fmtEmpty]
 
-    or      rbx, rbx
-    jz      .arrayEmpty
-
-    lea     r12, [.fmtEmpty]
-
-.arrayNextItem:
-
-    cinvoke printf, r12
-    lea     r12, [.fmtSeparator]
-
-    mov     rcx, rsi
-    call    __MOLD_PrintVariantWithQuotas
-
-    add     rsi, 16
-    dec     rbx
-    jne     .arrayNextItem
-
-.arrayEmpty:
+    lea     rdx, [rbp - 8 - 8]
+    lea     r8,  [rbp - 8 - 8 - 16]
+    lea     r9,  [.print_one_array_item]
+    call    __MOLD_ForDriver_Generic
 
     mov     cl, ']'
     cinvoke putchar
 
-    pop     rsi
     pop     rbx
+
+    add     rsp, 32 + 16
+    pop     rbp
+    ret
+
+.print_one_array_item:
+
+    cmp     dword [rbp - 8 - 8], 0
+    jz      .print_first_array_item
+
+    push    rcx
+    lea     rcx, [.fmtSeparator]
+    cinvoke printf
+    pop     rcx
+
+.print_first_array_item:
+
+    lea     rcx, [rbp - 8 - 8 - 16]
+    call    __MOLD_PrintVariantWithQuotas
     ret
 
     ; ------------------------------------------
@@ -383,7 +386,7 @@ proc __MOLD_PrintVariant uses r12, v
 .errorNonVariantItem:
     cinvoke printf, '__MOLD_VariantPrint: error: non-variant inner types not implemented'
     int 3
-endp
+
 
 ;###############################################################################
 ;
@@ -1095,6 +1098,19 @@ proc __MOLD_VariantStoreAtIndex_int32
     ; ==========================================================================
 
 .array:
+    test    dword [rcx + Variant_t.flags], VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE
+    jz      .fetch_array_buffer
+
+    push    rdx
+    push    r8
+
+    call    __MOLD_VariantArrayShallowCopy
+
+    pop     r8
+    pop     rdx
+
+.fetch_array_buffer:
+
     mov     r10, [rcx + Variant_t.value]  ; r10  = array buffer (Buffer_t)
     mov     edx, dword [rdx]              ; edx  = idx          (integer)
 
@@ -1615,6 +1631,18 @@ __MOLD_VariantArrayCreate:
 
     mov     [rcx + Variant_t.type], VARIANT_ARRAY
     mov     [rcx + Variant_t.value], rax
+
+    DEBUG_CHECK_VARIANT rcx
+
+    ret
+
+__MOLD_VariantArrayCreateFromInitList:
+    DEBUG_CHECK_VARIANT rdx
+
+    ; TODO: Clean up this mess.
+    movdqu  xmm0, [rdx]
+    movdqu  [rcx], xmm0
+    call    __MOLD_VariantArrayShallowCopy
 
     DEBUG_CHECK_VARIANT rcx
 
@@ -2419,6 +2447,61 @@ __MOLD_LoadFile:
     cinvoke printf, "error: string path expected"
     cinvoke ExitProcess, -1
 
+
+__MOLD_VariantArrayShallowCopy:
+    ; rcx - array (IN/OUT/Variant_t)
+    push    rbp
+    mov     rbp, rsp
+    sub     rsp, 72
+
+    clonedArray   EQU rbp - 8 - 16
+    iteratorValue EQU rbp - 8 - 16*2
+    iteratorIdx   EQU rbp - 8 - 16*2 - 8
+
+    push    rcx
+    lea     rcx, [clonedArray]
+    call    __MOLD_VariantArrayCreate
+    pop     rcx
+    push    rcx
+
+    lea     rdx, [iteratorIdx]
+    lea     r8,  [iteratorValue]
+    lea     r9,  [.insert_one_item]
+    call    __MOLD_ForDriver_IndexesAndValuesInArray
+
+    pop     rcx
+
+    ;mov     rax, [clonedArray + Variant_t.value]
+    ;mov     rdx, [rcx         + Variant_t.value]
+
+   ; movdqu  xmm0, [rax]
+  ;  movdqu  xmm1, [rax + 16]
+
+ ;   movdqu  [rdx     ], xmm0
+;    movdqu  [rdx + 16], xmm1
+
+    movdqu  xmm0, [clonedArray]
+    movdqu  [rcx], xmm0
+
+    DEBUG_CHECK_VARIANT rcx
+
+    add     rsp, 72
+    pop     rbp
+    ret
+
+.insert_one_item:
+
+    lea     rcx, [clonedArray]
+    lea     rdx, [iteratorIdx]
+    lea     r8,  [iteratorValue]
+    call    __MOLD_VariantStoreAtIndex_int32
+
+    ret
+
+    restore clonedArray
+    restore iteratorValue
+    restore iteratorIdx
+
 ;###############################################################################
 ;
 ; Process each (key, value) pairs in map.
@@ -2516,7 +2599,10 @@ __MOLD_ForDriver_IndexesAndValuesInArray:
 
     push    rbx
     push    rsi
-    push    r9
+    push    r12
+    push    r13
+    push    r14
+    push    r15
 
     mov     rcx, [rcx + Variant_t.value]          ; rcx = array (Buffer_t)
     mov     rcx, [rcx + Buffer_t.bytesPtr]        ; rcx = array (Array_t)
@@ -2525,47 +2611,129 @@ __MOLD_ForDriver_IndexesAndValuesInArray:
     or      rbx, rbx
     jz      .arrayEmpty
 
+    mov     r15, r8
+    mov     r13, rdx
+    mov     r14, r9
+
     lea     rsi, [rcx + Array_t.items]            ; rsi = array.items
     mov     dword [rdx], 0                        ; idx = 0
 
-.arrayNextItem:
+    mov     r12d, [rcx + Array_t.innerType]       ; r12 = innerType (got from box)
+    or      r12d, r12d
+    jz      .arrayNextItem_variant
 
-    ; ----------------------
-    ; Update value iterator
-    ; ----------------------
+    mov     [r15 + Variant_t.type], r12d          ;
+    add     r15, 8
 
-    mov     rax, [rsi]
-    mov     rcx, [rsi + 8]
+    movzx   rcx, byte [rcx + Array_t.itemSize]    ; rcx = log2(size(item))
+    jmp     qword [.jmpTable + rcx*8]
 
-    mov     [r8], rax
-    mov     [r8 + 8], rcx
+.jmpTable:
+    dq .arrayNextItem_8bit
+    dq .arrayNextItem_16bit
+    dq .arrayNextItem_32bit
+    dq .arrayNextItem_64bit
 
-    ; --------------------------------
-    ; Process next (index:value) pair
-    ; --------------------------------
+    ; ##########################################################################
+    ;                           Array of variants
+    ; ##########################################################################
 
-    push    rdx r8
-    call    qword [rsp + 16]
-    pop     r8 rdx
+.arrayNextItem_variant:
 
-    ; ----------------------
-    ; Update index iterator
-    ; ----------------------
+    movdqu  xmm0, [rsi]          ; xmm0           = source value (variant)
+    movdqu  [r15], xmm0          ; iterator.value = soruce value (variant)
 
-    inc     dword [rdx]
+    call    r14                  ; execute caller delivered code
 
-    ; ----------------
-    ; Go to next pair
-    ; ----------------
+    inc     dword [r13]          ; iterator.idx++
+    add     rsi, 16              ; go to next value (128-bit variant)
+    dec     rbx                  ; rbx = update loop counter
 
-    add     rsi, 16
-    dec     rbx
-    jne     .arrayNextItem
+    jne     .arrayNextItem_variant ; go to next item if exists
+    jmp     .done
+
+    ; ##########################################################################
+    ;                         Array of 8-bit values
+    ; ##########################################################################
+
+.arrayNextItem_8bit:
+
+    movsx   rax, byte [rsi]      ; rax            = source value (8-bit)
+    mov     [r15], rax           ; iterator.value = soruce value (8-bit)
+
+    call    r14                  ; execute caller delivered code
+
+    inc     dword [r13]          ; iterator.idx++
+    add     rsi, 1               ; go to next value (8-bit)
+    dec     rbx                  ; rbx = update loop counter
+
+    jne     .arrayNextItem_8bit  ; go to next item if exists
+    jmp     .done
+
+    ; ##########################################################################
+    ;                         Array of 16-bit values
+    ; ##########################################################################
+
+.arrayNextItem_16bit:
+
+    movsx   rax, word [rsi]      ; rax            = source value (16-bit)
+    mov     [r15], rax           ; iterator.value = soruce value (16-bit)
+
+    call    r14                  ; execute caller delivered code
+
+    inc     dword [r13]          ; iterator.idx++
+    add     rsi, 2               ; go to next value (16-bit)
+    dec     rbx                  ; rbx = update loop counter
+
+    jne     .arrayNextItem_16bit ; go to next item if exists
+    jmp     .done
+
+    ; ##########################################################################
+    ;                         Array of 32-bit values
+    ; ##########################################################################
+
+.arrayNextItem_32bit:
+
+    movsxd  rax, dword [rsi]     ; rax            = source value (32-bit)
+    mov     [r15], rax           ; iterator.value = soruce value (32-bit)
+
+    call    r14                  ; execute caller delivered code
+
+    inc     dword [r13]          ; iterator.idx++
+    add     rsi, 4               ; go to next value (32-bit)
+    dec     rbx                  ; rbx = update loop counter
+
+    jne     .arrayNextItem_32bit ; go to next item if exists
+    jmp     .done
+
+    ; ##########################################################################
+    ;                         Array of 64-bit values
+    ; ##########################################################################
+
+.arrayNextItem_64bit:
+
+    mov     rax, qword [rsi]     ; rax            = source value (64-bit)
+    mov     [r15], rax           ; iterator.value = soruce value (64-bit)
+
+    call    r14                  ; execute caller delivered code
+
+    inc     dword [r13]          ; iterator.idx++
+    add     rsi, 8               ; go to next value (64-bit)
+    dec     rbx                  ; rbx = update loop counter
+
+    jne     .arrayNextItem_64bit ; go to next item if exists
+
+    ; ##########################################################################
+    ;                    Loop finished or nothing to do
+    ; ##########################################################################
 
 .arrayEmpty:
 .done:
 
-    pop     r9
+    pop     r15
+    pop     r14
+    pop     r13
+    pop     r12
     pop     rsi
     pop     rbx
 

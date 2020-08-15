@@ -522,7 +522,7 @@ function AST_IsImm(x) -> rv
   elif x.opcode is AST_DATA_MAP
     rv = typeof(x.value) is 'map'
 
-  elif (x.opcode < AST_OPCODE_PROGRAM)
+  elif x.opcode < AST_OPCODE_PROGRAM
     rv = true
 
   else

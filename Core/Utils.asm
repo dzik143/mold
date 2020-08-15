@@ -415,7 +415,11 @@ __MOLD_PrintProfilerData:
 ;
 ;###############################################################################
 
-FMT_TERMINATOR        EQU 0
+; TODO:
+; Data source: local, global, retval, imm
+; Data size:   1, 2, 4, 8
+
+FMT_TEXT8             EQU 0
 FMT_RESERVED1         EQU 1
 
 FMT_LOCAL_int32       EQU 2
@@ -441,7 +445,7 @@ FMT_GLOBAL_variant    EQU 18
 FMT_RETVAL_variant    EQU 19
 
 FMT_EOL               EQU 20
-FMT_TEXT8             EQU 21
+FMT_TERMINATOR        EQU 21
 
 __MOLD_PrintFormatFromRegister:
     lea     rax, [__MOLD_TempFmt]
@@ -470,8 +474,8 @@ __MOLD_PrintFormatFromMemory:
     jmp     qword [.jmpTable + rax*8] ; dispatch item type
 
 .jmpTable:
-    dq .done              ; 0 terminator
 
+    dq .text8             ; 0 inline text with 8-byte size prefix
     dq .notImplemented    ; 1
     dq .int32Local        ; 2
     dq .notImplemented    ; 3
@@ -496,7 +500,7 @@ __MOLD_PrintFormatFromMemory:
     dq .variantRetVal     ; 19 retval variant
 
     dq .eol               ; 20 line break (EOL)
-    dq .text8             ; 21 inline text with 8-byte size prefix
+    dq .done              ; 21 terminator
 
 .text8:
     lodsb                        ; rax = text length (int8)
@@ -530,22 +534,23 @@ __MOLD_PrintFormatFromMemory:
 .float64Global:
     sub     eax, 5
     mov     rdx, qword [rsi]
-    add     rsi, 6
     mov     rdx, qword [rdx]
+    add     rsi, 8
     jmp     .generic_final
 
 .int32Global:
 .bool32Global:
     sub     eax, 5
     mov     rdx, qword [rsi]
-    add     rsi, 6
     mov     edx, dword [rdx]
+    add     rsi, 8
     jmp     .generic_final
 
 .float64Local:
     movsx   rdx, word [rsi]
     lea     rdx, [rbp + rdx]
     mov     rdx, qword [rdx]
+    add     rsi, 2
     jmp     .generic_final
 
 .int32Local:
@@ -553,13 +558,13 @@ __MOLD_PrintFormatFromMemory:
     movsx   rdx, word [rsi]      ; rdx = rbp offset
     lea     rdx, [rbp + rdx]     ; rdx = [rbp - item offset]
     movsxd  rdx, dword [rdx]     ; rdx = primitive value
+    add     rsi, 2
 
 .generic_final:
     lea     rcx, [__TrashBin]
     mov     dword [rcx + Variant_t.type], eax
     mov     qword [rcx + Variant_t.value], rdx
 
-    add     rsi, 2
     call    __MOLD_PrintVariant
     jmp     .fetch_next_param
 

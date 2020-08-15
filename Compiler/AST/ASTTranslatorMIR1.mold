@@ -265,8 +265,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
       # TODO: Review it.
       # TODO: Avoid move here?
       newConst = this.symbolTable.createConstFromValue(value)
-      this.emitMoveVariantOpcode(rv, newConst)
-
+      this.symbolTable.lookupForRead(newConst)
+      this.emitOneArgOpcode('create_array', rv, newConst)
     else
       # TODO: Handle terminal nodes.
       this.app.logError('unhandled imm type: ' ~ str(type))

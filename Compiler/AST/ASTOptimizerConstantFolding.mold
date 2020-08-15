@@ -40,9 +40,17 @@ class ASTOptimizerConstantFolding
 
     type = typeof(value)
 
-    if (type is 'array') or (type is 'map')
+
+    # TODO: Clean up this mess.
+    # TODO: Crash on string[i] (one character char result)
+    if ((type is 'string') and (len(value) is 1))
+      newValue = '' ~ value
+      value    = newValue
+    endif
+
+    if type is 'map'
       # TODO: Clone initialize list?
-      # Crash after attemp to modify moved constant [] or {}.
+      # Crash after attemp to modify moved constant {}.
 
     else
       this._debug('Set node #' ~ str(dst.id) ~ ' to imm "' ~ str(value) ~ '" (' ~ type ~ ')')
@@ -68,6 +76,12 @@ class ASTOptimizerConstantFolding
       elif type is 'undefined'
         newOpcode = AST_DATA_UNDEFINED
 
+      elif type is 'array'
+        newOpcode = AST_DATA_ARRAY
+
+      elif type is 'map'
+        newOpcode = AST_DATA_MAP
+
       else
         # Remove newOpcode assign.
         newOpcode = -1
@@ -81,21 +95,28 @@ class ASTOptimizerConstantFolding
   endmethod
 
   method _processNodeArray(node)
-    newValue    = []
-    isImm       = true
-    idx         = 0
-    children    = node.children
-    childrenCnt = len(children)
+    global AST_DATA_UNDEFINED
 
-    while (isImm is true) and (idx < childrenCnt)
-      isChanged     = this.processNode(children[idx])
-      newValue[idx] = children[idx].value
-      isImm         = AST_IsImm(children[idx])
-      idx           = idx + 1
-    endwhile
+    valuesStatic   = []
+    useStaticList  = false
+    useDynamicList = false
 
-    if isImm is true
-      this._setToImm(node, newValue)
+    for values oneChild in node.children
+      isChildChanged = this.processNode(oneChild)
+
+      if AST_IsImm(oneChild) is true
+        childValue               = oneChild.value
+        useStaticList            = true
+        oneChild.movedToInitList = true
+      else
+        childValue = null
+      endif
+
+      valuesStatic[@afterlast] = childValue
+    endfor
+
+    if useStaticList is true
+      node.initList = valuesStatic
     endif
   endmethod
 
