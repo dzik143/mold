@@ -267,6 +267,25 @@ class ASTTranslatorMIR1 extends ASTTranslator
       newConst = this.symbolTable.createConstFromValue(value)
       this.symbolTable.lookupForRead(newConst)
       this.emitOneArgOpcode('create_array', rv, newConst)
+
+    elif type is 'map'
+      # TODO: Review it.
+      # TODO: Avoid move here?
+      arrayOfValues = []
+      arrayOfKeys   = []
+
+      for keys k values v in value
+        arrayOfKeys[@afterlast]   = k
+        arrayOfValues[@afterlast] = v
+      endfor
+
+      newConstKeys   = this.symbolTable.createConstFromValue(arrayOfKeys)
+      newConstValues = this.symbolTable.createConstFromValue(arrayOfValues)
+
+      this.symbolTable.lookupForRead(newConstKeys)
+      this.symbolTable.lookupForRead(newConstValues)
+      this.emitTwoArgsOpcode('create_map', rv, newConstKeys, newConstValues)
+
     else
       # TODO: Handle terminal nodes.
       this.app.logError('unhandled imm type: ' ~ str(type))

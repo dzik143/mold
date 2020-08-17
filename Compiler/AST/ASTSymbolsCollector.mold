@@ -235,6 +235,11 @@ class ASTSymbolsCollector
           nodeBody.symbolTable.assignType('this', AST_DATA_OBJECT)
           paramShift = 1
           astTypeParams[@afterlast] = -1
+
+          # TODO: Review it.
+          if funcProto.name is 'constructor'
+            nodeBody.symbolTable.lookupForWrite('this')
+          endif
         endif
 
         for indexes paramIdx values paramName in funcProto.params

@@ -40,7 +40,6 @@ class ASTOptimizerConstantFolding
 
     type = typeof(value)
 
-
     # TODO: Clean up this mess.
     # TODO: Crash on string[i] (one character char result)
     if ((type is 'string') and (len(value) is 1))
@@ -48,58 +47,49 @@ class ASTOptimizerConstantFolding
       value    = newValue
     endif
 
-    if type is 'map'
-      # TODO: Clone initialize list?
-      # Crash after attemp to modify moved constant {}.
+    this._debug('Set node #' ~ str(dst.id) ~ ' to imm "' ~ str(value) ~ '" (' ~ type ~ ')')
+
+    if dst.opcode is AST_OPCODE_VARIABLE
+      if dst.symbolInfo is defined
+        dst.symbolInfo.readHits = dst.symbolInfo.readHits - 1
+      endif
+    endif
+
+    if type is 'boolean'
+      newOpcode = AST_DATA_BOOL
+
+    elif type is 'integer'
+      newOpcode = AST_DATA_INTEGER
+
+    elif type is 'float'
+      newOpcode = AST_DATA_DOUBLE
+
+    elif type is 'string'
+      newOpcode = AST_DATA_STRING
+
+    elif type is 'undefined'
+      newOpcode = AST_DATA_UNDEFINED
+
+    elif type is 'array'
+      newOpcode = AST_DATA_ARRAY
+
+    elif type is 'map'
+      newOpcode = AST_DATA_MAP
 
     else
-      this._debug('Set node #' ~ str(dst.id) ~ ' to imm "' ~ str(value) ~ '" (' ~ type ~ ')')
-
-      if dst.opcode is AST_OPCODE_VARIABLE
-        if dst.symbolInfo is defined
-          dst.symbolInfo.readHits = dst.symbolInfo.readHits - 1
-        endif
-      endif
-
-      if type is 'boolean'
-        newOpcode = AST_DATA_BOOL
-
-      elif type is 'integer'
-        newOpcode = AST_DATA_INTEGER
-
-      elif type is 'float'
-        newOpcode = AST_DATA_DOUBLE
-
-      elif type is 'string'
-        newOpcode = AST_DATA_STRING
-
-      elif type is 'undefined'
-        newOpcode = AST_DATA_UNDEFINED
-
-      elif type is 'array'
-        newOpcode = AST_DATA_ARRAY
-
-      elif type is 'map'
-        newOpcode = AST_DATA_MAP
-
-      else
-        # Remove newOpcode assign.
-        newOpcode = -1
-        die('error: unhandled result in constant folding: ' ~ type)
-      endif
-
-      dst.children  = []
-      dst.opcode    = newOpcode
-      dst.value     = value
+      # Remove newOpcode assign.
+      newOpcode = -1
+      die('error: unhandled result in constant folding: ' ~ type)
     endif
+
+    dst.children = []
+    dst.opcode   = newOpcode
+    dst.value    = value
   endmethod
 
   method _processNodeArray(node)
-    global AST_DATA_UNDEFINED
-
-    valuesStatic   = []
-    useStaticList  = false
-    useDynamicList = false
+    valuesStatic  = []
+    useStaticList = false
 
     for values oneChild in node.children
       isChildChanged = this.processNode(oneChild)
@@ -121,31 +111,38 @@ class ASTOptimizerConstantFolding
   endmethod
 
   method _processNodeMap(node)
-    newValue    = {}
-    isImm       = true
-    idx         = 0
+    valuesStatic  = {}
+    useStaticList = false
+
     children    = node.children
     childrenCnt = len(children)
 
-    while (isImm is true) and (idx < childrenCnt)
+    # TODO: Use foreach with step by.
+    for idx in 0 .. childrenCnt step 2
       nodeKey   = children[idx]
       nodeValue = children[idx + 1]
 
       isKeyChanged   = this.processNode(nodeKey)
       isValueChanged = this.processNode(nodeValue)
 
-      if (AST_IsImm(nodeKey) is true) and (AST_IsImm(nodeValue) is true)
-        newValue{nodeKey.value} = nodeValue.value
-      else
-        isImm = false
+      if AST_IsImm(nodeKey) is false
+        die('error: non-imm map key in init list')
       endif
-      idx = idx + 2
-    endwhile
 
-    if isImm is true
-      this._setToImm(node, newValue)
+      if AST_IsImm(nodeValue) is true
+        childValue                = nodeValue.value
+        useStaticList             = true
+        nodeValue.movedToInitList = true
+      else
+        childValue = null
+      endif
+
+      valuesStatic{nodeKey.value} = childValue
+    endfor
+
+    if useStaticList is true
+      node.initList = valuesStatic
     endif
-
   endmethod
 
   method processNode(node) -> isNodeChanged

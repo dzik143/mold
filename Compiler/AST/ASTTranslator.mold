@@ -475,21 +475,34 @@ class ASTTranslator
         endif
 
       elif opcode is AST_DATA_MAP
-        this._loadMap(rv)
+        if ast.initList is defined
+          this._loadImm(rv, ast.initList)
+        else
+          this._loadMap(rv)
+        endif
 
         if childrenCnt > 0
           # TODO: Handle non-variant values.
           valueAsVariant = this._getTempVar('variant')
 
           for idx in 0 .. childrenCnt step 2
-            key   = this._evaluateNode(children[idx])
-            value = this._evaluateNode(children[idx + 1])
-            this._convert(valueAsVariant, value, AST_GetDataType(children[idx + 1]), -1)
-            this._storeAtKey(rv, key, valueAsVariant)
+            keyNode   = children[idx]
+            valueNode = children[idx + 1]
 
-            # TODO: Is it really needed?
-            this._releaseTempVar(key)
-            this._releaseTempVar(value)
+            if valueNode.movedToInitList is defined
+              # Do nothing.
+              # We'll emit it inside static init list.
+            else
+              key   = this._evaluateNode(keyNode)
+              value = this._evaluateNode(valueNode)
+
+              this._convert(valueAsVariant, value, AST_GetDataType(children[idx + 1]), -1)
+              this._storeAtKey(rv, key, valueAsVariant)
+
+              # TODO: Is it really needed?
+              this._releaseTempVar(key)
+              this._releaseTempVar(value)
+            endif
           endfor
 
           # TODO: Is it really needed?
