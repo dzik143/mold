@@ -751,14 +751,14 @@ class ASTSymbolsCollector
       endif
 
       if ((opcode is AST_OPCODE_ADD) or
-            (opcode is AST_OPCODE_SUB) or
-            (opcode is AST_OPCODE_MUL) or
-            (opcode is AST_OPCODE_DIV) or
-            (opcode is AST_OPCODE_IDIV) or
-            (opcode is AST_OPCODE_COMPARE_LT) or
-            (opcode is AST_OPCODE_COMPARE_LE) or
-            (opcode is AST_OPCODE_COMPARE_GT) or
-            (opcode is AST_OPCODE_COMPARE_GE))
+          (opcode is AST_OPCODE_SUB) or
+          (opcode is AST_OPCODE_MUL) or
+          (opcode is AST_OPCODE_DIV) or
+          (opcode is AST_OPCODE_IDIV) or
+          (opcode is AST_OPCODE_COMPARE_LT) or
+          (opcode is AST_OPCODE_COMPARE_LE) or
+          (opcode is AST_OPCODE_COMPARE_GT) or
+          (opcode is AST_OPCODE_COMPARE_GE))
 
         # Numbers operators:
         # x + y

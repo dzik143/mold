@@ -668,7 +668,11 @@ class SymbolTable
     # TODO: Use remove() if ready.
     for keys symbolId values symbolInfo in this.symbols
       # TODO: Remove this hack.
-      if (symbolInfo.writeHits > 0) or (symbolInfo.readHits > 0) or (symbolInfo.kind is SYMBOL_KIND_VAR_PARAM) or (symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL)
+      if ((symbolInfo.writeHits > 0) or
+          (symbolInfo.readHits > 0) or
+          (symbolInfo.kind is SYMBOL_KIND_VAR_PARAM) or
+          (symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL))
+
         # Variable is used at least once time. Keep it in table.
         newSymbols{symbolInfo.name} = symbolInfo
 
