@@ -195,7 +195,7 @@ class CodeGeneratorX64
         print name, 'Variant_t VARIANT_UNDEFINED, 0, 0'
 
       else
-        print name, 'Variant_t [error: unhandled type]', type
+        die('error: unhandled type: ' ~ type)
       endif
     endif
 
@@ -1309,42 +1309,46 @@ class CodeGeneratorX64
         # TODO: Clean up this mess.
         # TODO: Don't repeat code.
         for values symbol in symbols
-          if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or
-              (symbol.kind is SYMBOL_KIND_VAR_PARAM))
+          if (symbol.readHits > 0) or (symbol.writeHits > 0)
+            if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or
+                (symbol.kind is SYMBOL_KIND_VAR_PARAM))
 
-            if (symbol.type is undefined) or (symbol.type is 'variant') or (symbol.type is 'string')
-              varSize          = 16
-              currentFrameSize = currentFrameSize + varSize
-              symbol.rbpOffset = 8 + currentFrameSize
-              print ' ', symbol.name, 'EQU rbp -', 8 + currentFrameSize, ';', varSize, 'bytes'
+              if (symbol.type is undefined) or (symbol.type is 'variant') or (symbol.type is 'string')
+                varSize          = 16
+                currentFrameSize = currentFrameSize + varSize
+                symbol.rbpOffset = 8 + currentFrameSize
+                print ' ', symbol.name, 'EQU rbp -', 8 + currentFrameSize, ';', varSize, 'bytes'
+              endif
             endif
           endif
         endfor
 
         # Pass #2: Allocate primitive values on stack.
         for values symbol in symbols
-          if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or
-              (symbol.kind is SYMBOL_KIND_VAR_PARAM))
+          if (symbol.readHits > 0) or (symbol.writeHits > 0)
+            if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or
+                (symbol.kind is SYMBOL_KIND_VAR_PARAM))
 
-            if (symbol.type is undefined) or (symbol.type is 'variant') or (symbol.type is 'string')
-              varSize = 0
+              if (symbol.type is undefined) or (symbol.type is 'variant') or (symbol.type is 'string')
+                varSize = 0
 
-            elif (symbol.type is 'int64') or (symbol.type is 'float64')
-              varSize = 8
+              elif (symbol.type is 'int64') or (symbol.type is 'float64')
+                varSize = 8
 
-            elif (symbol.type is 'int32') or (symbol.type is 'bool32')
-              varSize = 4
+              elif (symbol.type is 'int32') or (symbol.type is 'bool32')
+                varSize = 4
 
-            else
-              # TODO: Remove unneded assign.
-              varSize = -1
-              die('error: unhandled operand type while setting up frame: ' ~ str(symbol.type))
-            endif
+              else
+                # TODO: Remove unneded assign.
+                varSize = -1
+                die('error: unhandled operand type while setting up frame: ' ~ str(symbol.type))
+              endif
 
-            if varSize > 0
-              currentFrameSize = currentFrameSize + varSize
-              symbol.rbpOffset = 8 + currentFrameSize
-              print ' ', symbol.name, 'EQU rbp -', 8 + currentFrameSize, ';', varSize, 'bytes'
+              if varSize > 0
+                currentFrameSize = currentFrameSize + varSize
+                symbol.rbpOffset = 8 + currentFrameSize
+                print ' ', symbol.name, 'EQU rbp -', 8 + currentFrameSize, ';', varSize, 'bytes'
+              endif
             endif
           endif
         endfor
@@ -1466,7 +1470,11 @@ class CodeGeneratorX64
 
       elif originalOpcode is 'create_map'
         this.variantDestroy(dst)
-        this.call1('__MOLD_VariantMapCreate', dst)
+        if x is defined
+          this.call3('__MOLD_VariantMapCreateFromInitList', dst, x, y)
+        else
+          this.call1('__MOLD_VariantMapCreate', dst)
+        endif
 
       elif opcode is 'store_index_variant'
         # dst[x] := y
