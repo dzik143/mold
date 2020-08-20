@@ -1,0 +1,31 @@
+TEST "Divide by zero (integer)"
+print 1 // 0
+
+EXPECTED_ERROR:
+runtime error: divide by zero
+-------------------------------------------------------------------------------
+
+TEST "Divide by zero (float)"
+print 3.14 / 0.0
+
+EXPECTED_ERROR:
+runtime error: divide by zero
+-------------------------------------------------------------------------------
+
+TEST "Float overflow"
+
+x = 9999999999999999.0
+print x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x
+
+EXPECTED_ERROR:
+runtime error: floating point overflow
+-------------------------------------------------------------------------------
+
+TEST "Float underflow"
+
+x = 9999999999999999.0
+print x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x
+
+EXPECTED_ERROR:
+runtime error: floating point underflow
+-------------------------------------------------------------------------------

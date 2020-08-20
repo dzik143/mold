@@ -208,3 +208,15 @@ foo()
 EXPECTED_ERROR:
 ./temp/source.mold:3:6: error: 'foo' is not a function
 --------------------------------------------------------------------------------
+
+TEST "Partially unused params"
+
+function foo(x, y, z)
+  print y
+endfunction
+
+foo(10,20,30)
+
+EXPECTED_OUTPUT:
+20
+--------------------------------------------------------------------------------

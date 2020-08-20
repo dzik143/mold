@@ -772,6 +772,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     # TODO: Simplify it.
     procMeta = {
       'name': funcName,
+      'shortName': funcProto.name,
       'symbols': this.symbolTable.exportSymbols(),
       'symbolTable': this.symbolTable,
       'params': params,

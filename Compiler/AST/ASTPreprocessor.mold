@@ -151,6 +151,11 @@ class ASTPreprocessor
       funcName  = node.value
       sysCallId = MOLD_SYSCALL_MAP{funcName}
 
+      # TODO: Review it.
+      if funcName is 'typeof'
+        children[0].__isUsedAsTypeofArg = true
+      endif
+
       if sysCallId is defined
         # One of built-in functions.
         # Verify number of passed parameters.

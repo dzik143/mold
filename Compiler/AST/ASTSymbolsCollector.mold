@@ -24,7 +24,8 @@ import 'AST/ASTUtils.mold'
 class ASTSymbolsCollector
 
   method constructor(app)
-    this.app = app
+    this.app               = app
+    this.currentClassProto = null
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -152,7 +153,15 @@ class ASTSymbolsCollector
       baseName    = node.value.baseName
       vtable      = {}
       baseMethods = {}
-      classProto  = {}
+
+      # Build new class proto.
+      classProto = {
+        'name': className,
+        'baseName': baseName,
+        'vtable': vtable
+      }
+
+      this.currentClassProto = classProto
 
       # Import base class if any.
       if baseName is defined
@@ -191,14 +200,10 @@ class ASTSymbolsCollector
         endif
       endfor
 
+      this.currentClassProto = null
+
       # Declare new class.
-      classProto.name               = className
-      classProto.baseName           = baseName
-      classProto.vtable             = vtable
-      classProto.propertyClassNames = {}
-
       node.proto = classProto
-
       symbolTable.insertClass(className, classProto)
 
     elif (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
@@ -246,10 +251,10 @@ class ASTSymbolsCollector
           nodeBody.symbolTable.insertParam(paramName, paramShift + paramIdx)
 
           # TODO: Handle non-variant parameters.
-          if opcode is AST_OPCODE_CLASS_METHOD
-            nodeBody.symbolTable.assignType(paramName, -1)
-            nodeBody.symbolTable.freezeType(paramName)
-          endif
+          #if opcode is AST_OPCODE_CLASS_METHOD
+          #  nodeBody.symbolTable.assignType(paramName, -1)
+          #  nodeBody.symbolTable.freezeType(paramName)
+          #endif
         endfor
       endif
 
@@ -459,8 +464,7 @@ class ASTSymbolsCollector
               #
               # TODO: Clean up this mess.
               this._debug('Class mismatch while assigning new object at node #' ~ str(node.id))
-              x = []
-              symbolInfo.classProto = x[0]
+              symbolInfo.classProto = null
             else
               symbolInfo.classProto = newClassProto
             endif
@@ -695,6 +699,11 @@ class ASTSymbolsCollector
       x = children[0]
       y = children[1]
 
+      if opcode is AST_OPCODE_CALL_NEW
+        # TODO: Clean up this mess.
+        node.symbolTable = symbolTable
+      endif
+
       if opcode is AST_OPCODE_CALL
         funcName = node.value
 
@@ -708,6 +717,15 @@ class ASTSymbolsCollector
             # TODO: Fill up proto?
             # TODO: Handle non-variant ret-val.
             symbolTable.insertFunction(funcName, {'builtIn': true, 'astTypeRetVal': -1})
+          endif
+
+          if funcName is 'super'
+            # Inject proto of base class method.
+            baseName       = this.currentClassProto.baseName
+            baseClassProto = symbolTable.lookupClass(baseName).proto
+
+            # TODO: Review it.
+            node.funcProto = baseClassProto.vtable.constructor
           endif
         endif
 

@@ -2,12 +2,16 @@
 Unreleased
 ------------------------------------
   Dropped syntax:
-    - negative array indexes (x[-1] generates runtime error)
+    - negative array indexes x[-1] generate runtime error
+
+  Code generation:
+    - Create map/array from static init list
+    - Non-variant params,
+    - Non-variant return value in ordinary calls,
+    - Skip vtable entries for methods used only as ordinary calls.
 
   Internal maintain:
     - Better type guess
-    - Non-variant params and return value in ordinary calls
-    - Don't emit method used only as ordinary calls to vtable
 
 0.3.200720 (released on 2020-07-20):
 ------------------------------------

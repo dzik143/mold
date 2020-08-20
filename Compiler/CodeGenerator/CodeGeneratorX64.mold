@@ -22,6 +22,31 @@ const REG_PARAMS_CNT = 4
 const REG_PARAMS32   = ['ecx', 'edx', 'r8d', 'r9d']
 const REG_PARAMS64   = ['rcx', 'rdx', 'r8' , 'r9']
 
+MIR_TO_VARIANT_TYPE_MAP = {
+  'int32':   'VARIANT_INTEGER',
+  'int64':   'VARIANT_INTEGER',
+  'float32': 'VARIANT_FLOAT',
+  'float64': 'VARIANT_DOUBLE',
+  'bool32':  'VARIANT_BOOLEAN',
+  'bool64':  'VARIANT_BOOLEAN',
+  'string':  'VARIANT_STRING',
+  'array':   'VARIANT_ARRAY',
+  'map':     'VARIANT_MAP'
+}
+
+MIR_TYPE_SIZE_MAP = {
+  'int32':   4,
+  'int64':   8,
+  'float32': 4,
+  'float64': 8,
+  'bool32':  4,
+  'bool64':  8,
+  'variant': 16,
+  'string':  16,
+  'array':   16,
+  'map':     16
+}
+
 class CodeGeneratorX64
 
   method constructor()
@@ -479,6 +504,7 @@ class CodeGeneratorX64
     global SYMBOL_KIND_VAR_LOCAL, SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_CONST
     global SYMBOL_KIND_VAR_PARAM, SYMBOL_KIND_JMP_TABLE, SYMBOL_KIND_VAR_RETVAL
     global REG_PARAMS_CNT, REG_PARAMS32, REG_PARAMS64
+    global MIR_TO_VARIANT_TYPE_MAP, MIR_TYPE_SIZE_MAP
 
     #
     # Common headers.
@@ -1031,7 +1057,6 @@ class CodeGeneratorX64
           # Build msg format.
           # TODO: Handle more item types.
           encodedFormat = []
-          itemToPush    = null
 
           for values oneParam in params
             symbolInfo = currentSymbols{oneParam}
@@ -1343,6 +1368,64 @@ class CodeGeneratorX64
         currentProcName  = proto.name
         currentProcRv    = proto.rv
         currentSymbols   = proto.symbols
+
+        # Extra entry point for virtual call.
+        # Virtual call params are always variants.
+        # We need to translave variants to primitive before go on.
+        if ((currentSymbols{'this'} is defined) and
+            (codeObj.methodsMap{proto.shortName} is defined))
+
+          print currentProcName ~ '_vcall:'
+
+          for indexes paramIdx values paramName in proto.params
+            symbolInfo = currentSymbols{paramName}
+            symbolType = symbolInfo.type
+
+            # TODO: Clean up this mess.
+            if symbolType is defined
+              symbolSize = MIR_TYPE_SIZE_MAP{symbolType}
+            else
+              symbolSize = 16
+            endif
+
+            if symbolSize <= 8
+              # Primitive type.
+              expectedType = MIR_TO_VARIANT_TYPE_MAP{symbolType}
+
+              # TODO: Optimize it.
+              if paramIdx is 0
+                print '  cmp [rdx + Variant_t.type],', expectedType
+                print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
+                print '  mov rdx, [rdx + Variant_t.value]'
+                print ''
+
+              elif paramIdx is 1
+                print '  cmp [r8 + Variant_t.type],', expectedType
+                print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
+                print '  mov r8, [r8 + Variant_t.value]'
+                print ''
+
+              elif paramIdx is 2
+                print '  cmp [r9 + Variant_t.type],', expectedType
+                print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
+                print '  mov r9, [r9 + Variant_t.value]'
+                print ''
+
+              else
+                paramOffset = (paramIdx - 2) * 8
+                print '  mov rax, [rsp +', paramOffset, ']'
+                print '  cmp [rax + Variant_t.type],', expectedType
+                print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
+                print '  mov rax, [rax + Variant_t.value]'
+                print '  mov [rsp +', paramOffset, '], rax'
+                print ''
+              endif
+            endif
+          endfor
+        endif
+
+        # Ordinary entry point.
+        # This address can be called directly with primitive params.
         print currentProcName ~ ':'
 
         arrayOfProcedures[@afterlast] = currentProcName
@@ -1792,7 +1875,7 @@ class CodeGeneratorX64
           if methodProto is undefined
             methodPtr = '__MOLD_NullMethodCalled'
           else
-            methodPtr = methodProto.fullName
+            methodPtr = methodProto.fullName ~ '_vcall'
           endif
 
           print '  dq', methodPtr, ';', methodName, '(', methodIdx, ')'

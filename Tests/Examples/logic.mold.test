@@ -535,3 +535,35 @@ EXPECTED_OUTPUT:
 3 is in {1, 2, 3}
 4 is NOT in {1, 2, 3}
 -------------------------------------------------------------------------------
+
+TEST "Bug: Variant param incorectly reduced to primitive"
+
+function foo(x)
+  if typeof(x) is 'integer'
+    if x < 256
+      print x, 'is integer below 256'
+    else
+      print x, 'is integer above or equal to 256'
+    endif
+  else
+    print x, 'is NOT integer'
+  endif
+endfunction
+
+foo(10)
+foo(1000)
+foo(3.14)
+foo('text')
+foo(true)
+foo([])
+foo({})
+
+EXPECTED_OUTPUT:
+10 is integer below 256
+1000 is integer above or equal to 256
+3.140000 is NOT integer
+text is NOT integer
+true is NOT integer
+[] is NOT integer
+{} is NOT integer
+-------------------------------------------------------------------------------

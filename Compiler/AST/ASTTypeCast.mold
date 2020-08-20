@@ -158,14 +158,21 @@ class ASTTypeCast
         children[0] = AST_TypeCast(children[0], AST_DATA_INTEGER)
 
       elif opcode is AST_OPCODE_CALL
-        funcProto     = node.symbolInfo.proto
+        # TODO: Clean up this mess.
+        if node.value is 'super'
+          funcProto     = node.funcProto
+          firstParamIdx = 1
+        else
+          funcProto     = node.symbolInfo.proto
+          firstParamIdx = 0
+        endif
+
         astTypeParams = funcProto.astTypeParams
 
         if astTypeParams is defined
           for idx in 0 .. childrenCnt
             # Adjust argument type.
-            # TODO: Handle non-variant params.
-            children[idx] = AST_TypeCast(children[idx], astTypeParams[idx])
+            children[idx] = AST_TypeCast(children[idx], astTypeParams[firstParamIdx + idx])
           endfor
 
         elif (node.value isnt 'global') and (node.value isnt 'print')
@@ -176,9 +183,19 @@ class ASTTypeCast
           endfor
         endif
 
-      elif ((opcode is AST_OPCODE_VCALL) or
-            (opcode is AST_OPCODE_CALL_NEW))
+      elif opcode is AST_OPCODE_CALL_NEW
+        classProto = node.symbolTable.lookupClass(node.value).proto
+        funcProto  = classProto.vtable.constructor
 
+        if funcProto is defined
+          astTypeParams = funcProto.astTypeParams
+          for idx in 0 .. childrenCnt
+            # Adjust argument type.
+            children[idx] = AST_TypeCast(children[idx], astTypeParams[idx])
+          endfor
+        endif
+
+      elif opcode is AST_OPCODE_VCALL
         for idx in 0 .. childrenCnt
           # Adjust argument type.
           # TODO: Handle non-variant params.

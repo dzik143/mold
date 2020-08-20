@@ -356,15 +356,9 @@ EXPECTED_OUTPUT:
 -------------------------------------------------------------------------------
 
 TEST "Load from negative character index (should fail) #1"
-
 x = 'this is some text'
-
-print '(1) before error'
 print x[-1000]
-print '(2) after error'
 
-EXPECTED_OUTPUT:
-(1) before error
 EXPECTED_ERROR:
 runtime error: negative array index
 -------------------------------------------------------------------------------

@@ -216,18 +216,18 @@ class VMachineStack
         stack.setByAbsoluteIdx(paramBase + paramIdx, stack.pop())
 
       elif opcode is MIR_OPCODE_STORE_BY_INDEX
-        val = stack.pop()
-        idx = stack.pop()
-        box = stack.pop()
+        value = stack.pop()
+        index = stack.pop()
+        box   = stack.pop()
 
         # TODO: Why we need to check it here?
-        if typeof(idx) isnt 'integer'
+        if typeof(index) isnt 'integer'
           # Emulate the same beheavior as compiled version.
           # TODO: Handle source line.
           die('runtime error: integer expected')
         endif
 
-        box[idx] = val
+        box[index] = value
         stack.push(box)
 
       elif opcode is MIR_OPCODE_STORE_BY_KEY
