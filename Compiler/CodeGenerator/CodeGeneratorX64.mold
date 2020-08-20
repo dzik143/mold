@@ -18,6 +18,10 @@
 #                                                                              #
 ################################################################################
 
+const REG_PARAMS_CNT = 4
+const REG_PARAMS32   = ['ecx', 'edx', 'r8d', 'r9d']
+const REG_PARAMS64   = ['rcx', 'rdx', 'r8' , 'r9']
+
 class CodeGeneratorX64
 
   method constructor()
@@ -101,27 +105,93 @@ class CodeGeneratorX64
     endif
   endmethod
 
-  method pushParametersBeforeCall(params)
-    paramsCnt = len(params)
-    regParams = ['rcx', 'rdx', 'r8', 'r9']
+  method getVariableSize(varName) -> varSize
+    if varName is '__TrashBin'
+      varSize = 16
 
-    if paramsCnt <= 4
-      regParamsCnt   = paramsCnt
-      stackParamsCnt = 0
     else
-      regParamsCnt   = 4
-      stackParamsCnt = paramsCnt - 4
+      symbolInfo = this.symbols{varName}
+
+      if symbolInfo is undefined
+        # TODO: Review it.
+        print '; WARNING: Failed to get variable size:', varName
+        varSize = 16
+
+      elif ((symbolInfo.type is undefined) or
+          (symbolInfo.type is 'variant') or
+          (symbolInfo.type is 'string'))
+        # TODO: Review it.
+        varSize = 16
+
+      elif (symbolInfo.type is 'int64') or (symbolInfo.type is 'float64')
+        varSize = 8
+
+      elif (symbolInfo.type is 'int32') or (symbolInfo.type is 'bool32')
+        varSize = 4
+
+      else
+        # TODO: Remove unneded assign.
+        varSize = -1
+        die('error: unhandled variable type: ' ~ str(symbolInfo.type))
+      endif
     endif
+  endmethod
 
-    for idx in 0 .. regParamsCnt
-      this.lea(regParams[idx], params[idx])
+  method pushOneParameterBeforeCall(param, paramIdx)
+    global REG_PARAMS_CNT
+    global REG_PARAMS32
+    global REG_PARAMS64
+
+    varSize = this.getVariableSize(param)
+
+    if paramIdx < REG_PARAMS_CNT
+      if varSize is 4
+        print '  mov', REG_PARAMS32[paramIdx], ', dword [', param, ']'
+      elif varSize is 8
+        print '  mov', REG_PARAMS64[paramIdx], ', qword [', param, ']'
+      elif varSize is 16
+        print '  lea', REG_PARAMS64[paramIdx], ', [', param, ']'
+      endif
+
+    else
+      if varSize is 4
+        print '  mov  eax, dword [', param, ']'
+        print '  push rax'
+
+      elif varSize is 8
+        print '  push qword [', param, ']'
+
+      elif varSize is 16
+        print '  lea rax, [', param, ']'
+        print '  push rax'
+      endif
+    endif
+  endmethod
+
+  method pushParametersBeforeCall(params)
+    global REG_PARAMS_CNT
+    global REG_PARAMS32
+    global REG_PARAMS64
+
+    #paramsCnt = len(params)
+
+    #if paramsCnt <= REG_PARAMS_CNT
+    #  regParamsCnt   = paramsCnt
+    #  stackParamsCnt = 0
+    #else
+    #  regParamsCnt   = REG_PARAMS_CNT
+    #  stackParamsCnt = paramsCnt - REG_PARAMS_CNT
+    #endif
+
+    for indexes idx values oneParam in params
+      this.pushOneParameterBeforeCall(oneParam, idx)
     endfor
 
-    for idx in 4 .. paramsCnt
-      # TODO: Optimize it.
-      this.lea('rax', params[idx])
-      this.push('rax')
-    endfor
+#    for idx in 4 .. paramsCnt
+#      # TODO: Optimize it.
+#      this.lea('rax', params[idx])
+#      this.push('rax')
+#    endfor
   endmethod
 
   method _hash(x) -> rv
@@ -408,6 +478,7 @@ class CodeGeneratorX64
   method run(codeObj)
     global SYMBOL_KIND_VAR_LOCAL, SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_CONST
     global SYMBOL_KIND_VAR_PARAM, SYMBOL_KIND_JMP_TABLE, SYMBOL_KIND_VAR_RETVAL
+    global REG_PARAMS_CNT, REG_PARAMS32, REG_PARAMS64
 
     #
     # Common headers.
@@ -475,7 +546,11 @@ class CodeGeneratorX64
       yType   = 'variant'
 
       if (itemCnt > 2) and (typeof(x) is 'string')
-        if (opcode isnt 'call') and (opcode isnt 'vcall') and (opcode isnt 'syscall') and (opcode isnt 'create_object') and ((opcode[0] isnt 'c') or (opcode[1] is 'm'))
+        if ((opcode isnt 'call') and
+            (opcode isnt 'vcall') and
+            (opcode isnt 'syscall') and
+            (opcode isnt 'create_object') and
+            ((opcode[0] isnt 'c') or (opcode[1] is 'm')))
 
           # TODO: Clean up this mess.
           if opcode is 'load_index'
@@ -1007,6 +1082,16 @@ class CodeGeneratorX64
         print '  lea rdx, [', dst, ']'
         print '  call __MOLD_VariantConvertBool64ToString'
 
+      elif (opcode is 'call') and (item[2] is '__MOLD_ForDriver_Generic')
+        # TODO: Clean up this mess.
+        params = item[3]
+
+        this.lea('rcx', params[0])
+        this.lea('rdx', params[1])
+        this.lea('r8', params[2])
+        this.lea('r9', params[3])
+        this.call('__MOLD_ForDriver_Generic')
+
       elif (opcode is 'call') or (opcode is 'syscall')
         rv        = item[1]
         name      = item[2]
@@ -1296,14 +1381,17 @@ class CodeGeneratorX64
         # Clean up this mess.
         this.symbols = symbols
 
-        regParams = ['rcx','rdx', 'r8', 'r9']
-
         print '  ; init frame'
         print '  ; ----------'
 
         # Calculate frame size.
         currentFrameSize = 0
         paramsPassedCnt  = paramsCnt
+
+        if currentFrame.rv is defined
+          # TODO: Pass variant return values on stack?
+          print ' ', currentFrame.rv, 'EQU rdi'
+        endif
 
         # Pass #1: Allocate variant varibles on stack before all others.
         # TODO: Clean up this mess.
@@ -1313,7 +1401,10 @@ class CodeGeneratorX64
             if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or
                 (symbol.kind is SYMBOL_KIND_VAR_PARAM))
 
-              if (symbol.type is undefined) or (symbol.type is 'variant') or (symbol.type is 'string')
+              if ((symbol.type is undefined) or
+                  (symbol.type is 'variant') or
+                  (symbol.type is 'string'))
+
                 varSize          = 16
                 currentFrameSize = currentFrameSize + varSize
                 symbol.rbpOffset = 8 + currentFrameSize
@@ -1329,22 +1420,9 @@ class CodeGeneratorX64
             if ((symbol.kind is SYMBOL_KIND_VAR_LOCAL) or
                 (symbol.kind is SYMBOL_KIND_VAR_PARAM))
 
-              if (symbol.type is undefined) or (symbol.type is 'variant') or (symbol.type is 'string')
-                varSize = 0
+              varSize = this.getVariableSize(symbol.name)
 
-              elif (symbol.type is 'int64') or (symbol.type is 'float64')
-                varSize = 8
-
-              elif (symbol.type is 'int32') or (symbol.type is 'bool32')
-                varSize = 4
-
-              else
-                # TODO: Remove unneded assign.
-                varSize = -1
-                die('error: unhandled operand type while setting up frame: ' ~ str(symbol.type))
-              endif
-
-              if varSize > 0
+              if varSize < 16
                 currentFrameSize = currentFrameSize + varSize
                 symbol.rbpOffset = 8 + currentFrameSize
                 print ' ', symbol.name, 'EQU rbp -', 8 + currentFrameSize, ';', varSize, 'bytes'
@@ -1352,11 +1430,6 @@ class CodeGeneratorX64
             endif
           endif
         endfor
-
-        if currentFrame.rv is defined
-          # TODO: Pass variant return values on stack?
-          print ' ', currentFrame.rv, 'EQU rdi'
-        endif
 
         if symbols{'this'} is defined
           # TODO: Dirty fix to handle real number of stack parameters if 'this'
@@ -1399,34 +1472,38 @@ class CodeGeneratorX64
           elif oneItem.kind is SYMBOL_KIND_VAR_PARAM
             # Call parameter - copy to local var.
             if (oneItem.readHits > 0) or (oneItem.writeHits > 0)
+              varSize = this.getVariableSize(oneItem.name)
+
               if paramIdx < 4
-                srcPtr = regParams[paramIdx]
+                if varSize is 4
+                  srcPtr = REG_PARAMS32[paramIdx]
+                else
+                  srcPtr = REG_PARAMS64[paramIdx]
+                endif
               else
-                print '  mov    rax, [rbp + 16 + 8 *', paramsPassedCnt - paramIdx - 1, ']'
-                srcPtr = 'rax'
+                if varSize is 4
+                  print '  mov eax, dword [rbp + 16 + 8 *', paramsPassedCnt - paramIdx - 1, ']'
+                  srcPtr = 'eax'
+
+                else
+                  print '  mov rax, qword [rbp + 16 + 8 *', paramsPassedCnt - paramIdx - 1, ']'
+                  srcPtr = 'rax'
+                endif
               endif
 
-              if ((oneItem.type is undefined) or
-                  (oneItem.type is 'variant') or
-                  (oneItem.type is 'string'))
+              if varSize is 4
+                print '  mov dword [', oneItem.name, '],', srcPtr
 
-                  print '  movdqu xmm0', ', [', srcPtr, ']'
-                  print '  movdqu [', oneItem.name, '], xmm0'
+              elif varSize is 8
+                print '  mov qword [', oneItem.name, '],', srcPtr
+
+              elif varSize is 16
+                print '  movdqu xmm0', ', [', srcPtr, ']'
+                print '  movdqu [', oneItem.name, '], xmm0'
 
                 if oneItem.duplicateOnFirstWrite is defined
                   print '  or [', oneItem.name, ' + Variant_t.flags ], VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE'
                 endif
-
-              elif ((oneItem.type is 'int32') or
-                    (oneItem.type is 'bool32'))
-                print '  mov eax, dword [', srcPtr, ']'
-                print '  mov dword [', oneItem.name, '], eax'
-
-              elif ((oneItem.type is 'int64') or
-                    (oneItem.type is 'bool64') or
-                    (oneItem.type is 'float64'))
-                print '  mov rax, qword [', srcPtr, ']'
-                print '  mov qword [', oneItem.name, '], rax'
 
               else
                 die("error: unhandled type for param '" ~ oneItem.name ~ "': " ~ oneItem.type)
