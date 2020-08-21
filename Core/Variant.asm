@@ -23,6 +23,17 @@ include 'Utils.asm'
 include 'Memory.asm'
 
 ;###############################################################################
+;                                  Aliases
+;###############################################################################
+
+; TODO: Clean up this mess.
+__MOLD_Variant_add  EQU __MOLD_VariantAdd
+__MOLD_Variant_sub  EQU __MOLD_VariantSub
+__MOLD_Variant_mul  EQU __MOLD_VariantMul
+__MOLD_Variant_div  EQU __MOLD_VariantDiv
+__MOLD_Variant_idiv EQU __MOLD_VariantDivAsInteger
+
+;###############################################################################
 ;                                  Constants
 ;###############################################################################
 
@@ -3050,18 +3061,18 @@ __MOLD_VariantStringJoin:
 __MOLD_VCall:
   ; rcx - this (Variant_t)
   ; rax - method id (int32)
-  mov  r10, [rcx + Variant_t.value]     ; r10 = this (Buffer_t)
-  shl  eax, 3                           ; rax = method id * 8
-  mov  r10, [r10 + Buffer_t.bytesPtr]   ; r10 = this (Object_t)
-  mov  r10, [r10 + Object_t.vtable]     ; r10 = this.vtable
+  mov  r11, [rcx + Variant_t.value]     ; r11 = this (Buffer_t)
+  shl  r10d, 3                          ; r10 = method id * 8
+  mov  r11, [r11 + Buffer_t.bytesPtr]   ; r11 = this (Object_t)
+  mov  r11, [r11 + Object_t.vtable]     ; r11 = this.vtable
 
-  sub  eax, dword [r10]                 ; eax = 8*id - offsetStart
+  sub  r10d, dword [r11]                ; r10 = 8*id - offsetStart
   js   __MOLD_NullMethodCalled          ; is method out of range?
 
-  cmp  eax, dword [r10 + 4]             ; 8*id  offsetEnd > 0
+  cmp  r10d, dword [r11 + 4]            ; 8*id  offsetEnd > 0
   ja   __MOLD_NullMethodCalled          ; is method out of range?
 
-  jmp  qword [8 + r10 + rax]            ; call this.vtable[id]
+  jmp  qword [8 + r11 + r10]            ; call this.vtable[id]
 
 
 include 'Error.asm'

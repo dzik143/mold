@@ -591,7 +591,7 @@ class CodeGeneratorX64
         endif
       endif
 
-      # print '[x86]', opcode, dst, x, y
+      # print '  ; [x86]', opcode, dst, x, y
 
       # Dispatch opcode.
       if opcode is 'nop'
@@ -1117,45 +1117,45 @@ class CodeGeneratorX64
         this.lea('r9', params[3])
         this.call('__MOLD_ForDriver_Generic')
 
-      elif (opcode is 'call') or (opcode is 'syscall')
+      elif opcode is 'syscall'
+        rv        = item[1]
+        name      = item[2]
+        params    = item[3]
+
+        this.pushParametersBeforeCall(params)
+
+        # Syscall
+        if typeof(name) is 'integer'
+          print '  mov eax, ', name
+        else
+          print '  mov eax, dword [', name, '+ Variant_t.value]'
+        endif
+
+        if rv is defined
+          # TODO: Clean up this mess.
+          this.push('rdi')
+          this.lea('rdi', rv)
+          this.call('__MOLD_SysCall')
+          this.pop('rdi')
+        else
+          this.call('__MOLD_SysCall')
+        endif
+
+      elif opcode is 'call'
         rv        = item[1]
         name      = item[2]
         params    = item[3]
         paramsCnt = len(params)
 
         if rv is defined
-          # Function has return value.
-          # TODO: Clean up this mess.
-          this.push('rdi')
-          this.pushParametersBeforeCall(params)
-          this.lea('rdi', rv)
-          this.mov('[rdi + Variant_t.type]', 'VARIANT_UNDEFINED')
-        else
-          # No return value.
-          this.pushParametersBeforeCall(params)
+          this.lea('rax', rv)
         endif
 
-        if opcode is 'syscall'
-          # Syscall
-          if typeof(name) is 'integer'
-            print '  mov eax, ', name
-          else
-            print '  mov eax, dword [', name, '+ Variant_t.value]'
-          endif
-
-          this.call('__MOLD_SysCall')
-
-        else
-          # Ordinary function.
-          this.call(name)
-        endif
+        this.pushParametersBeforeCall(params)
+        this.call(name)
 
         if paramsCnt > 4
           print '  add rsp,', paramsCnt * 8 - 32
-        endif
-
-        if rv is defined
-          this.pop('rdi')
         endif
 
       elif opcode is 'vcall'
@@ -1164,24 +1164,17 @@ class CodeGeneratorX64
         params    = item[3]
         paramsCnt = len(params)
 
+        this.pushParametersBeforeCall(params)
+
         if rv is defined
-          this.push('rdi')
-          this.pushParametersBeforeCall(params)
-          print '  lea  rdi, [', rv, ']'
-          print '  mov [rdi + Variant_t.type], VARIANT_UNDEFINED'
-        else
-          this.pushParametersBeforeCall(params)
+          this.lea('rax', rv)
         endif
 
-        print '  mov  eax,', methodId
+        print '  mov  r10d,', methodId
         print '  call __MOLD_VCall'
 
         if paramsCnt > 4
           print '  add rsp,', paramsCnt * 8 - 32
-        endif
-
-        if rv is defined
-          this.pop('rdi')
         endif
 
       elif opcode is 'create_object'
@@ -1360,6 +1353,11 @@ class CodeGeneratorX64
         print ''
         print '  add  rsp,', currentFrameSize
         print '  pop  rbp'
+
+        if currentProcRv is defined
+          print '  pop  rdi'
+        endif
+
         print '  ret'
 
       elif opcode is 'proc'
@@ -1528,9 +1526,16 @@ class CodeGeneratorX64
           currentFrameSize = 32
         endif
 
+        if currentFrame.rv is defined
+          print ''
+          print '  push rdi'
+          print '  mov  rdi, rax'
+        endif
+
         print ''
         print '  push rbp'
         print '  mov  rbp, rsp'
+
         print '  sub  rsp,', currentFrameSize
         print ''
 

@@ -6,9 +6,9 @@ Unreleased
 
   Code generation:
     - Create map/array from static init list
-    - Non-variant params,
-    - Non-variant return value in ordinary calls,
-    - Skip vtable entries for methods used only as ordinary calls.
+    - Non-variant params and return value in ordinary calls,
+    - Skip vtable entries for methods used only as ordinary calls,
+    - Simplified passing return value.
 
   Internal maintain:
     - Better type guess
