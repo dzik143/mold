@@ -418,7 +418,6 @@ class ASTTranslator
           # Type mismatch. Perform conversion into another variable.
           # TODO: Clean up this mess.
           rv = this._getTempVar(dstTypeMir)
-          this.symbolTable.assignMirType(rv, dstTypeMir)
           this._releaseTempVar(src)
           this._convert(rv, src, srcType, dstType)
         endif
@@ -429,11 +428,8 @@ class ASTTranslator
       # This code is needed only in MIR1 flow.
       astDataType = AST_GetDataType(ast)
       mirDataType = AST_ConvertDataTypeToMIR(astDataType)
-      rv = this._getTempVar(mirDataType)
-      this.symbolTable.assignMirType(rv, mirDataType)
 
-      # Assign temp var to current node ("scratch").
-      ast.tempVar = rv
+      rv = this._getTempVar(mirDataType)
 
       if opcode is AST_DATA_UNDEFINED
         # Built-in null variable.
@@ -442,7 +438,6 @@ class ASTTranslator
       elif opcode is AST_DATA_ARRAY
         # TODO: Why typeof(value) is 'string' here?
         # print '; AST_DATA_ARRAY', value, typeof(value), value[0], valueType
-
         if ast.initList is defined
           this._loadImm(rv, ast.initList)
         else
