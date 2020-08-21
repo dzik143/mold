@@ -979,48 +979,26 @@ class CodeGeneratorX64
       #
 
       elif opcode is 'jmp_if_true_bool32'
-        print '  cmp dword [', x, '], 0'
-        print '  jnz', dst
+        this._jmp_if_cc_int32(dst, x, 0, 'nz')
 
       elif opcode is 'jmp_if_false_bool32'
-        print '  cmp dword [', x, '], 0'
-        print '  jz', dst
+        this._jmp_if_cc_int32(dst, x, 0, 'z')
 
       elif opcode is 'jmp_if_eq_bool32'
-        print '  xor   eax, eax'
-        print '  or    dword [', x, '], eax'
-        print '  setnz cl'
-        print '  or    dword [', y, '], eax'
-        print '  setz  al'
-        print '  xor   al, cl'
-        print '  jnz', dst
+        # TODO: Review it.
+        this._jmp_if_cc_int32(dst, x, y, 'z')
 
       elif opcode is 'jmp_if_ne_bool32'
-        print '  xor  eax, eax'
-        print '  or   dword [', x, '], eax'
-        print '  setz cl'
-        print '  or   dword [', y, '], eax'
-        print '  setz al'
-        print '  xor  al, cl'
-        print '  jnz', dst
+        # TODO: Review it.
+        this._jmp_if_cc_int32(dst, x, y, 'nz')
 
       elif opcode is 'cmp_eq_bool32'
-        print '  xor   eax, eax'
-        print '  or    dword [', x, '], eax'
-        print '  setnz cl'
-        print '  or    dword [', y, '], eax'
-        print '  setz  al'
-        print '  xor   al, cl'
-        print '  mov   dword [', dst, '], eax'
+        # TODO: Review it.
+        this._cmp_cc_int32(dst, x, y, 'z')
 
       elif opcode is 'cmp_ne_bool32'
-        print '  xor  eax, eax'
-        print '  or   dword [', x, '], eax'
-        print '  setz cl'
-        print '  or   dword [', y, '], eax'
-        print '  setz al'
-        print '  xor  al, cl'
-        print '  mov  dword [', dst, '], eax'
+        # TODO: Review it.
+        this._cmp_cc_int32(dst, x, y, 'nz')
 
       #
       # jmp_if_xx_float64
