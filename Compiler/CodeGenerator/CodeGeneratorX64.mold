@@ -496,6 +496,44 @@ class CodeGeneratorX64
     print '  j' ~ cc, dst
   endmethod
 
+  method _alu2_float64(dst, x, y, opcode)
+    print '  movq  xmm0, [', x, ']'
+    print ' ', opcode, 'xmm0, qword [', y, ']'
+    print '  movq  qword [', dst, '], xmm0'
+  endmethod
+
+  method _alu2_int32(dst, x, y, opcode)
+    print '  mov eax, dword [', x, ']'
+    print ' ', opcode, 'eax, dword [', y, ']'
+    print '  mov dword [', dst, '], eax'
+  endmethod
+
+  method _alu2_int64(dst, x, y, opcode)
+    print '  mov rax, qword [', x, ']'
+    print ' ', opcode, 'eax, qword [', y, ']'
+    print '  mov qword [', dst, '], rax'
+  endmethod
+
+  method _move_int32(dst, src)
+    print '  mov eax, dword [', src, ']'
+    print '  mov dword [', dst, '], eax'
+  endmethod
+
+  method _move_int64(dst, src)
+    print '  mov rax, qword [', src, ']'
+    print '  mov qword [', dst, '], rax'
+  endmethod
+
+  method _move_float64(dst, src)
+    this._move_int64(dst, src)
+  endmethod
+
+  method _loadString(dst, src)
+    this.variantDestroy(dst)
+    print '  movdqu xmm0, [', src, ']'
+    print '  movdqu [', dst, '], xmm0'
+  endmethod
+
   method _getSymbolType(symbolsMap, id) -> rv
     rv = 'variant'
     if typeof(id) is 'string'
@@ -617,12 +655,10 @@ class CodeGeneratorX64
         this.variantMove(dst, x)
 
       elif (opcode is 'move_int32') or (opcode is 'move_bool32')
-        print '  mov eax, dword [', x, ']'
-        print '  mov dword [', dst, '], eax'
+        this._move_int32(dst, x)
 
       elif (opcode is 'move_int64') or (opcode is 'move_float64')
-        print '  mov rax, qword [', x, ']'
-        print '  mov qword [', dst, '], rax'
+        this._move_int64(dst, x)
 
       #
       # Typeof(x)
@@ -630,19 +666,13 @@ class CodeGeneratorX64
       #
 
       elif (opcode is 'typeof_int64') or (opcode is 'typeof_int32')
-        this.variantDestroy(dst)
-        print '  movdqu xmm0, [StringInteger]'
-        print '  movdqu [', dst, '], xmm0'
+        this._loadString(dst, 'StringInteger')
 
       elif opcode is 'typeof_float64'
-        this.variantDestroy(dst)
-        print '  movdqu xmm0, [StringFloat]'
-        print '  movdqu [', dst, '], xmm0'
+        this._loadString(dst, 'StringFloat')
 
       elif opcode is 'typeof_bool32'
-        this.variantDestroy(dst)
-        print '  movdqu xmm0, [StringBoolean]'
-        print '  movdqu [', dst, '], xmm0'
+        this._loadString(dst, 'StringBoolean')
 
       #
       # int64 arithmetic
@@ -654,19 +684,13 @@ class CodeGeneratorX64
         print '  mov qword [', dst, '], rax'
 
       elif opcode is 'add_int64'
-        print '  mov rax, qword [', x, ']'
-        print '  add rax, qword [', y, ']'
-        print '  mov qword [', dst, '], rax'
+        this._alu2_int64(dst, x, y, 'add')
 
       elif opcode is 'sub_int64'
-        print '  mov rax, qword [', x, ']'
-        print '  sub rax, qword [', y, ']'
-        print '  mov qword [', dst, '], rax'
+        this._alu2_int64(dst, x, y, 'sub')
 
       elif opcode is 'mul_int64'
-        print '  mov rcx, qword [', x, ']'
-        print '  imul rcx, qword [', y, ']'
-        print '  mov qword [', dst, '], rcx'
+        this._alu2_int64(dst, x, y, 'imul')
 
       elif opcode is 'div_int64'
         print '  cvtsi2sd  xmm0, qword [', x, ']'   # ; xmm0 = double(x)
@@ -709,19 +733,13 @@ class CodeGeneratorX64
         print '  mov dword [', dst, '], eax'
 
       elif opcode is 'add_int32'
-        print '  mov eax, dword [', x, ']'
-        print '  add eax, dword [', y, ']'
-        print '  mov dword [', dst, '], eax'
+        this._alu2_int32(dst, x, y, 'add')
 
       elif opcode is 'sub_int32'
-        print '  mov eax, dword [', x, ']'
-        print '  sub eax, dword [', y, ']'
-        print '  mov dword [', dst, '], eax'
+        this._alu2_int32(dst, x, y, 'sub')
 
       elif opcode is 'mul_int32'
-        print '  mov ecx, dword [', x, ']'
-        print '  imul ecx, dword [', y, ']'
-        print '  mov dword [', dst, '], ecx'
+        this._alu2_int32(dst, x, y, 'imul')
 
       elif opcode is 'div_int32'
         print '  cvtsi2sd  xmm0, dword [', x, ']'   # ; xmm0 = double(x)
@@ -764,24 +782,16 @@ class CodeGeneratorX64
         print '  mov qword [', dst, '], rax'
 
       elif opcode is 'add_float64'
-        print '  movq  xmm0, [', x, ']'
-        print '  addsd xmm0, qword [', y, ']'
-        print '  movq  qword [', dst, '], xmm0'
+        this._alu2_float64(dst, x, y, 'addsd')
 
       elif opcode is 'sub_float64'
-        print '  movq  xmm0, [', x, ']'
-        print '  subsd xmm0, qword [', y, ']'
-        print '  movq  qword [', dst, '], xmm0'
+        this._alu2_float64(dst, x, y, 'subsd')
 
       elif opcode is 'mul_float64'
-        print '  movq  xmm0, [', x, ']'
-        print '  mulsd xmm0, qword [', y, ']'
-        print '  movq  qword [', dst, '], xmm0'
+        this._alu2_float64(dst, x, y, 'mulsd')
 
       elif opcode is 'div_float64'
-        print '  movq  xmm0, [', x, ']'
-        print '  divsd xmm0, qword [', y, ']'
-        print '  movq  qword [', dst, '], xmm0'
+        this._alu2_float64(dst, x, y, 'divsd')
 
       elif opcode is 'idiv_float64'
         print '  movq      xmm0, qword [', x, ']'  # xmm0 = x
