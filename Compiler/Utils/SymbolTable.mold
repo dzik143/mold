@@ -731,14 +731,21 @@ class SymbolTable
       rv = poolObj.pool[poolCnt]
       this._debug('Get temp var [' ~ rv ~ '] from pool (' ~ wantedType ~ ')')
 
+      # TODO: Review it.
+      symbolInfo           = this.lookup(rv)
+      symbolInfo.isDeleted = false
+
     else
       # There is no free temp vars. Allocate new one.
       rv = 'tmp' ~ str(SymbolTable_GetNextId())
       this.insertLocal(rv)
+
       # TODO: Clean up this mess.
-      symbolInfo        = this.lookup(rv)
-      symbolInfo.isTemp = true
-      symbolInfo.type   = wantedType
+      symbolInfo           = this.lookup(rv)
+      symbolInfo.isTemp    = true
+      symbolInfo.isDeleted = false
+      symbolInfo.type      = wantedType
+
       this._debug('Allocated new temp var [' ~ rv ~ '] (' ~ wantedType ~ ')')
     endif
 
@@ -760,8 +767,12 @@ class SymbolTable
     # TODO: Clean up this mess.
     if ((symbolInfo is defined) and
         (symbolInfo.isTemp is defined) and
-        (symbolInfo.isTemp is true))
+        (symbolInfo.isTemp is true) and
+        (symbolInfo.isDeleted is false))
 
+      # TODO: Review it.
+
+      symbolInfo.isDeleted = true
       #symbolInfo.refCnt = symbolInfo.refCnt - 1
 
       #if symbolInfo.refCnt is 0
