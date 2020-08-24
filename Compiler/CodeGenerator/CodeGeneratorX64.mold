@@ -1397,11 +1397,11 @@ class CodeGeneratorX64
 
               else
                 paramOffset = (paramIdx - 2) * 8
-                print '  mov r9, [rsp +', paramOffset, ']'
-                print '  cmp [r9 + Variant_t.type],', expectedType
+                print '  mov r10, [rsp +', paramOffset, ']'
+                print '  cmp [r10 + Variant_t.type],', expectedType
                 print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
-                print '  mov r9, [r9 + Variant_t.value]'
-                print '  mov [rsp +', paramOffset, '], r9'
+                print '  mov r10, [r10 + Variant_t.value]'
+                print '  mov [rsp +', paramOffset, '], r10'
                 print ''
               endif
             endif
