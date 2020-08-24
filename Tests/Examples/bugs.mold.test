@@ -415,3 +415,17 @@ foo(data, 0)
 EXPECTED_ERROR:
 runtime error: integer expected
 -------------------------------------------------------------------------------
+
+TEST "Bug: Incorrect switch to variant arithmetic"
+
+x   = {'0': 20}
+idx = 0
+acc = 10
+
+acc = acc + x{str(idx)}
+
+print acc
+
+EXPECTED_OUTPUT:
+30
+-------------------------------------------------------------------------------

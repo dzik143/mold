@@ -578,6 +578,40 @@ B : foo()
 C : foo()
 --------------------------------------------------------------------------------
 
+TEST "vcall with more than 3 params (no return value)"
+
+class Base
+  method foo(a, b, c, d, e, f, g, h)
+    print 'foo:', 1 , a , b , c , d , e , f , g , h
+    print 'foo:', 1 + a - b + c - d + e - f + g - h
+  endmethod
+endclass
+
+obj = new Base()
+obj.foo(10,20,30,40,50,60,70,80)
+
+EXPECTED_OUTPUT:
+foo: 1 10 20 30 40 50 60 70 80
+foo: -39
+--------------------------------------------------------------------------------
+
+TEST "vcall with more than 3 params (with return value)"
+
+class Base
+  method foo(a, b, c, d, e, f, g, h) -> rv
+    print 'foo(', 1 , a , b , c , d , e , f , g , h, ')'
+    rv = 1 + a - b + c - d + e - f + g - h
+  endmethod
+endclass
+
+obj = new Base()
+print obj.foo(10,20,30,40,50,60,70,80)
+
+EXPECTED_OUTPUT:
+foo( 1 10 20 30 40 50 60 70 80 )
+-39
+--------------------------------------------------------------------------------
+
 TEST "Bug: destroyed rdi after vcall with more than 3 parameters"
 
 class Base

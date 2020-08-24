@@ -311,15 +311,14 @@ EXPECTED_OUTPUT:
 init:foo:bar:final
 init:foo:bar:final
 -------------------------------------------------------------------------------
-TEST "Overlapped source and destination string: x = y ~ x (SKIPPED!)"
+TEST "Overlapped source and destination string: x = y ~ x"
 
-#x = 'b'
-#x = 'a' ~ x
-#print x
-print 'OK'
+x = 'b'
+x = 'a' ~ x
+print x
 
 EXPECTED_OUTPUT:
-OK
+ab
 -------------------------------------------------------------------------------
 
 TEST "Store one character at array index'
@@ -383,4 +382,119 @@ foo( 1 ) e
 foo( 10 ) d
 EXPECTED_ERROR:
 runtime error: negative array index
+-------------------------------------------------------------------------------
+
+TEST "Bug: Undefined beheavior on out-of-range ord(x[i]) string"
+
+x   = 'text'
+buf = '' ~ x[0]
+
+print 'len(buf)    =', len(buf)
+print 'ord(buf[0]) =', ord(buf[0])
+print 'ord(buf[1]) =', ord(buf[1])
+print 'ord(buf[2]) =', ord(buf[2])
+print 'ord(buf[3]) =', ord(buf[3])
+
+EXPECTED_OUTPUT:
+len(buf)    = 1
+ord(buf[0]) = 116
+ord(buf[1]) = 0
+ord(buf[2]) = 0
+ord(buf[3]) = 0
+-------------------------------------------------------------------------------
+
+TEST "Bug: Crash while joining one-character string"
+
+function foo(dst, value)
+  if len(value) is 1
+    newValue = '' ~ value
+    value    = newValue
+  endif
+
+  dst.value = value
+endfunction
+
+dst = {}
+foo(dst, '0')
+
+print dst
+
+EXPECTED_OUTPUT:
+{'value': '0'}
+-------------------------------------------------------------------------------
+
+TEST "Join with one-character"
+
+poolLeft  = 'llllll'
+poolRight = 'rrrrrr'
+
+l = poolLeft[3]
+r = poolRight[4]
+
+left  = 'left-'
+right = '-right'
+
+print 'One character ~ one character:'
+print '=============================='
+
+print '(1) ~ (1) =', l ~ l
+print '(1) ~ (1) =', l ~ r
+print '(1) ~ (1) =', r ~ r
+
+print ''
+print 'One character ~ many characters:'
+print '================================'
+
+print '(1) ~ (n) =', l    ~ right
+print '(1) ~ (n) =', r    ~ right
+
+print ''
+print 'Many characters ~ one character:'
+print '================================'
+
+print '(n) ~ (1) =', left ~ l
+print '(n) ~ (1) =', left ~ r
+
+print ''
+print 'Many characters ~ many characters:'
+print '=================================='
+
+print '(n) ~ (n) =', left ~ right
+
+EXPECTED_OUTPUT:
+One character ~ one character:
+==============================
+(1) ~ (1) = ll
+(1) ~ (1) = lr
+(1) ~ (1) = rr
+
+One character ~ many characters:
+================================
+(1) ~ (n) = l-right
+(1) ~ (n) = r-right
+
+Many characters ~ one character:
+================================
+(n) ~ (1) = left-l
+(n) ~ (1) = left-r
+
+Many characters ~ many characters:
+==================================
+(n) ~ (n) = left--right
+-------------------------------------------------------------------------------
+
+TEST "Use one-character strings as map key"
+
+text = 'abcd'
+x    = {}
+
+x{text[0]} = 10
+x{text[1]} = 20
+x{text[2]} = 30
+x{text[3]} = 40
+
+print x
+
+EXPECTED_OUTPUT:
+{'a': 10, 'b': 20, 'c': 30, 'd': 40}
 -------------------------------------------------------------------------------
