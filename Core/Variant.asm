@@ -554,7 +554,7 @@ __MOLD_VariantConvertToString:
     ; Boolean - true or false constants
     ; --------------------------------------------------------------------------
 
-__MOLD_VariantConvertBool64ToString:
+.bool64:
 
     ; r9  = value
     ; rdx = rv (Variant_t)
@@ -580,12 +580,13 @@ __MOLD_VariantConvertBool64ToString:
     cmp     r10d, VARIANT_TYPE_MAX
     ja      __MOLD_PrintErrorAndDie.badType
 
-    ; ------------------------------------
+    ; --------------------------------------------------------------------------
     ; Non string value, conversion needed.
     ; Allocate new String_t buffer
-    ; ------------------------------------
+    ; --------------------------------------------------------------------------
 
-__MOLD_VariantConvertPrimitiveToString:
+.primitive:
+
     ; r9  = value
     ; r10 = type
     ; rdx = rv (Variant_t)
