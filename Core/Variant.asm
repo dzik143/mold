@@ -1439,20 +1439,19 @@ __MOLD_VariantLoadFromIndex_int32:
     ; Get char at index
     ; --------------------------------------------------------------------------
 
+    xor    eax, eax                               ; rax = 0
     mov    rcx, [rcx + Variant_t.value]           ; rcx = string buffer (Buffer_t)
     mov    rcx, [rcx + Buffer_t.bytesPtr]         ; rcx = string buffer (String_t)
 
-    xor    eax, eax                               ; rax = 0
     cmp    rdx, [rcx + String_t.length]
     jae    .stringOutOfRangePeek
 
     mov    al, [rcx + String_t.text + rdx]        ; rax = str[idx] (char)
+    mov    [r8 + Variant_t.type], VARIANT_STRING  ; rv.type  = string
+    or     [r8 + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
 
 .stringOutOfRangePeek:
-
-    mov    [r8 + Variant_t.type], VARIANT_STRING  ; rv.type  = string
     mov    [r8 + Variant_t.value], rax            ; rv.value = box[idx] (char)
-    or     [r8 + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
 
     DEBUG_CHECK_VARIANT r8
 
