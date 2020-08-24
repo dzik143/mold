@@ -5,13 +5,19 @@ Unreleased
     - negative array indexes x[-1] generate runtime error
 
   Code generation:
-    - Create map/array from static init list
+    - Create map/array from init list,
     - Non-variant params and return value in ordinary calls,
     - Skip vtable entries for methods used only as ordinary calls,
     - Simplified passing return value.
 
+  Bug fixes:
+    - Crash on one-character string join,
+    - Crash if one-character string is used as map key,
+    - Crash on overlapped join: y = x ~ y.
+
   Internal maintain:
-    - Better type guess
+    - Better type guess,
+    - Better temp vars allocate.
 
 0.3.200720 (released on 2020-07-20):
 ------------------------------------
