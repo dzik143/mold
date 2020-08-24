@@ -65,6 +65,8 @@ VARIANT_ARRAY_DEFAULT_BUFFER_SIZE  EQU 16 * VARIANT_ARRAY_DEFAULT_ITEMS_CNT + 16
 VARIANT_MAP_DEFAULT_BUFFER_SIZE    EQU 36 * VARIANT_MAP_DEFAULT_BUCKETS_CNT + 32
 VARIANT_OBJECT_DEFAULT_BUFFER_SIZE EQU 36 * VARIANT_OBJECT_DEFAULT_BUCKETS_CNT + 32
 
+VARIANT_STRING_DEFAULT_BUFFER_SIZE EQU 16
+
 MAX_STRING_LENGTH EQU 1024*1024
 
 struct Variant_t
@@ -968,12 +970,18 @@ __MOLD_VariantNeg:
 
 .signBit dq 0x8000000000000000
 
-; -integer
+    ; --------------------------------------------------------------------------
+    ; -integer
+    ; --------------------------------------------------------------------------
+
 .case_i:
     neg     r10                           ; r10 = -x.value
     jmp     .final
 
-; -double
+    ; --------------------------------------------------------------------------
+    ; -double
+    ; --------------------------------------------------------------------------
+
 .case_d:
     xor     r10, [.signBit]
 
@@ -991,17 +999,13 @@ __MOLD_VariantNeg:
 ; Result is always integer.
 ; rv = x // y
 ;
-; rcx = x  (Variant_t) (IN)
-; rdx = y  (Variant_t) (IN)
-; r8  = rv (Variant_t) (OUT)
+; rcx = x  (Variant_t *) (IN)
+; rdx = y  (Variant_t *) (IN)
+; r8  = rv (Variant_t *) (OUT)
 ;
 ;###############################################################################
 
 __MOLD_VariantDivAsInteger:
-    ; rcx = [x]
-    ; rdx = [y]
-    ; r8  = [rv]
-
     mov   [r8 + Variant_t.type], VARIANT_INTEGER
 
     lea   r11, [.jmpTable]
@@ -1012,26 +1016,32 @@ __MOLD_VariantDivAsInteger:
     jmp short  .not_implemented     ; float   // float
     jmp short  .case_dd             ; double  // double
 
-; integer x integer
+    ; --------------------------------------------------------------------------
+    ; integer // integer
+    ; --------------------------------------------------------------------------
+
 .case_ii:
-  mov  rax, [rcx + Variant_t.value] ; rax     = x.value
-  mov  rcx, [rdx + Variant_t.value] ; rcx     = y.value
-  cqo                               ; rdx:rax = x.value
-  idiv rcx                          ; eax     = x.value // y.value
+    mov  rax, [rcx + Variant_t.value] ; rax     = x.value
+    mov  rcx, [rdx + Variant_t.value] ; rcx     = y.value
+    cqo                               ; rdx:rax = x.value
+    idiv rcx                          ; eax     = x.value // y.value
 
-  mov [r8 + Variant_t.value], rax  ; rv.value = x.value // y.value
+    mov [r8 + Variant_t.value], rax   ; rv.value = x.value // y.value
 
-  ret
+    ret
 
-; double // double
+    ; --------------------------------------------------------------------------
+    ; double // double
+    ; --------------------------------------------------------------------------
+
 .case_dd:
-   movq      xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
-   movq      xmm1, [rdx + Variant_t.value]  ; xmm1     = y.value
-   divsd     xmm0, xmm1                     ; xmm0     = x.value / y.value
-   cvttsd2si rax, xmm0                      ; rax      = int(x.value / y.value)
-   mov       [r8 + Variant_t.value], rax    ; rv.value = int(x.value / y.value)
+    movq      xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
+    movq      xmm1, [rdx + Variant_t.value]  ; xmm1     = y.value
+    divsd     xmm0, xmm1                     ; xmm0     = x.value / y.value
+    cvttsd2si rax, xmm0                      ; rax      = int(x.value / y.value)
+    mov       [r8 + Variant_t.value], rax    ; rv.value = int(x.value / y.value)
 
-   ret
+    ret
 
 .not_implemented:
     jmp __MOLD_PrintErrorAndDie.notImplemented
@@ -1059,13 +1069,19 @@ __MOLD_VariantDiv:
     jmp short .not_implemented               ; float   / float
     jmp short .case_dd                       ; double  / double
 
-; integer / integer
+    ; --------------------------------------------------------------------------
+    ; integer / integer
+    ; --------------------------------------------------------------------------
+
 .case_ii:
     cvtsi2sd  xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
     cvtsi2sd  xmm1, [rdx + Variant_t.value]  ; xmm1     = double(y.value)
     jmp       .case_dd_final
 
-; double / double
+    ; --------------------------------------------------------------------------
+    ; double / double
+    ; --------------------------------------------------------------------------
+
 .case_dd:
     movq      xmm0, [rcx + Variant_t.value]  ; xmm0     = x.value
     movq      xmm1, [rdx + Variant_t.value]  ; xmm1     = y.value
@@ -1207,18 +1223,18 @@ proc __MOLD_VariantStoreAtKey
     DEBUG_CHECK_VARIANT rdx
 
     ; TODO: Optimize it.
-    push   rcx rdx r8
-    mov    rcx, r8
-    call   __MOLD_VariantAddRef
-    pop    r8 rdx rcx
+    push      rcx rdx r8
+    mov       rcx, r8
+    call      __MOLD_VariantAddRef
+    pop       r8 rdx rcx
     ; END OF TODO
 
-    mov    eax, [rcx + Variant_t.type]
-    cmp    eax, VARIANT_MAP
-    je     .map
+    mov       eax, [rcx + Variant_t.type]
+    cmp       eax, VARIANT_MAP
+    je        .map
 
-    cmp    eax, VARIANT_OBJECT
-    jnz    __MOLD_PrintErrorAndDie.mapOrObjectExpected
+    cmp       eax, VARIANT_OBJECT
+    jnz       __MOLD_PrintErrorAndDie.mapOrObjectExpected
 
     ; --------------------------------------------------------------------------
     ;                        Hash map or object
@@ -1226,66 +1242,94 @@ proc __MOLD_VariantStoreAtKey
 
 .map:
 .object:
-    cmp    [rdx + Variant_t.type], VARIANT_STRING
-    jnz    __MOLD_PrintErrorAndDie.stringKeyExpected
 
-    mov    [.box], rcx
-    mov    [.keyPtr], rdx
-    mov    [.valuePtr], r8
+    ; --------------------------------------------------------------------------
+    ; Check for optimized one-character key.
+    ; --------------------------------------------------------------------------
+
+    test      [rdx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jz        .key_is_dynamic
+
+.key_is_one_char:
+
+    push      rcx
+    push      rdx
+    push      r8
+
+    lea       rcx, [__TrashBin]
+    mov       dl, byte [rdx + Variant_t.value]
+    call      __MOLD_VariantStringCreateFromOneChar
+
+    pop       r8
+    pop       rdx
+    pop       rcx
+
+    lea       rdx, [__TrashBin]
+
+.key_is_dynamic:
+
+    cmp       [rdx + Variant_t.type], VARIANT_STRING
+    jnz       __MOLD_PrintErrorAndDie.stringKeyExpected
+
+    mov       [.box], rcx
+    mov       [.keyPtr], rdx
+    mov       [.valuePtr], r8
 
 .mapRetrySearch:
-    mov    r10, [rcx + Variant_t.value]         ; r10  = map buffer (Buffer_t)
-    mov    r10, [r10 + Buffer_t.bytesPtr]       ; r10  = map buffer (Map_t)
-    mov    rdx, [rdx + Variant_t.value]         ; rcx  = key        (Buffer_t)
-    push   rdx
-    mov    rcx, [rdx + Buffer_t.bytesPtr]       ; rcx  = key        (String_t)
-    mov    r11, rcx                             ; r11  = key        (String_t)
 
-    call   __MOLD_StringHashDJB2                ; rax  = hash (integer)
+    mov       r10, [rcx + Variant_t.value]   ; r10  = map buffer (Buffer_t)
+    mov       r10, [r10 + Buffer_t.bytesPtr] ; r10  = map buffer (Map_t)
+    mov       rdx, [rdx + Variant_t.value]   ; rcx  = key        (Buffer_t)
+    push      rdx
+    mov       rcx, [rdx + Buffer_t.bytesPtr] ; rcx  = key        (String_t)
+    mov       r11, rcx                       ; r11  = key        (String_t)
 
-    mov    r9, [r10 + Map_t.bucketsCnt]         ; r9   = bucketsCnt      (integer)
-    shl    rax, 5                               ; rax  = hash * 32       (integer)
-    shl    r9, 5                                ; r9   = bucketsCnt * 32 (integer)
-    dec    r9                                   ; r9   = and mask        (integer)
-    mov    rcx, r9                              ; rcx  = bucketsCnt
+    call      __MOLD_StringHashDJB2          ; rax  = hash (integer)
+
+    mov       r9, [r10 + Map_t.bucketsCnt]   ; r9   = bucketsCnt      (integer)
+    shl       rax, 5                         ; rax  = hash * 32       (integer)
+    shl       r9, 5                          ; r9   = bucketsCnt * 32 (integer)
+    dec       r9                             ; r9   = and mask        (integer)
+    mov       rcx, r9                        ; rcx  = bucketsCnt
 
 .mapSearchForFreeBucket:
-    and    rax, r9                              ; rax  = bucket offset (integer)
 
-    cmp    dword [r10 + Map_t.buckets + rax + Variant_t.type], VARIANT_UNDEFINED
-    jz     .mapAllocateNewBucket
+    and       rax, r9                        ; rax  = bucket offset (integer)
+
+    cmp       dword [r10 + Map_t.buckets + rax + Variant_t.type], VARIANT_UNDEFINED
+    jz        .mapAllocateNewBucket
 
     ; TODO: Clean up this mess.
-    push   rax rcx rdx r8 r9 r10 r11 r12
-    mov    rcx, r11                             ; rcx  = key (String_t)
-    mov    rdx, [r10 + Map_t.buckets + rax + Variant_t.value]
-    mov    rdx, [rdx + Buffer_t.bytesPtr]
+    push      rax rcx rdx r8 r9 r10 r11 r12
+    mov       rcx, r11                       ; rcx  = key (String_t)
+    mov       rdx, [r10 + Map_t.buckets + rax + Variant_t.value]
+    mov       rdx, [rdx + Buffer_t.bytesPtr]
 
-    lea    rcx, [rcx + String_t.text]
-    lea    rdx, [rdx + String_t.text]
+    lea       rcx, [rcx + String_t.text]
+    lea       rdx, [rdx + String_t.text]
 
-    cinvoke strcmp
-    test   rax, rax
-    pop    r12 r11 r10 r9 r8 rdx rcx rax
+    cinvoke   strcmp
+    test      rax, rax
+    pop       r12 r11 r10 r9 r8 rdx rcx rax
 
-    jz     .mapSetBucket
+    jz        .mapSetBucket
 
-    add    rax, 32
-    dec    rcx
-    jnz    .mapSearchForFreeBucket
+    add       rax, 32
+    dec       rcx
+    jnz       .mapSearchForFreeBucket
 
     ; --------------------------------------------------------------------------
     ; Out of space - resize map and try again
     ; --------------------------------------------------------------------------
 
-    mov     rcx, [.box]
-    call    __MOLD_VariantMapResizeTwice
+    mov       rcx, [.box]
+    call      __MOLD_VariantMapResizeTwice
 
-    mov    rcx, [.box]
-    mov    rdx, [.keyPtr]
-    mov    r8,  [.valuePtr]
+    mov       rcx, [.box]
+    mov       rdx, [.keyPtr]
+    mov       r8,  [.valuePtr]
 
-    jmp    .mapRetrySearch
+    jmp       .mapRetrySearch
     ;jmp    .errorOutOfSpace
 
     ; --------------------------------------------------------------------------
@@ -1294,14 +1338,14 @@ proc __MOLD_VariantStoreAtKey
 
 .mapAllocateNewBucket:
 
-    mov    rcx, [r10 + Map_t.bucketsCnt]     ; rcx = bucketsCnt
-    mov    rdx, [r10 + Map_t.bucketsUsedCnt] ; rdx = bucketsUsedCnt
-    shl    rcx, 5                            ; rcx = bucketsCnt * 32 = offset(index)
-    lea    rdx, [rcx + rdx * 4]              ; rdx = offset(index + bucketsUsedCnt)
+    mov       rcx, [r10 + Map_t.bucketsCnt]     ; rcx = bucketsCnt
+    mov       rdx, [r10 + Map_t.bucketsUsedCnt] ; rdx = bucketsUsedCnt
+    shl       rcx, 5                            ; rcx = bucketsCnt * 32 = offset(index)
+    lea       rdx, [rcx + rdx * 4]              ; rdx = offset(index + bucketsUsedCnt)
 
-    mov    [r10 + Map_t.buckets + rdx], eax  ; index[bucketsUsedCnt] = bucketIdx
+    mov       [r10 + Map_t.buckets + rdx], eax  ; index[bucketsUsedCnt] = bucketIdx
 
-    inc    [r10 + Map_t.bucketsUsedCnt]      ; bucketsUsedCnt++
+    inc       [r10 + Map_t.bucketsUsedCnt]      ; bucketsUsedCnt++
 
 .mapSetBucket:
 
@@ -1309,27 +1353,27 @@ proc __MOLD_VariantStoreAtKey
     ; Destroy old value if any
     ; --------------------------------------------------------------------------
 
-    push    rax r10
-    lea     rcx, [r10 + Map_t.buckets + rax + 16]  ;
-    call    __MOLD_VariantDestroy                  ; map[key].destroy()
-    pop     r10 rax
+    push      rax r10
+    lea       rcx, [r10 + Map_t.buckets + rax + 16]  ;
+    call      __MOLD_VariantDestroy                  ; map[key].destroy()
+    pop       r10 rax                                ;
 
     ; --------------------------------------------------------------------------
     ; Store new value
     ; --------------------------------------------------------------------------
 
-    mov     rdx, [.keyPtr]
-    mov     r8, [.valuePtr]
+    mov       rdx, [.keyPtr]
+    mov       r8, [.valuePtr]
 
-    movdqu  xmm0, [rdx]                            ; xmm0 = key        (Variant_t)
-    movdqu  xmm1, [r8]                             ; xmm1 = value      (Variant_t)
+    movdqu    xmm0, [rdx]                            ; xmm0 = key        (Variant_t)
+    movdqu    xmm1, [r8]                             ; xmm1 = value      (Variant_t)
 
-    movdqu  [r10 + Map_t.buckets + rax     ], xmm0 ; map[key] = key
-    movdqu  [r10 + Map_t.buckets + rax + 16], xmm1 ; map[val] = value
+    movdqu    [r10 + Map_t.buckets + rax     ], xmm0 ; map[key] = key
+    movdqu    [r10 + Map_t.buckets + rax + 16], xmm1 ; map[val] = value
 
 .addRefKey:
-    pop    rcx
-    call   __MOLD_MemoryAddRef
+    pop       rcx
+    call      __MOLD_MemoryAddRef
 
     DEBUG_CHECK_VARIANT r8
 
@@ -1383,7 +1427,7 @@ __MOLD_VariantLoadFromIndex_int32:
 
     ; TODO: Handle non-integer primitive.
 .arrayLoadPrimitive:
-    mov    cl, [r9 + Array_t.itemSize]               ; cl  = log2(size(item))
+    mov    cl, [r9 + Array_t.itemSize]              ; cl  = log2(size(item))
     jmp    qword [.arrayLoadPrimitiveJumpTable + rcx*8]
 
 .arrayLoadInt8:
@@ -1489,6 +1533,21 @@ __MOLD_VariantLoadFromKey:
 
 .map:
 .object:
+
+    ; --------------------------------------------------------------------------
+    ; Check for optimized one-character key.
+    ; --------------------------------------------------------------------------
+
+    test      [rdx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jz        .key_is_dynamic
+
+.key_is_one_char:
+
+    mov       al, byte [rdx + Variant_t.value]
+    lea       rdx, [OneCharacterStringTemp]
+    mov       [OneCharacterStringTempPeek], al
+
+.key_is_dynamic:
 
     cmp    [rdx + Variant_t.type], VARIANT_STRING
     jnz    __MOLD_PrintErrorAndDie.stringKeyExpected
@@ -1815,9 +1874,9 @@ proc __MOLD_VariantMapResizeTwice
 
 .cloneNextBucket:
 
-    ; ------------------------
+    ; --------------------------------------------------------------------------
     ; Insert bucket to new map
-    ; ------------------------
+    ; --------------------------------------------------------------------------
 
     mov     eax, [rsi]                         ; eax = #n
     mov     rdx, rdi                           ; rdx = key #0
@@ -1881,6 +1940,7 @@ endp
 ;###############################################################################
 
 __MOLD_VariantObjectCreate:
+
     ; rcx = rv (Variant_t)
     ; rdx = vtable
     push    rcx rdx
@@ -1901,6 +1961,46 @@ __MOLD_VariantObjectCreate:
 
 ;###############################################################################
 ;
+; Allocate new string.
+;
+; rcx = pointer to store new allocated string (Variant_t *) (OUT)
+; edx = initial capacity (int32) (IN)
+;
+;###############################################################################
+
+__MOLD_VariantStringCreate:
+
+    push    rcx
+    lea     ecx, [edx + VARIANT_STRING_DEFAULT_BUFFER_SIZE]
+    call    __MOLD_MemoryAlloc
+    pop     rcx
+
+    mov     [rcx + Variant_t.type], VARIANT_STRING
+    mov     [rcx + Variant_t.value], rax
+
+    DEBUG_CHECK_VARIANT rcx
+
+    ret
+
+__MOLD_VariantStringCreateFromOneChar:
+
+    push    rcx
+    push    rdx
+
+    xor     edx, edx
+    call    __MOLD_VariantStringCreate
+
+    pop     rdx
+    pop     rcx
+
+    mov     rax, [rcx + Variant_t.value]
+    mov     rax, [rax + Buffer_t.bytesPtr]
+    mov     byte [rax + String_t.text], dl
+
+    ret
+
+;###############################################################################
+;
 ; Free all resources alocated by variant variable if any.
 ; Do nothing for privitives, but it's still correct.
 ;
@@ -1909,7 +2009,6 @@ __MOLD_VariantObjectCreate:
 ;###############################################################################
 
 __MOLD_VariantDestroy:
-    ; rcx = object to destroy (Variant_t)
 
     DEBUG_CHECK_VARIANT rcx
 
@@ -2014,9 +2113,9 @@ __MOLD_VariantDestroy:
 
 .destroyNextMapBucket:
 
-    ; ------------------------
+    ; --------------------------------------------------------------------------
     ; Destroy bucket #n
-    ; ------------------------
+    ; --------------------------------------------------------------------------
 
     mov     ecx, [rsi]                         ; eax = #n
     lea     rcx, [rdi + rcx]                   ; rcx = key #n
@@ -2301,6 +2400,7 @@ endp
 ;###############################################################################
 
 proc __MOLD_Main
+
   mov     ecx, 1
   mov     rdx, __MOLD_DefaultExceptionHandler
   cinvoke AddVectoredExceptionHandler
@@ -2359,6 +2459,7 @@ endp
 ;###############################################################################
 
 __MOLD_OpenExternalModule:
+
     sub     rsp, 32
     mov     rcx, [rcx + Variant_t.value]
     call    [LoadLibrary]
@@ -2382,6 +2483,7 @@ __MOLD_OpenExternalModule:
 ;###############################################################################
 
 __MOLD_LoadExternalFunction:
+
     sub     rsp, 32
     mov     rcx, [rcx + Variant_t.value]
     mov     rdx, [rdx + Variant_t.value]
@@ -2505,7 +2607,10 @@ __MOLD_LoadFile:
     cinvoke CloseHandle, r12
     pop     rax
 
+    ; --------------------------------------------------------------------------
     ; Add zero terminator
+    ; --------------------------------------------------------------------------
+
     mov     byte [rax + r13], 0
 
 .done:
@@ -2608,9 +2713,9 @@ __MOLD_ForDriver_KeysAndValuesInMap:
     mov     rcx, rdi                              ; rcx = buckets
     add     rcx, rax                              ; rcx = buckets[bucketIdx]
 
-    ; --------------------
+    ; --------------------------------------------------------------------------
     ; Update key iterator
-    ; --------------------
+    ; --------------------------------------------------------------------------
 
     mov     rax, [rcx]
     mov     r9,  [rcx + 8]
@@ -2618,9 +2723,9 @@ __MOLD_ForDriver_KeysAndValuesInMap:
     mov     [rdx], rax
     mov     [rdx + 8], r9
 
-    ; ----------------------
+    ; --------------------------------------------------------------------------
     ; Update value iterator
-    ; ----------------------
+    ; --------------------------------------------------------------------------
 
     mov     rax, [rcx + 16]
     mov     r9,  [rcx + 16 + 8]
@@ -2628,17 +2733,17 @@ __MOLD_ForDriver_KeysAndValuesInMap:
     mov     [r8], rax
     mov     [r8 + 8], r9
 
-    ; ------------------------------
+    ; --------------------------------------------------------------------------
     ; Process next (key:value) pair
-    ; ------------------------------
+    ; --------------------------------------------------------------------------
 
     push    rcx rdx r8
     call    qword [rsp + 24]
     pop     r8 rdx rcx
 
-    ; ----------------
+    ; --------------------------------------------------------------------------
     ; Go to next pair
-    ; ----------------
+    ; --------------------------------------------------------------------------
 
     add     rsi, 4
     dec     rbx
@@ -2847,9 +2952,9 @@ __MOLD_ForDriver_IndexesAndValuesInString:
 
 .stringNextItem:
 
-    ; ----------------------
+    ; --------------------------------------------------------------------------
     ; Update value iterator
-    ; ----------------------
+    ; --------------------------------------------------------------------------
 
     lodsb
 
@@ -2857,23 +2962,23 @@ __MOLD_ForDriver_IndexesAndValuesInString:
 
     mov     [r8 + 8], al
 
-    ; --------------------------------
+    ; --------------------------------------------------------------------------
     ; Process next (index:value) pair
-    ; --------------------------------
+    ; --------------------------------------------------------------------------
 
     push    rdx r8
     call    qword [rsp + 16]
     pop     r8 rdx
 
-    ; ----------------------
+    ; --------------------------------------------------------------------------
     ; Update index iterator
-    ; ----------------------
+    ; --------------------------------------------------------------------------
 
     inc     dword [rdx]
 
-    ; ----------------
+    ; --------------------------------------------------------------------------
     ; Go to next pair
-    ; ----------------
+    ; --------------------------------------------------------------------------
 
     dec     rbx
     jne     .stringNextItem
@@ -2899,9 +3004,10 @@ __MOLD_ForDriver_IndexesAndValuesInString:
 ;###############################################################################
 
 __MOLD_ForDriver_Generic:
-    ; --------------------------------------
+
+    ; --------------------------------------------------------------------------
     ; Redirect unused iterators to trash bin
-    ; --------------------------------------
+    ; --------------------------------------------------------------------------
 
     lea     rax, [__TrashBin]
     test    rdx, rdx
@@ -2910,9 +3016,9 @@ __MOLD_ForDriver_Generic:
     test    r8, r8
     cmovz   rdx, rax
 
-    ; -------------
+    ; --------------------------------------------------------------------------
     ; Dispatch code
-    ; -------------
+    ; --------------------------------------------------------------------------
 
     mov     eax, [rcx + Variant_t.type]
     cmp     eax, VARIANT_TYPE_MAX
@@ -2932,42 +3038,111 @@ __MOLD_ForDriver_Generic:
     dq __MOLD_ForDriver_KeysAndValuesInMap
     dq __MOLD_ForDriver_KeysAndValuesInMap ; object (TODO: Not implemented yet)
 
-; TODO: Clean up this mess.
+
+;###############################################################################
+;
+; Join two strings:
+; rv = x ~ y
+;
+; rcx = left string (Variant_t *)
+; rdx = right string (Variant_t *)
+; r8  = result string (Variant_t *)
+;
+;###############################################################################
+
 __MOLD_VariantStringJoin:
-    ; rcx = [x]
-    ; rdx = [y]
-    ; r8  = [rv]
 
     DEBUG_CHECK_VARIANT rcx
     DEBUG_CHECK_VARIANT rdx
 
-    mov r9d,  [rcx + Variant_t.type]  ; r9  = x.type
-    mov r10d, [rdx + Variant_t.type]  ; r10 = y.type
+    ; --------------------------------------------------------------------------
+    ; Validate types
+    ; --------------------------------------------------------------------------
 
-    cmp r9d, VARIANT_STRING
-    jnz __MOLD_PrintErrorAndDie.stringExpected
+    mov       r9d,  [rcx + Variant_t.type]  ; r9  = x.type
+    mov       r10d, [rdx + Variant_t.type]  ; r10 = y.type
 
-    cmp r10d, VARIANT_STRING
-    jnz __MOLD_PrintErrorAndDie.stringExpected
+    cmp       r9d, VARIANT_STRING
+    jnz       __MOLD_PrintErrorAndDie.stringExpected
+
+    cmp       r10d, VARIANT_STRING
+    jnz       __MOLD_PrintErrorAndDie.stringExpected
+
+    ; --------------------------------------------------------------------------
+    ; Check for optimized one-character strings (first string)
+    ; --------------------------------------------------------------------------
+
+    test      [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jz        .x_is_dynamic
+
+.x_is_one_char:
+
+    mov       al, byte [rcx + Variant_t.value]
+    lea       rcx, [OneCharacterStringTemp]
+    mov       [OneCharacterStringTempPeek], al
+
+.x_is_dynamic:
+
+    ; --------------------------------------------------------------------------
+    ; Check for optimized one-character strings (second string)
+    ; --------------------------------------------------------------------------
+
+    test      [rdx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    jz        .y_is_dynamic
+
+.y_is_one_char:
+
+    mov       al, byte [rdx + Variant_t.value]
+    lea       rdx, [OneCharacterStringTemp2]
+    mov       [OneCharacterStringTempPeek2], al
+
+.y_is_dynamic:
+
+    ; --------------------------------------------------------------------------
+    ; Check for overlapped source and destination
+    ; x = x ~ y
+    ; x = y ~ x
+    ; --------------------------------------------------------------------------
 
     cmp       r8, rcx
-    jz        .case_ss_overlapped_source_and_destination
+    jz        .case_ss_overlapped_source_and_destination_x_eq_x_y
     cmp       r8, rdx
-    jz        .case_ss_overlapped_source_and_destination
+    jz        .case_ss_overlapped_source_and_destination_y_eq_x_y
+
+    ; --------------------------------------------------------------------------
+    ; General case: rv = x ~ y
+    ; --------------------------------------------------------------------------
 
 .case_ss_source_and_destination_differ:
+
     mov       [r8 + Variant_t.value], 0
     jmp       .case_ss_do_work
 
-.case_ss_overlapped_source_and_destination:
+    ; --------------------------------------------------------------------------
+    ; Overlapped #1: x = x ~ y
+    ; --------------------------------------------------------------------------
 
-    ; Accumulate result:
-    ; x = x ~ y
+.case_ss_overlapped_source_and_destination_x_eq_x_y:
 
-    push  rcx
-    mov   rcx, [rcx + Variant_t.value]
-    call  __MOLD_MemoryAddRef
-    pop   rcx
+    push      rcx
+    mov       rcx, [rcx + Variant_t.value]
+    call      __MOLD_MemoryAddRef
+    pop       rcx
+
+    ; --------------------------------------------------------------------------
+    ; Overlapped #2: y = x ~ y
+    ; --------------------------------------------------------------------------
+
+.case_ss_overlapped_source_and_destination_y_eq_x_y:
+
+    push      rcx
+    mov       rcx, [rdx + Variant_t.value]
+    call      __MOLD_MemoryAddRef
+    pop       rcx
+
+    ; --------------------------------------------------------------------------
+    ; Fetch input buffers
+    ; --------------------------------------------------------------------------
 
 .case_ss_do_work:
 
@@ -2978,27 +3153,22 @@ __MOLD_VariantStringJoin:
     mov       r10, [rdx + Variant_t.value]   ; r10 = y.buffer (Buffer_t)
     push      r9
 
-    mov       [OneCharacterStringTempPeek], r10b
-    lea       rax, [OneCharacterStringTempBufferHolder]
-    test      [rdx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
-    cmovnz    r10, rax
-
     mov       r9,  [r9  + Buffer_t.bytesPtr] ; r9  = x.buffer (String_t)
     mov       r10, [r10 + Buffer_t.bytesPtr] ; r10 = y.buffer (String_t)
 
-    ; -------------------------------
+    ; --------------------------------------------------------------------------
     ; TODO: Don't alloc new buffer if
     ; it's not really needed
-    ; -------------------------------
+    ; --------------------------------------------------------------------------
 
     mov       rdx, [r9  + String_t.length] ; rdx = len(x)
     add       rdx, [r10 + String_t.length] ; rdx = len(x) + len(y)
     mov       r11, rdx                     ; r11 = len(x) + len(y)
     add       rdx, 1 + 8                   ; rdx = len(x) + len(y) + 1 + len(int64)
 
-    ; -------------------------------
+    ; --------------------------------------------------------------------------
     ; Allocate new buffer
-    ; -------------------------------
+    ; --------------------------------------------------------------------------
 
     push      r8 r9 r10 r11
     mov       rcx, 0
@@ -3010,10 +3180,10 @@ __MOLD_VariantStringJoin:
 
     mov       rdx, [rax + Buffer_t.bytesPtr]        ; rdx = new String_t
 
-    ; -------------------------------
+    ; --------------------------------------------------------------------------
     ; Copy first string.
     ; TODO: Don't copy byte-by-byte
-    ; -------------------------------
+    ; --------------------------------------------------------------------------
 
     pop       r9
     mov       r9,  [r9  + Buffer_t.bytesPtr]        ; r9  = dst = x.buffer (String_t)
@@ -3026,10 +3196,10 @@ __MOLD_VariantStringJoin:
     mov       rcx, [r9  + String_t.length]          ; rcx = len(src) = x.length (int64)
     rep       movsb
 
-    ; -------------------------------
+    ; --------------------------------------------------------------------------
     ; Copy second string.
     ; TODO: Don't copy byte-by-byte
-    ; -------------------------------
+    ; --------------------------------------------------------------------------
 
 .ss_overlapped_dst:
 
@@ -3039,9 +3209,9 @@ __MOLD_VariantStringJoin:
     mov       rcx, [r10 + String_t.length]          ; rcx = len(src) = y.length
     rep       movsb
 
-    ; -------------------------------
+    ; --------------------------------------------------------------------------
     ; Zero terminator
-    ; -------------------------------
+    ; --------------------------------------------------------------------------
 
     mov       byte [rdi], 0
     mov       [rdx + String_t.length], r11          ; rv.length = len(x) + len(y)
@@ -3064,9 +3234,17 @@ __MOLD_VariantStringJoin:
 
     ret
 
+;###############################################################################
+;
+; Perform virtual call.
+;
+; rcx - this pointer (Variant_t *) (IN)
+; eax - method id (int32) (IN)
+;
+;###############################################################################
+
 __MOLD_VCall:
-  ; rcx - this (Variant_t)
-  ; rax - method id (int32)
+
   mov  r11, [rcx + Variant_t.value]     ; r11 = this (Buffer_t)
   shl  r10d, 3                          ; r10 = method id * 8
   mov  r11, [r11 + Buffer_t.bytesPtr]   ; r11 = this (Object_t)
@@ -3079,7 +3257,6 @@ __MOLD_VCall:
   ja   __MOLD_NullMethodCalled          ; is method out of range?
 
   jmp  qword [8 + r11 + r10]            ; call this.vtable[id]
-
 
 include 'Error.asm'
 include 'SysCall.asm'
