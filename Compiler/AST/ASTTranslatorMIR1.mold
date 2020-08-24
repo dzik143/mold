@@ -243,6 +243,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
         this.emitOneArgOpcode('load_int32', rv, value)
       else
         # 64-bit integer
+        #this.emitOneArgOpcode('load_int64', rv, value)
+        #this.symbolTable.assignMirType(rv, 'int64')
         # TODO: Review it.
         # TODO: Int64 is always mapped to variant.
         this.emitOneArgOpcode('conv_int64_to_variant', rv, value)
@@ -315,8 +317,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
     elif (type is 'string') or (type is 'array')
       # TODO: Review it.
       # TODO: Avoid move here?
-      newConst = this.symbolTable.createConstFromValue(value)
-      this.emitMoveVariantOpcode(rv, newConst)
+      #newConst = this.symbolTable.createConstFromValue(value)
+      #this.emitMoveVariantOpcode(rv, newConst)
 
     else
       # TODO: Handle terminal nodes.
@@ -369,17 +371,16 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.push(name)
   endmethod
 
-  method _assign(name, unusedValue)
+  method _assign(dst, src)
     global SYMBOL_KIND_VAR_RETVAL
-    symbolInfo = this.symbolTable.lookup(name)
-    #if symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
-    #  name = '__rv'
-    #else
-      # TODO: Is it really needed?
-      symbolInfo.type = AST_ConvertDataTypeToMIR(symbolInfo.astType)
-    #endif
 
-    this.emitMoveVariantOpcode(name, this.popForRead())
+    if dst isnt src
+      # TODO: Is it really needed?
+      #dstInfo      = this.symbolTable.lookup(dst)
+      #dstInfo.type = AST_ConvertDataTypeToMIR(dstInfo.astType)
+
+      this.emitMoveVariantOpcode(dst, this.popForRead())
+    endif
   endmethod
 
   method _call(rv, proto, unusedParams, paramsCnt)

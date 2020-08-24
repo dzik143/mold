@@ -531,8 +531,10 @@ function AST_IsImm(x) -> rv
 endfunction
 
 function AST_IsPrimitiveImm(x) -> rv
-  global AST_DATA_UNDEFINED
-  if (x.opcode <= AST_DATA_UNDEFINED)
+  global AST_DATA_OBJECT
+  # TODO: Review it.
+  # TODO: Is undefined primitive?
+  if x.opcode < AST_DATA_OBJECT
     rv = true
   else
     rv = false
@@ -626,7 +628,11 @@ function AST_GetHashInternal(node, isCodeMode) -> rv
 
     elif opcode is AST_DATA_STRING
       # TODO: Review it.
-      rv = node.symbolInfo.name
+      if node.symbolInfo is defined
+        rv = node.symbolInfo.name
+      else
+        rv = 's:' ~ str(len(node.value)) ~ ':' ~ node.value
+      endif
 
     elif AST_IsVar(node) is true
       if isCodeMode is true
@@ -644,7 +650,19 @@ function AST_GetHashInternal(node, isCodeMode) -> rv
           endfor
 
         else
-          rv = '@' ~ str(node.storedValue.id)
+          rv = '@' ~ str(node.id)
+
+          # TODO: Fix it.
+          # TODO: Broken code after CSE optimization:
+          #
+          # function foo()
+          # endfunction
+          # x = 1234
+          # foo()
+          # print x
+
+          # OLD IMPLEMENTATION:
+          # rv = '@' ~ str(node.storedValue.id)
         endif
       endif
 /*

@@ -107,6 +107,7 @@ class ASTTypeCast
 
         x = children[0]
         y = children[1]
+
         xType = AST_GetDataType(x)
         yType = AST_GetDataType(y)
 
@@ -114,12 +115,12 @@ class ASTTypeCast
           # TODO: Better error handler.
           # TODO: Handle error at compilation time if possible.
           if xType is -1
-            # variant x concrete
+            # concrete x variant
             this._debug('Type mismatch at arithmetic expression node #' ~ str(node.id) ~ ' (' ~ str(xType) ~ ' vs ' ~ str(yType) ~ ')')
             children[1] = AST_TypeCast(y, xType)
 
           elif yType is -1
-            # concrete x variant
+            # variant x concrete
             this._debug('Type mismatch at arithmetic expression node #' ~ str(node.id) ~ ' (' ~ str(xType) ~ ' vs ' ~ str(yType) ~ ')')
             children[0] = AST_TypeCast(x, yType)
 

@@ -118,6 +118,27 @@ class ASTTranslator
     rv = this.symbolTableForTemps.getTempVarForReadAndWrite(wantedType)
   endmethod
 
+  method _getTempVarOrReuse(currentVar, wantedType) -> rv
+    rv = null
+
+    if currentVar is defined
+      # Check type of current variable.
+      symbolInfo = this.symbolTable.lookup(currentVar)
+
+      if ((symbolInfo.type is defined) and
+          (symbolInfo.type is wantedType))
+        # Current variable has the same type as wanted one.
+        # We can use it directly.
+        rv = currentVar
+      endif
+    endif
+
+    if rv is undefined
+      # Allocate new temp.
+      rv = this._getTempVar(wantedType)
+    endif
+  endmethod
+
   method _releaseTempVar(name)
     this.symbolTableForTemps.releaseTempVar(name)
   endmethod
@@ -337,16 +358,26 @@ class ASTTranslator
     global AST_OPCODE_CALL_NEW, AST_OPCODE_VCALL
     global AST_OPCODE_TYPE_CAST
     global AST_OPCODE_STRING_JOIN
+    global AST_OPCODE_DECLARE_OR_ASSIGN
 
     opcode      = ast.opcode
     value       = ast.value
     children    = ast.children
     childrenCnt = len(children)
+    rv          = null
 
     this._debug('_evaluateNode: ' ~ str(opcode) ~ ', ' ~ str(value))
 
     # TODO: Better way to pass source position to error handler.
     this.app.setLogContext(ast)
+
+    # TODO: Review it.
+    if ((ast.parent is defined) and
+        (ast.parent.opcode is AST_OPCODE_DECLARE_OR_ASSIGN) and
+        (ast.parent.children[0].opcode is AST_OPCODE_VARIABLE))
+      # x = ...
+      rv = ast.parent.children[0].value
+    endif
 
     #
     # DEBUG ONLY
@@ -416,8 +447,7 @@ class ASTTranslator
 
         else
           # Type mismatch. Perform conversion into another variable.
-          # TODO: Clean up this mess.
-          rv = this._getTempVar(dstTypeMir)
+          rv = this._getTempVarOrReuse(rv, dstTypeMir)
           this._releaseTempVar(src)
           this._convert(rv, src, srcType, dstType)
         endif
@@ -428,8 +458,7 @@ class ASTTranslator
       # This code is needed only in MIR1 flow.
       astDataType = AST_GetDataType(ast)
       mirDataType = AST_ConvertDataTypeToMIR(astDataType)
-
-      rv = this._getTempVar(mirDataType)
+      rv          = this._getTempVarOrReuse(rv, mirDataType)
 
       if opcode is AST_DATA_UNDEFINED
         # Built-in null variable.
