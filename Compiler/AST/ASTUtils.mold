@@ -604,6 +604,7 @@ endfunction
 function AST_GetHashInternal(node, isCodeMode) -> rv
   global AST_DATA_ARRAY
   global AST_DATA_MAP
+  global AST_DATA_STRING
   global AST_OPCODE_CALL
   global AST_OPCODE_CALL_NEW
   global AST_OPCODE_VCALL
@@ -622,6 +623,10 @@ function AST_GetHashInternal(node, isCodeMode) -> rv
     # and save for further calls.
     if (opcode is AST_DATA_MAP) or (opcode is AST_DATA_ARRAY)
       rv = '@' ~ str(node.id)
+
+    elif opcode is AST_DATA_STRING
+      # TODO: Review it.
+      rv = node.symbolInfo.name
 
     elif AST_IsVar(node) is true
       if isCodeMode is true
