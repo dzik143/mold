@@ -635,7 +635,7 @@ class CodeGeneratorX64
         endif
       endif
 
-      # print '  ; [x86]', opcode, dst, x, y
+      # print '  ; [x64]', opcode, dst, x, y
 
       # Dispatch opcode.
       if opcode is 'nop'
@@ -797,8 +797,8 @@ class CodeGeneratorX64
         print '  movq      xmm0, qword [', x, ']'  # xmm0 = x
         print '  movq      xmm1, qword [', y, ']'  # xmm1 = y
         print '  divsd     xmm0, xmm1'             # xmm0 = x / y
-        print '  cvttsd2si rax, xmm0'              # rax  = int(x / y)
-        print '  mov       qword [', dst, '], rax' # dst  = int(x / y)
+        print '  cvttsd2si eax, xmm0'              # rax  = int(x / y)
+        print '  mov       dword [', dst, '], eax' # dst  = int(x / y)
 
       elif opcode is 'cmp_eq_float64'
         this._cmp_cc_float64(dst, x, y, 'z')
@@ -986,18 +986,22 @@ class CodeGeneratorX64
 
       elif opcode is 'jmp_if_eq_bool32'
         # TODO: Review it.
+        print '; jmp_if_eq_bool32'
         this._jmp_if_cc_int32(dst, x, y, 'z')
 
       elif opcode is 'jmp_if_ne_bool32'
         # TODO: Review it.
+        print '; jmp_if_ne_bool32'
         this._jmp_if_cc_int32(dst, x, y, 'nz')
 
       elif opcode is 'cmp_eq_bool32'
         # TODO: Review it.
+        print '; cmp_eq_bool32'
         this._cmp_cc_int32(dst, x, y, 'z')
 
       elif opcode is 'cmp_ne_bool32'
         # TODO: Review it.
+        print '; cmp_ne_bool32'
         this._cmp_cc_int32(dst, x, y, 'nz')
 
       #
@@ -1393,15 +1397,45 @@ class CodeGeneratorX64
 
               else
                 paramOffset = (paramIdx - 2) * 8
-                print '  mov rax, [rsp +', paramOffset, ']'
-                print '  cmp [rax + Variant_t.type],', expectedType
+                print '  mov r9, [rsp +', paramOffset, ']'
+                print '  cmp [r9 + Variant_t.type],', expectedType
                 print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
-                print '  mov rax, [rax + Variant_t.value]'
-                print '  mov [rsp +', paramOffset, '], rax'
+                print '  mov r9, [r9 + Variant_t.value]'
+                print '  mov [rsp +', paramOffset, '], r9'
                 print ''
               endif
             endif
           endfor
+
+          # Make sure return value is passed as variant.
+          # TODO: Handle non-variant return value for vcalls?
+          if currentProcRv is defined
+            symbolInfo = currentSymbols{currentProcRv}
+            rvType     = symbolInfo.type
+            rvSize     = MIR_TYPE_SIZE_MAP{rvType}
+
+            if rvSize <= 8
+              # Original function returns primitive type.
+              # Call it explicit.
+              print '  push rax'
+              print '  call', currentProcName
+              print '  pop rax'
+
+              # Fetch primitive return value.
+              # TODO: Pass primitive values via register.
+              if rvSize is 4
+                print '  mov  ecx, dword [rax]'
+              else
+                print '  mov  rcx, qword [rax]'
+              endif
+
+              # Convert return value to variant.
+              print '  mov [rax + Variant_t.type],', MIR_TO_VARIANT_TYPE_MAP{rvType}
+              print '  mov [rax + Variant_t.value], rcx'
+              print '  ret'
+              print ''
+            endif
+          endif
         endif
 
         # Ordinary entry point.
@@ -1452,7 +1486,6 @@ class CodeGeneratorX64
         paramsPassedCnt  = paramsCnt
 
         if currentFrame.rv is defined
-          # TODO: Pass variant return values on stack?
           print ' ', currentFrame.rv, 'EQU rdi'
         endif
 
@@ -1637,13 +1670,14 @@ class CodeGeneratorX64
 
       elif opcode is 'load_index_variant_by_variant'
         # dst := x[y]
-        this.call3AndDestroy('__MOLD_VariantLoadFromIndex', x, y, dst)
+        # TODO: Is destroy needed here?
+        this.call3('__MOLD_VariantLoadFromIndex', x, y, dst)
 
       elif ((opcode is 'load_index_variant_by_int32') or
             (opcode is 'load_index_string_by_int32'))
-
         # dst := x[y]
-        this.call3AndDestroy('__MOLD_VariantLoadFromIndex_int32', x, y, dst)
+        # TODO: Is destroy needed here?
+        this.call3('__MOLD_VariantLoadFromIndex_int32', x, y, dst)
 
       elif opcode is 'load_index_int32_by_int32'
         # dst := x[y]
@@ -1651,13 +1685,19 @@ class CodeGeneratorX64
 
       elif opcode is 'load_key_variant'
         # dst := x[y]
-        this.call3AndDestroy('__MOLD_VariantLoadFromKey', x, y, dst)
+        # TODO: Is destroy needed here?
+        this.call3('__MOLD_VariantLoadFromKey', x, y, dst)
 
       elif originalOpcode is 'jmp'
        print '  jmp', dst
 
       else
         die('error: unhandled opcode "' ~ str(opcode) ~ '"')
+      endif
+
+      # Separate MIR opcodes by new line for better readability.
+      if originalOpcode isnt 'comment'
+        print ''
       endif
     endfor
 
