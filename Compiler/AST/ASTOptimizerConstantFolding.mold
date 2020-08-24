@@ -40,13 +40,6 @@ class ASTOptimizerConstantFolding
 
     type = typeof(value)
 
-    # TODO: Clean up this mess.
-    # TODO: Crash on string[i] (one character char result)
-    if ((type is 'string') and (len(value) is 1))
-      newValue = '' ~ value
-      value    = newValue
-    endif
-
     this._debug('Set node #' ~ str(dst.id) ~ ' to imm "' ~ str(value) ~ '" (' ~ type ~ ')')
 
     if dst.opcode is AST_OPCODE_VARIABLE
