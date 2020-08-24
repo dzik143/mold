@@ -2952,6 +2952,8 @@ __MOLD_VariantStringJoin:
 
     cmp       r8, rcx
     jz        .case_ss_overlapped_source_and_destination
+    cmp       r8, rdx
+    jz        .case_ss_overlapped_source_and_destination
 
 .case_ss_source_and_destination_differ:
     mov       [r8 + Variant_t.value], 0
