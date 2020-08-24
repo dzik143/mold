@@ -537,9 +537,9 @@ __MOLD_VariantConvertToString:
     cmp     r10d, VARIANT_STRING
     jnz     .notString
 
-    ; -----------------------------------------------
+    ; --------------------------------------------------------------------------
     ; String - Nothing to do, just pass string as is.
-    ; -----------------------------------------------
+    ; --------------------------------------------------------------------------
 
 .string:
     ; TODO: Clean up this mess.
@@ -548,11 +548,11 @@ __MOLD_VariantConvertToString:
 
 .notString:
     cmp     r10d, VARIANT_BOOLEAN
-    jnz     __MOLD_VariantConvertToString_notBoolean
+    jnz     .notBoolean
 
-    ; ---------------------------------
+    ; --------------------------------------------------------------------------
     ; Boolean - true or false constants
-    ; ---------------------------------
+    ; --------------------------------------------------------------------------
 
 __MOLD_VariantConvertBool64ToString:
 
@@ -576,8 +576,7 @@ __MOLD_VariantConvertBool64ToString:
 
     ret
 
-
-__MOLD_VariantConvertToString_notBoolean:
+.notBoolean:
     cmp     r10d, VARIANT_TYPE_MAX
     ja      __MOLD_PrintErrorAndDie.badType
 
@@ -591,42 +590,68 @@ __MOLD_VariantConvertPrimitiveToString:
     ; r10 = type
     ; rdx = rv (Variant_t)
 
-    push    rdx
+    push    rdx                             ;
+    push    r12                             ;
+    mov     r12d, 32                        ; r12 = snprintf buffer size (32)
 
-    push    rdx r9 r10
-    mov     ecx, 32                                ; rcx = buffer size needed
-    call    __MOLD_MemoryAlloc                     ; rax = new Buffer_t
-    pop     r10 r9 rdx
+    ; --------------------------------------------------------------------------
+    ; Allocate new 32-byte string
+    ; --------------------------------------------------------------------------
 
-    mov     [rdx + Variant_t.type], VARIANT_STRING ; rv.type  = VARIANT_STRING
-    mov     [rdx + Variant_t.value], rax           ; rv.value = new string buffer
-    mov     [rdx + Variant_t.flags], 0             ; rv.flags = none
-    mov     rax, [rax + Buffer_t.bytesPtr]
+    push    rdx r9 r10                      ;
+
+    mov     rcx, rdx                        ; rcx = rv
+    mov     edx, r12d                       ; rdx = capacity (32)
+    call    __MOLD_VariantStringCreate      ; rv  = new string (Variant_t)
+
+    pop     r10 r9 rdx                      ;
+
+    ; --------------------------------------------------------------------------
+    ; Print formatted value into string buffer
+    ; --------------------------------------------------------------------------
+
+    mov     rax, [rax + Buffer_t.bytesPtr]  ; rax = rv (String_t)
     push    rax
 
-    lea     rcx, [rax + String_t.text]             ; rcx = new string buffer
-    mov     edx, 31                                ; rdx = capacity of buffer
-    mov     r8, [.fmtTable + r10*8]                ; r8  = fmt
+    lea     rcx, [rax + String_t.text]      ; rcx = new string buffer
+    lea     edx, [r12d - 1]                 ; rdx = capacity of buffer (31)
+    lea     r8,  [.fmtBegin]
+    movzx   rax, byte [.fmtTable + r10]     ; rax = fmt - .fmtBegin
+    add     r8, rax                         ; r8  = fmt
 
-    sub     rsp, 32
-    call    [snprintf]                             ;
-    add     rsp, 32                                ;
-                                                   ;
-    ; TODO: Review it.
-    mov     edx, 31                                ; rdx = 32 - 1
-    and     rax, rdx                               ; rax = length mod 32
+    sub     rsp, r12                        ; 32 bytes shadow space
+    call    [snprintf]                      ; rv.text = str(value)
+    add     rsp, r12                        ; 32 bytes shadow space
 
-    pop     rcx
-    mov     [rcx + String_t.length], rax
+    ; --------------------------------------------------------------------------
+    ; Truncate string length to 31 on error
+    ; --------------------------------------------------------------------------
 
+    dec     r12                             ; r12 = 31
+    and     rax, r12                        ; rax = length mod 32
+
+    pop     rcx                             ; rcx = rv (String_t)
+    mov     [rcx + String_t.length], rax    ; rv.length = len(str(value))
+
+    pop     r12                             ;
     pop     rdx
     DEBUG_CHECK_VARIANT rdx
 
     ret
 
-.fmtTable     dq .fmtUndefined, .fmtNull  , .fmtInteger, .fmtFloat, .fmtDouble, .fmtString
-              dq .fmtBoolean  , .fmtArray , .fmtMap    , .fmtObject
+.fmtTable:
+  db .fmtUndefined - .fmtBegin
+  db .fmtNull      - .fmtBegin
+  db .fmtInteger   - .fmtBegin
+  db .fmtFloat     - .fmtBegin
+  db .fmtDouble    - .fmtBegin
+  db .fmtString    - .fmtBegin
+  db .fmtBoolean   - .fmtBegin
+  db .fmtArray     - .fmtBegin
+  db .fmtMap       - .fmtBegin
+  db .fmtObject    - .fmtBegin
 
+.fmtBegin:
 .fmtUndefined db 'undefined', 0
 .fmtNull      db 'null', 0
 .fmtInteger   db '%lld', 0
@@ -1976,6 +2001,7 @@ __MOLD_VariantStringCreate:
     pop     rcx
 
     mov     [rcx + Variant_t.type], VARIANT_STRING
+    mov     [rcx + Variant_t.flags], 0
     mov     [rcx + Variant_t.value], rax
 
     DEBUG_CHECK_VARIANT rcx
@@ -3105,15 +3131,15 @@ __MOLD_VariantStringJoin:
     ; --------------------------------------------------------------------------
 
     cmp       r8, rcx
-    jz        .case_ss_overlapped_source_and_destination_x_eq_x_y
+    jz        .overlapped_source_and_destination_x_eq_x_y
     cmp       r8, rdx
-    jz        .case_ss_overlapped_source_and_destination_y_eq_x_y
+    jz        .overlapped_source_and_destination_y_eq_x_y
 
     ; --------------------------------------------------------------------------
     ; General case: rv = x ~ y
     ; --------------------------------------------------------------------------
 
-.case_ss_source_and_destination_differ:
+.source_and_destination_differ:
 
     mov       [r8 + Variant_t.value], 0
     jmp       .case_ss_do_work
@@ -3122,7 +3148,7 @@ __MOLD_VariantStringJoin:
     ; Overlapped #1: x = x ~ y
     ; --------------------------------------------------------------------------
 
-.case_ss_overlapped_source_and_destination_x_eq_x_y:
+.overlapped_source_and_destination_x_eq_x_y:
 
     push      rcx
     mov       rcx, [rcx + Variant_t.value]
@@ -3133,7 +3159,7 @@ __MOLD_VariantStringJoin:
     ; Overlapped #2: y = x ~ y
     ; --------------------------------------------------------------------------
 
-.case_ss_overlapped_source_and_destination_y_eq_x_y:
+.overlapped_source_and_destination_y_eq_x_y:
 
     push      rcx
     mov       rcx, [rdx + Variant_t.value]
@@ -3161,10 +3187,10 @@ __MOLD_VariantStringJoin:
     ; it's not really needed
     ; --------------------------------------------------------------------------
 
-    mov       rdx, [r9  + String_t.length] ; rdx = len(x)
-    add       rdx, [r10 + String_t.length] ; rdx = len(x) + len(y)
-    mov       r11, rdx                     ; r11 = len(x) + len(y)
-    add       rdx, 1 + 8                   ; rdx = len(x) + len(y) + 1 + len(int64)
+    mov       rdx, [r9  + String_t.length]  ; rdx = len(x)
+    add       rdx, [r10 + String_t.length]  ; rdx = len(x) + len(y)
+    mov       r11, rdx                      ; r11 = len(x) + len(y)
+    add       rdx, 1 + 8                    ; rdx = len(x) + len(y) + 1 + len(int64)
 
     ; --------------------------------------------------------------------------
     ; Allocate new buffer
