@@ -182,7 +182,7 @@ __MOLD_VariantCheck:
     int 3
 
 .badStringCapacityError:
-    cinvoke printf, 'PANIC! Bad string capacity'
+    cinvoke printf, 'PANIC! Bad string capacity [%d]', [rax + Buffer_t.capacity]
     int 3
 
 .badStringRefCntError:
@@ -1428,6 +1428,10 @@ __MOLD_VariantLoadFromIndex_int32:
     dq .arrayLoadInt32
     dq .arrayLoadInt64
 
+    ; ==========================================================================
+    ;                                 String
+    ; --------------------------------------------------------------------------
+
 .string:
     mov    [r8 + Variant_t.type], VARIANT_UNDEFINED
 
@@ -1438,16 +1442,17 @@ __MOLD_VariantLoadFromIndex_int32:
     mov    rcx, [rcx + Variant_t.value]           ; rcx = string buffer (Buffer_t)
     mov    rcx, [rcx + Buffer_t.bytesPtr]         ; rcx = string buffer (String_t)
 
-    mov    eax, 0                                 ; rax = 0
+    xor    eax, eax                               ; rax = 0
     cmp    rdx, [rcx + String_t.length]
     jae    .stringOutOfRangePeek
 
     mov    al, [rcx + String_t.text + rdx]        ; rax = str[idx] (char)
+
+.stringOutOfRangePeek:
+
     mov    [r8 + Variant_t.type], VARIANT_STRING  ; rv.type  = string
     mov    [r8 + Variant_t.value], rax            ; rv.value = box[idx] (char)
     or     [r8 + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
-
-.stringOutOfRangePeek:
 
     DEBUG_CHECK_VARIANT r8
 
