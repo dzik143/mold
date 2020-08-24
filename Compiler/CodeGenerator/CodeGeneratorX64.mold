@@ -575,9 +575,12 @@ class CodeGeneratorX64
     currentProcProto    = null
     currentProcName     = null
     currentProcRv       = null
+    currentProcRvType   = null
     currentSymbols      = {}
     currentFrameSize    = 0
     currentFrameOffsets = {}
+
+    isInsideVcall = false
 
     dst = null
     x   = null
@@ -1133,11 +1136,12 @@ class CodeGeneratorX64
         params    = item[3]
         paramsCnt = len(params)
 
+        this.pushParametersBeforeCall(params)
+
         if rv is defined
           this.lea('rax', rv)
         endif
 
-        this.pushParametersBeforeCall(params)
         this.call(name)
 
         if paramsCnt > 4
@@ -1156,8 +1160,19 @@ class CodeGeneratorX64
           this.lea('rax', rv)
         endif
 
+        signOkLabel = codeObj.symbolTable.createLabel()
+
         print '  mov  r10d,', methodId
         print '  call __MOLD_VCall'
+
+        # TODO: Better way to handle 32-bit int result?
+        print ''
+        print '  ; 32-bit int sign extend after vcall if needed.'
+        print '  jns', signOkLabel
+        print '  movsxd rax, dword [', rv, '+ Variant_t.value ]'
+        print '  mov    qword [', rv, '+ Variant_t.value ], rax'
+        print signOkLabel ~ ':'
+        print ''
 
         if paramsCnt > 4
           print '  add rsp,', paramsCnt * 8 - 32
@@ -1338,12 +1353,16 @@ class CodeGeneratorX64
 
         print ''
         print '  add  rsp,', currentFrameSize
-        print '  pop  rbp'
 
         if currentProcRv is defined
+          if (isInsideVcall is true) and (currentProcRvType is 'int32')
+            # Set sign flag for int32 vcall result.
+            print '  or dword [', currentProcRv, '], 0'
+          endif
           print '  pop  rdi'
         endif
 
+        print '  pop  rbp'
         print '  ret'
 
       elif opcode is 'proc'
@@ -1352,12 +1371,20 @@ class CodeGeneratorX64
         currentProcName  = proto.name
         currentProcRv    = proto.rv
         currentSymbols   = proto.symbols
+        isInsideVcall    = false
+
+        if currentProcRv is defined
+          symbolInfo        = currentSymbols{currentProcRv}
+          currentProcRvType = symbolInfo.type
+        endif
 
         # Extra entry point for virtual call.
         # Virtual call params are always variants.
         # We need to translave variants to primitive before go on.
         if ((currentSymbols{'this'} is defined) and
             (codeObj.methodsMap{proto.shortName} is defined))
+
+          isInsideVcall = true
 
           print currentProcName ~ '_vcall:'
 
@@ -1410,29 +1437,26 @@ class CodeGeneratorX64
           # Make sure return value is passed as variant.
           # TODO: Handle non-variant return value for vcalls?
           if currentProcRv is defined
-            symbolInfo = currentSymbols{currentProcRv}
-            rvType     = symbolInfo.type
-            rvSize     = MIR_TYPE_SIZE_MAP{rvType}
+            rvSize        = MIR_TYPE_SIZE_MAP{currentProcRvType}
+            rvVariantType = MIR_TO_VARIANT_TYPE_MAP{currentProcRvType}
 
             if rvSize <= 8
               # Original function returns primitive type.
-              # Call it explicit.
-              print '  push rax'
-              print '  call', currentProcName
-              print '  pop rax'
+              # Redirect original return value pointer to variant_t.value part.
+              print '  mov  [rax + Variant_t.type],', rvVariantType
 
-              # Fetch primitive return value.
-              # TODO: Pass primitive values via register.
               if rvSize is 4
-                print '  mov  ecx, dword [rax]'
+                # 32-bit result.
+                # Zero fill higher dword of value part.
+                # Caller need to sign-extend it to 64-bit if needed.
+                print '  mov  [rax + Variant_t.value], 0'
+                print '  add  rax, Variant_t.value'
               else
-                print '  mov  rcx, qword [rax]'
+                # 64-bit result.
+                # Just skip to to value part.
+                print '  add  rax, Variant_t.value'
               endif
 
-              # Convert return value to variant.
-              print '  mov [rax + Variant_t.type],', MIR_TO_VARIANT_TYPE_MAP{rvType}
-              print '  mov [rax + Variant_t.value], rcx'
-              print '  ret'
               print ''
             endif
           endif
@@ -1541,15 +1565,16 @@ class CodeGeneratorX64
           currentFrameSize = 32
         endif
 
+        print ''
+        print '  push rbp'
+        print '  mov  rbp, rsp'
+
         if currentFrame.rv is defined
           print ''
           print '  push rdi'
           print '  mov  rdi, rax'
+          print ''
         endif
-
-        print ''
-        print '  push rbp'
-        print '  mov  rbp, rsp'
 
         print '  sub  rsp,', currentFrameSize
         print ''
