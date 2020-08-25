@@ -587,7 +587,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.emitComment('')
   endmethod
 
-  method _executeNodeForEach(iteratorKey, iteratorValue, box, bodyAst)
+  method _executeNodeForEach(iteratorKey, iteratorValue, box, bodyAst, isMapMode)
     labelForBegin = this.symbolTable.createLabel()
     labelForEnd   = this.symbolTable.createLabel()
 
@@ -616,9 +616,15 @@ class ASTTranslatorMIR1 extends ASTTranslator
       iteratorValue = '__TrashBin'
     endif
 
+    if isMapMode is true
+      funcName = '__MOLD_ForDriver_KeysAndValuesInMap'
+    else
+      funcName = '__MOLD_ForDriver_Generic'
+    endif
+
     # Emit call to loop handler.
     params = [box, iteratorKey, iteratorValue, labelForBegin]
-    this._emitOneItem(['call', null, '__MOLD_ForDriver_Generic', params])
+    this._emitOneItem(['call', null, funcName, params])
 
     this.emitComment('')
     this.emitComment('END: for keys ' ~ str(iteratorKey) ~ ' values ' ~ str(iteratorValue))

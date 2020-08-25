@@ -101,6 +101,7 @@ class ASTTranslator
   unimplemented method _evaluateNodeLazyBoolAnd(rv, leftAst, rightAst)
   unimplemented method _evaluateNodeLazyBoolOr(rv, leftAst, rightAst)
   unimplemented method _executeNodeFor(iteratorName, valueStart, valueEnd, valueStep, bodyAst)
+  unimplemented method _executeNodeForEach(iteratorKey, iteratorValue, box, bodyAst, isMapMode)
   unimplemented method _executeNodeWhile(condAst, bodyAst)
   unimplemented method _executeNodeIf(cond, codeIfTrue, codeIfFalse)
   unimplemented method _executeNodeSwitch(node)
@@ -877,7 +878,7 @@ class ASTTranslator
 
       # Enter loop scope.
       this._enterScope(loopBodyNode)
-      this._executeNodeForEach(null, iteratorValue, box, loopBodyNode)
+      this._executeNodeForEach(null, iteratorValue, box, loopBodyNode, false)
       this._leaveScope()
 
       # TODO: Simplify it.
@@ -891,9 +892,11 @@ class ASTTranslator
       box          = this._evaluateNode(children[1])
       loopBodyNode = children[2]
 
+      isMapMode = opcode is AST_OPCODE_FOR_KEYS
+
       # Enter loop scope.
       this._enterScope(loopBodyNode)
-      this._executeNodeForEach(iteratorKey, null, box, loopBodyNode)
+      this._executeNodeForEach(iteratorKey, null, box, loopBodyNode, isMapMode)
       this._leaveScope()
 
       # TODO: Simplify it.
@@ -908,9 +911,11 @@ class ASTTranslator
       box           = this._evaluateNode(children[2])
       loopBodyNode  = children[3]
 
+      isMapMode = opcode is AST_OPCODE_FOR_KEYS_VALUES
+
       # Enter loop scope.
       this._enterScope(loopBodyNode)
-      this._executeNodeForEach(iteratorKey, iteratorValue, box, loopBodyNode)
+      this._executeNodeForEach(iteratorKey, iteratorValue, box, loopBodyNode, isMapMode)
       this._leaveScope()
 
       # TODO: Simplify it.

@@ -310,7 +310,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
     code.dropN(2)                 # []
   endmethod
 
-  method _executeNodeForEach(iteratorKey, iteratorValue, box, bodyAst)
+  method _executeNodeForEach(iteratorKey, iteratorValue, box, bodyAst, isMapMode)
     global AST_DATA_INTEGER
 
     symbolTable = this.symbolTable
@@ -321,28 +321,20 @@ class ASTTranslatorMIR0 extends ASTTranslator
     keyId   = null
     valueId = null
 
-    # TODO: Clean up this mess.
-    isIntegerKey = false
-
     # Avoid exeuting loop body directly.
     # TODO: Handle inner functions in better way.
     code.jmp(endLabelId)
 
     if iteratorKey is defined
-      keySymbolInfo    = symbolTable.lookup(iteratorKey)
-      keyId            = code.allocateLocalId()
-      keySymbolInfo.id = keyId
-
-      # TODO: Clean up this mess.
-      if keySymbolInfo.astType is AST_DATA_INTEGER
-        isIntegerKey = true
-      endif
+      symbolInfo    = symbolTable.lookup(iteratorKey)
+      keyId         = code.allocateLocalId()
+      symbolInfo.id = keyId
     endif
 
     if iteratorValue is defined
-      valueSymbolInfo    = symbolTable.lookup(iteratorValue)
-      valueId            = code.allocateLocalId()
-      valueSymbolInfo.id = valueId
+      symbolInfo    = symbolTable.lookup(iteratorValue)
+      valueId       = code.allocateLocalId()
+      symbolInfo.id = valueId
     endif
 
     # Translate loop body as inner function.
@@ -352,10 +344,12 @@ class ASTTranslatorMIR0 extends ASTTranslator
     code.emitLabel(endLabelId)
 
     # TODO: Clean up this mess.
-    if isIntegerKey is true
-      code.forEachIndexes(keyId, valueId, code.resolveLabel(loopLabelId))
+    bodyIp = code.resolveLabel(loopLabelId)
+
+    if isMapMode is true
+      code.forEachKeys(keyId, valueId, bodyIp)
     else
-      code.forEachKeys(keyId, valueId, code.resolveLabel(loopLabelId))
+      code.forEachIndexes(keyId, valueId, bodyIp)
     endif
   endmethod
 
