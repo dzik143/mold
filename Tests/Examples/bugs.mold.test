@@ -429,3 +429,26 @@ print acc
 EXPECTED_OUTPUT:
 30
 -------------------------------------------------------------------------------
+
+TEST "Bug: Broken stack after strings join"
+
+function foo(x)
+  children = [1, 2, 3]
+
+  print 'prefix:' ~ x
+
+  for values item in children
+    params = []
+    params[0] = 1234
+    print params
+  endfor
+endfunction
+
+foo('abcd')
+
+EXPECTED_OUTPUT:
+prefix:abcd
+[1234]
+[1234]
+[1234]
+-------------------------------------------------------------------------------
