@@ -2717,6 +2717,14 @@ __MOLD_VariantArrayShallowCopy:
 
 __MOLD_ForDriver_KeysAndValuesInMap:
 
+    cmp     [rcx + Variant_t.type], VARIANT_MAP
+    jz      .goOn
+
+    cmp     [rcx + Variant_t.type], VARIANT_OBJECT
+    jnz     __MOLD_PrintErrorAndDie.mapOrObjectExpected
+
+.goOn:
+
     mov     rcx, [rcx + Variant_t.value]      ; rcx = map (Buffer_t)
     mov     rcx, [rcx + Buffer_t.bytesPtr]    ; rcx = map (Map_t)
     mov     r10, [rcx + Map_t.bucketsUsedCnt] ; r10 = map.bucketsUsedCnt (int64)
