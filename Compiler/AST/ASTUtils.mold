@@ -998,12 +998,10 @@ function AST_IsOkAsBox(node) -> rv
 endfunction
 
 function AST_CloneNode(node) -> rv
-  # Clone properties (shallow copy first).
-  # TODO: Modify rv directly when for keys loop fixed.
-  dst = {}
+  rv = {}
 
   for keys propertyId values propertyValue in node
-    dst{propertyId} = propertyValue
+    rv{propertyId} = propertyValue
   endfor
 
   # Clone children (deep copy).
@@ -1012,7 +1010,6 @@ function AST_CloneNode(node) -> rv
     newChildren[idx] = AST_CloneNode(oneChild)
   endfor
 
-  rv          = dst
   rv.children = newChildren
   rv.id       = AST_GetNextId()
   rv.parent   = null
