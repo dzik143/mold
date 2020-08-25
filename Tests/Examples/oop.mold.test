@@ -788,3 +788,86 @@ EXPECTED_OUTPUT:
 A::foo()
 B::foo()
 --------------------------------------------------------------------------------
+
+TEST "Virtual-call with mixed types (variant + primitives)"
+
+class Base
+  method foo3(v1, v2, b)
+    if b is true
+      print 'true ', v1, v2
+    else
+      print 'false', v1, v2
+    endif
+  endmethod
+
+  method foo4(v1, v2, v3, b)
+    if b is true
+      print 'true ', v1, v2, v3
+    else
+      print 'false', v1, v2, v3
+    endif
+  endmethod
+
+  method foo5(v1, v2, v3, v4, b)
+    if b is true
+      print 'true ', v1, v2, v3, v4
+    else
+      print 'false', v1, v2, v3, v4
+    endif
+  endmethod
+
+  method foo6(v1, v2, v3, v4, v5, b)
+    if b is true
+      print 'true ', v1, v2, v3, v4, v5
+    else
+      print 'false', v1, v2, v3, v4, v5
+    endif
+  endmethod
+endclass
+
+obj = new Base()
+
+print '4 params: this + 2 variants + 1 primitive'
+print '========================================='
+obj.foo3('a', 'b', true)
+obj.foo3('a', 'b', false)
+
+print ''
+print '5 params: this + 3 variants + 1 primitive'
+print '========================================='
+obj.foo4('c', 'c', 'c', true)
+obj.foo4('a', 'b', 'c', false)
+
+print ''
+print '6 params: this + 4 variants + 1 primitive'
+print '========================================='
+obj.foo5('a', 'b', 'c', 'd', true)
+obj.foo5('e', 'f', 'g', 'h', false)
+
+print ''
+print '7 params: this + 5 variants + 1 primitive'
+print '========================================='
+obj.foo6('a', 'b', 'c', 'd', 'e', true)
+obj.foo6('e', 'f', 'g', 'h', 'f', false)
+
+EXPECTED_OUTPUT:
+4 params: this + 2 variants + 1 primitive
+=========================================
+true  a b
+false a b
+
+5 params: this + 3 variants + 1 primitive
+=========================================
+true  c c c
+false a b c
+
+6 params: this + 4 variants + 1 primitive
+=========================================
+true  a b c d
+false e f g h
+
+7 params: this + 5 variants + 1 primitive
+=========================================
+true  a b c d e
+false e f g h f
+--------------------------------------------------------------------------------

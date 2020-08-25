@@ -1045,6 +1045,7 @@ class CodeGeneratorX64
 
           # Build msg format.
           # TODO: Handle more item types.
+          # TODO: Possible improvement: Avoid emitting the same format twice.
           encodedFormat = []
 
           for values oneParam in params
@@ -1385,6 +1386,7 @@ class CodeGeneratorX64
             (codeObj.methodsMap{proto.shortName} is defined))
 
           isInsideVcall = true
+          paramsCnt     = len(proto.params)
 
           print currentProcName ~ '_vcall:'
 
@@ -1423,7 +1425,7 @@ class CodeGeneratorX64
                 print ''
 
               else
-                paramOffset = (paramIdx - 2) * 8
+                paramOffset = (paramsCnt - paramIdx) * 8
                 print '  mov r10, [rsp +', paramOffset, ']'
                 print '  cmp [r10 + Variant_t.type],', expectedType
                 print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
