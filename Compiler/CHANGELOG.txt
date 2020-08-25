@@ -4,20 +4,19 @@ Unreleased
   Dropped syntax:
     - negative array indexes x[-1] generate runtime error
 
-  Code generation:
-    - Create map/array from init list,
-    - Non-variant params and return value in ordinary calls,
-    - Skip vtable entries for methods used only as ordinary calls,
-    - Simplified passing return value.
-
   Bug fixes:
     - Crash on one-character string join,
     - Crash if one-character string is used as map key,
     - Crash on overlapped join: y = x ~ y.
 
   Internal maintain:
-    - Better type guess,
-    - Better temp vars allocate.
+    - X64: Create map/array from init list,
+    - X64: Non-variant params and return value in ordinary calls,
+    - X64: Skip vtable entries for methods used only as ordinary calls,
+    - X64: Simplified passing return value,
+    - X64: Format driven print (internal only),
+    - Translator: Better type guess,
+    - Translator: Better temp vars allocation.
 
 0.3.200720 (released on 2020-07-20):
 ------------------------------------
@@ -34,8 +33,8 @@ Unreleased
     - Relative array selectors:
       x[@last]        - the last item in the array            (lval, rval)
       x[@first]       - the first item in the array           (lval, rval)
-      x[@afterLast]   - placeholder for new item at the end   (lval)
-      x[@beforeFirst] - placeholder for new item at the begin (lval)
+      x[@afterlast]   - placeholder for new item at the end   (lval)
+      x[@beforefirst] - placeholder for new item at the begin (lval)
 
    - AST optimizer: remove calls to empty functions
    - X64 optimizer: stub for x[i] load with native type
@@ -87,7 +86,7 @@ Unreleased
 
   Dropped functionalities:
     - No more C bootstrap, code is self-hosted,
-    - no more C target, only MIR and X64 assembler are supported.
+    - No more C target, only MIR and X64 assembler are supported.
 
 unnamed version (around 2015)
 -----------------------------
