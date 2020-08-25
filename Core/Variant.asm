@@ -2717,72 +2717,52 @@ __MOLD_VariantArrayShallowCopy:
 
 __MOLD_ForDriver_KeysAndValuesInMap:
 
-    push    rbx
-    push    rsi
-    push    rdi
-    push    r9
+    mov     rcx, [rcx + Variant_t.value]      ; rcx = map (Buffer_t)
+    mov     rcx, [rcx + Buffer_t.bytesPtr]    ; rcx = map (Map_t)
+    mov     r10, [rcx + Map_t.bucketsUsedCnt] ; r10 = map.bucketsUsedCnt (int64)
 
-    mov     rcx, [rcx + Variant_t.value]          ; rcx = map (Buffer_t)
-    mov     rcx, [rcx + Buffer_t.bytesPtr]        ; rcx = map (Map_t)
-    mov     rbx, [rcx + Map_t.bucketsUsedCnt]     ; rbx = map.bucketsUsedCnt (int64)
-
-    or      rbx, rbx
+    or      r10, r10
     jz      .mapEmpty
 
-    mov     rax, [rcx + Map_t.bucketsCnt]         ; rax = map.bucketsCnt
-    lea     rdi, [rcx + Map_t.buckets]            ; rdi = map.buckets
-    shl     rax, 5                                ; rax = map.bucketsCnt * 32
-    lea     rsi, [rdi + rax]                      ; rsi = map.index
+    mov     rax, [rcx + Map_t.bucketsCnt]     ; rax = map.bucketsCnt
+    lea     r11, [rcx + Map_t.buckets]        ; r11 = map.buckets
+    shl     rax, 5                            ; rax = map.bucketsCnt * 32
+    lea     rcx, [r11 + rax]                  ; rcx = map.index
 
 .mapNextItem:
 
-    mov     eax, [rsi]                            ; rcx = bucketIdx
-    mov     rcx, rdi                              ; rcx = buckets
-    add     rcx, rax                              ; rcx = buckets[bucketIdx]
+    mov     eax, [rcx]                        ; rax = bucketIdx
+    add     rax, r11                          ; rax = buckets[bucketIdx]
 
     ; --------------------------------------------------------------------------
-    ; Update key iterator
+    ; Update {key,value} iterators
     ; --------------------------------------------------------------------------
 
-    mov     rax, [rcx]
-    mov     r9,  [rcx + 8]
+    movdqu  xmm0, [rax]                       ; xmm0 = fetch next key
+    movdqu  xmm1, [rax + 16]                  ; xmm1 = fetch next value
 
-    mov     [rdx], rax
-    mov     [rdx + 8], r9
-
-    ; --------------------------------------------------------------------------
-    ; Update value iterator
-    ; --------------------------------------------------------------------------
-
-    mov     rax, [rcx + 16]
-    mov     r9,  [rcx + 16 + 8]
-
-    mov     [r8], rax
-    mov     [r8 + 8], r9
+    movdqu  [rdx], xmm0                       ; iterator.key   = next key
+    movdqu  [r8],  xmm1                       ; iterator.value = next value
 
     ; --------------------------------------------------------------------------
     ; Process next (key:value) pair
     ; --------------------------------------------------------------------------
 
-    push    rcx rdx r8
-    call    qword [rsp + 24]
-    pop     r8 rdx rcx
+    ; TODO: Clean up this mess.
+    push    rcx rdx r8 r9 r10 r11
+    call    r9
+    pop     r11 r10 r9 r8 rdx rcx
 
     ; --------------------------------------------------------------------------
     ; Go to next pair
     ; --------------------------------------------------------------------------
 
-    add     rsi, 4
-    dec     rbx
+    add     rcx, 4
+    dec     r10
     jne     .mapNextItem
 
 .mapEmpty:
 .done:
-
-    pop     r9
-    pop     rdi
-    pop     rsi
-    pop     rbx
 
     ret
 
