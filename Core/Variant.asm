@@ -2724,6 +2724,7 @@ __MOLD_ForDriver_KeysAndValuesInMap:
     jnz     __MOLD_PrintErrorAndDie.mapOrObjectExpected
 
 .goOn:
+.unsafeEntry:
 
     mov     rcx, [rcx + Variant_t.value]      ; rcx = map (Buffer_t)
     mov     rcx, [rcx + Buffer_t.bytesPtr]    ; rcx = map (Map_t)
@@ -3050,8 +3051,8 @@ __MOLD_ForDriver_Generic:
     dq __MOLD_ForDriver_IndexesAndValuesInString
     dq __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; boolean
     dq __MOLD_ForDriver_IndexesAndValuesInArray
-    dq __MOLD_ForDriver_KeysAndValuesInMap
-    dq __MOLD_ForDriver_KeysAndValuesInMap ; object (TODO: Not implemented yet)
+    dq __MOLD_ForDriver_KeysAndValuesInMap.unsafeEntry
+    dq __MOLD_ForDriver_KeysAndValuesInMap.unsafeEntry ; object (TODO: Not implemented yet)
 
 
 ;###############################################################################
