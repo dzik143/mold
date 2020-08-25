@@ -1,5 +1,5 @@
-TEST "Bug: Clone map into function retval (SKIPPED!)"
-/*
+TEST "Bug: Destroyed registers inside for keys loop"
+
 function foo(node) -> rv
   rv = {}
   for keys propertyId values propertyValue in node
@@ -13,11 +13,9 @@ dst = foo(src)
 
 print dst
 
+EXPECTED_OUTPUT:
 {}
 {'one': 1}
 {'one': 1, 'two': 2}
 {'one': 1, 'two': 2, 'three': 3}
-*/
-
-EXPECTED_OUTPUT:
 -------------------------------------------------------------------------------
