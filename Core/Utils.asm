@@ -493,7 +493,7 @@ __MOLD_PrintFormatFromMemory:
     dq .notImplemented    ; 13
     dq .float64Retval     ; 14
     dq .notImplemented    ; 15
-    dq .bool32GRetval     ; 16
+    dq .bool32Retval      ; 16
 
     dq .variantLocal      ; 17 local variant on stack [RBP - n*4]
     dq .variantGlobal     ; 18 global variant (absolute address)
@@ -570,9 +570,15 @@ __MOLD_PrintFormatFromMemory:
 
 
 .int32Retval:
+.bool32Retval:
+    sub     eax, 10              ; eax = ast type
+    mov     edx, dword [rdi]     ; rdx = primitive value
+    jmp     .generic_final
+
 .float64Retval:
-.bool32GRetval:
-    jmp     .notImplemented
+    sub     eax, 10              ; eax = ast type
+    mov     rdx, qword [rdi]     ; rdx = primitive value
+    jmp     .generic_final
 
 .eol:
     mov     cl, 10               ; begin new line
