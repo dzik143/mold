@@ -58,7 +58,7 @@ __MOLD_MemoryAlloc:
 
   push    rbp
   mov     rbp, rsp
-  sub     rsp, 64
+  sub     rsp, 72
 
   ; ----------------------------------------------------------------------------
   ; Align size to 64 bytes
@@ -123,7 +123,7 @@ end if
 
   mov     rax, [.bufferHolder]
 
-  add     rsp, 64
+  add     rsp, 72
   pop     rbp
   ret
 
