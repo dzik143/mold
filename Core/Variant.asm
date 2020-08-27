@@ -2777,6 +2777,26 @@ __MOLD_ForDriver_KeysAndValuesInMap:
 
 ;###############################################################################
 ;
+; Process each (idx, value) pairs in array or string.
+;
+; rcx - array or string (IN / Variant_t)
+; rdx - index iterator (OUT / uint32*)
+; r8  - value iterator (OUT / Variant_t)
+; r9  - body loop callback (IN / function pointer)
+;
+;###############################################################################
+
+__MOLD_ForDriver_IndexesAndValuesInArrayOrString:
+
+    cmp     [rcx + Variant_t.type], VARIANT_ARRAY
+    jz      __MOLD_ForDriver_IndexesAndValuesInArray.unsafeEntry
+
+    cmp     [rcx + Variant_t.type], VARIANT_STRING
+    jz      __MOLD_ForDriver_IndexesAndValuesInString.unsafeEntry
+    jmp     __MOLD_PrintErrorAndDie.arrayOrStringExpected
+
+;###############################################################################
+;
 ; Process each (idx, value) pairs in array.
 ;
 ; rcx - box (IN / Variant_t)
@@ -2787,6 +2807,11 @@ __MOLD_ForDriver_KeysAndValuesInMap:
 ;###############################################################################
 
 __MOLD_ForDriver_IndexesAndValuesInArray:
+
+    cmp     [rcx + Variant_t.type], VARIANT_ARRAY
+    jnz     __MOLD_PrintErrorAndDie.arrayExpected
+
+.unsafeEntry:
 
     push    rbx
     push    rsi
@@ -2943,6 +2968,11 @@ __MOLD_ForDriver_IndexesAndValuesInArray:
 
 __MOLD_ForDriver_IndexesAndValuesInString:
 
+    cmp     [rcx + Variant_t.type], VARIANT_STRING
+    jnz     __MOLD_PrintErrorAndDie.stringExpected
+
+.unsafeEntry:
+
     push    rbx
     push    rsi
     push    r9
@@ -3038,21 +3068,21 @@ __MOLD_ForDriver_Generic:
 
     mov     eax, [rcx + Variant_t.type]
     cmp     eax, VARIANT_TYPE_MAX
-    ja      __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; TODO: Change to badType
+    ja      __MOLD_PrintErrorAndDie.notIterable ; TODO: Change to badType
 
     jmp     qword [.jmpTable + rax*8]
 
 .jmpTable:
-    dq __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; undefined
-    dq __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; null
-    dq __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; integer
-    dq __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; float32
-    dq __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; float64
-    dq __MOLD_ForDriver_IndexesAndValuesInString
-    dq __MOLD_PrintErrorAndDie.arrayStringOrMapExpected ; boolean
-    dq __MOLD_ForDriver_IndexesAndValuesInArray
+    dq __MOLD_PrintErrorAndDie.notIterable              ; undefined
+    dq __MOLD_PrintErrorAndDie.notIterable              ; null
+    dq __MOLD_PrintErrorAndDie.notIterable              ; integer
+    dq __MOLD_PrintErrorAndDie.notIterable              ; float32
+    dq __MOLD_PrintErrorAndDie.notIterable              ; float64
+    dq __MOLD_ForDriver_IndexesAndValuesInString.unsafeEntry
+    dq __MOLD_PrintErrorAndDie.notIterable              ; boolean
+    dq __MOLD_ForDriver_IndexesAndValuesInArray.unsafeEntry
     dq __MOLD_ForDriver_KeysAndValuesInMap.unsafeEntry
-    dq __MOLD_ForDriver_KeysAndValuesInMap.unsafeEntry ; object (TODO: Not implemented yet)
+    dq __MOLD_ForDriver_KeysAndValuesInMap.unsafeEntry  ; object (TODO: Not implemented yet)
 
 
 ;###############################################################################

@@ -24,6 +24,7 @@ DefErrorEntry arrayOrStringExpected
 DefErrorEntry stringExpected
 DefErrorEntry negativeIndex
 DefErrorEntry indexOutOfRange
+DefErrorEntry outOfMemory
 DefErrorEntry badType
 DefErrorEntry notImplemented
 DefErrorEntry implicitConversion
@@ -31,6 +32,7 @@ DefErrorEntry arrayStringOrMapExpected
 DefErrorEntry divideByZero
 DefErrorEntry floatOverflow
 DefErrorEntry floatUnderflow
+DefErrorEntry notIterable
 
 .final:
 
@@ -89,8 +91,8 @@ DefErrorEntry floatUnderflow
     ret
 
 .msg_begin:
-                                   ; 0         1         2         3         4         5
-                                   ; 012345678901234567890123456789012345678901234567890
+                                    ; 0         1         2         3         4         5
+                                    ; 012345678901234567890123456789012345678901234567890
 .msg_beforeText               db 15 , 'runtime error: '
 .msg_generic                  db  7 , 'generic'
 .msg_integerExpected          db 16 , 'integer expected'
@@ -105,10 +107,12 @@ DefErrorEntry floatUnderflow
 .msg_arrayStringOrMapExpected db 29 , 'array, string or map expected'
 .msg_negativeIndex            db 20 , 'negative array index'
 .msg_indexOutOfRange          db 18 , 'index out of range'
+.msg_outOfMemory              db 14 , 'out of memory'
 .msg_badType                  db  8 , 'bad type'
 .msg_notImplemented           db 15 , 'not implemented'
 .msg_implicitConversion       db 46 , 'implicit type conversion not supported anymore'
 .msg_divideByZero             db 14 , 'divide by zero'
 .msg_floatOverflow            db 23 , 'floating point overflow'
 .msg_floatUnderflow           db 24 , 'floating point underflow'
+.msg_notIterable              db 12 , 'not iterable'
 .msg_afterText                db  2 , 13, 10
