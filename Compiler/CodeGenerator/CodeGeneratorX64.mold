@@ -1097,16 +1097,6 @@ class CodeGeneratorX64
         print '  lea rdx, [', dst, ']'
         print '  call __MOLD_VariantConvertBool64ToString'
 
-      elif (opcode is 'call') and (item[2] is '__MOLD_ForDriver_Generic')
-        # TODO: Clean up this mess.
-        params = item[3]
-
-        this.lea('rcx', params[0])
-        this.lea('rdx', params[1])
-        this.lea('r8', params[2])
-        this.lea('r9', params[3])
-        this.call('__MOLD_ForDriver_Generic')
-
       elif opcode is 'syscall'
         rv        = item[1]
         name      = item[2]
@@ -1137,16 +1127,30 @@ class CodeGeneratorX64
         params    = item[3]
         paramsCnt = len(params)
 
-        this.pushParametersBeforeCall(params)
+        if ((name is '__MOLD_ForDriver_Generic') or
+            (name is '__MOLD_ForDriver_IndexesAndValuesInArray') or
+            (name is '__MOLD_ForDriver_IndexesAndValuesInArrayOrString'))
 
-        if rv is defined
-          this.lea('rax', rv)
-        endif
+          # TODO: Clean up this mess.
+          this.lea('rcx', params[0])
+          this.lea('rdx', params[1])
+          this.lea('r8', params[2])
+          this.lea('r9', params[3])
+          this.call(name)
 
-        this.call(name)
+        else
+          # Generic call.
+          this.pushParametersBeforeCall(params)
 
-        if paramsCnt > 4
-          print '  add rsp,', paramsCnt * 8 - 32
+          if rv is defined
+            this.lea('rax', rv)
+          endif
+
+          this.call(name)
+
+          if paramsCnt > 4
+            print '  add rsp,', paramsCnt * 8 - 32
+          endif
         endif
 
       elif opcode is 'vcall'
