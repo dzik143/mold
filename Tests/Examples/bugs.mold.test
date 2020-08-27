@@ -452,3 +452,48 @@ prefix:abcd
 [1234]
 [1234]
 -------------------------------------------------------------------------------
+
+TEST "Bug: Broken shadow space before malloc"
+
+class Base
+  method foo(x)
+    print 'Base::foo(', x, ')'
+  endmethod
+endclass
+
+vars = []
+obj  = new Base()
+
+function bar(ip)
+  global vars
+  global obj
+
+  const g_program = [[0]]
+
+  code    = g_program
+  codeCnt = len(g_program)
+
+  item   = [1]
+  opcode = 0
+
+  print 'bar(' ~ ' ... ' ~ ')'
+
+  obj.foo(item[0] + 1)
+
+  if opcode is 0
+    newArray = []
+    vars[2]    = newArray
+    vars[2][0] = 1234
+
+    print 'vars[2] =', vars[2]
+  endif
+endfunction
+
+box = []
+bar(0)
+
+EXPECTED_OUTPUT:
+bar( ... )
+Base::foo( 2 )
+vars[2] = [1234]
+-------------------------------------------------------------------------------

@@ -842,13 +842,13 @@ print ''
 print '6 params: this + 4 variants + 1 primitive'
 print '========================================='
 obj.foo5('a', 'b', 'c', 'd', true)
-obj.foo5('e', 'f', 'g', 'h', false)
+obj.foo5('a', 'b', 'c', 'd', false)
 
 print ''
 print '7 params: this + 5 variants + 1 primitive'
 print '========================================='
 obj.foo6('a', 'b', 'c', 'd', 'e', true)
-obj.foo6('e', 'f', 'g', 'h', 'f', false)
+obj.foo6('a', 'b', 'c', 'd', 'e', false)
 
 EXPECTED_OUTPUT:
 4 params: this + 2 variants + 1 primitive
@@ -864,10 +864,10 @@ false a b c
 6 params: this + 4 variants + 1 primitive
 =========================================
 true  a b c d
-false e f g h
+false a b c d
 
 7 params: this + 5 variants + 1 primitive
 =========================================
 true  a b c d e
-false e f g h f
+false a b c d e
 --------------------------------------------------------------------------------
