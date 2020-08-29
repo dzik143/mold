@@ -696,3 +696,191 @@ x = [3, 4]
 EXPECTED_ERROR:
 ./temp/source.mold:2:10: error: attemp to assign array to map
 -------------------------------------------------------------------------------
+
+TEST "Compare: x is typename"
+
+function foo(x)
+  print ''
+
+  if x is defined
+    print x, 'is defined'
+  endif
+
+  if x is undefined
+    print x, 'is undefined'
+  endif
+
+  if x is integer
+    print x, 'is integer'
+  endif
+
+  if x is float
+    print x, 'is float'
+  endif
+
+  if x is boolean
+    print x, 'is boolean'
+  endif
+
+  if x is array
+    print x, 'is array'
+  endif
+
+  if x is map
+    print x, 'is map'
+  endif
+
+  if x is object
+    print x, 'is object'
+  endif
+endfunction
+
+foo(null)
+foo(1234)
+foo(3.14)
+foo(true)
+foo(false)
+foo([1,2,3])
+foo({'one': 10, 'two': 20, 'three': 30})
+
+class Base
+endclass
+
+foo(new Base())
+
+EXPECTED_OUTPUT:
+
+undefined is undefined
+
+1234 is defined
+1234 is integer
+
+3.140000 is defined
+3.140000 is float
+
+true is defined
+true is boolean
+
+false is defined
+false is boolean
+
+[1, 2, 3] is defined
+[1, 2, 3] is array
+
+{'one': 10, 'two': 20, 'three': 30} is defined
+{'one': 10, 'two': 20, 'three': 30} is map
+
+[object] is defined
+[object] is object
+-------------------------------------------------------------------------------
+
+TEST "Compare: x isnt typename"
+
+function foo(x)
+  print ''
+
+  if x isnt defined
+    print x, 'isnt defined'
+  endif
+
+  if x isnt undefined
+    print x, 'isnt undefined'
+  endif
+
+  if x isnt integer
+    print x, 'isnt integer'
+  endif
+
+  if x isnt float
+    print x, 'isnt float'
+  endif
+
+  if x isnt boolean
+    print x, 'isnt boolean'
+  endif
+
+  if x isnt array
+    print x, 'isnt array'
+  endif
+
+  if x isnt map
+    print x, 'isnt map'
+  endif
+
+  if x isnt object
+    print x, 'isnt object'
+  endif
+endfunction
+
+foo(null)
+foo(1234)
+foo(3.14)
+foo(true)
+foo(false)
+foo([1,2,3])
+foo({'one': 10, 'two': 20, 'three': 30})
+
+class Base
+endclass
+
+foo(new Base())
+
+EXPECTED_OUTPUT:
+
+undefined isnt defined
+undefined isnt integer
+undefined isnt float
+undefined isnt boolean
+undefined isnt array
+undefined isnt map
+undefined isnt object
+
+1234 isnt undefined
+1234 isnt float
+1234 isnt boolean
+1234 isnt array
+1234 isnt map
+1234 isnt object
+
+3.140000 isnt undefined
+3.140000 isnt integer
+3.140000 isnt boolean
+3.140000 isnt array
+3.140000 isnt map
+3.140000 isnt object
+
+true isnt undefined
+true isnt integer
+true isnt float
+true isnt array
+true isnt map
+true isnt object
+
+false isnt undefined
+false isnt integer
+false isnt float
+false isnt array
+false isnt map
+false isnt object
+
+[1, 2, 3] isnt undefined
+[1, 2, 3] isnt integer
+[1, 2, 3] isnt float
+[1, 2, 3] isnt boolean
+[1, 2, 3] isnt map
+[1, 2, 3] isnt object
+
+{'one': 10, 'two': 20, 'three': 30} isnt undefined
+{'one': 10, 'two': 20, 'three': 30} isnt integer
+{'one': 10, 'two': 20, 'three': 30} isnt float
+{'one': 10, 'two': 20, 'three': 30} isnt boolean
+{'one': 10, 'two': 20, 'three': 30} isnt array
+{'one': 10, 'two': 20, 'three': 30} isnt object
+
+[object] isnt undefined
+[object] isnt integer
+[object] isnt float
+[object] isnt boolean
+[object] isnt array
+[object] isnt map
+-------------------------------------------------------------------------------

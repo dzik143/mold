@@ -2,7 +2,7 @@
 Unreleased
 ------------------------------------
   Dropped syntax:
-    - negative array indexes x[-1] generate runtime error
+    - Negative array indexes x[-1] generate runtime error from now.
 
   Bug fixes:
     - Crash on one-character string join,
@@ -16,7 +16,8 @@ Unreleased
     - X64: Simplified passing return value,
     - X64: Format driven print (internal only),
     - Translator: Better type guess,
-    - Translator: Better temp vars allocation.
+    - Translator: Better temp vars allocation,
+    - Translator: Simpler AST node create.
 
 0.3.200720 (released on 2020-07-20):
 ------------------------------------

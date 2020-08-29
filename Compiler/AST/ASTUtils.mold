@@ -55,34 +55,43 @@ function AST_GetNextId() -> rv
   NodeId = NodeId + 1
 endfunction
 
-function AST_CreateNodeVariable(name) -> rv
-  global AST_OPCODE_VARIABLE
+function AST_CreateNode(opcode, value, args) -> rv
   rv = {
     'id': AST_GetNextId(),
-    'opcode': AST_OPCODE_VARIABLE,
-    'children': [],
-    'value': name
+    'opcode': opcode,
+    'children': args,
+    'value': value
   }
+endfunction
+
+function AST_CreateNodeVariable(name) -> rv
+  global AST_OPCODE_VARIABLE
+  rv = AST_CreateNode(AST_OPCODE_VARIABLE, name, [])
 endfunction
 
 function AST_CreateNodeInteger(value) -> rv
   global AST_DATA_INTEGER
-  rv = {
-    'id': AST_GetNextId(),
-    'opcode': AST_DATA_INTEGER,
-    'children': [],
-    'value': value
-  }
+  rv = AST_CreateNode(AST_DATA_INTEGER, value, [])
 endfunction
 
 function AST_CreateNodeString(value) -> rv
   global AST_DATA_STRING
-  rv = {
-    'id': AST_GetNextId(),
-    'opcode': AST_DATA_STRING,
-    'children': [],
-    'value': value
-  }
+  rv = AST_CreateNode(AST_DATA_STRING, value, [])
+endfunction
+
+function AST_CreateNodeCall(name, args) -> rv
+  global AST_OPCODE_CALL
+  rv = AST_CreateNode(AST_OPCODE_CALL, name, args)
+endfunction
+
+function AST_CreateNodeBlock(children) -> rv
+  global AST_OPCODE_BLOCK
+  rv = AST_CreateNode(AST_OPCODE_BLOCK, null, children)
+endfunction
+
+function AST_CreateNodeSysCall(sysCallId, args) -> rv
+  rv = AST_CreateNodeCall('__mold_syscall', args)
+  rv.sysCallId = sysCallId
 endfunction
 
 function AST_GetDataTypeFromValue(value) -> rv
@@ -959,7 +968,6 @@ function AST_TypeCast(node, dstDataType) -> rv
     else
       # Types mismatch - wrap into type cast node.
       #print '[ ASTUtils ] Type cast node #' ~ str(node.id), ' from', srcDataType, 'to', dstDataType
-
       rv = {
         'id': AST_GetNextId(),
         'opcode': AST_OPCODE_TYPE_CAST,

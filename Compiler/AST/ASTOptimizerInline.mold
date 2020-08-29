@@ -69,12 +69,7 @@ class ASTOptimizerInline
       endfor
     endif
 
-    rv = {
-      'id': AST_GetNextId(),
-      'opcode': newOpcode,
-      'children': newChildren,
-      'value': newValue
-    }
+    rv = AST_CreateNode(newOpcode, newValue, newChildren)
   endmethod
 
   method _injectParamInit(dst, symbolTable, paramName, paramInitValueNode)
@@ -83,19 +78,10 @@ class ASTOptimizerInline
 
     symbolTable.lookupForWriteOrInsert(paramName)
 
-    dst[@afterlast] = {
-      'id': AST_GetNextId(),
-      'opcode': AST_OPCODE_DECLARE_OR_ASSIGN,
-      'children': [
-        {
-          'id': AST_GetNextId(),
-          'opcode': AST_OPCODE_VARIABLE,
-          'children': [],
-          'value': paramName
-        },
-        paramInitValueNode
-      ]
-    }
+    dst[@afterlast] = AST_CreateNode(AST_OPCODE_DECLARE_OR_ASSIGN, null, [
+      AST_CreateNodeVariable(paramName),
+      paramInitValueNode
+    ])
   endmethod
 
   method _injectFunctionBody(dst, symbolTable, callNode)

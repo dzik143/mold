@@ -33,15 +33,7 @@ class ASTOptimizerCSE
   endmethod
 
   method _createNodeVariable() -> rv
-    global AST_OPCODE_VARIABLE
-
-    rv = {
-      # TODO: Ask AST for id?
-      'id': AST_GetNextId(),
-      'opcode': AST_OPCODE_VARIABLE,
-      'value': '__cse' ~ str(this._getNextId()),
-      'children': []
-    }
+    rv = AST_CreateNodeVariable('__cse' ~ str(this._getNextId()))
   endmethod
 
   method _debug(msg)
@@ -283,11 +275,11 @@ class ASTOptimizerCSE
 
                   # Push __csexx = ... before first usage.
                   isCseEmited = true
-                  newCommonBlockChildren[@afterlast] = {
-                    'id': AST_GetNextId(),
-                    'opcode': AST_OPCODE_DECLARE_OR_ASSIGN,
-                    'children': [matchedNode, node]
-                  }
+
+                  newCommonBlockChildren[@afterlast] = AST_CreateNode(
+                    AST_OPCODE_DECLARE_OR_ASSIGN,
+                    null,
+                    [matchedNode, node])
                 endif
               endif
 

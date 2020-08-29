@@ -75,6 +75,17 @@ MOLD_SYSCALL_MAP = {
   '__mold_arrayInsertBeforeFirst': MOLD_SYSCALL_TWO_ARGS + 51
 }
 
+MOLD_TYPE_ID_MAP = {
+  'undefined': 0,
+  'integer':   2,
+  'float':     4,
+  'string':    5,
+  'boolean':   6,
+  'array':     7,
+  'map':       8,
+  'object':    9
+}
+
 class ASTPreprocessor
   method constructor(app)
     this.app = app
@@ -101,6 +112,7 @@ class ASTPreprocessor
     global AST_DATA_SELECTOR
     global AST_OPCODE_FUNCTION
     global AST_OPCODE_CLASS_METHOD
+    global MOLD_TYPE_ID_MAP
 
     opcode   = node.opcode
     children = node.children
@@ -110,8 +122,15 @@ class ASTPreprocessor
       this._processNode(oneChild)
     endfor
 
+    # TODO: Clean up this mess.
+    # TODO: Better way to pass current line/column to error
+    # handler.
+    this.app.setLogContext(node)
+
     # Process current node.
-    if opcode is AST_OPCODE_COMPARE_EQ
+    if ((opcode is AST_OPCODE_COMPARE_EQ) or
+        (opcode is AST_OPCODE_COMPARE_NEQ))
+
       # TODO: Review it.
       # x is y
       x = children[0]
@@ -122,25 +141,22 @@ class ASTPreprocessor
         # - x is defined,
         # - x is odd,
         # - etc.
-        name = y.value
+        name   = y.value
+        typeId = null
 
         if name is 'defined'
           # x is defined => x isnt undefined
-          name = 'undefined'
-          node.opcode = AST_OPCODE_COMPARE_NEQ
+          AST_InvertBoolean(node)
+          typeId = 0
+        else
+          typeId = MOLD_TYPE_ID_MAP{name}
         endif
 
-        if name is 'undefined'
+        if typeId is defined
           # TODO: Optimize it.
-          children[0] = {
-            'id': AST_GetNextId(),
-            'opcode': AST_OPCODE_CALL,
-            'value': '__mold_syscall',
-            'sysCallId': 57, # TODO: Don't use hardcoded value ('getTypeId')
-            'children': [x]
-          }
-          y.opcode = AST_DATA_INTEGER
-          y.value  = 0
+          # TODO: Remove hardcoded syscall id (getTypeId)
+          children[0] = AST_CreateNodeSysCall(57, [x])
+          children[1] = AST_CreateNodeInteger(typeId)
 
           # TODO: Clean up this mess.
           x.__isUsedAsTypeofArg = true
@@ -163,10 +179,6 @@ class ASTPreprocessor
         paramsPassedCnt   = len(node.children)
 
         if paramsExpectedCnt isnt paramsPassedCnt
-          # TODO: Clean up this mess.
-          # TODO: Better way to pass current line/column to error
-          # handler.
-          this.app.setLogContext(node)
           this.app.logError('built-in ' ~ funcName ~ ' function requires exactly ' ~ str(paramsExpectedCnt) ~ ' parameter(s), but ' ~ str(paramsPassedCnt) ~ ' were passed')
         endif
 
@@ -199,20 +211,11 @@ class ASTPreprocessor
       # TODO: Handle empty array error.
       if selector is '@last'
         # x[@last] -> x[len(x) - 1]
-        node.children[1] = {
-          'id': AST_GetNextId(),
-          'opcode': AST_OPCODE_SUB,
-          'children': [
-            {
-              'id': AST_GetNextId(),
-              'opcode': AST_OPCODE_CALL,
-              'value': '__mold_syscall',
-              'sysCallId': 43, # TODO: Don't use hardcoded value ('len'),
-              'children': [AST_CloneNode(box)]
-            },
-            AST_CreateNodeInteger(1)
-          ]
-        }
+        # Don't use hardcoded value ('len')
+        node.children[1] = AST_CreateNode(AST_OPCODE_SUB, '-', [
+          AST_CreateNodeSysCall(43, [AST_CloneNode(box)]),
+          AST_CreateNodeInteger(1)
+        ])
 
       elif selector is '@first'
         # x[@first] = 0
@@ -261,21 +264,12 @@ class ASTPreprocessor
         methodName     = funcName
         fullMethodName = className ~ '.' ~ methodName
 
-        funcCode = {
-          'id': AST_GetNextId(),
-          'opcode': AST_OPCODE_BLOCK,
-          'children': [
-            {
-              'id': AST_GetNextId(),
-              'opcode': AST_OPCODE_CALL,
-              'value': '__mold_syscall',
-              'sysCallId': 41, # TODO: Don't use hardcoded value ('die').
-              'children': [
-                AST_CreateNodeString('not implemented: ' ~ fullMethodName)
-              ]
-            }
-          ]
-        }
+        # TODO: Don't use hardcoded value ('die').
+        funcCode = AST_CreateNodeBlock([
+          AST_CreateNodeSysCall(41, [
+            AST_CreateNodeString('not implemented: ' ~ fullMethodName)
+          ])
+        ])
       endif
 
       # Inject code block.
