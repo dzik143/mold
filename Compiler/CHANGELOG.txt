@@ -1,6 +1,22 @@
-
 Unreleased
+----------
+...
+
+0.4.200831 (released on 2020-08-31):
 ------------------------------------
+
+  New syntax:
+    - Built-in conditions x is/isnt typename:
+      - x is/isnt undefined,
+      - x is/isnt defined,
+      - x is/isnt integer,
+      - x is/isnt float,
+      - x is/isnt boolean,
+      - x is/isnt string,
+      - x is/isnt array,
+      - x is/isnt map,
+      - x is/isnt object.
+
   Dropped syntax:
     - Negative array indexes x[-1] generate runtime error from now.
 
@@ -17,7 +33,7 @@ Unreleased
     - X64: Format driven print (internal only),
     - Translator: Better type guess,
     - Translator: Better temp vars allocation,
-    - Translator: Simpler AST node create.
+    - Translator: Simpler AST node creation.
 
 0.3.200720 (released on 2020-07-20):
 ------------------------------------

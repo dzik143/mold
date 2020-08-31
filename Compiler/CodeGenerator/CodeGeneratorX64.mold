@@ -1495,7 +1495,9 @@ class CodeGeneratorX64
               (oneItem.kind is SYMBOL_KIND_VAR_PARAM) or
               (oneItem.kind is SYMBOL_KIND_VAR_RETVAL))
 
-            print '  restore', oneItem.name
+            if (oneItem.readHits > 0) or (oneItem.writeHits > 0)
+              print '  restore', oneItem.name
+            endif
           endif
         endfor
 
