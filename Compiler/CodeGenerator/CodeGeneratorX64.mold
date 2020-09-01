@@ -566,7 +566,7 @@ class CodeGeneratorX64
 
     print "section '.text' code readable executable"
     print "stack 1024*1024*4, 1024*1024*4"
-    print "include 'Variant.asm'"
+    print "include 'x64\Variant.asm'"
 
     #
     # Fetch code and code metas.
@@ -1765,7 +1765,7 @@ class CodeGeneratorX64
     print '; ------------------------------------------------------------------------------'
     print "section '.data' data readable writeable"
 
-    print "include 'CommonData.asm'"
+    print "include 'x64\CommonData.asm'"
     print ''
 
     print ''
@@ -1973,7 +1973,7 @@ class CodeGeneratorX64
     print '; ------------------------------------------------------------------------------'
 
     print "section '.idata' import data readable writeable"
-    print "  include 'CommonImports.asm'"
+    print "  include 'x64\CommonImports.asm'"
     print ''
 
     #
@@ -1992,7 +1992,7 @@ class CodeGeneratorX64
     # Dump symbols.
     print 'SymbolTable:'
     print 'dq 0, 0'
-    print "include 'SymbolTableCommon.asm'"
+    print "include 'x64\SymbolTableCommon.asm'"
 
     for values procName in arrayOfProcedures
       print 'dq ', procName, ',', 'name_' ~ procName
@@ -2004,7 +2004,7 @@ class CodeGeneratorX64
     print ''
 
     print 'SymbolTableNames:'
-    print "include 'SymbolTableCommonNames.asm'"
+    print "include 'x64\SymbolTableCommonNames.asm'"
 
     for values procName in arrayOfProcedures
       print 'name_' ~ procName, 'db', "'" ~ procName ~ "', 0"
