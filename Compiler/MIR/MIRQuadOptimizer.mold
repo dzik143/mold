@@ -98,7 +98,7 @@ class MIRQuadOptimizer extends PipeAbstract
 
     elif ((opcode is 'move') and
           (this.lastOpcode isnt 'move') and
-          (typeof(this.lastDst) is 'string') and
+          (this.lastDst is string) and
           (this.lastDst is src))
 
       # tmp := x + y

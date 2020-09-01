@@ -221,7 +221,7 @@ class VMachineStack
         box   = stack.pop()
 
         # TODO: Why we need to check it here?
-        if typeof(index) isnt 'integer'
+        if index isnt integer
           # Emulate the same beheavior as compiled version.
           # TODO: Handle source line.
           die('runtime error: integer expected')

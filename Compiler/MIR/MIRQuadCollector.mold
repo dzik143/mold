@@ -42,7 +42,7 @@ class MIRQuadCollector extends PipeAbstract
       item = '-'
     endif
 
-    if typeof(item) is 'array'
+    if item is array
       # Operand is an array.
       # Render item-by-item.
       # TODO: Handle complex data in built-in str().
@@ -163,12 +163,12 @@ class MIRQuadCollector extends PipeAbstract
         if opcode[0] isnt 'c'
           xType = -1
 
-          if typeof(x) is 'string'
+          if x is string
             xType  = this._getType(x)
             opcode = opcode ~ '_' ~ xType
           endif
 
-          if typeof(y) is 'string'
+          if y is string
             yType  = this._getType(y)
             if xType isnt yType
               opcode = opcode ~ '_' ~ yType

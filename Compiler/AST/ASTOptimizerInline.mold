@@ -34,7 +34,7 @@ class ASTOptimizerInline
       print '[ ASTOptimizerInline ]', msg
     endif
   endmethod
-
+/*
   method _resolveParamsForInline(symbolTable, namePrefix, node) -> rv
     global AST_OPCODE_VARIABLE
     global SYMBOL_KIND_VAR_PARAM
@@ -218,13 +218,27 @@ class ASTOptimizerInline
       endif
     endif
   endmethod
+*/
+  method _expandCallParams(node, paramsReplaceMap)
+    global AST_OPCODE_VARIABLE
+
+    children = node.children
+
+    for indexes idx values oneChild in children
+      if oneChild.opcode is AST_OPCODE_VARIABLE
+        replacedNode = paramsReplaceMap{oneChild.value}
+        if replacedNode is defined
+          children[idx] = replacedNode
+        endif
+      else
+        this._expandCallParams(oneChild, paramsReplaceMap)
+      endif
+    endfor
+  endmethod
 
   method _processNode(symbolTable, node)
     global AST_OPCODE_CALL
-    global AST_OPCODE_IF
-    global AST_OPCODE_WHILE
     global AST_OPCODE_DECLARE_OR_ASSIGN
-    global AST_OPCODE_VCALL
 
     opcode   = node.opcode
     children = node.children
@@ -234,61 +248,36 @@ class ASTOptimizerInline
       symbolTable = node.symbolTable
     endif
 
-    # TODO: Optimize it.
-    newChildren = []
-
-    # Process child nodes recursively.
-    for values childNode in children
-      if childNode.opcode is AST_OPCODE_DECLARE_OR_ASSIGN
-        # Input:
-        #   x = foo(...)
-        #
-        # Output:
-        #   foo_body_1
-        #   foo_body_2
-        #   ...
-        #   inline_rv = foo_body_n
-        #   x = inline_rv
-        #
-        rvalNode = childNode.children[1]
-        this._processNode_injectInlineFunctions(newChildren, symbolTable, rvalNode)
-
-      elif ((childNode.opcode is AST_OPCODE_CALL) or
-            (childNode.opcode is AST_OPCODE_VCALL))
-
+    # Process children.
+    for indexes childIdx values childNode in children
+      # Dispatch node type.
+      if childNode.opcode is AST_OPCODE_CALL
         # foo()
-        callParams = childNode.children
+        funcProto = childNode.symbolInfo.proto
+        funcBody  = funcProto.children
 
-        # Resolve function calls in parameters list.
-        for values oneParam in callParams
-          this._processNode_injectInlineFunctions(newChildren, symbolTable, oneParam)
-        endfor
+        if (funcBody is defined) and (len(funcBody[0].children) is 1)
+          callNode = funcBody[0].children[0]
 
-        # Resolve function call itself.
-        this._processNode_injectInlineFunctions(newChildren, symbolTable, childNode)
+          if callNode.opcode is AST_OPCODE_CALL
+            paramsReplaceMap = {}
+            paramsNodes      = childNode.children
 
-      elif ((opcode is AST_OPCODE_IF) or
-            (opcode is AST_OPCODE_WHILE))
+            for indexes paramIdx values paramName in funcProto.params
+              paramsReplaceMap{paramName} = paramsNodes[paramIdx]
+            endfor
 
-        # Resolve condition first.
-        #this._processNode_injectInlineFunctions(newChildren, symbolTable, childNode.children[0])
-
-        # Resolve node itself.
-        #this._processNode_injectInlineFunctions(newChildren, symbolTable, childNode)
-
-        for childIdx in 1 .. len(childNode.children)
-          this._processNode(symbolTable, childNode.children[childIdx])
-        endfor
+            clonedNode = AST_CloneNode(callNode)
+            this._expandCallParams(clonedNode, paramsReplaceMap)
+            children[childIdx] = clonedNode
+            childNode.symbolInfo.readHits = childNode.symbolInfo.readHits - 1
+          endif
+        endif
 
       else
-        # Process nodes recursively.
         this._processNode(symbolTable, childNode)
       endif
-
-      newChildren[@afterlast] = childNode
     endfor
-
-    node.children = newChildren
   endmethod
 
   method processNode(node)

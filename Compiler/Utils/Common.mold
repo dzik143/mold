@@ -25,7 +25,7 @@ function UTILS_PadString(item, desiredLen) -> rv
     item = '-'
   endif
 
-  if typeof(item) is 'array'
+  if item is array
     # Operand is an array.
     # Render item-by-item.
     # TODO: Handle complex data in built-in str().

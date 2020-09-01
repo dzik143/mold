@@ -192,7 +192,7 @@ class ASTPrinterText
       __mold_printToStdOutput("'")
 
     elif opcode is AST_DATA_ARRAY
-      if typeof(node.value) is 'array'
+      if node.value is array
         # Array has initializer list - just render it.
         print node.value
 
@@ -209,7 +209,7 @@ class ASTPrinterText
       endif
 
     elif opcode is AST_DATA_MAP
-      if typeof(node.value) is 'map'
+      if node.value is map
         # Map has initializer list - just render it.
         print node.value
 
@@ -242,7 +242,7 @@ class ASTPrinterText
         for values item in symbols
           if (item.kind is SYMBOL_KIND_CONST) and (item.readHits > 0)
             value = item.value
-            if (typeof(value) is 'array') or (typeof(value) is 'map')
+            if (value is array) or (value is map)
               print prefix, ' const', item.name, '=', value
             #else
             #  print prefix, ' ', symbolInfo.name, '=', value
@@ -443,7 +443,7 @@ class ASTPrinterText
 
       if ((symbolInfo is defined) and
           (symbolInfo.kind is SYMBOL_KIND_CONST) and
-          (typeof(symbolInfo.value) is 'string'))
+          (symbolInfo.value is string))
 
         value = "'" ~ str(symbolInfo.value) ~ "'"
       endif

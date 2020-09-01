@@ -56,7 +56,7 @@ class ASTEvaluator
     # TODO: Optimize it.
     # Merge in first array if any.
     if x is defined
-      if typeof(x) is 'array'
+      if x is array
         for values item in x
           rv[@afterlast] = item
         endfor
@@ -67,7 +67,7 @@ class ASTEvaluator
 
     # Merge in second array if any.
     if y is defined
-      if typeof(y) is 'array'
+      if y is array
         for values item in y
           rv[@afterlast] = item
         endfor
@@ -129,7 +129,7 @@ class ASTEvaluator
       # No values collected for this node yet.
       # Nothing to do.
 
-    elif typeof(storedValue) is 'array'
+    elif storedValue is array
       # There are more than one possible values for this node.
       # Node values is code flow dependent.
       for values item in storedValue

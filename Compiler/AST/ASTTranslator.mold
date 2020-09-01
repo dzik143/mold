@@ -122,7 +122,7 @@ class ASTTranslator
   method _getTempVarOrReuse(currentVar, wantedType) -> rv
     rv = null
 
-    if typeof(currentVar) is 'string'
+    if currentVar is string
       # Check type of current variable.
       symbolInfo = this.symbolTable.lookup(currentVar)
 
@@ -646,7 +646,7 @@ class ASTTranslator
 
     # TODO: Review it?
     # TODO: Return symbolInfo instead of symbol name?
-    #if typeof(rv) is 'string'
+    #if rv is string
     #  astDataType = AST_GetDataType(ast)
     #  mirDataType = AST_ConvertDataTypeToMIR(astDataType)
     #  this.symbolTable.assignMirType(rv, mirDataType)
@@ -952,7 +952,7 @@ class ASTTranslator
 
         for values oneChild in children
           paramName = oneChild.value
-          if typeof(paramName) isnt 'string'
+          if paramName isnt string
             this._error('global directive expects string, but ' ~ typeof(paramName) ~ ' passed')
           else
             this._importGlobal(paramName)

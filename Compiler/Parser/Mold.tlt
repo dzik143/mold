@@ -345,6 +345,8 @@ class Parser
     stackLines   = [0]
     stackColumns = [0]
 
+    # TODO: Crash on one-character byte.
+    # TODO: Clean up this mess.
     buf = '' ~ asc(lookupByte)
 
     # Current lexer token.

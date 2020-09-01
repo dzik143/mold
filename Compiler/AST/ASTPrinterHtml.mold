@@ -40,7 +40,7 @@ class ASTPrinterHtml
 
       if symbolInfo.value is defined
         value = symbolInfo.value
-        if typeof(value) is 'string'
+        if value is string
           value = '"' ~ value ~ '"'
         endif
       endif
@@ -121,7 +121,7 @@ class ASTPrinterHtml
           (opcode is AST_OPCODE_VARIABLE))
 
         value = node.value
-        if typeof(value) is 'string'
+        if value is string
           value = "'" ~ value ~ "' <i>(" ~ AST_ConvertDataTypeToText(AST_GetDataType(node)) ~ ")</i>"
         endif
 
@@ -144,7 +144,7 @@ class ASTPrinterHtml
 
       print '<tr><td><hr>'
 
-      if typeof(node.storedValue) is 'array'
+      if node.storedValue is array
 
         for values item in node.storedValue
           print '@' ~ str(item.id), '<br>'

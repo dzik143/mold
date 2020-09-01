@@ -67,7 +67,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this._emitOneItem(newQuad)
     # TODO: Review it.
     # TODO: Simplify it.
-    #if typeof(x) is 'string'
+    #if x is string
     #  this.symbolTable.releaseTempVar(x)
     #endif
   endmethod
@@ -77,11 +77,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this._emitOneItem(newQuad)
     # TODO: Review it.
     # TODO: Simplify it.
-    #if typeof(x) is 'string'
+    #if x is string
     #  this.symbolTable.releaseTempVar(x)
     #endif
 
-    #if typeof(y) is 'string'
+    #if y is string
     #  this.symbolTable.releaseTempVar(y)
     #endif
   endmethod
@@ -234,9 +234,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _loadImm(rv, value)
-    type = typeof(value)
-
-    if type is 'integer'
+    if value is integer
       if (value >= -2147483648) and (value <= 2147483647)
         # 32-bit integer
         # TODO: Review it: this.emitOneArgOpcode('conv_int32_to_variant', rv, value)
@@ -251,26 +249,26 @@ class ASTTranslatorMIR1 extends ASTTranslator
         # this.emitOneArgOpcode('load_int64', rv, value)
       endif
 
-    elif type is 'float'
+    elif value is float
       # TODO: Review it: this.emitOneArgOpcode('conv_float64_to_variant', rv, value)
       this.emitOneArgOpcode('load_float64', rv, value)
 
-    elif type is 'boolean'
+    elif value is boolean
       # TODO: Review it: this.emitOneArgOpcode('conv_bool32_to_variant', rv, value)
       this.emitOneArgOpcode('load_bool32', rv, value)
 
-    elif type is 'string'
+    elif value is string
       # Do nothing.
       # Just push __literalxxx to the stack.
 
-    elif type is 'array'
+    elif value is array
       # TODO: Review it.
       # TODO: Avoid move here?
       newConst = this.symbolTable.createConstFromValue(value)
       this.symbolTable.lookupForRead(newConst)
       this.emitOneArgOpcode('create_array', rv, newConst)
 
-    elif type is 'map'
+    elif value is map
       # TODO: Review it.
       # TODO: Avoid move here?
       arrayOfValues = []
@@ -290,13 +288,14 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     else
       # TODO: Handle terminal nodes.
-      this.app.logError('unhandled imm type: ' ~ str(type))
+      this.app.logError('unhandled imm type: ' ~ typeof(value))
     endif
 
     this.push(rv)
   endmethod
 
   method _loadImmAsVariant(rv, value)
+    # TODO: Is it still needed?
     type = typeof(value)
 
     if type is 'integer'

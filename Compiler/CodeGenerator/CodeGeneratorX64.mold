@@ -72,6 +72,10 @@ class CodeGeneratorX64
     print '  mov ', dst, ',', src
   endmethod
 
+  method store(dst, src)
+    print '  mov [', dst, '],', src
+  endmethod
+
   method call(name)
     print '  call ', name
   endmethod
@@ -223,7 +227,7 @@ class CodeGeneratorX64
     # TODO: Optimize it.
     rv = typeof(x) ~ ':'
 
-    if typeof(x) is 'array'
+    if x is array
       rv = rv ~ str(len(x)) ~ ':'
       for values item in x
         rv = rv ~ this._hash(item)
@@ -471,7 +475,7 @@ class CodeGeneratorX64
   endmethod
 
   method _jmp_if_cc_int32(dst, x, y, cc)
-    if typeof(y) is 'integer'
+    if y is integer
       print '  cmp dword [', x, '],', y
     else
       print '  mov eax, dword [', x, ']'
@@ -481,12 +485,10 @@ class CodeGeneratorX64
   endmethod
 
   method _jmp_if_cc_variant(dst, x, y, cc)
-    # TODO: Optimize it.
     print '  lea rcx, [', x, ']'
     print '  lea rdx, [', y, ']'
-    print '  lea r8, [__TrashBin]'
     print '  call __MOLD_VariantCompare' ~ cc
-    print '  cmp dword [__TrashBin], 0'
+    print '  test al, al'
     print '  jnz', dst
   endmethod
 
@@ -536,7 +538,7 @@ class CodeGeneratorX64
 
   method _getSymbolType(symbolsMap, id) -> rv
     rv = 'variant'
-    if typeof(id) is 'string'
+    if id is string
       symbolInfo = symbolsMap{id}
       if (symbolInfo is defined) and (symbolInfo.type is defined)
         rv = symbolInfo.type
@@ -618,7 +620,7 @@ class CodeGeneratorX64
       xType   = 'variant'
       yType   = 'variant'
 
-      if (itemCnt > 2) and (typeof(x) is 'string')
+      if (itemCnt > 2) and (x is string)
         if ((opcode isnt 'call') and
             (opcode isnt 'vcall') and
             (opcode isnt 'syscall') and
@@ -844,22 +846,28 @@ class CodeGeneratorX64
         this.call3('__MOLD_VariantDivAsInteger', x, y, dst)
 
       elif (opcode is 'cmp_eq_variant') or (opcode is 'cmp_eq_string')
-        this.call3('__MOLD_VariantCompareEQ', x, y, dst)
+        this.call2('__MOLD_VariantCompareEQ', x, y)
+        this.store(dst, 'eax')
 
       elif (opcode is 'cmp_ne_variant') or (opcode is 'cmp_ne_string')
-        this.call3('__MOLD_VariantCompareNE', x, y, dst)
+        this.call2('__MOLD_VariantCompareNE', x, y)
+        this.store(dst, 'eax')
 
       elif opcode is 'cmp_lt_variant'
-        this.call3('__MOLD_VariantCompareLT', x, y, dst)
+        this.call2('__MOLD_VariantCompareLT', x, y)
+        this.store(dst, 'eax')
 
       elif opcode is 'cmp_le_variant'
-        this.call3('__MOLD_VariantCompareLE', x, y, dst)
+        this.call2('__MOLD_VariantCompareLE', x, y)
+        this.store(dst, 'eax')
 
       elif opcode is 'cmp_gt_variant'
-        this.call3('__MOLD_VariantCompareLT', y, x, dst)
+        this.call2('__MOLD_VariantCompareLT', y, x)
+        this.store(dst, 'eax')
 
       elif opcode is 'cmp_ge_variant'
-        this.call3('__MOLD_VariantCompareLE', y, x, dst)
+        this.call2('__MOLD_VariantCompareLE', y, x)
+        this.store(dst, 'eax')
 
       #
       # build-in string operations
@@ -1099,27 +1107,38 @@ class CodeGeneratorX64
 
       elif opcode is 'syscall'
         rv        = item[1]
-        name      = item[2]
+        sysCallId = item[2]
         params    = item[3]
 
-        this.pushParametersBeforeCall(params)
+        /*
+        if (sysCallId is integer) and (sysCallId is 57)
+          print '  ; Optimized syscall: gettypeid'
+          print '  mov eax, dword [', params[0], ' + Variant_t.type]'
+          print '  mov dword [', rv, ' + Variant_t.type], VARIANT_INTEGER'
+          print '  mov qword [', rv, ' + Variant_t.value], rax'
 
-        # Syscall
-        if typeof(name) is 'integer'
-          print '  mov eax, ', name
         else
-          print '  mov eax, dword [', name, '+ Variant_t.value]'
-        endif
+        */
+          # Generic syscall.
+          this.pushParametersBeforeCall(params)
 
-        if rv is defined
-          # TODO: Clean up this mess.
-          this.push('rdi')
-          this.lea('rdi', rv)
-          this.call('__MOLD_SysCall')
-          this.pop('rdi')
-        else
-          this.call('__MOLD_SysCall')
-        endif
+          if sysCallId is integer
+            print '  mov eax, ', sysCallId
+          else
+            print '  mov eax, dword [', sysCallId, '+ Variant_t.value]'
+          endif
+
+          if rv is defined
+            # TODO: Clean up this mess.
+            this.push('rdi')
+            this.lea('rdi', rv)
+            this.call('__MOLD_SysCall')
+            this.pop('rdi')
+          else
+            this.call('__MOLD_SysCall')
+          endif
+
+        # endif
 
       elif opcode is 'call'
         rv        = item[1]
@@ -1200,7 +1219,7 @@ class CodeGeneratorX64
       elif originalOpcode is 'conv_int32_to_variant'
         print '  mov [', dst, '+ Variant_t.type], VARIANT_INTEGER'
 
-        if typeof(x) is 'integer'
+        if x is integer
           print '  mov [', dst, '+ Variant_t.value],', x
         else
           print '  movsxd rax, dword [', x, ']'
@@ -1208,7 +1227,7 @@ class CodeGeneratorX64
         endif
 
       elif originalOpcode is 'conv_int64_to_variant'
-        if typeof(x) is 'integer'
+        if x is integer
           print '  mov rax,', x
         else
           print '  mov rax, qword [', x, ']'
@@ -1218,7 +1237,7 @@ class CodeGeneratorX64
         print '  mov [', dst, '+ Variant_t.value], rax'
 
       elif originalOpcode is 'conv_float64_to_variant'
-        if typeof(x) is 'float'
+        if x is float
           print '  db 0x48, 0xb8' # mov rax, float64
           print '  dq', x
         else
@@ -1229,7 +1248,7 @@ class CodeGeneratorX64
         print '  mov [', dst, '+ Variant_t.value], rax'
 
       elif originalOpcode is 'conv_float64_to_int32'
-        if typeof(x) is 'float'
+        if x is float
           die('error: convert imm float64 to int32 not supported')
         else
           print '  cvttsd2si eax, [', x, ']'
@@ -1237,7 +1256,7 @@ class CodeGeneratorX64
         endif
 
       elif originalOpcode is 'conv_float64_to_int64'
-        if typeof(x) is 'float'
+        if x is float
           die('error: convert imm float64 to int64 not supported')
         else
           print '  cvttsd2si rax, [', x, ']'
@@ -1245,7 +1264,7 @@ class CodeGeneratorX64
         endif
 
       elif originalOpcode is 'conv_bool32_to_variant'
-        if typeof(x) is 'boolean'
+        if x is boolean
           if x is true
             print '  mov eax, 1'
           elif x is false

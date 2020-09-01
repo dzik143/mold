@@ -400,7 +400,7 @@ class ASTSymbolsCollector
       if lval.opcode is AST_OPCODE_VARIABLE
         # TODO: Review it.
         # Handle constant arrays.
-        if (rval.opcode is AST_DATA_ARRAY) and (typeof(rval.value) is 'array')
+        if (rval.opcode is AST_DATA_ARRAY) and (rval.value is array)
           # Insert new constant.
           symbolInfo  = symbolTable.insertConst(lval.value, rval.value)
           node.opcode = AST_OPCODE_NOP

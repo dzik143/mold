@@ -97,17 +97,17 @@ endfunction
 function AST_GetDataTypeFromValue(value) -> rv
   global AST_DATA_INTEGER, AST_DATA_DOUBLE, AST_DATA_BOOL
 
-  rv       = -1
-  typeName = typeof(value)
-
-  if typeName is 'integer'
+  if value is integer
     rv = AST_DATA_INTEGER
 
-  elif typeName is 'float'
+  elif value is float
     rv = AST_DATA_DOUBLE
 
-  elif typeName is 'boolean'
+  elif value is boolean
     rv = AST_DATA_BOOL
+
+  else
+    rv = -1
   endif
 endfunction
 
@@ -526,10 +526,10 @@ function AST_IsImm(x) -> rv
   global AST_DATA_MAP
 
   if x.opcode is AST_DATA_ARRAY
-    rv = typeof(x.value) is 'array'
+    rv = x.value is array
 
   elif x.opcode is AST_DATA_MAP
-    rv = typeof(x.value) is 'map'
+    rv = x.value is map
 
   elif x.opcode < AST_OPCODE_PROGRAM
     rv = true
@@ -585,7 +585,7 @@ function AST_HasSideEffects(node) -> rv
     rv = true
 
     if ((node.value is '__mold_syscall') and
-        (typeof(node.sysCallId) is 'integer'))
+        (node.sysCallId is integer))
 
       if (((node.sysCallId >= 31) and (node.sysCallId <= 44)) or
            (node.sysCallId is 56) or
@@ -652,7 +652,7 @@ function AST_GetHashInternal(node, isCodeMode) -> rv
           # TODO: Review it.
           rv = '@' ~ node.value
 
-        elif typeof(node.storedValue) is 'array'
+        elif node.storedValue is array
           rv = ''
           for values item in node.storedValue
             rv = rv ~ '@' ~ str(item.id)
@@ -815,7 +815,7 @@ function AST_GetDataType(node) -> rv
     rv     = -1
 
     if ((opcode is AST_DATA_INTEGER) and
-        (typeof(node.value) is 'integer') and
+        (node.value is integer) and
         (node.value < -2147483648) or (node.value > 2147483647))
 
       # TODO: Review it.
@@ -846,7 +846,7 @@ function AST_GetDataType(node) -> rv
       # TODO: Clean up this mess.
       /*
       if ((node.value is '__mold_syscall') and
-          (typeof(node.sysCallId) is 'integer') and
+          (node.sysCallId is integer) and
           (node.sysCallId is 43))
         rv = AST_DATA_INTEGER
       else
@@ -931,7 +931,7 @@ function AST_GetDataType(node) -> rv
 
     #print 'Detected ast type [', rv, '] at node #' ~ str(node.id)
 
-    if typeof(rv) isnt 'integer'
+    if rv isnt integer
       die('error: unset AST data type at AST_GetDataType() at node #' ~ str(node.id))
     endif
   endif

@@ -35,7 +35,7 @@ import 'CodeGenerator/CodeGeneratorX64.mold'
 import 'MIR/MIRQuadOptimizer.mold'
 import 'VM/VMachineStack.mold'
 
-VERSION_STRING = '0.5.200821'
+VERSION_STRING = '0.4.200831'
 
 # ------------------------------------------------------------------------------
 #                              Helper functions
@@ -194,8 +194,8 @@ else
     app.logDebug('VCall optimization...')
     app.getAstOptimizerVCall().processNode(ast)
 
-    app.logDebug('Inline optimization... (TEMPORARY DISABLED!)')
-    #app.getAstOptimizerInline().processNode(ast)
+    # app.logDebug('Inline optimization... (TEMPORARY DISABLED!)')
+    # app.getAstOptimizerInline().processNode(ast)
 
     # Common preprocess before go-on with further AST optimization.
     app.logDebug('Evaluating AST nodes...')
