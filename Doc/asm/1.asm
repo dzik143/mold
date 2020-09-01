@@ -1,14 +1,6 @@
-  ; Init for each loop.
-  lea  rcx, [ x ]
-  lea  rdx, [ k ]
-  lea  r8,  [ v ]
-  lea  r9, [.for_keys_values_begin]
-  lea  r10, [.for_keys_values_end]
-  jmp  __MOLD_ForDriver_KeysAndValuesInMap
-   
-.for_keys_values_begin:
+use64
 
-  ; loop body
-  ret
+;  mov  eax, 123
+  call __foo
 
-.for_keys_values_end:
+__foo:

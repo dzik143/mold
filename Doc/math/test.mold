@@ -1,0 +1,26 @@
+# Storage as: logE(x)
+x = logE(a)
+y = logE(b)
+
+
+logE(a * b)   = logE(a) + logE(b)
+logE(a / b)   = logE(a) - logE(b)
+logE(a + b)   = logE(e^a + e^b)
+logE(a - b)   = logE(e^a - e^b)
+logE(a ^ n)   = n   * logE(a)
+logE(sqrt(a)) = 0.5 * logE(a)
+logE(e ^ a)   = a
+
+
+
+          a*logE(e)   a * 1.44269504088896340739
+exp(a) = 2         = 2
+
+                   a*C   a*C
+exp(a) + exp(b) = 2   + 2
+
+
+
+exp(a) + exp(b) = 2
+                + a + a^2/2! + a^3/3! + a^4/4! + ...
+                + a + a^2/2! + a^3/3! + a^4/4! + ...

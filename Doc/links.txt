@@ -1,1 +1,3 @@
 https://www3.nd.edu/~dthain/courses/cse40243/fall2015/intel-intro.html
+
+bfp - Beyond Floating Point

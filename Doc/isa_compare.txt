@@ -1,0 +1,2 @@
+https://github.com/jameslzhu/riscv-card/blob/master/riscv-card.pdf
+http://www.cburch.com/cs/330/reading/mips-ref.pdf
