@@ -49,7 +49,6 @@ dq __MOLD_VariantSub                         , name__MOLD_VariantSub
 dq __MOLD_VariantMul                         , name__MOLD_VariantMul
 dq __MOLD_VariantCompareEQ                   , name__MOLD_VariantCompareEQ
 dq __MOLD_VariantCompareNE                   , name__MOLD_VariantCompareNE
-dq __MOLD_VariantDefaultCompareEQ            , name__MOLD_VariantDefaultCompareEQ
 dq __MOLD_VariantCompareLT                   , name__MOLD_VariantCompareLT
 dq __MOLD_VariantCompareLE                   , name__MOLD_VariantCompareLE
 dq __MOLD_VariantNeg                         , name__MOLD_VariantNeg

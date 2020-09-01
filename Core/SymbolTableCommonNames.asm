@@ -49,7 +49,6 @@ name__MOLD_VariantSub                         db '__MOLD_VariantSub', 0
 name__MOLD_VariantMul                         db '__MOLD_VariantMul', 0
 name__MOLD_VariantCompareEQ                   db '__MOLD_VariantCompareEQ', 0
 name__MOLD_VariantCompareNE                   db '__MOLD_VariantCompareNE', 0
-name__MOLD_VariantDefaultCompareEQ            db '__MOLD_VariantDefaultCompareEQ', 0
 name__MOLD_VariantCompareLT                   db '__MOLD_VariantCompareLT', 0
 name__MOLD_VariantCompareLE                   db '__MOLD_VariantCompareLE', 0
 name__MOLD_VariantNeg                         db '__MOLD_VariantNeg', 0

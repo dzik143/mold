@@ -829,7 +829,7 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
   name:
     ; rcx = x  (Variant_t) (IN)
     ; rdx = y  (Variant_t) (IN)
-    ; r8  = rv (int32*)    (OUT)
+    ; rax = rv (bool32)    (RETURN VALUE)
 
     lea     r11, [.jmpTable]
     jmp     __MOLD_VariantTypeDispatcherXX
@@ -846,7 +846,6 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
     xor       rax, rax
     cmp       rcx, rdx
     opcode_ii al
-    mov       dword [r8], eax
     ret
 
   ; double x double
@@ -855,17 +854,24 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
     movq      xmm1, [rdx + Variant_t.value]
     opcode_dd xmm0, xmm1
     movq      rax, xmm0
-    mov       dword [r8], eax
     ret
 
 .not_implemented:
     jmp __MOLD_PrintErrorAndDie.notImplemented
 }
 
-proc __MOLD_VariantCompareEQ
-    ; rcx = x  (Variant_t) (IN)
-    ; rdx = y  (Variant_t) (IN)
-    ; r8  = rv (int32*)    (OUT)
+;###############################################################################
+;
+; Check do two variant variables are equal.
+; rv = x == y
+;
+; rcx = x  (Variant_t) (IN)
+; rdx = y  (Variant_t) (IN)
+; rax = rv (bool32)    (RETURN VALUE)
+;
+;###############################################################################
+
+__MOLD_VariantCompareEQ:
 
     DEBUG_CHECK_VARIANT rcx
     DEBUG_CHECK_VARIANT rdx
@@ -901,10 +907,9 @@ proc __MOLD_VariantCompareEQ
 .memoryCompare:
     ; TODO: Optimize it.
     mov     r9,  [rcx + Variant_t.value]   ; r9  = x.value
-    xor     r9,  [rdx + Variant_t.value]   ; r9  = x.value xor y.value
+    cmp     r9,  [rdx + Variant_t.value]   ; r9  = x.value xor y.value
     setz    al                             ; rax = compareEQ(x, y)
     and     eax, 1                         ; rax = compareEQ(x, y) {0,1}
-    mov     dword [r8], eax                ; rv  = compareEQ(x, y) {0,1}
     ret
 
 .compare_ss:
@@ -939,28 +944,32 @@ proc __MOLD_VariantCompareEQ
     test    rax, rax
     setz    al
     and     rax, 1
-    mov     dword [r8], eax
 
     ret
-endp
 
-proc __MOLD_VariantCompareNE
-    ; rcx = x  (Variant_t) (IN)
-    ; rdx = y  (Variant_t) (IN)
-    ; r8  = rv (int32*)    (OUT)
+;###############################################################################
+;
+; Check do two variant variables are differ.
+; rv = x != y
+;
+; rcx = x  (Variant_t) (IN)
+; rdx = y  (Variant_t) (IN)
+; rax = rv (bool32)    (RETURN VALUE)
+;
+;###############################################################################
+
+__MOLD_VariantCompareNE:
 
     DEBUG_CHECK_VARIANT rcx
     DEBUG_CHECK_VARIANT rdx
 
     call    __MOLD_VariantCompareEQ
-    xor     dword [r8], 1
+    xor     al, 1
 
     ret
-endp
 
-DefVariantCompare __MOLD_VariantDefaultCompareEQ, setz,  cmpeqsd
-DefVariantCompare __MOLD_VariantCompareLT,        setl,  cmpltsd
-DefVariantCompare __MOLD_VariantCompareLE,        setle, cmplesd
+DefVariantCompare __MOLD_VariantCompareLT, setl,  cmpltsd
+DefVariantCompare __MOLD_VariantCompareLE, setle, cmplesd
 
 ; http://www.felixcloutier.com/x86/CMPSD.html#tbl-3-6
 ; The greater-than relations that the processor does not implement require
