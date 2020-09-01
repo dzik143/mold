@@ -183,7 +183,7 @@ class ASTSymbolsCollector
 
         if opcode is AST_OPCODE_CLASS_METHOD
           methodName      = child.value.name
-          methodParamsCnt = len(child.params)
+          methodParamsCnt = len(child.value.params)
 
           child.fullName   = '__' ~ className ~ '_' ~ methodName ~ '$' ~ str(methodParamsCnt)
           child.className  = className
