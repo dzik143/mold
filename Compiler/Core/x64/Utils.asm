@@ -568,7 +568,6 @@ __MOLD_PrintFormatFromMemory:
     call    __MOLD_PrintVariant
     jmp     .fetch_next_param
 
-
 .int32Retval:
 .bool32Retval:
     sub     eax, 10              ; eax = ast type

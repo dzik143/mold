@@ -67,12 +67,12 @@ dq __MOLD_VariantDestroy                     , name__MOLD_VariantDestroy
 dq __MOLD_VariantLength                      , name__MOLD_VariantLength
 dq __MOLD_VariantAddRef                      , name__MOLD_VariantAddRef
 dq __MOLD_VariantMove                        , name__MOLD_VariantMove
-dq __MOLD_InitArgv                           , name__MOLD_InitArgv
+;dq __MOLD_InitArgv                           , name__MOLD_InitArgv
 dq __MOLD_Main                               , name__MOLD_Main
 dq __MOLD_Halt                               , name__MOLD_Halt
 dq __MOLD_NullMethodCalled                   , name__MOLD_NullMethodCalled
-dq __MOLD_OpenExternalModule                 , name__MOLD_OpenExternalModule
-dq __MOLD_LoadExternalFunction               , name__MOLD_LoadExternalFunction
+;dq __MOLD_OpenExternalModule                 , name__MOLD_OpenExternalModule
+;dq __MOLD_LoadExternalFunction               , name__MOLD_LoadExternalFunction
 dq __MOLD_Peek                               , name__MOLD_Peek
 dq __MOLD_Ord                                , name__MOLD_Ord
 dq __MOLD_LoadFile                           , name__MOLD_LoadFile

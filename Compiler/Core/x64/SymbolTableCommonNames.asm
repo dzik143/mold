@@ -67,12 +67,12 @@ name__MOLD_VariantDestroy                     db '__MOLD_VariantDestroy', 0
 name__MOLD_VariantLength                      db '__MOLD_VariantLength', 0
 name__MOLD_VariantAddRef                      db '__MOLD_VariantAddRef', 0
 name__MOLD_VariantMove                        db '__MOLD_VariantMove', 0
-name__MOLD_InitArgv                           db '__MOLD_InitArgv', 0
+;name__MOLD_InitArgv                           db '__MOLD_InitArgv', 0
 name__MOLD_Main                               db '__MOLD_Main', 0
 name__MOLD_Halt                               db '__MOLD_Halt', 0
 name__MOLD_NullMethodCalled                   db '__MOLD_NullMethodCalled', 0
-name__MOLD_OpenExternalModule                 db '__MOLD_OpenExternalModule', 0
-name__MOLD_LoadExternalFunction               db '__MOLD_LoadExternalFunction', 0
+;name__MOLD_OpenExternalModule                 db '__MOLD_OpenExternalModule', 0
+;name__MOLD_LoadExternalFunction               db '__MOLD_LoadExternalFunction', 0
 name__MOLD_Peek                               db '__MOLD_Peek', 0
 name__MOLD_Ord                                db '__MOLD_Ord', 0
 name__MOLD_LoadFile                           db '__MOLD_LoadFile', 0

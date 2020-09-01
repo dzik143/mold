@@ -254,33 +254,36 @@ __MOLD_SysCall:
 ; ------------------------------------------------------------------------------
 
 .callExternal:
-    push    rdx
+    jmp    __MOLD_PrintErrorAndDie.notImplemented
 
-    ; Load DLL
-    ; TODO: Don't resolve handle each time.
-    ; ------------------------------------
-    mov     rcx, [rcx + Variant_t.value]
-    mov     rcx, [rcx + Buffer_t.bytesPtr]
-    lea     rcx, [rcx + String_t.text]
-
-    cinvoke LoadLibrary                     ; rax = DLL Handle
-    mov     rcx, rax                        ; rcx = DLL Handle
-
-    ; Import procedure from DLL
-    ; TODO: Don't resolve symbol each time.
-    ; ------------------------------------
-
-    pop     rdx
-    mov     rdx, [rdx + Variant_t.value]
-    mov     rdx, [rdx + Buffer_t.bytesPtr]
-    lea     rdx, [rdx + String_t.text]
-
-    cinvoke GetProcAddress                  ; rax = external procedure ptr
-
-    ; Call imported procedure
-    ; TODO: Handle parameters.
-    ; ------------------------------------
-    jmp     rax
+; TODO: Not implemented
+;    push    rdx
+;
+;    ; Load DLL
+;    ; TODO: Don't resolve handle each time.
+;    ; ------------------------------------
+;    mov     rcx, [rcx + Variant_t.value]
+;    mov     rcx, [rcx + Buffer_t.bytesPtr]
+;    lea     rcx, [rcx + String_t.text]
+;
+;    cinvoke LoadLibrary                     ; rax = DLL Handle
+;    mov     rcx, rax                        ; rcx = DLL Handle
+;
+;    ; Import procedure from DLL
+;    ; TODO: Don't resolve symbol each time.
+;    ; ------------------------------------
+;
+;    pop     rdx
+;    mov     rdx, [rdx + Variant_t.value]
+;    mov     rdx, [rdx + Buffer_t.bytesPtr]
+;    lea     rdx, [rdx + String_t.text]
+;
+;    cinvoke GetProcAddress                  ; rax = external procedure ptr
+;
+;    ; Call imported procedure
+;    ; TODO: Handle parameters.
+;    ; ------------------------------------
+;    jmp     rax
 
 ; ------------------------------------------------------------------------------
 ; die(msg)
