@@ -461,7 +461,7 @@ class ASTOptimizerConstantFolding
         # TODO: Why we sometimes get non-integer sysCallId here?
         elif ((opcode is AST_OPCODE_CALL) and
               (value is '__mold_syscall') and
-              (typeof(node.sysCallId) is 'integer') and
+              (node.sysCallId is integer) and
               (node.sysCallId is 44))
 
           # typeof(...) - non imm variant.

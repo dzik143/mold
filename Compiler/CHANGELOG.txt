@@ -1,6 +1,7 @@
 Unreleased
 ----------
-...
+  Internal maintain:
+    - X64: Addded cmp_is_typeof opcode.
 
 0.4.200831 (released on 2020-08-31):
 ------------------------------------

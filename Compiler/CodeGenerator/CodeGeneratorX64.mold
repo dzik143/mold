@@ -809,6 +809,12 @@ class CodeGeneratorX64
       elif opcode is 'cmp_ge_int32'
         this._cmp_cc_int32(dst, x, y, 'ge')
 
+      elif opcode is 'cmp_is_typeof_int32'
+        this.store32(dst, y is VARIANT_INTEGER)
+
+      elif opcode is 'cmp_is_not_typeof_int32'
+        this.store32(dst, y isnt VARIANT_INTEGER)
+
       #
       # float64 arithmetic
       #
@@ -856,14 +862,10 @@ class CodeGeneratorX64
         this._cmp_cc_float64(dst, x, y, 'ae')
 
       elif opcode is 'cmp_is_typeof_float64'
-        if y is VARIANT_DOUBLE
-          this.store32(dst, 1)
-        endif
+        this.store32(dst, y is VARIANT_DOUBLE)
 
       elif opcode is 'cmp_is_not_typeof_float64'
-        if y isnt VARIANT_DOUBLE
-          this.store32(dst, 1)
-        endif
+        this.store32(dst, y isnt VARIANT_DOUBLE)
 
       elif opcode is 'jmp_if_typeof_float64'
         if y is VARIANT_DOUBLE

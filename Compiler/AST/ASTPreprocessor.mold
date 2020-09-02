@@ -165,6 +165,13 @@ class ASTPreprocessor
           # children[1] = AST_CreateNodeInteger(typeId)
           # TODO: Clean up this mess.
           x.__isUsedAsTypeofArg = true
+
+        elif name is 'empty'
+          # x is   empty -> len(x) is 0
+          # x isnt empty -> len(x) isnt 0
+          # TODO: Remove hardcoded syscall id (43=len)
+          children[0] = AST_CreateNodeSysCall(43, x)
+          children[1] = AST_CreateNodeInteger(0)
         endif
       endif
 
