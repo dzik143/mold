@@ -126,6 +126,20 @@ class ASTTranslatorMIR0 extends ASTTranslator
     this.code.cmpGE()
   endmethod
 
+  method _isTypeOf(rv, x, typeId)
+    # TODO: Clean up this mess (57=getTypeId)
+    this.code.syscall(57, 1)
+    this.code.loadImm(typeId)
+    this.code.cmpEQ()
+  endmethod
+
+  method _isNotTypeOf(rv, x, typeId)
+    # TODO: Clean up this mess (57=getTypeId)
+    this.code.syscall(57, 1)
+    this.code.loadImm(typeId)
+    this.code.cmpNEQ()
+  endmethod
+
   method _loadVariable(name)
     global SYMBOL_KIND_VAR_LOCAL
     global SYMBOL_KIND_VAR_GLOBAL

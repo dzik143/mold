@@ -28,6 +28,7 @@ DefErrorEntry outOfMemory
 DefErrorEntry badType
 DefErrorEntry notImplemented
 DefErrorEntry implicitConversion
+DefErrorEntry notComparable
 DefErrorEntry arrayStringOrMapExpected
 DefErrorEntry divideByZero
 DefErrorEntry floatOverflow
@@ -111,6 +112,7 @@ DefErrorEntry notIterable
 .msg_badType                  db  8 , 'bad type'
 .msg_notImplemented           db 15 , 'not implemented'
 .msg_implicitConversion       db 46 , 'implicit type conversion not supported anymore'
+.msg_notComparable            db 14 , 'not comparable'
 .msg_divideByZero             db 14 , 'divide by zero'
 .msg_floatOverflow            db 23 , 'floating point overflow'
 .msg_floatUnderflow           db 24 , 'floating point underflow'

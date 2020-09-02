@@ -328,7 +328,7 @@ elif foo() is false
 endif
 
 EXPECTED_ERROR:
-runtime error: implicit type conversion not supported anymore
+runtime error: not comparable
 -------------------------------------------------------------------------------
 
 TEST "Bug: signed integer GE"

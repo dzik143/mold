@@ -113,6 +113,7 @@ class ASTPreprocessor
     global AST_OPCODE_FUNCTION
     global AST_OPCODE_CLASS_METHOD
     global MOLD_TYPE_ID_MAP
+    global AST_OPCODE_IS_TYPEOF
 
     opcode   = node.opcode
     children = node.children
@@ -154,10 +155,14 @@ class ASTPreprocessor
 
         if typeId is defined
           # TODO: Optimize it.
-          # TODO: Remove hardcoded syscall id (getTypeId)
-          children[0] = AST_CreateNodeSysCall(57, [x])
-          children[1] = AST_CreateNodeInteger(typeId)
+          # Promote x is/isnt typename to is_typeof(x,typeid)
+          node.opcode   = node.opcode + AST_OPCODE_IS_TYPEOF - AST_OPCODE_COMPARE_EQ
+          node.children = [x]
+          node.value    = typeId
 
+          # TODO: Remove hardcoded syscall id (getTypeId)
+          # children[0] = AST_CreateNodeSysCall(57, [x])
+          # children[1] = AST_CreateNodeInteger(typeId)
           # TODO: Clean up this mess.
           x.__isUsedAsTypeofArg = true
         endif

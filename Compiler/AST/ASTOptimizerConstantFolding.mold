@@ -159,6 +159,8 @@ class ASTOptimizerConstantFolding
     global AST_OPCODE_REFERENCE_BY_KEY
     global AST_OPCODE_TYPE_CAST
     global SYMBOL_KIND_CONST
+    global AST_OPCODE_IS_TYPEOF
+    global AST_OPCODE_IS_NOT_TYPEOF
 
     isNodeChanged = false
 
@@ -365,6 +367,14 @@ class ASTOptimizerConstantFolding
             else
               # Unhandled call - do nothing.
             endif
+
+          elif opcode is AST_OPCODE_IS_TYPEOF
+            # TODO: Clean up this mess (57=getypeid)
+            newValue = __mold_syscall(57, x.value) is value
+
+          elif opcode is AST_OPCODE_IS_NOT_TYPEOF
+            # TODO: Clean up this mess (57=getypeid)
+            newValue = __mold_syscall(57, x.value) isnt value
 
           elif opcode is AST_OPCODE_NEG
             newValue = -x.value

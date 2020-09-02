@@ -327,6 +327,8 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   global AST_OPCODE_FOR_INDEXES
   global AST_OPCODE_FOR_INDEXES_VALUES
   global AST_OPCODE_STRING_JOIN
+  global AST_OPCODE_IS_TYPEOF
+  global AST_OPCODE_IS_NOT_TYPEOF
 
   if opcode is AST_OPCODE_REFERENCE_BY_INDEX
     rv = '&i'
@@ -403,6 +405,12 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   elif opcode is AST_OPCODE_COMPARE_GE
     rv = 'ge'
 
+  elif opcode is AST_OPCODE_IS_TYPEOF
+    rv = 'typeof'
+
+  elif opcode is AST_OPCODE_IS_NOT_TYPEOF
+    rv = 'nottypeof'
+
   elif opcode is AST_OPCODE_VARIABLE
     rv = 'v'
 
@@ -466,6 +474,8 @@ function AST_InvertBoolean(node)
   global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ, AST_OPCODE_COMPARE_GT
   global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
   global AST_OPCODE_TYPE_CAST
+  global AST_OPCODE_IS_TYPEOF
+  global AST_OPCODE_IS_NOT_TYPEOF
 
   opcode = node.opcode
 
@@ -508,6 +518,12 @@ function AST_InvertBoolean(node)
 
   elif opcode is AST_OPCODE_TYPE_CAST
     AST_InvertBoolean(node.children[0])
+
+  elif opcode is AST_OPCODE_IS_TYPEOF
+    node.opcode = AST_OPCODE_IS_NOT_TYPEOF
+
+  elif opcode is AST_OPCODE_IS_NOT_TYPEOF
+    node.opcode = AST_OPCODE_IS_TYPEOF
 
   else
     die('error: unhandled opcode in AST_InvertBoolean: ' ~ str(opcode))
@@ -790,6 +806,7 @@ function AST_GetDataType(node) -> rv
   global AST_OPCODE_DIV
   global AST_OPCODE_IDIV
   global AST_OPCODE_COMPARE_EQ, AST_OPCODE_BOOL_OR, AST_OPCODE_BOOL_NOT
+  global AST_OPCODE_IS_TYPEOF, AST_OPCODE_IS_NOT_TYPEOF
 
   global AST_DATA_UNDEFINED
   global AST_DATA_INTEGER
@@ -844,14 +861,11 @@ function AST_GetDataType(node) -> rv
 
     elif opcode is AST_OPCODE_CALL
       # TODO: Clean up this mess.
-      /*
-      if ((node.value is '__mold_syscall') and
-          (node.sysCallId is integer) and
-          (node.sysCallId is 43))
-        rv = AST_DATA_INTEGER
-      else
-      */
-
+      #if ((node.value is '__mold_syscall') and
+      #    (node.sysCallId is integer) and
+      #    (node.sysCallId is 57))
+      #  # TODO: Remove hard-coded value (57=gettypeid)
+      #  rv = AST_DATA_INTEGER
       if ((node.symbolInfo is defined) and
           (node.symbolInfo.proto.astTypeRetVal is defined))
         rv = node.symbolInfo.proto.astTypeRetVal
@@ -919,7 +933,9 @@ function AST_GetDataType(node) -> rv
         if opcode is AST_OPCODE_NEG
           rv = xType
 
-        elif opcode is AST_OPCODE_BOOL_NOT
+        elif ((opcode is AST_OPCODE_BOOL_NOT) or
+              (opcode is AST_OPCODE_IS_TYPEOF) or
+              (opcode is AST_OPCODE_IS_NOT_TYPEOF))
           rv = AST_DATA_BOOL
         endif
       endif

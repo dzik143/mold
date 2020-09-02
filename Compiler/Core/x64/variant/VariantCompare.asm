@@ -71,7 +71,7 @@ __MOLD_VariantCompareEQ:
     cmp     r10d, 98h
     jz      .memoryCompare
 
-    jmp     __MOLD_PrintErrorAndDie.implicitConversion
+    jmp     __MOLD_PrintErrorAndDie.notComparable
 
 .types_are_equal:
     ; string vs string

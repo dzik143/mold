@@ -41,7 +41,10 @@ class MIRQuadOptimizer extends PipeAbstract
       'cmp_lt': 'jmp_if_ge',
       'cmp_le': 'jmp_if_gt',
       'cmp_gt': 'jmp_if_le',
-      'cmp_ge': 'jmp_if_lt'
+      'cmp_ge': 'jmp_if_lt',
+
+      'cmp_is_typeof':     'jmp_if_not_typeof',
+      'cmp_is_not_typeof': 'jmp_if_typeof'
     }
 
     this.cmpXxJmpIfTrueMap = {
@@ -50,7 +53,10 @@ class MIRQuadOptimizer extends PipeAbstract
       'cmp_lt': 'jmp_if_lt',
       'cmp_le': 'jmp_if_le',
       'cmp_gt': 'jmp_if_gt',
-      'cmp_ge': 'jmp_if_ge'
+      'cmp_ge': 'jmp_if_ge',
+
+      'cmp_is_typeof':     'jmp_if_typeof',
+      'cmp_is_not_typeof': 'jmp_if_not_typeof'
     }
   endmethod
 

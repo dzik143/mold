@@ -10,3 +10,5 @@ cd   %CORE%
 call fasm %BUILD%\pass1.asm
 
 copy %BUILD%\pass1.exe %TESTS%\mold.exe
+
+%BUILD%\pass1.exe --debug source.mold

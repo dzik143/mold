@@ -72,6 +72,7 @@ class ASTTranslator
   unimplemented method _mul(rv, x, y)
   unimplemented method _div(rv, x, y)
   unimplemented method _idiv(rv, x, y)
+
   unimplemented method _compareEQ(rv, x, y)
   unimplemented method _compareNEQ(rv, x, y)
   unimplemented method _compareLT(rv, x, y)
@@ -80,6 +81,9 @@ class ASTTranslator
   unimplemented method _compareGE(rv, x, y)
   unimplemented method _boolAnd(rv, x, y)
   unimplemented method _boolOr(rv, x, y)
+  unimplemented method _isTypeOf(rv, x, typeId)
+  unimplemented method _isNotTypeOf(rv, x, typeId)
+
   unimplemented method _loadFromIndex(rv, box, idx)
   unimplemented method _loadFromKey(rv, box, key)
   unimplemented method _storeAtIndex(box, idx, value)
@@ -360,6 +364,8 @@ class ASTTranslator
     global AST_OPCODE_TYPE_CAST
     global AST_OPCODE_STRING_JOIN
     global AST_OPCODE_DECLARE_OR_ASSIGN
+    global AST_OPCODE_IS_TYPEOF
+    global AST_OPCODE_IS_NOT_TYPEOF
 
     opcode      = ast.opcode
     value       = ast.value
@@ -559,6 +565,14 @@ class ASTTranslator
       elif opcode is AST_OPCODE_BOOL_OR
         # Lazy 'or' operator.
         this._evaluateNodeLazyBoolOr(rv, children[0], children[1])
+
+      elif opcode is AST_OPCODE_IS_TYPEOF
+        x = this._evaluateNode(children[0])
+        this._isTypeOf(rv, x, value)
+
+      elif opcode is AST_OPCODE_IS_NOT_TYPEOF
+        x = this._evaluateNode(children[0])
+        this._isNotTypeOf(rv, x, value)
 
       elif opcode is AST_OPCODE_CALL_NEW
         classProto = this._getClassProto(value)

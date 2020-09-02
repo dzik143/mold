@@ -366,6 +366,16 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.popTwoArgsAndEmitOpcode('cmp_ge', rv)
   endmethod
 
+  method _isTypeOf(rv, x, typeId)
+    this.push(typeId)
+    this.popTwoArgsAndEmitOpcode('cmp_is_typeof', rv)
+  endmethod
+
+  method _isNotTypeOf(rv, x, typeId)
+    this.push(typeId)
+    this.popTwoArgsAndEmitOpcode('cmp_is_not_typeof', rv)
+  endmethod
+
   method _loadVariable(name)
     this.push(name)
   endmethod

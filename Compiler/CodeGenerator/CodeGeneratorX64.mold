@@ -47,6 +47,22 @@ MIR_TYPE_SIZE_MAP = {
   'map':     16
 }
 
+const VARIANT_UNDEFINED = 0
+const VARIANT_NULL      = 1
+
+# Primitives.
+const VARIANT_INTEGER   = 2
+const VARIANT_FLOAT     = 3
+const VARIANT_DOUBLE    = 4
+const VARIANT_STRING    = 5
+const VARIANT_BOOLEAN   = 6
+
+# Complex containers.
+const VARIANT_ARRAY     = 7
+const VARIANT_MAP       = 8
+const VARIANT_OBJECT    = 9
+const VARIANT_TYPE_MAX  = 9
+
 class CodeGeneratorX64
 
   method constructor()
@@ -74,6 +90,14 @@ class CodeGeneratorX64
 
   method store(dst, src)
     print '  mov [', dst, '],', src
+  endmethod
+
+  method store32(dst, src)
+    print '  mov dword [', dst, '],', src
+  endmethod
+
+  method store64(dst, src)
+    print '  mov qword [', dst, '],', src
   endmethod
 
   method call(name)
@@ -551,6 +575,10 @@ class CodeGeneratorX64
     global SYMBOL_KIND_VAR_PARAM, SYMBOL_KIND_JMP_TABLE, SYMBOL_KIND_VAR_RETVAL
     global REG_PARAMS_CNT, REG_PARAMS32, REG_PARAMS64
     global MIR_TO_VARIANT_TYPE_MAP, MIR_TYPE_SIZE_MAP
+    global VARIANT_INTEGER
+    global VARIANT_STRING
+    global VARIANT_DOUBLE
+    global VARIANT_BOOLEAN
 
     #
     # Common headers.
@@ -640,7 +668,11 @@ class CodeGeneratorX64
         endif
       endif
 
-      # print '  ; [x64]', opcode, dst, x, y
+      #if ((opcode isnt 'comment') and
+      #    (opcode isnt 'proc') and
+      #    (opcode isnt 'init_frame'))
+      #  print '  ; [x64]', opcode, dst, x, y
+      #endif
 
       # Dispatch opcode.
       if opcode is 'nop'
@@ -823,6 +855,26 @@ class CodeGeneratorX64
       elif opcode is 'cmp_ge_float64'
         this._cmp_cc_float64(dst, x, y, 'ae')
 
+      elif opcode is 'cmp_is_typeof_float64'
+        if y is VARIANT_DOUBLE
+          this.store32(dst, 1)
+        endif
+
+      elif opcode is 'cmp_is_not_typeof_float64'
+        if y isnt VARIANT_DOUBLE
+          this.store32(dst, 1)
+        endif
+
+      elif opcode is 'jmp_if_typeof_float64'
+        if y is VARIANT_DOUBLE
+          print '  jmp', dst
+        endif
+
+      elif opcode is 'jmp_if_not_typeof_float64'
+        if y isnt VARIANT_DOUBLE
+          print '  jmp', dst
+        endif
+
       #
       # Variant arithmetic.
       #
@@ -869,12 +921,34 @@ class CodeGeneratorX64
         this.call2('__MOLD_VariantCompareLE', y, x)
         this.store(dst, 'eax')
 
+      elif opcode is 'cmp_is_typeof_variant'
+        print '  xor eax, eax'
+        print '  cmp [', x, ' + Variant_t.type],', y
+        print '  setz al'
+        print '  mov dword [', dst, '], eax'
+
+      elif opcode is 'cmp_is_not_typeof_variant'
+        print '  xor eax, eax'
+        print '  cmp [', x, ' + Variant_t.type],', y
+        print '  setnz al'
+        print '  mov dword [', dst, '], eax'
+
       #
       # build-in string operations
       #
 
       elif originalOpcode is 'string_join'
         this.call3AndDestroy('__MOLD_VariantStringJoin', x, y, dst)
+
+      elif opcode is 'jmp_if_typeof_string'
+        if y is VARIANT_STRING
+          print '  jmp', dst
+        endif
+
+      elif opcode is 'jmp_if_not_typeof_string'
+        if y isnt VARIANT_STRING
+          print '  jmp', dst
+        endif
 
       #
       # indirect jumps
@@ -913,6 +987,14 @@ class CodeGeneratorX64
 
       elif opcode is 'jmp_if_ge_variant'
         this._jmp_if_cc_variant(dst, y, x, 'LE')
+
+      elif opcode is 'jmp_if_typeof_variant'
+        print '  cmp [', x, ' + Variant_t.type],', y
+        print '  jz', dst
+
+      elif opcode is 'jmp_if_not_typeof_variant'
+        print '  cmp [', x, '+ Variant_t.type ],', y
+        print '  jnz', dst
 
       #
       # load imm values
@@ -984,6 +1066,16 @@ class CodeGeneratorX64
       elif opcode is 'jmp_if_ge_int32'
         this._jmp_if_cc_int32(dst, x, y, 'ge')
 
+      elif opcode is 'jmp_if_typeof_int32'
+        if y is VARIANT_INTEGER
+          print '  jmp', dst
+        endif
+
+      elif opcode is 'jmp_if_not_typeof_int32'
+        if y isnt VARIANT_INTEGER
+          print '  jmp', dst
+        endif
+
       #
       # jmp_if_true_bool32
       # jmp_if_false_bool32
@@ -997,22 +1089,18 @@ class CodeGeneratorX64
 
       elif opcode is 'jmp_if_eq_bool32'
         # TODO: Review it.
-        print '; jmp_if_eq_bool32'
         this._jmp_if_cc_int32(dst, x, y, 'z')
 
       elif opcode is 'jmp_if_ne_bool32'
         # TODO: Review it.
-        print '; jmp_if_ne_bool32'
         this._jmp_if_cc_int32(dst, x, y, 'nz')
 
       elif opcode is 'cmp_eq_bool32'
         # TODO: Review it.
-        print '; cmp_eq_bool32'
         this._cmp_cc_int32(dst, x, y, 'z')
 
       elif opcode is 'cmp_ne_bool32'
         # TODO: Review it.
-        print '; cmp_ne_bool32'
         this._cmp_cc_int32(dst, x, y, 'nz')
 
       #
@@ -1110,15 +1198,13 @@ class CodeGeneratorX64
         sysCallId = item[2]
         params    = item[3]
 
-        /*
-        if (sysCallId is integer) and (sysCallId is 57)
-          print '  ; Optimized syscall: gettypeid'
-          print '  mov eax, dword [', params[0], ' + Variant_t.type]'
-          print '  mov dword [', rv, ' + Variant_t.type], VARIANT_INTEGER'
-          print '  mov qword [', rv, ' + Variant_t.value], rax'
-
-        else
-        */
+        #if (sysCallId is integer) and (sysCallId is 57)
+        #  print '  ; Optimized syscall: gettypeid'
+        #  print '  mov eax, dword [', params[0], ' + Variant_t.type]'
+        #  print '  mov dword [', rv, ' + Variant_t.type], VARIANT_INTEGER'
+        #  print '  mov qword [', rv, ' + Variant_t.value], rax'
+        #
+        #else
           # Generic syscall.
           this.pushParametersBeforeCall(params)
 
@@ -1137,8 +1223,7 @@ class CodeGeneratorX64
           else
             this.call('__MOLD_SysCall')
           endif
-
-        # endif
+        #endif
 
       elif opcode is 'call'
         rv        = item[1]
