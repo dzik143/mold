@@ -775,13 +775,12 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     this.methodEmitted{funcProto.name} = true
 
-    symbolTable = this.symbolTable
-
     this.emitComment('-----------------------------------------------')
     this.emitComment('function ' ~ funcName)
     this.emitComment('-----------------------------------------------')
 
     # TODO: Simplify it.
+    symbolTable      = this.symbolTable
     oldSymbolTable   = this.symbolTable
     this.symbolTable = codeAst.symbolTable
 
@@ -799,7 +798,10 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.emitProcBegin(procMeta)
 
     # Emit function code if any.
-    if len(codeAst.children) > 0
+    if funcProto.isPureVirtual is defined
+      this.emitJmp('__MOLD_PrintErrorAndDie.notImplemented')
+
+    elif len(codeAst.children) > 0
       # Init frame only if there is any code to emit.
       this.emitInitFrame(procMeta)
 

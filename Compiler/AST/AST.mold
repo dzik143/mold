@@ -22,6 +22,8 @@
 #                               Common constants
 # ------------------------------------------------------------------------------
 
+const AST_DATA_NONE      = 0
+
 const AST_DATA_INTEGER   = 1
 const AST_DATA_FLOAT     = 2
 const AST_DATA_DOUBLE    = 3

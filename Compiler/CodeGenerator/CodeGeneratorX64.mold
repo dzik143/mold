@@ -237,7 +237,12 @@ class CodeGeneratorX64
     #endif
 
     for indexes idx values oneParam in params
-      this.pushOneParameterBeforeCall(oneParam, idx)
+      # Skip unused params.
+      if oneParam is defined
+        this.pushOneParameterBeforeCall(oneParam, idx)
+      else
+        print '  ; skipped unused call param'
+      endif
     endfor
 
 #    for idx in 4 .. paramsCnt
@@ -1205,7 +1210,7 @@ class CodeGeneratorX64
         #  print '  mov eax, dword [', params[0], ' + Variant_t.type]'
         #  print '  mov dword [', rv, ' + Variant_t.type], VARIANT_INTEGER'
         #  print '  mov qword [', rv, ' + Variant_t.value], rax'
-        #
+
         #else
           # Generic syscall.
           this.pushParametersBeforeCall(params)
@@ -1502,46 +1507,51 @@ class CodeGeneratorX64
 
           for indexes paramIdx values paramName in proto.params
             symbolInfo = currentSymbols{paramName}
-            symbolType = symbolInfo.type
 
-            # TODO: Clean up this mess.
-            if symbolType is defined
-              symbolSize = MIR_TYPE_SIZE_MAP{symbolType}
+            if (symbolInfo.readHits is 0) and (symbolInfo.writeHits is 0)
+              print '  ; skipped unused parameter [', paramName, ']'
             else
-              symbolSize = 16
-            endif
+              symbolType = symbolInfo.type
 
-            if symbolSize <= 8
-              # Primitive type.
-              expectedType = MIR_TO_VARIANT_TYPE_MAP{symbolType}
-
-              # TODO: Optimize it.
-              if paramIdx is 0
-                print '  cmp [rdx + Variant_t.type],', expectedType
-                print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
-                print '  mov rdx, [rdx + Variant_t.value]'
-                print ''
-
-              elif paramIdx is 1
-                print '  cmp [r8 + Variant_t.type],', expectedType
-                print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
-                print '  mov r8, [r8 + Variant_t.value]'
-                print ''
-
-              elif paramIdx is 2
-                print '  cmp [r9 + Variant_t.type],', expectedType
-                print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
-                print '  mov r9, [r9 + Variant_t.value]'
-                print ''
-
+              # TODO: Clean up this mess.
+              if symbolType is defined
+                symbolSize = MIR_TYPE_SIZE_MAP{symbolType}
               else
-                paramOffset = (paramsCnt - paramIdx) * 8
-                print '  mov r10, [rsp +', paramOffset, ']'
-                print '  cmp [r10 + Variant_t.type],', expectedType
-                print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
-                print '  mov r10, [r10 + Variant_t.value]'
-                print '  mov [rsp +', paramOffset, '], r10'
-                print ''
+                symbolSize = 16
+              endif
+
+              if symbolSize <= 8
+                # Primitive type.
+                expectedType = MIR_TO_VARIANT_TYPE_MAP{symbolType}
+
+                # TODO: Optimize it.
+                if paramIdx is 0
+                  print '  cmp [rdx + Variant_t.type],', expectedType
+                  print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
+                  print '  mov rdx, [rdx + Variant_t.value]'
+                  print ''
+
+                elif paramIdx is 1
+                  print '  cmp [r8 + Variant_t.type],', expectedType
+                  print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
+                  print '  mov r8, [r8 + Variant_t.value]'
+                  print ''
+
+                elif paramIdx is 2
+                  print '  cmp [r9 + Variant_t.type],', expectedType
+                  print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
+                  print '  mov r9, [r9 + Variant_t.value]'
+                  print ''
+
+                else
+                  paramOffset = (paramsCnt - paramIdx) * 8
+                  print '  mov r10, [rsp +', paramOffset, ']'
+                  print '  cmp [r10 + Variant_t.type],', expectedType
+                  print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
+                  print '  mov r10, [r10 + Variant_t.value]'
+                  print '  mov [rsp +', paramOffset, '], r10'
+                  print ''
+                endif
               endif
             endif
           endfor
@@ -1642,7 +1652,7 @@ class CodeGeneratorX64
                 varSize          = 16
                 currentFrameSize = currentFrameSize + varSize
                 symbol.rbpOffset = 8 + currentFrameSize
-                print ' ', symbol.name, 'EQU rbp -', 8 + currentFrameSize, ';', varSize, 'bytes'
+                print ' ', symbol.name, 'EQU rbp -', 8 + currentFrameSize, ';', varSize, 'bytes, (kind=', symbol.kind, ', type=', symbol.type, ', writeHits=', symbol.writeHits, ', readHits=', symbol.readHits, ')'
               endif
             endif
           endif
@@ -1659,7 +1669,7 @@ class CodeGeneratorX64
               if varSize < 16
                 currentFrameSize = currentFrameSize + varSize
                 symbol.rbpOffset = 8 + currentFrameSize
-                print ' ', symbol.name, 'EQU rbp -', 8 + currentFrameSize, ';', varSize, 'bytes'
+                print ' ', symbol.name, 'EQU rbp -', 8 + currentFrameSize, ';', varSize, 'bytes, (kind=', symbol.kind, ', type=', symbol.type, ', writeHits=', symbol.writeHits, ', readHits=', symbol.readHits, ')'
               endif
             endif
           endif
@@ -1693,7 +1703,8 @@ class CodeGeneratorX64
         print '  sub  rsp,', currentFrameSize
         print ''
 
-        paramIdx = 0
+        paramIdx  = 0
+        isRaxZero = false
 
         for values oneItem in symbols
           if oneItem.kind is SYMBOL_KIND_VAR_LOCAL
@@ -1707,7 +1718,11 @@ class CodeGeneratorX64
                 # It's only dump reference for existing box values or keys.
                 print '  ; Skipped loop iterator', oneItem.item
               else
-                print '  mov [' ~ oneItem.name ~ ' + Variant_t.type], VARIANT_UNDEFINED'
+                if isRaxZero is false
+                  print '  xor eax, eax'
+                  isRaxZero = true
+                endif
+                print '  mov [' ~ oneItem.name ~ ' + Variant_t.type], eax'
               endif
             endif
 
@@ -1723,6 +1738,7 @@ class CodeGeneratorX64
                   srcPtr = REG_PARAMS64[paramIdx]
                 endif
               else
+                isRaxZero = false
                 if varSize is 4
                   print '  mov eax, dword [rbp + 16 + 8 *', paramsPassedCnt - paramIdx - 1, ']'
                   srcPtr = 'eax'

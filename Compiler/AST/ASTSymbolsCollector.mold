@@ -87,6 +87,7 @@ class ASTSymbolsCollector
     global AST_OPCODE_COMPARE_GE
     global AST_OPCODE_BOOL_NOT
     global AST_OPCODE_CALL_NEW
+    global AST_DATA_NONE
     global AST_DATA_UNDEFINED
     global AST_DATA_BOOL
     global AST_DATA_OBJECT
@@ -266,7 +267,15 @@ class ASTSymbolsCollector
       # TODO: Handle non-variant params for vcall too.
       for indexes paramIdx values paramName in funcProto.params
         symbolInfo = nodeBody.symbolTable.lookup(paramName)
-        astTypeParams[@afterlast] = symbolInfo.astType
+        # astTypeParams[@afterlast] = symbolInfo.astType
+
+        # TODO: Review it.
+        # Mark unused parameters.
+        if (symbolInfo.readHits is 0) and (symbolInfo.writeHits is 0)
+          astTypeParams[@afterlast] = AST_DATA_NONE
+        else
+          astTypeParams[@afterlast] = symbolInfo.astType
+        endif
       endfor
 
       funcProto.astTypeParams = astTypeParams

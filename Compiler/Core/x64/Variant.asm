@@ -18,6 +18,9 @@
 ;#                                                                             #
 ;###############################################################################
 
+true  EQU 1
+false EQU 0
+
 include 'Debug.asm'
 include 'Utils.asm'
 include 'Memory.asm'

@@ -296,6 +296,7 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   global AST_OPCODE_WHILE
   global AST_OPCODE_FOR_VALUES_RANGE
   global AST_OPCODE_NOP
+  global AST_DATA_NONE
 
   global AST_OPCODE_ASSIGN
   global AST_OPCODE_DECLARE
@@ -460,6 +461,10 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   elif opcode is AST_OPCODE_NOP
     # TODO: Review it.
     rv = 'nop'
+
+  elif opcode is AST_DATA_NONE
+    # TODO: Review it.
+    rv = '__unused'
 
   else
     # TODO: Handle terminal nodes.
@@ -863,9 +868,10 @@ function AST_GetDataType(node) -> rv
       # TODO: Clean up this mess.
       #if ((node.value is '__mold_syscall') and
       #    (node.sysCallId is integer) and
-      #    (node.sysCallId is 57))
+      #    (node.sysCallId is 43))
       #  # TODO: Remove hard-coded value (57=gettypeid)
       #  rv = AST_DATA_INTEGER
+
       if ((node.symbolInfo is defined) and
           (node.symbolInfo.proto.astTypeRetVal is defined))
         rv = node.symbolInfo.proto.astTypeRetVal

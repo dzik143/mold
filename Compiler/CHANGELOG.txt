@@ -1,7 +1,9 @@
 Unreleased
 ----------
   Internal maintain:
-    - X64: Addded cmp_is_typeof opcode.
+    - X64: Addded cmp_is_typeof and cmp_is_not_typeof opcodes,
+    - X64: Simplify code for unimplemented methods,
+    - Translator: skip unused call params.
 
 0.4.200831 (released on 2020-08-31):
 ------------------------------------

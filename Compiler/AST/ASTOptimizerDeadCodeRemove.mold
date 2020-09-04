@@ -91,6 +91,7 @@ class ASTOptimizerDeadCodeRemove
     global AST_OPCODE_FUNCTION
     global AST_OPCODE_TYPE_CAST
     global SYMBOL_KIND_CONST, SYMBOL_KIND_VAR_RETVAL
+    global AST_DATA_NONE
 
     this.app.setLogContext(node)
 
@@ -215,6 +216,7 @@ class ASTOptimizerDeadCodeRemove
       if x.opcode is AST_OPCODE_VARIABLE
         # x = ...
         symbolInfo = symbolTable.lookup(x.value)
+
         if symbolInfo.readHits is 0
           # Assign to unused variable.
           rval = children[1]
@@ -249,17 +251,26 @@ class ASTOptimizerDeadCodeRemove
 
     elif opcode is AST_OPCODE_CALL
       symbolInfo = symbolTable.lookup(value)
+
       # TODO: Use x is empty?
       # TODO: Decrease read/call hits counter?
       # TODO: Remove called function if no any caller left?
       if ((symbolInfo.proto is defined) and
-          (symbolInfo.proto.children is defined) and
-          (len(symbolInfo.proto.children[0].children) is 0))
-        #
-        #print symbolInfo.proto
-        #print symbolInfo.proto.name, len(symbolInfo.proto.children[0].children)
-        this._debug('Useless function call at node #' ~ str(node.id) ~ ' (' ~ value ~ ')')
-        removeNode = true
+          (symbolInfo.proto.children is defined))
+
+        if len(symbolInfo.proto.children[0].children) is 0
+          this._debug('Useless function call at node #' ~ str(node.id) ~ ' (' ~ value ~ ')')
+          removeNode = true
+
+        else
+          # Remove calculation of unused function params.
+          for indexes paramIdx values paramType in symbolInfo.proto.astTypeParams
+            if paramType is AST_DATA_NONE
+              this._debug('Skip unused function param at node #' ~ str(children[paramIdx].id))
+              children[paramIdx] = AST_CreateNode(AST_DATA_NONE, null, [])
+            endif
+          endfor
+        endif
       endif
     endif
 

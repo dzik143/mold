@@ -366,6 +366,7 @@ class ASTTranslator
     global AST_OPCODE_DECLARE_OR_ASSIGN
     global AST_OPCODE_IS_TYPEOF
     global AST_OPCODE_IS_NOT_TYPEOF
+    global AST_DATA_NONE
 
     opcode      = ast.opcode
     value       = ast.value
@@ -404,6 +405,13 @@ class ASTTranslator
       # TODO: Clean up this mess
       rv = this.symbolTable.lookupLiteralForRead(ast.value).name
       this._loadImm(rv, ast.value)
+
+    elif opcode is AST_DATA_NONE
+      # Do nothing.
+      # The value has no meaning or it's unused anywhere.
+      # Example: Unused call param.
+      this._loadImm(rv, '__unused')
+      rv = '__unused'
 
     elif opcode is AST_OPCODE_VARIABLE
       # Load variable.

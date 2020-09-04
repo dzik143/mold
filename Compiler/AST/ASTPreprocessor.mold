@@ -114,6 +114,7 @@ class ASTPreprocessor
     global AST_OPCODE_CLASS_METHOD
     global MOLD_TYPE_ID_MAP
     global AST_OPCODE_IS_TYPEOF
+    global AST_OPCODE_NOP
 
     opcode   = node.opcode
     children = node.children
@@ -275,6 +276,7 @@ class ASTPreprocessor
         className      = node.parent.value.name
         methodName     = funcName
         fullMethodName = className ~ '.' ~ methodName
+        node.isPureVirtual = true
 
         # TODO: Don't use hardcoded value ('die').
         funcCode = AST_CreateNodeBlock([

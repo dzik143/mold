@@ -58,8 +58,8 @@ astSymbolsCollector.buildSymbolTable(ast)
 
 # TODO: More generic way to apply selected optimizations.
 
-#app.logDebug('VCall optimization...')
-#app.getAstOptimizerVCall().processNode(ast)
+app.logDebug('VCall optimization...')
+app.getAstOptimizerVCall().processNode(ast)
 
 #app.logDebug('Inline optimization... (TEMPORARY DISABLED!)')
 #app.getAstOptimizerInline().processNode(ast)
@@ -69,14 +69,14 @@ astSymbolsCollector.buildSymbolTable(ast)
 app.logDebug('Evaluating AST nodes...')
 app.getAstEvaluator().processNode(ast)
 
-#app.logDebug('Constant folding...')
-#app.getAstOptimizerConstantFolding().processNode(ast)
+app.logDebug('Constant folding...')
+app.getAstOptimizerConstantFolding().processNode(ast)
 
-#app.logDebug('If optimization...')
-#app.getAstOptimizerIf().processNode(ast)
+app.logDebug('If optimization...')
+app.getAstOptimizerIf().processNode(ast)
 
-#app.logDebug('Dead code elimination...')
-#app.getAstOptimizerDeadCodeRemove().processNode(ast)
+app.logDebug('Dead code elimination...')
+app.getAstOptimizerDeadCodeRemove().processNode(ast)
 
 #app.logDebug('Common subexpression elimination (CSE)...')
 #app.getAstOptimizerCSE().processNode(ast)
@@ -101,8 +101,8 @@ print 'Going to translate AST to MIR1...'
 mirCollector = new MIRQuadCollector()
 mirOptimizer = new MIRQuadOptimizer()
 
-unused = astTranslator.connectTo(mirCollector)
-#astTranslator.connectTo(mirOptimizer).connectTo(mirCollector)
+#unused = astTranslator.connectTo(mirCollector)
+astTranslator.connectTo(mirOptimizer).connectTo(mirCollector)
 
 astTranslator.run(ast)
 
