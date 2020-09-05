@@ -1223,10 +1223,17 @@ class CodeGeneratorX64
 
           if rv is defined
             # TODO: Clean up this mess.
-            this.push('rdi')
-            this.lea('rdi', rv)
-            this.call('__MOLD_SysCall')
-            this.pop('rdi')
+            if currentProcRv is defined
+              this.push('rdi')
+              this.lea('rdi', rv)
+              this.call('__MOLD_SysCall')
+              this.pop('rdi')
+
+            else
+              this.lea('rdi', rv)
+              this.call('__MOLD_SysCall')
+
+            endif
           else
             this.call('__MOLD_SysCall')
           endif
