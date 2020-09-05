@@ -1212,6 +1212,12 @@ class CodeGeneratorX64
         #  print '  mov qword [', rv, ' + Variant_t.value], rax'
 
         #else
+        # TODO: Clean up this mess.
+        if rv is defined
+          # TODO: Review it.
+          this.variantDestroy(rv)
+        endif
+
           # Generic syscall.
           this.pushParametersBeforeCall(params)
 
