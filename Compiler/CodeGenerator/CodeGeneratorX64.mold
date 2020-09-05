@@ -1223,17 +1223,18 @@ class CodeGeneratorX64
 
           if rv is defined
             # TODO: Clean up this mess.
-            if currentProcRv is defined
+            #if currentProcRv is defined
+
               this.push('rdi')
               this.lea('rdi', rv)
               this.call('__MOLD_SysCall')
               this.pop('rdi')
 
-            else
-              this.lea('rdi', rv)
-              this.call('__MOLD_SysCall')
-
-            endif
+            #else
+            #  this.lea('rdi', rv)
+            #  this.call('__MOLD_SysCall')
+            #
+            #endif
           else
             this.call('__MOLD_SysCall')
           endif
@@ -1428,8 +1429,9 @@ class CodeGeneratorX64
 
         for values oneItem in symbols
 
+          # TODO: Clean up this mess.
           if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) and
-              ((oneItem.type is undefined) or (oneItem.type is 'variant')))
+              ((oneItem.type is undefined) or (oneItem.type is 'variant') or (oneItem.type is 'string')))
 
             if oneItem.usedAsIterator is defined
               # Symbol is used as loop iterator.
