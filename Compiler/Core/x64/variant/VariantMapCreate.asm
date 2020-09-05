@@ -14,6 +14,7 @@ __MOLD_VariantMapCreate:
     pop     rcx
 
     mov     [rcx + Variant_t.type], VARIANT_MAP
+    mov     [rcx + Variant_t.flags], 0
     mov     [rcx + Variant_t.value], rax
 
     mov     rax, [rax + Buffer_t.bytesPtr]

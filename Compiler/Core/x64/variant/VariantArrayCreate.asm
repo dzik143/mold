@@ -14,6 +14,7 @@ __MOLD_VariantArrayCreate:
     pop     rcx
 
     mov     [rcx + Variant_t.type], VARIANT_ARRAY
+    mov     [rcx + Variant_t.flags], 0
     mov     [rcx + Variant_t.value], rax
 
     DEBUG_CHECK_VARIANT rcx
