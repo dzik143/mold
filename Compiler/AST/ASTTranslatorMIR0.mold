@@ -227,10 +227,6 @@ class ASTTranslatorMIR0 extends ASTTranslator
     endif
   endmethod
 
-  method _callPrint(params, paramsCnt)
-    this.code.callPrint(paramsCnt)
-  endmethod
-
   method _loadFromIndex(rv, unusedBox, unusedIdx)
     this.code.loadFromIndex()
   endmethod
@@ -401,6 +397,22 @@ class ASTTranslatorMIR0 extends ASTTranslator
     endif
 
     code.emitLabel(endLabelId)
+  endmethod
+
+  method _executeNodePrint(node)
+    children = node.children
+    params   = []
+
+    for values childNode in children
+      params[@afterlast] = this._evaluateNode(childNode)
+    endfor
+
+    # TODO: Simplify it.
+    for values oneParam in params
+      this._releaseTempVar(oneParam)
+    endfor
+
+    this.code.callPrint(len(params))
   endmethod
 
   method _declareFunction(funcName, funcProto)

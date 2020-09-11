@@ -36,6 +36,7 @@
 @INTEGER '0-9'+ | "0x" '0-9a-fA-F'+;
 
 #left '=';
+#left '~';
 #left '+' '-';
 #left '*' '/' "//";
 #left "is" "isnt" '<' '>' "<=" ">=";

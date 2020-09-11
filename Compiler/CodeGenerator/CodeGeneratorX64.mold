@@ -632,7 +632,8 @@ class CodeGeneratorX64
     arrayOfMessageFormats = []
 
     # TODO: Clean up this mess.
-    fakeSymbolInfoForEOL = {'name': '__EOL'}
+    fakeSymbolInfoForEOL   = {'name': '__EOL'}
+    fakeSymbolInfoForGlued = {'name': '@glued'}
 
     #
     # Translate code section.
@@ -1161,6 +1162,10 @@ class CodeGeneratorX64
               # TODO: Clean up this mess.
               encodedFormat[@afterlast] = fakeSymbolInfoForEOL
 
+            elif oneParam is '@glued'
+              # TODO: Clean up this mess.
+              encodedFormat[@afterlast] = fakeSymbolInfoForGlued
+
             else
               encodedFormat[@afterlast] = codeObj.symbolTable.lookup(oneParam)
             endif
@@ -1213,10 +1218,10 @@ class CodeGeneratorX64
 
         #else
         # TODO: Clean up this mess.
-        if rv is defined
-          # TODO: Review it.
-          this.variantDestroy(rv)
-        endif
+        #if rv is defined
+        #  # TODO: Review it.
+        #  this.variantDestroy(rv)
+        #endif
 
           # Generic syscall.
           this.pushParametersBeforeCall(params)
@@ -1947,6 +1952,9 @@ class CodeGeneratorX64
         if symbolInfo.name is '__EOL'
           print '  db FMT_EOL'
 
+        elif symbolInfo.name is '@glued'
+          print '  db FMT_PREFIX_GLUED'
+
         elif symbolInfo.kind is SYMBOL_KIND_CONST
           msgContent = str(symbolInfo.value)
           msgLength  = len(msgContent)
@@ -1958,6 +1966,7 @@ class CodeGeneratorX64
           endif
 
         elif symbolInfo.rbpOffset is defined
+          # TODO: Clean up this mess.
           print '  db FMT_LOCAL_' ~ type
           print '  dw -', symbolInfo.rbpOffset
 

@@ -445,7 +445,8 @@ FMT_GLOBAL_variant    EQU 18
 FMT_RETVAL_variant    EQU 19
 
 FMT_EOL               EQU 20
-FMT_TERMINATOR        EQU 21
+FMT_PREFIX_GLUED      EQU 21
+FMT_TERMINATOR        EQU 22
 
 __MOLD_PrintFormatFromRegister:
     lea     rax, [__MOLD_TempFmt]
@@ -453,6 +454,7 @@ __MOLD_PrintFormatFromRegister:
     mov     rcx, rax
 
 __MOLD_PrintFormatFromMemory:
+    push    r12
     push    rsi
     sub     rsp, 32              ; shadow space for inner calls
 
@@ -500,7 +502,8 @@ __MOLD_PrintFormatFromMemory:
     dq .variantRetVal     ; 19 retval variant
 
     dq .eol               ; 20 line break (EOL)
-    dq .done              ; 21 terminator
+    dq .prefixGlued       ; 21 glued prefix (GLUED)
+    dq .done              ; 22 terminator
 
 .text8:
     lodsb                        ; rax = text length (int8)
@@ -584,12 +587,16 @@ __MOLD_PrintFormatFromMemory:
     call    [putchar]            ;
     jmp     .fetch_first_param   ;
 
+.prefixGlued:
+    jmp     .fetch_first_param
+
 .done:
     mov     cl, 10               ; append end of line
     call    [putchar]            ;
 
     add     rsp, 32              ; clean shadow space
     pop     rsi                  ;
+    pop     r12
     ret                          ;
 
 .notImplemented:

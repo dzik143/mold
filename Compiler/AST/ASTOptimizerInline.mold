@@ -263,8 +263,17 @@ class ASTOptimizerInline
             paramsReplaceMap = {}
             paramsNodes      = childNode.children
 
+            # TODO: Clean up this mess.
+            # TODO: Why we need to handle hidden this parameter manually?
+            if childNode.isOptimizedVcall is defined
+              paramBaseIdx             = 1
+              paramsReplaceMap{'this'} = paramsNodes[0]
+            else
+              paramBaseIdx = 0
+            endif
+
             for indexes paramIdx values paramName in funcProto.params
-              paramsReplaceMap{paramName} = paramsNodes[paramIdx]
+              paramsReplaceMap{paramName} = paramsNodes[paramBaseIdx + paramIdx]
             endfor
 
             clonedNode = AST_CloneNode(callNode)

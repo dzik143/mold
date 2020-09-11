@@ -7,4 +7,7 @@ set BUILD=%CD%\_build
 set COMPILER=%CD%\..\
 set TESTS=%CD%\..\..\Tests
 
+del %BUILD%\pass1.exe
+del %BUILD%\pass2.exe
+
 mkdir %BUILD%

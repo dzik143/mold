@@ -64,7 +64,6 @@ class ASTTranslator
   unimplemented method _loadVariable(name)
   unimplemented method _call(rv, funcProto, params, paramsCnt)
   unimplemented method _invokeMethod(methodName, params, paramsCnt)
-  unimplemented method _callPrint(params, paramsCnt)
   unimplemented method _neg(rv, value)
   unimplemented method _add(rv, x, y)
   unimplemented method _stringJoin(rv, x, y)
@@ -109,6 +108,7 @@ class ASTTranslator
   unimplemented method _executeNodeWhile(condAst, bodyAst)
   unimplemented method _executeNodeIf(cond, codeIfTrue, codeIfFalse)
   unimplemented method _executeNodeSwitch(node)
+  unimplemented method _executeNodePrint(node)
 
   # ----------------------------------------------------------------------------
   #                         Internal helpers (private)
@@ -699,11 +699,7 @@ class ASTTranslator
       this._releaseTempVar(oneParam)
     endfor
 
-    if funcName is 'print'
-      # Built-in print function.
-      this._callPrint(params, paramsCnt)
-
-    elif funcName is 'super'
+    if funcName is 'super'
       this._callSuper(rv, params, paramsCnt)
 
     elif (funcName is '__mold_syscall')
@@ -988,6 +984,23 @@ class ASTTranslator
       #  this._evaluateNodeCall(unusedRv, ast)
       #  this._dropRetVal()
       #  this._releaseTempVar(unusedRv)
+
+      elif value is 'print'
+        # Built-in print function.
+        # TODO: Review it.
+        this._executeNodePrint(ast)
+
+        #params = []
+        #for values childNode in children
+        #  params[@afterlast] = this._evaluateNode(childNode)
+        #endfor
+
+        # TODO: Simplify it.
+        #for values oneParam in params
+        #  this._releaseTempVar(oneParam)
+        #endfor
+        #
+        #this._callPrint(params, len(params))
 
       else
         # Ordinary call wihout return value.

@@ -423,12 +423,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.push(rv)
   endmethod
 
-  method _callPrint(unusedParams, paramsCnt)
-    params = this.popParametersBeforeCall(paramsCnt)
-    this.emitTargetOnlyOpcode('print_array_of_variants_ln', params)
-    #this.push('<print:unused_rv>')
-  endmethod
-
   method _loadFromIndex(rv, unusedBox, unusedIdx)
     this.popTwoArgsAndEmitOpcode('load_index', rv)
   endmethod
@@ -756,6 +750,48 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.emitComment('END: switch ' ~ varName)
     this.emitComment('-----------------------------')
     this.emitComment('')
+  endmethod
+
+  method _evaluateStringFormatItemNode(fmt, node)
+    global AST_OPCODE_STRING_JOIN
+    global AST_OPCODE_CALL
+
+    if node.opcode is AST_OPCODE_STRING_JOIN
+      this._evaluateStringFormatItemNode(fmt, node.children[0])
+      fmt[@afterlast] = '@glued'
+      this._evaluateStringFormatItemNode(fmt, node.children[1])
+
+    elif ((node.opcode is AST_OPCODE_CALL) and
+          (node.value is '__mold_syscall') and
+          (node.sysCallId is integer) and
+          (node.sysCallId is 42))
+      # TODO: Clean up this mess.
+      # TODO: Remove hardcoded syscallId (42=str).
+      # str(x) -> x
+      this._evaluateStringFormatItemNode(fmt, node.children[0])
+
+    else
+      fmt[@afterlast] = this._evaluateNode(node)
+    endif
+  endmethod
+
+  method _executeNodePrint(node)
+    children = node.children
+    params   = []
+
+    for values childNode in children
+      this._evaluateStringFormatItemNode(params, childNode)
+    endfor
+
+    # TODO: Simplify it.
+    for values oneParam in params
+      if oneParam isnt '@glued'
+        this._releaseTempVar(oneParam)
+      endif
+    endfor
+
+    this.emitTargetOnlyOpcode('print_array_of_variants_ln', params)
+    this.stack.eatN(len(children))
   endmethod
 
   method _declareFunction(funcName, funcProto)
