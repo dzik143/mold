@@ -128,13 +128,13 @@ class X64Parser extends AbstractDescentParser
     if this._isDigit(token[0]) is true
       if this.lookupBuffer is '*'
         # [ scale * index ]
-        this._getChar()
+        this._eatChar()
         scale = ParseInteger(token)
         index = X64_ParseRegisterName(this._getToken())
 
         if this.lookupBuffer is '+'
           # [ scale * index + ... ]
-          this._getChar()
+          this._eatChar()
           token = this._getToken()
 
           if this._isDigit(token[0]) is true
@@ -181,30 +181,30 @@ class X64Parser extends AbstractDescentParser
 
     elif this.lookupBuffer is '-'
       # [ base - disp ]
-      this._getChar()
+      this._eatChar()
       base = X64_ParseRegisterName(token)
       disp = - ParseInteger(this._getToken())
 
     elif this.lookupBuffer is '+'
       # [ base + ... ]
-      this._getChar()
+      this._eatChar()
       base  = X64_ParseRegisterName(token)
       token = this._getToken()
 
       if this.lookupBuffer is '*'
         # [ base + scale * index ]
-        this._getChar()
+        this._eatChar()
         scale = ParseInteger(token)
         index = X64_ParseRegisterName(this._getToken())
 
         if this.lookupBuffer is '+'
           # [ base + scale * index + disp ]
-          this._getChar()
+          this._eatChar()
           disp = ParseInteger(this._getToken())
 
         elif this.lookupBuffer is '-'
           # [ base + scale * index - disp ]
-          this._getChar()
+          this._eatChar()
           disp = - ParseInteger(this._getToken())
         endif
 
@@ -219,12 +219,12 @@ class X64Parser extends AbstractDescentParser
 
         if this.lookupBuffer is '+'
           # [ base + index + disp ]
-          this._getChar()
+          this._eatChar()
           disp = ParseInteger(this._getToken())
 
         elif this.lookupBuffer is '-'
           # [ base + index - disp ]
-          this._getChar()
+          this._eatChar()
           disp = - ParseInteger(this._getToken())
         endif
       endif
@@ -240,7 +240,8 @@ class X64Parser extends AbstractDescentParser
     instruction.disp  = disp
 
     # This is the first operand, so we write to memory.
-    instruction.isWriteToMemory = (instruction.reg is -1)
+    instruction.isWriteToMemory     = (instruction.reg is -1)
+    instruction.isMemoryOperandUsed = true
   endmethod
 
   method _setImmediate(instruction, value)
@@ -343,7 +344,7 @@ class X64Parser extends AbstractDescentParser
 
     if this._isEndOfLine(this.lookupBuffer) is true
       # Eat end of line.
-      this._getChar()
+      this._eatChar()
     else
       # Error - new line expected, but something different found.
       this._error('unexpected content')
@@ -367,7 +368,7 @@ class X64Parser extends AbstractDescentParser
       endif
 
       instruction.numberOfOperands = instruction.numberOfOperands + 1
-      this._getChar()
+      this._eatChar()
       this._matchOperand(instruction)
     endif
   endmethod
@@ -382,11 +383,13 @@ class X64Parser extends AbstractDescentParser
       'rm': -1,
       'dataSize': -1,
       'offset': this.outputObject.getCurrentPosition(),
-      'numberOfOperands': 0
+      'numberOfOperands': 0,
+      'isMemoryOperandUsed': false
     }
 
     this._parseFirstOperand(newItem)
     this._parseSecondOperand(newItem)
+
     # TODO: Review it.
     this._parseSecondOperand(newItem)
     this._emitOneItem(newItem)
@@ -405,7 +408,7 @@ class X64Parser extends AbstractDescentParser
 
     c = this.lookupBuffer
     if c is ';'
-      this._getChar()
+      this._eatChar()
       # Eat all input until end of line.
       while this._isEndOfLine(c) is false
         c = this._getChar()
@@ -437,7 +440,7 @@ class X64Parser extends AbstractDescentParser
     while goOn is true
       if this.lookupBuffer is "'"
 
-        this._getChar()
+        this._eatChar()
         c = this._getChar()
 
         while c isnt "'"
@@ -550,7 +553,7 @@ class X64Parser extends AbstractDescentParser
 
       elif this.lookupBuffer is ':'
         # Label line.
-        this._getChar()
+        this._eatChar()
         labelObj = this._emitLabel(token)
 
       else

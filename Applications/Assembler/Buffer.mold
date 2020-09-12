@@ -38,7 +38,11 @@ class Buffer
     this.pos = pos + 1
   endmethod
 
-  method emitWord(x)
+  method emitWord(value)
+    # TODO: Clean up this mess.
+    # Force variant to store 64-bit int correctly.
+    x = null
+    x = value
     # TODO: Clean up this mess.
     if x < 0
       x = 0x10000 + x
@@ -47,8 +51,11 @@ class Buffer
     this.emitByte(x // 0x100)
   endmethod
 
-  method emitDword(x)
+  method emitDword(value)
     # TODO: Clean up this mess.
+    # Force variant to store 64-bit int correctly.
+    x = null
+    x = value
     if x < 0
       x = 0x100000000 + x
     endif
@@ -56,8 +63,12 @@ class Buffer
     this.emitWord(x // 0x10000)
   endmethod
 
-  method emitQword(x)
+  method emitQword(value)
+    # TODO: Clean up this mess.
+    # Force variant to store 64-bit int correctly.
     # TODO: Fix negative numbers.
+    x = null
+    x = value
     this.emitDword(x)
     this.emitDword(x // 0x100000000)
   endmethod

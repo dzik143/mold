@@ -33,14 +33,17 @@ class AbstractDescentParser
   #                Internal implementation: error handling
   # ----------------------------------------------------------------------------
 
-  method _error(msg) -> rv
+  method _error(msg)
     die('error: ' ~ this.path ~ ': ' ~ str(msg))
-    rv = -1
   endmethod
 
   # ----------------------------------------------------------------------------
   #           Internal implementation: lookup one-character buffer
   # ----------------------------------------------------------------------------
+
+  method _eatChar()
+    this.lookupBuffer = FileReadChar(this.f)
+  endmethod
 
   method _getChar() -> rv
     rv = this.lookupBuffer
@@ -49,7 +52,7 @@ class AbstractDescentParser
 
   method _skipWhites()
     while this.lookupBuffer is ' '
-      this._getChar()
+      this._eatChar()
     endwhile
   endmethod
 
@@ -78,7 +81,7 @@ class AbstractDescentParser
 
   method _matchChar(x)
     if this.lookupBuffer is x
-      this._getChar()
+      this._eatChar()
     else
       this._error("'" ~ x + "' expected, but '" ~ str(this.lookupBuffer) ~ '" found')
     endif
@@ -90,7 +93,8 @@ class AbstractDescentParser
       rv = this._getChar()
     else
       # Error - letter expected.
-      rv = this._error('letter A-Z or a-z expected')
+      rv = -1
+      this._error('letter A-Z or a-z expected')
     endif
   endmethod
 
@@ -100,7 +104,8 @@ class AbstractDescentParser
       rv = this._getChar()
     else
       # Error - letter expected.
-      rv = this._error('letter A-Z, a-z or digit 0-9 expected')
+      rv = -1
+      this._error('letter A-Z, a-z or digit 0-9 expected')
     endif
   endmethod
 

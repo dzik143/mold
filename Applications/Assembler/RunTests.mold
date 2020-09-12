@@ -32,6 +32,7 @@ arrayOfTests = [
   'common/common_no_operands',
   'common/common_ports',
   'common/common_proc',
+
   'core/adc',
   'core/add',
   'core/and',

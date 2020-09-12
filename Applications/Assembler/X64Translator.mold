@@ -699,7 +699,11 @@ class X64Translator extends PipeAbstract
     global X64_DATA_SIZE_ID
     regSizeId  = reg // 16
     rmSizeId   = rm  // 16
-    dataSizeId = X64_DATA_SIZE_ID[dataSize]
+    dataSizeId = -1
+
+    if dataSize isnt -1
+      dataSizeId = X64_DATA_SIZE_ID[dataSize]
+    endif
 
     # TODO: Optimize it.
     if imm is undefined
@@ -716,13 +720,13 @@ class X64Translator extends PipeAbstract
   endmethod
 
   method _validateImmRange(reg, rm, dataSize, imm)
-    global X64_DATA_SIZE_ID
-
     # TODO: Optimize it.
     if imm is defined
       regSizeId  = reg // 16
       rmSizeId   = rm  // 16
-      dataSizeId = X64_DATA_SIZE_ID[dataSize]
+
+      # TODO: Is it still needed?
+      # dataSizeId = X64_DATA_SIZE_ID[dataSize]
 
       if reg isnt -1
         # r, imm
@@ -768,13 +772,13 @@ class X64Translator extends PipeAbstract
   endmethod
 
   method _failIfMemoryWrite(item)
-    if item.isWriteToMemory is true
+    if (item.isMemoryOperandUsed is true) and (item.isWriteToMemory is true)
       this._error("memory address cannot be destination operand for: '" ~ item.mnemonic ~ "'")
     endif
   endmethod
 
   method _failIfMemoryRead(item)
-    if item.isWriteToMemory is false
+    if (item.isMemoryOperandUsed is true) and (item.isWriteToMemory is false)
       this._error("memory address cannot be used as the second operand for: '" ~ item.mnemonic ~ "'")
     endif
   endmethod
@@ -786,7 +790,7 @@ class X64Translator extends PipeAbstract
   endmethod
 
   method _failIfMemoryReadOrWrite(item)
-    if item.scale is defined
+    if item.isMemoryOperandUsed is true
       this._error("memory operands not allowed for: '" ~ item.mnemonic ~ "'")
     endif
   endmethod
@@ -1025,6 +1029,12 @@ class X64Translator extends PipeAbstract
     global X64_SYNTAX_TWO_OPERANDS, X64_SYNTAX_TWO_OPERANDS_EQUAL_SIZE
     global X64_SYNTAX_ONE_OPERAND_READWRITE
 
+    # TODO: Fix it when 32 vs 64-bit integer issue will be fixed.
+    # TODO: Force variant types.
+    opcodeInfo = null
+    handlerId  = null
+    syntaxId   = null
+
     encoder = this.outputObject
 
     if item.type is 'instruction'
@@ -1240,6 +1250,7 @@ class X64Translator extends PipeAbstract
             if opcode is X64_MOV
               if imm is defined
                 this._validateImmRange(reg, rm, dataSize, imm)
+
                 if reg isnt -1
                   # mov r, imm
                   encoder.mov_r_imm(reg, imm)
