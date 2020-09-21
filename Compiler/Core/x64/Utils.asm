@@ -497,7 +497,7 @@ __MOLD_PrintFormatFromMemory:
     dq .notImplemented    ; 15
     dq .bool32Retval      ; 16
 
-    dq .variantLocal      ; 17 local variant on stack [RBP - n*4]
+    dq .variantLocal      ; 17 local variant on stack [RBP - n]
     dq .variantGlobal     ; 18 global variant (absolute address)
     dq .variantRetVal     ; 19 retval variant
 

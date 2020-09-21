@@ -395,7 +395,7 @@ class CodeGeneratorX64
       innerAsmType     = 'db'
       innerValueMin    = items[0] # TODO: Use MAX_INTEGER like const?
       innerValueMax    = items[0] # TODO: Use MIN_INTEGER like const?
-      innerItemIdx     = 1
+      innerItemIdx     = 0
       itemValue        = null
 
       goOn = true
@@ -407,7 +407,8 @@ class CodeGeneratorX64
         if itemType isnt innerType
           # Various types in one array.
           # Fall-back to variant storage and don't go anymore.
-          goOn = false
+          innerTypeForEmit = '0'
+          goOn             = false
 
         elif itemType is 'integer'
           innerTypeForEmit = 'VARIANT_INTEGER'
@@ -630,6 +631,7 @@ class CodeGeneratorX64
     # TODO: Remove it.
     arrayOfProcedures     = []
     arrayOfMessageFormats = []
+    fmtHashToIdMap        = {}
 
     # TODO: Clean up this mess.
     fakeSymbolInfoForEOL   = {'name': '__EOL'}
@@ -1150,29 +1152,41 @@ class CodeGeneratorX64
           # Build msg format.
           # TODO: Handle more item types.
           # TODO: Possible improvement: Avoid emitting the same format twice.
-          encodedFormat = []
+          encodedFormat     = []
+          encodedFormatHash = ''
 
           for values oneParam in params
             symbolInfo = currentSymbols{oneParam}
 
             if symbolInfo is defined
               encodedFormat[@afterlast] = symbolInfo
+              encodedFormatHash = encodedFormatHash ~ 'l:' ~ str(symbolInfo.kind) ~ ':' ~ str(symbolInfo.name)
 
             elif oneParam is '__EOL'
               # TODO: Clean up this mess.
               encodedFormat[@afterlast] = fakeSymbolInfoForEOL
+              encodedFormatHash = encodedFormatHash ~ '@eol'
 
             elif oneParam is '@glued'
               # TODO: Clean up this mess.
               encodedFormat[@afterlast] = fakeSymbolInfoForGlued
+              encodedFormatHash = encodedFormatHash ~ '@glued'
 
             else
               encodedFormat[@afterlast] = codeObj.symbolTable.lookup(oneParam)
+              encodedFormatHash = encodedFormatHash ~ 'g:' ~ oneParam
             endif
+
+            encodedFormatHash = encodedFormatHash ~ ';'
           endfor
 
-          arrayOfMessageFormats[@afterlast] = encodedFormat
-          messageFormatId                   = len(arrayOfMessageFormats) - 1
+          messageFormatId = fmtHashToIdMap{encodedFormatHash}
+
+          if messageFormatId isnt defined
+            arrayOfMessageFormats[@afterlast] = encodedFormat
+            messageFormatId                   = len(arrayOfMessageFormats) - 1
+            fmtHashToIdMap{encodedFormatHash} = messageFormatId
+          endif
 
           print '  lea rcx, [__fmt' ~ str(messageFormatId), ']'
           print '  call __MOLD_PrintFormatFromMemory'
@@ -1229,7 +1243,7 @@ class CodeGeneratorX64
           if sysCallId is integer
             print '  mov eax, ', sysCallId
           else
-            print '  mov eax, dword [', sysCallId, '+ Variant_t.value]'
+            print '  mov eax, dword [', sysCallId, ']'
           endif
 
           if rv is defined
@@ -1966,7 +1980,6 @@ class CodeGeneratorX64
           endif
 
         elif symbolInfo.rbpOffset is defined
-          # TODO: Clean up this mess.
           print '  db FMT_LOCAL_' ~ type
           print '  dw -', symbolInfo.rbpOffset
 

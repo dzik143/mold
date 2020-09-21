@@ -150,10 +150,13 @@ class SymbolTable
   endmethod
 
   method importExternalVariable(name)
+    # TODO: Handle non-variant externals.
     global SYMBOL_KIND_VAR_GLOBAL
     this.insert(name, {
       'name': name,
-      'kind': SYMBOL_KIND_VAR_GLOBAL
+      'kind': SYMBOL_KIND_VAR_GLOBAL,
+      'astType': -1,
+      'isAstTypeFrozen': true
     })
   endmethod
 
