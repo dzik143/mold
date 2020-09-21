@@ -884,3 +884,35 @@ false isnt object
 [object] isnt array
 [object] isnt map
 -------------------------------------------------------------------------------
+
+TEST "Bug: 32-bit unsigned treated as signed when expanding to 64-bit (SKIPPED!)"
+/*
+opcodes = [0xfe000000]
+
+function foo(idx)
+  global opcodes
+
+  opcodeInfo = opcodes[idx]
+  handlerId  = bitand(opcodeInfo, 0xff000000)
+
+  if handlerId is 1
+    print 'handlerId is 1'
+
+  elif handlerId is 0xfe000000
+    print 'handlerId is 0xfe000000'
+
+  else
+    print 'handlerId is', handlerId
+  endif
+endfunction
+
+foo(0)
+
+EXPECTEDDDD_OOOOUTPUT:
+handlerId is 0xfe000000
+*/
+print 'SKIPPED!'
+
+EXPECTED_OUTPUT:
+SKIPPED!
+-------------------------------------------------------------------------------

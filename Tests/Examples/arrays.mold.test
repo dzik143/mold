@@ -1371,3 +1371,53 @@ foo( 10 ) [0, 10, 20, undefined, undefined, 50, undefined, undefined, undefined,
 EXPECTED_ERROR:
 runtime error: negative array index
 -------------------------------------------------------------------------------
+
+TEST "Array of integer constants"
+
+function foo(name, tab)
+  print ''
+  print name ~ ':'
+  for indexes i values v in tab
+    print ' ', i, v
+  endfor
+endfunction
+
+foo('8-bit',  [0x7f               , 0 , 0 , 0 , 0, 0])
+foo('16-bit', [0x7fff             , 0 , 0 , 0 , 0, 0])
+foo('32-bit', [0x7fffffff         , 0 , 0 , 0 , 0, 0])
+foo('64-bit', [0x7fffffffffffffff , 0 , 0 , 0 , 0, 0])
+
+EXPECTED_OUTPUT:
+
+8-bit:
+  0 127
+  1 0
+  2 0
+  3 0
+  4 0
+  5 0
+
+16-bit:
+  0 32767
+  1 0
+  2 0
+  3 0
+  4 0
+  5 0
+
+32-bit:
+  0 2147483647
+  1 0
+  2 0
+  3 0
+  4 0
+  5 0
+
+64-bit:
+  0 9223372036854775807
+  1 0
+  2 0
+  3 0
+  4 0
+  5 0
+-------------------------------------------------------------------------------

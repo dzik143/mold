@@ -1,0 +1,104 @@
+TEST "64-bit integer test (SKIPPED!)"
+
+/*
+function emitByte(x)
+  __mold_printToStdOutput(' ')
+  __mold_printToStdOutput(bitand(x, 0xff))
+endfunction
+
+function emitWord(x)
+  # TODO: Clean up this mess.
+  if x < 0
+    x = 0x10000 + x
+  endif
+  emitByte(x)
+  emitByte(x // 0x100)
+endfunction
+
+function emitDword(x)
+  # TODO: Clean up this mess.
+  if x < 0
+    x = 0x100000000 + x
+  endif
+  emitWord(x)
+  emitWord(x // 0x10000)
+endfunction
+
+function emitQword(x)
+  # TODO: Fix negative numbers.
+  emitDword(x)
+  emitDword(x // 0x100000000)
+endfunction
+
+print 'bytes'
+emitByte(0)
+emitByte(1)
+emitByte(127)                 # 2^7-1
+emitByte(128)                 # 2^7
+emitByte(255)                 # 2^8-1
+
+print ''
+print 'words'
+emitWord(0)
+emitWord(1)
+emitWord(127)                 # 2^7-1
+emitWord(128)                 # 2^7
+emitWord(255)                 # 2^8-1
+emitWord(256)                 # 2^8
+emitWord(32766)               # 2^15-1
+emitWord(32767)               # 2^15
+emitWord(65535)               # 2^16-1
+
+print ''
+print 'dword'
+emitDword(0)
+emitDword(1)
+emitDword(127)                 # 2^7-1
+emitDword(128)                 # 2^7
+emitDword(255)                 # 2^8-1
+emitDword(256)                 # 2^8
+emitDword(32766)               # 2^15-1
+emitDword(32767)               # 2^15
+emitDword(65535)               # 2^16-1
+emitDword(65536)               # 2^16
+emitDword(2147483647)          # 2^31-1
+emitDword(2147483648)          # 2^31
+emitDword(4294967295)          # 2^32-1
+
+print ''
+print 'qword'
+emitQword(0)
+emitQword(1)
+emitQword(127)                 # 2^7-1
+emitQword(128)                 # 2^7
+emitQword(255)                 # 2^8-1
+emitQword(256)                 # 2^8
+emitQword(32766)               # 2^15-1
+emitQword(32767)               # 2^15
+emitQword(65535)               # 2^16-1
+emitQword(65536)               # 2^16
+emitQword(2147483647)          # 2^31-1
+emitQword(2147483648)          # 2^31
+emitQword(4294967295)          # 2^32-1
+emitQword(4294967296)          # 2^32
+emitQword(9223372036854775807) # 2^63-1
+emitQword(9223372036854775808) # 2^63
+
+print ''
+
+EXPECTEDDDDD_OOOOOOOUTPUT:
+bytes
+ 0 1 127 128 255
+words
+ 0 0 1 0 127 0 128 0 255 0 0 1 254 127 255 127 255 255
+dword
+ 0 0 0 0 1 0 0 0 127 0 0 0 128 0 0 0 255 0 0 0 0 1 0 0 254 127 0 0 255 127 0 0 255 255 0 0 0 0 1 0 255 255 255 127 0 0 0 128 255 255 255 255
+qword
+ 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 127 0 0 0 0 0 0 0 128 0 0 0 0 0 0 0 255 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 254 127 0 0 0 0 0 0 255 127 0 0 0 0 0 0 255 255 0 0 0 0 0 0 0 0 1 0 0 0 0 0 255 255 255 127 0 0 0 0 0 0 0 128 0 0 0 0 255 255 255 255 0 0 0 0 0 0 0 0 1 0 0 0 255 255 255 255 255 255 255 127 255 255 255 255 255 255 255 127
+*/
+
+print 'SKIPPED'
+
+EXPECTED_OUTPUT:
+SKIPPED
+--------------------------------------------------------------------------------

@@ -6,3 +6,18 @@ print 'OK!'
 EXPECTED_OUTPUT:
 OK!
 -------------------------------------------------------------------------------
+
+TEST "argv vs argc consistency"
+
+# Force compare with integer constant.
+if argc > 0
+  print 'argc > 0'
+endif
+
+# Should always gives zero.
+print 'len(argv) - argc =', len(argv) - argc
+
+EXPECTED_OUTPUT:
+argc > 0
+len(argv) - argc = 0
+-------------------------------------------------------------------------------
