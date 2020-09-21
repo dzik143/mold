@@ -347,63 +347,28 @@ class ASTOptimizerConstantFolding
           if opcode is AST_OPCODE_CALL
             # TODO: Why we get non-integer sysCallId here?
             if (value is '__mold_syscall') and (childrenCnt is 1)
-
-              # TODO: Don't use hardcoded values.
-              # TODO: Clean up this mess.
-              #'ord':          MOLD_SYSCALL_ONE_ARG + 31,
-              #'asc':          MOLD_SYSCALL_ONE_ARG + 32,
-              #'ParseInteger': MOLD_SYSCALL_ONE_ARG + 33,
-              #'ParseFloat':   MOLD_SYSCALL_ONE_ARG + 34,
-              #'bitand':       MOLD_SYSCALL_TWO_ARGS + 35,
-              #'bitor':        MOLD_SYSCALL_TWO_ARGS + 36,
-              #'bitxor':       MOLD_SYSCALL_TWO_ARGS + 37,
-              #'bitnot':       MOLD_SYSCALL_ONE_ARG  + 38,
-              #'str':          MOLD_SYSCALL_ONE_ARG + 42,
-              #'len':          MOLD_SYSCALL_ONE_ARG + 43,
-              #'typeof':       MOLD_SYSCALL_ONE_ARG + 44,
+              # __mold_syscall(id, x)
               sysCallId = node.sysCallId
               xValue    = x.value
 
-              if sysCallId is MOLD_SYSCALL_ID_ORD
-                newValue = ord(xValue)
+              if ((sysCallId is MOLD_SYSCALL_ID_ORD) or
+                  (sysCallId is MOLD_SYSCALL_ID_ASC) or
+                  (sysCallId is MOLD_SYSCALL_ID_PARSE_INTEGER) or
+                  (sysCallId is MOLD_SYSCALL_ID_PARSE_FLOAT) or
+                  (sysCallId is MOLD_SYSCALL_ID_STR) or
+                  (sysCallId is MOLD_SYSCALL_ID_LEN) or
+                  (sysCallId is MOLD_SYSCALL_ID_TYPEOF) or
+                  (sysCallId is MOLD_SYSCALL_ID_GET_TYPEID))
 
-              elif sysCallId is MOLD_SYSCALL_ID_ASC
-                newValue = asc(xValue)
-
-              elif sysCallId is MOLD_SYSCALL_ID_PARSE_INTEGER
-                newValue = ParseInteger(xValue)
-
-              elif sysCallId is MOLD_SYSCALL_ID_PARSE_FLOAT
-                newValue = ParseFloat(xValue)
-
-              elif sysCallId is MOLD_SYSCALL_ID_STR
-                newValue = str(xValue)
-
-              elif sysCallId is MOLD_SYSCALL_ID_LEN
-                newValue = len(xValue)
-
-              elif sysCallId is MOLD_SYSCALL_ID_TYPEOF
-                newValue = typeof(xValue)
-
-              elif sysCallId is MOLD_SYSCALL_ID_GET_TYPEID
-                # getTypeId
-                newValue = __mold_syscall(57, xValue)
-
-              else
-                # Unhandled syscall - do nothing.
+                newValue = __mold_syscall(sysCallId, xValue)
               endif
-
-            else
-              # Unhandled call - do nothing.
             endif
 
           elif opcode is AST_OPCODE_IS_TYPEOF
-            # TODO: Clean up this mess (57=getypeid)
-            newValue = __mold_syscall(57, x.value) is value
+            newValue = __mold_syscall(MOLD_SYSCALL_ID_GET_TYPEID, x.value) is value
 
           elif opcode is AST_OPCODE_IS_NOT_TYPEOF
-            # TODO: Clean up this mess (57=getypeid)
-            newValue = __mold_syscall(57, x.value) isnt value
+            newValue = __mold_syscall(MOLD_SYSCALL_ID_GET_TYPEID, x.value) isnt value
 
           elif opcode is AST_OPCODE_NEG
             newValue = -x.value
@@ -486,7 +451,6 @@ class ASTOptimizerConstantFolding
             endif
           endif
 
-        # TODO: Remove hardcoded value ('typeof').
         # TODO: Why we sometimes get non-integer sysCallId here?
         elif ((opcode is AST_OPCODE_CALL) and
               (value is '__mold_syscall') and

@@ -127,15 +127,15 @@ class ASTTranslatorMIR0 extends ASTTranslator
   endmethod
 
   method _isTypeOf(rv, x, typeId)
-    # TODO: Clean up this mess (57=getTypeId)
-    this.code.syscall(57, 1)
+    global MOLD_SYSCALL_ID_GET_TYPEID
+    this.code.syscall(MOLD_SYSCALL_ID_GET_TYPEID, 1)
     this.code.loadImm(typeId)
     this.code.cmpEQ()
   endmethod
 
   method _isNotTypeOf(rv, x, typeId)
-    # TODO: Clean up this mess (57=getTypeId)
-    this.code.syscall(57, 1)
+    global MOLD_SYSCALL_ID_GET_TYPEID
+    this.code.syscall(MOLD_SYSCALL_ID_GET_TYPEID, 1)
     this.code.loadImm(typeId)
     this.code.cmpNEQ()
   endmethod

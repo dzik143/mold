@@ -115,6 +115,8 @@ class ASTPreprocessor
     global MOLD_TYPE_ID_MAP
     global AST_OPCODE_IS_TYPEOF
     global AST_OPCODE_NOP
+    global MOLD_SYSCALL_ID_LEN
+    global MOLD_SYSCALL_ID_DIE
 
     opcode   = node.opcode
     children = node.children
@@ -161,8 +163,7 @@ class ASTPreprocessor
           node.children = [x]
           node.value    = typeId
 
-          # TODO: Remove hardcoded syscall id (getTypeId)
-          # children[0] = AST_CreateNodeSysCall(57, [x])
+          # children[0] = AST_CreateNodeSysCall(MOLD_SYSCALL_ID_GET_TYPEID, [x])
           # children[1] = AST_CreateNodeInteger(typeId)
           # TODO: Clean up this mess.
           x.__isUsedAsTypeofArg = true
@@ -170,8 +171,7 @@ class ASTPreprocessor
         elif name is 'empty'
           # x is   empty -> len(x) is 0
           # x isnt empty -> len(x) isnt 0
-          # TODO: Remove hardcoded syscall id (43=len)
-          children[0] = AST_CreateNodeSysCall(43, x)
+          children[0] = AST_CreateNodeSysCall(MOLD_SYSCALL_ID_LEN, x)
           children[1] = AST_CreateNodeInteger(0)
         endif
       endif
@@ -229,9 +229,8 @@ class ASTPreprocessor
       # TODO: Handle empty array error.
       if selector is '@last'
         # x[@last] -> x[len(x) - 1]
-        # Don't use hardcoded value ('len')
         node.children[1] = AST_CreateNode(AST_OPCODE_SUB, '-', [
-          AST_CreateNodeSysCall(43, [AST_CloneNode(box)]),
+          AST_CreateNodeSysCall(MOLD_SYSCALL_ID_LEN, [AST_CloneNode(box)]),
           AST_CreateNodeInteger(1)
         ])
 
@@ -283,9 +282,8 @@ class ASTPreprocessor
         fullMethodName = className ~ '.' ~ methodName
         node.isPureVirtual = true
 
-        # TODO: Don't use hardcoded value ('die').
         funcCode = AST_CreateNodeBlock([
-          AST_CreateNodeSysCall(41, [
+          AST_CreateNodeSysCall(MOLD_SYSCALL_ID_DIE, [
             AST_CreateNodeString('not implemented: ' ~ fullMethodName)
           ])
         ])

@@ -65,7 +65,8 @@ const MOLD_SYSCALL_ID_STR    = 42
 const MOLD_SYSCALL_ID_LEN    = 43
 const MOLD_SYSCALL_ID_TYPEOF = 44
 
-const MOLD_SYSCALL_ID_GET_TYPEID = 57
+const MOLD_SYSCALL_ID_INNER_TYPEOF = 56
+const MOLD_SYSCALL_ID_GET_TYPEID   = 57
 
 #const MOLD_SYSCALL_ID_  '__mold_printToStdOutput': MOLD_SYSCALL_ONE_ARG + 45,
 #const MOLD_SYSCALL_ID_  '__mold_warning': MOLD_SYSCALL_ONE_ARG + 46,
@@ -620,11 +621,15 @@ function AST_HasSideEffects(node) -> rv
   global AST_OPCODE_CALL_NEW
   global AST_OPCODE_VCALL
 
+  global MOLD_SYSCALL_ID_ORD
+  global MOLD_SYSCALL_ID_TYPEOF
+  global MOLD_SYSCALL_ID_INNER_TYPEOF
+  global MOLD_SYSCALL_ID_GET_TYPEID
+
   opcode = node.opcode
 
   if opcode is AST_OPCODE_CALL
     # TODO: Check function protos.
-    # TODO: Don't use hardcoded values.
     # TODO: Why we sometimes got non-integer syscall id?
     # TODO: Clean up this mess.
     rv = true
@@ -632,9 +637,9 @@ function AST_HasSideEffects(node) -> rv
     if ((node.value is '__mold_syscall') and
         (node.sysCallId is integer))
 
-      if (((node.sysCallId >= 31) and (node.sysCallId <= 44)) or
-           (node.sysCallId is 56) or
-           (node.sysCallId is 57))
+      if (((node.sysCallId >= MOLD_SYSCALL_ID_ORD) and (node.sysCallId <= MOLD_SYSCALL_ID_TYPEOF)) or
+           (node.sysCallId is MOLD_SYSCALL_ID_INNER_TYPEOF) or
+           (node.sysCallId is MOLD_SYSCALL_ID_GET_TYPEID))
         # Built-in function without side effect.
         rv = false
       endif
@@ -892,8 +897,7 @@ function AST_GetDataType(node) -> rv
       # TODO: Clean up this mess.
       #if ((node.value is '__mold_syscall') and
       #    (node.sysCallId is integer) and
-      #    (node.sysCallId is 43))
-      #  # TODO: Remove hard-coded value (57=gettypeid)
+      #    (node.sysCallId is MOLD_SYSCALL_ID_LEN))
       #  rv = AST_DATA_INTEGER
 
       if ((node.symbolInfo is defined) and

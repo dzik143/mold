@@ -755,6 +755,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   method _evaluateStringFormatItemNode(fmt, node)
     global AST_OPCODE_STRING_JOIN
     global AST_OPCODE_CALL
+    global MOLD_SYSCALL_ID_STR
 
     if node.opcode is AST_OPCODE_STRING_JOIN
       this._evaluateStringFormatItemNode(fmt, node.children[0])
@@ -764,9 +765,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
     elif ((node.opcode is AST_OPCODE_CALL) and
           (node.value is '__mold_syscall') and
           (node.sysCallId is integer) and
-          (node.sysCallId is 42))
+          (node.sysCallId is MOLD_SYSCALL_ID_STR))
       # TODO: Clean up this mess.
-      # TODO: Remove hardcoded syscallId (42=str).
       # str(x) -> x
       this._evaluateStringFormatItemNode(fmt, node.children[0])
 
