@@ -21,6 +21,7 @@
 MAX_SYSCALL_ID EQU (.jmpTableEnd - .jmpTable) / 8
 
 __MOLD_SysCall:
+
   cmp  eax, MAX_SYSCALL_ID
   ja   .error
   jmp  qword [.jmpTable + eax * 8]
@@ -442,7 +443,8 @@ __MOLD_SysCall:
 ; ------------------------------------------------------------------------------
 
 .jmpTable:
-  dq .error         ; 0
+  dq __MOLD_SysCall ; 0 (generic dispatcher)
+
   dq .openForRead   ; 1
   dq .openForWrite  ; 2
   dq .openForCreate ; 3

@@ -16,7 +16,7 @@ __MOLD_ForDriver_IndexesAndValuesInString:
 
 .unsafeEntry:
 
-    push    rbx
+    push    r12
     push    rsi
     push    r9
 
@@ -26,7 +26,7 @@ __MOLD_ForDriver_IndexesAndValuesInString:
     mov     [r8  + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
     mov     [r8  + Variant_t.value], 0
 
-    mov     ebx, 1                                ; rbx = 1 = start from one char string
+    mov     r12d, 1                               ; r12 = 1 = start from one char string
     mov     rax, [rcx + Variant_t.value]          ; rax = string (Buffer_t)
 
     test    [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
@@ -34,9 +34,9 @@ __MOLD_ForDriver_IndexesAndValuesInString:
 
     mov     rcx, [rax + Buffer_t.bytesPtr]        ; rax = string (String_t)
     lea     rsi, [rcx + String_t.text]            ; rsi = string.text (char *)
-    mov     rbx, [rcx + String_t.length]          ; rbx = string.length (int64)
+    mov     r12, [rcx + String_t.length]          ; r12 = string.length (int64)
 
-    or      rbx, rbx
+    or      r12, r12
     jz      .stringEmpty
 
 .stringNextItem:
@@ -69,7 +69,7 @@ __MOLD_ForDriver_IndexesAndValuesInString:
     ; Go to next pair
     ; --------------------------------------------------------------------------
 
-    dec     rbx
+    dec     r12
     jne     .stringNextItem
 
 .stringEmpty:
@@ -77,6 +77,6 @@ __MOLD_ForDriver_IndexesAndValuesInString:
 
     pop     r9
     pop     rsi
-    pop     rbx
+    pop     r12
 
     ret

@@ -83,7 +83,7 @@ include 'variant\VariantAddRef.asm'
 
 include 'io\LoadFile.asm'
 
-include 'Error.asm'
+include 'error\Error.asm'
 include 'SysCall.asm'
 
 ; Init code.

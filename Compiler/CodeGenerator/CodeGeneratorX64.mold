@@ -576,6 +576,16 @@ class CodeGeneratorX64
     endif
   endmethod
 
+  method _syscall(id)
+
+    if id is integer
+      print '  call qword [rbx + 8 *', id, ']'
+    else
+      print '  mov eax, dword [', id, ']'
+      print '  call qword [rbx]'
+    endif
+  endmethod
+
   method run(codeObj)
     global SYMBOL_KIND_VAR_LOCAL, SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_CONST
     global SYMBOL_KIND_VAR_PARAM, SYMBOL_KIND_JMP_TABLE, SYMBOL_KIND_VAR_RETVAL
@@ -1224,6 +1234,8 @@ class CodeGeneratorX64
         sysCallId = item[2]
         params    = item[3]
 
+        print '  ; __mold_syscall(', sysCallId, ')'
+
         #if (sysCallId is integer) and (sysCallId is 57)
         #  print '  ; Optimized syscall: gettypeid'
         #  print '  mov eax, dword [', params[0], ' + Variant_t.type]'
@@ -1240,29 +1252,15 @@ class CodeGeneratorX64
           # Generic syscall.
           this.pushParametersBeforeCall(params)
 
-          if sysCallId is integer
-            print '  mov eax, ', sysCallId
-          else
-            print '  mov eax, dword [', sysCallId, ']'
-          endif
-
           if rv is defined
-            # TODO: Clean up this mess.
-            #if currentProcRv is defined
-
-              this.push('rdi')
-              this.lea('rdi', rv)
-              this.call('__MOLD_SysCall')
-              this.pop('rdi')
-
-            #else
-            #  this.lea('rdi', rv)
-            #  this.call('__MOLD_SysCall')
-            #
-            #endif
+            this.push('rdi')
+            this.lea('rdi', rv)
+            this._syscall(sysCallId)
+            this.pop('rdi')
           else
-            this.call('__MOLD_SysCall')
+            this._syscall(sysCallId)
           endif
+
         #endif
 
       elif opcode is 'call'

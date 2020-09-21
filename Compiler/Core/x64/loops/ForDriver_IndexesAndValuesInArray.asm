@@ -16,7 +16,6 @@ __MOLD_ForDriver_IndexesAndValuesInArray:
 
 .unsafeEntry:
 
-    push    rbx
     push    rsi
     push    r12
     push    r13
@@ -25,9 +24,9 @@ __MOLD_ForDriver_IndexesAndValuesInArray:
 
     mov     rcx, [rcx + Variant_t.value]          ; rcx = array (Buffer_t)
     mov     rcx, [rcx + Buffer_t.bytesPtr]        ; rcx = array (Array_t)
-    mov     rbx, [rcx + Array_t.itemsCnt]         ; rbx = array.itemsCnt (int64)
+    mov     r12, [rcx + Array_t.itemsCnt]         ; r12 = array.itemsCnt (int64)
 
-    or      rbx, rbx
+    or      r12, r12
     jz      .arrayEmpty
 
     mov     r15, r8
@@ -37,11 +36,11 @@ __MOLD_ForDriver_IndexesAndValuesInArray:
     lea     rsi, [rcx + Array_t.items]            ; rsi = array.items
     mov     dword [rdx], 0                        ; idx = 0
 
-    mov     r12d, [rcx + Array_t.innerType]       ; r12 = innerType (got from box)
-    or      r12d, r12d
+    mov     eax, [rcx + Array_t.innerType]        ; rax = innerType (got from box)
+    or      eax, eax
     jz      .arrayNextItem_variant
 
-    mov     [r15 + Variant_t.type], r12d          ;
+    mov     [r15 + Variant_t.type], eax           ;
     add     r15, 8
 
     movzx   rcx, byte [rcx + Array_t.itemSize]    ; rcx = log2(size(item))
@@ -66,7 +65,7 @@ __MOLD_ForDriver_IndexesAndValuesInArray:
 
     inc     dword [r13]          ; iterator.idx++
     add     rsi, 16              ; go to next value (128-bit variant)
-    dec     rbx                  ; rbx = update loop counter
+    dec     r12                  ; r12 = update loop counter
 
     jne     .arrayNextItem_variant ; go to next item if exists
     jmp     .done
@@ -84,7 +83,7 @@ __MOLD_ForDriver_IndexesAndValuesInArray:
 
     inc     dword [r13]          ; iterator.idx++
     add     rsi, 1               ; go to next value (8-bit)
-    dec     rbx                  ; rbx = update loop counter
+    dec     r12                  ; r12 = update loop counter
 
     jne     .arrayNextItem_8bit  ; go to next item if exists
     jmp     .done
@@ -102,7 +101,7 @@ __MOLD_ForDriver_IndexesAndValuesInArray:
 
     inc     dword [r13]          ; iterator.idx++
     add     rsi, 2               ; go to next value (16-bit)
-    dec     rbx                  ; rbx = update loop counter
+    dec     r12                  ; r12 = update loop counter
 
     jne     .arrayNextItem_16bit ; go to next item if exists
     jmp     .done
@@ -120,7 +119,7 @@ __MOLD_ForDriver_IndexesAndValuesInArray:
 
     inc     dword [r13]          ; iterator.idx++
     add     rsi, 4               ; go to next value (32-bit)
-    dec     rbx                  ; rbx = update loop counter
+    dec     r12                  ; r12 = update loop counter
 
     jne     .arrayNextItem_32bit ; go to next item if exists
     jmp     .done
@@ -138,7 +137,7 @@ __MOLD_ForDriver_IndexesAndValuesInArray:
 
     inc     dword [r13]          ; iterator.idx++
     add     rsi, 8               ; go to next value (64-bit)
-    dec     rbx                  ; rbx = update loop counter
+    dec     r12                  ; r12 = update loop counter
 
     jne     .arrayNextItem_64bit ; go to next item if exists
 
@@ -154,6 +153,5 @@ __MOLD_ForDriver_IndexesAndValuesInArray:
     pop     r13
     pop     r12
     pop     rsi
-    pop     rbx
 
     ret

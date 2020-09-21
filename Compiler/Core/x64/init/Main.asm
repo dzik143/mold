@@ -14,6 +14,8 @@ proc __MOLD_Main
 
   ldmxcsr dword [__MOLD_mxcsr]
 
+  lea     rbx, [__MOLD_SysCall.jmpTable]
+
   xor     rbp, rbp
   call    start
 
