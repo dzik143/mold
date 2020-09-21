@@ -726,6 +726,11 @@ class ASTSymbolsCollector
 
             # TODO: Review it.
             node.funcProto = baseClassProto.vtable.constructor
+
+          elif (funcName is '__mold_syscall') and (node.sysCallId is string)
+            symbolInfo = symbolTable.lookupForRead(node.sysCallId)
+            symbolTable.assignTypeAndFreeze(node.sysCallId, AST_DATA_INTEGER)
+            node.symbolInfoForSyscallId = symbolInfo
           endif
         endif
 

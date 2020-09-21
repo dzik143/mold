@@ -48,6 +48,30 @@ const AST_DataTypeForMIR = [
   'variant'    # map (TODO)
 ]
 
+# Possible improvement: Move to better place?
+const MOLD_SYSCALL_ID_ORD           = 31
+const MOLD_SYSCALL_ID_ASC           = 32
+const MOLD_SYSCALL_ID_PARSE_INTEGER = 33
+const MOLD_SYSCALL_ID_PARSE_FLOAT   = 34
+
+const MOLD_SYSCALL_ID_BITAND = 35
+const MOLD_SYSCALL_ID_BITOR  = 36
+const MOLD_SYSCALL_ID_BITXOR = 37
+const MOLD_SYSCALL_ID_BITNOT = 38
+
+const MOLD_SYSCALL_ID_EXIT   = 40
+const MOLD_SYSCALL_ID_DIE    = 41
+const MOLD_SYSCALL_ID_STR    = 42
+const MOLD_SYSCALL_ID_LEN    = 43
+const MOLD_SYSCALL_ID_TYPEOF = 44
+
+const MOLD_SYSCALL_ID_GET_TYPEID = 57
+
+#const MOLD_SYSCALL_ID_  '__mold_printToStdOutput': MOLD_SYSCALL_ONE_ARG + 45,
+#const MOLD_SYSCALL_ID_  '__mold_warning': MOLD_SYSCALL_ONE_ARG + 46,
+#const MOLD_SYSCALL_ID_  '__mold_arrayInsertAfterLast':   MOLD_SYSCALL_TWO_ARGS + 50,
+#const MOLD_SYSCALL_ID_  '__mold_arrayInsertBeforeFirst': MOLD_SYSCALL_TWO_ARGS + 51
+
 # TODO: Synchronize id along whole code.
 function AST_GetNextId() -> rv
   global NodeId

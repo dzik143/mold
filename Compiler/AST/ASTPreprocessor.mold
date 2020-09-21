@@ -202,9 +202,14 @@ class ASTPreprocessor
       elif funcName is '__mold_syscall'
         # TODO: Clean up this mess.
         # Treat first parameter as hard-coded integer syscall id.
-        node.sysCallId = children[0].value
-        newChildren    = []
-        childrenCnt    = len(node.children)
+        #if children[0].opcode is AST_DATA_INTEGER
+          node.sysCallId = children[0].value
+        #else
+        #  this.app.logError('non-integer syscall id')
+        #endif
+
+        newChildren = []
+        childrenCnt = len(node.children)
 
         for idx in 1 .. childrenCnt
           newChildren[idx - 1] = children[idx]

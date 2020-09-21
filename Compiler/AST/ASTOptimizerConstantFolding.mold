@@ -162,6 +162,23 @@ class ASTOptimizerConstantFolding
     global AST_OPCODE_IS_TYPEOF
     global AST_OPCODE_IS_NOT_TYPEOF
 
+    global MOLD_SYSCALL_ID_ORD
+    global MOLD_SYSCALL_ID_ASC
+    global MOLD_SYSCALL_ID_PARSE_INTEGER
+    global MOLD_SYSCALL_ID_PARSE_FLOAT
+
+    global MOLD_SYSCALL_ID_BITAND
+    global MOLD_SYSCALL_ID_BITOR
+    global MOLD_SYSCALL_ID_BITXOR
+    global MOLD_SYSCALL_ID_BITNOT
+
+    global MOLD_SYSCALL_ID_EXIT
+    global MOLD_SYSCALL_ID_DIE
+    global MOLD_SYSCALL_ID_STR
+    global MOLD_SYSCALL_ID_LEN
+    global MOLD_SYSCALL_ID_TYPEOF
+    global MOLD_SYSCALL_ID_GET_TYPEID
+
     isNodeChanged = false
 
     opcode      = node.opcode
@@ -291,6 +308,18 @@ class ASTOptimizerConstantFolding
 
           node.children = newParams
 
+        # TODO: Why symbolInfo.value is never set here?
+        elif ((opcode is AST_OPCODE_CALL) and
+              (value is '__mold_syscall') and
+              (node.symbolInfoForSyscallId is defined) and
+              (node.symbolInfoForSyscallId.writeHits <= 1) and
+              (node.symbolInfoForSyscallId.value is integer))
+
+          this._debug('Set syscall id at node #' ~ str(node.id) ~ ' to imm "' ~ str(node.symbolInfoForSyscallId.value) ~ '" (integer)')
+
+          node.sysCallId = node.symbolInfoForSyscallId.value
+          node.symbolInfoForSyscallId.readHits = node.symbolInfoForSyscallId.readHits - 1
+
         # TODO: Review it.
         elif (((opcode is AST_OPCODE_REFERENCE_BY_INDEX) or (opcode is AST_OPCODE_REFERENCE_BY_KEY)) and
               (x.opcode is AST_OPCODE_VARIABLE) and
@@ -335,28 +364,28 @@ class ASTOptimizerConstantFolding
               sysCallId = node.sysCallId
               xValue    = x.value
 
-              if sysCallId is 31
+              if sysCallId is MOLD_SYSCALL_ID_ORD
                 newValue = ord(xValue)
 
-              elif sysCallId is 32
+              elif sysCallId is MOLD_SYSCALL_ID_ASC
                 newValue = asc(xValue)
 
-              elif sysCallId is 33
+              elif sysCallId is MOLD_SYSCALL_ID_PARSE_INTEGER
                 newValue = ParseInteger(xValue)
 
-              elif sysCallId is 34
+              elif sysCallId is MOLD_SYSCALL_ID_PARSE_FLOAT
                 newValue = ParseFloat(xValue)
 
-              elif sysCallId is 42
+              elif sysCallId is MOLD_SYSCALL_ID_STR
                 newValue = str(xValue)
 
-              elif sysCallId is 43
+              elif sysCallId is MOLD_SYSCALL_ID_LEN
                 newValue = len(xValue)
 
-              elif sysCallId is 44
+              elif sysCallId is MOLD_SYSCALL_ID_TYPEOF
                 newValue = typeof(xValue)
 
-              elif sysCallId is 57
+              elif sysCallId is MOLD_SYSCALL_ID_GET_TYPEID
                 # getTypeId
                 newValue = __mold_syscall(57, xValue)
 
@@ -462,7 +491,7 @@ class ASTOptimizerConstantFolding
         elif ((opcode is AST_OPCODE_CALL) and
               (value is '__mold_syscall') and
               (node.sysCallId is integer) and
-              (node.sysCallId is 44))
+              (node.sysCallId is MOLD_SYSCALL_ID_TYPEOF))
 
           # typeof(...) - non imm variant.
           # Maybe we already know type?

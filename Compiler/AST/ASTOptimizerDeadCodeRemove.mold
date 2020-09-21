@@ -129,7 +129,8 @@ class ASTOptimizerDeadCodeRemove
     # Process current one node.
     #
 
-    if (opcode is AST_OPCODE_FOR_VALUES_RANGE) and (AST_IsEmpty(children[4]) is true)
+    if ((opcode is AST_OPCODE_FOR_VALUES_RANGE) and
+        (AST_IsEmpty(children[4]) is true))
       # empty for
       this._debug('Empty for loop at node #' ~ str(node.id))
       removeNode = true
