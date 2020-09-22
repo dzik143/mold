@@ -1253,13 +1253,18 @@ class CodeGeneratorX64
           this.pushParametersBeforeCall(params)
 
           if rv is defined
-            this.push('rdi')
-            this.lea('rdi', rv)
-            this._syscall(sysCallId)
-            this.pop('rdi')
-          else
-            this._syscall(sysCallId)
+            # TODO: Standarize return value passing.
+            # Add pointer to the return-value buffer as the last param.
+            this.pushOneParameterBeforeCall(rv, len(params))
+
+            #this.push('rdi')
+            #this.lea('rdi', rv)
+            #this._syscall(sysCallId)
+            #this.pop('rdi')
+          #else
           endif
+
+          this._syscall(sysCallId)
 
         #endif
 
