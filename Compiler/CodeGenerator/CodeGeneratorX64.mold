@@ -636,8 +636,6 @@ class CodeGeneratorX64
     originalOpcode = ''
     paramsCnt      = 0
 
-    symbols = {}
-
     # TODO: Remove it.
     arrayOfProcedures     = []
     arrayOfMessageFormats = []
@@ -1453,10 +1451,7 @@ class CodeGeneratorX64
         print '  ; -----------'
 
         # TODO: Clean up this mess.
-        symbols = currentSymbols
-
-        for values oneItem in symbols
-
+        for values oneItem in currentSymbols
           # TODO: Clean up this mess.
           if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) and
               ((oneItem.type is undefined) or (oneItem.type is 'variant') or (oneItem.type is 'string')))
@@ -1494,7 +1489,7 @@ class CodeGeneratorX64
         endif
 
         if currentProcName is 'start'
-          for values oneItem in symbols
+          for values oneItem in currentSymbols
 
             if ((oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and
                 ((oneItem.type is undefined) or (oneItem.type is 'variant')))
@@ -1642,8 +1637,7 @@ class CodeGeneratorX64
       elif opcode is 'endp'
         print ''
         # TODO: Clean up this mess.
-        for values oneItem in symbols
-
+        for values oneItem in currentSymbols
           if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) or
               (oneItem.kind is SYMBOL_KIND_VAR_PARAM) or
               (oneItem.kind is SYMBOL_KIND_VAR_RETVAL))
