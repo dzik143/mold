@@ -339,7 +339,10 @@ __MOLD_SysCall:
     jmp     __MOLD_VariantConvertToString
 
 .len:
-    jmp     __MOLD_VariantLength
+    call    __MOLD_VariantLength
+    mov     [rdx + Variant_t.type], VARIANT_INTEGER
+    mov     [rdx + Variant_t.value], rax
+    ret
 
 .typeof:
     jmp     __MOLD_VariantTypeOf
@@ -376,7 +379,7 @@ __MOLD_SysCall:
     push    rdx
                                          ; rcx = box      (Array_t)
     lea     rdx, [__TempIndexInteger]    ; rdx = *tmp     (Variant_t)
-    call    __MOLD_VariantLength         ; tmp = len(box) (Variant_t)
+    call    .len                         ; tmp = len(box) (Variant_t)
 
     lea     rdx, [__TempIndexInteger]    ; rdx = len(box) (Variant_t)
     pop     r8                           ; r8  = value    (Variant_t)
@@ -539,7 +542,7 @@ __MOLD_SysCall:
   dq .die           ; 41
 
   dq __MOLD_VariantConvertToString ; 42
-  dq __MOLD_VariantLength          ; 43
+  dq .len                          ; 43
   dq __MOLD_VariantTypeOf          ; 44
   dq __MOLD_PrintVariant           ; 45
   dq __MOLD_PrintVariantToStdError ; 46

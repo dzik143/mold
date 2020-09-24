@@ -1,6 +1,14 @@
+; ##############################################################################
+;
+; rv = len(value)
+;
+; rcx = value (VARIANT*) (IN)
+;
+; RETURNS: len(value) in rax
+;
+; ##############################################################################
+
 __MOLD_VariantLength:
-    ; rcx = value
-    ; rdx = rv
 
     DEBUG_CHECK_VARIANT rcx
 
@@ -28,24 +36,20 @@ __MOLD_VariantLength:
     jmp short .object ; object (9)
 
 .load0:
-    mov     [rdx + Variant_t.value], 0
+    mov     eax, 0
     ret
 
 .load1:
-    mov     [rdx + Variant_t.value], 1
+    mov     eax, 1
     ret
 
 .string:
-    mov     eax, 1
     test    [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
-    jnz     .oneCharacterString
+    jnz     .load1
 
     mov     rcx, [rcx + Variant_t.value]
     mov     rcx, [rcx + Buffer_t.bytesPtr]
     mov     rax, [rcx + String_t.length]
-
-.oneCharacterString:
-    mov     [rdx + Variant_t.value], rax
     ret
 
 .array:
@@ -54,5 +58,4 @@ __MOLD_VariantLength:
     mov     rcx, [rcx + Variant_t.value]
     mov     rcx, [rcx + Buffer_t.bytesPtr]
     mov     rax, [rcx + Array_t.itemsCnt]
-    mov     [rdx + Variant_t.value], rax
     ret

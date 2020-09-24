@@ -6,15 +6,39 @@
 
 proc __MOLD_Main
 
-  mov     ecx, 1
+  ; OLD IMPLEMENTATION
+  mov     ecx, 1 ; first?
   mov     rdx, __MOLD_DefaultExceptionHandler
   cinvoke AddVectoredExceptionHandler
 
+  ; ----------------------------------------------------------------------------
+  ; Install generic handler for exceptions not listed in .pdata section.
+  ; ----------------------------------------------------------------------------
+
+  ;mov     rcx, __MOLD_DefaultExceptionHandler
+  ;cinvoke SetUnhandledExceptionFilter
+
+  ; ----------------------------------------------------------------------------
+  ; Init argv[] and argc variables.
+  ; ----------------------------------------------------------------------------
+
   call    __MOLD_InitArgv
+
+  ; ----------------------------------------------------------------------------
+  ; Init floating point flags.
+  ; ----------------------------------------------------------------------------
 
   ldmxcsr dword [__MOLD_mxcsr]
 
+  ; ----------------------------------------------------------------------------
+  ; Map syscall routines to rbx register.
+  ; ----------------------------------------------------------------------------
+
   lea     rbx, [__MOLD_SysCall.jmpTable]
+
+  ; ----------------------------------------------------------------------------
+  ; Pass control to the user-defined entry point.
+  ; ----------------------------------------------------------------------------
 
   xor     rbp, rbp
   call    start

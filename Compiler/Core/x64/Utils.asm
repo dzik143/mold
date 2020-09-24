@@ -18,6 +18,15 @@
 ;#                                                                             #
 ;###############################################################################
 
+EXCEPTION_CONTINUE_EXECUTION EQU -1
+EXCEPTION_CONTINUE_SEARCH    EQU  0
+EXCEPTION_NONCONTINUABLE     EQU  1
+
+EXCEPTION_PDATA_CONTINUE_EXECUTION = 0
+EXCEPTION_PDATA_CONTINUE_SEARCH    = 1
+EXCEPTION_PDATA_NESTED_EXCEPTION   = 2
+EXCEPTION_PDATA_COLLIDED_UNWIND    = 3
+
 struct CPU_CONTEXT
   P1Home       dq ?
   P2Home       dq ?
@@ -153,8 +162,8 @@ __MOLD_PrintStackTraceItem:
 ;###############################################################################
 
 __MOLD_PrintStackTrace:
-    push    rbp
-    push    r12
+    push    rbp                         ;
+    push    r12                         ;
     mov     r12, 16                     ; r12 = max frames to print
 
 .walk:
@@ -171,23 +180,23 @@ __MOLD_PrintStackTrace:
     ; Print function pointed by current frame.
     ; --------------------------------------------------------------------------
 
-    call    __MOLD_PrintStackTraceItem
+    call    __MOLD_PrintStackTraceItem  ;
 
     ; --------------------------------------------------------------------------
     ; Get next frame and go on.
     ; --------------------------------------------------------------------------
 
-    dec     r12
-    jnz     .walk
+    dec     r12                         ;
+    jnz     .walk                       ;
 
 .done:
     ; --------------------------------------------------------------------------
     ; NULL frame pointer found, don't go on anymore.
     ; --------------------------------------------------------------------------
 
-    pop     r12
-    pop     rbp
-    ret
+    pop     r12                         ;
+    pop     rbp                         ;
+    ret                                 ;
 
 .fmtStackTraceItem db '%p <%s>', 13, 10, 0
 
@@ -205,6 +214,7 @@ __MOLD_PrintStackTrace:
 ;###############################################################################
 
 __MOLD_PrintCpuContext:
+
     push    qword [rcx + CPU_CONTEXT.Xmm7 + 0]
     push    qword [rcx + CPU_CONTEXT.Xmm7 + 8]
 
@@ -281,14 +291,37 @@ __MOLD_PrintCpuContext:
 ;
 ;###############################################################################
 
- __MOLD_DefaultExceptionHandler:
-    push    rbp
-    push    r12
-    push    r13
+__MOLD_DefaultExceptionHandler:
+
+    ; --------------------------------------------------------------------------
+    ; Flush pending IO
+    ; --------------------------------------------------------------------------
+
+    ; TODO: Temporary fix only
+;    mov     rdx, [rcx]
+;    mov     edx, [rdx + EXCEPTION_RECORD.ExceptionCode]
+;    cmp     edx, 0x80000001
+;    jnz     .ordinaryException
+;
+;.flushPendingIO:
+;    mov     rdx, [rcx + 8]
+;    mov     rax, qword [rdx + CPU_CONTEXT.Rip]
+;    mov     rcx, qword [rdx + CPU_CONTEXT.Rsp]
+;    mov     [rcx], rax
+;    mov     qword [rdx + CPU_CONTEXT.Rip], __MOLD_IO_Handler_FlushPage
+;
+;    mov     eax, EXCEPTION_CONTINUE_EXECUTION
+;    ret
 
     ; --------------------------------------------------------------------------
     ; Avoid recursive call (exception inside exception handler)
     ; --------------------------------------------------------------------------
+
+.ordinaryException:
+
+    push    rbp
+    push    r12
+    push    r13
 
 ;    cmp     byte [CrashDetected], 1       ; are we inside exception?
 ;    jz      .corruptedStack               ;

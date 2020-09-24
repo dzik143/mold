@@ -35,6 +35,7 @@ import kernel32, \
   ReadFile,'ReadFile', \
   GetLastError,'GetLastError', \
   AddVectoredExceptionHandler, 'AddVectoredExceptionHandler', \
+  SetUnhandledExceptionFilter, 'SetUnhandledExceptionFilter', \
   VirtualProtect, 'VirtualProtect'
 
 import msvcrt,\

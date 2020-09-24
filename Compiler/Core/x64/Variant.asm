@@ -21,6 +21,8 @@
 true  EQU 1
 false EQU 0
 
+IMAGE_DIRECTORY_ENTRY_EXCEPTION EQU 3
+
 include 'Debug.asm'
 include 'Utils.asm'
 include 'Memory.asm'
