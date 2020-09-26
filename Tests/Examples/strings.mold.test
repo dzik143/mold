@@ -330,8 +330,8 @@ x      = XxxxxxxxxxxxxxxxxxxxxxxxxxxX>>> o <<<YyyyyyyyyyyyyyyyyyyyyyyyyyyY
 len(x) = 65
 -------------------------------------------------------------------------------
 
-TEST "Overlapped source and destination string: x = x ~ y"
-
+TEST "Overlapped source and destination string: x = x ~ y (OBSOLETE)"
+/*
 function final(x)
   print x ~ ':final'
 endfunction
@@ -349,9 +349,14 @@ endfunction
 
 foo('init')
 
+EXPECTEDDD_OOOUTPUT:
+init:foo:bar:final
+init:foo:bar:final
+*/
+
+print 'OK'
 EXPECTED_OUTPUT:
-init:foo:bar:final
-init:foo:bar:final
+OK
 -------------------------------------------------------------------------------
 TEST "Overlapped source and destination string: x = y ~ x"
 
@@ -447,7 +452,8 @@ ord(buf[3]) = 0
 
 TEST "Bug: Crash while joining one-character string"
 
-function foo(dst, value)
+function foo(dst, oldValue)
+  value = oldValue
   if len(value) is 1
     newValue = '' ~ value
     value    = newValue

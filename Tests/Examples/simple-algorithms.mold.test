@@ -58,7 +58,8 @@ EXPECTED_OUTPUT:
 
 TEST "Bubble sort"
 
-function bubbleSort(A, n)
+function bubbleSort(A)
+  n = len(A)
   while n > 1
     for i in 0..n-1
       if A[i] > A[i+1]
@@ -81,7 +82,7 @@ A = [4, 1, -8, 4, -53]
 print "input: ",  A
 
 # Sort!
-bubbleSort(A, 5)
+bubbleSort(A)
 
 # Show sorted array.
 print "output:", A

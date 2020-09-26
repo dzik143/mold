@@ -220,3 +220,13 @@ foo(10,20,30)
 EXPECTED_OUTPUT:
 20
 --------------------------------------------------------------------------------
+
+TEST "Attemp to overwrite function parameter"
+
+function foo(x, y, z)
+  y = 1234
+endfunction
+
+EXPECTED_ERROR:
+./temp/source.mold:3:11: error: function parameters can not be overwritten: 'y'
+--------------------------------------------------------------------------------

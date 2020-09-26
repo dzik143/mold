@@ -217,7 +217,7 @@ TEST "Bug: crash on <string>[0] = 1"
 'text'[0] = 1
 
 EXPECTED_ERROR:
-./temp/source.mold:1:7: error: string type cannot be modified
+./temp/source.mold:1:10: error: string variables can not be modified directly
 -------------------------------------------------------------------------------
 
 TEST "Bug: crash on <integer>[0] = 1"

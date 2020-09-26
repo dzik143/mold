@@ -179,18 +179,22 @@ EXPECTED_OUTPUT:
 x = [1234]
 y = {'a': 5678}
 -------------------------------------------------------------------------------
-TEST "Bug: Destroy function params"
+TEST "Bug: Destroy function params (OBSOLETE)"
 
-function foo(node)
-  node = node.next
-endfunction
-
-node = {'abcd': 1234}
-foo(node)
-print node
+#function foo(node)
+#  node = node.next
+#endfunction
+#
+#node = {'abcd': 1234}
+#foo(node)
+#print node
+#
+#EXPECTEDDDD_OOOOOUTPUT:
+#{'abcd': 1234}
+print 'obsolete'
 
 EXPECTED_OUTPUT:
-{'abcd': 1234}
+obsolete
 -------------------------------------------------------------------------------
 TEST "Bug: CSE fail #1 (insert __cse var in wrong scope)"
 
