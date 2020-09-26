@@ -236,7 +236,7 @@ class ASTOptimizerInline
     endfor
   endmethod
 
-  method _processNode(symbolTable, node)
+  method _processNode(parentSymbolTable, node)
     global AST_OPCODE_CALL
     global AST_OPCODE_DECLARE_OR_ASSIGN
 
@@ -245,7 +245,13 @@ class ASTOptimizerInline
 
     # Switch symbolTable if needed.
     if node.symbolTable is defined
+      # We entered into new scope with own symbol table.
+      # Switch to new one.
       symbolTable = node.symbolTable
+    else
+      # Nothing changed - continue with symbol table inherited
+      # from parent node.
+      symbolTable = parentSymbolTable
     endif
 
     # Process children.

@@ -611,12 +611,15 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.emitLabel(labelForEnd)
 
     # TODO: Clean up this mess.
-    if iteratorKey is undefined
-      iteratorKey = '__TrashBin'
+    iteratorKeyForMir   = '__TrashBin'
+    iteratorValueForMir = '__TrashBin'
+
+    if iteratorKey is defined
+      iteratorKeyForMir = iteratorKey
     endif
 
-    if iteratorValue is undefined
-      iteratorValue = '__TrashBin'
+    if iteratorValue is defined
+      iteratorValueForMir = iteratorValue
     endif
 
     if isMapMode is true
@@ -626,7 +629,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     endif
 
     # Emit call to loop handler.
-    params = [box, iteratorKey, iteratorValue, labelForBegin]
+    params = [box, iteratorKeyForMir, iteratorValueForMir, labelForBegin]
     this._emitOneItem(['call', null, funcName, params])
 
     this.emitComment('')

@@ -129,18 +129,12 @@ class ASTSymbolsCollector
       # Do nothing.
 
     elif opcode is AST_OPCODE_PROGRAM
-      symbolTable      = this.app.getSymbolTable()
-      node.symbolTable = symbolTable
-
+      node.symbolTable = this.app.getSymbolTable()
       for values item in children
         this._collectSymbolsFromLeftNode(node.symbolTable, item)
       endfor
 
     elif opcode is AST_DATA_STRING
-      if isLeftNode is true
-        this.app.logError('string type cannot be modified')
-      endif
-
       symbolInfo = symbolTable.insertLiteral(node.value)
 
       # TODO: Is it still needed?
@@ -246,7 +240,7 @@ class ASTSymbolsCollector
 
           # TODO: Review it.
           if funcProto.name is 'constructor'
-            nodeBody.symbolTable.lookupForWrite('this')
+            nodeBody.symbolTable.lookupForRead('this')
           endif
         endif
 
@@ -348,7 +342,11 @@ class ASTSymbolsCollector
        nodeBox = children[0]
        nodeIdx = children[1]
 
-       this._collectSymbols(symbolTable, nodeBox, isLeftNode)
+       if AST_GetDataType(nodeBox) is AST_DATA_STRING
+         this.app.logError('string variables can not be modified directly')
+       endif
+
+       this._collectSymbolsFromRightNode(symbolTable, nodeBox)
        this._collectSymbolsFromRightNode(symbolTable, nodeIdx)
 
        # TODO: Review it.
@@ -382,7 +380,7 @@ class ASTSymbolsCollector
        nodeBox = children[0]
        nodeKey = children[1]
 
-       this._collectSymbols(symbolTable, nodeBox, isLeftNode)
+       this._collectSymbolsFromRightNode(symbolTable, nodeBox)
        this._collectSymbolsFromRightNode(symbolTable, nodeKey)
 
        # TODO: Review it.
@@ -695,6 +693,7 @@ class ASTSymbolsCollector
 
     else
       goOnIntoChildren = true
+      newIsLeftNode    = false
 
       x = children[0]
       y = children[1]
@@ -742,7 +741,6 @@ class ASTSymbolsCollector
           isRetValUsed = true
         endif
 
-        isLeftNode          = false
         node.symbolInfo     = symbolTable.lookupForCall(node.value, childrenCnt, isRetValUsed)
         currentFunctionName = symbolTable.getCurrentFunctionName()
 
@@ -764,12 +762,12 @@ class ASTSymbolsCollector
 
       elif opcode is AST_OPCODE_VCALL
         node.isUsedAsLeftValue = isLeftNode
-        isLeftNode = false
+        newIsLeftNode = false
       endif
 
       if goOnIntoChildren is true
         for values item in children
-          this._collectSymbols(symbolTable, item, isLeftNode)
+          this._collectSymbols(symbolTable, item, newIsLeftNode)
         endfor
       endif
 

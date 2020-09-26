@@ -48,7 +48,7 @@ class ASTOptimizerCSE
     unused = this._processNode(node, mapOfExpressions, symbolTable)
   endmethod
 
-  method _processNode(node, mapOfExpressions, symbolTable) -> rv
+  method _processNode(node, mapOfExpressions, parentSymbolTable) -> rv
     global AST_OPCODE_PROGRAM
     global AST_OPCODE_BLOCK
     global AST_OPCODE_VARIABLE
@@ -76,7 +76,13 @@ class ASTOptimizerCSE
 
     # Switch symbolTable if needed.
     if node.symbolTable is defined
+      # We entered into new scope with own symbol table.
+      # Switch to new one.
       symbolTable = node.symbolTable
+    else
+      # Nothing changed - continue with symbol table inherited
+      # from parent node.
+      symbolTable = parentSymbolTable
     endif
 
     opcode   = node.opcode
@@ -122,8 +128,7 @@ class ASTOptimizerCSE
       # IF branch or function/method.
       # Start new expression table from scratch.
       for values oneChild in children
-        mapOfExpressions = {}
-        this._processInnerNode(oneChild, mapOfExpressions, symbolTable)
+        this._processInnerNode(oneChild, {}, symbolTable)
       endfor
 
     elif opcode is AST_OPCODE_WHILE
@@ -135,16 +140,14 @@ class ASTOptimizerCSE
       #  rv = values[name]
       # endwhile
       for values oneChild in children
-        mapOfExpressions = {}
-        this._processInnerNode(oneChild, mapOfExpressions, symbolTable)
+        this._processInnerNode(oneChild, {}, symbolTable)
       endfor
 
     elif (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
       # IF branch or function/method.
       # Start new expression table from scratch.
-      mapOfExpressions = {}
       for values oneChild in children
-        this._processInnerNode(oneChild, mapOfExpressions, symbolTable)
+        this._processInnerNode(oneChild, {}, symbolTable)
       endfor
 
     elif ((opcode is AST_OPCODE_CALL) or
@@ -162,18 +165,19 @@ class ASTOptimizerCSE
       # TODO: Review it.
       if ((opcode >= AST_OPCODE_FOR_VALUES_RANGE) and
           (opcode < AST_OPCODE_FOR_INDEXES_VALUES))
-
-        mapOfExpressions = {}
+        newMapOfExpressions = {}
+      else
+        newMapOfExpressions = mapOfExpressions
       endif
 
       if (len(node.children) > 0) and (node.hash is defined)
-        matchedNode = mapOfExpressions{node.hash}
+        matchedNode = newMapOfExpressions{node.hash}
 
         if matchedNode is undefined
           # Expression seen first time, save it in map and wait for
           # more expressions from different nodes.
           node.symbolTable = symbolTable
-          mapOfExpressions{node.hash} = node
+          newMapOfExpressions{node.hash} = node
           this._debug('Expression found at node #' ~ str(node.id) ~ ', (' ~ node.hash ~ ')')
 
         elif matchedNode is node
@@ -307,7 +311,7 @@ class ASTOptimizerCSE
 
       if goOn is true
         for indexes childIdx values childNode in children
-          newNode = this._processNode(childNode, mapOfExpressions, symbolTable)
+          newNode = this._processNode(childNode, newMapOfExpressions, symbolTable)
           if newNode isnt childNode
             children[childIdx] = newNode
           endif
@@ -317,8 +321,6 @@ class ASTOptimizerCSE
   endmethod
 
   method processNode(node)
-    mapOfExpressions = {}
-    symbolTable      = node.symbolTable
-    this._processInnerNode(node, mapOfExpressions, symbolTable)
+    this._processInnerNode(node, {}, node.symbolTable)
   endmethod
 endclass

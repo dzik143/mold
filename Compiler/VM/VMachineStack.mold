@@ -47,7 +47,7 @@ class VMachineStack
     this.code = code
   endmethod
 
-  method _call(ip)
+  method _call(entryPointIp)
     global MIR_OPCODE_NOP, MIR_OPCODE_NEG, MIR_OPCODE_ADD, MIR_OPCODE_SUB
     global MIR_OPCODE_MUL, MIR_OPCODE_DIV, MIR_OPCODE_IDIV, MIR_OPCODE_LOAD_IMM
     global MIR_OPCODE_LOAD_ARRAY, MIR_OPCODE_LOAD_MAP, MIR_OPCODE_CMP_EQ
@@ -91,6 +91,9 @@ class VMachineStack
     # Dirty hack: push return address out of code to know when
     # whole desired code was executed.
     stack.push(codeCnt)
+
+    # Start execution at entry point passed by caller.
+    ip = entryPointIp
 
     while ip < codeCnt
       # Fetch instruction

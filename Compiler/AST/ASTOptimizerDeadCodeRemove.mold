@@ -70,7 +70,7 @@ class ASTOptimizerDeadCodeRemove
     node.children = newChildren
   endmethod
 
-  method _processNode(symbolTable, node) -> rv
+  method _processNode(parentSymbolTable, node) -> rv
     global AST_OPCODE_PROGRAM
     global AST_OPCODE_BLOCK
     global AST_OPCODE_VARIABLE
@@ -95,6 +95,17 @@ class ASTOptimizerDeadCodeRemove
 
     this.app.setLogContext(node)
 
+    # Switch symbolTable if needed.
+    if node.symbolTable is defined
+      # We entered into new scope with own symbol table.
+      # Switch to new one.
+      symbolTable = node.symbolTable
+    else
+      # Nothing changed - continue with symbol table inherited
+      # from parent node.
+      symbolTable = parentSymbolTable
+    endif
+
     # TODO: Use should/assert/etc when ready.
     if symbolTable is undefined
       die('error: unset symbol table at ASTOptimizerDeadCodeRemove::_processNode()')
@@ -105,11 +116,6 @@ class ASTOptimizerDeadCodeRemove
     endif
 
     opcode = node.opcode
-
-    # Enter scope if needed.
-    if opcode is AST_OPCODE_BLOCK
-      symbolTable = node.symbolTable
-    endif
 
     # Process child nodes recursively.
     this._processChildNodes(symbolTable, node)

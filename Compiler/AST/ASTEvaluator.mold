@@ -43,10 +43,12 @@ class ASTEvaluator
   endmethod
 
   method _getValue(valuesMap, name) -> rv
-    rv = valuesMap{name}
-    while (rv is undefined) and (valuesMap.parent is defined)
-      valuesMap = valuesMap.parent
-      rv        = valuesMap{name}
+    iterMap = valuesMap
+    rv      = valuesMap{name}
+
+    while (rv is undefined) and (iterMap.parent is defined)
+      iterMap = iterMap.parent
+      rv      = iterMap{name}
     endwhile
   endmethod
 
@@ -353,12 +355,14 @@ class ASTEvaluator
 
     else
       if (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
-        valuesMap = {}
+        newValuesMap = {}
+      else
+        newValuesMap = valuesMap
       endif
 
       # Process children one-by-one recursively.
       for values childNode in children
-        this._processNode(valuesMap, childNode)
+        this._processNode(newValuesMap, childNode)
       endfor
     endif
   endmethod

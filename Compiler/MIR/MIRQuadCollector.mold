@@ -35,11 +35,13 @@ class MIRQuadCollector extends PipeAbstract
   #                        Internal helpers (private)
   # ----------------------------------------------------------------------------
 
-  method _pad(item, desiredLen) -> rv
-    if item is undefined
+  method _pad(originalItem, desiredLen) -> rv
+    if originalItem is undefined
       # Undefined (probably unused) operand.
       # Show nothing.
       item = '-'
+    else
+      item = originalItem
     endif
 
     if item is array
@@ -80,12 +82,12 @@ class MIRQuadCollector extends PipeAbstract
   endmethod
 
   method _printSymbolInfoRow(name, readHits, writeHits, type, kind)
-    name      = this._pad(name, 10)
-    readHits  = this._pad(readHits, 4)
-    writeHits = this._pad(writeHits, 4)
-    type      = this._pad(type, 9)
-    kind      = this._pad(kind, 8)
-    print '    ;', name, readHits, writeHits, type, kind
+    namePad      = this._pad(name, 10)
+    readHitsPad  = this._pad(readHits, 4)
+    writeHitsPad = this._pad(writeHits, 4)
+    typePad      = this._pad(type, 9)
+    kindPad      = this._pad(kind, 8)
+    print '    ;', namePad, readHitsPad, writeHitsPad, typePad, kindPad
   endmethod
 
   method _dumpFrameInfo(frameInfo)

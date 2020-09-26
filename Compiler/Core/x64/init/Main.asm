@@ -4,64 +4,74 @@
 ;
 ;###############################################################################
 
-proc __MOLD_Main
+__MOLD_Main:
 
-  ; OLD IMPLEMENTATION
-  mov     ecx, 1 ; first?
-  mov     rdx, __MOLD_DefaultExceptionHandler
-  cinvoke AddVectoredExceptionHandler
+    push    rbp
+    mov     rbp, rsp
+    sub     rsp, 32
 
-  ; ----------------------------------------------------------------------------
-  ; Install generic handler for exceptions not listed in .pdata section.
-  ; ----------------------------------------------------------------------------
+    ; OLD IMPLEMENTATION
+    mov     ecx, 1 ; first?
+    mov     rdx, __MOLD_DefaultExceptionHandler
+    call    [AddVectoredExceptionHandler]
 
-  ;mov     rcx, __MOLD_DefaultExceptionHandler
-  ;cinvoke SetUnhandledExceptionFilter
+    ; ----------------------------------------------------------------------------
+    ; Install generic handler for exceptions not listed in .pdata section.
+    ; ----------------------------------------------------------------------------
 
-  ; ----------------------------------------------------------------------------
-  ; Init argv[] and argc variables.
-  ; ----------------------------------------------------------------------------
+    ;mov     rcx, __MOLD_DefaultExceptionHandler
+    ;cinvoke SetUnhandledExceptionFilter
 
-  call    __MOLD_InitArgv
+    ; ----------------------------------------------------------------------------
+    ; Init argv[] and argc variables.
+    ; ----------------------------------------------------------------------------
 
-  ; ----------------------------------------------------------------------------
-  ; Init floating point flags.
-  ; ----------------------------------------------------------------------------
+    call    __MOLD_InitArgv
 
-  ldmxcsr dword [__MOLD_mxcsr]
+    ; ----------------------------------------------------------------------------
+    ; Init floating point flags.
+    ; ----------------------------------------------------------------------------
 
-  ; ----------------------------------------------------------------------------
-  ; Map syscall routines to rbx register.
-  ; ----------------------------------------------------------------------------
+    ldmxcsr dword [__MOLD_mxcsr]
 
-  lea     rbx, [__MOLD_SysCall.jmpTable]
+    ; ----------------------------------------------------------------------------
+    ; Map syscall routines to rbx register.
+    ; ----------------------------------------------------------------------------
 
-  ; ----------------------------------------------------------------------------
-  ; Pass control to the user-defined entry point.
-  ; ----------------------------------------------------------------------------
+    lea     rbx, [__MOLD_SysCall.jmpTable]
 
-  xor     rbp, rbp
-  call    start
+    ; ----------------------------------------------------------------------------
+    ; Pass control to the user-defined entry point.
+    ; ----------------------------------------------------------------------------
 
-  lea     rcx, [argv]
-  call    __MOLD_VariantDestroy
+    xor     rbp, rbp
+    call    start
 
-  ; ----------------------------------------------------------------------------
-  ; Verify memory leaks
-  ; ----------------------------------------------------------------------------
+    lea     rcx, [argv]
+    call    __MOLD_VariantDestroy
 
-  if ASSERT_ENABLED
-  mov     rax, [MemoryAllocCnt]
-  cmp     rax, [MemoryFreeCnt]
-  je      .noMemoryLeaks
+    ; ----------------------------------------------------------------------------
+    ; Verify memory leaks
+    ; ----------------------------------------------------------------------------
 
-  cinvoke printf, .fmt, [MemoryAllocCnt], [MemoryFreeCnt], [MemoryReallocCnt]
+if ASSERT_ENABLED
 
-.noMemoryLeaks:
-  end if
+    mov     rax, [MemoryAllocCnt]
+    cmp     rax, [MemoryFreeCnt]
+    je      .noMemoryLeaksOrDone
 
-  cinvoke ExitProcess, 0
-  ret
+    cinvoke printf, .fmt, [MemoryAllocCnt], [MemoryFreeCnt], [MemoryReallocCnt]
 
-.fmt db "; PANIC! Memory leak detected! (allocated: %d, freed: %d, realloc: %d)", 13, 10, 0
-endp
+    jmp     .noMemoryLeaksOrDone
+
+    .fmt db "; PANIC! Memory leak detected! (allocated: %d, freed: %d, realloc: %d)", 13, 10, 0
+
+.noMemoryLeaksOrDone:
+
+end if
+
+    add     rsp, 32
+    pop     rbp
+
+    mov     eax, 0
+    call    [ExitProcess]

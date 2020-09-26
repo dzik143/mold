@@ -1234,37 +1234,18 @@ class CodeGeneratorX64
 
         print '  ; __mold_syscall(', sysCallId, ')'
 
-        #if (sysCallId is integer) and (sysCallId is 57)
-        #  print '  ; Optimized syscall: gettypeid'
-        #  print '  mov eax, dword [', params[0], ' + Variant_t.type]'
-        #  print '  mov dword [', rv, ' + Variant_t.type], VARIANT_INTEGER'
-        #  print '  mov qword [', rv, ' + Variant_t.value], rax'
+        # Push call parameters.
+        this.pushParametersBeforeCall(params)
 
-        #else
-        # TODO: Clean up this mess.
-        #if rv is defined
-        #  # TODO: Review it.
-        #  this.variantDestroy(rv)
-        #endif
+        # Push pointer to return value if any.
+        if rv is defined
+          # TODO: Standarize return value passing.
+          # Add pointer to the return-value buffer as the last param.
+          this.pushOneParameterBeforeCall(rv, len(params))
+        endif
 
-          # Generic syscall.
-          this.pushParametersBeforeCall(params)
-
-          if rv is defined
-            # TODO: Standarize return value passing.
-            # Add pointer to the return-value buffer as the last param.
-            this.pushOneParameterBeforeCall(rv, len(params))
-
-            #this.push('rdi')
-            #this.lea('rdi', rv)
-            #this._syscall(sysCallId)
-            #this.pop('rdi')
-          #else
-          endif
-
-          this._syscall(sysCallId)
-
-        #endif
+        # Generate syscall opcode.
+        this._syscall(sysCallId)
 
       elif opcode is 'call'
         rv        = item[1]
@@ -2132,7 +2113,7 @@ class CodeGeneratorX64
     print "include 'x64\SymbolTableCommon.asm'"
 
     for values procName in arrayOfProcedures
-      print 'dq ', procName, ',', 'name_' ~ procName
+      print 'dq', procName, ',', 'name_' ~ procName
     endfor
 
     print 'dq endOfCodeSection, name_endOfCodeSection'

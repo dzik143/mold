@@ -18,11 +18,14 @@
 #                                                                              #
 ################################################################################
 
-function UTILS_PadString(item, desiredLen) -> rv
-  if item is undefined
+function UTILS_PadString(originalItem, desiredLen) -> rv
+  if originalItem is undefined
     # Undefined (probably unused) operand.
     # Show nothing.
     item = '-'
+  else
+    # Show original item passed by caller.
+    item = originalItem
   endif
 
   if item is array

@@ -53,9 +53,6 @@ __MOLD_MemoryAlloc:
   .alignedCapacity EQU rbp - 24 ; 8 bytes
   .bufferHolder    EQU rbp - 32 ; 8 bytes
 
-  ;local .alignedCapacity dq ?
-  ;local .bufferHolder    dq ?
-
   push    rbp
   mov     rbp, rsp
   sub     rsp, 72

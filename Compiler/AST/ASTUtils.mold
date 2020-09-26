@@ -855,6 +855,7 @@ function AST_GetDataType(node) -> rv
   global AST_OPCODE_REFERENCE_BY_KEY
   global AST_OPCODE_STRING_JOIN
   global SYMBOL_KIND_CONST
+  global MOLD_SYSCALL_ID_LEN
 
   rv = -1
 

@@ -75,7 +75,7 @@ class ASTPrinterText
     endif
   endmethod
 
-  method _printNode_codeBlock(prefix, node)
+  method _printNode_codeBlock(currentPrefix, node)
     global AST_OPCODE_NOP
     global AST_OPCODE_PROGRAM
     global AST_OPCODE_BLOCK
@@ -89,7 +89,9 @@ class ASTPrinterText
         (node.opcode isnt AST_OPCODE_FUNCTION) and
         (node.opcode isnt AST_OPCODE_CLASS_METHOD))
 
-      prefix = prefix ~ '  '
+      prefix = currentPrefix ~ '  '
+    else
+      prefix = currentPrefix
     endif
 
     for values childNode in node.children

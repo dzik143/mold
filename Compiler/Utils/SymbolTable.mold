@@ -215,8 +215,13 @@ class SymbolTable
   endmethod
 
   method lookupForWrite(name) -> rv
+    global SYMBOL_KIND_VAR_PARAM
     rv           = this.lookup(name)
     rv.writeHits = rv.writeHits + 1
+
+    if rv.kind is SYMBOL_KIND_VAR_PARAM
+      this._error("function parameters can not be overwritten: '" ~ name ~ "'")
+    endif
   endmethod
 
   method lookupForReadAndWrite(name) -> rv
@@ -391,11 +396,13 @@ class SymbolTable
       # TODO: Clean up this mess.
       if rv.proto.opcode is AST_OPCODE_CLASS_METHOD
         # Adjust for this parameter for direct call.
-        paramsCnt = paramsCnt - 1
+        passedParamsCnt = paramsCnt - 1
+      else
+        passedParamsCnt = paramsCnt
       endif
 
-      if len(rv.proto.params) isnt paramsCnt
-        this._error("function '" ~ name ~ "' requires exactly " ~ str(len(rv.proto.params)) ~ ' parameters, but ' ~ str(paramsCnt) ~ ' were passed')
+      if len(rv.proto.params) isnt passedParamsCnt
+        this._error("function '" ~ name ~ "' requires exactly " ~ str(len(rv.proto.params)) ~ ' parameters, but ' ~ str(passedParamsCnt) ~ ' were passed')
 
       elif (isRetValUsed is true) and (rv.proto.rv is undefined)
         this._error("function '" ~ name ~ "' does not return a value")
@@ -446,7 +453,8 @@ class SymbolTable
 
     newEntry = {
       'name': name,
-      'kind': SYMBOL_KIND_VAR_LOCAL
+      'kind': SYMBOL_KIND_VAR_LOCAL,
+      'type': 'variant'
     }
     this.insert(name, newEntry)
   endmethod
@@ -519,7 +527,8 @@ class SymbolTable
       'name': name,
       'kind': SYMBOL_KIND_VAR_PARAM,
       'id': paramId,
-      'astType': -1
+      'astType': -1,
+      'type': 'variant'
     }
     this.insert(name, newEntry)
   endmethod
