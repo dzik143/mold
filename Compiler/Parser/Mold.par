@@ -125,8 +125,10 @@ function_proto
   | @IDENT '(' parameter_list ')'
   ;
 
-stmt_call:
-  @IDENT '(' rval_list_many_lines? ')' =AST_OPCODE_CALL;
+stmt_call
+  : @IDENT  '(' rval_list_many_lines? ')' =AST_OPCODE_CALL
+  | "print" '(' rval_list_many_lines? ')' =AST_OPCODE_CALL
+  ;
 
 stmt_function_declaration:
   "function" function_proto @EOL
