@@ -1771,9 +1771,10 @@ class CodeGeneratorX64
                 print '  movdqu xmm0', ', [', srcPtr, ']'
                 print '  movdqu [', oneItem.name, '], xmm0'
 
-                if oneItem.duplicateOnFirstWrite is defined
-                  print '  or [', oneItem.name, ' + Variant_t.flags ], VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE'
-                endif
+                # TODO: Is it still needed?
+                #if oneItem.duplicateOnFirstWrite is defined
+                #  print '  or [', oneItem.name, ' + Variant_t.flags ], VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE'
+                #endif
 
               else
                 die("error: unhandled type for param '" ~ oneItem.name ~ "': " ~ oneItem.type)

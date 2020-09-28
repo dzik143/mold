@@ -827,7 +827,9 @@ class ASTTranslator
             (lval is children[1].children[0].value))
 
           symbolInfo = this.symbolTable.lookup(lval)
-          symbolInfo.duplicateOnFirstWrite = true
+
+          # TODO: Is it still needed?
+          # symbolInfo.duplicateOnFirstWrite = true
         endif
 
         # Simplify it.
