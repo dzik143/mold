@@ -378,14 +378,15 @@ __MOLD_SysCall:
     push    rcx
     push    rdx
                                          ; rcx = box      (Array_t)
-    lea     rdx, [__TempIndexInteger]    ; rdx = *tmp     (Variant_t)
+    lea     rdx, [__TempInteger]         ; rdx = *tmp     (Variant_t)
     call    .len                         ; tmp = len(box) (Variant_t)
 
-    lea     rdx, [__TempIndexInteger]    ; rdx = len(box) (Variant_t)
+    mov     rdx, [__TempInteger + Variant_t.value]
+                                         ; rdx = len(box) (int32)
     pop     r8                           ; r8  = value    (Variant_t)
     pop     rcx                          ; rcx = box      (Array_t)
 
-    jmp     __MOLD_VariantStoreAtIndex
+    jmp     __temp_MOLD_VariantStoreAtIndex_variant
 
 .arraySetBySelector:
     ; TODO
