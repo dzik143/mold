@@ -142,3 +142,12 @@ __MOLD_VariantLoadFromIndex_native:
     pop     r8
     mov     dword [r8], eax
     ret
+
+; rcx = box   (Variant_t) (IN)
+; rdx = index (int32)     (IN)
+; r8  = rv    (Variant_t) (OUT)
+__temp_MOLD_VariantLoadFromIndex:
+    lea     rax, [__TempInteger + Variant_t.value]
+    mov     [rax], rdx
+    mov     rdx, rax
+    jmp     __MOLD_VariantLoadFromIndex_int32

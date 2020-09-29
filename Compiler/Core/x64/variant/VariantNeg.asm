@@ -19,7 +19,9 @@ __MOLD_VariantNeg:
     jmp short  .not_implemented           ; -float
     jmp short  .case_d                    ; -double
 
+align 16
 .signBit dq 0x8000000000000000
+         dq 0x8000000000000000
 
     ; --------------------------------------------------------------------------
     ; -integer

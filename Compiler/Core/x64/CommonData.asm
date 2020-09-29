@@ -80,6 +80,9 @@ OneCharacterStringTempBufferBytes2  StringHead_t 1
 OneCharacterStringTempPeek2         db 0, 0
 
 __TempIndexInteger Variant_t VARIANT_INTEGER, 0, 0
+__TempInteger      Variant_t VARIANT_INTEGER, 0, 0
+__TempBoolean      Variant_t VARIANT_BOOLEAN, 0, 0
+__TempFloat        Variant_t VARIANT_DOUBLE , 0, 0
 
 __MOLD_TypeNames:
 .typeUndefined Variant_t VARIANT_STRING, 0, .typeUndefinedBuffer
