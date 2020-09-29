@@ -100,6 +100,24 @@ class CodeGeneratorX64
     print '  mov qword [', dst, '],', src
   endmethod
 
+  method storeResult(dst)
+    symbolInfo = this.symbols{dst}
+    type       = symbolInfo.type
+
+    if (type is 'int32') or (type is 'bool32')
+      print '  mov dword [', dst, '], ecx'
+
+    elif type is 'int64'
+      print '  mov qword [', dst, '], rcx'
+
+    elif type is 'float64'
+      print '  movq qword [', dst, '], xmm0'
+
+    else
+      die('unhandled result type: ' ~ type)
+    endif
+  endmethod
+
   method call(name)
     print '  call ', name
   endmethod
@@ -195,29 +213,58 @@ class CodeGeneratorX64
     global REG_PARAMS32
     global REG_PARAMS64
 
-    varSize = this.getVariableSize(param)
+    if param is string
+      varSize = this.getVariableSize(param)
 
-    if paramIdx < REG_PARAMS_CNT
-      if varSize is 4
-        print '  mov', REG_PARAMS32[paramIdx], ', dword [', param, ']'
-      elif varSize is 8
-        print '  mov', REG_PARAMS64[paramIdx], ', qword [', param, ']'
-      elif varSize is 16
-        print '  lea', REG_PARAMS64[paramIdx], ', [', param, ']'
+      if paramIdx < REG_PARAMS_CNT
+        if varSize is 4
+          print '  mov', REG_PARAMS32[paramIdx], ', dword [', param, ']'
+
+        elif varSize is 8
+          if this.symbols{param}.type is 'float64'
+            print '  movq xmm' ~ str(paramIdx), ', qword [', param, ']'
+          else
+            print '  mov', REG_PARAMS64[paramIdx], ', qword [', param, ']'
+          endif
+
+        elif varSize is 16
+          print '  lea', REG_PARAMS64[paramIdx], ', [', param, ']'
+        endif
+
+      else
+        if varSize is 4
+          print '  mov  eax, dword [', param, ']'
+          print '  push rax'
+
+        elif varSize is 8
+          print '  push qword [', param, ']'
+
+        elif varSize is 16
+          print '  lea rax, [', param, ']'
+          print '  push rax'
+        endif
+      endif
+
+    elif (param is integer) or (param is boolean)
+      # TODO: Handle 64-bit integer.
+      if paramIdx < REG_PARAMS_CNT
+        print '  mov', REG_PARAMS32[paramIdx], ',', param
+      else
+        print '  push', param
+      endif
+
+    elif param is float
+      print '  db 0x48, 0xb8' # mov rax, float64
+      print '  dq', param
+
+      if paramIdx < REG_PARAMS_CNT
+        print '  movq xmm' ~ str(paramIdx), ', rax'
+      else
+        print '  push rax'
       endif
 
     else
-      if varSize is 4
-        print '  mov  eax, dword [', param, ']'
-        print '  push rax'
-
-      elif varSize is 8
-        print '  push qword [', param, ']'
-
-      elif varSize is 16
-        print '  lea rax, [', param, ']'
-        print '  push rax'
-      endif
+      die('unhandled param type before push: ' ~ typeof(param))
     endif
   endmethod
 
@@ -477,83 +524,90 @@ class CodeGeneratorX64
   endmethod
 
   method _cmp_cc_int64(dst, x, y, cc)
-    print '  mov dword [', dst, '], 0'
-    print '  mov rcx, qword [', x, ']'
-    print '  cmp rcx, qword [', y, ']'
-    print '  set' ~ cc, 'byte [', dst, ']'
+    this.pushOneParameterBeforeCall(x, 0)
+    this.pushOneParameterBeforeCall(y, 1)
+    print '  cmp rcx, rdx'
+    print '  set' ~ cc, 'cl'
+    print '  and ecx, 1'
+    this.storeResult(dst)
   endmethod
 
   method _cmp_cc_int32(dst, x, y, cc)
-    print '  mov dword [', dst, '], 0'
-    print '  mov ecx, dword [', x, ']'
-    print '  cmp ecx, dword [', y, ']'
-    print '  set' ~ cc, 'byte [', dst, ']'
+    this.pushOneParameterBeforeCall(x, 0)
+    this.pushOneParameterBeforeCall(y, 1)
+    print '  cmp ecx, edx'
+    print '  set' ~ cc, 'cl'
+    print '  and ecx, 1'
+    this.storeResult(dst)
   endmethod
 
   method _cmp_cc_float64(dst, x, y, cc)
-    print '  xor eax, eax'
-    print '  movq   xmm0, [', x, ']'
-    print '  comisd xmm0, [', y, ']'
-    print '  set' ~ cc, 'al'
-    print '  mov dword [', dst, '], eax'
+    this.pushOneParameterBeforeCall(x, 0)
+    this.pushOneParameterBeforeCall(y, 1)
+    print '  comisd xmm0, xmm1'
+    print '  set' ~ cc, 'cl'
+    print '  and ecx, 1'
+    this.storeResult(dst)
   endmethod
 
   method _jmp_if_cc_int64(dst, x, y, cc)
-    print '  mov rax, qword [', x, ']'
-    print '  cmp rax, qword [', y, ']'
+    this.pushOneParameterBeforeCall(x, 0)
+    this.pushOneParameterBeforeCall(y, 1)
+    print '  cmp rcx, rdx'
     print '  j' ~ cc, dst
   endmethod
 
   method _jmp_if_cc_int32(dst, x, y, cc)
-    if y is integer
-      print '  cmp dword [', x, '],', y
-    else
-      print '  mov eax, dword [', x, ']'
-      print '  cmp eax, dword [', y, ']'
-    endif
+    this.pushOneParameterBeforeCall(x, 0)
+    this.pushOneParameterBeforeCall(y, 1)
+    print '  cmp ecx, edx'
     print '  j' ~ cc, dst
   endmethod
 
   method _jmp_if_cc_variant(dst, x, y, cc)
-    print '  lea rcx, [', x, ']'
-    print '  lea rdx, [', y, ']'
+    this.pushOneParameterBeforeCall(x, 0)
+    this.pushOneParameterBeforeCall(y, 1)
     print '  call __MOLD_VariantCompare' ~ cc
     print '  test al, al'
     print '  jnz', dst
   endmethod
 
   method _jmp_if_cc_float64(dst, x, y, cc)
-    print '  movq   xmm0, [', x, ']'
-    print '  comisd xmm0, [', y, ']'
+    this.pushOneParameterBeforeCall(x, 0)
+    this.pushOneParameterBeforeCall(y, 1)
+    print '  comisd xmm0, xmm1'
     print '  j' ~ cc, dst
   endmethod
 
   method _alu2_float64(dst, x, y, opcode)
-    print '  movq  xmm0, [', x, ']'
-    print ' ', opcode, 'xmm0, qword [', y, ']'
-    print '  movq  qword [', dst, '], xmm0'
+    this.pushOneParameterBeforeCall(x, 0)
+    this.pushOneParameterBeforeCall(y, 1)
+    print ' ', opcode, 'xmm0, xmm1'
+    this.storeResult(dst)
   endmethod
 
   method _alu2_int32(dst, x, y, opcode)
-    print '  mov eax, dword [', x, ']'
-    print ' ', opcode, 'eax, dword [', y, ']'
-    print '  mov dword [', dst, '], eax'
+    this.pushOneParameterBeforeCall(x, 0)
+    this.pushOneParameterBeforeCall(y, 1)
+    print ' ', opcode, 'ecx, edx'
+    this.storeResult(dst)
   endmethod
 
   method _alu2_int64(dst, x, y, opcode)
-    print '  mov rax, qword [', x, ']'
-    print ' ', opcode, 'eax, qword [', y, ']'
-    print '  mov qword [', dst, '], rax'
+    this.pushOneParameterBeforeCall(x, 0)
+    this.pushOneParameterBeforeCall(y, 1)
+    print ' ', opcode, 'rcx, rdx'
+    this.storeResult(dst)
   endmethod
 
   method _move_int32(dst, src)
-    print '  mov eax, dword [', src, ']'
-    print '  mov dword [', dst, '], eax'
+    this.pushOneParameterBeforeCall(src, 0)
+    this.storeResult(dst)
   endmethod
 
   method _move_int64(dst, src)
-    print '  mov rax, qword [', src, ']'
-    print '  mov qword [', dst, '], rax'
+    this.pushOneParameterBeforeCall(src, 0)
+    this.storeResult(dst)
   endmethod
 
   method _move_float64(dst, src)
@@ -567,12 +621,26 @@ class CodeGeneratorX64
   endmethod
 
   method _getSymbolType(symbolsMap, id) -> rv
-    rv = 'variant'
     if id is string
+      rv = 'variant'
       symbolInfo = symbolsMap{id}
+
       if (symbolInfo is defined) and (symbolInfo.type is defined)
         rv = symbolInfo.type
       endif
+
+    elif id is integer
+      # TODO: Handle int64 immediate.
+      rv = 'int32'
+
+    elif id is float
+      rv = 'float64'
+
+    elif id is boolean
+      rv = 'bool32'
+
+    else
+      rv = 'custom'
     endif
   endmethod
 
@@ -664,7 +732,7 @@ class CodeGeneratorX64
       xType   = 'variant'
       yType   = 'variant'
 
-      if (itemCnt > 2) and (x is string)
+      if itemCnt > 2
         if ((opcode isnt 'call') and
             (opcode isnt 'vcall') and
             (opcode isnt 'syscall') and
@@ -730,11 +798,11 @@ class CodeGeneratorX64
       #
       # int64 arithmetic
       #
-
+/*
       elif opcode is 'neg_int64'
-        print '  mov rax, qword [', x, ']'
-        print '  neg rax'
-        print '  mov qword [', dst, '], rax'
+        this.pushOneParameterBeforeCall(x, 0)
+        print '  neg rcx'
+        this.storeResult(dst)
 
       elif opcode is 'add_int64'
         this._alu2_int64(dst, x, y, 'add')
@@ -746,17 +814,21 @@ class CodeGeneratorX64
         this._alu2_int64(dst, x, y, 'imul')
 
       elif opcode is 'div_int64'
-        print '  cvtsi2sd  xmm0, qword [', x, ']'   # ; xmm0 = double(x)
-        print '  cvtsi2sd  xmm1, qword [', y, ']'   # ; xmm1 = double(y)
-        print '  divsd     xmm0, xmm1'              # ; xmm0 = x / y
-        print '  movq      qword [', dst, '], xmm0' # ; dst  = x / y
+        this.pushOneParameterBeforeCall(x, 0)
+        this.pushOneParameterBeforeCall(y, 1)
+        print '  cvtsi2sd  xmm0, rcx'    # ; xmm0 = double(x)
+        print '  cvtsi2sd  xmm1, rdx'    # ; xmm1 = double(y)
+        print '  divsd     xmm0, xmm1'   # ; xmm0 = x / y
+        print '  movq [', dst, '], xmm0' # ; dst  = x / y
 
       elif opcode is 'idiv_int64'
-        print '  mov  rax, qword [', x, ']' # ; rax     = x
-        print '  mov  rcx, qword [', y, ']' # ; rcx     = y
+        this.pushOneParameterBeforeCall(x, 0)
+        this.pushOneParameterBeforeCall(y, 1)
+        print '  mov  rax, rcx'             # ; rax     = x
+        print '  mov  rcx, rdx'             # ; rcx     = y
         print '  cqo'                       # ; rdx:rax = x
-        print '  idiv rcx'                  # ; rax     = x / y
-        print '  mov  qword [', dst,'], rax'
+        print '  idiv r8'                   # ; rax     = x // y
+        print '  mov  qword [', dst,'], rax'# ; dst     = x // y
 
       elif opcode is 'cmp_eq_int64'
         this._cmp_cc_int64(dst, x, y, 'z')
@@ -775,15 +847,15 @@ class CodeGeneratorX64
 
       elif opcode is 'cmp_ge_int64'
         this._cmp_cc_int64(dst, x, y, 'ge')
-
+*/
       #
       # int32 arithmetic
       #
 
       elif opcode is 'neg_int32'
-        print '  mov eax, dword [', x, ']'
-        print '  neg eax'
-        print '  mov dword [', dst, '], eax'
+        this.pushOneParameterBeforeCall(x, 0)
+        print '  neg ecx'
+        this.storeResult(dst)
 
       elif opcode is 'add_int32'
         this._alu2_int32(dst, x, y, 'add')
@@ -795,17 +867,21 @@ class CodeGeneratorX64
         this._alu2_int32(dst, x, y, 'imul')
 
       elif opcode is 'div_int32'
-        print '  cvtsi2sd  xmm0, dword [', x, ']'   # ; xmm0 = double(x)
-        print '  cvtsi2sd  xmm1, dword [', y, ']'   # ; xmm1 = double(y)
+        this.pushOneParameterBeforeCall(x, 0)
+        this.pushOneParameterBeforeCall(y, 1)
+        print '  cvtsi2sd  xmm0, rcx'               # ; xmm0 = double(x)
+        print '  cvtsi2sd  xmm1, rdx'               # ; xmm1 = double(y)
         print '  divsd     xmm0, xmm1'              # ; xmm0 = x / y
         print '  movq      qword [', dst, '], xmm0' # ; dst  = x / y
 
       elif opcode is 'idiv_int32'
-        print '  mov  eax, dword [', x, ']' # ; eax     = x
-        print '  mov  ecx, dword [', y, ']' # ; ecx     = y
-        print '  cdq'                       # ; edx:eax = x
-        print '  idiv ecx'                  # ; eax     = x / y
-        print '  mov  dword [', dst,'], eax'
+        this.pushOneParameterBeforeCall(x, 0)
+        this.pushOneParameterBeforeCall(y, 1)
+        print '  mov  eax, ecx'              # ; eax     = x
+        print '  mov  ecx, edx'              # ; ecx     = y
+        print '  cdq'                        # ; edx:eax = x
+        print '  idiv ecx'                   # ; eax     = x // y
+        print '  mov  dword [', dst,'], eax' # ; dst     = x // y
 
       elif opcode is 'cmp_eq_int32'
         this._cmp_cc_int32(dst, x, y, 'z')
@@ -836,9 +912,10 @@ class CodeGeneratorX64
       #
 
       elif opcode is 'neg_float64'
-        print '  mov rax, qword [', x, ']'
-        print '  xor rax, qword [__MOLD_VariantNeg.signBit]'
-        print '  mov qword [', dst, '], rax'
+        # TODO: Optimize it.
+        this.pushOneParameterBeforeCall(x, 0)
+        print '  pxor xmm0, xword [__MOLD_VariantNeg.signBit]'
+        this.storeResult(dst)
 
       elif opcode is 'add_float64'
         this._alu2_float64(dst, x, y, 'addsd')
@@ -853,11 +930,11 @@ class CodeGeneratorX64
         this._alu2_float64(dst, x, y, 'divsd')
 
       elif opcode is 'idiv_float64'
-        print '  movq      xmm0, qword [', x, ']'  # xmm0 = x
-        print '  movq      xmm1, qword [', y, ']'  # xmm1 = y
+        this.pushOneParameterBeforeCall(x, 0)
+        this.pushOneParameterBeforeCall(y, 1)
         print '  divsd     xmm0, xmm1'             # xmm0 = x / y
-        print '  cvttsd2si eax, xmm0'              # rax  = int(x / y)
-        print '  mov       dword [', dst, '], eax' # dst  = int(x / y)
+        print '  cvttsd2si rcx, xmm0'              # rcx  = int(x / y)
+        this.storeResult(dst)
 
       elif opcode is 'cmp_eq_float64'
         this._cmp_cc_float64(dst, x, y, 'z')
@@ -1164,25 +1241,38 @@ class CodeGeneratorX64
           encodedFormatHash = ''
 
           for values oneParam in params
-            symbolInfo = currentSymbols{oneParam}
+            if oneParam is string
+              symbolInfo = currentSymbols{oneParam}
 
-            if symbolInfo is defined
-              encodedFormat[@afterlast] = symbolInfo
-              encodedFormatHash = encodedFormatHash ~ 'l:' ~ str(symbolInfo.kind) ~ ':' ~ str(symbolInfo.name)
+              if symbolInfo is defined
+                encodedFormat[@afterlast] = symbolInfo
+                encodedFormatHash = encodedFormatHash ~ 'l:' ~ str(symbolInfo.kind) ~ ':' ~ str(symbolInfo.name)
 
-            elif oneParam is '__EOL'
-              # TODO: Clean up this mess.
-              encodedFormat[@afterlast] = fakeSymbolInfoForEOL
-              encodedFormatHash = encodedFormatHash ~ '@eol'
+              elif oneParam is '__EOL'
+                # TODO: Clean up this mess.
+                encodedFormat[@afterlast] = fakeSymbolInfoForEOL
+                encodedFormatHash = encodedFormatHash ~ '@eol'
 
-            elif oneParam is '@glued'
-              # TODO: Clean up this mess.
-              encodedFormat[@afterlast] = fakeSymbolInfoForGlued
-              encodedFormatHash = encodedFormatHash ~ '@glued'
+              elif oneParam is '@glued'
+                # TODO: Clean up this mess.
+                encodedFormat[@afterlast] = fakeSymbolInfoForGlued
+                encodedFormatHash = encodedFormatHash ~ '@glued'
+
+              else
+                encodedFormat[@afterlast] = codeObj.symbolTable.lookup(oneParam)
+                encodedFormatHash = encodedFormatHash ~ 'g:' ~ oneParam
+              endif
 
             else
-              encodedFormat[@afterlast] = codeObj.symbolTable.lookup(oneParam)
-              encodedFormatHash = encodedFormatHash ~ 'g:' ~ oneParam
+              # Immediate value.
+              # Build fake one-time symbol format.
+              encodedFormat[@afterlast] = {
+                'name': 'imm',
+                'kind': SYMBOL_KIND_CONST,
+                'value': oneParam,
+                'readHits': 1
+              }
+              encodedFormatHash = encodedFormatHash ~ 'imm:' ~ str(oneParam)
             endif
 
             encodedFormatHash = encodedFormatHash ~ ';'
@@ -1741,11 +1831,17 @@ class CodeGeneratorX64
           elif oneItem.kind is SYMBOL_KIND_VAR_PARAM
             # Call parameter - copy to local var.
             if (oneItem.readHits > 0) or (oneItem.writeHits > 0)
-              varSize = this.getVariableSize(oneItem.name)
+              varSize    = this.getVariableSize(oneItem.name)
+              movOpcode8 = 'mov'
 
               if paramIdx < 4
-                if varSize is 4
+                if oneItem.type is 'float64'
+                  srcPtr     = 'xmm' ~ str(paramIdx)
+                  movOpcode8 = 'movq'
+
+                elif varSize is 4
                   srcPtr = REG_PARAMS32[paramIdx]
+
                 else
                   srcPtr = REG_PARAMS64[paramIdx]
                 endif
@@ -1765,7 +1861,7 @@ class CodeGeneratorX64
                 print '  mov dword [', oneItem.name, '],', srcPtr
 
               elif varSize is 8
-                print '  mov qword [', oneItem.name, '],', srcPtr
+                print ' ', movOpcode8, 'qword [', oneItem.name, '],', srcPtr
 
               elif varSize is 16
                 print '  movdqu xmm0', ', [', srcPtr, ']'
@@ -1824,35 +1920,28 @@ class CodeGeneratorX64
           this.call1('__MOLD_VariantMapCreate', dst)
         endif
 
-      elif opcode is 'store_index_variant'
+      elif originalOpcode is 'store_index'
         # dst[x] := y
-        this.call3('__MOLD_VariantStoreAtIndex', dst, x, y)
+        this.pushOneParameterBeforeCall(dst, 0)
+        this.pushOneParameterBeforeCall(x, 1)
+        this.pushOneParameterBeforeCall(y, 2)
+
+        yType = this._getSymbolType(currentSymbols, y)
+        print '  call __temp_MOLD_VariantStoreAtIndex_' ~ yType
+
+      elif originalOpcode is 'load_index'
+        # dst := x[y]
+        this.pushOneParameterBeforeCall(x, 0)
+        this.pushOneParameterBeforeCall(y, 1)
+        this.pushOneParameterBeforeCall(dst, 2)
+        this.call('__temp_MOLD_VariantLoadFromIndex')
 
       elif (opcode is 'store_key_string') or (opcode is 'store_key_variant')
         # dst{x} := y
         this.call3('__MOLD_VariantStoreAtKey', dst, x, y)
 
-      elif opcode is 'store_index_int32'
-        # dst[x] := y
-        this.call3('__MOLD_VariantStoreAtIndex_int32', dst, x, y)
-
-      elif opcode is 'load_index_variant_by_variant'
-        # dst := x[y]
-        # TODO: Is destroy needed here?
-        this.call3('__MOLD_VariantLoadFromIndex', x, y, dst)
-
-      elif ((opcode is 'load_index_variant_by_int32') or
-            (opcode is 'load_index_string_by_int32'))
-        # dst := x[y]
-        # TODO: Is destroy needed here?
-        this.call3('__MOLD_VariantLoadFromIndex_int32', x, y, dst)
-
-      elif opcode is 'load_index_int32_by_int32'
-        # dst := x[y]
-        this.call3('__MOLD_VariantLoadFromIndex_native', x, y, dst)
-
       elif opcode is 'load_key_variant'
-        # dst := x[y]
+        # dst := x{y}
         # TODO: Is destroy needed here?
         this.call3('__MOLD_VariantLoadFromKey', x, y, dst)
 

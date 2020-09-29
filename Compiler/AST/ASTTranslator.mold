@@ -144,7 +144,9 @@ class ASTTranslator
   endmethod
 
   method _releaseTempVar(name)
-    this.symbolTableForTemps.releaseTempVar(name)
+    if name is string
+      this.symbolTableForTemps.releaseTempVar(name)
+    endif
   endmethod
 
   method _enterScope(ast)
@@ -490,7 +492,7 @@ class ASTTranslator
         if childrenCnt > 0
           # TODO: Handle non-variant indexes and values.
           key            = this._getTempVar('int32')
-          valueAsVariant = this._getTempVar('variant')
+          # valueAsVariant = this._getTempVar('variant')
 
           for indexes childIdx values childNode in children
             if childNode.movedToInitList is defined
@@ -499,17 +501,20 @@ class ASTTranslator
             else
               this._loadImm(key, childIdx)
               value = this._evaluateNode(childNode)
-              this._convert(valueAsVariant, value, AST_GetDataType(childNode), -1)
-              this._storeAtIndex(rv, key, valueAsVariant)
+              # this._convert(valueAsVariant, value, AST_GetDataType(childNode), -1)
+
+              this._storeAtIndex(rv, key, value)
 
               # TODO: Is it really needed?
-              this._releaseTempVar(value)
+              if value is string
+                this._releaseTempVar(value)
+              endif
             endif
           endfor
 
           # TODO: Is it really needed?
           this._releaseTempVar(key)
-          this._releaseTempVar(valueAsVariant)
+          #this._releaseTempVar(valueAsVariant)
         endif
 
       elif opcode is AST_DATA_MAP
@@ -550,6 +555,14 @@ class ASTTranslator
       elif opcode < AST_OPCODE_PROGRAM
         # Imm data node, just return value.
         this._loadImm(rv, value)
+
+        if ((opcode is AST_DATA_INTEGER) or
+            (opcode is AST_DATA_BOOL) or
+            (opcode is AST_DATA_DOUBLE))
+
+          this._releaseTempVar(rv)
+          rv = value
+        endif
 
       elif opcode is AST_OPCODE_CALL
         # foo(x,y,z...).
@@ -989,6 +1002,7 @@ class ASTTranslator
       elif value is 'print'
         # Built-in print function.
         # TODO: Review it.
+
         this._executeNodePrint(ast)
 
         #params = []

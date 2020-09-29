@@ -233,12 +233,15 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.push(rv)
   endmethod
 
-  method _loadImm(rv, value)
+  method _loadImm(targetVariable, value)
+    rv = targetVariable
+
     if value is integer
       if (value >= -2147483648) and (value <= 2147483647)
         # 32-bit integer
         # TODO: Review it: this.emitOneArgOpcode('conv_int32_to_variant', rv, value)
-        this.emitOneArgOpcode('load_int32', rv, value)
+        # this.emitOneArgOpcode('load_int32', rv, value)
+        rv = value
       else
         # 64-bit integer
         #this.emitOneArgOpcode('load_int64', rv, value)
@@ -248,15 +251,16 @@ class ASTTranslatorMIR1 extends ASTTranslator
         this.emitOneArgOpcode('conv_int64_to_variant', rv, value)
         # this.emitOneArgOpcode('load_int64', rv, value)
       endif
-
-    elif value is float
-      # TODO: Review it: this.emitOneArgOpcode('conv_float64_to_variant', rv, value)
-      this.emitOneArgOpcode('load_float64', rv, value)
-
+/*
     elif value is boolean
       # TODO: Review it: this.emitOneArgOpcode('conv_bool32_to_variant', rv, value)
       this.emitOneArgOpcode('load_bool32', rv, value)
 
+    if value is float
+      # TODO: Review it: this.emitOneArgOpcode('conv_float64_to_variant', rv, value)
+      #this.emitOneArgOpcode('load_float64', rv, value)
+      # TODO: Avoid move here?
+*/
     elif value is string
       # Do nothing.
       # Just push __literalxxx to the stack.
@@ -287,9 +291,15 @@ class ASTTranslatorMIR1 extends ASTTranslator
       this.emitTwoArgsOpcode('create_map', rv, newConstKeys, newConstValues)
 
     else
-      # TODO: Handle terminal nodes.
-      this.app.logError('unhandled imm type: ' ~ typeof(value))
+      # Do nothing.
+      # Just put primitive value to the stack.
+      rv = value
     endif
+
+    #else
+    #  # TODO: Handle terminal nodes.
+    #  this.app.logError('unhandled imm type: ' ~ typeof(value))
+    #endif
 
     this.push(rv)
   endmethod
@@ -350,7 +360,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   method _assign(dst, src)
     global SYMBOL_KIND_VAR_RETVAL
 
-    if dst isnt src
+    if (typeof(dst) isnt typeof(src)) or (dst isnt src)
       # TODO: Is it really needed?
       #dstInfo      = this.symbolTable.lookup(dst)
       #dstInfo.type = AST_ConvertDataTypeToMIR(dstInfo.astType)
@@ -447,7 +457,9 @@ class ASTTranslatorMIR1 extends ASTTranslator
     #   rv = right()
     # .done:
 
-    this._loadImm(rv, false)                                           # [false]
+    this.push(rv)
+
+    this.emitOneArgOpcode('move', rv, false)                           # [false]
     x = this._evaluateNode(leftAst)                                    # [false x]
     this.emitOneArgOpcode('jmp_if_false', endLabel, this.popForRead()) # [false]
 
@@ -472,7 +484,9 @@ class ASTTranslatorMIR1 extends ASTTranslator
     #   rv = right()
     # .done:
 
-    this._loadImm(rv, true)                                           # [true]
+    this.push(rv)
+
+    this.emitOneArgOpcode('move', rv, true)                           # [true]
     x = this._evaluateNode(leftAst)                                   # [true x]
     this.emitOneArgOpcode('jmp_if_true', endLabel, this.popForRead()) # [true]
 
@@ -755,7 +769,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     # TODO: Simplify it.
     for values oneParam in params
-      if oneParam isnt '@glued'
+      if (oneParam is string) and (oneParam isnt '@glued')
         this._releaseTempVar(oneParam)
       endif
     endfor
