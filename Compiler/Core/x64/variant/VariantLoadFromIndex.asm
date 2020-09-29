@@ -142,16 +142,3 @@ __MOLD_VariantLoadFromIndex_native:
     pop     r8
     mov     dword [r8], eax
     ret
-
-__MOLD_VariantStoreAtIndex:
-    ; rcx = box   (Variant_t)
-    ; rdx = index (Variant_t)
-    ; r8  = value (Variant_t)
-
-    DEBUG_CHECK_VARIANT rdx
-
-    cmp     [rdx + Variant_t.type], VARIANT_INTEGER
-    jnz     __MOLD_PrintErrorAndDie.integerIndexExpected
-
-    add     rdx, Variant_t.value
-    jmp     __MOLD_VariantStoreAtIndex_int32

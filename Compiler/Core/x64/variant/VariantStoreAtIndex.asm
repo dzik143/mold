@@ -105,3 +105,16 @@ proc __MOLD_VariantStoreAtIndex_int32
     ret
 
 endp
+
+__MOLD_VariantStoreAtIndex:
+    ; rcx = box   (Variant_t)
+    ; rdx = index (Variant_t)
+    ; r8  = value (Variant_t)
+
+    DEBUG_CHECK_VARIANT rdx
+
+    cmp     [rdx + Variant_t.type], VARIANT_INTEGER
+    jnz     __MOLD_PrintErrorAndDie.integerIndexExpected
+
+    add     rdx, Variant_t.value
+    jmp     __MOLD_VariantStoreAtIndex_int32
