@@ -60,7 +60,6 @@ class ASTTranslator
   unimplemented method _loadMap(rv)
   unimplemented method _loadNull(rv)
   unimplemented method _loadImm(rv, value)
-  unimplemented method _loadImmAsVariant(rv, value)
   unimplemented method _loadVariable(name)
   unimplemented method _call(rv, funcProto, params, paramsCnt)
   unimplemented method _invokeMethod(methodName, params, paramsCnt)
@@ -490,7 +489,7 @@ class ASTTranslator
 
         if childrenCnt > 0
           # TODO: Handle non-variant indexes and values.
-          key            = this._getTempVar('variant')
+          key            = this._getTempVar('int32')
           valueAsVariant = this._getTempVar('variant')
 
           for indexes childIdx values childNode in children
@@ -498,7 +497,7 @@ class ASTTranslator
               # Do nothing.
               # We'll emit it inside static init list.
             else
-              this._loadImmAsVariant(key, childIdx)
+              this._loadImm(key, childIdx)
               value = this._evaluateNode(childNode)
               this._convert(valueAsVariant, value, AST_GetDataType(childNode), -1)
               this._storeAtIndex(rv, key, valueAsVariant)

@@ -294,39 +294,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.push(rv)
   endmethod
 
-  method _loadImmAsVariant(rv, value)
-    # TODO: Is it still needed?
-    type = typeof(value)
-
-    if type is 'integer'
-      if (value >= -2147483648) and (value <= 2147483647)
-        # 32-bit integer
-        this.emitOneArgOpcode('conv_int32_to_variant', rv, value)
-      else
-        # 64-bit integer
-        this.emitOneArgOpcode('conv_int64_to_variant', rv, value)
-      endif
-
-    elif type is 'float'
-      this.emitOneArgOpcode('conv_float64_to_variant', rv, value)
-
-    elif type is 'boolean'
-      this.emitOneArgOpcode('conv_bool32_to_variant', rv, value)
-
-    elif (type is 'string') or (type is 'array')
-      # TODO: Review it.
-      # TODO: Avoid move here?
-      #newConst = this.symbolTable.createConstFromValue(value)
-      #this.emitMoveVariantOpcode(rv, newConst)
-
-    else
-      # TODO: Handle terminal nodes.
-      this.app.logError('unhandled imm type: ' ~ str(type))
-    endif
-
-    this.push(rv)
-  endmethod
-
   method _convert(rv, unusedSrc, srcType, dstType)
     srcTypeMIR = AST_ConvertDataTypeToMIR(srcType)
     dstTypeMIR = AST_ConvertDataTypeToMIR(dstType)

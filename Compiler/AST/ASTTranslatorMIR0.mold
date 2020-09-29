@@ -92,11 +92,6 @@ class ASTTranslatorMIR0 extends ASTTranslator
     this.code.loadImm(value)
   endmethod
 
-  method _loadImmAsVariant(rv, value)
-    # TODO: Is it really needed?
-    this._loadImm(rv, value)
-  endmethod
-
   method _convert(dst, src, srcType, dstType)
     # TODO: Review it.
     # Do nothing. We always use variant.
