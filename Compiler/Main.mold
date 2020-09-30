@@ -35,7 +35,7 @@ import 'CodeGenerator/CodeGeneratorX64.mold'
 import 'MIR/MIRQuadOptimizer.mold'
 import 'VM/VMachineStack.mold'
 
-VERSION_STRING = '0.5.200921'
+VERSION_STRING = '0.5.200930'
 
 # ------------------------------------------------------------------------------
 #                              Helper functions
@@ -133,6 +133,9 @@ endfor
 if path is ''
   BadUsageError()
 endif
+
+# print '; Source file [', path, ']'
+# print '; Optimization level [', optimizationLevel, ']'
 
 #
 # Load input file and build Abstract Syntax Tree (AST)

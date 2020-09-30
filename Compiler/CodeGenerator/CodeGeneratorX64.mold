@@ -298,8 +298,9 @@ class CodeGeneratorX64
       endif
 
     elif param is float
-      print '  db 0x48, 0xb8' # mov rax, float64
-      print '  dq', param
+      #print '  db 0x48, 0xb8' # mov rax, float64
+      #print '  dq', param
+      print '  mov rax,', param
 
       if paramIdx < REG_PARAMS_CNT
         print '  movq xmm' ~ str(paramIdx), ', rax'
@@ -1849,12 +1850,7 @@ class CodeGeneratorX64
         endfor
 
         # Align to 16-bytes and add 32-byte shadow space.
-        # TODO: Optimize it.
-        if currentFrameSize > 0
-          currentFrameSize = ((currentFrameSize + 32) // 16 + 1) * 16
-        else
-          currentFrameSize = 32
-        endif
+        currentFrameSize = bitand(currentFrameSize + 32 + (16 - 1), -16)
 
         print ''
         print '  push rbp'
