@@ -62,9 +62,9 @@ __MOLD_VariantMapCreateFromInitList:
 
 .l0:
     lea  rcx , [ arrayOfKeys ]
-    lea  rdx , [ idx ]
+    mov  edx , dword [ idx ]
     lea  r8 , [ key ]
-    call  __MOLD_VariantLoadFromIndex_int32
+    call  __MOLD_VariantLoadFromIndex
 
     lea  rcx , [ dst ]
     lea  rdx , [ key ]

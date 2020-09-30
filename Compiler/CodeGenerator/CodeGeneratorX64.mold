@@ -1937,7 +1937,7 @@ class CodeGeneratorX64
         this.pushOneParameterBeforeCall(x, 0)
         this.pushOneParameterBeforeCall(y, 1)
         this.pushOneParameterBeforeCall(dst, 2)
-        this.call('__temp_MOLD_VariantLoadFromIndex')
+        this.call('__MOLD_VariantLoadFromIndex')
 
       elif (opcode is 'store_key_string') or (opcode is 'store_key_variant')
         # dst{x} := y
