@@ -476,10 +476,11 @@ FMT_RETVAL_bool32     EQU 16
 FMT_LOCAL_variant     EQU 17
 FMT_GLOBAL_variant    EQU 18
 FMT_RETVAL_variant    EQU 19
+FMT_LOCAL_variant_ptr EQU 20
 
-FMT_EOL               EQU 20
-FMT_PREFIX_GLUED      EQU 21
-FMT_TERMINATOR        EQU 22
+FMT_EOL               EQU 21
+FMT_PREFIX_GLUED      EQU 22
+FMT_TERMINATOR        EQU 23
 
 __MOLD_PrintFormatFromRegister:
     lea     rax, [__MOLD_TempFmt]
@@ -530,13 +531,14 @@ __MOLD_PrintFormatFromMemory:
     dq .notImplemented    ; 15
     dq .bool32Retval      ; 16
 
-    dq .variantLocal      ; 17 local variant on stack [RBP - n]
+    dq .variantLocal      ; 17 local variant on stack [RBP + n]
     dq .variantGlobal     ; 18 global variant (absolute address)
     dq .variantRetVal     ; 19 retval variant
+    dq .variantLocalPtr   ; 20 pointer to variant on stack [RBP + n]
 
-    dq .eol               ; 20 line break (EOL)
-    dq .prefixGlued       ; 21 glued prefix (GLUED)
-    dq .done              ; 22 terminator
+    dq .eol               ; 21 line break (EOL)
+    dq .prefixGlued       ; 22 glued prefix (GLUED)
+    dq .done              ; 23 terminator
 
 .text8:
     lodsb                        ; rax = text length (int8)
@@ -547,6 +549,14 @@ __MOLD_PrintFormatFromMemory:
     ; TODO: Clean up this mess.
     cinvoke printf, '%.*s'       ; print inline text with given length
     jmp     .fetch_next_param    ;
+
+.variantLocalPtr:
+    movsx   rax, word [rsi]      ; rax = rbp offset
+    mov     rcx, [rbp + rax]     ; rcx = [rbp - item offset]
+    call    __MOLD_PrintVariant  ; print variant item from stack
+
+    add     rsi, 2               ; rsi = next item in format buffer
+    jmp     .fetch_next_param
 
 .variantLocal:
     movsx   rax, word [rsi]      ; rax = rbp offset
