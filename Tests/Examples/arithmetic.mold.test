@@ -149,6 +149,10 @@ OK
 -------------------------------------------------------------------------------
 
 TEST "Constant arithmetic (TEMPORARY TEST WITHOUT TYPE CONVERSION)"
+
+neg_i  = -1
+neg_f  = -1.2
+
 add_ii = 1   + 3
 add_ff = 1.2 + 3.4
 
@@ -164,6 +168,12 @@ div_ff = 1.2 / 3.4
 idiv_ii = 3   // 1
 idiv_ff = 3.4 // 1.2
 
+print '-imm'
+print '========='
+print neg_i, typeof(neg_i)
+print neg_f, typeof(neg_f)
+
+print ''
 print 'imm + imm'
 print '========='
 print add_ii, typeof(add_ii)
@@ -194,6 +204,11 @@ print idiv_ii, typeof(idiv_ii)
 print idiv_ff, typeof(idiv_ff)
 
 EXPECTED_OUTPUT:
+-imm
+=========
+-1 integer
+-1.200000 float
+
 imm + imm
 =========
 4 integer

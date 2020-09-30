@@ -1,3 +1,101 @@
+TEST "for keys in: empty map"
+x = {}
+for keys k in x
+  print k
+endfor
+print 'OK'
+
+EXPECTED_OUTPUT:
+OK
+-------------------------------------------------------------------------------
+
+TEST "for keys in: small map"
+x = {'x': 10, 'y': 20, 'z': 30}
+
+for keys k in x
+  print k
+endfor
+
+EXPECTED_OUTPUT:
+x
+y
+z
+-------------------------------------------------------------------------------
+
+TEST "for keys in: wrong type (array) (SKIPPED!)"
+#x = {}
+#for indexes idx in x
+#  print idx
+#endfor
+print 'OK'
+
+EXPECTED_OUTPUT:
+OK
+-------------------------------------------------------------------------------
+
+TEST "for keys in: concat map keys one-by-one"
+
+x = {'x': 10, 'y': 20, 'z': 30}
+
+acc = ''
+
+for keys k in x
+  acc = acc ~ '-' ~ k
+endfor
+print acc
+
+EXPECTED_OUTPUT:
+-x-y-z
+-------------------------------------------------------------------------------
+
+TEST "for keys in: nested map"
+
+A = {
+  'row1': {'col1': 11, 'col2': 12, 'col3': 13},
+  'row2': {'col1': 21, 'col2': 22, 'col3': 23},
+  'row3': {'col1': 31, 'col2': 32, 'col3': 33}
+}
+
+acc = ''
+for keys k1 in A
+  for keys k2 in A{k1}
+    print 'Concat', k1, k2
+    acc = acc ~ '-' ~ k1 ~ ':' ~ k2
+  endfor
+endfor
+
+print acc
+
+EXPECTED_OUTPUT:
+Concat row1 col1
+Concat row1 col2
+Concat row1 col3
+Concat row2 col1
+Concat row2 col2
+Concat row2 col3
+Concat row3 col1
+Concat row3 col2
+Concat row3 col3
+-row1:col1-row1:col2-row1:col3-row2:col1-row2:col2-row2:col3-row3:col1-row3:col2-row3:col3
+-------------------------------------------------------------------------------
+
+TEST "for keys in: edit map content"
+
+x = {'x': 1, 'y': 2, 'z': 3}
+
+print 'before :', x
+
+for keys k in x
+  x{k} = x{k} * 10
+endfor
+
+print 'after  :', x
+
+EXPECTED_OUTPUT:
+before : {'x': 1, 'y': 2, 'z': 3}
+after  : {'x': 10, 'y': 20, 'z': 30}
+-------------------------------------------------------------------------------
+
 TEST "Bug: Destroyed registers inside for keys loop"
 
 function foo(node) -> rv
