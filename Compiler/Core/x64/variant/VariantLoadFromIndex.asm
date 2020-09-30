@@ -10,6 +10,7 @@
 ;###############################################################################
 
 __MOLD_VariantLoadFromIndex_int32:
+
     DEBUG_CHECK_VARIANT rcx
 
     mov    eax, [rcx + Variant_t.type]
@@ -132,16 +133,6 @@ __MOLD_VariantLoadFromIndex:
 
     add     rdx, Variant_t.value
     jmp     __MOLD_VariantLoadFromIndex
-
-; TODO: Clean up this mess.
-__MOLD_VariantLoadFromIndex_native:
-    push    r8
-    lea     r8, [__TrashBin]
-    call    __MOLD_VariantLoadFromIndex_int32
-    mov     rax, [__TrashBin + Variant_t.value]
-    pop     r8
-    mov     dword [r8], eax
-    ret
 
 ; rcx = box   (Variant_t) (IN)
 ; rdx = index (int32)     (IN)
