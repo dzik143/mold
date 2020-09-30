@@ -35,7 +35,7 @@ __MOLD_VariantArrayShallowCopy:
     lea     rcx, [clonedArray]
     mov     edx, dword [iteratorIdx]
     lea     r8,  [iteratorValue]
-    call    __temp_MOLD_VariantStoreAtIndex_variant
+    call    __MOLD_VariantStoreAtIndex_variant
 
     ret
 

@@ -1035,6 +1035,9 @@ class CodeGeneratorX64
       elif originalOpcode is 'string_join'
         this.call3AndDestroy('__MOLD_VariantStringJoin', x, y, dst)
 
+      elif opcode is 'cmp_is_typeof_string'
+        this.store32(dst, y is VARIANT_STRING)
+
       elif opcode is 'jmp_if_typeof_string'
         if y is VARIANT_STRING
           print '  jmp', dst
@@ -1927,7 +1930,7 @@ class CodeGeneratorX64
         this.pushOneParameterBeforeCall(y, 2)
 
         yType = this._getSymbolType(currentSymbols, y)
-        print '  call __temp_MOLD_VariantStoreAtIndex_' ~ yType
+        print '  call __MOLD_VariantStoreAtIndex_' ~ yType
 
       elif originalOpcode is 'load_index'
         # dst := x[y]

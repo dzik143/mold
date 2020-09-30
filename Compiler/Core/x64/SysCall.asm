@@ -386,7 +386,7 @@ __MOLD_SysCall:
     pop     r8                           ; r8  = value    (Variant_t)
     pop     rcx                          ; rcx = box      (Array_t)
 
-    jmp     __temp_MOLD_VariantStoreAtIndex_variant
+    jmp     __MOLD_VariantStoreAtIndex_variant
 
 .arraySetBySelector:
     ; TODO
