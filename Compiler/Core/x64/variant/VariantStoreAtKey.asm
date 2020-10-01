@@ -9,6 +9,9 @@
 ;
 ;###############################################################################
 
+__MOLD_VariantStoreAtKey_variant:
+__MOLD_VariantStoreAtKey_string:
+
 proc __MOLD_VariantStoreAtKey
     ; TODO: Avoid temp stack values.
     local .keyPtr   dq ?

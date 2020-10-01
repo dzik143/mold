@@ -77,28 +77,12 @@ class CodeGeneratorX64
     print '  lea ', dst, ', [', src, ']'
   endmethod
 
-  method push(x)
-    print '  push', x
-  endmethod
-
-  method pop(x)
-    print '  pop', x
-  endmethod
-
-  method mov(dst, src)
-    print '  mov ', dst, ',', src
-  endmethod
-
   method store(dst, src)
     print '  mov [', dst, '],', src
   endmethod
 
   method store32(dst, src)
     print '  mov dword [', dst, '],', src
-  endmethod
-
-  method store64(dst, src)
-    print '  mov qword [', dst, '],', src
   endmethod
 
   method storeResult(dst)
@@ -144,10 +128,6 @@ class CodeGeneratorX64
   method call3AndDestroy(name, x, y, dst)
     if (x is dst) or (y is dst)
       this.call3(name, x, y, dst)
-      #this.lea('rcx', x)
-      #this.lea('rdx', y)
-      #this.lea('r8', dst)
-      #this.call(name)
     else
       this.variantDestroy(dst)
       this.call3(name, x, y, dst)
@@ -318,16 +298,6 @@ class CodeGeneratorX64
     global REG_PARAMS32
     global REG_PARAMS64
 
-    #paramsCnt = len(params)
-
-    #if paramsCnt <= REG_PARAMS_CNT
-    #  regParamsCnt   = paramsCnt
-    #  stackParamsCnt = 0
-    #else
-    #  regParamsCnt   = REG_PARAMS_CNT
-    #  stackParamsCnt = paramsCnt - REG_PARAMS_CNT
-    #endif
-
     for indexes idx values oneParam in params
       # Skip unused params.
       if oneParam is defined
@@ -336,12 +306,6 @@ class CodeGeneratorX64
         print '  ; skipped unused call param'
       endif
     endfor
-
-#    for idx in 4 .. paramsCnt
-#      # TODO: Optimize it.
-#      this.lea('rax', params[idx])
-#      this.push('rax')
-#    endfor
   endmethod
 
   method _hash(x) -> rv
@@ -645,20 +609,6 @@ class CodeGeneratorX64
     this.storeResult(dst)
   endmethod
 
-  method _move_int32(dst, src)
-    this.pushOneParameterBeforeCall(src, 0)
-    this.storeResult(dst)
-  endmethod
-
-  method _move_int64(dst, src)
-    this.pushOneParameterBeforeCall(src, 0)
-    this.storeResult(dst)
-  endmethod
-
-  method _move_float64(dst, src)
-    this._move_int64(dst, src)
-  endmethod
-
   method _loadString(dst, src)
     this.variantDestroy(dst)
     print '  movdqu xmm0, [', src, ']'
@@ -824,26 +774,6 @@ class CodeGeneratorX64
       elif originalOpcode is 'move'
         this.pushOneParameterBeforeCall(x, 0)
         this.storeResult(dst)
-
-      #elif (opcode is 'move_int32') or (opcode is 'move_bool32')
-      #  this._move_int32(dst, x)
-
-      #elif (opcode is 'move_int64') or (opcode is 'move_float64')
-      #  this._move_int64(dst, x)
-
-      #
-      # Typeof(x)
-      # TODO: Move typeof(imm) to core.
-      #
-
-      elif (opcode is 'typeof_int64') or (opcode is 'typeof_int32')
-        this._loadString(dst, 'StringInteger')
-
-      elif opcode is 'typeof_float64'
-        this._loadString(dst, 'StringFloat')
-
-      elif opcode is 'typeof_bool32'
-        this._loadString(dst, 'StringBoolean')
 
       #
       # int64 arithmetic
@@ -1155,25 +1085,6 @@ class CodeGeneratorX64
       elif originalOpcode is 'load_null'
         this.variantDestroy(dst)
 
-      elif originalOpcode is 'load_int64'
-        print '  mov rax,', x
-        print '  mov qword [', dst, '], rax'
-
-      elif originalOpcode is 'load_int32'
-        print '  mov dword [', dst, '],', x
-
-      elif originalOpcode is 'load_bool32'
-        if x is true
-          print '  mov dword [', dst, '],', 1
-        else
-          print '  mov dword [', dst, '],', 0
-        endif
-
-      elif originalOpcode is 'load_float64'
-        print '  db 0x48, 0xb8' # mov rax, float64
-        print '  dq', x
-        print '  mov qword [', dst, '], rax'
-
       #
       # jmp_if_xx_int64
       #
@@ -1285,94 +1196,58 @@ class CodeGeneratorX64
         params    = dst
         paramsCnt = len(params)
 
-        # TODO: Fall back to single param
-        #if paramsCnt is 1
-        #  this.call1('__MOLD_PrintVariantLn', params[0])
-        #
-        #else
+        # Build msg format.
+        encodedFormat     = []
+        encodedFormatHash = ''
 
-          # Build msg format.
-          # TODO: Handle more item types.
-          # TODO: Possible improvement: Avoid emitting the same format twice.
-          encodedFormat     = []
-          encodedFormatHash = ''
+        for values oneParam in params
+          if oneParam is string
+            symbolInfo = currentSymbols{oneParam}
 
-          for values oneParam in params
-            if oneParam is string
-              symbolInfo = currentSymbols{oneParam}
+            if symbolInfo is defined
+              encodedFormat[@afterlast] = symbolInfo
+              encodedFormatHash = encodedFormatHash ~ 'l:' ~ str(symbolInfo.kind) ~ ':' ~ str(symbolInfo.name)
 
-              if symbolInfo is defined
-                encodedFormat[@afterlast] = symbolInfo
-                encodedFormatHash = encodedFormatHash ~ 'l:' ~ str(symbolInfo.kind) ~ ':' ~ str(symbolInfo.name)
+            elif oneParam is '__EOL'
+              # TODO: Clean up this mess.
+              encodedFormat[@afterlast] = fakeSymbolInfoForEOL
+              encodedFormatHash = encodedFormatHash ~ '@eol'
 
-              elif oneParam is '__EOL'
-                # TODO: Clean up this mess.
-                encodedFormat[@afterlast] = fakeSymbolInfoForEOL
-                encodedFormatHash = encodedFormatHash ~ '@eol'
-
-              elif oneParam is '@glued'
-                # TODO: Clean up this mess.
-                encodedFormat[@afterlast] = fakeSymbolInfoForGlued
-                encodedFormatHash = encodedFormatHash ~ '@glued'
-
-              else
-                encodedFormat[@afterlast] = codeObj.symbolTable.lookup(oneParam)
-                encodedFormatHash = encodedFormatHash ~ 'g:' ~ oneParam
-              endif
+            elif oneParam is '@glued'
+              # TODO: Clean up this mess.
+              encodedFormat[@afterlast] = fakeSymbolInfoForGlued
+              encodedFormatHash = encodedFormatHash ~ '@glued'
 
             else
-              # Immediate value.
-              # Build fake one-time symbol format.
-              encodedFormat[@afterlast] = {
-                'name': 'imm',
-                'kind': SYMBOL_KIND_CONST,
-                'value': oneParam,
-                'readHits': 1
-              }
-              encodedFormatHash = encodedFormatHash ~ 'imm:' ~ str(oneParam)
+              encodedFormat[@afterlast] = codeObj.symbolTable.lookup(oneParam)
+              encodedFormatHash = encodedFormatHash ~ 'g:' ~ oneParam
             endif
 
-            encodedFormatHash = encodedFormatHash ~ ';'
-          endfor
-
-          messageFormatId = fmtHashToIdMap{encodedFormatHash}
-
-          if messageFormatId isnt defined
-            arrayOfMessageFormats[@afterlast] = encodedFormat
-            messageFormatId                   = len(arrayOfMessageFormats) - 1
-            fmtHashToIdMap{encodedFormatHash} = messageFormatId
+          else
+            # Immediate value.
+            # Build fake one-time symbol format.
+            encodedFormat[@afterlast] = {
+              'name': 'imm',
+              'kind': SYMBOL_KIND_CONST,
+              'value': oneParam,
+              'readHits': 1
+            }
+            encodedFormatHash = encodedFormatHash ~ 'imm:' ~ str(oneParam)
           endif
 
-          print '  lea rcx, [__fmt' ~ str(messageFormatId), ']'
-          print '  call __MOLD_PrintFormatFromMemory'
-        #endif
+          encodedFormatHash = encodedFormatHash ~ ';'
+        endfor
 
-      elif opcode is 'str_int64'
-        this.variantDestroy(dst)
-        print '  mov r9, [', x, ']'
-        print '  mov r10d, VARIANT_INTEGER'
-        print '  lea rdx, [', dst, ']'
-        print '  call __MOLD_VariantConvertPrimitiveToString'
+        messageFormatId = fmtHashToIdMap{encodedFormatHash}
 
-      elif opcode is 'str_int32'
-        this.variantDestroy(dst)
-        print '  mov r9d, [', x, ']'
-        print '  mov r10d, VARIANT_INTEGER'
-        print '  lea rdx, [', dst, ']'
-        print '  call __MOLD_VariantConvertPrimitiveToString'
+        if messageFormatId isnt defined
+          arrayOfMessageFormats[@afterlast] = encodedFormat
+          messageFormatId                   = len(arrayOfMessageFormats) - 1
+          fmtHashToIdMap{encodedFormatHash} = messageFormatId
+        endif
 
-      elif opcode is 'str_float64'
-        this.variantDestroy(dst)
-        print '  mov r9, [', x, ']'
-        print '  mov r10d, VARIANT_DOUBLE'
-        print '  lea rdx, [', dst, ']'
-        print '  call __MOLD_VariantConvertPrimitiveToString'
-
-      elif opcode is 'str_bool32'
-        this.variantDestroy(dst)
-        print '  mov r9d, dword [', x, ']'
-        print '  lea rdx, [', dst, ']'
-        print '  call __MOLD_VariantConvertBool64ToString'
+        print '  lea rcx, [__fmt' ~ str(messageFormatId), ']'
+        print '  call __MOLD_PrintFormatFromMemory'
 
       elif opcode is 'syscall'
         rv        = item[1]
@@ -1462,14 +1337,6 @@ class CodeGeneratorX64
         print '  lea  rdx, [vtable_' ~ str(x) ~ ']'
         print '  call __MOLD_VariantObjectCreate'
 
-      #elif originalOpcode is 'conv_int32_to_float64'
-      #  print '  cvtsi2sd xmm0, dword [', x, ']'
-      #  print '  movq [', dst, '], xmm0'
-
-      #elif originalOpcode is 'conv_int64_to_float64'
-      #  print '  cvtsi2sd xmm0, qword [', x, ']'
-      #  print '  movq [', dst, '], xmm0'
-
       elif originalOpcode is 'conv_int32_to_variant'
         this.pushOneParameterBeforeCall(dst, 0)
         print '  mov [rcx + Variant_t.type], VARIANT_INTEGER'
@@ -1493,22 +1360,6 @@ class CodeGeneratorX64
         this.pushOneParameterBeforeCall(x, 1)
         print '  mov [rcx + Variant_t.type], VARIANT_DOUBLE'
         print '  movq [rcx + Variant_t.value], xmm1'
-
-      #elif originalOpcode is 'conv_float64_to_int32'
-      #  if x is float
-      #    die('error: convert imm float64 to int32 not supported')
-      #  else
-      #    print '  cvttsd2si eax, [', x, ']'
-      #    print '  mov dword [', dst, '], eax'
-      #  endif
-      #
-      #elif originalOpcode is 'conv_float64_to_int64'
-      #  if x is float
-      #    die('error: convert imm float64 to int64 not supported')
-      #  else
-      #    print '  cvttsd2si rax, [', x, ']'
-      #    print '  mov qword [', dst, '], rax'
-      #  endif
 
       elif originalOpcode is 'conv_bool32_to_variant'
         this.pushOneParameterBeforeCall(dst, 0)
@@ -1869,18 +1720,6 @@ class CodeGeneratorX64
         paramIdx  = 0
         isRaxZero = false
 
-        # TODO: Clean up this mess.
-        #  x5 EQU rbp + 8 + 8 * 4
-        #  x6 EQU rbp + 8 + 8 * 3
-        #  x7 EQU rbp + 8 + 8 * 2
-        #  x8 EQU rbp + 8 + 8 * 1
-        #if paramsCnt > 4
-        #  print '  ; stack parameters'
-        #  for idx in 4 .. paramsCnt
-        #    print ' ', params[idx], 'EQU rbp + 8 + 8 *', paramsCnt - idx
-        #  endfor
-        #endif
-
         for values oneItem in symbols
           if oneItem.kind is SYMBOL_KIND_VAR_LOCAL
             if ((oneItem.type is undefined) or
@@ -1985,19 +1824,23 @@ class CodeGeneratorX64
         this.pushOneParameterBeforeCall(dst, 2)
         this.call('__MOLD_VariantLoadFromIndex')
 
-      elif (opcode is 'store_key_string') or (opcode is 'store_key_variant')
+      elif originalOpcode is 'store_key'
         # dst{x} := y
         this.pushOneParameterBeforeCall(dst, 0)
         this.pushOneParameterBeforeCall(x, 1)
         this.pushOneParameterBeforeCall(y, 2)
-        print '  call __MOLD_VariantStoreAtKey'
 
-      elif opcode is 'load_key_variant'
+        yType = this._getSymbolType(currentSymbols, y)
+        print '  call __MOLD_VariantStoreAtKey_' ~ yType
+
+      elif originalOpcode is 'load_key'
         # dst := x{y}
         this.pushOneParameterBeforeCall(x, 0)
         this.pushOneParameterBeforeCall(y, 1)
         this.pushOneParameterBeforeCall(dst, 2)
-        print '  call __MOLD_VariantLoadFromKey'
+
+        dstType = this._getSymbolType(currentSymbols, dst)
+        print '  call __MOLD_VariantLoadFromKey_' ~ dstType
 
       elif originalOpcode is 'jmp'
        print '  jmp', dst

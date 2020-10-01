@@ -10,6 +10,9 @@
 ;###############################################################################
 
 __MOLD_VariantLoadFromKey:
+__MOLD_VariantLoadFromKey_variant:
+__MOLD_VariantLoadFromKey_string:
+
     ; TODO: Clean up this mess.
     DEBUG_CHECK_VARIANT rcx
     DEBUG_CHECK_VARIANT rdx
