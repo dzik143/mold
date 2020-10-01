@@ -94,8 +94,8 @@ class ASTTypeCast
               (x.opcode is AST_OPCODE_REFERENCE_BY_KEY))
           # x[i] = y
           # x{i} = y
-          # TODO: Handle non-variant array items.
-          children[1] = AST_TypeCast(y, -1)
+          # Do nothing.
+          # We already able to handle any value types.
         endif
 
       elif ((opcode is AST_OPCODE_ADD) or
@@ -139,13 +139,11 @@ class ASTTypeCast
         children[1] = AST_TypeCast(children[1], AST_DATA_STRING)
 
       elif opcode is AST_OPCODE_REFERENCE_BY_INDEX
-        # TODO: Handle native machine indexes.
-        # x[idx]
+        # ... = x[idx]
         children[1] = AST_TypeCast(children[1], AST_DATA_INTEGER)
 
       elif opcode is AST_OPCODE_REFERENCE_BY_KEY
-        # TODO: Handle native machine indexes.
-        # x{key}
+        # ... = x{key}
         children[1] = AST_TypeCast(children[1], AST_DATA_STRING)
 
       elif opcode is AST_OPCODE_FOR_VALUES_RANGE
