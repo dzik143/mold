@@ -9,6 +9,13 @@ __MOLD_Variant_mul  EQU __MOLD_VariantMul
 __MOLD_Variant_div  EQU __MOLD_VariantDiv
 __MOLD_Variant_idiv EQU __MOLD_VariantDivAsInteger
 
+__MOLD_Variant_cmp_eq EQU __MOLD_VariantCompareEQ
+__MOLD_Variant_cmp_ne EQU __MOLD_VariantCompareNE
+__MOLD_Variant_cmp_gt EQU __MOLD_VariantCompareGT
+__MOLD_Variant_cmp_ge EQU __MOLD_VariantCompareGE
+__MOLD_Variant_cmp_lt EQU __MOLD_VariantCompareLT
+__MOLD_Variant_cmp_le EQU __MOLD_VariantCompareLE
+
 ;###############################################################################
 ;                                  Constants
 ;###############################################################################

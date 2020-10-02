@@ -248,7 +248,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
         #this.symbolTable.assignMirType(rv, 'int64')
         # TODO: Review it.
         # TODO: Int64 is always mapped to variant.
-        this.emitOneArgOpcode('conv_int64_to_variant', rv, value)
+        #this.emitOneArgOpcode('conv_int64_to_variant', rv, value)
+        this.emitOneArgOpcode('variant_create', rv, value)
         # this.emitOneArgOpcode('load_int64', rv, value)
       endif
 /*
@@ -307,16 +308,29 @@ class ASTTranslatorMIR1 extends ASTTranslator
   method _convert(rv, unusedSrc, srcType, dstType)
     srcTypeMIR = AST_ConvertDataTypeToMIR(srcType)
     dstTypeMIR = AST_ConvertDataTypeToMIR(dstType)
-
+    opcode     = 'move'
 
     if srcTypeMIR is dstTypeMIR
+      # Nothing to convert.
+      # Just emit move opcode.
       # TODO: Avoid move here?
-      this.popOneArgAndEmitOpcode('move', rv)
+
+    elif (dstTypeMIR is 'variant') and (srcTypeMIR is 'string')
+      # Do nothing.
+
+    elif srcTypeMIR is 'variant'
+      # Cast variant to primitive.
+      opcode = 'variant_cast'
+
+    elif dstTypeMIR is 'variant'
+      # Create variant from primitive.
+      opcode = 'variant_create'
 
     else
-      opcode = 'conv_' ~ srcTypeMIR ~ '_to_' ~ dstTypeMIR
-      this.popOneArgAndEmitOpcode(opcode, rv)
+      this._error("Unhandled MIR convert from '" ~ srcTypeMIR ~ " to '" ~ dstTypeMIR ~ "'")
     endif
+
+    this.popOneArgAndEmitOpcode(opcode, rv)
   endmethod
 
   method _compareEQ(rv, x, y)

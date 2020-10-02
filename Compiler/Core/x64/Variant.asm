@@ -39,6 +39,8 @@ include 'variant\VariantLength.asm'
 include 'variant\VariantArrayShallowCopy.asm'
 include 'variant\VariantPeek.asm'
 include 'variant\VariantOrd.asm'
+include 'variant\VariantCastTo.asm'
+include 'variant\VariantCreateFrom.asm'
 
 ; Print functions
 include 'variant\VariantPrintNewLine.asm'

@@ -3,6 +3,58 @@
 ; Store single item in the box using string key.
 ; x{key} = ...
 ;
+; rcx  = box            (Variant_t) (IN)
+; rdx  = key            (Variant_t) (IN)
+; xmm2 = value to store (float64)   (IN)
+;
+;###############################################################################
+
+__MOLD_VariantStoreAtKey_float64:
+
+    lea       r8, [__TempFloat]
+    movq      [r8 + Variant_t.value], xmm2
+    jmp       __MOLD_VariantStoreAtKey_variant
+
+;###############################################################################
+;
+; Store single item in the box using string key.
+; x{key} = ...
+;
+; rcx = box            (Variant_t) (IN)
+; rdx = key            (Variant_t) (IN)
+; r8  = value to store (bool32)    (IN)
+;
+;###############################################################################
+
+__MOLD_VariantStoreAtKey_bool32:
+
+    mov       eax, r8d
+    lea       r8, [__TempBoolean]
+    mov       [r8 + Variant_t.value], rax
+    jmp       __MOLD_VariantStoreAtKey_variant
+
+;###############################################################################
+;
+; Store single item in the box using string key.
+; x{key} = ...
+;
+; rcx = box            (Variant_t) (IN)
+; rdx = key            (Variant_t) (IN)
+; r8  = value to store (int32)     (IN)
+;
+;###############################################################################
+
+__MOLD_VariantStoreAtKey_int32:
+
+    movsxd    rax, r8d
+    lea       r8, [__TempInteger]
+    mov       [r8 + Variant_t.value], rax
+
+;###############################################################################
+;
+; Store single item in the box using string key.
+; x{key} = ...
+;
 ; rcx = box            (Variant_t) (IN)
 ; rdx = key            (Variant_t) (IN)
 ; r8  = value to store (Variant_t) (IN)

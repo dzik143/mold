@@ -155,3 +155,11 @@ DefVariantCompare __MOLD_VariantCompareLE, setle, cmplesd
 
 ;DefVariantCompare __MOLD_VariantCompareGT, setg,  cmpnlesd
 ;DefVariantCompare __MOLD_VariantCompareGE, setge, cmpnltsd
+
+__MOLD_VariantCompareGT:
+    xchg     rcx, rdx
+    jmp      __MOLD_VariantCompareLT
+
+__MOLD_VariantCompareGE:
+    xchg     rcx, rdx
+    jmp      __MOLD_VariantCompareLE

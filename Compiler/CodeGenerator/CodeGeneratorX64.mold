@@ -625,8 +625,11 @@ class CodeGeneratorX64
       endif
 
     elif id is integer
-      # TODO: Handle int64 immediate.
-      rv = 'int32'
+      if (id < -2147483648) or (id > 2147483647)
+        rv = 'int64'
+      else
+        rv = 'int32'
+      endif
 
     elif id is float
       rv = 'float64'
@@ -1164,7 +1167,7 @@ class CodeGeneratorX64
       elif itemCnt is 2
 
         # ----------------------------------------------------------------------
-        #                             opcode x
+        #                              opcode x
         # ----------------------------------------------------------------------
 
         if opcode is 'comment'
@@ -1538,12 +1541,13 @@ class CodeGeneratorX64
       elif itemCnt is 3
 
         # ----------------------------------------------------------------------
-        #                            opcode x, y
+        #                          dst = opcode(x)
         # ----------------------------------------------------------------------
 
+        dstType = this._getSymbolType(currentSymbols, dst)
+
         if ((opcode is 'move_variant') or
-            (opcode is 'move_string') or
-            (opcode is 'conv_string_to_variant'))
+            (opcode is 'move_string'))
 
         this.variantDestroy(dst)
         this.variantMove(dst, x)
@@ -1552,64 +1556,19 @@ class CodeGeneratorX64
           this.pushOneParameterBeforeCall(x, 0)
           this.storeResult(dst)
 
-        elif originalOpcode is 'conv_int32_to_variant'
-          this.pushOneParameterBeforeCall(dst, 0)
-          print '  mov [rcx + Variant_t.type], VARIANT_INTEGER'
-
-          if x is integer
-            print '  mov qword [rcx + Variant_t.value],', x
-          else
-            this.pushOneParameterBeforeCall(x, 1)
-            print '  movsxd rax, edx'
-            print '  mov [rcx + Variant_t.value], rax'
-          endif
-
-        elif originalOpcode is 'conv_int64_to_variant'
-          this.pushOneParameterBeforeCall(dst, 0)
-          this.pushOneParameterBeforeCall(x, 1)
-          print '  mov [rcx + Variant_t.type], VARIANT_INTEGER'
-          print '  mov [rcx + Variant_t.value], rdx'
-
-        elif originalOpcode is 'conv_float64_to_variant'
-          this.pushOneParameterBeforeCall(dst, 0)
-          this.pushOneParameterBeforeCall(x, 1)
-          print '  mov [rcx + Variant_t.type], VARIANT_DOUBLE'
-          print '  movq [rcx + Variant_t.value], xmm1'
-
-        elif originalOpcode is 'conv_bool32_to_variant'
-          this.pushOneParameterBeforeCall(dst, 0)
-          this.pushOneParameterBeforeCall(x, 1)
-          print '  mov [rcx + Variant_t.type], VARIANT_BOOLEAN'
-          print '  mov [rcx + Variant_t.value], rdx'
-
-
-        elif originalOpcode is 'conv_variant_to_bool32'
+        elif originalOpcode is 'variant_cast'
+          # Cast variant to primitive.
+          # dst = x.value
           this.pushOneParameterBeforeCall(x, 0)
-          print '  cmp [rcx + Variant_t.type], VARIANT_BOOLEAN'
-          print '  jnz __MOLD_PrintErrorAndDie.booleanExpected'
-          print '  mov ecx, dword [rcx + Variant_t.value]'
+          this.call('__MOLD_VariantCastTo_' ~ dstType)
           this.storeResult(dst)
 
-        elif originalOpcode is 'conv_variant_to_int32'
+        elif originalOpcode is 'variant_create'
+          # Create variant from primitive.
+          # dst.value = x
           this.pushOneParameterBeforeCall(x, 0)
-          print '  cmp [rcx + Variant_t.type], VARIANT_INTEGER'
-          print '  jnz __MOLD_PrintErrorAndDie.integerExpected'
-          print '  mov rcx, qword [rcx + Variant_t.value]'
-          this.storeResult(dst)
-
-        elif originalOpcode is 'conv_variant_to_int64'
-          this.pushOneParameterBeforeCall(x, 0)
-          print '  cmp [rcx + Variant_t.type], VARIANT_INTEGER'
-          print '  jnz __MOLD_PrintErrorAndDie.integerExpected'
-          print '  mov rcx, qword [rcx + Variant_t.value]'
-          this.storeResult(dst)
-
-        elif originalOpcode is 'conv_variant_to_float64'
-          this.pushOneParameterBeforeCall(x, 0)
-          print '  cmp [rcx + Variant_t.type], VARIANT_DOUBLE'
-          print '  jnz __MOLD_PrintErrorAndDie.floatExpected'
-          print '  movq xmm0, qword [rcx + Variant_t.value]'
-          this.storeResult(dst)
+          this.pushOneParameterBeforeCall(dst, 1)
+          this.call('__MOLD_VariantCreateFrom_' ~ xType)
 
         elif opcode is 'neg_int32'
           this.pushOneParameterBeforeCall(x, 0)
@@ -1665,7 +1624,7 @@ class CodeGeneratorX64
       elif itemCnt is 4
 
         # ----------------------------------------------------------------------
-        #                           opcode x, y, z
+        #                          dst = opcode(x, y)
         # ----------------------------------------------------------------------
 
         if opcode is 'cmp_eq_int32'
