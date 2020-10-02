@@ -748,16 +748,330 @@ class CodeGeneratorX64
         endif
       endif
 
-      isOpcodeHandled = false
+      #if ((opcode isnt 'comment') and
+      #    (opcode isnt 'proc') and
+      #    (opcode isnt 'init_frame'))
+      #  print '  ; [x64]', opcode, dst, x, y
+      #endif
 
-      if itemCnt is 1
+      isOpcodeHandled = true
+
+      # ----------------------------------------------------------------------
+      #                   Opcodes with custom handlers
+      # ----------------------------------------------------------------------
+
+      # Dispatch opcode.
+      if originalOpcode is 'create_array'
+        this.variantDestroy(dst)
+        if x is defined
+          this.call2('__MOLD_VariantArrayCreateFromInitList', dst, x)
+        else
+          this.call1('__MOLD_VariantArrayCreate', dst)
+        endif
+
+      elif originalOpcode is 'create_map'
+        this.variantDestroy(dst)
+        if x is defined
+          this.call3('__MOLD_VariantMapCreateFromInitList', dst, x, y)
+        else
+          this.call1('__MOLD_VariantMapCreate', dst)
+        endif
+
+      #
+      # int64 arithmetic
+      #
+/*
+      elif opcode is 'neg_int64'
+        this.pushOneParameterBeforeCall(x, 0)
+        print '  neg rcx'
+        this.storeResult(dst)
+
+      elif opcode is 'add_int64'
+        this._alu2_int64(dst, x, y, 'add')
+
+      elif opcode is 'sub_int64'
+        this._alu2_int64(dst, x, y, 'sub')
+
+      elif opcode is 'mul_int64'
+        this._alu2_int64(dst, x, y, 'imul')
+
+      elif opcode is 'div_int64'
+        this.pushOneParameterBeforeCall(x, 0)
+        this.pushOneParameterBeforeCall(y, 1)
+        print '  cvtsi2sd  xmm0, rcx'    # ; xmm0 = double(x)
+        print '  cvtsi2sd  xmm1, rdx'    # ; xmm1 = double(y)
+        print '  divsd     xmm0, xmm1'   # ; xmm0 = x / y
+        print '  movq [', dst, '], xmm0' # ; dst  = x / y
+
+      elif opcode is 'idiv_int64'
+        this.pushOneParameterBeforeCall(x, 0)
+        this.pushOneParameterBeforeCall(y, 1)
+        print '  mov  rax, rcx'             # ; rax     = x
+        print '  mov  rcx, rdx'             # ; rcx     = y
+        print '  cqo'                       # ; rdx:rax = x
+        print '  idiv r8'                   # ; rax     = x // y
+        print '  mov  qword [', dst,'], rax'# ; dst     = x // y
+
+      elif opcode is 'cmp_eq_int64'
+        this._cmp_cc_int64(dst, x, y, 'z')
+
+      elif opcode is 'cmp_ne_int64'
+        this._cmp_cc_int64(dst, x, y, 'nz')
+
+      elif opcode is 'cmp_lt_int64'
+        this._cmp_cc_int64(dst, x, y, 'l')
+
+      elif opcode is 'cmp_le_int64'
+        this._cmp_cc_int64(dst, x, y, 'le')
+
+      elif opcode is 'cmp_gt_int64'
+        this._cmp_cc_int64(dst, x, y, 'g')
+
+      elif opcode is 'cmp_ge_int64'
+        this._cmp_cc_int64(dst, x, y, 'ge')
+*/
+      #
+      # int32 arithmetic
+      #
+
+
+      elif opcode is 'cmp_is_typeof_float64'
+        this.store32(dst, y is VARIANT_DOUBLE)
+
+      elif opcode is 'cmp_is_not_typeof_float64'
+        this.store32(dst, y isnt VARIANT_DOUBLE)
+
+      elif opcode is 'jmp_if_typeof_float64'
+        if y is VARIANT_DOUBLE
+          print '  jmp', dst
+        endif
+
+      elif opcode is 'jmp_if_not_typeof_float64'
+        if y isnt VARIANT_DOUBLE
+          print '  jmp', dst
+        endif
+
+      #
+      # Variant arithmetic.
+      #
+
+      elif opcode is 'cmp_is_typeof_variant'
+        this.pushOneParameterBeforeCall(x, 0)
+        print '  cmp [rcx + Variant_t.type],', y
+        print '  setz cl'
+        print '  and ecx, 1'
+        this.storeResult(dst)
+
+      elif opcode is 'cmp_is_not_typeof_variant'
+        this.pushOneParameterBeforeCall(x, 0)
+        print '  cmp [rcx + Variant_t.type],', y
+        print '  setnz cl'
+        print '  and ecx, 1'
+        this.storeResult(dst)
+
+      #
+      # build-in string operations
+      #
+
+      elif originalOpcode is 'string_join'
+        this.call3AndDestroy('__MOLD_VariantStringJoin', x, y, dst)
+
+      elif opcode is 'cmp_is_typeof_string'
+        this.store32(dst, y is VARIANT_STRING)
+
+      elif opcode is 'jmp_if_typeof_string'
+        if y is VARIANT_STRING
+          print '  jmp', dst
+        endif
+
+      elif opcode is 'jmp_if_not_typeof_string'
+        if y isnt VARIANT_STRING
+          print '  jmp', dst
+        endif
+
+      #
+      # jmp_if_xx_variant
+      #
+
+
+      elif opcode is 'jmp_if_typeof_variant'
+        this.pushOneParameterBeforeCall(x, 0)
+        print '  cmp [rcx + Variant_t.type],', y
+        print '  jz', dst
+
+      elif opcode is 'jmp_if_not_typeof_variant'
+        this.pushOneParameterBeforeCall(x, 0)
+        print '  cmp [rcx + Variant_t.type],', y
+        print '  jnz', dst
+
+      #
+      # jmp_if_xx_int64
+      #
+
+      #
+      # jmp_if_xx_int32
+      #
+
+
+      elif opcode is 'jmp_if_typeof_int32'
+        if y is VARIANT_INTEGER
+          print '  jmp', dst
+        endif
+
+      elif opcode is 'jmp_if_not_typeof_int32'
+        if y isnt VARIANT_INTEGER
+          print '  jmp', dst
+        endif
+
+      #
+      # jmp_if_true_bool32
+      # jmp_if_false_bool32
+      #
+
+
+      #
+      # jmp_if_xx_float64
+      #
+
+
+      elif opcode is 'syscall'
+        rv        = item[1]
+        sysCallId = item[2]
+        params    = item[3]
+
+        print '  ; __mold_syscall(', sysCallId, ')'
+
+        # Push call parameters.
+        this.pushParametersBeforeCall(params)
+
+        # Push pointer to return value if any.
+        if rv is defined
+          # TODO: Standarize return value passing.
+          # Add pointer to the return-value buffer as the last param.
+          this.pushOneParameterBeforeCall(rv, len(params))
+        endif
+
+        # Generate syscall opcode.
+        this._syscall(sysCallId)
+
+      elif opcode is 'call'
+        rv        = item[1]
+        name      = item[2]
+        params    = item[3]
+        paramsCnt = len(params)
+
+        if ((name is '__MOLD_ForDriver_Generic') or
+            (name is '__MOLD_ForDriver_IndexesAndValuesInArray') or
+            (name is '__MOLD_ForDriver_IndexesAndValuesInArrayOrString'))
+
+          # TODO: Clean up this mess.
+          this.pushOneParameterBeforeCall(params[0], 0)
+          this.lea('rdx', params[1])
+          this.lea('r8', params[2])
+          this.lea('r9', params[3])
+          this.call(name)
+
+        else
+          # Generic call.
+          this.pushParametersBeforeCall(params)
+
+          if rv is defined
+            this.lea('rax', rv)
+          endif
+
+          this.call(name)
+
+          if paramsCnt > 4
+            print '  add rsp,', paramsCnt * 8 - 32
+          endif
+        endif
+
+      elif opcode is 'vcall'
+        rv        = item[1]
+        methodId  = item[2]
+        params    = item[3]
+        paramsCnt = len(params)
+
+        this.pushParametersBeforeCall(params)
+
+        if rv is defined
+          this.lea('rax', rv)
+        endif
+
+        signOkLabel = codeObj.symbolTable.createLabel()
+
+        print '  mov  r10d,', methodId
+        print '  call __MOLD_VCall'
+
+        # TODO: Better way to handle 32-bit int result?
+        print ''
+        print '  ; 32-bit int sign extend after vcall if needed.'
+        print '  jns', signOkLabel
+        print '  movsxd rax, dword [', rv, '+ Variant_t.value ]'
+        print '  mov    qword [', rv, '+ Variant_t.value ], rax'
+        print signOkLabel ~ ':'
+        print ''
+
+        if paramsCnt > 4
+          print '  add rsp,', paramsCnt * 8 - 32
+        endif
+
+      elif opcode is 'create_object'
+        this.variantDestroy(dst)
+        print '  lea  rcx, [', dst, ']'
+        print '  lea  rdx, [vtable_' ~ str(x) ~ ']'
+        print '  call __MOLD_VariantObjectCreate'
+
+      elif opcode is 'jmp_if_variant_ge_int64'
+        this.pushOneParameterBeforeCall(x, 0)
+        this.pushOneParameterBeforeCall(y, 1)
+        print '  cmp  [rcx + Variant_t.value], rdx'
+        print '  jge ', dst
+
+      elif originalOpcode is 'store_index'
+        # dst[x] := y
+        this.pushOneParameterBeforeCall(dst, 0)
+        this.pushOneParameterBeforeCall(x, 1)
+        this.pushOneParameterBeforeCall(y, 2)
+
+        yType = this._getSymbolType(currentSymbols, y)
+        print '  call __MOLD_VariantStoreAtIndex_' ~ yType
+
+      elif originalOpcode is 'load_index'
+        # dst := x[y]
+        this.pushOneParameterBeforeCall(x, 0)
+        this.pushOneParameterBeforeCall(y, 1)
+        this.pushOneParameterBeforeCall(dst, 2)
+        this.call('__MOLD_VariantLoadFromIndex')
+
+      elif originalOpcode is 'store_key'
+        # dst{x} := y
+        this.pushOneParameterBeforeCall(dst, 0)
+        this.pushOneParameterBeforeCall(x, 1)
+        this.pushOneParameterBeforeCall(y, 2)
+
+        yType = this._getSymbolType(currentSymbols, y)
+        print '  call __MOLD_VariantStoreAtKey_' ~ yType
+
+      elif originalOpcode is 'load_key'
+        # dst := x{y}
+        this.pushOneParameterBeforeCall(x, 0)
+        this.pushOneParameterBeforeCall(y, 1)
+        this.pushOneParameterBeforeCall(dst, 2)
+
+        dstType = this._getSymbolType(currentSymbols, dst)
+        print '  call __MOLD_VariantLoadFromKey_' ~ dstType
+
+      elif itemCnt is 1
+
         # ----------------------------------------------------------------------
         #                  opcode only without any operands
         # ----------------------------------------------------------------------
 
-        isOpcodeHandled = true
+        if opcode is 'nop'
+          print '  nop'
 
-        if opcode is 'ret'
+        elif opcode is 'ret'
           print ''
           print '  ; clean frame'
           print '  ; -----------'
@@ -852,8 +1166,6 @@ class CodeGeneratorX64
         # ----------------------------------------------------------------------
         #                             opcode x
         # ----------------------------------------------------------------------
-
-        isOpcodeHandled = true
 
         if opcode is 'comment'
           print ';', dst
@@ -1229,8 +1541,6 @@ class CodeGeneratorX64
         #                            opcode x, y
         # ----------------------------------------------------------------------
 
-        isOpcodeHandled = true
-
         if ((opcode is 'move_variant') or
             (opcode is 'move_string') or
             (opcode is 'conv_string_to_variant'))
@@ -1357,8 +1667,6 @@ class CodeGeneratorX64
         # ----------------------------------------------------------------------
         #                           opcode x, y, z
         # ----------------------------------------------------------------------
-
-        isOpcodeHandled = true
 
         if opcode is 'cmp_eq_int32'
           this._cmp_cc_int32(dst, x, y, 'z')
@@ -1584,321 +1892,7 @@ class CodeGeneratorX64
         endif
       endif
 
-      #if ((opcode isnt 'comment') and
-      #    (opcode isnt 'proc') and
-      #    (opcode isnt 'init_frame'))
-      #  print '  ; [x64]', opcode, dst, x, y
-      #endif
-
-      # Dispatch opcode.
-      if isOpcodeHandled is true
-        # Do nothing.
-
-      elif opcode is 'nop'
-        print '  nop'
-
-      elif originalOpcode is 'create_array'
-        this.variantDestroy(dst)
-        if x is defined
-          this.call2('__MOLD_VariantArrayCreateFromInitList', dst, x)
-        else
-          this.call1('__MOLD_VariantArrayCreate', dst)
-        endif
-
-      elif originalOpcode is 'create_map'
-        this.variantDestroy(dst)
-        if x is defined
-          this.call3('__MOLD_VariantMapCreateFromInitList', dst, x, y)
-        else
-          this.call1('__MOLD_VariantMapCreate', dst)
-        endif
-
-      #
-      # int64 arithmetic
-      #
-/*
-      elif opcode is 'neg_int64'
-        this.pushOneParameterBeforeCall(x, 0)
-        print '  neg rcx'
-        this.storeResult(dst)
-
-      elif opcode is 'add_int64'
-        this._alu2_int64(dst, x, y, 'add')
-
-      elif opcode is 'sub_int64'
-        this._alu2_int64(dst, x, y, 'sub')
-
-      elif opcode is 'mul_int64'
-        this._alu2_int64(dst, x, y, 'imul')
-
-      elif opcode is 'div_int64'
-        this.pushOneParameterBeforeCall(x, 0)
-        this.pushOneParameterBeforeCall(y, 1)
-        print '  cvtsi2sd  xmm0, rcx'    # ; xmm0 = double(x)
-        print '  cvtsi2sd  xmm1, rdx'    # ; xmm1 = double(y)
-        print '  divsd     xmm0, xmm1'   # ; xmm0 = x / y
-        print '  movq [', dst, '], xmm0' # ; dst  = x / y
-
-      elif opcode is 'idiv_int64'
-        this.pushOneParameterBeforeCall(x, 0)
-        this.pushOneParameterBeforeCall(y, 1)
-        print '  mov  rax, rcx'             # ; rax     = x
-        print '  mov  rcx, rdx'             # ; rcx     = y
-        print '  cqo'                       # ; rdx:rax = x
-        print '  idiv r8'                   # ; rax     = x // y
-        print '  mov  qword [', dst,'], rax'# ; dst     = x // y
-
-      elif opcode is 'cmp_eq_int64'
-        this._cmp_cc_int64(dst, x, y, 'z')
-
-      elif opcode is 'cmp_ne_int64'
-        this._cmp_cc_int64(dst, x, y, 'nz')
-
-      elif opcode is 'cmp_lt_int64'
-        this._cmp_cc_int64(dst, x, y, 'l')
-
-      elif opcode is 'cmp_le_int64'
-        this._cmp_cc_int64(dst, x, y, 'le')
-
-      elif opcode is 'cmp_gt_int64'
-        this._cmp_cc_int64(dst, x, y, 'g')
-
-      elif opcode is 'cmp_ge_int64'
-        this._cmp_cc_int64(dst, x, y, 'ge')
-*/
-      #
-      # int32 arithmetic
-      #
-
-
-      elif opcode is 'cmp_is_typeof_float64'
-        this.store32(dst, y is VARIANT_DOUBLE)
-
-      elif opcode is 'cmp_is_not_typeof_float64'
-        this.store32(dst, y isnt VARIANT_DOUBLE)
-
-      elif opcode is 'jmp_if_typeof_float64'
-        if y is VARIANT_DOUBLE
-          print '  jmp', dst
-        endif
-
-      elif opcode is 'jmp_if_not_typeof_float64'
-        if y isnt VARIANT_DOUBLE
-          print '  jmp', dst
-        endif
-
-      #
-      # Variant arithmetic.
-      #
-
-      elif opcode is 'cmp_is_typeof_variant'
-        this.pushOneParameterBeforeCall(x, 0)
-        print '  cmp [rcx + Variant_t.type],', y
-        print '  setz cl'
-        print '  and ecx, 1'
-        this.storeResult(dst)
-
-      elif opcode is 'cmp_is_not_typeof_variant'
-        this.pushOneParameterBeforeCall(x, 0)
-        print '  cmp [rcx + Variant_t.type],', y
-        print '  setnz cl'
-        print '  and ecx, 1'
-        this.storeResult(dst)
-
-      #
-      # build-in string operations
-      #
-
-      elif originalOpcode is 'string_join'
-        this.call3AndDestroy('__MOLD_VariantStringJoin', x, y, dst)
-
-      elif opcode is 'cmp_is_typeof_string'
-        this.store32(dst, y is VARIANT_STRING)
-
-      elif opcode is 'jmp_if_typeof_string'
-        if y is VARIANT_STRING
-          print '  jmp', dst
-        endif
-
-      elif opcode is 'jmp_if_not_typeof_string'
-        if y isnt VARIANT_STRING
-          print '  jmp', dst
-        endif
-
-      #
-      # jmp_if_xx_variant
-      #
-
-
-      elif opcode is 'jmp_if_typeof_variant'
-        this.pushOneParameterBeforeCall(x, 0)
-        print '  cmp [rcx + Variant_t.type],', y
-        print '  jz', dst
-
-      elif opcode is 'jmp_if_not_typeof_variant'
-        this.pushOneParameterBeforeCall(x, 0)
-        print '  cmp [rcx + Variant_t.type],', y
-        print '  jnz', dst
-
-      #
-      # jmp_if_xx_int64
-      #
-
-      #
-      # jmp_if_xx_int32
-      #
-
-
-      elif opcode is 'jmp_if_typeof_int32'
-        if y is VARIANT_INTEGER
-          print '  jmp', dst
-        endif
-
-      elif opcode is 'jmp_if_not_typeof_int32'
-        if y isnt VARIANT_INTEGER
-          print '  jmp', dst
-        endif
-
-      #
-      # jmp_if_true_bool32
-      # jmp_if_false_bool32
-      #
-
-
-      #
-      # jmp_if_xx_float64
-      #
-
-
-      elif opcode is 'syscall'
-        rv        = item[1]
-        sysCallId = item[2]
-        params    = item[3]
-
-        print '  ; __mold_syscall(', sysCallId, ')'
-
-        # Push call parameters.
-        this.pushParametersBeforeCall(params)
-
-        # Push pointer to return value if any.
-        if rv is defined
-          # TODO: Standarize return value passing.
-          # Add pointer to the return-value buffer as the last param.
-          this.pushOneParameterBeforeCall(rv, len(params))
-        endif
-
-        # Generate syscall opcode.
-        this._syscall(sysCallId)
-
-      elif opcode is 'call'
-        rv        = item[1]
-        name      = item[2]
-        params    = item[3]
-        paramsCnt = len(params)
-
-        if ((name is '__MOLD_ForDriver_Generic') or
-            (name is '__MOLD_ForDriver_IndexesAndValuesInArray') or
-            (name is '__MOLD_ForDriver_IndexesAndValuesInArrayOrString'))
-
-          # TODO: Clean up this mess.
-          this.pushOneParameterBeforeCall(params[0], 0)
-          this.lea('rdx', params[1])
-          this.lea('r8', params[2])
-          this.lea('r9', params[3])
-          this.call(name)
-
-        else
-          # Generic call.
-          this.pushParametersBeforeCall(params)
-
-          if rv is defined
-            this.lea('rax', rv)
-          endif
-
-          this.call(name)
-
-          if paramsCnt > 4
-            print '  add rsp,', paramsCnt * 8 - 32
-          endif
-        endif
-
-      elif opcode is 'vcall'
-        rv        = item[1]
-        methodId  = item[2]
-        params    = item[3]
-        paramsCnt = len(params)
-
-        this.pushParametersBeforeCall(params)
-
-        if rv is defined
-          this.lea('rax', rv)
-        endif
-
-        signOkLabel = codeObj.symbolTable.createLabel()
-
-        print '  mov  r10d,', methodId
-        print '  call __MOLD_VCall'
-
-        # TODO: Better way to handle 32-bit int result?
-        print ''
-        print '  ; 32-bit int sign extend after vcall if needed.'
-        print '  jns', signOkLabel
-        print '  movsxd rax, dword [', rv, '+ Variant_t.value ]'
-        print '  mov    qword [', rv, '+ Variant_t.value ], rax'
-        print signOkLabel ~ ':'
-        print ''
-
-        if paramsCnt > 4
-          print '  add rsp,', paramsCnt * 8 - 32
-        endif
-
-      elif opcode is 'create_object'
-        this.variantDestroy(dst)
-        print '  lea  rcx, [', dst, ']'
-        print '  lea  rdx, [vtable_' ~ str(x) ~ ']'
-        print '  call __MOLD_VariantObjectCreate'
-
-      elif opcode is 'jmp_if_variant_ge_int64'
-        this.pushOneParameterBeforeCall(x, 0)
-        this.pushOneParameterBeforeCall(y, 1)
-        print '  cmp  [rcx + Variant_t.value], rdx'
-        print '  jge ', dst
-
-      elif originalOpcode is 'store_index'
-        # dst[x] := y
-        this.pushOneParameterBeforeCall(dst, 0)
-        this.pushOneParameterBeforeCall(x, 1)
-        this.pushOneParameterBeforeCall(y, 2)
-
-        yType = this._getSymbolType(currentSymbols, y)
-        print '  call __MOLD_VariantStoreAtIndex_' ~ yType
-
-      elif originalOpcode is 'load_index'
-        # dst := x[y]
-        this.pushOneParameterBeforeCall(x, 0)
-        this.pushOneParameterBeforeCall(y, 1)
-        this.pushOneParameterBeforeCall(dst, 2)
-        this.call('__MOLD_VariantLoadFromIndex')
-
-      elif originalOpcode is 'store_key'
-        # dst{x} := y
-        this.pushOneParameterBeforeCall(dst, 0)
-        this.pushOneParameterBeforeCall(x, 1)
-        this.pushOneParameterBeforeCall(y, 2)
-
-        yType = this._getSymbolType(currentSymbols, y)
-        print '  call __MOLD_VariantStoreAtKey_' ~ yType
-
-      elif originalOpcode is 'load_key'
-        # dst := x{y}
-        this.pushOneParameterBeforeCall(x, 0)
-        this.pushOneParameterBeforeCall(y, 1)
-        this.pushOneParameterBeforeCall(dst, 2)
-
-        dstType = this._getSymbolType(currentSymbols, dst)
-        print '  call __MOLD_VariantLoadFromKey_' ~ dstType
-
-      else
+      if isOpcodeHandled is false
         die('error: unhandled opcode "' ~ str(opcode) ~ '"')
       endif
 
