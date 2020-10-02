@@ -780,6 +780,31 @@ class CodeGeneratorX64
           this.call1('__MOLD_VariantMapCreate', dst)
         endif
 
+      elif ((opcode is 'move_variant') or
+            (opcode is 'move_string'))
+
+        this.variantDestroy(dst)
+        this.variantMove(dst, x)
+
+      elif originalOpcode is 'move'
+        this.pushOneParameterBeforeCall(x, 0)
+        this.storeResult(dst)
+      #
+      # indirect jumps
+      #
+
+      elif opcode is 'jmp_by_table_int32'
+        symbolInfo = codeObj.symbolTable.lookup(dst)
+
+        print '  mov eax, dword [', x, ']'
+        print '  sub eax,', symbolInfo.valueMin
+        print '  cmp eax,', symbolInfo.valueMax - symbolInfo.valueMin
+        print '  ja', symbolInfo.defaultLabel
+
+        print '  movsx rax, word [', dst, '+ rax * 2]'
+        print '  lea rax, [', symbolInfo.defaultLabel, '+ rax]'
+        print '  jmp rax'
+
       #
       # int64 arithmetic
       #
@@ -1544,77 +1569,49 @@ class CodeGeneratorX64
         #                          dst = opcode(x)
         # ----------------------------------------------------------------------
 
-        dstType = this._getSymbolType(currentSymbols, dst)
+        this.pushOneParameterBeforeCall(x, 0)
 
-        if ((opcode is 'move_variant') or
-            (opcode is 'move_string'))
-
-        this.variantDestroy(dst)
-        this.variantMove(dst, x)
-
-        elif originalOpcode is 'move'
-          this.pushOneParameterBeforeCall(x, 0)
-          this.storeResult(dst)
-
-        elif originalOpcode is 'variant_cast'
+        if originalOpcode is 'variant_cast'
           # Cast variant to primitive.
           # dst = x.value
-          this.pushOneParameterBeforeCall(x, 0)
+          dstType = this._getSymbolType(currentSymbols, dst)
           this.call('__MOLD_VariantCastTo_' ~ dstType)
           this.storeResult(dst)
 
         elif originalOpcode is 'variant_create'
           # Create variant from primitive.
           # dst.value = x
-          this.pushOneParameterBeforeCall(x, 0)
           this.pushOneParameterBeforeCall(dst, 1)
           this.call('__MOLD_VariantCreateFrom_' ~ xType)
 
         elif opcode is 'neg_int32'
-          this.pushOneParameterBeforeCall(x, 0)
           print '  neg ecx'
           this.storeResult(dst)
 
         elif opcode is 'neg_float64'
           # TODO: Optimize it.
-          this.pushOneParameterBeforeCall(x, 0)
           print '  pxor xmm0, xword [__MOLD_VariantNeg.signBit]'
           this.storeResult(dst)
 
         elif opcode is 'jmp_if_true_bool32'
-          this._jmp_if_cc_int32(dst, x, 0, 'nz')
+          print '  test ecx, ecx'
+          print '  jnz', dst
 
         elif opcode is 'jmp_if_false_bool32'
-          this._jmp_if_cc_int32(dst, x, 0, 'z')
+          print '  test ecx, ecx'
+          print '  jz', dst
 
         elif opcode is 'jmp_if_true_variant'
-          this.pushOneParameterBeforeCall(x, 0)
           print '  test byte [rcx + Variant_t.value], 0'
           print '  jnz', dst
 
         elif opcode is 'jmp_if_false_variant'
-          this.pushOneParameterBeforeCall(x, 0)
           print '  test byte [rcx + Variant_t.value], 0'
           print '  jz', dst
 
         elif opcode is 'neg_variant'
-          this.call2('__MOLD_VariantNeg', x, dst)
-
-        #
-        # indirect jumps
-        #
-
-        elif opcode is 'jmp_by_table_int32'
-          symbolInfo = codeObj.symbolTable.lookup(dst)
-
-          print '  mov eax, dword [', x, ']'
-          print '  sub eax,', symbolInfo.valueMin
-          print '  cmp eax,', symbolInfo.valueMax - symbolInfo.valueMin
-          print '  ja', symbolInfo.defaultLabel
-
-          print '  movsx rax, word [', dst, '+ rax * 2]'
-          print '  lea rax, [', symbolInfo.defaultLabel, '+ rax]'
-          print '  jmp rax'
+          this.pushOneParameterBeforeCall(dst, 1)
+          this.call('__MOLD_VariantNeg')
 
         else
           isOpcodeHandled = false
@@ -1830,7 +1827,7 @@ class CodeGeneratorX64
           print '  cvttsd2si rcx, xmm0'              # rcx  = int(x / y)
           this.storeResult(dst)
 
-        elif (opcode is 'add_variant') or (opcode is 'add_string')
+        elif opcode is 'add_variant'
           this.call3('__MOLD_VariantAdd', x, y, dst)
 
         elif opcode is 'sub_variant'
