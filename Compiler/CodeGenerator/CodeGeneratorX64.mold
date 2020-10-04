@@ -541,70 +541,52 @@ class CodeGeneratorX64
     this.storeResult(dst)
   endmethod
 
-  method _cmp_cc_int32(dst, x, y, cc)
-    this.pushOneParameterBeforeCall(x, 0)
-    this.pushOneParameterBeforeCall(y, 1)
+  method _cmp_cc_int32(dst, cc)
     print '  cmp ecx, edx'
     print '  set' ~ cc, 'cl'
     print '  and ecx, 1'
     this.storeResult(dst)
   endmethod
 
-  method _cmp_cc_float64(dst, x, y, cc)
-    this.pushOneParameterBeforeCall(x, 0)
-    this.pushOneParameterBeforeCall(y, 1)
+  method _cmp_cc_float64(dst, cc)
     print '  comisd xmm0, xmm1'
     print '  set' ~ cc, 'cl'
     print '  and ecx, 1'
     this.storeResult(dst)
   endmethod
 
-  method _jmp_if_cc_int64(dst, x, y, cc)
-    this.pushOneParameterBeforeCall(x, 0)
-    this.pushOneParameterBeforeCall(y, 1)
+  method _jmp_if_cc_int64(dst, cc)
     print '  cmp rcx, rdx'
     print '  j' ~ cc, dst
   endmethod
 
-  method _jmp_if_cc_int32(dst, x, y, cc)
-    this.pushOneParameterBeforeCall(x, 0)
-    this.pushOneParameterBeforeCall(y, 1)
+  method _jmp_if_cc_int32(dst, cc)
     print '  cmp ecx, edx'
     print '  j' ~ cc, dst
   endmethod
 
-  method _jmp_if_cc_variant(dst, x, y, cc)
-    this.pushOneParameterBeforeCall(x, 0)
-    this.pushOneParameterBeforeCall(y, 1)
+  method _jmp_if_cc_variant(dst, cc)
     print '  call __MOLD_VariantCompare' ~ cc
     print '  test al, al'
     print '  jnz', dst
   endmethod
 
-  method _jmp_if_cc_float64(dst, x, y, cc)
-    this.pushOneParameterBeforeCall(x, 0)
-    this.pushOneParameterBeforeCall(y, 1)
+  method _jmp_if_cc_float64(dst, cc)
     print '  comisd xmm0, xmm1'
     print '  j' ~ cc, dst
   endmethod
 
-  method _alu2_float64(dst, x, y, opcode)
-    this.pushOneParameterBeforeCall(x, 0)
-    this.pushOneParameterBeforeCall(y, 1)
+  method _alu2_float64(dst, opcode)
     print ' ', opcode, 'xmm0, xmm1'
     this.storeResult(dst)
   endmethod
 
-  method _alu2_int32(dst, x, y, opcode)
-    this.pushOneParameterBeforeCall(x, 0)
-    this.pushOneParameterBeforeCall(y, 1)
+  method _alu2_int32(dst,opcode)
     print ' ', opcode, 'ecx, edx'
     this.storeResult(dst)
   endmethod
 
-  method _alu2_int64(dst, x, y, opcode)
-    this.pushOneParameterBeforeCall(x, 0)
-    this.pushOneParameterBeforeCall(y, 1)
+  method _alu2_int64(dst, opcode)
     print ' ', opcode, 'rcx, rdx'
     this.storeResult(dst)
   endmethod
@@ -815,13 +797,13 @@ class CodeGeneratorX64
         this.storeResult(dst)
 
       elif opcode is 'add_int64'
-        this._alu2_int64(dst, x, y, 'add')
+        this._alu2_int64(dst, 'add')
 
       elif opcode is 'sub_int64'
-        this._alu2_int64(dst, x, y, 'sub')
+        this._alu2_int64(dst, 'sub')
 
       elif opcode is 'mul_int64'
-        this._alu2_int64(dst, x, y, 'imul')
+        this._alu2_int64(dst, 'imul')
 
       elif opcode is 'div_int64'
         this.pushOneParameterBeforeCall(x, 0)
@@ -1093,7 +1075,7 @@ class CodeGeneratorX64
       elif itemCnt is 1
 
         # ----------------------------------------------------------------------
-        #                  opcode only without any operands
+        #                  opcode only without any operand
         # ----------------------------------------------------------------------
 
         if opcode is 'nop'
@@ -1624,23 +1606,26 @@ class CodeGeneratorX64
         #                          dst = opcode(x, y)
         # ----------------------------------------------------------------------
 
+        this.pushOneParameterBeforeCall(x, 0)
+        this.pushOneParameterBeforeCall(y, 1)
+
         if opcode is 'cmp_eq_int32'
-          this._cmp_cc_int32(dst, x, y, 'z')
+          this._cmp_cc_int32(dst, 'z')
 
         elif opcode is 'cmp_ne_int32'
-          this._cmp_cc_int32(dst, x, y, 'nz')
+          this._cmp_cc_int32(dst, 'nz')
 
         elif opcode is 'cmp_lt_int32'
-          this._cmp_cc_int32(dst, x, y, 'l')
+          this._cmp_cc_int32(dst, 'l')
 
         elif opcode is 'cmp_le_int32'
-          this._cmp_cc_int32(dst, x, y, 'le')
+          this._cmp_cc_int32(dst, 'le')
 
         elif opcode is 'cmp_gt_int32'
-          this._cmp_cc_int32(dst, x, y, 'g')
+          this._cmp_cc_int32(dst, 'g')
 
         elif opcode is 'cmp_ge_int32'
-          this._cmp_cc_int32(dst, x, y, 'ge')
+          this._cmp_cc_int32(dst, 'ge')
 
         elif opcode is 'cmp_is_typeof_int32'
           this.store32(dst, y is VARIANT_INTEGER)
@@ -1649,159 +1634,159 @@ class CodeGeneratorX64
           this.store32(dst, y isnt VARIANT_INTEGER)
 
         elif opcode is 'cmp_eq_float64'
-          this._cmp_cc_float64(dst, x, y, 'z')
+          this._cmp_cc_float64(dst, 'z')
 
         elif opcode is 'cmp_ne_float64'
-          this._cmp_cc_float64(dst, x, y, 'nz')
+          this._cmp_cc_float64(dst, 'nz')
 
         elif opcode is 'cmp_lt_float64'
-          this._cmp_cc_float64(dst, x, y, 'b')
+          this._cmp_cc_float64(dst, 'b')
 
         elif opcode is 'cmp_le_float64'
-          this._cmp_cc_float64(dst, x, y, 'be')
+          this._cmp_cc_float64(dst, 'be')
 
         elif opcode is 'cmp_gt_float64'
-          this._cmp_cc_float64(dst, x, y, 'a')
+          this._cmp_cc_float64(dst, 'a')
 
         elif opcode is 'cmp_ge_float64'
-          this._cmp_cc_float64(dst, x, y, 'ae')
+          this._cmp_cc_float64(dst, 'ae')
 
         elif (opcode is 'cmp_eq_variant') or (opcode is 'cmp_eq_string')
-          this.call2('__MOLD_VariantCompareEQ', x, y)
+          this.call('__MOLD_VariantCompareEQ')
           this.store(dst, 'eax')
 
         elif (opcode is 'cmp_ne_variant') or (opcode is 'cmp_ne_string')
-          this.call2('__MOLD_VariantCompareNE', x, y)
+          this.call('__MOLD_VariantCompareNE')
           this.store(dst, 'eax')
 
         elif opcode is 'cmp_lt_variant'
-          this.call2('__MOLD_VariantCompareLT', x, y)
+          this.call('__MOLD_VariantCompareLT')
           this.store(dst, 'eax')
 
         elif opcode is 'cmp_le_variant'
-          this.call2('__MOLD_VariantCompareLE', x, y)
+          this.call('__MOLD_VariantCompareLE')
           this.store(dst, 'eax')
 
         elif opcode is 'cmp_gt_variant'
-          this.call2('__MOLD_VariantCompareLT', y, x)
+          # TODO: Swap operands and use LT.
+          this.call('__MOLD_VariantCompareGT')
           this.store(dst, 'eax')
 
         elif opcode is 'cmp_ge_variant'
-          this.call2('__MOLD_VariantCompareLE', y, x)
+          # TODO: Swap operands and use LE.
+          this.call('__MOLD_VariantCompareGE')
           this.store(dst, 'eax')
 
         elif opcode is 'cmp_eq_bool32'
           # TODO: Review it.
-          this._cmp_cc_int32(dst, x, y, 'z')
+          this._cmp_cc_int32(dst, 'z')
 
         elif opcode is 'cmp_ne_bool32'
           # TODO: Review it.
-          this._cmp_cc_int32(dst, x, y, 'nz')
+          this._cmp_cc_int32(dst, 'nz')
 
         elif (opcode is 'jmp_if_eq_variant') or (opcode is 'jmp_if_eq_string')
-          this._jmp_if_cc_variant(dst, x, y, 'EQ')
+          this._jmp_if_cc_variant(dst, 'EQ')
 
         elif (opcode is 'jmp_if_ne_variant') or (opcode is 'jmp_if_ne_string')
-          this._jmp_if_cc_variant(dst, x, y, 'NE')
+          this._jmp_if_cc_variant(dst, 'NE')
 
         elif opcode is 'jmp_if_lt_variant'
-          this._jmp_if_cc_variant(dst, x, y, 'LT')
+          this._jmp_if_cc_variant(dst, 'LT')
 
         elif opcode is 'jmp_if_le_variant'
-          this._jmp_if_cc_variant(dst, x, y, 'LE')
+          this._jmp_if_cc_variant(dst, 'LE')
 
         elif opcode is 'jmp_if_gt_variant'
-          this._jmp_if_cc_variant(dst, y, x, 'LT')
+          # TODO: Swap operands and change to LT.
+          this._jmp_if_cc_variant(dst, 'GT')
 
         elif opcode is 'jmp_if_ge_variant'
-          this._jmp_if_cc_variant(dst, y, x, 'LE')
+          # TODO: Swap operands and change to LE.
+          this._jmp_if_cc_variant(dst, 'GE')
 
         elif opcode is 'jmp_if_eq_int64'
-          this._jmp_if_cc_int64(dst, x, y, 'z')
+          this._jmp_if_cc_int64(dst, 'z')
 
         elif opcode is 'jmp_if_ne_int64'
-          this._jmp_if_cc_int64(dst, x, y, 'nz')
+          this._jmp_if_cc_int64(dst, 'nz')
 
         elif opcode is 'jmp_if_lt_int64'
-          this._jmp_if_cc_int64(dst, x, y, 'l')
+          this._jmp_if_cc_int64(dst, 'l')
 
         elif opcode is 'jmp_if_le_int64'
-          this._jmp_if_cc_int64(dst, x, y, 'le')
+          this._jmp_if_cc_int64(dst, 'le')
 
         elif opcode is 'jmp_if_gt_int64'
-          this._jmp_if_cc_int64(dst, x, y, 'g')
+          this._jmp_if_cc_int64(dst, 'g')
 
         elif opcode is 'jmp_if_ge_int64'
-          this._jmp_if_cc_int64(dst, x, y, 'ge')
+          this._jmp_if_cc_int64(dst, 'ge')
 
         elif opcode is 'jmp_if_eq_int32'
-          this._jmp_if_cc_int32(dst, x, y, 'z')
+          this._jmp_if_cc_int32(dst, 'z')
 
         elif opcode is 'jmp_if_ne_int32'
-          this._jmp_if_cc_int32(dst, x, y, 'nz')
+          this._jmp_if_cc_int32(dst, 'nz')
 
         elif opcode is 'jmp_if_lt_int32'
-          this._jmp_if_cc_int32(dst, x, y, 'l')
+          this._jmp_if_cc_int32(dst, 'l')
 
         elif opcode is 'jmp_if_le_int32'
-          this._jmp_if_cc_int32(dst, x, y, 'le')
+          this._jmp_if_cc_int32(dst, 'le')
 
         elif opcode is 'jmp_if_gt_int32'
-          this._jmp_if_cc_int32(dst, x, y, 'g')
+          this._jmp_if_cc_int32(dst, 'g')
 
         elif opcode is 'jmp_if_ge_int32'
-          this._jmp_if_cc_int32(dst, x, y, 'ge')
+          this._jmp_if_cc_int32(dst, 'ge')
 
         elif opcode is 'jmp_if_eq_bool32'
           # TODO: Review it.
-          this._jmp_if_cc_int32(dst, x, y, 'z')
+          this._jmp_if_cc_int32(dst, 'z')
 
         elif opcode is 'jmp_if_ne_bool32'
           # TODO: Review it.
-          this._jmp_if_cc_int32(dst, x, y, 'nz')
+          this._jmp_if_cc_int32(dst, 'nz')
 
         elif opcode is 'jmp_if_eq_float64'
-          this._jmp_if_cc_float64(dst, x, y, 'z')
+          this._jmp_if_cc_float64(dst, 'z')
 
         elif opcode is 'jmp_if_ne_float64'
-          this._jmp_if_cc_float64(dst, x, y, 'nz')
+          this._jmp_if_cc_float64(dst, 'nz')
 
         elif opcode is 'jmp_if_lt_float64'
-          this._jmp_if_cc_float64(dst, x, y, 'b')
+          this._jmp_if_cc_float64(dst, 'b')
 
         elif opcode is 'jmp_if_le_float64'
-          this._jmp_if_cc_float64(dst, x, y, 'be')
+          this._jmp_if_cc_float64(dst, 'be')
 
         elif opcode is 'jmp_if_gt_float64'
-          this._jmp_if_cc_float64(dst, x, y, 'a')
+          this._jmp_if_cc_float64(dst, 'a')
 
         elif opcode is 'jmp_if_ge_float64'
-          this._jmp_if_cc_float64(dst, x, y, 'ae')
+          this._jmp_if_cc_float64(dst, 'ae')
 
         #
         # Arithmetic
         #
 
         elif opcode is 'add_int32'
-          this._alu2_int32(dst, x, y, 'add')
+          this._alu2_int32(dst,'add')
 
         elif opcode is 'sub_int32'
-          this._alu2_int32(dst, x, y, 'sub')
+          this._alu2_int32(dst,'sub')
 
         elif opcode is 'mul_int32'
-          this._alu2_int32(dst, x, y, 'imul')
+          this._alu2_int32(dst,'imul')
 
         elif opcode is 'div_int32'
-          this.pushOneParameterBeforeCall(x, 0)
-          this.pushOneParameterBeforeCall(y, 1)
           print '  cvtsi2sd  xmm0, rcx'               # ; xmm0 = double(x)
           print '  cvtsi2sd  xmm1, rdx'               # ; xmm1 = double(y)
           print '  divsd     xmm0, xmm1'              # ; xmm0 = x / y
           print '  movq      qword [', dst, '], xmm0' # ; dst  = x / y
 
         elif opcode is 'idiv_int32'
-          this.pushOneParameterBeforeCall(x, 0)
-          this.pushOneParameterBeforeCall(y, 1)
           print '  mov  eax, ecx'              # ; eax     = x
           print '  mov  ecx, edx'              # ; ecx     = y
           print '  cdq'                        # ; edx:eax = x
@@ -1809,38 +1794,41 @@ class CodeGeneratorX64
           print '  mov  dword [', dst,'], eax' # ; dst     = x // y
 
         elif opcode is 'add_float64'
-          this._alu2_float64(dst, x, y, 'addsd')
+          this._alu2_float64(dst, 'addsd')
 
         elif opcode is 'sub_float64'
-          this._alu2_float64(dst, x, y, 'subsd')
+          this._alu2_float64(dst, 'subsd')
 
         elif opcode is 'mul_float64'
-          this._alu2_float64(dst, x, y, 'mulsd')
+          this._alu2_float64(dst, 'mulsd')
 
         elif opcode is 'div_float64'
-          this._alu2_float64(dst, x, y, 'divsd')
+          this._alu2_float64(dst, 'divsd')
 
         elif opcode is 'idiv_float64'
-          this.pushOneParameterBeforeCall(x, 0)
-          this.pushOneParameterBeforeCall(y, 1)
           print '  divsd     xmm0, xmm1'             # xmm0 = x / y
           print '  cvttsd2si rcx, xmm0'              # rcx  = int(x / y)
           this.storeResult(dst)
 
         elif opcode is 'add_variant'
-          this.call3('__MOLD_VariantAdd', x, y, dst)
+          this.pushOneParameterBeforeCall(dst, 2)
+          this.call('__MOLD_VariantAdd')
 
         elif opcode is 'sub_variant'
-          this.call3('__MOLD_VariantSub', x, y, dst)
+          this.pushOneParameterBeforeCall(dst, 2)
+          this.call('__MOLD_VariantSub')
 
         elif opcode is 'mul_variant'
-          this.call3('__MOLD_VariantMul', x, y, dst)
+          this.pushOneParameterBeforeCall(dst, 2)
+          this.call('__MOLD_VariantMul')
 
         elif opcode is 'div_variant'
-          this.call3('__MOLD_VariantDiv', x, y, dst)
+          this.pushOneParameterBeforeCall(dst, 2)
+          this.call('__MOLD_VariantDiv')
 
         elif opcode is 'idiv_variant'
-          this.call3('__MOLD_VariantDivAsInteger', x, y, dst)
+          this.pushOneParameterBeforeCall(dst, 2)
+          this.call('__MOLD_VariantDivAsInteger')
 
         else
           isOpcodeHandled = false
