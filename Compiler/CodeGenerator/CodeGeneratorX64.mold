@@ -1032,12 +1032,6 @@ class CodeGeneratorX64
         print '  lea  rdx, [vtable_' ~ str(x) ~ ']'
         print '  call __MOLD_VariantObjectCreate'
 
-      elif opcode is 'jmp_if_variant_ge_int64'
-        this.pushOneParameterBeforeCall(x, 0)
-        this.pushOneParameterBeforeCall(y, 1)
-        print '  cmp  [rcx + Variant_t.value], rdx'
-        print '  jge ', dst
-
       elif originalOpcode is 'store_index'
         # dst[x] := y
         this.pushOneParameterBeforeCall(dst, 0)
