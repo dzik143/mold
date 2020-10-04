@@ -1041,13 +1041,6 @@ class CodeGeneratorX64
         yType = this._getSymbolType(y)
         print '  call __MOLD_VariantStoreAtIndex_' ~ yType
 
-      elif originalOpcode is 'load_index'
-        # dst := x[y]
-        this.pushOneParameterBeforeCall(x, 0)
-        this.pushOneParameterBeforeCall(y, 1)
-        this.pushOneParameterBeforeCall(dst, 2)
-        this.call('__MOLD_VariantLoadFromIndex')
-
       elif originalOpcode is 'store_key'
         # dst{x} := y
         this.pushOneParameterBeforeCall(dst, 0)
@@ -1056,15 +1049,6 @@ class CodeGeneratorX64
 
         yType = this._getSymbolType(y)
         print '  call __MOLD_VariantStoreAtKey_' ~ yType
-
-      elif originalOpcode is 'load_key'
-        # dst := x{y}
-        this.pushOneParameterBeforeCall(x, 0)
-        this.pushOneParameterBeforeCall(y, 1)
-        this.pushOneParameterBeforeCall(dst, 2)
-
-        dstType = this._getSymbolType(dst)
-        print '  call __MOLD_VariantLoadFromKey_' ~ dstType
 
       elif itemCnt is 1
 
@@ -1823,6 +1807,17 @@ class CodeGeneratorX64
         elif opcode is 'idiv_variant'
           this.pushOneParameterBeforeCall(dst, 2)
           this.call('__MOLD_VariantDivAsInteger')
+
+        elif originalOpcode is 'load_index'
+          # dst := x[y]
+          this.pushOneParameterBeforeCall(dst, 2)
+          this.call('__MOLD_VariantLoadFromIndex')
+
+        elif originalOpcode is 'load_key'
+          # dst := x{y}
+          this.pushOneParameterBeforeCall(dst, 2)
+          dstType = this._getSymbolType(dst)
+          print '  call __MOLD_VariantLoadFromKey_' ~ dstType
 
         else
           isOpcodeHandled = false
