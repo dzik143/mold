@@ -597,10 +597,10 @@ class CodeGeneratorX64
     print '  movdqu [', dst, '], xmm0'
   endmethod
 
-  method _getSymbolType(symbolsMap, id) -> rv
+  method _getSymbolType(id) -> rv
     if id is string
       rv = 'variant'
-      symbolInfo = symbolsMap{id}
+      symbolInfo = this.symbols{id}
 
       if (symbolInfo is defined) and (symbolInfo.type is defined)
         rv = symbolInfo.type
@@ -722,12 +722,12 @@ class CodeGeneratorX64
 
           # TODO: Clean up this mess.
           if opcode is 'load_index'
-            dstType = this._getSymbolType(currentSymbols, dst)
-            idxType = this._getSymbolType(currentSymbols, y)
+            dstType = this._getSymbolType(dst)
+            idxType = this._getSymbolType(y)
             opcode  = opcode ~ '_' ~ dstType ~ '_by_' ~ idxType
 
           else
-            xType  = this._getSymbolType(currentSymbols, x)
+            xType  = this._getSymbolType(x)
             opcode = opcode ~ '_' ~ xType
           endif
         endif
@@ -1044,7 +1044,7 @@ class CodeGeneratorX64
         this.pushOneParameterBeforeCall(x, 1)
         this.pushOneParameterBeforeCall(y, 2)
 
-        yType = this._getSymbolType(currentSymbols, y)
+        yType = this._getSymbolType(y)
         print '  call __MOLD_VariantStoreAtIndex_' ~ yType
 
       elif originalOpcode is 'load_index'
@@ -1060,7 +1060,7 @@ class CodeGeneratorX64
         this.pushOneParameterBeforeCall(x, 1)
         this.pushOneParameterBeforeCall(y, 2)
 
-        yType = this._getSymbolType(currentSymbols, y)
+        yType = this._getSymbolType(y)
         print '  call __MOLD_VariantStoreAtKey_' ~ yType
 
       elif originalOpcode is 'load_key'
@@ -1069,7 +1069,7 @@ class CodeGeneratorX64
         this.pushOneParameterBeforeCall(y, 1)
         this.pushOneParameterBeforeCall(dst, 2)
 
-        dstType = this._getSymbolType(currentSymbols, dst)
+        dstType = this._getSymbolType(dst)
         print '  call __MOLD_VariantLoadFromKey_' ~ dstType
 
       elif itemCnt is 1
@@ -1556,7 +1556,7 @@ class CodeGeneratorX64
         if originalOpcode is 'variant_cast'
           # Cast variant to primitive.
           # dst = x.value
-          dstType = this._getSymbolType(currentSymbols, dst)
+          dstType = this._getSymbolType(dst)
           this.call('__MOLD_VariantCastTo_' ~ dstType)
           this.storeResult(dst)
 
@@ -1806,8 +1806,8 @@ class CodeGeneratorX64
           this._alu2_float64(dst, 'divsd')
 
         elif opcode is 'idiv_float64'
-          print '  divsd     xmm0, xmm1'             # xmm0 = x / y
-          print '  cvttsd2si rcx, xmm0'              # rcx  = int(x / y)
+          print '  divsd     xmm0, xmm1' # xmm0 = x / y
+          print '  cvttsd2si rcx, xmm0'  # rcx  = int(x / y)
           this.storeResult(dst)
 
         elif opcode is 'add_variant'
