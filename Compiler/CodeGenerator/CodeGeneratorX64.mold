@@ -728,22 +728,9 @@ class CodeGeneratorX64
       yType   = 'variant'
 
       if itemCnt > 2
-        if ((opcode isnt 'call') and
-            (opcode isnt 'vcall') and
-            (opcode isnt 'syscall') and
-            (opcode isnt 'create_object') and
-            ((opcode[0] isnt 'c') or (opcode[1] is 'm')))
-
-          # TODO: Clean up this mess.
-          if opcode is 'load_index'
-            dstType = this._getSymbolType(dst)
-            idxType = this._getSymbolType(y)
-            opcode  = opcode ~ '_' ~ dstType ~ '_by_' ~ idxType
-
-          else
-            xType  = this._getSymbolType(x)
-            opcode = opcode ~ '_' ~ xType
-          endif
+        if (opcode[0] isnt 'c') or (opcode[1] is 'm')
+          xType  = this._getSymbolType(x)
+          opcode = opcode ~ '_' ~ xType
         endif
       endif
 
@@ -958,7 +945,7 @@ class CodeGeneratorX64
       #
 
 
-      elif opcode is 'syscall'
+      elif originalOpcode is 'syscall'
         rv        = item[1]
         sysCallId = item[2]
         params    = item[3]
@@ -978,7 +965,7 @@ class CodeGeneratorX64
         # Generate syscall opcode.
         this._syscall(sysCallId)
 
-      elif opcode is 'call'
+      elif originalOpcode is 'call'
         rv        = item[1]
         name      = item[2]
         params    = item[3]
@@ -1010,7 +997,7 @@ class CodeGeneratorX64
           endif
         endif
 
-      elif opcode is 'vcall'
+      elif originalOpcode is 'vcall'
         rv        = item[1]
         methodId  = item[2]
         params    = item[3]
@@ -1040,7 +1027,7 @@ class CodeGeneratorX64
           print '  add rsp,', paramsCnt * 8 - 32
         endif
 
-      elif opcode is 'create_object'
+      elif originalOpcode is 'create_object'
         this.variantDestroy(dst)
         print '  lea  rcx, [', dst, ']'
         print '  lea  rdx, [vtable_' ~ str(x) ~ ']'
