@@ -548,26 +548,21 @@ class CodeGeneratorX64
   endmethod
 
   method _cmp_cc_int64(dst, x, y, cc)
-    this.pushOneParameterBeforeCall(x, 0)
-    this.pushOneParameterBeforeCall(y, 1)
     print '  cmp rcx, rdx'
     print '  set' ~ cc, 'cl'
     print '  and ecx, 1'
-    this.storeResultAfterCall(dst)
   endmethod
 
   method _cmp_cc_int32(dst, cc)
     print '  cmp ecx, edx'
     print '  set' ~ cc, 'cl'
     print '  and ecx, 1'
-    this.storeResultAfterCall(dst)
   endmethod
 
   method _cmp_cc_float64(dst, cc)
     print '  comisd xmm0, xmm1'
     print '  set' ~ cc, 'cl'
     print '  and ecx, 1'
-    this.storeResultAfterCall(dst)
   endmethod
 
   method _jmp_if_cc_int64(dst, cc)
@@ -593,17 +588,14 @@ class CodeGeneratorX64
 
   method _alu2_float64(dst, opcode)
     print ' ', opcode, 'xmm0, xmm1'
-    this.storeResultAfterCall(dst)
   endmethod
 
   method _alu2_int32(dst,opcode)
     print ' ', opcode, 'ecx, edx'
-    this.storeResultAfterCall(dst)
   endmethod
 
   method _alu2_int64(dst, opcode)
     print ' ', opcode, 'rcx, rdx'
-    this.storeResultAfterCall(dst)
   endmethod
 
   method _loadString(dst, src)
@@ -1054,6 +1046,14 @@ class CodeGeneratorX64
         print '  lea  rdx, [vtable_' ~ str(x) ~ ']'
         print '  call __MOLD_VariantObjectCreate'
 
+      elif originalOpcode is 'load_index'
+        # dst := x[y]
+        this.pushOneParameterBeforeCall(x, 0)
+        this.pushOneParameterBeforeCall(y, 1)
+        this.pushOneParameterBeforeCall(dst, 2)
+
+        this.call('__MOLD_VariantLoadFromIndex')
+
       elif originalOpcode is 'store_index'
         # dst[x] := y
         this.pushOneParameterBeforeCall(dst, 0)
@@ -1071,6 +1071,15 @@ class CodeGeneratorX64
 
         yType = this._getSymbolType(y)
         print '  call __MOLD_VariantStoreAtKey_' ~ yType
+
+      elif originalOpcode is 'load_key'
+        # dst := x{y}
+        this.pushOneParameterBeforeCall(x, 0)
+        this.pushOneParameterBeforeCall(y, 1)
+        this.pushOneParameterBeforeCall(dst, 2)
+
+        dstType = this._getSymbolType(dst)
+        print '  call __MOLD_VariantLoadFromKey_' ~ dstType
 
       elif itemCnt is 1
 
@@ -1608,7 +1617,18 @@ class CodeGeneratorX64
         this.pushOneParameterBeforeCall(y, 1)
         this.setDestinationVariableBeforeCall(dst, 2)
 
-        if opcode is 'cmp_eq_int32'
+        if (xType is 'variant') or (xType is 'string')
+          # Non-primitive - call related routine.
+          dstType = this._getSymbolType(dst)
+          print '  call __MOLD_Variant_' ~ originalOpcode
+
+          # TODO: Clean up this mess.
+          if dstType is 'label'
+            print '  test ecx, ecx'
+            print '  jnz', dst
+          endif
+
+        elif opcode is 'cmp_eq_int32'
           this._cmp_cc_int32(dst, 'z')
 
         elif opcode is 'cmp_ne_int32'
@@ -1650,32 +1670,6 @@ class CodeGeneratorX64
         elif opcode is 'cmp_ge_float64'
           this._cmp_cc_float64(dst, 'ae')
 
-        elif (opcode is 'cmp_eq_variant') or (opcode is 'cmp_eq_string')
-          this.call('__MOLD_VariantCompareEQ')
-          this.store(dst, 'eax')
-
-        elif (opcode is 'cmp_ne_variant') or (opcode is 'cmp_ne_string')
-          this.call('__MOLD_VariantCompareNE')
-          this.store(dst, 'eax')
-
-        elif opcode is 'cmp_lt_variant'
-          this.call('__MOLD_VariantCompareLT')
-          this.store(dst, 'eax')
-
-        elif opcode is 'cmp_le_variant'
-          this.call('__MOLD_VariantCompareLE')
-          this.store(dst, 'eax')
-
-        elif opcode is 'cmp_gt_variant'
-          # TODO: Swap operands and use LT.
-          this.call('__MOLD_VariantCompareGT')
-          this.store(dst, 'eax')
-
-        elif opcode is 'cmp_ge_variant'
-          # TODO: Swap operands and use LE.
-          this.call('__MOLD_VariantCompareGE')
-          this.store(dst, 'eax')
-
         elif opcode is 'cmp_eq_bool32'
           # TODO: Review it.
           this._cmp_cc_int32(dst, 'z')
@@ -1683,26 +1677,6 @@ class CodeGeneratorX64
         elif opcode is 'cmp_ne_bool32'
           # TODO: Review it.
           this._cmp_cc_int32(dst, 'nz')
-
-        elif (opcode is 'jmp_if_eq_variant') or (opcode is 'jmp_if_eq_string')
-          this._jmp_if_cc_variant(dst, 'EQ')
-
-        elif (opcode is 'jmp_if_ne_variant') or (opcode is 'jmp_if_ne_string')
-          this._jmp_if_cc_variant(dst, 'NE')
-
-        elif opcode is 'jmp_if_lt_variant'
-          this._jmp_if_cc_variant(dst, 'LT')
-
-        elif opcode is 'jmp_if_le_variant'
-          this._jmp_if_cc_variant(dst, 'LE')
-
-        elif opcode is 'jmp_if_gt_variant'
-          # TODO: Swap operands and change to LT.
-          this._jmp_if_cc_variant(dst, 'GT')
-
-        elif opcode is 'jmp_if_ge_variant'
-          # TODO: Swap operands and change to LE.
-          this._jmp_if_cc_variant(dst, 'GE')
 
         elif opcode is 'jmp_if_eq_int64'
           this._jmp_if_cc_int64(dst, 'z')
@@ -1790,7 +1764,7 @@ class CodeGeneratorX64
           print '  mov  ecx, edx'              # ; ecx     = y
           print '  cdq'                        # ; edx:eax = x
           print '  idiv ecx'                   # ; eax     = x // y
-          print '  mov  dword [', dst,'], eax' # ; dst     = x // y
+          print '  mov  ecx, eax'              # ; ecx     = x // y (TODO)
 
         elif opcode is 'add_float64'
           this._alu2_float64(dst, 'addsd')
@@ -1807,36 +1781,13 @@ class CodeGeneratorX64
         elif opcode is 'idiv_float64'
           print '  divsd     xmm0, xmm1' # xmm0 = x / y
           print '  cvttsd2si rcx, xmm0'  # rcx  = int(x / y)
-          this.storeResultAfterCall(dst)
-
-        elif opcode is 'add_variant'
-          this.call('__MOLD_VariantAdd')
-
-        elif opcode is 'sub_variant'
-          this.call('__MOLD_VariantSub')
-
-        elif opcode is 'mul_variant'
-          this.call('__MOLD_VariantMul')
-
-        elif opcode is 'div_variant'
-          this.call('__MOLD_VariantDiv')
-
-        elif opcode is 'idiv_variant'
-          this.call('__MOLD_VariantDivAsInteger')
-
-        elif originalOpcode is 'load_index'
-          # dst := x[y]
-          this.call('__MOLD_VariantLoadFromIndex')
-
-        elif originalOpcode is 'load_key'
-          # dst := x{y}
-          dstType = this._getSymbolType(dst)
-          print '  call __MOLD_VariantLoadFromKey_' ~ dstType
 
         else
           isOpcodeHandled = false
           print '; OPCODE4', opcode
         endif
+
+        this.storeResultAfterCall(dst)
       endif
 
       if isOpcodeHandled is false
