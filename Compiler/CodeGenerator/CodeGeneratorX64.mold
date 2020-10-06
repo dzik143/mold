@@ -552,12 +552,6 @@ class CodeGeneratorX64
     endfor
   endmethod
 
-  method _loadString(dst, src)
-    this.variantDestroy(dst)
-    print '  movdqu xmm0, [', src, ']'
-    print '  movdqu [', dst, '], xmm0'
-  endmethod
-
   method _getSymbolType(id) -> rv
     global SYMBOL_KIND_LABEL
 
@@ -1394,13 +1388,24 @@ class CodeGeneratorX64
       # ------------------------------------------------------------------------
 
       elif opcode >= MIR1_FIRST_CALL_LIKE_OPCODE
+        rv        = item[1]
+        nameOrId  = item[2]
+        params    = item[3]
+        paramsCnt = len(params)
 
-        if opcode is MIR1_OPCODE_SYSCALL
-          rv        = item[1]
-          sysCallId = item[2]
-          params    = item[3]
+        if ((opcode is MIR1_OPCODE_CALL) and
+            (nameOrId is '__MOLD_ForDriver_Generic') or
+            (nameOrId is '__MOLD_ForDriver_IndexesAndValuesInArray') or
+            (nameOrId is '__MOLD_ForDriver_IndexesAndValuesInArrayOrString'))
 
-          print '  ; __mold_syscall(', sysCallId, ')'
+          # TODO: Clean up this mess.
+          this.pushOneParameterBeforeCall(params[0], 0)
+          print '  lea rdx, [', params[1], ']'
+          print '  lea r8, [', params[2], ']'
+          print '  lea r9, [', params[3], ']'
+          print '  call', nameOrId
+
+        else
 
           # Push call parameters.
           this.pushParametersBeforeCall(params)
@@ -1408,82 +1413,57 @@ class CodeGeneratorX64
           # Push pointer to return value if any.
           if rv is defined
             # TODO: Standarize return value passing.
-            # Add pointer to the return-value buffer as the last param.
-            this.pushOneParameterBeforeCall(rv, len(params))
-          endif
-
-          # Generate syscall opcode.
-          this._syscall(sysCallId)
-
-        elif opcode is MIR1_OPCODE_CALL
-          rv        = item[1]
-          name      = item[2]
-          params    = item[3]
-          paramsCnt = len(params)
-
-          if ((name is '__MOLD_ForDriver_Generic') or
-              (name is '__MOLD_ForDriver_IndexesAndValuesInArray') or
-              (name is '__MOLD_ForDriver_IndexesAndValuesInArrayOrString'))
-
-            # TODO: Clean up this mess.
-            this.pushOneParameterBeforeCall(params[0], 0)
-            print '  lea rdx, [', params[1], ']'
-            print '  lea r8, [', params[2], ']'
-            print '  lea r9, [', params[3], ']'
-            print '  call', name
-
-          else
-            # Generic call.
-            this.pushParametersBeforeCall(params)
-
-            if rv is defined
+            if opcode is MIR1_OPCODE_SYSCALL
+              # Add pointer to the return-value buffer as the last param.
+              this.pushOneParameterBeforeCall(rv, paramsCnt)
+            else
               print '  lea rax, [', rv, ']'
             endif
-
-            this.call(name)
-
-            if paramsCnt > 4
-              print '  add rsp,', paramsCnt * 8 - 32
-            endif
           endif
 
-        elif opcode is MIR1_OPCODE_VCALL
-          rv        = item[1]
-          methodId  = item[2]
-          params    = item[3]
-          paramsCnt = len(params)
+          # Generate call opcode.
+          if opcode is MIR1_OPCODE_SYSCALL
+            # rv = syscall(id, ...)
+            this._syscall(nameOrId)
 
-          this.pushParametersBeforeCall(params)
+          elif opcode is MIR1_OPCODE_CALL
+            # rv = foo(...)
+            this.call(nameOrId)
 
-          if rv is defined
-            # rv = obj.foo(...)
-            # TODO: Better way to handle 32-bit int result?
-            signOkLabel = codeObj.symbolTable.createLabel()
+          elif opcode is MIR1_OPCODE_VCALL
+            methodId  = nameOrId
 
-            print '  lea rax, [', rv, ']'
-            print '  mov  r10d,', methodId
-            print '  call __MOLD_VCall'
+            if rv is defined
+              # rv = obj.foo(...)
+              # TODO: Better way to handle 32-bit int result?
+              signOkLabel = codeObj.symbolTable.createLabel()
 
-            print ''
-            print '  ; 32-bit int sign extend after vcall if needed.'
-            print '  jns', signOkLabel
-            print '  movsxd rax, dword [', rv, '+ Variant_t.value ]'
-            print '  mov    qword [', rv, '+ Variant_t.value ], rax'
-            print signOkLabel ~ ':'
-            print ''
+              print '  mov  r10d,', methodId
+              print '  call __MOLD_VCall'
+
+              print ''
+              print '  ; 32-bit int sign extend after vcall if needed.'
+              print '  jns', signOkLabel
+              print '  movsxd rax, dword [', rv, '+ Variant_t.value ]'
+              print '  mov    qword [', rv, '+ Variant_t.value ], rax'
+              print signOkLabel ~ ':'
+              print ''
+
+            else
+              # obj.foo(...)
+              print '  mov  r10d,', methodId
+              print '  call __MOLD_VCall'
+            endif
 
           else
-            # obj.foo(...)
-            print '  mov  r10d,', methodId
-            print '  call __MOLD_VCall'
+            isOpcodeHandled = false
           endif
 
+          # Clean stack after call if needed.
           if paramsCnt > 4
             print '  add rsp,', paramsCnt * 8 - 32
           endif
 
-        else
-          isOpcodeHandled = false
         endif
 
       # ------------------------------------------------------------------------
