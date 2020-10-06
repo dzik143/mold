@@ -703,18 +703,12 @@ class CodeGeneratorX64
       x       = item[2]
       y       = item[3]
 
-      # TODO: Optimize it.
-      originalOpcode = opcode
-
       dstType = 'variant'
       xType   = 'variant'
       yType   = 'variant'
 
       if itemCnt > 2
-      #  if (opcode[0] isnt 'c') or (opcode[1] is 'm')
-          xType  = this._getSymbolType(x)
-      #    opcode = opcode ~ '_' ~ xType
-      #  endif
+        xType  = this._getSymbolType(x)
       endif
 
       #if ((opcode isnt MIR1_OPCODE_COMMENT) and
@@ -730,7 +724,7 @@ class CodeGeneratorX64
       # ----------------------------------------------------------------------
 
       # Dispatch opcode.
-      if originalOpcode is MIR1_OPCODE_CREATE_ARRAY
+      if opcode is MIR1_OPCODE_CREATE_ARRAY
         this.variantDestroy(dst)
         if x is defined
           this.call2('__MOLD_VariantArrayCreateFromInitList', dst, x)
@@ -738,7 +732,7 @@ class CodeGeneratorX64
           this.call1('__MOLD_VariantArrayCreate', dst)
         endif
 
-      elif originalOpcode is MIR1_OPCODE_CREATE_MAP
+      elif opcode is MIR1_OPCODE_CREATE_MAP
         this.variantDestroy(dst)
         if x is defined
           this.call3('__MOLD_VariantMapCreateFromInitList', dst, x, y)
@@ -746,7 +740,7 @@ class CodeGeneratorX64
           this.call1('__MOLD_VariantMapCreate', dst)
         endif
 
-      elif originalOpcode is MIR1_OPCODE_MOVE
+      elif opcode is MIR1_OPCODE_MOVE
         if (xType is 'variant') or (xType is 'string')
           this.variantDestroy(dst)
           this.variantMove(dst, x)
@@ -894,10 +888,10 @@ class CodeGeneratorX64
       # build-in string operations
       #
 
-      elif originalOpcode is MIR1_OPCODE_STRING_JOIN
+      elif opcode is MIR1_OPCODE_STRING_JOIN
         this.call3AndDestroy('__MOLD_VariantStringJoin', x, y, dst)
 
-      elif originalOpcode is MIR1_OPCODE_SYSCALL
+      elif opcode is MIR1_OPCODE_SYSCALL
         rv        = item[1]
         sysCallId = item[2]
         params    = item[3]
@@ -917,7 +911,7 @@ class CodeGeneratorX64
         # Generate syscall opcode.
         this._syscall(sysCallId)
 
-      elif originalOpcode is MIR1_OPCODE_CALL
+      elif opcode is MIR1_OPCODE_CALL
         rv        = item[1]
         name      = item[2]
         params    = item[3]
@@ -949,7 +943,7 @@ class CodeGeneratorX64
           endif
         endif
 
-      elif originalOpcode is MIR1_OPCODE_VCALL
+      elif opcode is MIR1_OPCODE_VCALL
         rv        = item[1]
         methodId  = item[2]
         params    = item[3]
@@ -958,34 +952,39 @@ class CodeGeneratorX64
         this.pushParametersBeforeCall(params)
 
         if rv is defined
+          # rv = obj.foo(...)
+          # TODO: Better way to handle 32-bit int result?
+          signOkLabel = codeObj.symbolTable.createLabel()
+
           print '  lea rax, [', rv, ']'
+          print '  mov  r10d,', methodId
+          print '  call __MOLD_VCall'
+
+          print ''
+          print '  ; 32-bit int sign extend after vcall if needed.'
+          print '  jns', signOkLabel
+          print '  movsxd rax, dword [', rv, '+ Variant_t.value ]'
+          print '  mov    qword [', rv, '+ Variant_t.value ], rax'
+          print signOkLabel ~ ':'
+          print ''
+
+        else
+          # obj.foo(...)
+          print '  mov  r10d,', methodId
+          print '  call __MOLD_VCall'
         endif
-
-        signOkLabel = codeObj.symbolTable.createLabel()
-
-        print '  mov  r10d,', methodId
-        print '  call __MOLD_VCall'
-
-        # TODO: Better way to handle 32-bit int result?
-        print ''
-        print '  ; 32-bit int sign extend after vcall if needed.'
-        print '  jns', signOkLabel
-        print '  movsxd rax, dword [', rv, '+ Variant_t.value ]'
-        print '  mov    qword [', rv, '+ Variant_t.value ], rax'
-        print signOkLabel ~ ':'
-        print ''
 
         if paramsCnt > 4
           print '  add rsp,', paramsCnt * 8 - 32
         endif
 
-      elif originalOpcode is MIR1_OPCODE_CREATE_OBJECT
+      elif opcode is MIR1_OPCODE_CREATE_OBJECT
         this.variantDestroy(dst)
         print '  lea  rcx, [', dst, ']'
         print '  lea  rdx, [vtable_' ~ str(x) ~ ']'
         print '  call __MOLD_VariantObjectCreate'
 
-      elif originalOpcode is MIR1_OPCODE_LOAD_INDEX
+      elif opcode is MIR1_OPCODE_LOAD_INDEX
         # dst := x[y]
         this.pushOneParameterBeforeCall(x, 0)
         this.pushOneParameterBeforeCall(y, 1)
@@ -993,7 +992,7 @@ class CodeGeneratorX64
 
         this.call('__MOLD_VariantLoadFromIndex')
 
-      elif originalOpcode is MIR1_OPCODE_STORE_INDEX
+      elif opcode is MIR1_OPCODE_STORE_INDEX
         # dst[x] := y
         this.pushOneParameterBeforeCall(dst, 0)
         this.pushOneParameterBeforeCall(x, 1)
@@ -1002,7 +1001,7 @@ class CodeGeneratorX64
         yType = this._getSymbolType(y)
         print '  call __MOLD_VariantStoreAtIndex_' ~ yType
 
-      elif originalOpcode is MIR1_OPCODE_STORE_KEY
+      elif opcode is MIR1_OPCODE_STORE_KEY
         # dst{x} := y
         this.pushOneParameterBeforeCall(dst, 0)
         this.pushOneParameterBeforeCall(x, 1)
@@ -1011,7 +1010,7 @@ class CodeGeneratorX64
         yType = this._getSymbolType(y)
         print '  call __MOLD_VariantStoreAtKey_' ~ yType
 
-      elif originalOpcode is MIR1_OPCODE_LOAD_KEY
+      elif opcode is MIR1_OPCODE_LOAD_KEY
         # dst := x{y}
         this.pushOneParameterBeforeCall(x, 0)
         this.pushOneParameterBeforeCall(y, 1)
@@ -1131,10 +1130,10 @@ class CodeGeneratorX64
         elif opcode is MIR1_OPCODE_LABEL
           print dst ~ ':'
 
-        elif originalOpcode is MIR1_OPCODE_JMP
+        elif opcode is MIR1_OPCODE_JMP
          print '  jmp', dst
 
-        elif originalOpcode is MIR1_OPCODE_LOAD_NULL
+        elif opcode is MIR1_OPCODE_LOAD_NULL
           this.variantDestroy(dst)
 
         elif opcode is MIR1_OPCODE_PRINT
@@ -1502,18 +1501,18 @@ class CodeGeneratorX64
         this.pushOneParameterBeforeCall(x, 0)
         this.setDestinationVariableBeforeCall(dst, 1)
 
-        if originalOpcode is MIR1_OPCODE_CAST_VARIANT_TO
+        if opcode is MIR1_OPCODE_CAST_VARIANT_TO
           # Cast variant to primitive.
           # dst = x.value
           dstType = this._getSymbolType(dst)
           this.call('__MOLD_VariantCastTo_' ~ dstType)
 
-        elif originalOpcode is MIR1_OPCODE_CREATE_VARIANT_FROM
+        elif opcode is MIR1_OPCODE_CREATE_VARIANT_FROM
           # Create variant from primitive.
           # dst.value = x
           this.call('__MOLD_VariantCreateFrom_' ~ xType)
 
-        elif originalOpcode is MIR1_OPCODE_NEG
+        elif opcode is MIR1_OPCODE_NEG
           if xType is 'int32'
             print '  neg ecx'
 
@@ -1635,7 +1634,7 @@ class CodeGeneratorX64
       endif
 
       # Separate MIR opcodes by new line for better readability.
-      if originalOpcode isnt MIR1_OPCODE_COMMENT
+      if opcode isnt MIR1_OPCODE_COMMENT
         print ''
       endif
     endfor
