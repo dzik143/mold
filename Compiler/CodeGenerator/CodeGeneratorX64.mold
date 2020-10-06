@@ -957,22 +957,11 @@ class CodeGeneratorX64
                   expectedType = MIR_TO_VARIANT_TYPE_MAP{symbolType}
 
                   # TODO: Optimize it.
-                  if paramIdx is 0
-                    print '  cmp [rdx + Variant_t.type],', expectedType
+                  if paramIdx < 3
+                    reg = REG_PARAMS64[paramIdx + 1]
+                    print '  cmp [', reg, ' + Variant_t.type],', expectedType
                     print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
-                    print '  mov rdx, [rdx + Variant_t.value]'
-                    print ''
-
-                  elif paramIdx is 1
-                    print '  cmp [r8 + Variant_t.type],', expectedType
-                    print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
-                    print '  mov r8, [r8 + Variant_t.value]'
-                    print ''
-
-                  elif paramIdx is 2
-                    print '  cmp [r9 + Variant_t.type],', expectedType
-                    print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
-                    print '  mov r9, [r9 + Variant_t.value]'
+                    print '  mov ', reg, ', [', reg, ' + Variant_t.value]'
                     print ''
 
                   else
@@ -1199,7 +1188,6 @@ class CodeGeneratorX64
 
                 print '  mov [' ~ oneItem.name ~ ' + Variant_t.type], VARIANT_UNDEFINED'
               endif
-
             endfor
           endif
 
