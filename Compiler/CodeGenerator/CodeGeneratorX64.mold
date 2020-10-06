@@ -47,6 +47,12 @@ MIR_TYPE_SIZE_MAP = {
   'map':     16
 }
 
+const MIR_COMPARE_FLAGS_FOR_INTEGERS = ['e', 'ne', 'l', 'ge', 'le', 'g']
+const MIR_COMPARE_FLAGS_FOR_FLOATS   = ['e', 'ne', 'b', 'ae', 'be', 'a']
+
+const MIR_ALU_OPCODES_FOR_INTEGERS = ['add'   , 'sub'   , 'imul'  , 'div'   , 'idiv']
+const MIR_ALU_OPCODES_FOR_FLOATS   = ['addsd' , 'subsd' , 'mulsd' , 'divsd' , 'divsd']
+
 const VARIANT_UNDEFINED = 0
 const VARIANT_NULL      = 1
 
@@ -322,7 +328,6 @@ class CodeGeneratorX64
     endif
   endmethod
 
-
   method _hash(x) -> rv
     # TODO: Optimize it.
     rv = typeof(x) ~ ':'
@@ -547,57 +552,6 @@ class CodeGeneratorX64
     endfor
   endmethod
 
-  method _cmp_cc_int64(dst, x, y, cc)
-    print '  cmp rcx, rdx'
-    print '  set' ~ cc, 'cl'
-    print '  and ecx, 1'
-  endmethod
-
-  method _cmp_cc_int32(dst, cc)
-    print '  cmp ecx, edx'
-    print '  set' ~ cc, 'cl'
-    print '  and ecx, 1'
-  endmethod
-
-  method _cmp_cc_float64(dst, cc)
-    print '  comisd xmm0, xmm1'
-    print '  set' ~ cc, 'cl'
-    print '  and ecx, 1'
-  endmethod
-
-  method _jmp_if_cc_int64(dst, cc)
-    print '  cmp rcx, rdx'
-    print '  j' ~ cc, dst
-  endmethod
-
-  method _jmp_if_cc_int32(dst, cc)
-    print '  cmp ecx, edx'
-    print '  j' ~ cc, dst
-  endmethod
-
-  method _jmp_if_cc_variant(dst, cc)
-    print '  call __MOLD_VariantCompare' ~ cc
-    print '  test al, al'
-    print '  jnz', dst
-  endmethod
-
-  method _jmp_if_cc_float64(dst, cc)
-    print '  comisd xmm0, xmm1'
-    print '  j' ~ cc, dst
-  endmethod
-
-  method _alu2_float64(dst, opcode)
-    print ' ', opcode, 'xmm0, xmm1'
-  endmethod
-
-  method _alu2_int32(dst,opcode)
-    print ' ', opcode, 'ecx, edx'
-  endmethod
-
-  method _alu2_int64(dst, opcode)
-    print ' ', opcode, 'rcx, rdx'
-  endmethod
-
   method _loadString(dst, src)
     this.variantDestroy(dst)
     print '  movdqu xmm0, [', src, ']'
@@ -657,6 +611,35 @@ class CodeGeneratorX64
     global VARIANT_DOUBLE
     global VARIANT_BOOLEAN
 
+    global MIR1_OPCODE_COMMENT, MIR1_OPCODE_LABEL
+    global MIR1_OPCODE_PROC, MIR1_OPCODE_ENDP
+    global MIR1_OPCODE_MOVE, MIR1_OPCODE_CONV
+    global MIR1_OPCODE_NEG, MIR1_OPCODE_ADD, MIR1_OPCODE_SUB
+    global MIR1_OPCODE_MUL, MIR1_OPCODE_DIV, MIR1_OPCODE_IDIV
+    global MIR1_OPCODE_CMP_EQ, MIR1_OPCODE_CMP_NE, MIR1_OPCODE_CMP_LT
+    global MIR1_OPCODE_CMP_LE, MIR1_OPCODE_CMP_GT, MIR1_OPCODE_CMP_GE
+    global MIR1_OPCODE_CMP_IS_TYPEOF, MIR1_OPCODE_CMP_IS_NOT_TYPEOF
+    global MIR1_OPCODE_JMP_IF_TYPEOF, MIR1_OPCODE_JMP_IF_NOT_TYPEOF
+    global MIR1_OPCODE_JMP, MIR1_OPCODE_JMP_BY_TABLE
+    global MIR1_OPCODE_JMP_IF_TRUE, MIR1_OPCODE_JMP_IF_FALSE
+    global MIR1_OPCODE_JMP_IF_EQ, MIR1_OPCODE_JMP_IF_NE
+    global MIR1_OPCODE_JMP_IF_LT, MIR1_OPCODE_JMP_IF_LE
+    global MIR1_OPCODE_JMP_IF_GT, MIR1_OPCODE_JMP_IF_GE
+    global MIR1_OPCODE_CALL, MIR1_OPCODE_VCALL, MIR1_OPCODE_SYSCALL
+    global MIR1_OPCODE_RET, MIR1_OPCODE_INNER_RET
+    global MIR1_OPCODE_NOP, MIR1_OPCODE_STRING_JOIN
+    global MIR1_OPCODE_LOAD_NULL, MIR1_OPCODE_PRINT
+    global MIR1_OPCODE_CREATE_OBJECT, MIR1_OPCODE_CREATE_ARRAY
+    global MIR1_OPCODE_CREATE_MAP
+    global MIR1_OPCODE_STORE_INDEX, MIR1_OPCODE_LOAD_INDEX
+    global MIR1_OPCODE_STORE_KEY, MIR1_OPCODE_LOAD_KEY
+    global MIR1_OPCODE_CREATE_VARIANT_FROM, MIR1_OPCODE_CAST_VARIANT_TO
+    global MIR1_OPCODE_INIT_FRAME
+    global MIR1_OPCODE_CMP_CC_GROUP, MIR1_OPCODE_JMP_IF_CC_GROUP
+    global MIR_COMPARE_FLAGS_FOR_INTEGERS, MIR_COMPARE_FLAGS_FOR_FLOATS
+    global MIR_ALU_OPCODES_FOR_INTEGERS, MIR_ALU_OPCODES_FOR_FLOATS
+    global MIR1_OPCODE_ALU2_GROUP
+
     #
     # Common headers.
     #
@@ -693,8 +676,8 @@ class CodeGeneratorX64
     x   = null
     y   = null
 
-    opcode         = ''
-    originalOpcode = ''
+    opcode         = 0
+    originalOpcode = 0
     paramsCnt      = 0
 
     # TODO: Remove it.
@@ -728,15 +711,15 @@ class CodeGeneratorX64
       yType   = 'variant'
 
       if itemCnt > 2
-        if (opcode[0] isnt 'c') or (opcode[1] is 'm')
+      #  if (opcode[0] isnt 'c') or (opcode[1] is 'm')
           xType  = this._getSymbolType(x)
-          opcode = opcode ~ '_' ~ xType
-        endif
+      #    opcode = opcode ~ '_' ~ xType
+      #  endif
       endif
 
-      #if ((opcode isnt 'comment') and
-      #    (opcode isnt 'proc') and
-      #    (opcode isnt 'init_frame'))
+      #if ((opcode isnt MIR1_OPCODE_COMMENT) and
+      #    (opcode isnt MIR1_OPCODE_PROC) and
+      #    (opcode isnt MIR1_OPCODE_INIT_FRAME))
       #  print '  ; [x64]', opcode, dst, x, y
       #endif
 
@@ -747,7 +730,7 @@ class CodeGeneratorX64
       # ----------------------------------------------------------------------
 
       # Dispatch opcode.
-      if originalOpcode is 'create_array'
+      if originalOpcode is MIR1_OPCODE_CREATE_ARRAY
         this.variantDestroy(dst)
         if x is defined
           this.call2('__MOLD_VariantArrayCreateFromInitList', dst, x)
@@ -755,7 +738,7 @@ class CodeGeneratorX64
           this.call1('__MOLD_VariantArrayCreate', dst)
         endif
 
-      elif originalOpcode is 'create_map'
+      elif originalOpcode is MIR1_OPCODE_CREATE_MAP
         this.variantDestroy(dst)
         if x is defined
           this.call3('__MOLD_VariantMapCreateFromInitList', dst, x, y)
@@ -763,20 +746,20 @@ class CodeGeneratorX64
           this.call1('__MOLD_VariantMapCreate', dst)
         endif
 
-      elif ((opcode is 'move_variant') or
-            (opcode is 'move_string'))
+      elif originalOpcode is MIR1_OPCODE_MOVE
+        if (xType is 'variant') or (xType is 'string')
+          this.variantDestroy(dst)
+          this.variantMove(dst, x)
+        else
+          this.pushOneParameterBeforeCall(x, 0)
+          this.storeResultAfterCall(dst)
+        endif
 
-        this.variantDestroy(dst)
-        this.variantMove(dst, x)
-
-      elif originalOpcode is 'move'
-        this.pushOneParameterBeforeCall(x, 0)
-        this.storeResultAfterCall(dst)
       #
       # indirect jumps
       #
 
-      elif opcode is 'jmp_by_table_int32'
+      elif opcode is MIR1_OPCODE_JMP_BY_TABLE
         symbolInfo = codeObj.symbolTable.lookup(dst)
 
         print '  mov eax, dword [', x, ']'
@@ -841,111 +824,80 @@ class CodeGeneratorX64
       elif opcode is 'cmp_ge_int64'
         this._cmp_cc_int64(dst, x, y, 'ge')
 */
-      #
-      # int32 arithmetic
-      #
+      elif ((opcode is MIR1_OPCODE_CMP_IS_TYPEOF) or
+            (opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF) or
+            (opcode is MIR1_OPCODE_JMP_IF_TYPEOF) or
+            (opcode is MIR1_OPCODE_JMP_IF_NOT_TYPEOF))
 
+        if xType is 'variant'
+          this.pushOneParameterBeforeCall(x, 0)
+          print '  cmp [rcx + Variant_t.type],', y
 
-      elif opcode is 'cmp_is_typeof_float64'
-        this.store32(dst, y is VARIANT_DOUBLE)
+          if opcode is MIR1_OPCODE_CMP_IS_TYPEOF
+            print '  setz cl'
+            print '  and ecx, 1'
+            this.storeResultAfterCall(dst)
 
-      elif opcode is 'cmp_is_not_typeof_float64'
-        this.store32(dst, y isnt VARIANT_DOUBLE)
+          elif opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF
+            print '  setnz cl'
+            print '  and ecx, 1'
+            this.storeResultAfterCall(dst)
 
-      elif opcode is 'jmp_if_typeof_float64'
-        if y is VARIANT_DOUBLE
-          print '  jmp', dst
+          elif opcode is MIR1_OPCODE_JMP_IF_TYPEOF
+            print '  jz', dst
+
+          elif opcode is MIR1_OPCODE_JMP_IF_NOT_TYPEOF
+            print '  jnz', dst
+          endif
+
+        else
+          # TODO: Resolve at earlier stage.
+          cmpResult = false
+
+          if xType is 'float64'
+            cmpResult = y is VARIANT_DOUBLE
+
+          elif xType is 'int32'
+            cmpResult = y is VARIANT_INTEGER
+
+          elif xType is 'bool32'
+            cmpResult = y is VARIANT_INTEGER
+
+          elif xType is 'string'
+            cmpResult = y is VARIANT_STRING
+          endif
+
+          if opcode is MIR1_OPCODE_CMP_IS_TYPEOF
+            this.store32(dst, cmpResult)
+
+          elif opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF
+            # TODO: Use not x
+            if cmpResult is true
+              this.store32(dst, false)
+            else
+              this.store32(dst, true)
+            endif
+
+          elif opcode is MIR1_OPCODE_JMP_IF_TYPEOF
+            if cmpResult is true
+              print '  jmp', dst
+            endif
+
+          elif opcode is MIR1_OPCODE_JMP_IF_NOT_TYPEOF
+            if cmpResult is false
+              print '  jmp', dst
+            endif
+          endif
         endif
-
-      elif opcode is 'jmp_if_not_typeof_float64'
-        if y isnt VARIANT_DOUBLE
-          print '  jmp', dst
-        endif
-
-      #
-      # Variant arithmetic.
-      #
-
-      elif opcode is 'cmp_is_typeof_variant'
-        this.pushOneParameterBeforeCall(x, 0)
-        print '  cmp [rcx + Variant_t.type],', y
-        print '  setz cl'
-        print '  and ecx, 1'
-        this.storeResultAfterCall(dst)
-
-      elif opcode is 'cmp_is_not_typeof_variant'
-        this.pushOneParameterBeforeCall(x, 0)
-        print '  cmp [rcx + Variant_t.type],', y
-        print '  setnz cl'
-        print '  and ecx, 1'
-        this.storeResultAfterCall(dst)
 
       #
       # build-in string operations
       #
 
-      elif originalOpcode is 'string_join'
+      elif originalOpcode is MIR1_OPCODE_STRING_JOIN
         this.call3AndDestroy('__MOLD_VariantStringJoin', x, y, dst)
 
-      elif opcode is 'cmp_is_typeof_string'
-        this.store32(dst, y is VARIANT_STRING)
-
-      elif opcode is 'jmp_if_typeof_string'
-        if y is VARIANT_STRING
-          print '  jmp', dst
-        endif
-
-      elif opcode is 'jmp_if_not_typeof_string'
-        if y isnt VARIANT_STRING
-          print '  jmp', dst
-        endif
-
-      #
-      # jmp_if_xx_variant
-      #
-
-
-      elif opcode is 'jmp_if_typeof_variant'
-        this.pushOneParameterBeforeCall(x, 0)
-        print '  cmp [rcx + Variant_t.type],', y
-        print '  jz', dst
-
-      elif opcode is 'jmp_if_not_typeof_variant'
-        this.pushOneParameterBeforeCall(x, 0)
-        print '  cmp [rcx + Variant_t.type],', y
-        print '  jnz', dst
-
-      #
-      # jmp_if_xx_int64
-      #
-
-      #
-      # jmp_if_xx_int32
-      #
-
-
-      elif opcode is 'jmp_if_typeof_int32'
-        if y is VARIANT_INTEGER
-          print '  jmp', dst
-        endif
-
-      elif opcode is 'jmp_if_not_typeof_int32'
-        if y isnt VARIANT_INTEGER
-          print '  jmp', dst
-        endif
-
-      #
-      # jmp_if_true_bool32
-      # jmp_if_false_bool32
-      #
-
-
-      #
-      # jmp_if_xx_float64
-      #
-
-
-      elif originalOpcode is 'syscall'
+      elif originalOpcode is MIR1_OPCODE_SYSCALL
         rv        = item[1]
         sysCallId = item[2]
         params    = item[3]
@@ -965,7 +917,7 @@ class CodeGeneratorX64
         # Generate syscall opcode.
         this._syscall(sysCallId)
 
-      elif originalOpcode is 'call'
+      elif originalOpcode is MIR1_OPCODE_CALL
         rv        = item[1]
         name      = item[2]
         params    = item[3]
@@ -977,17 +929,17 @@ class CodeGeneratorX64
 
           # TODO: Clean up this mess.
           this.pushOneParameterBeforeCall(params[0], 0)
-          this.lea('rdx', params[1])
-          this.lea('r8', params[2])
-          this.lea('r9', params[3])
-          this.call(name)
+          print '  lea rdx, [', params[1], ']'
+          print '  lea r8, [', params[2], ']'
+          print '  lea r9, [', params[3], ']'
+          print '  call', name
 
         else
           # Generic call.
           this.pushParametersBeforeCall(params)
 
           if rv is defined
-            this.lea('rax', rv)
+            print '  lea rax, [', rv, ']'
           endif
 
           this.call(name)
@@ -997,7 +949,7 @@ class CodeGeneratorX64
           endif
         endif
 
-      elif originalOpcode is 'vcall'
+      elif originalOpcode is MIR1_OPCODE_VCALL
         rv        = item[1]
         methodId  = item[2]
         params    = item[3]
@@ -1006,7 +958,7 @@ class CodeGeneratorX64
         this.pushParametersBeforeCall(params)
 
         if rv is defined
-          this.lea('rax', rv)
+          print '  lea rax, [', rv, ']'
         endif
 
         signOkLabel = codeObj.symbolTable.createLabel()
@@ -1027,13 +979,13 @@ class CodeGeneratorX64
           print '  add rsp,', paramsCnt * 8 - 32
         endif
 
-      elif originalOpcode is 'create_object'
+      elif originalOpcode is MIR1_OPCODE_CREATE_OBJECT
         this.variantDestroy(dst)
         print '  lea  rcx, [', dst, ']'
         print '  lea  rdx, [vtable_' ~ str(x) ~ ']'
         print '  call __MOLD_VariantObjectCreate'
 
-      elif originalOpcode is 'load_index'
+      elif originalOpcode is MIR1_OPCODE_LOAD_INDEX
         # dst := x[y]
         this.pushOneParameterBeforeCall(x, 0)
         this.pushOneParameterBeforeCall(y, 1)
@@ -1041,7 +993,7 @@ class CodeGeneratorX64
 
         this.call('__MOLD_VariantLoadFromIndex')
 
-      elif originalOpcode is 'store_index'
+      elif originalOpcode is MIR1_OPCODE_STORE_INDEX
         # dst[x] := y
         this.pushOneParameterBeforeCall(dst, 0)
         this.pushOneParameterBeforeCall(x, 1)
@@ -1050,7 +1002,7 @@ class CodeGeneratorX64
         yType = this._getSymbolType(y)
         print '  call __MOLD_VariantStoreAtIndex_' ~ yType
 
-      elif originalOpcode is 'store_key'
+      elif originalOpcode is MIR1_OPCODE_STORE_KEY
         # dst{x} := y
         this.pushOneParameterBeforeCall(dst, 0)
         this.pushOneParameterBeforeCall(x, 1)
@@ -1059,7 +1011,7 @@ class CodeGeneratorX64
         yType = this._getSymbolType(y)
         print '  call __MOLD_VariantStoreAtKey_' ~ yType
 
-      elif originalOpcode is 'load_key'
+      elif originalOpcode is MIR1_OPCODE_LOAD_KEY
         # dst := x{y}
         this.pushOneParameterBeforeCall(x, 0)
         this.pushOneParameterBeforeCall(y, 1)
@@ -1074,10 +1026,10 @@ class CodeGeneratorX64
         #                  opcode only without any operand
         # ----------------------------------------------------------------------
 
-        if opcode is 'nop'
+        if opcode is MIR1_OPCODE_NOP
           print '  nop'
 
-        elif opcode is 'ret'
+        elif opcode is MIR1_OPCODE_RET
           print ''
           print '  ; clean frame'
           print '  ; -----------'
@@ -1145,11 +1097,11 @@ class CodeGeneratorX64
           print '  pop  rbp'
           print '  ret'
 
-        elif opcode is 'inner_ret'
+        elif opcode is MIR1_OPCODE_INNER_RET
           # TODO: Better handling of nested procedures.
           print '  ret'
 
-        elif opcode is 'endp'
+        elif opcode is MIR1_OPCODE_ENDP
           print ''
           # TODO: Clean up this mess.
           for values oneItem in currentSymbols
@@ -1173,19 +1125,19 @@ class CodeGeneratorX64
         #                              opcode x
         # ----------------------------------------------------------------------
 
-        if opcode is 'comment'
+        if opcode is MIR1_OPCODE_COMMENT
           print ';', dst
 
-        elif opcode is 'label'
+        elif opcode is MIR1_OPCODE_LABEL
           print dst ~ ':'
 
-        elif originalOpcode is 'jmp'
+        elif originalOpcode is MIR1_OPCODE_JMP
          print '  jmp', dst
 
-        elif originalOpcode is 'load_null'
+        elif originalOpcode is MIR1_OPCODE_LOAD_NULL
           this.variantDestroy(dst)
 
-        elif opcode is 'print_array_of_variants_ln'
+        elif opcode is MIR1_OPCODE_PRINT
           params    = dst
           paramsCnt = len(params)
 
@@ -1242,7 +1194,7 @@ class CodeGeneratorX64
           print '  lea rcx, [__fmt' ~ str(messageFormatId), ']'
           print '  call __MOLD_PrintFormatFromMemory'
 
-          elif opcode is 'proc'
+          elif opcode is MIR1_OPCODE_PROC
             proto            = item[1]
             currentProcProto = proto
             currentProcName  = proto.name
@@ -1363,7 +1315,7 @@ class CodeGeneratorX64
               print '  pop    rdx'
             endif
 
-        elif opcode is 'init_frame'
+        elif opcode is MIR1_OPCODE_INIT_FRAME
           currentFrame = dst
           symbols      = currentFrame.symbols
           params       = currentFrame.params
@@ -1550,42 +1502,43 @@ class CodeGeneratorX64
         this.pushOneParameterBeforeCall(x, 0)
         this.setDestinationVariableBeforeCall(dst, 1)
 
-        if originalOpcode is 'variant_cast'
+        if originalOpcode is MIR1_OPCODE_CAST_VARIANT_TO
           # Cast variant to primitive.
           # dst = x.value
           dstType = this._getSymbolType(dst)
           this.call('__MOLD_VariantCastTo_' ~ dstType)
 
-        elif originalOpcode is 'variant_create'
+        elif originalOpcode is MIR1_OPCODE_CREATE_VARIANT_FROM
           # Create variant from primitive.
           # dst.value = x
           this.call('__MOLD_VariantCreateFrom_' ~ xType)
 
-        elif opcode is 'neg_int32'
-          print '  neg ecx'
+        elif originalOpcode is MIR1_OPCODE_NEG
+          if xType is 'int32'
+            print '  neg ecx'
 
-        elif opcode is 'neg_float64'
-          # TODO: Optimize it.
-          print '  pxor xmm0, xword [__MOLD_VariantNeg.signBit]'
+          elif xType is 'float64'
+            # TODO: Optimize it.
+            print '  pxor xmm0, xword [__MOLD_VariantNeg.signBit]'
 
-        elif opcode is 'jmp_if_true_bool32'
-          print '  test ecx, ecx'
-          print '  jnz', dst
+          elif xType is 'variant'
+            this.call('__MOLD_VariantNeg')
+          endif
 
-        elif opcode is 'jmp_if_false_bool32'
-          print '  test ecx, ecx'
-          print '  jz', dst
+        elif ((opcode is MIR1_OPCODE_JMP_IF_TRUE) or
+              (opcode is MIR1_OPCODE_JMP_IF_FALSE))
 
-        elif opcode is 'jmp_if_true_variant'
-          print '  test byte [rcx + Variant_t.value], 0'
-          print '  jnz', dst
+          if xType is 'variant'
+            print '  test byte [rcx + Variant_t.value], 0'
+          elif xType is 'bool32'
+            print '  test ecx, ecx'
+          endif
 
-        elif opcode is 'jmp_if_false_variant'
-          print '  test byte [rcx + Variant_t.value], 0'
-          print '  jz', dst
-
-        elif opcode is 'neg_variant'
-          this.call('__MOLD_VariantNeg')
+          if opcode is MIR1_OPCODE_JMP_IF_TRUE
+            print '  jnz', dst
+          else
+            print '  jz', dst
+          endif
 
         else
           isOpcodeHandled = false
@@ -1604,170 +1557,70 @@ class CodeGeneratorX64
         this.pushOneParameterBeforeCall(y, 1)
         this.setDestinationVariableBeforeCall(dst, 2)
 
-        if (xType is 'variant') or (xType is 'string')
-          # Non-primitive - call related routine.
-          dstType = this._getSymbolType(dst)
-          print '  call __MOLD_Variant_' ~ originalOpcode
+        opcodeMajor = bitand(opcode, 0xf8)
+        opcodeMinor = bitand(opcode, 0x7)
 
-          # TODO: Clean up this mess.
-          if dstType is 'label'
+        if (xType is 'variant') or (xType is 'string')
+          if opcodeMajor is MIR1_OPCODE_CMP_CC_GROUP
+            print '  call __MOLD_Variant_cmp_' ~ MIR_COMPARE_FLAGS_FOR_INTEGERS[opcodeMinor]
+
+          elif opcodeMajor is MIR1_OPCODE_JMP_IF_CC_GROUP
+            print '  call __MOLD_Variant_cmp_' ~ MIR_COMPARE_FLAGS_FOR_INTEGERS[opcodeMinor]
             print '  test ecx, ecx'
             print '  jnz', dst
+
+          elif opcodeMajor is MIR1_OPCODE_ALU2_GROUP
+            print '  call __MOLD_Variant_' ~ MIR_ALU_OPCODES_FOR_INTEGERS[opcodeMinor]
           endif
 
-        elif opcode is 'cmp_eq_int32'
-          this._cmp_cc_int32(dst, 'z')
+        elif ((opcodeMajor is MIR1_OPCODE_CMP_CC_GROUP) or
+              (opcodeMajor is MIR1_OPCODE_JMP_IF_CC_GROUP))
 
-        elif opcode is 'cmp_ne_int32'
-          this._cmp_cc_int32(dst, 'nz')
+          if xType is 'float64'
+            cmpFlag = MIR_COMPARE_FLAGS_FOR_FLOATS[opcodeMinor]
+            print '  comisd xmm0, xmm1'
+          else
+            cmpFlag = MIR_COMPARE_FLAGS_FOR_INTEGERS[opcodeMinor]
+            print '  cmp ecx, edx'
+          endif
 
-        elif opcode is 'cmp_lt_int32'
-          this._cmp_cc_int32(dst, 'l')
-
-        elif opcode is 'cmp_le_int32'
-          this._cmp_cc_int32(dst, 'le')
-
-        elif opcode is 'cmp_gt_int32'
-          this._cmp_cc_int32(dst, 'g')
-
-        elif opcode is 'cmp_ge_int32'
-          this._cmp_cc_int32(dst, 'ge')
-
-        elif opcode is 'cmp_is_typeof_int32'
-          this.store32(dst, y is VARIANT_INTEGER)
-
-        elif opcode is 'cmp_is_not_typeof_int32'
-          this.store32(dst, y isnt VARIANT_INTEGER)
-
-        elif opcode is 'cmp_eq_float64'
-          this._cmp_cc_float64(dst, 'z')
-
-        elif opcode is 'cmp_ne_float64'
-          this._cmp_cc_float64(dst, 'nz')
-
-        elif opcode is 'cmp_lt_float64'
-          this._cmp_cc_float64(dst, 'b')
-
-        elif opcode is 'cmp_le_float64'
-          this._cmp_cc_float64(dst, 'be')
-
-        elif opcode is 'cmp_gt_float64'
-          this._cmp_cc_float64(dst, 'a')
-
-        elif opcode is 'cmp_ge_float64'
-          this._cmp_cc_float64(dst, 'ae')
-
-        elif opcode is 'cmp_eq_bool32'
-          # TODO: Review it.
-          this._cmp_cc_int32(dst, 'z')
-
-        elif opcode is 'cmp_ne_bool32'
-          # TODO: Review it.
-          this._cmp_cc_int32(dst, 'nz')
-
-        elif opcode is 'jmp_if_eq_int64'
-          this._jmp_if_cc_int64(dst, 'z')
-
-        elif opcode is 'jmp_if_ne_int64'
-          this._jmp_if_cc_int64(dst, 'nz')
-
-        elif opcode is 'jmp_if_lt_int64'
-          this._jmp_if_cc_int64(dst, 'l')
-
-        elif opcode is 'jmp_if_le_int64'
-          this._jmp_if_cc_int64(dst, 'le')
-
-        elif opcode is 'jmp_if_gt_int64'
-          this._jmp_if_cc_int64(dst, 'g')
-
-        elif opcode is 'jmp_if_ge_int64'
-          this._jmp_if_cc_int64(dst, 'ge')
-
-        elif opcode is 'jmp_if_eq_int32'
-          this._jmp_if_cc_int32(dst, 'z')
-
-        elif opcode is 'jmp_if_ne_int32'
-          this._jmp_if_cc_int32(dst, 'nz')
-
-        elif opcode is 'jmp_if_lt_int32'
-          this._jmp_if_cc_int32(dst, 'l')
-
-        elif opcode is 'jmp_if_le_int32'
-          this._jmp_if_cc_int32(dst, 'le')
-
-        elif opcode is 'jmp_if_gt_int32'
-          this._jmp_if_cc_int32(dst, 'g')
-
-        elif opcode is 'jmp_if_ge_int32'
-          this._jmp_if_cc_int32(dst, 'ge')
-
-        elif opcode is 'jmp_if_eq_bool32'
-          # TODO: Review it.
-          this._jmp_if_cc_int32(dst, 'z')
-
-        elif opcode is 'jmp_if_ne_bool32'
-          # TODO: Review it.
-          this._jmp_if_cc_int32(dst, 'nz')
-
-        elif opcode is 'jmp_if_eq_float64'
-          this._jmp_if_cc_float64(dst, 'z')
-
-        elif opcode is 'jmp_if_ne_float64'
-          this._jmp_if_cc_float64(dst, 'nz')
-
-        elif opcode is 'jmp_if_lt_float64'
-          this._jmp_if_cc_float64(dst, 'b')
-
-        elif opcode is 'jmp_if_le_float64'
-          this._jmp_if_cc_float64(dst, 'be')
-
-        elif opcode is 'jmp_if_gt_float64'
-          this._jmp_if_cc_float64(dst, 'a')
-
-        elif opcode is 'jmp_if_ge_float64'
-          this._jmp_if_cc_float64(dst, 'ae')
+          if opcodeMajor is MIR1_OPCODE_CMP_CC_GROUP
+            print '  set' ~ cmpFlag, 'cl'
+            print '  and ecx, 1'
+          else
+            print '  j' ~ cmpFlag, dst
+          endif
 
         #
         # Arithmetic
         #
 
-        elif opcode is 'add_int32'
-          this._alu2_int32(dst,'add')
+        elif opcodeMajor is MIR1_OPCODE_ALU2_GROUP
 
-        elif opcode is 'sub_int32'
-          this._alu2_int32(dst,'sub')
+          if (opcode is MIR1_OPCODE_DIV) and (xType is 'int32')
+            print '  cvtsi2sd  xmm0, rcx'  # xmm0 = double(x)
+            print '  cvtsi2sd  xmm1, rdx'  # xmm1 = double(y)
+            print '  divsd     xmm0, xmm1' # xmm0 = x / y
 
-        elif opcode is 'mul_int32'
-          this._alu2_int32(dst,'imul')
+          elif opcode is MIR1_OPCODE_IDIV
+            if xType is 'int32'
+              print '  mov  eax, ecx'  # ; eax     = x
+              print '  mov  ecx, edx'  # ; ecx     = y
+              print '  cdq'            # ; edx:eax = x
+              print '  idiv ecx'       # ; eax     = x // y
+              print '  mov  ecx, eax'  # ; ecx     = x // y (TODO)
 
-        elif opcode is 'div_int32'
-          print '  cvtsi2sd  xmm0, rcx'               # ; xmm0 = double(x)
-          print '  cvtsi2sd  xmm1, rdx'               # ; xmm1 = double(y)
-          print '  divsd     xmm0, xmm1'              # ; xmm0 = x / y
-          print '  movq      qword [', dst, '], xmm0' # ; dst  = x / y
+            else
+              print '  divsd xmm0, xmm1'     # xmm0 = x / y
+              print '  cvttsd2si rcx, xmm0'  # rcx  = int(x / y)
+            endif
 
-        elif opcode is 'idiv_int32'
-          print '  mov  eax, ecx'              # ; eax     = x
-          print '  mov  ecx, edx'              # ; ecx     = y
-          print '  cdq'                        # ; edx:eax = x
-          print '  idiv ecx'                   # ; eax     = x // y
-          print '  mov  ecx, eax'              # ; ecx     = x // y (TODO)
+          elif xType is 'float64'
+            print ' ', MIR_ALU_OPCODES_FOR_FLOATS[opcodeMinor], 'xmm0, xmm1'
 
-        elif opcode is 'add_float64'
-          this._alu2_float64(dst, 'addsd')
-
-        elif opcode is 'sub_float64'
-          this._alu2_float64(dst, 'subsd')
-
-        elif opcode is 'mul_float64'
-          this._alu2_float64(dst, 'mulsd')
-
-        elif opcode is 'div_float64'
-          this._alu2_float64(dst, 'divsd')
-
-        elif opcode is 'idiv_float64'
-          print '  divsd     xmm0, xmm1' # xmm0 = x / y
-          print '  cvttsd2si rcx, xmm0'  # rcx  = int(x / y)
+          elif xType is 'int32'
+            print ' ', MIR_ALU_OPCODES_FOR_INTEGERS[opcodeMinor], 'ecx, edx'
+          endif
 
         else
           isOpcodeHandled = false
@@ -1782,7 +1635,7 @@ class CodeGeneratorX64
       endif
 
       # Separate MIR opcodes by new line for better readability.
-      if originalOpcode isnt 'comment'
+      if originalOpcode isnt MIR1_OPCODE_COMMENT
         print ''
       endif
     endfor

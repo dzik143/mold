@@ -29,35 +29,11 @@ class MIRQuadOptimizer extends PipeAbstract
   method constructor()
     super()
     this.bufferingEnabled = true
-    this.lastOpcode       = 'nop'
+    this.lastOpcode       = -1
     this.lastDst          = '[error]'
     this.lastSrc1         = '[error]'
     this.lastSrc2         = '[error]'
     this.currentFrame     = {}
-
-    this.cmpXxJmpIfFalseMap = {
-      'cmp_eq': 'jmp_if_ne',
-      'cmp_ne': 'jmp_if_eq',
-      'cmp_lt': 'jmp_if_ge',
-      'cmp_le': 'jmp_if_gt',
-      'cmp_gt': 'jmp_if_le',
-      'cmp_ge': 'jmp_if_lt',
-
-      'cmp_is_typeof':     'jmp_if_not_typeof',
-      'cmp_is_not_typeof': 'jmp_if_typeof'
-    }
-
-    this.cmpXxJmpIfTrueMap = {
-      'cmp_eq': 'jmp_if_eq',
-      'cmp_ne': 'jmp_if_ne',
-      'cmp_lt': 'jmp_if_lt',
-      'cmp_le': 'jmp_if_le',
-      'cmp_gt': 'jmp_if_gt',
-      'cmp_ge': 'jmp_if_ge',
-
-      'cmp_is_typeof':     'jmp_if_typeof',
-      'cmp_is_not_typeof': 'jmp_if_not_typeof'
-    }
   endmethod
 
   # ----------------------------------------------------------------------------
@@ -75,25 +51,42 @@ class MIRQuadOptimizer extends PipeAbstract
   # ----------------------------------------------------------------------------
 
   method processOneItem(item)
+    global MIR1_OPCODE_STORE_INDEX
+    global MIR1_OPCODE_STORE_KEY
+    global MIR1_OPCODE_CALL
+    global MIR1_OPCODE_VCALL
+    global MIR1_OPCODE_PRINT
+    global MIR1_OPCODE_MOVE
+    global MIR1_OPCODE_JMP_IF_FALSE
+    global MIR1_OPCODE_JMP_IF_TRUE
+    global MIR1_OPCODE_PROC
+    global MIR1_OPCODE_ENDP
+    global MIR1_OPCODE_CMP_CC_GROUP
+    global MIR1_OPCODE_JMP_IF_TYPEOF
+    global MIR1_OPCODE_JMP_IF_NOT_TYPEOF
+    global MIR1_OPCODE_CMP_IS_TYPEOF
+    global MIR1_OPCODE_CMP_IS_NOT_TYPEOF
+
     opcode = item[0]
     dst    = item[1]
     src    = item[2]
 
     # print '[ MIRQuadOptimizer ]', opcode
 
-    if (this.lastOpcode is 'store_index') or (this.lastOpcode is 'store_key')
+    if ((this.lastOpcode is MIR1_OPCODE_STORE_INDEX) or
+        (this.lastOpcode is MIR1_OPCODE_STORE_KEY))
       this._emitOneItem(item)
 
-    elif this.lastOpcode is 'call'
+    elif this.lastOpcode is MIR1_OPCODE_CALL
       # Temporary fix for x = foo(x).
       this._emitOneItem(item)
 
-    elif this.lastOpcode is 'vcall'
+    elif this.lastOpcode is MIR1_OPCODE_VCALL
       # Temporary fix for x = x.foo().
       this._emitOneItem(item)
 
-    elif ((opcode is 'print_array_of_variants_ln') and
-          (this.lastOpcode is 'print_array_of_variants_ln'))
+    elif ((opcode is MIR1_OPCODE_PRINT) and
+          (this.lastOpcode is MIR1_OPCODE_PRINT))
       # TODO: Use if x,y are ... ?
       this.lastDst[@afterlast] = '__EOL'
       for values oneItem in dst
@@ -102,8 +95,8 @@ class MIRQuadOptimizer extends PipeAbstract
 
       dst = this.lastDst
 
-    elif ((opcode is 'move') and
-          (this.lastOpcode isnt 'move') and
+    elif ((opcode is MIR1_OPCODE_MOVE) and
+          (this.lastOpcode isnt MIR1_OPCODE_MOVE) and
           (this.lastDst is string) and
           (src is string) and
           (this.lastDst is src))
@@ -114,26 +107,32 @@ class MIRQuadOptimizer extends PipeAbstract
       lastItem    = buffer[@last]
       lastItem[1] = dst
 
-    elif opcode is 'jmp_if_false'
-      newOpcode = this.cmpXxJmpIfFalseMap{this.lastOpcode}
+    elif ((opcode is MIR1_OPCODE_JMP_IF_FALSE) or
+          (opcode is MIR1_OPCODE_JMP_IF_TRUE))
 
-      if newOpcode is defined
+      lastOpcode      = this.lastOpcode
+      lastOpcodeMajor = bitand(lastOpcode, 0xf8)
+      newOpcode       = -1
+
+      if lastOpcodeMajor is MIR1_OPCODE_CMP_CC_GROUP
         # cmp_xx       tmp, x, y
         # jmp_if_false label
-        #this._decreaseReadAndWriteHits(src)
-        this._replaceLastItem([newOpcode, dst, this.lastSrc1, this.lastSrc2])
-      else
-        # Not a cmp/jmp pattern. Do nothing.
-        this._emitOneItem(item)
+        newOpcode = lastOpcode + 8
+
+      elif lastOpcode is MIR1_OPCODE_CMP_IS_TYPEOF
+        newOpcode = MIR1_OPCODE_JMP_IF_TYPEOF
+
+      elif lastOpcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF
+        newOpcode = MIR1_OPCODE_JMP_IF_NOT_TYPEOF
       endif
 
-    elif opcode is 'jmp_if_true'
-      newOpcode = this.cmpXxJmpIfTrueMap{this.lastOpcode}
+      if newOpcode isnt -1
+        # this._decreaseReadAndWriteHits(src)
+        # Invert condition if needed.
+        if opcode is MIR1_OPCODE_JMP_IF_FALSE
+          newOpcode = bitxor(newOpcode, 1)
+        endif
 
-      if newOpcode is defined
-        # cmp_xx      tmp, x, y
-        # jmp_if_true label
-        #this._decreaseReadAndWriteHits(src)
         this._replaceLastItem([newOpcode, dst, this.lastSrc1, this.lastSrc2])
       else
         # Not a cmp/jmp pattern. Do nothing.
@@ -144,9 +143,10 @@ class MIRQuadOptimizer extends PipeAbstract
       this._emitOneItem(item)
     endif
 
-    if opcode is 'proc'
+    if opcode is MIR1_OPCODE_PROC
       this.currentFrame = item[1]
-    elif opcode is 'endp'
+
+    elif opcode is MIR1_OPCODE_ENDP
       this.flush()
     endif
 

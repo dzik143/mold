@@ -17,9 +17,9 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
   .case_ii:
     mov       rcx, [rcx + Variant_t.value]  ; rcx = x.value
     mov       rdx, [rdx + Variant_t.value]  ; rdx = y.value
-    xor       rax, rax
     cmp       rcx, rdx
-    opcode_ii al
+    opcode_ii cl
+    and       ecx, 1
     ret
 
   ; double x double
@@ -27,7 +27,7 @@ macro DefVariantCompare name, opcode_ii, opcode_dd
     movq      xmm0, [rcx + Variant_t.value]
     movq      xmm1, [rdx + Variant_t.value]
     opcode_dd xmm0, xmm1
-    movq      rax, xmm0
+    movq      rcx, xmm0
     ret
 
 .not_implemented:
@@ -82,8 +82,8 @@ __MOLD_VariantCompareEQ:
     ; TODO: Optimize it.
     mov     r9,  [rcx + Variant_t.value]   ; r9  = x.value
     cmp     r9,  [rdx + Variant_t.value]   ; r9  = x.value xor y.value
-    setz    al                             ; rax = compareEQ(x, y)
-    and     eax, 1                         ; rax = compareEQ(x, y) {0,1}
+    setz    cl                             ; rcx = compareEQ(x, y)
+    and     ecx, 1                         ; rcx = compareEQ(x, y) {0,1}
     ret
 
 .compare_ss:
@@ -116,8 +116,8 @@ __MOLD_VariantCompareEQ:
     pop     r8
 
     test    rax, rax
-    setz    al
-    and     rax, 1
+    setz    cl
+    and     ecx, 1
 
     ret
 
@@ -138,8 +138,7 @@ __MOLD_VariantCompareNE:
     DEBUG_CHECK_VARIANT rdx
 
     call    __MOLD_VariantCompareEQ
-    xor     al, 1
-
+    xor     cl, 1
     ret
 
 DefVariantCompare __MOLD_VariantCompareLT, setl,  cmpltsd

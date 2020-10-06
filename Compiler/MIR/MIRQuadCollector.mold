@@ -118,7 +118,7 @@ class MIRQuadCollector extends PipeAbstract
     code = this.quads
 
     for values item in code
-      opcode = item[0]
+      opcode = MIR1_GetOpcodeAsText(item[0])
 
       # print '[ MIRQuadCollector ]', item
 
@@ -127,7 +127,7 @@ class MIRQuadCollector extends PipeAbstract
         this._dumpFrameInfo(item[1].symbols)
         this.currentFrame = item[1]
 
-      elif opcode is 'init_frame'
+      elif opcode is 'init.frame'
         print '    init_frame'
 
       elif opcode is 'endp'
@@ -139,7 +139,7 @@ class MIRQuadCollector extends PipeAbstract
       elif opcode is 'label'
         print item[1] ~ ':'
 
-      elif opcode is 'print_array_of_variants_ln'
+      elif opcode is 'print'
         print '   ', this._pad(opcode, 28), item[1]
 
       elif opcode is 'call'
@@ -150,34 +150,6 @@ class MIRQuadCollector extends PipeAbstract
         x   = item[2]
         y   = item[3]
 
-        #if (opcode is 'move')# or (opcode is 'conv')
-        #  dstType = this._getType(dst)
-        #  srcType = this._getType(x)
-
-        #  if dstType isnt srcType
-          #  opcode = opcode ~ '_' ~ srcType
-          #else
-          #  opcode = 'conv_' ~ srcType ~ '_to_' ~ dstType
-        #  endif
-        #else
-
-/*
-        if opcode[0] isnt 'c'
-          xType = -1
-
-          if x is string
-            xType  = this._getType(x)
-            opcode = opcode ~ '_' ~ xType
-          endif
-
-          if y is string
-            yType  = this._getType(y)
-            if xType isnt yType
-              opcode = opcode ~ '_' ~ yType
-            endif
-          endif
-        endif
-*/
         paddedOpcode = this._pad(opcode, 28)
         paddedDst    = this._pad(dst, 8)
         paddedX      = this._pad(x, 8)

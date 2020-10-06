@@ -1,0 +1,276 @@
+# ------------------------------------------------------------------------------
+#                                Helper flags
+# ------------------------------------------------------------------------------
+
+# No operands.
+
+# Meta opcodes.
+const MIR1_OPCODE_COMMENT = 0
+const MIR1_OPCODE_PROC    = 1
+const MIR1_OPCODE_ENDP    = 2
+const MIR1_OPCODE_LABEL   = 3
+
+# Data move.
+const MIR1_OPCODE_MOVE = 4
+const MIR1_OPCODE_CONV = 5
+
+# Arithmetic: dst = op(x)
+const MIR1_OPCODE_NEG = 6
+
+# Arithmetic: dst = op(x, y)
+const MIR1_OPCODE_ALU2_GROUP = 8
+const MIR1_OPCODE_ADD        = 8  # 8 + 0
+const MIR1_OPCODE_SUB        = 9  # 8 + 1
+const MIR1_OPCODE_MUL        = 10 # 8 + 2
+const MIR1_OPCODE_DIV        = 11 # 8 + 3
+const MIR1_OPCODE_IDIV       = 12 # 8 + 4
+const MIR1_OPCODE_RESERVED_1 = 13 # 8 + 5
+const MIR1_OPCODE_RESERVED_2 = 14 # 8 + 6
+const MIR1_OPCODE_RESERVED_3 = 15 # 8 + 7
+
+# Compare.
+const MIR1_OPCODE_CMP_CC_GROUP = 16
+const MIR1_OPCODE_CMP_EQ    = 16 # 16 + 0
+const MIR1_OPCODE_CMP_NE    = 17 # 16 + 1
+const MIR1_OPCODE_CMP_LT    = 18 # 16 + 2
+const MIR1_OPCODE_CMP_GE    = 19 # 16 + 3
+const MIR1_OPCODE_CMP_LE    = 20 # 16 + 4
+const MIR1_OPCODE_CMP_GT    = 21 # 16 + 5
+const MIR1_OPCODE_RESERVED4 = 22 # 16 + 6
+const MIR1_OPCODE_RESERVED5 = 23 # 16 + 7
+
+const MIR1_OPCODE_JMP_IF_CC_GROUP = 24
+const MIR1_OPCODE_JMP_IF_EQ = 24 # 24 + 0
+const MIR1_OPCODE_JMP_IF_NE = 25 # 24 + 1
+const MIR1_OPCODE_JMP_IF_LT = 26 # 24 + 2
+const MIR1_OPCODE_JMP_IF_GE = 27 # 24 + 3
+const MIR1_OPCODE_JMP_IF_LE = 28 # 24 + 4
+const MIR1_OPCODE_JMP_IF_GT = 29 # 24 + 5
+const MIR1_OPCODE_RESERVED6 = 30 # 24 + 6
+const MIR1_OPCODE_RESERVED7 = 31 # 24 + 7
+
+# Dynamic types.
+const MIR1_OPCODE_CMP_IS_TYPEOF     = 32
+const MIR1_OPCODE_CMP_IS_NOT_TYPEOF = 33
+const MIR1_OPCODE_JMP_IF_TYPEOF     = 34
+const MIR1_OPCODE_JMP_IF_NOT_TYPEOF = 35
+
+# Conditional jumps.
+const MIR1_OPCODE_JMP          = 36
+const MIR1_OPCODE_JMP_BY_TABLE = 37
+const MIR1_OPCODE_JMP_IF_TRUE  = 38
+const MIR1_OPCODE_JMP_IF_FALSE = 39
+
+# Box storage.
+const MIR1_OPCODE_CREATE_OBJECT = 41
+const MIR1_OPCODE_CREATE_ARRAY  = 42
+const MIR1_OPCODE_CREATE_MAP    = 43
+
+const MIR1_OPCODE_STORE_INDEX = 44
+const MIR1_OPCODE_LOAD_INDEX  = 45
+const MIR1_OPCODE_STORE_KEY   = 46
+const MIR1_OPCODE_LOAD_KEY    = 47
+
+# Variant convert.
+const MIR1_OPCODE_CREATE_VARIANT_FROM = 48
+const MIR1_OPCODE_CAST_VARIANT_TO     = 49
+
+const MIR1_OPCODE_INIT_FRAME = 50
+
+# Procedure related.
+const MIR1_OPCODE_CALL      = 51
+const MIR1_OPCODE_VCALL     = 52
+const MIR1_OPCODE_SYSCALL   = 53
+const MIR1_OPCODE_RET       = 54
+const MIR1_OPCODE_INNER_RET = 55
+
+# Other.
+const MIR1_OPCODE_NOP         = 56
+const MIR1_OPCODE_STRING_JOIN = 57
+const MIR1_OPCODE_LOAD_NULL   = 58
+const MIR1_OPCODE_PRINT       = 59
+
+function MIR1_GetOpcodeAsText(opcode) -> rv
+  global MIR1_OPCODE_COMMENT, MIR1_OPCODE_LABEL
+  global MIR1_OPCODE_PROC, MIR1_OPCODE_ENDP
+  global MIR1_OPCODE_MOVE, MIR1_OPCODE_CONV
+  global MIR1_OPCODE_NEG, MIR1_OPCODE_ADD, MIR1_OPCODE_SUB
+  global MIR1_OPCODE_MUL, MIR1_OPCODE_DIV, MIR1_OPCODE_IDIV
+  global MIR1_OPCODE_CMP_EQ, MIR1_OPCODE_CMP_NE, MIR1_OPCODE_CMP_LT
+  global MIR1_OPCODE_CMP_LE, MIR1_OPCODE_CMP_GT, MIR1_OPCODE_CMP_GE
+  global MIR1_OPCODE_CMP_IS_TYPEOF, MIR1_OPCODE_CMP_IS_NOT_TYPEOF
+  global MIR1_OPCODE_JMP_IF_TYPEOF, MIR1_OPCODE_JMP_IF_NOT_TYPEOF
+  global MIR1_OPCODE_JMP, MIR1_OPCODE_JMP_BY_TABLE
+  global MIR1_OPCODE_JMP_IF_TRUE, MIR1_OPCODE_JMP_IF_FALSE
+  global MIR1_OPCODE_JMP_IF_EQ, MIR1_OPCODE_JMP_IF_NE
+  global MIR1_OPCODE_JMP_IF_LT, MIR1_OPCODE_JMP_IF_LE
+  global MIR1_OPCODE_JMP_IF_GT, MIR1_OPCODE_JMP_IF_GE
+  global MIR1_OPCODE_CALL, MIR1_OPCODE_VCALL, MIR1_OPCODE_SYSCALL
+  global MIR1_OPCODE_RET, MIR1_OPCODE_INNER_RET
+  global MIR1_OPCODE_NOP, MIR1_OPCODE_STRING_JOIN
+  global MIR1_OPCODE_LOAD_NULL, MIR1_OPCODE_PRINT
+  global MIR1_OPCODE_CREATE_OBJECT, MIR1_OPCODE_CREATE_ARRAY
+  global MIR1_OPCODE_CREATE_MAP
+  global MIR1_OPCODE_STORE_INDEX, MIR1_OPCODE_LOAD_INDEX
+  global MIR1_OPCODE_STORE_KEY, MIR1_OPCODE_LOAD_KEY
+  global MIR1_OPCODE_CREATE_VARIANT_FROM, MIR1_OPCODE_CAST_VARIANT_TO
+  global MIR1_OPCODE_INIT_FRAME
+  global MIR1_OPCODE_CMP_CC_GROUP, MIR1_OPCODE_JMP_IF_CC_GROUP
+
+  if opcode is MIR1_OPCODE_COMMENT
+    rv = 'comment'
+
+  elif opcode is MIR1_OPCODE_PROC
+    rv = 'proc'
+
+  elif opcode is MIR1_OPCODE_ENDP
+    rv = 'endp'
+
+  elif opcode is MIR1_OPCODE_LABEL
+    rv = 'label'
+
+  elif opcode is MIR1_OPCODE_MOVE
+    rv = 'move'
+
+  elif opcode is MIR1_OPCODE_CONV
+    rv = 'conv'
+
+  elif opcode is MIR1_OPCODE_NEG
+    rv = 'neg'
+
+  elif opcode is MIR1_OPCODE_ADD
+    rv = 'add'
+
+  elif opcode is MIR1_OPCODE_SUB
+    rv = 'sub'
+
+  elif opcode is MIR1_OPCODE_MUL
+    rv = 'mul'
+
+  elif opcode is MIR1_OPCODE_DIV
+    rv = 'div'
+
+  elif opcode is MIR1_OPCODE_IDIV
+    rv = 'idiv'
+
+  elif opcode is MIR1_OPCODE_CMP_EQ
+    rv = 'cmp.eq'
+
+  elif opcode is MIR1_OPCODE_CMP_NE
+    rv = 'cmp.ne'
+
+  elif opcode is MIR1_OPCODE_CMP_LT
+    rv = 'cmp.lt'
+
+  elif opcode is MIR1_OPCODE_CMP_GE
+    rv = 'cmp.ge'
+
+  elif opcode is MIR1_OPCODE_CMP_LE
+    rv = 'cmp.le'
+
+  elif opcode is MIR1_OPCODE_CMP_GT
+    rv = 'cmp.gt'
+
+  elif opcode is MIR1_OPCODE_JMP_IF_EQ
+    rv = 'jmp.if.eq'
+
+  elif opcode is MIR1_OPCODE_JMP_IF_NE
+    rv = 'jmp.if.ne'
+
+  elif opcode is MIR1_OPCODE_JMP_IF_LT
+    rv = 'jmp.if.lt'
+
+  elif opcode is MIR1_OPCODE_JMP_IF_GE
+    rv = 'jmp.if.ge'
+
+  elif opcode is MIR1_OPCODE_JMP_IF_LE
+    rv = 'jmp.if.le'
+
+  elif opcode is MIR1_OPCODE_JMP_IF_GT
+    rv = 'jmp.if.gt'
+
+  elif opcode is MIR1_OPCODE_CMP_IS_TYPEOF
+    rv = 'cmp.typeof'
+
+  elif opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF
+    rv = 'cmp.not.typeof'
+
+  elif opcode is MIR1_OPCODE_JMP_IF_TYPEOF
+    rv = 'jmp.if.typeof'
+
+  elif opcode is MIR1_OPCODE_JMP_IF_NOT_TYPEOF
+    rv = 'jmp.if.not.typeof'
+
+  elif opcode is MIR1_OPCODE_JMP
+    rv = 'jmp'
+
+  elif opcode is MIR1_OPCODE_JMP_BY_TABLE
+    rv = 'jmp.by.table'
+
+  elif opcode is MIR1_OPCODE_JMP_IF_TRUE
+    rv = 'jmp.if.true'
+
+  elif opcode is MIR1_OPCODE_JMP_IF_FALSE
+    rv = 'jmp.if.false'
+
+  elif opcode is MIR1_OPCODE_CREATE_OBJECT
+    rv = 'create.object'
+
+  elif opcode is MIR1_OPCODE_CREATE_ARRAY
+    rv = 'create.array'
+
+  elif opcode is MIR1_OPCODE_CREATE_MAP
+    rv = 'create.map'
+
+  elif opcode is MIR1_OPCODE_STORE_INDEX
+    rv = 'store.index'
+
+  elif opcode is MIR1_OPCODE_LOAD_INDEX
+    rv = 'load.index'
+
+  elif opcode is MIR1_OPCODE_STORE_KEY
+    rv = 'store.key'
+
+  elif opcode is MIR1_OPCODE_LOAD_KEY
+    rv = 'load.key'
+
+  elif opcode is MIR1_OPCODE_CREATE_VARIANT_FROM
+    rv = 'create.variant.from'
+
+  elif opcode is MIR1_OPCODE_CAST_VARIANT_TO
+    rv = 'cast.variant.to'
+
+  elif opcode is MIR1_OPCODE_INIT_FRAME
+    rv = 'init.frame'
+
+  elif opcode is MIR1_OPCODE_CALL
+    rv = 'call'
+
+  elif opcode is MIR1_OPCODE_VCALL
+    rv = 'vcall'
+
+  elif opcode is MIR1_OPCODE_SYSCALL
+    rv = 'syscall'
+
+  elif opcode is MIR1_OPCODE_RET
+    rv = 'ret'
+
+  elif opcode is MIR1_OPCODE_INNER_RET
+    rv = 'inner.ret'
+
+  elif opcode is MIR1_OPCODE_NOP
+    rv = 'nop'
+
+  elif opcode is MIR1_OPCODE_STRING_JOIN
+    rv = 'string.join'
+
+  elif opcode is MIR1_OPCODE_LOAD_NULL
+    rv = 'load.null'
+
+  elif opcode is MIR1_OPCODE_PRINT
+    rv = 'print'
+
+  else
+    rv = '(BAD:' ~ str(opcode) ~ ')'
+  endif
+endfunction

@@ -587,10 +587,12 @@ class ASTTranslator
         this._evaluateNodeLazyBoolOr(rv, children[0], children[1])
 
       elif opcode is AST_OPCODE_IS_TYPEOF
+        # TODO: Is it really needed?
         x = this._evaluateNode(children[0])
         this._isTypeOf(rv, x, value)
 
       elif opcode is AST_OPCODE_IS_NOT_TYPEOF
+        # TODO: Is it really needed?
         x = this._evaluateNode(children[0])
         this._isNotTypeOf(rv, x, value)
 

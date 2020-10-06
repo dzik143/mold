@@ -6,15 +6,26 @@
 __MOLD_Variant_add  EQU __MOLD_VariantAdd
 __MOLD_Variant_sub  EQU __MOLD_VariantSub
 __MOLD_Variant_mul  EQU __MOLD_VariantMul
+__MOLD_Variant_imul EQU __MOLD_VariantMul
 __MOLD_Variant_div  EQU __MOLD_VariantDiv
 __MOLD_Variant_idiv EQU __MOLD_VariantDivAsInteger
 
+__MOLD_Variant_cmp_e  EQU __MOLD_VariantCompareEQ
 __MOLD_Variant_cmp_eq EQU __MOLD_VariantCompareEQ
 __MOLD_Variant_cmp_ne EQU __MOLD_VariantCompareNE
+__MOLD_Variant_cmp_g  EQU __MOLD_VariantCompareGT
 __MOLD_Variant_cmp_gt EQU __MOLD_VariantCompareGT
 __MOLD_Variant_cmp_ge EQU __MOLD_VariantCompareGE
+__MOLD_Variant_cmp_l  EQU __MOLD_VariantCompareLT
 __MOLD_Variant_cmp_lt EQU __MOLD_VariantCompareLT
 __MOLD_Variant_cmp_le EQU __MOLD_VariantCompareLE
+
+__MOLD_Variant_jmp_if_eq EQU __MOLD_VariantCompareEQ
+__MOLD_Variant_jmp_if_ne EQU __MOLD_VariantCompareNE
+__MOLD_Variant_jmp_if_gt EQU __MOLD_VariantCompareGT
+__MOLD_Variant_jmp_if_ge EQU __MOLD_VariantCompareGE
+__MOLD_Variant_jmp_if_lt EQU __MOLD_VariantCompareLT
+__MOLD_Variant_jmp_if_le EQU __MOLD_VariantCompareLE
 
 ;###############################################################################
 ;                                  Constants

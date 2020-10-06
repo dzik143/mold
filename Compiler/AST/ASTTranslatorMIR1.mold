@@ -20,6 +20,7 @@
 
 import 'AST/ASTTranslator.mold'
 import 'MIR/MIR.mold'
+import 'MIR/MIR1.mold'
 import 'Utils/Stack.mold'
 
 class ASTTranslatorMIR1 extends ASTTranslator
@@ -87,24 +88,29 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method emitComment(comment)
-    this.emitTargetOnlyOpcode('comment', comment)
+    global MIR1_OPCODE_COMMENT
+    this.emitTargetOnlyOpcode(MIR1_OPCODE_COMMENT, comment)
   endmethod
 
   method emitLabel(label)
-    this.emitTargetOnlyOpcode('label', label)
+    global MIR1_OPCODE_LABEL
+    this.emitTargetOnlyOpcode(MIR1_OPCODE_LABEL, label)
   endmethod
 
   method emitJmp(label)
-    this.emitTargetOnlyOpcode('jmp', label)
+    global MIR1_OPCODE_JMP
+    this.emitTargetOnlyOpcode(MIR1_OPCODE_JMP, label)
   endmethod
 
   method emitJmpByTable(jmpTable, labelIdx)
-    newQuad = ['jmp_by_table', jmpTable, labelIdx]
+    global MIR1_OPCODE_JMP_BY_TABLE
+    newQuad = [MIR1_OPCODE_JMP_BY_TABLE, jmpTable, labelIdx]
     this._emitOneItem(newQuad)
   endmethod
 
   method emitMoveVariantOpcode(dst, src)
-    this.emitOneArgOpcode('move', dst, src)
+    global MIR1_OPCODE_MOVE
+    this.emitOneArgOpcode(MIR1_OPCODE_MOVE, dst, src)
   endmethod
 
   method popForRead() -> rv
@@ -152,19 +158,23 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method emitProcBegin(procMeta)
-    this.emitTargetOnlyOpcode('proc', procMeta)
+    global MIR1_OPCODE_PROC
+    this.emitTargetOnlyOpcode(MIR1_OPCODE_PROC, procMeta)
   endmethod
 
   method emitInitFrame(procMeta)
-    this.emitTargetOnlyOpcode('init_frame', procMeta)
+    global MIR1_OPCODE_INIT_FRAME
+    this.emitTargetOnlyOpcode(MIR1_OPCODE_INIT_FRAME, procMeta)
   endmethod
 
   method emitProcEnd()
-    this.emitZeroArgsOpcode('endp')
+    global MIR1_OPCODE_ENDP
+    this.emitZeroArgsOpcode(MIR1_OPCODE_ENDP)
   endmethod
 
   method emitRet()
-    this.emitZeroArgsOpcode('ret')
+    global MIR1_OPCODE_RET
+    this.emitZeroArgsOpcode(MIR1_OPCODE_RET)
   endmethod
 
   method emitMoveBackVariant()
@@ -191,49 +201,63 @@ class ASTTranslatorMIR1 extends ASTTranslator
   # ----------------------------------------------------------------------------
 
   method _neg(rv, value)
-    this.popOneArgAndEmitOpcode('neg', rv)
+    global MIR1_OPCODE_NEG
+    this.popOneArgAndEmitOpcode(MIR1_OPCODE_NEG, rv)
   endmethod
 
   method _add(rv, x, y)
-    this.popTwoArgsAndEmitOpcode('add', rv)
+    global MIR1_OPCODE_ADD
+    this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_ADD, rv)
   endmethod
 
   method _stringJoin(rv, x, y)
-    this.popTwoArgsAndEmitOpcode('string_join', rv)
+    global MIR1_OPCODE_STRING_JOIN
+    this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_STRING_JOIN, rv)
   endmethod
 
   method _sub(rv, x, y)
-    this.popTwoArgsAndEmitOpcode('sub', rv)
+    global MIR1_OPCODE_SUB
+    this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_SUB, rv)
   endmethod
 
   method _mul(rv, x, y)
-    this.popTwoArgsAndEmitOpcode('mul', rv)
+    global MIR1_OPCODE_MUL
+    this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_MUL, rv)
   endmethod
 
   method _div(rv, x, y)
-    this.popTwoArgsAndEmitOpcode('div', rv)
+    global MIR1_OPCODE_DIV
+    this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_DIV, rv)
   endmethod
 
   method _idiv(rv, x, y)
-    this.popTwoArgsAndEmitOpcode('idiv', rv)
+    global MIR1_OPCODE_IDIV
+    this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_IDIV, rv)
   endmethod
 
   method _loadArray(rv)
-    this.emitTargetOnlyOpcode('create_array', rv)
+    global MIR1_OPCODE_CREATE_ARRAY
+    this.emitTargetOnlyOpcode(MIR1_OPCODE_CREATE_ARRAY, rv)
     this.push(rv)
   endmethod
 
   method _loadMap(rv)
-    this.emitTargetOnlyOpcode('create_map', rv)
+    global MIR1_OPCODE_CREATE_MAP
+    this.emitTargetOnlyOpcode(MIR1_OPCODE_CREATE_MAP, rv)
     this.push(rv)
   endmethod
 
   method _loadNull(rv)
-    this.emitTargetOnlyOpcode('load_null', rv)
+    global MIR1_OPCODE_LOAD_NULL
+    this.emitTargetOnlyOpcode(MIR1_OPCODE_LOAD_NULL, rv)
     this.push(rv)
   endmethod
 
   method _loadImm(targetVariable, value)
+    global MIR1_OPCODE_CREATE_VARIANT_FROM
+    global MIR1_OPCODE_CREATE_ARRAY
+    global MIR1_OPCODE_CREATE_MAP
+
     rv = targetVariable
 
     if value is integer
@@ -249,7 +273,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
         # TODO: Review it.
         # TODO: Int64 is always mapped to variant.
         #this.emitOneArgOpcode('conv_int64_to_variant', rv, value)
-        this.emitOneArgOpcode('variant_create', rv, value)
+        this.emitOneArgOpcode(MIR1_OPCODE_CREATE_VARIANT_FROM, rv, value)
         # this.emitOneArgOpcode('load_int64', rv, value)
       endif
 /*
@@ -271,7 +295,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
       # TODO: Avoid move here?
       newConst = this.symbolTable.createConstFromValue(value)
       this.symbolTable.lookupForRead(newConst)
-      this.emitOneArgOpcode('create_array', rv, newConst)
+      this.emitOneArgOpcode(MIR1_OPCODE_CREATE_ARRAY, rv, newConst)
 
     elif value is map
       # TODO: Review it.
@@ -289,7 +313,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
       this.symbolTable.lookupForRead(newConstKeys)
       this.symbolTable.lookupForRead(newConstValues)
-      this.emitTwoArgsOpcode('create_map', rv, newConstKeys, newConstValues)
+      this.emitTwoArgsOpcode(MIR1_OPCODE_CREATE_MAP, rv, newConstKeys, newConstValues)
 
     else
       # Do nothing.
@@ -306,9 +330,13 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _convert(rv, unusedSrc, srcType, dstType)
+    global MIR1_OPCODE_MOVE
+    global MIR1_OPCODE_CAST_VARIANT_TO
+    global MIR1_OPCODE_CREATE_VARIANT_FROM
+
     srcTypeMIR = AST_ConvertDataTypeToMIR(srcType)
     dstTypeMIR = AST_ConvertDataTypeToMIR(dstType)
-    opcode     = 'move'
+    opcode     = MIR1_OPCODE_MOVE
 
     if srcTypeMIR is dstTypeMIR
       # Nothing to convert.
@@ -320,11 +348,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     elif srcTypeMIR is 'variant'
       # Cast variant to primitive.
-      opcode = 'variant_cast'
+      opcode = MIR1_OPCODE_CAST_VARIANT_TO
 
     elif dstTypeMIR is 'variant'
       # Create variant from primitive.
-      opcode = 'variant_create'
+      opcode = MIR1_OPCODE_CREATE_VARIANT_FROM
 
     else
       this._error("Unhandled MIR convert from '" ~ srcTypeMIR ~ " to '" ~ dstTypeMIR ~ "'")
@@ -334,37 +362,45 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _compareEQ(rv, x, y)
-    this.popTwoArgsAndEmitOpcode('cmp_eq', rv)
+    global MIR1_OPCODE_CMP_EQ
+    this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_CMP_EQ, rv)
   endmethod
 
   method _compareNEQ(rv, x, y)
-    this.popTwoArgsAndEmitOpcode('cmp_ne', rv)
+    global MIR1_OPCODE_CMP_NE
+    this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_CMP_NE, rv)
   endmethod
 
   method _compareLT(rv, x, y)
-    this.popTwoArgsAndEmitOpcode('cmp_lt', rv)
+    global MIR1_OPCODE_CMP_LT
+    this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_CMP_LT, rv)
   endmethod
 
   method _compareLE(rv, x, y)
-    this.popTwoArgsAndEmitOpcode('cmp_le', rv)
+    global MIR1_OPCODE_CMP_LE
+    this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_CMP_LE, rv)
   endmethod
 
   method _compareGT(rv, x, y)
-    this.popTwoArgsAndEmitOpcode('cmp_gt', rv)
+    global MIR1_OPCODE_CMP_GT
+    this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_CMP_GT, rv)
   endmethod
 
   method _compareGE(rv, x, y)
-    this.popTwoArgsAndEmitOpcode('cmp_ge', rv)
+    global MIR1_OPCODE_CMP_GE
+    this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_CMP_GE, rv)
   endmethod
 
   method _isTypeOf(rv, x, typeId)
+    global MIR1_OPCODE_CMP_IS_TYPEOF
     this.push(typeId)
-    this.popTwoArgsAndEmitOpcode('cmp_is_typeof', rv)
+    this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_CMP_IS_TYPEOF, rv)
   endmethod
 
   method _isNotTypeOf(rv, x, typeId)
+    global MIR1_OPCODE_CMP_IS_NOT_TYPEOF
     this.push(typeId)
-    this.popTwoArgsAndEmitOpcode('cmp_is_not_typeof', rv)
+    this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_CMP_IS_NOT_TYPEOF, rv)
   endmethod
 
   method _loadVariable(name)
@@ -384,6 +420,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _call(rv, proto, unusedParams, paramsCnt)
+    global MIR1_OPCODE_CALL
+
     params = this.popParametersBeforeCall(paramsCnt)
     name   = proto.fullName
 
@@ -392,7 +430,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     endif
 
     # TODO: Use emitTwoArgsOpcode() after fix.
-    this._emitOneItem(['call', rv, name, params])
+    this._emitOneItem([MIR1_OPCODE_CALL, rv, name, params])
 
     if ((proto.isConstructor is defined) and
         (proto.isConstructor is true))
@@ -408,63 +446,75 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _syscall(rv, id, unusedParams, paramsCnt)
+    global MIR1_OPCODE_SYSCALL
     params = this.popParametersBeforeCall(paramsCnt)
     # TODO: Use emitTwoArgsOpcode() after fix.
-    this._emitOneItem(['syscall', rv, id, params])
+    this._emitOneItem([MIR1_OPCODE_SYSCALL, rv, id, params])
     this.push(rv)
   endmethod
 
   method _loadFromIndex(rv, unusedBox, unusedIdx)
-    this.popTwoArgsAndEmitOpcode('load_index', rv)
+    global MIR1_OPCODE_LOAD_INDEX
+    this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_LOAD_INDEX, rv)
   endmethod
 
   method _loadFromKey(rv, unusedBox, unusedKey)
-    this.popTwoArgsAndEmitOpcode('load_key', rv)
+    global MIR1_OPCODE_LOAD_KEY
+    this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_LOAD_KEY, rv)
   endmethod
 
   method _storeAtIndex(unusedBox, unusedIdx, unusedValue)
+    global MIR1_OPCODE_STORE_INDEX
     val = this.popForRead()
     idx = this.popForRead()
     box = this.popForRead()
-    this.emitTwoArgsOpcode('store_index', box, idx, val)
+    this.emitTwoArgsOpcode(MIR1_OPCODE_STORE_INDEX, box, idx, val)
     this.push(box)
   endmethod
 
   method _storeAtKey(unusedBox, unusedKey, unusedValue)
+    global MIR1_OPCODE_STORE_KEY
     val = this.popForRead()
     key = this.popForRead()
     box = this.popForRead()
-    this.emitTwoArgsOpcode('store_key', box, key, val)
+    this.emitTwoArgsOpcode(MIR1_OPCODE_STORE_KEY, box, key, val)
     this.push(box)
   endmethod
 
   method _storeAtIndexAndDrop(unusedBox, unusedIdx, unusedValue)
+    global MIR1_OPCODE_STORE_INDEX
     val = this.popForRead()
     idx = this.popForRead()
     box = this.popForRead()
-    this.emitTwoArgsOpcode('store_index', box, idx, val)
+    this.emitTwoArgsOpcode(MIR1_OPCODE_STORE_INDEX, box, idx, val)
   endmethod
 
   method _storeAtKeyAndDrop(unusedBox, unusedKey, unusedValue)
+    global MIR1_OPCODE_STORE_KEY
     val = this.popForRead()
     key = this.popForRead()
     box = this.popForRead()
-    this.emitTwoArgsOpcode('store_key', box, key, val)
+    this.emitTwoArgsOpcode(MIR1_OPCODE_STORE_KEY, box, key, val)
   endmethod
 
   method _createObject(rv, classProto)
+    global MIR1_OPCODE_CREATE_OBJECT
     if classProto is undefined
       # Dynamic code, adjust class proto at run-time.
       this._error('error: missing classProto in MIR_OPCODE_CREATE_OBJECT')
 
     else
       # Static code, we got class proto inside MIR opcode.
-      this.emitOneArgOpcode('create_object', rv, classProto.name)
+      this.emitOneArgOpcode(MIR1_OPCODE_CREATE_OBJECT, rv, classProto.name)
       this.push(rv)
     endif
   endmethod
 
   method _evaluateNodeLazyBoolAnd(rv, leftAst, rightAst)
+    global MIR1_OPCODE_MOVE
+    global MIR1_OPCODE_JMP_IF_FALSE
+    global MIR1_OPCODE_JMP_IF_TRUE
+
     endLabel = this.symbolTable.createLabel()
     #   rv = left()
     #   if not rv goto .done
@@ -473,9 +523,9 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     this.push(rv)
 
-    this.emitOneArgOpcode('move', rv, false)                           # [false]
-    x = this._evaluateNode(leftAst)                                    # [false x]
-    this.emitOneArgOpcode('jmp_if_false', endLabel, this.popForRead()) # [false]
+    this.emitOneArgOpcode(MIR1_OPCODE_MOVE, rv, false)                           # [false]
+    x = this._evaluateNode(leftAst)                                              # [false x]
+    this.emitOneArgOpcode(MIR1_OPCODE_JMP_IF_FALSE, endLabel, this.popForRead()) # [false]
 
     # TODO: Review it?
     # TODO: Simplify it.
@@ -492,6 +542,9 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _evaluateNodeLazyBoolOr(rv, leftAst, rightAst)
+    global MIR1_OPCODE_MOVE
+    global MIR1_OPCODE_JMP_IF_TRUE
+
     endLabel = this.symbolTable.createLabel()
     #   rv = left()
     #   if rv goto .done
@@ -500,9 +553,9 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     this.push(rv)
 
-    this.emitOneArgOpcode('move', rv, true)                           # [true]
-    x = this._evaluateNode(leftAst)                                   # [true x]
-    this.emitOneArgOpcode('jmp_if_true', endLabel, this.popForRead()) # [true]
+    this.emitOneArgOpcode(MIR1_OPCODE_MOVE, rv, true)                           # [true]
+    x = this._evaluateNode(leftAst)                                             # [true x]
+    this.emitOneArgOpcode(MIR1_OPCODE_JMP_IF_TRUE, endLabel, this.popForRead()) # [true]
 
     # TODO: Simplify it.
     this._releaseTempVar(x)
@@ -518,6 +571,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _invokeMethod(rv, methodName, unusedParams, paramsCnt)
+    global MIR1_OPCODE_VCALL
     # TODO: Remove paramsCnt
     # TODO: Remove codeObj
     methodId = this.code.methodsMap{methodName}
@@ -536,11 +590,15 @@ class ASTTranslatorMIR1 extends ASTTranslator
     params = this.popParametersBeforeCall(paramsCnt)
 
     # TODO: Use emitTwoArgsOpcode() if fixed.
-    this._emitOneItem(['vcall', rv, methodId, params])
+    this._emitOneItem([MIR1_OPCODE_VCALL, rv, methodId, params])
     this.push(rv)
   endmethod
 
   method _executeNodeFor(iterName, idxStart, idxEnd, idxStep, bodyAst)
+    global MIR1_OPCODE_JMP
+    global MIR1_OPCODE_ADD
+    global MIR1_OPCODE_JMP_IF_GE
+
     labelForBegin = this.symbolTable.createLabel()
     labelForEnd   = this.symbolTable.createLabel()
 
@@ -564,7 +622,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
       # Is it the end?
       # if not (idx < idxEnd) goto end
-      this.emitTwoArgsOpcode('jmp_if_ge', labelForEnd, iterName, idxEnd)
+      this.emitTwoArgsOpcode(MIR1_OPCODE_JMP_IF_GE, labelForEnd, iterName, idxEnd)
 
       # Loop body.
       for values oneChild in bodyAst.children
@@ -574,8 +632,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
       # Update iterator value and jmp to loop begin.
       # idx += step
       # goto begin
-      this.emitTwoArgsOpcode('add', iterName, iterName, idxStep)
-      this.emitTargetOnlyOpcode('jmp', labelForBegin)
+      this.emitTwoArgsOpcode(MIR1_OPCODE_ADD, iterName, iterName, idxStep)
+      this.emitTargetOnlyOpcode(MIR1_OPCODE_JMP, labelForBegin)
 
     this.emitLabel(labelForEnd)
 
@@ -586,6 +644,10 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _executeNodeForEach(iteratorKey, iteratorValue, box, bodyAst, isMapMode)
+    global MIR1_OPCODE_CALL
+    global MIR1_OPCODE_JMP
+    global MIR1_OPCODE_INNER_RET
+
     labelForBegin = this.symbolTable.createLabel()
     labelForEnd   = this.symbolTable.createLabel()
 
@@ -596,12 +658,12 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     # Avoid direct exeution of loop body.
     # TODO: Handle inner functions in better way.
-    this.emitTargetOnlyOpcode('jmp', labelForEnd)
+    this.emitTargetOnlyOpcode(MIR1_OPCODE_JMP, labelForEnd)
 
       # Translate loop body as inner function.
       this.emitLabel(labelForBegin)
       this._executeNode(bodyAst)
-      this.emitZeroArgsOpcode('inner_ret')
+      this.emitZeroArgsOpcode(MIR1_OPCODE_INNER_RET)
 
     this.emitLabel(labelForEnd)
 
@@ -625,7 +687,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     # Emit call to loop handler.
     params = [box, iteratorKeyForMir, iteratorValueForMir, labelForBegin]
-    this._emitOneItem(['call', null, funcName, params])
+    this._emitOneItem([MIR1_OPCODE_CALL, null, funcName, params])
 
     this.emitComment('')
     this.emitComment('END: for keys ' ~ str(iteratorKey) ~ ' values ' ~ str(iteratorValue))
@@ -634,6 +696,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _executeNodeWhile(condAst, bodyAst)
+    global MIR1_OPCODE_JMP_IF_FALSE
+
     loopLabel = this.symbolTable.createLabel()
     endLabel  = this.symbolTable.createLabel()
 
@@ -645,7 +709,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.emitLabel(loopLabel)
       # if (not cond) goto end
       cond = this._evaluateNode(condAst)
-      this.emitOneArgOpcode('jmp_if_false', endLabel, this.popForRead())
+      this.emitOneArgOpcode(MIR1_OPCODE_JMP_IF_FALSE, endLabel, this.popForRead())
 
       # Loop body
       this._executeNode(bodyAst)
@@ -660,6 +724,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _executeNodeIf(cond, codeIfTrue, codeIfFalse)
+    global MIR1_OPCODE_JMP_IF_FALSE
+
     falseLabel = this.symbolTable.createLabel()
     endLabel   = this.symbolTable.createLabel()
 
@@ -671,7 +737,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     #   codeIfFalse
     #
     # endLabel:
-    this.emitOneArgOpcode('jmp_if_false', falseLabel, this.popForRead())
+    this.emitOneArgOpcode(MIR1_OPCODE_JMP_IF_FALSE, falseLabel, this.popForRead())
 
     this._executeNode(codeIfTrue)
 
@@ -774,6 +840,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _executeNodePrint(node)
+    global MIR1_OPCODE_PRINT
     children = node.children
     params   = []
 
@@ -788,7 +855,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
       endif
     endfor
 
-    this.emitTargetOnlyOpcode('print_array_of_variants_ln', params)
+    this.emitTargetOnlyOpcode(MIR1_OPCODE_PRINT, params)
     this.stack.eatN(len(children))
   endmethod
 
@@ -801,6 +868,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _emitFunctionBody(funcName, funcProto)
+    global MIR1_OPCODE_INNER_RET
+
     params    = funcProto.params
     paramsCnt = len(funcProto.params)
     children  = funcProto.children
@@ -848,7 +917,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
 
     else
       # Emit single ret opcode if there is no any code.
-      this.emitZeroArgsOpcode('inner_ret')
+      this.emitZeroArgsOpcode(MIR1_OPCODE_INNER_RET)
     endif
 
     # Emit function finish / clean up.
