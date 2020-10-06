@@ -49,6 +49,9 @@ const MIR1_OPCODE_JMP_IF_GT = 29 # 24 + 5
 const MIR1_OPCODE_RESERVED6 = 30 # 24 + 6
 const MIR1_OPCODE_RESERVED7 = 31 # 24 + 7
 
+const MIR1_OPCODE_LOAD_INDEX = 32
+const MIR1_OPCODE_LOAD_KEY   = 33
+
 # ------------------------------------------------------------------------------
 #                              Call-like opcodes
 # ------------------------------------------------------------------------------
@@ -74,9 +77,7 @@ const MIR1_OPCODE_CREATE_ARRAY  = 67
 const MIR1_OPCODE_CREATE_MAP    = 68
 
 const MIR1_OPCODE_STORE_INDEX = 69
-const MIR1_OPCODE_LOAD_INDEX  = 70
-const MIR1_OPCODE_STORE_KEY   = 71
-const MIR1_OPCODE_LOAD_KEY    = 72
+const MIR1_OPCODE_STORE_KEY   = 70
 
 # Other.
 const MIR1_OPCODE_MOVE       = 73

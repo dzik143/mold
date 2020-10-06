@@ -739,10 +739,6 @@ class CodeGeneratorX64
             this.call1('__MOLD_VariantMapCreate', dst)
           endif
 
-        #
-        # indirect jumps
-        #
-
         elif opcode is MIR1_OPCODE_JMP_BY_TABLE
           symbolInfo = codeObj.symbolTable.lookup(dst)
 
@@ -758,59 +754,6 @@ class CodeGeneratorX64
         elif opcode is MIR1_OPCODE_STRING_JOIN
           this.call3AndDestroy('__MOLD_VariantStringJoin', x, y, dst)
 
-        #
-        # int64 arithmetic
-        #
-/*
-        elif opcode is 'neg_int64'
-          this.pushOneParameterBeforeCall(x, 0)
-          print '  neg rcx'
-          this.storeResultAfterCall(dst)
-
-        elif opcode is 'add_int64'
-          this._alu2_int64(dst, 'add')
-
-        elif opcode is 'sub_int64'
-          this._alu2_int64(dst, 'sub')
-
-        elif opcode is 'mul_int64'
-          this._alu2_int64(dst, 'imul')
-
-        elif opcode is 'div_int64'
-          this.pushOneParameterBeforeCall(x, 0)
-          this.pushOneParameterBeforeCall(y, 1)
-          print '  cvtsi2sd  xmm0, rcx'    # ; xmm0 = double(x)
-          print '  cvtsi2sd  xmm1, rdx'    # ; xmm1 = double(y)
-          print '  divsd     xmm0, xmm1'   # ; xmm0 = x / y
-          print '  movq [', dst, '], xmm0' # ; dst  = x / y
-
-        elif opcode is 'idiv_int64'
-          this.pushOneParameterBeforeCall(x, 0)
-          this.pushOneParameterBeforeCall(y, 1)
-          print '  mov  rax, rcx'             # ; rax     = x
-          print '  mov  rcx, rdx'             # ; rcx     = y
-          print '  cqo'                       # ; rdx:rax = x
-          print '  idiv r8'                   # ; rax     = x // y
-          print '  mov  qword [', dst,'], rax'# ; dst     = x // y
-
-        elif opcode is 'cmp_eq_int64'
-          this._cmp_cc_int64(dst, x, y, 'z')
-
-        elif opcode is 'cmp_ne_int64'
-          this._cmp_cc_int64(dst, x, y, 'nz')
-
-        elif opcode is 'cmp_lt_int64'
-          this._cmp_cc_int64(dst, x, y, 'l')
-
-        elif opcode is 'cmp_le_int64'
-          this._cmp_cc_int64(dst, x, y, 'le')
-
-        elif opcode is 'cmp_gt_int64'
-          this._cmp_cc_int64(dst, x, y, 'g')
-
-        elif opcode is 'cmp_ge_int64'
-          this._cmp_cc_int64(dst, x, y, 'ge')
-*/
         elif ((opcode is MIR1_OPCODE_CMP_IS_TYPEOF) or
               (opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF) or
               (opcode is MIR1_OPCODE_JMP_IF_TYPEOF) or
@@ -883,14 +826,6 @@ class CodeGeneratorX64
           print '  lea  rdx, [vtable_' ~ str(x) ~ ']'
           print '  call __MOLD_VariantObjectCreate'
 
-        elif opcode is MIR1_OPCODE_LOAD_INDEX
-          # dst := x[y]
-          this.pushOneParameterBeforeCall(x, 0)
-          this.pushOneParameterBeforeCall(y, 1)
-          this.pushOneParameterBeforeCall(dst, 2)
-
-          this.call('__MOLD_VariantLoadFromIndex')
-
         elif opcode is MIR1_OPCODE_STORE_INDEX
           # dst[x] := y
           this.pushOneParameterBeforeCall(dst, 0)
@@ -908,15 +843,6 @@ class CodeGeneratorX64
 
           yType = this._getSymbolType(y)
           print '  call __MOLD_VariantStoreAtKey_' ~ yType
-
-        elif opcode is MIR1_OPCODE_LOAD_KEY
-          # dst := x{y}
-          this.pushOneParameterBeforeCall(x, 0)
-          this.pushOneParameterBeforeCall(y, 1)
-          this.pushOneParameterBeforeCall(dst, 2)
-
-          dstType = this._getSymbolType(dst)
-          print '  call __MOLD_VariantLoadFromKey_' ~ dstType
 
         elif opcode is MIR1_OPCODE_COMMENT
           print ';', dst
@@ -987,126 +913,126 @@ class CodeGeneratorX64
           print '  lea rcx, [__fmt' ~ str(messageFormatId), ']'
           print '  call __MOLD_PrintFormatFromMemory'
 
-          elif opcode is MIR1_OPCODE_PROC
-            proto            = item[1]
-            currentProcProto = proto
-            currentProcName  = proto.name
-            currentProcRv    = proto.rv
-            currentSymbols   = proto.symbols
-            isInsideVcall    = false
+        elif opcode is MIR1_OPCODE_PROC
+          proto            = item[1]
+          currentProcProto = proto
+          currentProcName  = proto.name
+          currentProcRv    = proto.rv
+          currentSymbols   = proto.symbols
+          isInsideVcall    = false
 
-            if currentProcRv is defined
-              symbolInfo        = currentSymbols{currentProcRv}
-              currentProcRvType = symbolInfo.type
-            endif
+          if currentProcRv is defined
+            symbolInfo        = currentSymbols{currentProcRv}
+            currentProcRvType = symbolInfo.type
+          endif
 
-            # Extra entry point for virtual call.
-            # Virtual call params are always variants.
-            # We need to translave variants to primitive before go on.
-            if ((currentSymbols{'this'} is defined) and
-                (codeObj.methodsMap{proto.shortName} is defined))
+          # Extra entry point for virtual call.
+          # Virtual call params are always variants.
+          # We need to translave variants to primitive before go on.
+          if ((currentSymbols{'this'} is defined) and
+              (codeObj.methodsMap{proto.shortName} is defined))
 
-              isInsideVcall = true
-              paramsCnt     = len(proto.params)
+            isInsideVcall = true
+            paramsCnt     = len(proto.params)
 
-              print currentProcName ~ '_vcall:'
+            print currentProcName ~ '_vcall:'
 
-              for indexes paramIdx values paramName in proto.params
-                symbolInfo = currentSymbols{paramName}
+            for indexes paramIdx values paramName in proto.params
+              symbolInfo = currentSymbols{paramName}
 
-                if (symbolInfo.readHits is 0) and (symbolInfo.writeHits is 0)
-                  print '  ; skipped unused parameter [', paramName, ']'
+              if (symbolInfo.readHits is 0) and (symbolInfo.writeHits is 0)
+                print '  ; skipped unused parameter [', paramName, ']'
+              else
+                symbolType = symbolInfo.type
+
+                # TODO: Clean up this mess.
+                if symbolType is defined
+                  symbolSize = MIR_TYPE_SIZE_MAP{symbolType}
                 else
-                  symbolType = symbolInfo.type
-
-                  # TODO: Clean up this mess.
-                  if symbolType is defined
-                    symbolSize = MIR_TYPE_SIZE_MAP{symbolType}
-                  else
-                    symbolSize = 16
-                  endif
-
-                  if symbolSize <= 8
-                    # Primitive type.
-                    expectedType = MIR_TO_VARIANT_TYPE_MAP{symbolType}
-
-                    # TODO: Optimize it.
-                    if paramIdx is 0
-                      print '  cmp [rdx + Variant_t.type],', expectedType
-                      print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
-                      print '  mov rdx, [rdx + Variant_t.value]'
-                      print ''
-
-                    elif paramIdx is 1
-                      print '  cmp [r8 + Variant_t.type],', expectedType
-                      print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
-                      print '  mov r8, [r8 + Variant_t.value]'
-                      print ''
-
-                    elif paramIdx is 2
-                      print '  cmp [r9 + Variant_t.type],', expectedType
-                      print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
-                      print '  mov r9, [r9 + Variant_t.value]'
-                      print ''
-
-                    else
-                      paramOffset = (paramsCnt - paramIdx) * 8
-                      print '  mov r10, [rsp +', paramOffset, ']'
-                      print '  cmp [r10 + Variant_t.type],', expectedType
-                      print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
-                      print '  mov r10, [r10 + Variant_t.value]'
-                      print '  mov [rsp +', paramOffset, '], r10'
-                      print ''
-                    endif
-                  endif
+                  symbolSize = 16
                 endif
-              endfor
 
-              # Make sure return value is passed as variant.
-              # TODO: Handle non-variant return value for vcalls?
-              if currentProcRv is defined
-                rvSize        = MIR_TYPE_SIZE_MAP{currentProcRvType}
-                rvVariantType = MIR_TO_VARIANT_TYPE_MAP{currentProcRvType}
+                if symbolSize <= 8
+                  # Primitive type.
+                  expectedType = MIR_TO_VARIANT_TYPE_MAP{symbolType}
 
-                if rvSize <= 8
-                  # Original function returns primitive type.
-                  # Redirect original return value pointer to variant_t.value part.
-                  print '  mov  [rax + Variant_t.type],', rvVariantType
+                  # TODO: Optimize it.
+                  if paramIdx is 0
+                    print '  cmp [rdx + Variant_t.type],', expectedType
+                    print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
+                    print '  mov rdx, [rdx + Variant_t.value]'
+                    print ''
 
-                  if rvSize is 4
-                    # 32-bit result.
-                    # Zero fill higher dword of value part.
-                    # Caller need to sign-extend it to 64-bit if needed.
-                    print '  mov  [rax + Variant_t.value], 0'
-                    print '  add  rax, Variant_t.value'
+                  elif paramIdx is 1
+                    print '  cmp [r8 + Variant_t.type],', expectedType
+                    print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
+                    print '  mov r8, [r8 + Variant_t.value]'
+                    print ''
+
+                  elif paramIdx is 2
+                    print '  cmp [r9 + Variant_t.type],', expectedType
+                    print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
+                    print '  mov r9, [r9 + Variant_t.value]'
+                    print ''
+
                   else
-                    # 64-bit result.
-                    # Just skip to to value part.
-                    print '  add  rax, Variant_t.value'
+                    paramOffset = (paramsCnt - paramIdx) * 8
+                    print '  mov r10, [rsp +', paramOffset, ']'
+                    print '  cmp [r10 + Variant_t.type],', expectedType
+                    print '  jnz __MOLD_PrintErrorAndDie.implicitConversion'
+                    print '  mov r10, [r10 + Variant_t.value]'
+                    print '  mov [rsp +', paramOffset, '], r10'
+                    print ''
                   endif
-
-                  print ''
                 endif
               endif
+            endfor
+
+            # Make sure return value is passed as variant.
+            # TODO: Handle non-variant return value for vcalls?
+            if currentProcRv is defined
+              rvSize        = MIR_TYPE_SIZE_MAP{currentProcRvType}
+              rvVariantType = MIR_TO_VARIANT_TYPE_MAP{currentProcRvType}
+
+              if rvSize <= 8
+                # Original function returns primitive type.
+                # Redirect original return value pointer to variant_t.value part.
+                print '  mov  [rax + Variant_t.type],', rvVariantType
+
+                if rvSize is 4
+                  # 32-bit result.
+                  # Zero fill higher dword of value part.
+                  # Caller need to sign-extend it to 64-bit if needed.
+                  print '  mov  [rax + Variant_t.value], 0'
+                  print '  add  rax, Variant_t.value'
+                else
+                  # 64-bit result.
+                  # Just skip to to value part.
+                  print '  add  rax, Variant_t.value'
+                endif
+
+                print ''
+              endif
             endif
+          endif
 
-            # Ordinary entry point.
-            # This address can be called directly with primitive params.
-            print currentProcName ~ ':'
+          # Ordinary entry point.
+          # This address can be called directly with primitive params.
+          print currentProcName ~ ':'
 
-            arrayOfProcedures[@afterlast] = currentProcName
+          arrayOfProcedures[@afterlast] = currentProcName
 
-            # Profiler code if needed.
-            if this.isProfilerEnabled is true
-              print '  ; enter profiler code'
-              print '  ; -------------------'
-              print '  push   rdx'
-              print '  rdtsc'
-              print '  shl    rdx, 32'
-              print '  add    rdx, rax'
-              print '  sub    qword [__profilerCounterEntry_' ~ currentProcName ~ '], rdx'
-              print '  pop    rdx'
-            endif
+          # Profiler code if needed.
+          if this.isProfilerEnabled is true
+            print '  ; enter profiler code'
+            print '  ; -------------------'
+            print '  push   rdx'
+            print '  rdtsc'
+            print '  shl    rdx, 32'
+            print '  add    rdx, rax'
+            print '  sub    qword [__profilerCounterEntry_' ~ currentProcName ~ '], rdx'
+            print '  pop    rdx'
+          endif
 
         elif opcode is MIR1_OPCODE_INIT_FRAME
           currentFrame = dst
@@ -1479,7 +1405,16 @@ class CodeGeneratorX64
         opcodeMajor = bitand(opcode, 0xf8)
         opcodeMinor = bitand(opcode, 0x7)
 
-        if (xType is 'variant') or (xType is 'string')
+        if opcode is MIR1_OPCODE_LOAD_INDEX
+          # dst := x[y]
+          print '  call __MOLD_VariantLoadFromIndex'
+
+        elif opcode is MIR1_OPCODE_LOAD_KEY
+          # dst := x{y}
+          dstType = this._getSymbolType(dst)
+          print '  call __MOLD_VariantLoadFromKey_' ~ dstType
+
+        elif (xType is 'variant') or (xType is 'string')
           if opcodeMajor is MIR1_OPCODE_CMP_CC_GROUP
             print '  call __MOLD_Variant_cmp_' ~ MIR_COMPARE_FLAGS_FOR_INTEGERS[opcodeMinor]
 
@@ -1543,7 +1478,6 @@ class CodeGeneratorX64
 
         else
           isOpcodeHandled = false
-          print '; OPCODE4', opcode
         endif
 
         this.storeResultAfterCall(dst)
