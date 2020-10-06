@@ -640,6 +640,10 @@ class CodeGeneratorX64
     global MIR_ALU_OPCODES_FOR_INTEGERS, MIR_ALU_OPCODES_FOR_FLOATS
     global MIR1_OPCODE_ALU2_GROUP
 
+    global MIR1_FIRST_DST_OP_X_Y_OPCODE
+    global MIR1_FIRST_CALL_LIKE_OPCODE
+    global MIR1_FIRST_CUSTOM_OPCODE
+
     #
     # Common headers.
     #
@@ -723,408 +727,204 @@ class CodeGeneratorX64
       #                   Opcodes with custom handlers
       # ----------------------------------------------------------------------
 
-      # Dispatch opcode.
-      if opcode is MIR1_OPCODE_CREATE_ARRAY
-        this.variantDestroy(dst)
-        if x is defined
-          this.call2('__MOLD_VariantArrayCreateFromInitList', dst, x)
-        else
-          this.call1('__MOLD_VariantArrayCreate', dst)
-        endif
+      if opcode >= MIR1_FIRST_CUSTOM_OPCODE
 
-      elif opcode is MIR1_OPCODE_CREATE_MAP
-        this.variantDestroy(dst)
-        if x is defined
-          this.call3('__MOLD_VariantMapCreateFromInitList', dst, x, y)
-        else
-          this.call1('__MOLD_VariantMapCreate', dst)
-        endif
-
-      elif opcode is MIR1_OPCODE_MOVE
-        if (xType is 'variant') or (xType is 'string')
+        if opcode is MIR1_OPCODE_CREATE_ARRAY
           this.variantDestroy(dst)
-          this.variantMove(dst, x)
-        else
-          this.pushOneParameterBeforeCall(x, 0)
-          this.storeResultAfterCall(dst)
-        endif
+          if x is defined
+            this.call2('__MOLD_VariantArrayCreateFromInitList', dst, x)
+          else
+            this.call1('__MOLD_VariantArrayCreate', dst)
+          endif
 
-      #
-      # indirect jumps
-      #
+        elif opcode is MIR1_OPCODE_CREATE_MAP
+          this.variantDestroy(dst)
+          if x is defined
+            this.call3('__MOLD_VariantMapCreateFromInitList', dst, x, y)
+          else
+            this.call1('__MOLD_VariantMapCreate', dst)
+          endif
 
-      elif opcode is MIR1_OPCODE_JMP_BY_TABLE
-        symbolInfo = codeObj.symbolTable.lookup(dst)
+        #
+        # indirect jumps
+        #
 
-        print '  mov eax, dword [', x, ']'
-        print '  sub eax,', symbolInfo.valueMin
-        print '  cmp eax,', symbolInfo.valueMax - symbolInfo.valueMin
-        print '  ja', symbolInfo.defaultLabel
+        elif opcode is MIR1_OPCODE_JMP_BY_TABLE
+          symbolInfo = codeObj.symbolTable.lookup(dst)
 
-        print '  movsx rax, word [', dst, '+ rax * 2]'
-        print '  lea rax, [', symbolInfo.defaultLabel, '+ rax]'
-        print '  jmp rax'
+          print '  mov eax, dword [', x, ']'
+          print '  sub eax,', symbolInfo.valueMin
+          print '  cmp eax,', symbolInfo.valueMax - symbolInfo.valueMin
+          print '  ja', symbolInfo.defaultLabel
 
-      #
-      # int64 arithmetic
-      #
+          print '  movsx rax, word [', dst, '+ rax * 2]'
+          print '  lea rax, [', symbolInfo.defaultLabel, '+ rax]'
+          print '  jmp rax'
+
+        elif opcode is MIR1_OPCODE_STRING_JOIN
+          this.call3AndDestroy('__MOLD_VariantStringJoin', x, y, dst)
+
+        #
+        # int64 arithmetic
+        #
 /*
-      elif opcode is 'neg_int64'
-        this.pushOneParameterBeforeCall(x, 0)
-        print '  neg rcx'
-        this.storeResultAfterCall(dst)
-
-      elif opcode is 'add_int64'
-        this._alu2_int64(dst, 'add')
-
-      elif opcode is 'sub_int64'
-        this._alu2_int64(dst, 'sub')
-
-      elif opcode is 'mul_int64'
-        this._alu2_int64(dst, 'imul')
-
-      elif opcode is 'div_int64'
-        this.pushOneParameterBeforeCall(x, 0)
-        this.pushOneParameterBeforeCall(y, 1)
-        print '  cvtsi2sd  xmm0, rcx'    # ; xmm0 = double(x)
-        print '  cvtsi2sd  xmm1, rdx'    # ; xmm1 = double(y)
-        print '  divsd     xmm0, xmm1'   # ; xmm0 = x / y
-        print '  movq [', dst, '], xmm0' # ; dst  = x / y
-
-      elif opcode is 'idiv_int64'
-        this.pushOneParameterBeforeCall(x, 0)
-        this.pushOneParameterBeforeCall(y, 1)
-        print '  mov  rax, rcx'             # ; rax     = x
-        print '  mov  rcx, rdx'             # ; rcx     = y
-        print '  cqo'                       # ; rdx:rax = x
-        print '  idiv r8'                   # ; rax     = x // y
-        print '  mov  qword [', dst,'], rax'# ; dst     = x // y
-
-      elif opcode is 'cmp_eq_int64'
-        this._cmp_cc_int64(dst, x, y, 'z')
-
-      elif opcode is 'cmp_ne_int64'
-        this._cmp_cc_int64(dst, x, y, 'nz')
-
-      elif opcode is 'cmp_lt_int64'
-        this._cmp_cc_int64(dst, x, y, 'l')
-
-      elif opcode is 'cmp_le_int64'
-        this._cmp_cc_int64(dst, x, y, 'le')
-
-      elif opcode is 'cmp_gt_int64'
-        this._cmp_cc_int64(dst, x, y, 'g')
-
-      elif opcode is 'cmp_ge_int64'
-        this._cmp_cc_int64(dst, x, y, 'ge')
-*/
-      elif ((opcode is MIR1_OPCODE_CMP_IS_TYPEOF) or
-            (opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF) or
-            (opcode is MIR1_OPCODE_JMP_IF_TYPEOF) or
-            (opcode is MIR1_OPCODE_JMP_IF_NOT_TYPEOF))
-
-        if xType is 'variant'
+        elif opcode is 'neg_int64'
           this.pushOneParameterBeforeCall(x, 0)
-          print '  cmp [rcx + Variant_t.type],', y
+          print '  neg rcx'
+          this.storeResultAfterCall(dst)
 
-          if opcode is MIR1_OPCODE_CMP_IS_TYPEOF
-            print '  setz cl'
-            print '  and ecx, 1'
-            this.storeResultAfterCall(dst)
+        elif opcode is 'add_int64'
+          this._alu2_int64(dst, 'add')
 
-          elif opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF
-            print '  setnz cl'
-            print '  and ecx, 1'
-            this.storeResultAfterCall(dst)
+        elif opcode is 'sub_int64'
+          this._alu2_int64(dst, 'sub')
 
-          elif opcode is MIR1_OPCODE_JMP_IF_TYPEOF
-            print '  jz', dst
+        elif opcode is 'mul_int64'
+          this._alu2_int64(dst, 'imul')
 
-          elif opcode is MIR1_OPCODE_JMP_IF_NOT_TYPEOF
-            print '  jnz', dst
-          endif
+        elif opcode is 'div_int64'
+          this.pushOneParameterBeforeCall(x, 0)
+          this.pushOneParameterBeforeCall(y, 1)
+          print '  cvtsi2sd  xmm0, rcx'    # ; xmm0 = double(x)
+          print '  cvtsi2sd  xmm1, rdx'    # ; xmm1 = double(y)
+          print '  divsd     xmm0, xmm1'   # ; xmm0 = x / y
+          print '  movq [', dst, '], xmm0' # ; dst  = x / y
 
-        else
-          # TODO: Resolve at earlier stage.
-          cmpResult = false
+        elif opcode is 'idiv_int64'
+          this.pushOneParameterBeforeCall(x, 0)
+          this.pushOneParameterBeforeCall(y, 1)
+          print '  mov  rax, rcx'             # ; rax     = x
+          print '  mov  rcx, rdx'             # ; rcx     = y
+          print '  cqo'                       # ; rdx:rax = x
+          print '  idiv r8'                   # ; rax     = x // y
+          print '  mov  qword [', dst,'], rax'# ; dst     = x // y
 
-          if xType is 'float64'
-            cmpResult = y is VARIANT_DOUBLE
+        elif opcode is 'cmp_eq_int64'
+          this._cmp_cc_int64(dst, x, y, 'z')
 
-          elif xType is 'int32'
-            cmpResult = y is VARIANT_INTEGER
+        elif opcode is 'cmp_ne_int64'
+          this._cmp_cc_int64(dst, x, y, 'nz')
 
-          elif xType is 'bool32'
-            cmpResult = y is VARIANT_INTEGER
+        elif opcode is 'cmp_lt_int64'
+          this._cmp_cc_int64(dst, x, y, 'l')
 
-          elif xType is 'string'
-            cmpResult = y is VARIANT_STRING
-          endif
+        elif opcode is 'cmp_le_int64'
+          this._cmp_cc_int64(dst, x, y, 'le')
 
-          if opcode is MIR1_OPCODE_CMP_IS_TYPEOF
-            this.store32(dst, cmpResult)
+        elif opcode is 'cmp_gt_int64'
+          this._cmp_cc_int64(dst, x, y, 'g')
 
-          elif opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF
-            # TODO: Use not x
-            if cmpResult is true
-              this.store32(dst, false)
-            else
-              this.store32(dst, true)
+        elif opcode is 'cmp_ge_int64'
+          this._cmp_cc_int64(dst, x, y, 'ge')
+*/
+        elif ((opcode is MIR1_OPCODE_CMP_IS_TYPEOF) or
+              (opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF) or
+              (opcode is MIR1_OPCODE_JMP_IF_TYPEOF) or
+              (opcode is MIR1_OPCODE_JMP_IF_NOT_TYPEOF))
+
+          if xType is 'variant'
+            this.pushOneParameterBeforeCall(x, 0)
+            print '  cmp [rcx + Variant_t.type],', y
+
+            if opcode is MIR1_OPCODE_CMP_IS_TYPEOF
+              print '  setz cl'
+              print '  and ecx, 1'
+              this.storeResultAfterCall(dst)
+
+            elif opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF
+              print '  setnz cl'
+              print '  and ecx, 1'
+              this.storeResultAfterCall(dst)
+
+            elif opcode is MIR1_OPCODE_JMP_IF_TYPEOF
+              print '  jz', dst
+
+            elif opcode is MIR1_OPCODE_JMP_IF_NOT_TYPEOF
+              print '  jnz', dst
             endif
 
-          elif opcode is MIR1_OPCODE_JMP_IF_TYPEOF
-            if cmpResult is true
-              print '  jmp', dst
+          else
+            # TODO: Resolve at earlier stage.
+            cmpResult = false
+
+            if xType is 'float64'
+              cmpResult = y is VARIANT_DOUBLE
+
+            elif xType is 'int32'
+              cmpResult = y is VARIANT_INTEGER
+
+            elif xType is 'bool32'
+              cmpResult = y is VARIANT_INTEGER
+
+            elif xType is 'string'
+              cmpResult = y is VARIANT_STRING
             endif
 
-          elif opcode is MIR1_OPCODE_JMP_IF_NOT_TYPEOF
-            if cmpResult is false
-              print '  jmp', dst
-            endif
-          endif
-        endif
+            if opcode is MIR1_OPCODE_CMP_IS_TYPEOF
+              this.store32(dst, cmpResult)
 
-      #
-      # build-in string operations
-      #
-
-      elif opcode is MIR1_OPCODE_STRING_JOIN
-        this.call3AndDestroy('__MOLD_VariantStringJoin', x, y, dst)
-
-      elif opcode is MIR1_OPCODE_SYSCALL
-        rv        = item[1]
-        sysCallId = item[2]
-        params    = item[3]
-
-        print '  ; __mold_syscall(', sysCallId, ')'
-
-        # Push call parameters.
-        this.pushParametersBeforeCall(params)
-
-        # Push pointer to return value if any.
-        if rv is defined
-          # TODO: Standarize return value passing.
-          # Add pointer to the return-value buffer as the last param.
-          this.pushOneParameterBeforeCall(rv, len(params))
-        endif
-
-        # Generate syscall opcode.
-        this._syscall(sysCallId)
-
-      elif opcode is MIR1_OPCODE_CALL
-        rv        = item[1]
-        name      = item[2]
-        params    = item[3]
-        paramsCnt = len(params)
-
-        if ((name is '__MOLD_ForDriver_Generic') or
-            (name is '__MOLD_ForDriver_IndexesAndValuesInArray') or
-            (name is '__MOLD_ForDriver_IndexesAndValuesInArrayOrString'))
-
-          # TODO: Clean up this mess.
-          this.pushOneParameterBeforeCall(params[0], 0)
-          print '  lea rdx, [', params[1], ']'
-          print '  lea r8, [', params[2], ']'
-          print '  lea r9, [', params[3], ']'
-          print '  call', name
-
-        else
-          # Generic call.
-          this.pushParametersBeforeCall(params)
-
-          if rv is defined
-            print '  lea rax, [', rv, ']'
-          endif
-
-          this.call(name)
-
-          if paramsCnt > 4
-            print '  add rsp,', paramsCnt * 8 - 32
-          endif
-        endif
-
-      elif opcode is MIR1_OPCODE_VCALL
-        rv        = item[1]
-        methodId  = item[2]
-        params    = item[3]
-        paramsCnt = len(params)
-
-        this.pushParametersBeforeCall(params)
-
-        if rv is defined
-          # rv = obj.foo(...)
-          # TODO: Better way to handle 32-bit int result?
-          signOkLabel = codeObj.symbolTable.createLabel()
-
-          print '  lea rax, [', rv, ']'
-          print '  mov  r10d,', methodId
-          print '  call __MOLD_VCall'
-
-          print ''
-          print '  ; 32-bit int sign extend after vcall if needed.'
-          print '  jns', signOkLabel
-          print '  movsxd rax, dword [', rv, '+ Variant_t.value ]'
-          print '  mov    qword [', rv, '+ Variant_t.value ], rax'
-          print signOkLabel ~ ':'
-          print ''
-
-        else
-          # obj.foo(...)
-          print '  mov  r10d,', methodId
-          print '  call __MOLD_VCall'
-        endif
-
-        if paramsCnt > 4
-          print '  add rsp,', paramsCnt * 8 - 32
-        endif
-
-      elif opcode is MIR1_OPCODE_CREATE_OBJECT
-        this.variantDestroy(dst)
-        print '  lea  rcx, [', dst, ']'
-        print '  lea  rdx, [vtable_' ~ str(x) ~ ']'
-        print '  call __MOLD_VariantObjectCreate'
-
-      elif opcode is MIR1_OPCODE_LOAD_INDEX
-        # dst := x[y]
-        this.pushOneParameterBeforeCall(x, 0)
-        this.pushOneParameterBeforeCall(y, 1)
-        this.pushOneParameterBeforeCall(dst, 2)
-
-        this.call('__MOLD_VariantLoadFromIndex')
-
-      elif opcode is MIR1_OPCODE_STORE_INDEX
-        # dst[x] := y
-        this.pushOneParameterBeforeCall(dst, 0)
-        this.pushOneParameterBeforeCall(x, 1)
-        this.pushOneParameterBeforeCall(y, 2)
-
-        yType = this._getSymbolType(y)
-        print '  call __MOLD_VariantStoreAtIndex_' ~ yType
-
-      elif opcode is MIR1_OPCODE_STORE_KEY
-        # dst{x} := y
-        this.pushOneParameterBeforeCall(dst, 0)
-        this.pushOneParameterBeforeCall(x, 1)
-        this.pushOneParameterBeforeCall(y, 2)
-
-        yType = this._getSymbolType(y)
-        print '  call __MOLD_VariantStoreAtKey_' ~ yType
-
-      elif opcode is MIR1_OPCODE_LOAD_KEY
-        # dst := x{y}
-        this.pushOneParameterBeforeCall(x, 0)
-        this.pushOneParameterBeforeCall(y, 1)
-        this.pushOneParameterBeforeCall(dst, 2)
-
-        dstType = this._getSymbolType(dst)
-        print '  call __MOLD_VariantLoadFromKey_' ~ dstType
-
-      elif itemCnt is 1
-
-        # ----------------------------------------------------------------------
-        #                  opcode only without any operand
-        # ----------------------------------------------------------------------
-
-        if opcode is MIR1_OPCODE_NOP
-          print '  nop'
-
-        elif opcode is MIR1_OPCODE_RET
-          print ''
-          print '  ; clean frame'
-          print '  ; -----------'
-
-          # TODO: Clean up this mess.
-          for values oneItem in currentSymbols
-            # TODO: Clean up this mess.
-            if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) and
-                ((oneItem.type is undefined) or (oneItem.type is 'variant') or (oneItem.type is 'string')))
-
-              if oneItem.usedAsIterator is defined
-                # Symbol is used as loop iterator.
-                # It's only dump reference for existing box values or keys.
-                print '  ; Skipped loop iterator', oneItem.name
-
+            elif opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF
+              # TODO: Use not x
+              if cmpResult is true
+                this.store32(dst, false)
               else
-                this.variantDestroy(oneItem.name)
+                this.store32(dst, true)
               endif
-            endif
-          endfor
 
-          # Profiler code if needed.
-          if this.isProfilerEnabled is true
-            print '  ; leave profiler code'
-            print '  ; -------------------'
-            print '  push   rdx'
-            print '  rdtsc'
-            print '  shl    rdx, 32'
-            print '  add    rdx, rax'
-            print '  add    qword [__profilerCounterEntry_' ~ currentProcName ~ '], rdx'
-            print '  pop    rdx'
+            elif opcode is MIR1_OPCODE_JMP_IF_TYPEOF
+              if cmpResult is true
+                print '  jmp', dst
+              endif
 
-            if currentProcName is 'start'
-              print ''
-              print '  ; print profiler result'
-              print '  ; ---------------------'
-              print '  lea  rcx, [__profilerCounterData]'
-              print '  call __MOLD_PrintProfilerData'
-              print ''
+            elif opcode is MIR1_OPCODE_JMP_IF_NOT_TYPEOF
+              if cmpResult is false
+                print '  jmp', dst
+              endif
             endif
           endif
 
-          if currentProcName is 'start'
-            for values oneItem in currentSymbols
+        elif opcode is MIR1_OPCODE_CREATE_OBJECT
+          this.variantDestroy(dst)
+          print '  lea  rcx, [', dst, ']'
+          print '  lea  rdx, [vtable_' ~ str(x) ~ ']'
+          print '  call __MOLD_VariantObjectCreate'
 
-              if ((oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and
-                  ((oneItem.type is undefined) or (oneItem.type is 'variant')))
+        elif opcode is MIR1_OPCODE_LOAD_INDEX
+          # dst := x[y]
+          this.pushOneParameterBeforeCall(x, 0)
+          this.pushOneParameterBeforeCall(y, 1)
+          this.pushOneParameterBeforeCall(dst, 2)
 
-                this.variantDestroy(oneItem.name)
-              endif
-            endfor
-          endif
+          this.call('__MOLD_VariantLoadFromIndex')
 
-          print ''
-          print '  add  rsp,', currentFrameSize
+        elif opcode is MIR1_OPCODE_STORE_INDEX
+          # dst[x] := y
+          this.pushOneParameterBeforeCall(dst, 0)
+          this.pushOneParameterBeforeCall(x, 1)
+          this.pushOneParameterBeforeCall(y, 2)
 
-          if currentProcRv is defined
-            if (isInsideVcall is true) and (currentProcRvType is 'int32')
-              # Set sign flag for int32 vcall result.
-              print '  or dword [', currentProcRv, '], 0'
-            endif
-            print '  pop  rdi'
-          endif
+          yType = this._getSymbolType(y)
+          print '  call __MOLD_VariantStoreAtIndex_' ~ yType
 
-          print '  pop  rbp'
-          print '  ret'
+        elif opcode is MIR1_OPCODE_STORE_KEY
+          # dst{x} := y
+          this.pushOneParameterBeforeCall(dst, 0)
+          this.pushOneParameterBeforeCall(x, 1)
+          this.pushOneParameterBeforeCall(y, 2)
 
-        elif opcode is MIR1_OPCODE_INNER_RET
-          # TODO: Better handling of nested procedures.
-          print '  ret'
+          yType = this._getSymbolType(y)
+          print '  call __MOLD_VariantStoreAtKey_' ~ yType
 
-        elif opcode is MIR1_OPCODE_ENDP
-          print ''
-          # TODO: Clean up this mess.
-          for values oneItem in currentSymbols
-            if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) or
-                (oneItem.kind is SYMBOL_KIND_VAR_PARAM) or
-                (oneItem.kind is SYMBOL_KIND_VAR_RETVAL))
+        elif opcode is MIR1_OPCODE_LOAD_KEY
+          # dst := x{y}
+          this.pushOneParameterBeforeCall(x, 0)
+          this.pushOneParameterBeforeCall(y, 1)
+          this.pushOneParameterBeforeCall(dst, 2)
 
-              if (oneItem.readHits > 0) or (oneItem.writeHits > 0)
-                print '  restore', oneItem.name
-              endif
-            endif
-          endfor
+          dstType = this._getSymbolType(dst)
+          print '  call __MOLD_VariantLoadFromKey_' ~ dstType
 
-        else
-          isOpcodeHandled = false
-        endif
-
-      elif itemCnt is 2
-
-        # ----------------------------------------------------------------------
-        #                              opcode x
-        # ----------------------------------------------------------------------
-
-        if opcode is MIR1_OPCODE_COMMENT
+        elif opcode is MIR1_OPCODE_COMMENT
           print ';', dst
 
         elif opcode is MIR1_OPCODE_LABEL
@@ -1487,70 +1287,210 @@ class CodeGeneratorX64
           print '  ; code'
           print '  ; ----'
 
-        else
-          isOpcodeHandled = false
-          print '; OPCODE2', opcode
-        endif
-
-      elif itemCnt is 3
-
-        # ----------------------------------------------------------------------
-        #                          dst = opcode(x)
-        # ----------------------------------------------------------------------
-
-        this.pushOneParameterBeforeCall(x, 0)
-        this.setDestinationVariableBeforeCall(dst, 1)
-
-        if opcode is MIR1_OPCODE_CAST_VARIANT_TO
-          # Cast variant to primitive.
-          # dst = x.value
-          dstType = this._getSymbolType(dst)
-          this.call('__MOLD_VariantCastTo_' ~ dstType)
-
-        elif opcode is MIR1_OPCODE_CREATE_VARIANT_FROM
-          # Create variant from primitive.
-          # dst.value = x
-          this.call('__MOLD_VariantCreateFrom_' ~ xType)
-
-        elif opcode is MIR1_OPCODE_NEG
-          if xType is 'int32'
-            print '  neg ecx'
-
-          elif xType is 'float64'
-            # TODO: Optimize it.
-            print '  pxor xmm0, xword [__MOLD_VariantNeg.signBit]'
-
-          elif xType is 'variant'
-            this.call('__MOLD_VariantNeg')
-          endif
-
-        elif ((opcode is MIR1_OPCODE_JMP_IF_TRUE) or
-              (opcode is MIR1_OPCODE_JMP_IF_FALSE))
-
-          if xType is 'variant'
-            print '  test byte [rcx + Variant_t.value], 0'
-          elif xType is 'bool32'
-            print '  test ecx, ecx'
-          endif
-
-          if opcode is MIR1_OPCODE_JMP_IF_TRUE
-            print '  jnz', dst
+        elif opcode is MIR1_OPCODE_MOVE
+          if (xType is 'variant') or (xType is 'string')
+            this.variantDestroy(dst)
+            this.variantMove(dst, x)
           else
-            print '  jz', dst
+            this.pushOneParameterBeforeCall(x, 0)
+            this.storeResultAfterCall(dst)
+          endif
+
+        elif opcode is MIR1_OPCODE_NOP
+          print '  nop'
+
+        elif opcode is MIR1_OPCODE_RET
+          print ''
+          print '  ; clean frame'
+          print '  ; -----------'
+
+          # TODO: Clean up this mess.
+          for values oneItem in currentSymbols
+            # TODO: Clean up this mess.
+            if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) and
+                ((oneItem.type is undefined) or (oneItem.type is 'variant') or (oneItem.type is 'string')))
+
+              if oneItem.usedAsIterator is defined
+                # Symbol is used as loop iterator.
+                # It's only dump reference for existing box values or keys.
+                print '  ; Skipped loop iterator', oneItem.name
+
+              else
+                this.variantDestroy(oneItem.name)
+              endif
+            endif
+          endfor
+
+          # Profiler code if needed.
+          if this.isProfilerEnabled is true
+            print '  ; leave profiler code'
+            print '  ; -------------------'
+            print '  push   rdx'
+            print '  rdtsc'
+            print '  shl    rdx, 32'
+            print '  add    rdx, rax'
+            print '  add    qword [__profilerCounterEntry_' ~ currentProcName ~ '], rdx'
+            print '  pop    rdx'
+
+            if currentProcName is 'start'
+              print ''
+              print '  ; print profiler result'
+              print '  ; ---------------------'
+              print '  lea  rcx, [__profilerCounterData]'
+              print '  call __MOLD_PrintProfilerData'
+              print ''
+            endif
+          endif
+
+          if currentProcName is 'start'
+            for values oneItem in currentSymbols
+
+              if ((oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and
+                  ((oneItem.type is undefined) or (oneItem.type is 'variant')))
+
+                this.variantDestroy(oneItem.name)
+              endif
+            endfor
+          endif
+
+          print ''
+          print '  add  rsp,', currentFrameSize
+
+          if currentProcRv is defined
+            if (isInsideVcall is true) and (currentProcRvType is 'int32')
+              # Set sign flag for int32 vcall result.
+              print '  or dword [', currentProcRv, '], 0'
+            endif
+            print '  pop  rdi'
+          endif
+
+          print '  pop  rbp'
+          print '  ret'
+
+        elif opcode is MIR1_OPCODE_INNER_RET
+          # TODO: Better handling of nested procedures.
+          print '  ret'
+
+        elif opcode is MIR1_OPCODE_ENDP
+          print ''
+          # TODO: Clean up this mess.
+          for values oneItem in currentSymbols
+            if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) or
+                (oneItem.kind is SYMBOL_KIND_VAR_PARAM) or
+                (oneItem.kind is SYMBOL_KIND_VAR_RETVAL))
+
+              if (oneItem.readHits > 0) or (oneItem.writeHits > 0)
+                print '  restore', oneItem.name
+              endif
+            endif
+          endfor
+
+        else
+          isOpcodeHandled = false
+        endif
+
+      # ------------------------------------------------------------------------
+      #                           Call-like opcodes
+      # ------------------------------------------------------------------------
+
+      elif opcode >= MIR1_FIRST_CALL_LIKE_OPCODE
+
+        if opcode is MIR1_OPCODE_SYSCALL
+          rv        = item[1]
+          sysCallId = item[2]
+          params    = item[3]
+
+          print '  ; __mold_syscall(', sysCallId, ')'
+
+          # Push call parameters.
+          this.pushParametersBeforeCall(params)
+
+          # Push pointer to return value if any.
+          if rv is defined
+            # TODO: Standarize return value passing.
+            # Add pointer to the return-value buffer as the last param.
+            this.pushOneParameterBeforeCall(rv, len(params))
+          endif
+
+          # Generate syscall opcode.
+          this._syscall(sysCallId)
+
+        elif opcode is MIR1_OPCODE_CALL
+          rv        = item[1]
+          name      = item[2]
+          params    = item[3]
+          paramsCnt = len(params)
+
+          if ((name is '__MOLD_ForDriver_Generic') or
+              (name is '__MOLD_ForDriver_IndexesAndValuesInArray') or
+              (name is '__MOLD_ForDriver_IndexesAndValuesInArrayOrString'))
+
+            # TODO: Clean up this mess.
+            this.pushOneParameterBeforeCall(params[0], 0)
+            print '  lea rdx, [', params[1], ']'
+            print '  lea r8, [', params[2], ']'
+            print '  lea r9, [', params[3], ']'
+            print '  call', name
+
+          else
+            # Generic call.
+            this.pushParametersBeforeCall(params)
+
+            if rv is defined
+              print '  lea rax, [', rv, ']'
+            endif
+
+            this.call(name)
+
+            if paramsCnt > 4
+              print '  add rsp,', paramsCnt * 8 - 32
+            endif
+          endif
+
+        elif opcode is MIR1_OPCODE_VCALL
+          rv        = item[1]
+          methodId  = item[2]
+          params    = item[3]
+          paramsCnt = len(params)
+
+          this.pushParametersBeforeCall(params)
+
+          if rv is defined
+            # rv = obj.foo(...)
+            # TODO: Better way to handle 32-bit int result?
+            signOkLabel = codeObj.symbolTable.createLabel()
+
+            print '  lea rax, [', rv, ']'
+            print '  mov  r10d,', methodId
+            print '  call __MOLD_VCall'
+
+            print ''
+            print '  ; 32-bit int sign extend after vcall if needed.'
+            print '  jns', signOkLabel
+            print '  movsxd rax, dword [', rv, '+ Variant_t.value ]'
+            print '  mov    qword [', rv, '+ Variant_t.value ], rax'
+            print signOkLabel ~ ':'
+            print ''
+
+          else
+            # obj.foo(...)
+            print '  mov  r10d,', methodId
+            print '  call __MOLD_VCall'
+          endif
+
+          if paramsCnt > 4
+            print '  add rsp,', paramsCnt * 8 - 32
           endif
 
         else
           isOpcodeHandled = false
-          print '; OPCODE3', opcode
         endif
 
-        this.storeResultAfterCall(dst)
+      # ------------------------------------------------------------------------
+      #                         Opcodes: dst = op(x, y)
+      # ------------------------------------------------------------------------
 
-      elif itemCnt is 4
-
-        # ----------------------------------------------------------------------
-        #                          dst = opcode(x, y)
-        # ----------------------------------------------------------------------
+      elif opcode >= MIR1_FIRST_DST_OP_X_Y_OPCODE
 
         this.pushOneParameterBeforeCall(x, 0)
         this.pushOneParameterBeforeCall(y, 1)
@@ -1627,10 +1567,64 @@ class CodeGeneratorX64
         endif
 
         this.storeResultAfterCall(dst)
+
+      else
+
+        # ----------------------------------------------------------------------
+        #                          dst = opcode(x)
+        # ----------------------------------------------------------------------
+
+        this.pushOneParameterBeforeCall(x, 0)
+        this.setDestinationVariableBeforeCall(dst, 1)
+
+        if opcode is MIR1_OPCODE_CAST_VARIANT_TO
+          # Cast variant to primitive.
+          # dst = x.value
+          dstType = this._getSymbolType(dst)
+          this.call('__MOLD_VariantCastTo_' ~ dstType)
+
+        elif opcode is MIR1_OPCODE_CREATE_VARIANT_FROM
+          # Create variant from primitive.
+          # dst.value = x
+          this.call('__MOLD_VariantCreateFrom_' ~ xType)
+
+        elif opcode is MIR1_OPCODE_NEG
+          if xType is 'int32'
+            print '  neg ecx'
+
+          elif xType is 'float64'
+            # TODO: Optimize it.
+            print '  pxor xmm0, xword [__MOLD_VariantNeg.signBit]'
+
+          elif xType is 'variant'
+            this.call('__MOLD_VariantNeg')
+          endif
+
+        elif ((opcode is MIR1_OPCODE_JMP_IF_TRUE) or
+              (opcode is MIR1_OPCODE_JMP_IF_FALSE))
+
+          if xType is 'variant'
+            print '  test byte [rcx + Variant_t.value], 0'
+          elif xType is 'bool32'
+            print '  test ecx, ecx'
+          endif
+
+          if opcode is MIR1_OPCODE_JMP_IF_TRUE
+            print '  jnz', dst
+          else
+            print '  jz', dst
+          endif
+
+        else
+          isOpcodeHandled = false
+          print '; OPCODE3', opcode
+        endif
+
+        this.storeResultAfterCall(dst)
       endif
 
       if isOpcodeHandled is false
-        die('error: unhandled opcode "' ~ str(opcode) ~ '"')
+        die('error: unhandled opcode "' ~ MIR1_GetOpcodeAsText(opcode) ~ '"')
       endif
 
       # Separate MIR opcodes by new line for better readability.

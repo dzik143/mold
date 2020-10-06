@@ -181,9 +181,11 @@ class ASTOptimizerConstantFolding
 
     isNodeChanged = false
 
+    value    = null
+    newValue = null
+
     opcode      = node.opcode
     value       = node.value
-    newValue    = null
     children    = node.children
     childrenCnt = len(children)
     x           = children[0]
@@ -341,7 +343,7 @@ class ASTOptimizerConstantFolding
         endif
 
         # Calculate imm result if all child nodes are imm.
-        if areArgsImm is true
+        if (newValue is undefined) and (areArgsImm is true)
 
           # Dispatch opcode.
           if opcode is AST_OPCODE_CALL

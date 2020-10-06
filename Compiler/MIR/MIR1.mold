@@ -1,21 +1,21 @@
 # ------------------------------------------------------------------------------
-#                                Helper flags
+#                              Opcodes: dst = op(x)
 # ------------------------------------------------------------------------------
 
-# No operands.
+const MIR1_OPCODE_CONV = 1
+const MIR1_OPCODE_NEG  = 2
 
-# Meta opcodes.
-const MIR1_OPCODE_COMMENT = 0
-const MIR1_OPCODE_PROC    = 1
-const MIR1_OPCODE_ENDP    = 2
-const MIR1_OPCODE_LABEL   = 3
+const MIR1_OPCODE_CREATE_VARIANT_FROM = 3
+const MIR1_OPCODE_CAST_VARIANT_TO     = 4
 
-# Data move.
-const MIR1_OPCODE_MOVE = 4
-const MIR1_OPCODE_CONV = 5
+const MIR1_OPCODE_JMP_IF_TRUE  = 5
+const MIR1_OPCODE_JMP_IF_FALSE = 6
 
-# Arithmetic: dst = op(x)
-const MIR1_OPCODE_NEG = 6
+# ------------------------------------------------------------------------------
+#                             Opcodes: dst = op(x, y)
+# ------------------------------------------------------------------------------
+
+const MIR1_FIRST_DST_OP_X_Y_OPCODE = 8
 
 # Arithmetic: dst = op(x, y)
 const MIR1_OPCODE_ALU2_GROUP = 8
@@ -49,46 +49,56 @@ const MIR1_OPCODE_JMP_IF_GT = 29 # 24 + 5
 const MIR1_OPCODE_RESERVED6 = 30 # 24 + 6
 const MIR1_OPCODE_RESERVED7 = 31 # 24 + 7
 
-# Dynamic types.
-const MIR1_OPCODE_CMP_IS_TYPEOF     = 32
-const MIR1_OPCODE_CMP_IS_NOT_TYPEOF = 33
-const MIR1_OPCODE_JMP_IF_TYPEOF     = 34
-const MIR1_OPCODE_JMP_IF_NOT_TYPEOF = 35
+# ------------------------------------------------------------------------------
+#                              Call-like opcodes
+# ------------------------------------------------------------------------------
+
+const MIR1_FIRST_CALL_LIKE_OPCODE = 48
+
+const MIR1_OPCODE_CALL    = 48
+const MIR1_OPCODE_VCALL   = 49
+const MIR1_OPCODE_SYSCALL = 50
+
+# ------------------------------------------------------------------------------
+#                   Opcodes with custom data flow paterns
+# ------------------------------------------------------------------------------
 
 # Conditional jumps.
-const MIR1_OPCODE_JMP          = 36
-const MIR1_OPCODE_JMP_BY_TABLE = 37
-const MIR1_OPCODE_JMP_IF_TRUE  = 38
-const MIR1_OPCODE_JMP_IF_FALSE = 39
+const MIR1_FIRST_CUSTOM_OPCODE = 64
+const MIR1_OPCODE_JMP          = 64
+const MIR1_OPCODE_JMP_BY_TABLE = 65
 
 # Box storage.
-const MIR1_OPCODE_CREATE_OBJECT = 41
-const MIR1_OPCODE_CREATE_ARRAY  = 42
-const MIR1_OPCODE_CREATE_MAP    = 43
+const MIR1_OPCODE_CREATE_OBJECT = 66
+const MIR1_OPCODE_CREATE_ARRAY  = 67
+const MIR1_OPCODE_CREATE_MAP    = 68
 
-const MIR1_OPCODE_STORE_INDEX = 44
-const MIR1_OPCODE_LOAD_INDEX  = 45
-const MIR1_OPCODE_STORE_KEY   = 46
-const MIR1_OPCODE_LOAD_KEY    = 47
-
-# Variant convert.
-const MIR1_OPCODE_CREATE_VARIANT_FROM = 48
-const MIR1_OPCODE_CAST_VARIANT_TO     = 49
-
-const MIR1_OPCODE_INIT_FRAME = 50
-
-# Procedure related.
-const MIR1_OPCODE_CALL      = 51
-const MIR1_OPCODE_VCALL     = 52
-const MIR1_OPCODE_SYSCALL   = 53
-const MIR1_OPCODE_RET       = 54
-const MIR1_OPCODE_INNER_RET = 55
+const MIR1_OPCODE_STORE_INDEX = 69
+const MIR1_OPCODE_LOAD_INDEX  = 70
+const MIR1_OPCODE_STORE_KEY   = 71
+const MIR1_OPCODE_LOAD_KEY    = 72
 
 # Other.
-const MIR1_OPCODE_NOP         = 56
-const MIR1_OPCODE_STRING_JOIN = 57
-const MIR1_OPCODE_LOAD_NULL   = 58
-const MIR1_OPCODE_PRINT       = 59
+const MIR1_OPCODE_MOVE       = 73
+const MIR1_OPCODE_PRINT      = 74
+const MIR1_OPCODE_INIT_FRAME = 75
+const MIR1_OPCODE_RET        = 76
+const MIR1_OPCODE_INNER_RET  = 77
+const MIR1_OPCODE_NOP        = 78
+const MIR1_OPCODE_LOAD_NULL  = 79
+
+# Meta opcodes.
+const MIR1_OPCODE_COMMENT = 80
+const MIR1_OPCODE_PROC    = 81
+const MIR1_OPCODE_ENDP    = 82
+const MIR1_OPCODE_LABEL   = 83
+
+# Dynamic types.
+const MIR1_OPCODE_CMP_IS_TYPEOF     = 84
+const MIR1_OPCODE_CMP_IS_NOT_TYPEOF = 85
+const MIR1_OPCODE_JMP_IF_TYPEOF     = 86
+const MIR1_OPCODE_JMP_IF_NOT_TYPEOF = 87
+const MIR1_OPCODE_STRING_JOIN       = 88
 
 function MIR1_GetOpcodeAsText(opcode) -> rv
   global MIR1_OPCODE_COMMENT, MIR1_OPCODE_LABEL
