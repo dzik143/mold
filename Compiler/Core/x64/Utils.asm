@@ -617,7 +617,7 @@ __MOLD_PrintFormatFromMemory:
 .int32Retval:
 .bool32Retval:
     sub     eax, 10              ; eax = ast type
-    mov     edx, dword [rdi]     ; rdx = primitive value
+    movsxd  rdx, dword [rdi]     ; rdx = primitive value
     jmp     .generic_final
 
 .float64Retval:
