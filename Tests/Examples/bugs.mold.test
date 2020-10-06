@@ -501,3 +501,42 @@ bar( ... )
 Base::foo( 2 )
 vars[2] = [1234]
 -------------------------------------------------------------------------------
+
+TEST "Bug: Broken sign extend while printing return value"
+
+function foo(box) -> rv
+  value = box.value
+  rv    = -1
+
+  print '(1) rv =', rv
+
+  if rv isnt integer
+    print '(2) rv isnt integer'
+  endif
+
+  if value < 3000
+    print '(3) rv =', rv
+    rv = value
+    print '(4) rv =', rv
+  endif
+
+  print '(5) rv =', rv
+
+  if rv isnt integer
+    print '(6) rv isnt integer'
+  endif
+endfunction
+
+box = {
+  'value': 1234
+}
+
+print '(7) rv =', foo(box)
+
+EXPECTED_OUTPUT:
+(1) rv = -1
+(3) rv = -1
+(4) rv = 1234
+(5) rv = 1234
+(7) rv = 1234
+-------------------------------------------------------------------------------

@@ -244,3 +244,156 @@ print x
 EXPECTED_OUTPUT:
 {'column': -1, 'line': -1}
 -------------------------------------------------------------------------------
+
+TEST "Store and load various types one map"
+
+class Foo
+endclass
+
+class Bar
+endclass
+
+# Start from empty array.
+x = {}
+
+var1_integer = 1234
+var1_float   = 5.67
+var1_boolean = false
+var1_map     = {'key1': 'value1'}
+var1_array   = [81, 82, 83, 84, 85]
+var1_object  = new Foo()
+
+var2_integer = 4321
+var2_float   = 7.65
+var2_boolean = true
+var2_map     = {'key2': 'value2'}
+var2_array   = [85, 84, 83, 82, 81]
+var2_object  = new Bar()
+
+print 'Initial state'
+print '============='
+print 'var1_integer:', var1_integer
+print 'var1_float  :', var1_float
+print 'var1_boolean:', var1_boolean
+print 'var1_map    :', var1_map
+print 'var1_array  :', var1_array
+print 'var1_object :', var1_object
+print ''
+print 'var2_integer:', var2_integer
+print 'var2_float  :', var2_float
+print 'var2_boolean:', var2_boolean
+print 'var2_map    :', var2_map
+print 'var2_array  :', var2_array
+print 'var2_object :', var2_object
+print ''
+print 'map         :', x
+print ''
+
+# Store values in empty array.
+x{'integer'} = var1_integer
+x{'float'}   = var1_float
+x{'boolean'} = var1_boolean
+x{'map'}     = var1_map
+x{'array'}   = var1_array
+x{'object'}  = var1_object
+
+print 'After store'
+print '==========='
+print 'var1_integer:', var1_integer
+print 'var1_float  :', var1_float
+print 'var1_boolean:', var1_boolean
+print 'var1_map    :', var1_map
+print 'var1_array  :', var1_array
+print 'var1_object :', var1_object
+print ''
+print 'var2_integer:', var2_integer
+print 'var2_float  :', var2_float
+print 'var2_boolean:', var2_boolean
+print 'var2_map    :', var2_map
+print 'var2_array  :', var2_array
+print 'var2_object :', var2_object
+print ''
+print 'map         :', x
+print ''
+
+# Read fields back.
+var2_integer = x{'integer'}
+var2_float   = x{'float'}
+var2_boolean = x{'boolean'}
+var2_map     = x{'map'}
+var2_array   = x{'array'}
+var2_object  = x{'object'}
+
+print 'After load'
+print '=========='
+print 'var1_integer:', var1_integer
+print 'var1_float  :', var1_float
+print 'var1_boolean:', var1_boolean
+print 'var1_map    :', var1_map
+print 'var1_array  :', var1_array
+print 'var1_object :', var1_object
+print ''
+print 'var2_integer:', var2_integer
+print 'var2_float  :', var2_float
+print 'var2_boolean:', var2_boolean
+print 'var2_map    :', var2_map
+print 'var2_array  :', var2_array
+print 'var2_object :', var2_object
+print ''
+print 'map         :', x
+
+EXPECTED_OUTPUT:
+Initial state
+=============
+var1_integer: 1234
+var1_float  : 5.670000
+var1_boolean: false
+var1_map    : {'key1': 'value1'}
+var1_array  : [81, 82, 83, 84, 85]
+var1_object : [object]
+
+var2_integer: 4321
+var2_float  : 7.650000
+var2_boolean: true
+var2_map    : {'key2': 'value2'}
+var2_array  : [85, 84, 83, 82, 81]
+var2_object : [object]
+
+map         : {}
+
+After store
+===========
+var1_integer: 1234
+var1_float  : 5.670000
+var1_boolean: false
+var1_map    : {'key1': 'value1'}
+var1_array  : [81, 82, 83, 84, 85]
+var1_object : [object]
+
+var2_integer: 4321
+var2_float  : 7.650000
+var2_boolean: true
+var2_map    : {'key2': 'value2'}
+var2_array  : [85, 84, 83, 82, 81]
+var2_object : [object]
+
+map         : {'integer': 1234, 'float': 5.670000, 'boolean': false, 'map': {'key1': 'value1'}, 'array': [81, 82, 83, 84, 85], 'object': [object]}
+
+After load
+==========
+var1_integer: 1234
+var1_float  : 5.670000
+var1_boolean: false
+var1_map    : {'key1': 'value1'}
+var1_array  : [81, 82, 83, 84, 85]
+var1_object : [object]
+
+var2_integer: 1234
+var2_float  : 5.670000
+var2_boolean: false
+var2_map    : {'key1': 'value1'}
+var2_array  : [81, 82, 83, 84, 85]
+var2_object : [object]
+
+map         : {'integer': 1234, 'float': 5.670000, 'boolean': false, 'map': {'key1': 'value1'}, 'array': [81, 82, 83, 84, 85], 'object': [object]}
+-------------------------------------------------------------------------------
