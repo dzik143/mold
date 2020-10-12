@@ -19,7 +19,7 @@
 ; - https://stackoverflow.com/a/32820799
 ; - https://hero.handmade.network/forums/code-discussion/t/129-howto_-_building_without_import_libraries
 
-; Created at: 2020-10-12
+; Created on: 2020-10-12
 
 ; Code shows the example how to import external modules on-the-fly *WITHOUT*
 ; import table.
@@ -32,15 +32,15 @@
 ;   5. use LoadLibraryA and GetProcAddress to import user32!MessageBox.
 
 ; Possible improvement:
-; - Case insensitive match for 'KERNEL32.DLL' string (?),
-; - match full path '%WINDIR%\SYSTEM32\KERNEL32.DLL' for security (?).
+; - match full '%WINDIR%\SYSTEM32\KERNEL32.DLL' path for security (?)
+;   (we search for kernel32.dll string only).
 
-;
 ; Limitations:
 ; - Code works on AMD64 (x86-64) only - GS register is unused on 32-bit OS.
 ;
 ; - To get it work on 32-bit OS, the kernel32 base may be obtain via return
-;   address in the main entry point: https://stackoverflow.com/a/32820799
+;   address in the main entry point (instead of PEB):
+;   https://stackoverflow.com/a/32820799
 
 ; Build by command:
 ; fasm pe64-no-imports.asm
@@ -63,7 +63,7 @@ section '.text' readable executable
   messageCaption db 'PE32+ without imports table', 0
 
   __imp_name16_kernel32:
-    dw 'K','E','R','N','E','L','3','2','.','D','L','L'
+    dw 'k','e','r','n','e','l','3','2','.','d','l','l'
   __imp_name16_kernel32_end:
 
 ; ------------------------------------------------------------------------------
@@ -144,15 +144,21 @@ start:
     ;                   We match this part only
     ; -----------------------------------------
 
+    mov   rdx, 0x0020002000200020 ; rdx = mask for case insensitive compare.
+                                  ; We convert source text to lower case.
+
     mov   rcx, qword [rax - 8]
+    or    rcx, rdx
     cmp   rcx, qword [__imp_name16_kernel32_end - 8]
     jnz   .scanNextLdrModule
 
     mov   rcx, qword [rax - 16]
+    or    rcx, rdx
     cmp   rcx, qword [__imp_name16_kernel32_end - 16]
     jnz   .scanNextLdrModule
 
     mov   rcx, qword [rax - 24]
+    or    rcx, rdx
     cmp   rcx, qword [__imp_name16_kernel32_end - 24]
     jnz   .scanNextLdrModule
 
