@@ -24,13 +24,15 @@
 ; Code shows the example how to import external modules on-the-fly *WITHOUT*
 ; import table.
 ;
-; 1. Find the base of KERNEL32.DLL via Thread Environment Block (TEB),
-; 2. find export table at KERNEL32.DLL module space (kernel32!ExportTable),
-; 3. find the entry point of GetProcAddress in kernel32!ExportTable,
-; 4. use GetProcAddress to import example Beep function at runtime.
+; Below code does:
+;   1. Find the base of KERNEL32.DLL via Thread Environment Block (TEB),
+;   2. find export table at KERNEL32.DLL module space (kernel32!ExportTable),
+;   3. find the entry point of GetProcAddress in kernel32!ExportTable,
+;   4. use GetProcAddress to find entry of kernel32!LoadLibraryA routine,
+;   5. use LoadLibraryA and GetProcAddress to import user32!MessageBox.
 
 ; Possible improvement:
-; - Case isnensitive match for 'KERNEL32.DLL' string (?),
+; - Case insensitive match for 'KERNEL32.DLL' string (?),
 ; - match full path '%WINDIR%\SYSTEM32\KERNEL32.DLL' for security (?).
 
 ;
@@ -52,7 +54,13 @@ section '.text' readable executable
 ;       Read only data in code section, move to new section if you want
 ; ------------------------------------------------------------------------------
 
-  _imp_name_Beep db 'Beep', 0
+  _imp_name_Beep         db 'Beep', 0
+  _imp_name_LoadLibraryA db 'LoadLibraryA', 0
+  _imp_name_MessageBoxA  db 'MessageBoxA', 0
+  _imp_name_user32       db 'user32.dll', 0
+
+  messageText    db 'This executable has no imports table', 0
+  messageCaption db 'PE32+ without imports table', 0
 
   __imp_name16_kernel32:
     dw 'K','E','R','N','E','L','3','2','.','D','L','L'
@@ -72,13 +80,17 @@ start:
 
     push  rbx
     push  rsi
-    sub   rsp, 64
+    sub   rsp, 80
 
     ; We store imported addresses on the stack.
     ; Move where you want if needed.
-    __imp_kernel32       EQU rbp - 16 ; 8
-    __imp_GetProcAddress EQU rbp - 24 ; 8
-    __imp_Beep           EQU rbp - 32 ; 8
+    ; ----------------------------------------
+
+    __imp_kernel32       EQU rbp - 8 - 8 * 1 ; 8 bytes
+    __imp_user32         EQU rbp - 8 - 8 * 2 ; 8 bytes
+    __imp_GetProcAddress EQU rbp - 8 - 8 * 3 ; 8 bytes
+    __imp_LoadLibraryA   EQU rbp - 8 - 8 * 4 ; 8 bytes
+    __imp_MessageBoxA    EQU rbp - 8 - 8 * 5 ; 8 bytes
 
     ; ##########################################################################
     ; #
@@ -216,11 +228,11 @@ start:
     jnz   .scanNextProc
 
     ; --------------------------------------------------------------------------
-    ; Get address of GetProcAddress function from kernel32
-    ; rbx = kernel32 base (HMODULE)
-    ; rsi = export table
-    ; rcx = procIdx = index of procedure within exports table
-    ; We want to get moduleEntry->IAT[procIdx] now.
+    ; Get address of GetProcAddress function from kernel32.
+    ; At this place:
+    ;   rbx = kernel32 base (HMODULE),
+    ;   rsi = export table of kernel32,
+    ;   rcx = procIdx = index of GetProcAddress in exports table.
     ; --------------------------------------------------------------------------
 
     ; Fetch GetProcAddress ordinal
@@ -245,25 +257,50 @@ start:
 
     ; ##########################################################################
     ; #
-    ; #    Step 4: Use GetProcAddress to import needed symbols at runtime
+    ; #   Step 4: Use GetProcAddress to find entry of LoadLibraryA routine.
     ; #
     ; ##########################################################################
 
-    ; Import Beep from kernel32
-    ; ... = GetProcAddress(kernel32, 'Beep')
-    ; --------------------------------------
+    ; ... = GetProcAddress(kernel32, 'LoadLibraryA')
+    ; ----------------------------------------------
 
-    mov   rcx, rbx
-    lea   rdx, qword [_imp_name_Beep]
-    call  qword [__imp_GetProcAddress]
-    mov   qword [__imp_Beep], rax
+    mov   rcx, rbx                        ; rcx = moduleBase = kernel32
+    lea   rdx, qword [_imp_name_LoadLibraryA]
+                                          ; rdx = 'LoadLibraryA'
+    call  qword [__imp_GetProcAddress]    ; rax = GetProcAddress(...)
+    mov   qword [__imp_LoadLibraryA], rax ; Save pointer to LoadLibraryA
 
-    ; Call Beep(1000, 1000)
-    ; ---------------------
+    ; ##########################################################################
+    ; #
+    ; #   Step 5: Use GetProcAddress to find entry of LoadLibraryA routine.
+    ; #
+    ; ##########################################################################
 
-    mov   ecx, 1000
-    mov   edx, ecx
-    call  qword [__imp_Beep]
+    ; Import user32.dll
+    ; ... = LoadLibraryA('user32.dll')
+    ; --------------------------------
+
+    lea   rcx, qword [_imp_name_user32]   ; rcx = 'user32.dll'
+    call  qword [__imp_LoadLibraryA]      ; rax = LoadLibraryA(...)
+    mov   qword [__imp_user32], rax       ; Save pointer to user32.dll
+
+    ; Import user32:MessageBoxA routine
+    ; ... = GetProcAddress(user32, 'MessageBoxA')
+    ; -------------------------------------------
+
+    mov   rcx, rax                        ; rcx = moduleBase = user32
+    lea   rdx, [_imp_name_MessageBoxA]    ; rdx = 'MessageBoxA'
+    call  qword [__imp_GetProcAddress]    ; rax = GetProcAddress(...)
+    mov   qword [__imp_MessageBoxA], rax  ; Save pointer to MessageBoxA
+
+    ; Call MessageBoxA(NULL, msg, caption, 0)
+    ; ---------------------------------------
+
+    xor   ecx, ecx                        ; rcx = hWnd = NULL = desktop
+    lea   rdx, [messageText]              ; rdx = message text
+    lea   r8,  [messageCaption]           ; r8  = message caption
+    xor   r9d, r9d                        ; r9  = uType = 0 = MB_OK
+    call  qword [__imp_MessageBoxA]       ; rax = MessageBoxA(...)
 
     ; Clean stack frame
     ; -----------------
@@ -271,7 +308,7 @@ start:
 .error:
 .done:
 
-    add   rsp, 64
+    add   rsp, 80
     pop   rsi
     pop   rbx
 
