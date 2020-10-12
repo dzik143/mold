@@ -701,13 +701,9 @@ class CodeGeneratorX64
       x       = item[2]
       y       = item[3]
 
-      dstType = 'variant'
-      xType   = 'variant'
-      yType   = 'variant'
-
-      if itemCnt > 2
-        xType  = this._getSymbolType(x)
-      endif
+      dstType = this._getSymbolType(dst)
+      xType   = this._getSymbolType(x)
+      yType   = this._getSymbolType(y)
 
       #if ((opcode isnt MIR1_OPCODE_COMMENT) and
       #    (opcode isnt MIR1_OPCODE_PROC) and
@@ -831,8 +827,6 @@ class CodeGeneratorX64
           this.pushOneParameterBeforeCall(dst, 0)
           this.pushOneParameterBeforeCall(x, 1)
           this.pushOneParameterBeforeCall(y, 2)
-
-          yType = this._getSymbolType(y)
           print '  call __MOLD_VariantStoreAtIndex_' ~ yType
 
         elif opcode is MIR1_OPCODE_STORE_KEY
@@ -840,8 +834,6 @@ class CodeGeneratorX64
           this.pushOneParameterBeforeCall(dst, 0)
           this.pushOneParameterBeforeCall(x, 1)
           this.pushOneParameterBeforeCall(y, 2)
-
-          yType = this._getSymbolType(y)
           print '  call __MOLD_VariantStoreAtKey_' ~ yType
 
         elif opcode is MIR1_OPCODE_COMMENT
@@ -1302,9 +1294,9 @@ class CodeGeneratorX64
       # ------------------------------------------------------------------------
 
       elif opcode >= MIR1_FIRST_CALL_LIKE_OPCODE
-        rv        = item[1]
-        nameOrId  = item[2]
-        params    = item[3]
+        # dst = x(y, ....)
+        nameOrId  = x
+        params    = y
         paramsCnt = len(params)
 
         if ((opcode is MIR1_OPCODE_CALL) and
@@ -1325,30 +1317,30 @@ class CodeGeneratorX64
           this.pushParametersBeforeCall(params)
 
           # Push pointer to return value if any.
-          if rv is defined
+          if dst is defined
             # TODO: Standarize return value passing.
             if opcode is MIR1_OPCODE_SYSCALL
               # Add pointer to the return-value buffer as the last param.
-              this.pushOneParameterBeforeCall(rv, paramsCnt)
+              this.pushOneParameterBeforeCall(dst, paramsCnt)
             else
-              print '  lea rax, [', rv, ']'
+              print '  lea rax, [', dst, ']'
             endif
           endif
 
           # Generate call opcode.
           if opcode is MIR1_OPCODE_SYSCALL
-            # rv = syscall(id, ...)
+            # dst = syscall(id, ...)
             this._syscall(nameOrId)
 
           elif opcode is MIR1_OPCODE_CALL
-            # rv = foo(...)
+            # dst = foo(...)
             this.call(nameOrId)
 
           elif opcode is MIR1_OPCODE_VCALL
             methodId  = nameOrId
 
-            if rv is defined
-              # rv = obj.foo(...)
+            if dst is defined
+              # dst = obj.foo(...)
               # TODO: Better way to handle 32-bit int result?
               signOkLabel = codeObj.symbolTable.createLabel()
 
@@ -1358,8 +1350,8 @@ class CodeGeneratorX64
               print ''
               print '  ; 32-bit int sign extend after vcall if needed.'
               print '  jns', signOkLabel
-              print '  movsxd rax, dword [', rv, '+ Variant_t.value ]'
-              print '  mov    qword [', rv, '+ Variant_t.value ], rax'
+              print '  movsxd rax, dword [', dst, '+ Variant_t.value ]'
+              print '  mov    qword [', dst, '+ Variant_t.value ], rax'
               print signOkLabel ~ ':'
               print ''
 
@@ -1377,7 +1369,6 @@ class CodeGeneratorX64
           if paramsCnt > 4
             print '  add rsp,', paramsCnt * 8 - 32
           endif
-
         endif
 
       # ------------------------------------------------------------------------
@@ -1399,7 +1390,6 @@ class CodeGeneratorX64
 
         elif opcode is MIR1_OPCODE_LOAD_KEY
           # dst := x{y}
-          dstType = this._getSymbolType(dst)
           print '  call __MOLD_VariantLoadFromKey_' ~ dstType
 
         elif (xType is 'variant') or (xType is 'string')
@@ -1482,7 +1472,6 @@ class CodeGeneratorX64
         if opcode is MIR1_OPCODE_CAST_VARIANT_TO
           # Cast variant to primitive.
           # dst = x.value
-          dstType = this._getSymbolType(dst)
           this.call('__MOLD_VariantCastTo_' ~ dstType)
 
         elif opcode is MIR1_OPCODE_CREATE_VARIANT_FROM
@@ -1519,7 +1508,6 @@ class CodeGeneratorX64
 
         else
           isOpcodeHandled = false
-          print '; OPCODE3', opcode
         endif
 
         this.storeResultAfterCall(dst)
