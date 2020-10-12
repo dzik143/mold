@@ -54,10 +54,10 @@ section '.text' readable executable
 ;       Read only data in code section, move to new section if you want
 ; ------------------------------------------------------------------------------
 
-  _imp_name_LoadLibraryA db 'LoadLibraryA', 0
-  _imp_name_MessageBoxA  db 'MessageBoxA', 0
-  _imp_name_user32       db 'user32.dll', 0
-  __imp_name_kernel32    db 'kernel32.dll', 0
+  __imp_name_LoadLibraryA db 'LoadLibraryA', 0
+  __imp_name_MessageBoxA  db 'MessageBoxA', 0
+  __imp_name_user32       db 'user32.dll', 0
+  __imp_name_kernel32     db 'kernel32.dll', 0
 
   messageText    db 'This executable has no imports table', 0
   messageCaption db 'PE32+ without imports table', 0
@@ -68,26 +68,7 @@ section '.text' readable executable
 
 start:
 
-    ; Init stack frame
-    ; ----------------
-
-    push  rbp
-    mov   rbp, rsp
-
-    sub   rsp, 88
-    push  rbx
-    push  rsi
-    push  rdi
-
-    ; We store imported addresses on the stack.
-    ; Move where you want if needed.
-    ; ----------------------------------------
-
-    __imp_kernel32       EQU rbp - 8 - 8 * 1 ; 8 bytes
-    __imp_user32         EQU rbp - 8 - 8 * 2 ; 8 bytes
-    __imp_GetProcAddress EQU rbp - 8 - 8 * 3 ; 8 bytes
-    __imp_LoadLibraryA   EQU rbp - 8 - 8 * 4 ; 8 bytes
-    __imp_MessageBoxA    EQU rbp - 8 - 8 * 5 ; 8 bytes
+    sub   rsp, 40
 
     ; ##########################################################################
     ; #
@@ -128,9 +109,7 @@ start:
     ; Fetch next DllName
     ; -------------------
 
-    mov   eax, [rbx + 56]         ;  ax = DllNameLength (int16)
-    and   eax, 0xff               ; rax = DllNameLength (int64)
-
+    movzx eax, word [rbx + 56]    ; rax = DllNameLength (int16)
     add   rax, qword [rbx + 64]   ; rax = DllNameBuffer + DllNameLength =
                                   ;     = the end of DllNameLength buffer
 
@@ -178,9 +157,9 @@ start:
     ; Go to export table
     ; ------------------
 
-    mov   eax, [rbx + rax + 112]  ; rax = offset of export table in file (RVA)
+    mov   edx, [rbx + rax + 112]  ; rdx = offset of export table in file (RVA)
 
-    lea   rdx, [rbx + rax]        ; rdx = BASE + RVA(exportTable) =
+    add   rdx, rbx                ; rdx = BASE + RVA(exportTable) =
                                   ;     = address of export table in memory
 
     ; ##########################################################################
@@ -243,8 +222,7 @@ start:
     mov   eax, [rax + rcx*4]      ; eax = RVA(GetProcAddress)
     add   rax, rbx                ; rax = GetProcAddress entry point
 
-    mov   qword [__imp_kernel32], rbx
-    mov   qword [__imp_GetProcAddress], rax
+    mov   rsi, rax
 
     ; ##########################################################################
     ; #
@@ -256,10 +234,10 @@ start:
     ; ----------------------------------------------
 
     mov   rcx, rbx                        ; rcx = moduleBase = kernel32
-    lea   rdx, qword [_imp_name_LoadLibraryA]
-                                          ; rdx = 'LoadLibraryA'
-    call  qword [__imp_GetProcAddress]    ; rax = GetProcAddress(...)
-    mov   qword [__imp_LoadLibraryA], rax ; Save pointer to LoadLibraryA
+    lea   rdx, [__imp_name_LoadLibraryA]  ; rdx = 'LoadLibraryA'
+
+    call  rsi                             ; rax = GetProcAddress(kernel32,
+                                          ;                     'LoadLibrary')
 
     ; ##########################################################################
     ; #
@@ -271,18 +249,17 @@ start:
     ; ... = LoadLibraryA('user32.dll')
     ; --------------------------------
 
-    lea   rcx, qword [_imp_name_user32]   ; rcx = 'user32.dll'
-    call  qword [__imp_LoadLibraryA]      ; rax = LoadLibraryA(...)
-    mov   qword [__imp_user32], rax       ; Save pointer to user32.dll
+    lea   rcx, [__imp_name_user32]        ; rcx = 'user32.dll'
+    call  rax                             ; rax = LoadLibrary('user32.dll')
 
     ; Import user32:MessageBoxA routine
     ; ... = GetProcAddress(user32, 'MessageBoxA')
     ; -------------------------------------------
 
     mov   rcx, rax                        ; rcx = moduleBase = user32
-    lea   rdx, [_imp_name_MessageBoxA]    ; rdx = 'MessageBoxA'
-    call  qword [__imp_GetProcAddress]    ; rax = GetProcAddress(...)
-    mov   qword [__imp_MessageBoxA], rax  ; Save pointer to MessageBoxA
+    lea   rdx, [__imp_name_MessageBoxA]   ; rdx = 'MessageBoxA'
+    call  rsi                             ; rax = GetProcAddress(kernel32,
+                                          ;                     'MessageBoxA')
 
     ; Call MessageBoxA(NULL, msg, caption, 0)
     ; ---------------------------------------
@@ -291,7 +268,7 @@ start:
     lea   rdx, [messageText]              ; rdx = message text
     lea   r8,  [messageCaption]           ; r8  = message caption
     xor   r9d, r9d                        ; r9  = uType = 0 = MB_OK
-    call  qword [__imp_MessageBoxA]       ; rax = MessageBoxA(...)
+    call  rax                             ; rax = result of MessageBoxA(...)
 
     ; Clean stack frame
     ; -----------------
@@ -299,10 +276,5 @@ start:
 .error:
 .done:
 
-    pop   rdi
-    pop   rsi
-    pop   rbx
-
-    add   rsp, 88
-    pop   rbp
+    add   rsp, 40
     ret

@@ -186,9 +186,9 @@ start:
     ; Go to export table
     ; ------------------
 
-    mov   eax, [rbx + rax + 112]  ; rax = offset of export table in file (RVA)
+    mov   edx, [rbx + rax + 112]  ; rdx = offset of export table in file (RVA)
 
-    lea   rdx, [rbx + rax]        ; rdx = BASE + RVA(exportTable) =
+    add   rdx, rbx                ; rdx = BASE + RVA(exportTable) =
                                   ;     = address of export table in memory
 
     ; ##########################################################################
@@ -218,19 +218,12 @@ start:
     ; Match 'GetProcAddress\0'
     ; -----------------------
 
-    cmp   dword [rax], 'GetP'
+    mov   rdi, 'GetProcA'
+    cmp   rdi, qword [rax]
     jnz   .scanNextProc
 
-    cmp   dword [rax + 4], 'rocA'
-    jnz   .scanNextProc
-
-    cmp   dword [rax + 8], 'ddre'
-    jnz   .scanNextProc
-
-    cmp   word  [rax + 12], 'ss'
-    jnz   .scanNextProc
-
-    cmp   byte  [rax + 14], 0
+    mov   rdi, 'Address'
+    cmp   rdi, qword [rax + 7]
     jnz   .scanNextProc
 
     ; --------------------------------------------------------------------------
