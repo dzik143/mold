@@ -54,13 +54,15 @@ section '.text' readable executable
 ;       Read only data in code section, move to new section if you want
 ; ------------------------------------------------------------------------------
 
-  __imp_name_LoadLibraryA db 'LoadLibraryA', 0
-  __imp_name_MessageBoxA  db 'MessageBoxA', 0
-  __imp_name_user32       db 'user32.dll', 0
-  __imp_name_kernel32     db 'kernel32.dll', 0
+__literals:
 
-  messageText    db 'This executable has no imports table', 0
-  messageCaption db 'PE32+ without imports table', 0
+  .Kernel32     db 'kernel32.dll', 0
+  .LoadLibraryA db 'LoadLibraryA', 0
+  .User32       db 'user32.dll'  , 0
+  .MessageBoxA  db 'MessageBoxA' , 0
+
+  .messageText    db '', 0;This executable has no imports table', 0
+  .messageCaption db '', 0;PE32+ without imports table', 0
 
 ; ------------------------------------------------------------------------------
 ;                                 Entry point
@@ -69,6 +71,20 @@ section '.text' readable executable
 start:
 
     sub   rsp, 40
+
+    ; Map literals base to rbp to avoid usage
+    ; of rip based addresses with 32-bit displacements
+    ; ------------------------------------------------
+
+    lea   rbp, [__literals]
+
+    __imp_name_Kernel32     EQU rbp + __literals.Kernel32     - __literals
+    __imp_name_LoadLibraryA EQU rbp + __literals.LoadLibraryA - __literals
+    __imp_name_User32       EQU rbp + __literals.User32       - __literals
+    __imp_name_MessageBoxA  EQU rbp + __literals.MessageBoxA  - __literals
+
+    messageText    EQU rbp + __literals.messageText    - __literals
+    messageCaption EQU rbp + __literals.messageCaption - __literals
 
     ; ##########################################################################
     ; #
@@ -113,25 +129,29 @@ start:
     add   rax, qword [rbx + 64]   ; rax = DllNameBuffer + DllNameLength =
                                   ;     = the end of DllNameLength buffer
 
+    ; --------------------------------------------------------------------------
     ; Match KERNEL32.DLL from backward, because
     ; entries contain full module paths e.g.
     ; C:\WINDOWS\SYSTEM32\KERNEL32.DLL
     ;                     ^^^^^^^^^^^^
     ;                   We match this part only
-    ; -----------------------------------------
+    ; --------------------------------------------------------------------------
 
-    mov   ecx, 11                 ; rcx = 12 = len('kernel32.dll') in chars
+    push  11                      ;
+    pop   rcx                     ; rcx = 12 = len('kernel32.dll') in chars
     sub   rax, 24                 ; rax = DllNameLength - len('kernel32.dll')
 
 .compareLoop:
 
     mov   dl, [rax + rcx*2]       ; dl = fetch next char
     or    dl, 32                  ; dl = lowercase
-    cmp   dl, [__imp_name_kernel32 + rcx]
+    cmp   dl, [__imp_name_Kernel32 + rcx]
                                   ; is characters match?
 
     jne   .scanNextLdrModule      ; go to next module if not matched
-    loop  .compareLoop            ; compare up to 24 characters
+    dec   ecx
+    jne   .compareLoop
+;    loop  .compareLoop            ; compare up to 24 characters
 
 .kernel32_found:
 
@@ -143,21 +163,12 @@ start:
     ; #
     ; ##########################################################################
 
-    ; Go to PE header
-    ; ---------------
-
     mov   eax, [rbx + 60]         ; rax = offset of the PE header in file (RVA)
 
-    ;
-    ; Go to PE optional header
-    ; ------------------------
+    add   eax, 24 + 112           ; rax = addres of PE optional in file (RVA)
+                                  ;     + ExportTable (112)
 
-    add   eax, 24                 ; rax = addres of PE optional in file (RVA)
-
-    ; Go to export table
-    ; ------------------
-
-    mov   edx, [rbx + rax + 112]  ; rdx = offset of export table in file (RVA)
+    mov   edx, [rbx + rax]        ; rdx = offset of export table in file (RVA)
 
     add   rdx, rbx                ; rdx = BASE + RVA(exportTable) =
                                   ;     = address of export table in memory
@@ -172,7 +183,8 @@ start:
     lea   rsi, [rbx + rax]        ; rsi = BASE + RVA(NamePointerTable)
                                   ;     = address of NamePointerTable in memory
 
-    mov   rcx, -1                 ; rcx = procIdx = index in export table
+    push  -1                      ;
+    pop   rcx                     ; rcx = procIdx = index in export table
 
 .scanNextProc:
 
@@ -189,13 +201,13 @@ start:
     ; Match 'GetProcAddress\0'
     ; -----------------------
 
-    mov   rdi, 'GetProcA'
-    cmp   rdi, qword [rax]
-    jnz   .scanNextProc
+    mov   rdi, 'GetProcA'         ; Compare first 8 bytes
+    cmp   rdi, qword [rax]        ;
+    jnz   .scanNextProc           ;
 
-    mov   rdi, 'Address'
-    cmp   rdi, qword [rax + 7]
-    jnz   .scanNextProc
+    mov   rdi, 'Address'          ; Compare last 8 bytes including zero
+    cmp   rdi, qword [rax + 7]    ; terminator. 7-th byte is compared twice
+    jnz   .scanNextProc           ; to make code shorter.
 
     ; --------------------------------------------------------------------------
     ; Get address of GetProcAddress function from kernel32.
@@ -219,6 +231,7 @@ start:
 
     mov   eax, [rdx + 28]         ; edx = RVA(ExportTable.ExportAddressTableRVA)
     add   rax, rbx                ; rax = ExportTable.ExportAddressTableRVA
+
     mov   eax, [rax + rcx*4]      ; eax = RVA(GetProcAddress)
     add   rax, rbx                ; rax = GetProcAddress entry point
 
@@ -235,7 +248,6 @@ start:
 
     mov   rcx, rbx                        ; rcx = moduleBase = kernel32
     lea   rdx, [__imp_name_LoadLibraryA]  ; rdx = 'LoadLibraryA'
-
     call  rsi                             ; rax = GetProcAddress(kernel32,
                                           ;                     'LoadLibrary')
 
@@ -249,7 +261,7 @@ start:
     ; ... = LoadLibraryA('user32.dll')
     ; --------------------------------
 
-    lea   rcx, [__imp_name_user32]        ; rcx = 'user32.dll'
+    lea   rcx, [__imp_name_User32]        ; rcx = 'user32.dll'
     call  rax                             ; rax = LoadLibrary('user32.dll')
 
     ; Import user32:MessageBoxA routine

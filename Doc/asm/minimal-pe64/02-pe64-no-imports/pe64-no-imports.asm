@@ -137,12 +137,13 @@ start:
     add   rax, qword [rbx + 64]   ; rax = DllNameBuffer + DllNameLength =
                                   ;     = the end of DllNameLength buffer
 
+    ; --------------------------------------------------------------------------
     ; Match KERNEL32.DLL from backward, because
     ; entries contain full module paths e.g.
     ; C:\WINDOWS\SYSTEM32\KERNEL32.DLL
     ;                     ^^^^^^^^^^^^
     ;                   We match this part only
-    ; -----------------------------------------
+    ; --------------------------------------------------------------------------
 
     mov   rdx, 0x0020002000200020 ; rdx = mask for case insensitive compare.
                                   ; We convert source text to lower case.
@@ -181,12 +182,13 @@ start:
     ; Go to PE optional header
     ; ------------------------
 
-    add   eax, 24                 ; rax = addres of PE optional in file (RVA)
+    add   eax, 24 + 112           ; rax = addres of PE optional in file (RVA)
+                                  ;     + ExportTable (112)
 
     ; Go to export table
     ; ------------------
 
-    mov   edx, [rbx + rax + 112]  ; rdx = offset of export table in file (RVA)
+    mov   edx, [rbx + rax]        ; rdx = offset of export table in file (RVA)
 
     add   rdx, rbx                ; rdx = BASE + RVA(exportTable) =
                                   ;     = address of export table in memory
