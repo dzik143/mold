@@ -125,8 +125,8 @@ start:
     ; Fetch next DllName
     ; -------------------
 
-    movzx eax, word [rbx + 56]    ; rax = DllNameLength (int16)
-    add   rax, qword [rbx + 64]   ; rax = DllNameBuffer + DllNameLength =
+    movzx esi, word [rbx + 56]    ; esi = DllNameLength (int16)
+    add   rsi, qword [rbx + 64]   ; rsi = DllNameBuffer + DllNameLength =
                                   ;     = the end of DllNameLength buffer
 
     ; --------------------------------------------------------------------------
@@ -139,13 +139,13 @@ start:
 
     push  11                      ;
     pop   rcx                     ; rcx = 12 = len('kernel32.dll') in chars
-    sub   rax, 24                 ; rax = DllNameLength - len('kernel32.dll')
+    sub   rsi, 24                 ; rax = DllNameLength - len('kernel32.dll')
 
 .compareLoop:
 
-    mov   dl, [rax + rcx*2]       ; dl = fetch next char
-    or    dl, 32                  ; dl = lowercase
-    cmp   dl, [__imp_name_Kernel32 + rcx]
+    mov   al, [rsi + rcx*2]       ; dl = fetch next char
+    or    al, 32                  ; dl = lowercase
+    cmp   al, [__imp_name_Kernel32 + rcx]
                                   ; is characters match?
 
     jne   .scanNextLdrModule      ; go to next module if not matched
