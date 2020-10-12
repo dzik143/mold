@@ -150,8 +150,7 @@ start:
 
     jne   .scanNextLdrModule      ; go to next module if not matched
     dec   ecx
-    jne   .compareLoop
-;    loop  .compareLoop            ; compare up to 24 characters
+    loop  .compareLoop            ; compare up to 24 characters
 
 .kernel32_found:
 
