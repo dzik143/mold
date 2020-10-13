@@ -102,26 +102,26 @@ __MOLD_MemoryAlloc:
   ; DEBUG
   ; ----------------------------------------------------------------------------
 
-if DEBUG
-  push rax rcx rdx r8 r9 r10 r11
-  mov   r9, rax
-  mov   r8, rdx
-  mov   rdx, rcx
-  lea   rcx, [.fmtDebug1]
-  call  [printf]
-  pop   r11 r10 r9 r8 rdx rcx rax
-  jmp   .afterDebug1
-.fmtDebug1 db 'allocated buffer ptr %p, %d bytes, bytesPtr %p', 13, 10, 0
-.afterDebug1:
-end if
+  if DEBUG
+    push rax rcx rdx r8 r9 r10 r11
+    mov   r9, rax
+    mov   r8, rdx
+    mov   rdx, rcx
+    lea   rcx, [.fmtDebug1]
+    call  [printf]
+    pop   r11 r10 r9 r8 rdx rcx rax
+    jmp   .afterDebug1
+    .fmtDebug1 db 'allocated buffer ptr %p, %d bytes, bytesPtr %p', 13, 10, 0
+    .afterDebug1:
+  end if
+
   ; ----------------------------------------------------------------------------
   ; END OF DEBUG
   ; ----------------------------------------------------------------------------
 
   mov     rax, [.bufferHolder]
 
-  add     rsp, 72
-  pop     rbp
+  leave
   ret
 
   restore .alignedCapacity
@@ -328,8 +328,8 @@ __MOLD_MemoryIncreaseBufferTwice:
     cinvoke printf, .fmtDebug2, rdx, r11, r9
     pop  r11 r10 r9 r8 rdx rcx
     jmp .afterDebug2
-  .fmtDebug2 db 'resizing buffer ptr %p from %d to %d bytes', 13, 10, 0
-  .afterDebug2:
+    .fmtDebug2 db 'resizing buffer ptr %p from %d to %d bytes', 13, 10, 0
+    .afterDebug2:
   end if
 
   ; ----------------------------------------------------------------------------
@@ -407,15 +407,16 @@ __MOLD_MemoryRealloc:
   ; ------------
   ; DEBUG
   ; ------------
-if DEBUG
-  push rcx rdx r8 r9 r10 r11
-  mov  rdx, rcx
-  cinvoke printf, .fmtDebug1
-  pop  r11 r10 r9 r8 rdx rcx
-  jmp .afterDebug1
-.fmtDebug1 db 'going to resize ptr %p', 13, 10, 0
-.afterDebug1:
-end if
+  if DEBUG
+    push rcx rdx r8 r9 r10 r11
+    mov  rdx, rcx
+    cinvoke printf, .fmtDebug1
+    pop  r11 r10 r9 r8 rdx rcx
+    jmp .afterDebug1
+    .fmtDebug1 db 'going to resize ptr %p', 13, 10, 0
+    .afterDebug1:
+  end if
+
   ; ------------
   ; END OF DEBUG
   ; ------------
@@ -462,16 +463,16 @@ end if
   ; ------------
   ; DEBUG
   ; ------------
-if DEBUG
-  push rcx rdx r8 r9 r10 r11
-  mov  r9, rdx
-  mov  rdx, rcx
-  cinvoke printf, .fmtDebug2, rdx, r11, r9
-  pop  r11 r10 r9 r8 rdx rcx
-  jmp .afterDebug2
-.fmtDebug2 db 'resizing buffer ptr %p from %d to %d bytes', 13, 10, 0
-.afterDebug2:
-end if
+  if DEBUG
+    push rcx rdx r8 r9 r10 r11
+    mov  r9, rdx
+    mov  rdx, rcx
+    cinvoke printf, .fmtDebug2, rdx, r11, r9
+    pop  r11 r10 r9 r8 rdx rcx
+    jmp .afterDebug2
+    .fmtDebug2 db 'resizing buffer ptr %p from %d to %d bytes', 13, 10, 0
+    .afterDebug2:
+  end if
 
   ; ----------------------------------------------------------------------------
   ; Log reallocation if if needed
@@ -525,16 +526,16 @@ __MOLD_MemoryLogAlloc:
   inc  qword [MemoryAllocCnt]
 
   if DEBUG
-  push    rax rcx rdx r8 r9 r10 r11
-  mov     rdx, rcx
-  cinvoke printf, .fmt, rdx, [MemoryAllocCnt], [MemoryFreeCnt], [MemoryReallocCnt]
-  pop     r11 r10 r9 r8 rdx rcx rax
+    push    rax rcx rdx r8 r9 r10 r11
+    mov     rdx, rcx
+    cinvoke printf, .fmt, rdx, [MemoryAllocCnt], [MemoryFreeCnt], [MemoryReallocCnt]
+    pop     r11 r10 r9 r8 rdx rcx rax
   end if
 
   ret
 
   if DEBUG
-  .fmt db "; malloc, %d bytes (allocated: %d, freed: %d, realloc: %d)", 13, 10, 0
+    .fmt db "; malloc, %d bytes (allocated: %d, freed: %d, realloc: %d)", 13, 10, 0
   end if
 
 __MOLD_MemoryLogFree:
@@ -543,15 +544,15 @@ __MOLD_MemoryLogFree:
   inc  qword [MemoryFreeCnt]
 
   if DEBUG
-  push    rax rcx rdx r8 r9 r10 r11
-  cinvoke printf, .fmt, [MemoryAllocCnt], [MemoryFreeCnt], [MemoryReallocCnt]
-  pop     r11 r10 r9 r8 rdx rcx rax
+    push    rax rcx rdx r8 r9 r10 r11
+    cinvoke printf, .fmt, [MemoryAllocCnt], [MemoryFreeCnt], [MemoryReallocCnt]
+    pop     r11 r10 r9 r8 rdx rcx rax
   end if
 
   ret
 
   if DEBUG
-  .fmt db "; free (allocated: %d, freed: %d, realloc: %d)", 13, 10, 0
+    .fmt db "; free (allocated: %d, freed: %d, realloc: %d)", 13, 10, 0
   end if
 
 __MOLD_MemoryLogRealloc:

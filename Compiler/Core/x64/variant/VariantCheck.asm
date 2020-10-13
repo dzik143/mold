@@ -56,8 +56,7 @@ __MOLD_VariantCheck:
 .ok:
     pop  rax
 
-    add  rsp, 32
-    pop  rbp
+    leave
     ret
 
 .wrongTypeError:

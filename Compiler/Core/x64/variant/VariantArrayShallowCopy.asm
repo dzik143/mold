@@ -26,8 +26,7 @@ __MOLD_VariantArrayShallowCopy:
 
     DEBUG_CHECK_VARIANT rcx
 
-    add     rsp, 72
-    pop     rbp
+    leave
     ret
 
 .insert_one_item:

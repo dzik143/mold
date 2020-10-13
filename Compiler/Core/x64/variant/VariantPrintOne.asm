@@ -101,8 +101,7 @@ __MOLD_PrintVariant:
 
     pop     rbx
 
-    add     rsp, 32 + 16
-    pop     rbp
+    leave
     ret
 
 .print_one_array_item:

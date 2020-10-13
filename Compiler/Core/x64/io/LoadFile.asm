@@ -11,7 +11,10 @@
 __MOLD_LoadFile:
     ; TODO: Handle read error
 
+    push    rbp
+    mov     rbp, rsp
     sub     rsp, 32
+
     push    r12
     push    r13
 
@@ -63,13 +66,13 @@ __MOLD_LoadFile:
     pop     r13
     pop     r12
 
-    add     rsp, 32
+    leave
     ret
 
 .couldNotOpenError:
     cinvoke printf, "error: could not open file '%s'", rdx
-    cinvoke ExitProcess, -1
+    jmp __MOLD_Halt
 
 .stringPathExpectedError:
     cinvoke printf, "error: string path expected"
-    cinvoke ExitProcess, -1
+    jmp __MOLD_Halt

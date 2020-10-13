@@ -17,6 +17,8 @@ __MOLD_VariantLoadFromKey_string:
     DEBUG_CHECK_VARIANT rcx
     DEBUG_CHECK_VARIANT rdx
 
+    push   rbp
+    mov    rbp, rsp
     sub    rsp, 32
 
     mov    eax, [rcx + Variant_t.type]
@@ -109,5 +111,5 @@ __MOLD_VariantLoadFromKey_string:
 
     DEBUG_CHECK_VARIANT r8
 
-    add     rsp, 32
+    leave
     ret

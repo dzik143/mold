@@ -168,6 +168,5 @@ __MOLD_VariantStoreAtIndex_variant:
 
     DEBUG_CHECK_VARIANT r8                  ;
 
-    add     rsp, 32                         ;
-    pop     rbp                             ;
+    leave
     ret

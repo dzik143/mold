@@ -54,21 +54,21 @@ __MOLD_Main:
     ; Verify memory leaks
     ; ----------------------------------------------------------------------------
 
-if ASSERT_ENABLED
+    if ASSERT_ENABLED
 
-    mov     rax, [MemoryAllocCnt]
-    cmp     rax, [MemoryFreeCnt]
-    je      .noMemoryLeaksOrDone
+      mov     rax, [MemoryAllocCnt]
+      cmp     rax, [MemoryFreeCnt]
+      je      .noMemoryLeaksOrDone
 
-    cinvoke printf, .fmt, [MemoryAllocCnt], [MemoryFreeCnt], [MemoryReallocCnt]
+      cinvoke printf, .fmt, [MemoryAllocCnt], [MemoryFreeCnt], [MemoryReallocCnt]
 
-    jmp     .noMemoryLeaksOrDone
+      jmp     .noMemoryLeaksOrDone
 
-    .fmt db "; PANIC! Memory leak detected! (allocated: %d, freed: %d, realloc: %d)", 13, 10, 0
+      .fmt db "; PANIC! Memory leak detected! (allocated: %d, freed: %d, realloc: %d)", 13, 10, 0
 
-.noMemoryLeaksOrDone:
+      .noMemoryLeaksOrDone:
 
-end if
+    end if
 
     add     rsp, 32
     pop     rbp

@@ -78,8 +78,7 @@ __MOLD_VariantMapCreateFromInitList:
     ; -----------------------------
     ;
 
-    add  rsp, 80
-    pop  rbp
+    leave
     ret
 
     restore dst

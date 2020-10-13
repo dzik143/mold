@@ -66,8 +66,7 @@ __MOLD_SysCall:
 
 .close:
     mov     rcx, [rcx + Variant_t.value]
-    cinvoke CloseHandle
-    ret
+    jmp     [CloseHandle]
 
 ; ------------------------------------------------------------------------------
 ; Read from file

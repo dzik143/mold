@@ -24,8 +24,10 @@ __MOLD_InitArgv:
     xor       r9, r9
     lea       rax, [startupinfo]
     push      rax
-    cinvoke   __getmainargs
-    add       rsp, 8
+
+    sub       rsp, 32
+    call      [__getmainargs]
+    add       rsp, 32 + 8
 
     lea       rcx, [argv]
     call      __MOLD_VariantArrayCreate
@@ -52,7 +54,11 @@ __MOLD_InitArgv:
     mov       r12, rcx
     mov       r14, rdx
 
-    cinvoke   strlen, rdx
+    sub       rsp, 32
+    mov       rcx, rdx
+    call      [strlen]
+    add       rsp, 32
+
     mov       r13, rax
     lea       rcx, [rax + 1]
 
@@ -66,7 +72,10 @@ __MOLD_InitArgv:
 
     lea       rcx, [rax + String_t.text]
     mov       rdx, r14
-    cinvoke   strcpy
+
+    sub       rsp, 32
+    call      [strcpy]
+    add       rsp, 32
 
     pop       r11 r10 r9 r8 rdx rcx rax
 
@@ -82,9 +91,9 @@ __MOLD_InitArgv:
 
     mov       dword [argc + Variant_t.type], VARIANT_INTEGER
 
-    pop    r14
-    pop    r13
-    pop    r12
+    pop       r14
+    pop       r13
+    pop       r12
     leave
     ret
 

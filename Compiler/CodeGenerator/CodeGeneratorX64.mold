@@ -1727,7 +1727,7 @@ class CodeGeneratorX64
           methodProto = vtable{methodName}
 
           if methodProto is undefined
-            methodPtr = '__MOLD_NullMethodCalled'
+            methodPtr = '__MOLD_PrintErrorAndDie.nullMethodCalled'
           else
             methodPtr = methodProto.fullName ~ '_vcall'
           endif

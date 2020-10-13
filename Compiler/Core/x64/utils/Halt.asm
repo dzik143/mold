@@ -1,2 +1,3 @@
 __MOLD_Halt:
-  cinvoke ExitProcess, 0
+  xor  eax, eax
+  call [ExitProcess]
