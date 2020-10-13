@@ -25,22 +25,29 @@
 ; import table.
 ;
 ; Below code does:
-;   1. Find the base of KERNEL32.DLL via Thread Environment Block (TEB),
+; ----------------
+;
+;   1. Find the KERNEL32.DLL base using return address passed from OS,
 ;   2. find export table at KERNEL32.DLL module space (kernel32!ExportTable),
 ;   3. find the entry point of GetProcAddress in kernel32!ExportTable,
 ;   4. use GetProcAddress to find entry of kernel32!LoadLibraryA routine,
 ;   5. use LoadLibraryA and GetProcAddress to import user32!MessageBox.
 
+; How does it work:
+; -----------------
+;
+; - We assume that entry point in our application is called directly by
+;   KERNEL32.DLL,
+;
+; - So the return address on app start-up should points somwhere in-the-middle
+;   of KERNEL32.dll module,
+;
+; - So, scan memory pointed by return address backward until we find something
+;   looking like the PE header.
+
 ; Possible improvement:
 ; - match full '%WINDIR%\SYSTEM32\KERNEL32.DLL' path for security (?)
 ;   (we search for kernel32.dll string only).
-
-; Limitations:
-; - Code works on AMD64 (x86-64) only - GS register is unused on 32-bit OS.
-;
-; - To get it work on 32-bit OS, the kernel32 base may be obtain via return
-;   address in the main entry point (instead of PEB):
-;   https://stackoverflow.com/a/32820799
 
 ; Build by command:
 ; fasm pe64-no-imports.asm
@@ -56,7 +63,6 @@ section '.text' readable executable
 
 __literals:
 
-  .Kernel32     db 'kernel32.dll', 0
   .LoadLibraryA db 'LoadLibraryA', 0
   .User32       db 'user32.dll'  , 0
   .MessageBoxA  db 'MessageBoxA' , 0
@@ -70,11 +76,31 @@ __literals:
 
 start:
 
-    sub   rsp, 40
+    ; ##########################################################################
+    ; #
+    ; #        Step 1: Find KERNEL32.DLL base via return address
+    ; #
+    ; ##########################################################################
+
+    ; --------------------------------------------------------------------------
+    ; Find module base address by searching for 'MZ\0\0' magic
+    ; --------------------------------------------------------------------------
+
+    mov   rbx, [rsp]              ; rbx = retAddr (to parent module)
+    xor   bx, bx                  ; rbx = retAddr % 0x10000
+                                  ;     = retAddr & 0xffffffffffff0000
+
+.searchForDosHeader:
+
+    sub   rbx, 0x10000 / 4        ; Search backward for MZ magic
+    cmp   dword [rbx], 0x00905a4d ; 'MZ\0\0' magic
+    jnz   .searchForDosHeader
 
     ; Map literals base to rbp to avoid usage
     ; of rip based addresses with 32-bit displacements
     ; ------------------------------------------------
+
+    sub   rsp, 40
 
     lea   rbp, [__literals]
 
@@ -85,75 +111,6 @@ start:
 
     messageText    EQU rbp + __literals.messageText    - __literals
     messageCaption EQU rbp + __literals.messageCaption - __literals
-
-    ; ##########################################################################
-    ; #
-    ; #              Step 1: Find KERNEL32.DLL base via PEB
-    ; #
-    ; ##########################################################################
-
-    ; --------------------------------------------------------------------------
-    ; Fetch TEB.PEB.LoaderData.Modules[] array.
-    ; --------------------------------------------------------------------------
-
-    mov   rbx, qword [gs:0x30]    ; rbx = TEB = Thread Environment Block
-    mov   rbx, qword [rbx + 0x60] ; rbx = TEB.PEB = Process Environment Block
-    mov   rbx, qword [rbx + 0x18] ; rbx = TEB.PEB.LoaderData
-    mov   rbx, qword [rbx + 0x20] ; rbx = TEB.PEB.LoaderData.Modules
-
-    ; --------------------------------------------------------------------------
-    ; Find base of kernel32.dll module.
-    ; --------------------------------------------------------------------------
-
-    ; One loader entry is:
-    ;   LIST_ENTRY LinkedList;       ; 0  8
-    ;   LIST_ENTRY UnusedList;       ; 8  8
-    ;   PVOID BaseAddress;           ; 16 8
-    ;   PVOID Reserved2[1];          ; 24 8
-    ;   PVOID DllBase;               ; 32 8
-    ;   PVOID EntryPoint;            ; 40 8
-    ;   PVOID Reserved3;             ; 48 8
-    ;   USHORT DllNameLength;        ; 56 2
-    ;   USHORT DllNameMaximumLength; ; 58 2
-    ;   USHORT Reserver4[2]          ; 60 4
-    ;   PWSTR  DllNameBuffer;        ; 64 8
-
-.scanNextLdrModule:
-
-    mov   rbx, [rbx]              ; rbx = next module in linked list
-
-    ; Fetch next DllName
-    ; -------------------
-
-    movzx esi, word [rbx + 56]    ; esi = DllNameLength (int16)
-    add   rsi, qword [rbx + 64]   ; rsi = DllNameBuffer + DllNameLength =
-                                  ;     = the end of DllNameLength buffer
-
-    ; --------------------------------------------------------------------------
-    ; Match KERNEL32.DLL from backward, because
-    ; entries contain full module paths e.g.
-    ; C:\WINDOWS\SYSTEM32\KERNEL32.DLL
-    ;                     ^^^^^^^^^^^^
-    ;                   We match this part only
-    ; --------------------------------------------------------------------------
-
-    push  12                      ;
-    pop   rcx                     ; rcx = 12 = len('kernel32.dll') in chars
-    sub   rsi, 26                 ; rsi = &DllName[len(DllName) - 12 - 1]
-
-.compareLoop:
-
-    mov   al, [rsi + rcx*2]       ; dl = fetch next char
-    or    al, 32                  ; dl = lowercase
-    cmp   al, [__imp_name_Kernel32 + rcx - 1]
-                                  ; is characters match?
-
-    jne   .scanNextLdrModule      ; go to next module if not matched
-    loop  .compareLoop            ; compare up to 24 characters
-
-.kernel32_found:
-
-    mov   rbx, [rbx + 32]         ; rbx = base of kernel32 module
 
     ; ##########################################################################
     ; #
