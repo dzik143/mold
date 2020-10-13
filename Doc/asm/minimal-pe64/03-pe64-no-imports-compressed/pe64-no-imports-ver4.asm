@@ -74,13 +74,10 @@ start:
     ; --------------------------------------------------------------------------
 
     mov   rbx, [rsp]              ; rbx = retAddr (to parent module)
-    xor   bx, bx                  ; rbx = retAddr % 0x10000
-                                  ;     = retAddr & 0xffffffffffff0000
 
 .searchForDosHeader:
-
-    sub   rbx, 0x10000 / 4        ; Search backward for MZ magic
-    cmp   dword [rbx], 0x00905a4d ; 'MZ\0\0' magic
+    dec   rbx                     ; Search backward for MZ magic
+    cmp   dword [rbx], 0x00905a4d ; 'MZ\x90\0' magic
     jnz   .searchForDosHeader
 
     ; Map literals base to rbp to avoid usage
@@ -107,10 +104,11 @@ start:
 
     mov   eax, [rbx + 60]         ; rax = offset of the PE header in file (RVA)
 
-    add   eax, 24 + 112           ; rax = addres of PE optional in file (RVA)
+    mov   edx, [rbx + rax + 24 + 112]
+                                  ; rdx = offset of export table in file (RVA)
+                                  ;     = BASE + addres of PE.Optional in file (RVA)
                                   ;     + ExportTable (112)
 
-    mov   edx, [rbx + rax]        ; rdx = offset of export table in file (RVA)
 
     add   rdx, rbx                ; rdx = BASE + RVA(exportTable) =
                                   ;     = address of export table in memory
@@ -134,7 +132,7 @@ start:
     ; ---------------------
 
     inc   ecx                     ; rcx = procIdx + 1 = go to next proc entry
-    mov   eax, [rsi + rcx*4]      ; eax = RVA(NamePointerTable[procIdx])
+    lodsd                         ; eax = RVA(NamePointerTable[procIdx])
 
     add   rax, rbx                ; rax = BASE + RVA(NamePointerTable[procIdx])
                                   ;     = address of NamePointerTable[procIdx]
@@ -174,10 +172,8 @@ start:
     mov   eax, [rdx + 28]         ; edx = RVA(ExportTable.ExportAddressTableRVA)
     add   rax, rbx                ; rax = ExportTable.ExportAddressTableRVA
 
-    mov   eax, [rax + rcx*4]      ; eax = RVA(GetProcAddress)
-    add   rax, rbx                ; rax = GetProcAddress entry point
-
-    mov   rsi, rax
+    mov   esi, [rax + rcx*4]      ; esi = RVA(GetProcAddress)
+    add   rsi, rbx                ; rsi = GetProcAddress entry point
 
     ; ##########################################################################
     ; #
