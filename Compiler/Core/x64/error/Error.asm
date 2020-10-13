@@ -34,6 +34,7 @@ DefErrorEntry divideByZero
 DefErrorEntry floatOverflow
 DefErrorEntry floatUnderflow
 DefErrorEntry notIterable
+DefErrorEntry nullMethodCalled
 
 .final:
 
@@ -116,4 +117,5 @@ DefErrorEntry notIterable
 .msg_floatOverflow            db 23 , 'floating point overflow'
 .msg_floatUnderflow           db 24 , 'floating point underflow'
 .msg_notIterable              db 12 , 'not iterable'
+.msg_nullMethodCalled         db 18 , 'null method called'
 .msg_afterText                db  2 , 13, 10

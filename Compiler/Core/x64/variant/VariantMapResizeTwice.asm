@@ -6,22 +6,24 @@
 ;
 ;###############################################################################
 
-proc __MOLD_VariantMapResizeTwice
+__MOLD_VariantMapResizeTwice:
 
     ; --------------------------------------------------------------------------
     ; Set up stack frame
     ; --------------------------------------------------------------------------
 
-    local .newBox Variant_t ?
+    push    rbp
+    mov     rbp, rsp
 
     push    rsi
     push    rdi
     push    r12
     push    r13
 
-    sub     rsp, 32
-
     mov     r12, rcx                           ; r12 = old box
+
+    ; TODO: Review it.
+    .newBox EQU __TrashBin
 
     ; --------------------------------------------------------------------------
     ; Allocate new buffer (resized)
@@ -108,11 +110,11 @@ proc __MOLD_VariantMapResizeTwice
     ; Clean up stack frame
     ; --------------------------------------------------------------------------
 
-    add     rsp, 32
-
     pop     r13
     pop     r12
     pop     rdi
     pop     rsi
+    pop     rbp
     ret
-endp
+
+    restore .newBox

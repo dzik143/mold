@@ -74,7 +74,7 @@ __MOLD_MemoryAlloc:
   cinvoke malloc                            ; rax = pointer to new Buffer_t
   mov     [.bufferHolder], rax              ; save pointer to buffer holder
   test    rax, rax
-  jz      .outOfMemory
+  jz      __MOLD_PrintErrorAndDie.outOfMemory
 
   ; ----------------------------------------------------------------------------
   ; Allocate new memory block
@@ -84,7 +84,7 @@ __MOLD_MemoryAlloc:
   mov     rdx, 1                            ; rdx = 1
   cinvoke calloc                            ; rax = new memory block
   test    rax, rax
-  jz      .outOfMemory
+  jz      __MOLD_PrintErrorAndDie.outOfMemory
 
   ; ----------------------------------------------------------------------------
   ; Set up Buffer_t struct
@@ -127,13 +127,8 @@ end if
   restore .alignedCapacity
   restore .bufferHolder
 
-;.fmt db 'Init refCnt to 1', 13, 10, 0
-.outOfMemory:
-  cinvoke printf, 'PANIC! Out of memory'
-  int 3
 
-
-proc __MOLD_MemoryAddRef buf
+__MOLD_MemoryAddRef:
   ; rcx = buf
 
   mov     rax, [rcx + Buffer_t.refCnt]
@@ -141,26 +136,26 @@ proc __MOLD_MemoryAddRef buf
   jl      .staticBuffer
 
   if DEBUG
-  push    rax rcx rdx r8 r9 r10 r11
-  mov     r9, [rcx + Buffer_t.bytesPtr]
-  mov     r8, rcx
-  mov     rdx, [rcx + Buffer_t.refCnt]
-  lea     rcx, [.fmt]
-  cinvoke printf
-  pop     r11 r10 r9 r8 rdx rcx rax
+    push    rax rcx rdx r8 r9 r10 r11
+    mov     r9, [rcx + Buffer_t.bytesPtr]
+    mov     r8, rcx
+    mov     rdx, [rcx + Buffer_t.refCnt]
+    lea     rcx, [.fmt]
+    cinvoke printf
+    pop     r11 r10 r9 r8 rdx rcx rax
   end if
 
   ; -----
   ; DEBUG
   ; -----
   if ASSERT_ENABLED
-  mov     rax, [rcx + Buffer_t.refCnt]
-  cmp     rax, MAX_REF_CNT
-  jna    .refCntOk
+    mov     rax, [rcx + Buffer_t.refCnt]
+    cmp     rax, MAX_REF_CNT
+    jna    .refCntOk
 
-  cinvoke printf, "PANIC! Unexpected refCnt [%d] while increasing ptr %p", rax, rcx
-  int 3
-.refCntOk:
+    cinvoke printf, "PANIC! Unexpected refCnt [%d] while increasing ptr %p", rax, rcx
+    int 3
+    .refCntOk:
   end if
 
   inc     [rcx + Buffer_t.refCnt]
@@ -168,12 +163,11 @@ proc __MOLD_MemoryAddRef buf
 .staticBuffer:
   ret
 
-if DEBUG
-.fmt db "Increasing refCnt from %d, ptr %p, bytesPtr %p", 13, 10, 0
-end if
-endp
+  if DEBUG
+  .fmt db "Increasing refCnt from %d, ptr %p, bytesPtr %p", 13, 10, 0
+  end if
 
-proc __MOLD_MemoryRelease buf
+__MOLD_MemoryRelease:
   ; rcx = buf
 
   ; -----
@@ -181,11 +175,11 @@ proc __MOLD_MemoryRelease buf
   ; -----
 
   if ASSERT_ENABLED
-  test    rcx, rcx
-  jnz     .ptrOk
-  cinvoke printf, 'PANIC! Attemp to free NULL pointer'
-  int     3
-.ptrOk:
+    test    rcx, rcx
+    jnz     .ptrOk
+    cinvoke printf, 'PANIC! Attemp to free NULL pointer'
+    int     3
+    .ptrOk:
   end if
 
   ; ------------
@@ -200,27 +194,27 @@ proc __MOLD_MemoryRelease buf
   ; DEBUG
   ; -----
   if ASSERT_ENABLED
-  or      rax, rax
-  jz      .refCntZero
+    or  rax, rax
+    jz  .refCntZero
 
-  cmp     rax, MAX_REF_CNT
-  jna    .refCntOk
+    cmp rax, MAX_REF_CNT
+    jna .refCntOk
 
-.refCntZero:
-  cinvoke printf, "PANIC! Unexpected refCnt [%d] while release ptr %p", rax, rcx
-  int 3
+    .refCntZero:
+    cinvoke printf, "PANIC! Unexpected refCnt [%d] while release ptr %p", rax, rcx
+    int 3
 
-.refCntOk:
+    .refCntOk:
   end if
 
   if DEBUG
-  push    rax rcx rdx r8 r9 r10 r11
-  mov     r9, [rcx + Buffer_t.bytesPtr]
-  mov     r8, rcx
-  mov     rdx, [rcx + Buffer_t.refCnt]
-  lea     rcx, [.fmt]
-  cinvoke printf
-  pop     r11 r10 r9 r8 rdx rcx rax
+    push    rax rcx rdx r8 r9 r10 r11
+    mov     r9, [rcx + Buffer_t.bytesPtr]
+    mov     r8, rcx
+    mov     rdx, [rcx + Buffer_t.refCnt]
+    lea     rcx, [.fmt]
+    cinvoke printf
+    pop     r11 r10 r9 r8 rdx rcx rax
   end if
 
   ; ------------
@@ -234,11 +228,11 @@ proc __MOLD_MemoryRelease buf
   ; DEBUG
   ; -----
   if DEBUG
-  push    rcx rdx r8 r9 r10 r11
-  mov     rdx, [rcx + Buffer_t.bytesPtr]
-  lea     rcx, [.fmtFree]
-  cinvoke printf
-  pop     r11 r10 r9 r8 rdx rcx
+    push    rcx rdx r8 r9 r10 r11
+    mov     rdx, [rcx + Buffer_t.bytesPtr]
+    lea     rcx, [.fmtFree]
+    cinvoke printf
+    pop     r11 r10 r9 r8 rdx rcx
   end if
   ; ------------
   ; END OF DEBUG
@@ -257,11 +251,10 @@ proc __MOLD_MemoryRelease buf
 .bufferInUse:
   ret
 
-if DEBUG
-.fmt     db "Decreasing refCnt from %d, ptr %p, bytesPtr %p", 13, 10, 0
-.fmtFree db "Freeing ptr %p", 13, 10, 0
-end if
-endp
+  if DEBUG
+    .fmt     db "Decreasing refCnt from %d, ptr %p, bytesPtr %p", 13, 10, 0
+    .fmtFree db "Freeing ptr %p", 13, 10, 0
+  end if
 
 ;###############################################################################
 ;
@@ -273,7 +266,7 @@ endp
 ;
 ;###############################################################################
 
-proc __MOLD_MemoryIncreaseBufferTwice buf
+__MOLD_MemoryIncreaseBufferTwice:
 
   ; ----------------------------------------------------------------------------
   ; Set up stack frame
@@ -287,15 +280,17 @@ proc __MOLD_MemoryIncreaseBufferTwice buf
   ; ------------
   ; DEBUG
   ; ------------
-if DEBUG
-  push rcx rdx r8 r9 r10 r11
-  mov  rdx, rcx
-  cinvoke printf, .fmtDebug1
-  pop  r11 r10 r9 r8 rdx rcx
-  jmp .afterDebug1
-.fmtDebug1 db 'going to resize ptr %p', 13, 10, 0
-.afterDebug1:
-end if
+  if DEBUG
+    push rcx rdx r8 r9 r10 r11
+    mov  rdx, rcx
+    cinvoke printf, .fmtDebug1
+    pop  r11 r10 r9 r8 rdx rcx
+    jmp .afterDebug1
+
+    .fmtDebug1 db 'going to resize ptr %p', 13, 10, 0
+    .afterDebug1:
+  end if
+
   ; ------------
   ; END OF DEBUG
   ; ------------
@@ -303,6 +298,7 @@ end if
   ; ----------------------------------------------------------------------------
   ; Is it static buffer?
   ; ----------------------------------------------------------------------------
+
   mov     rax, [rcx + Buffer_t.refCnt]
   test    rax, rax
   jnl     .dynamicBuffer
@@ -324,16 +320,17 @@ end if
   ; ------------
   ; DEBUG
   ; ------------
-if DEBUG
-  push rcx rdx r8 r9 r10 r11
-  mov  r9, rdx
-  mov  rdx, rcx
-  cinvoke printf, .fmtDebug2, rdx, r11, r9
-  pop  r11 r10 r9 r8 rdx rcx
-  jmp .afterDebug2
-.fmtDebug2 db 'resizing buffer ptr %p from %d to %d bytes', 13, 10, 0
-.afterDebug2:
-end if
+
+  if DEBUG
+    push rcx rdx r8 r9 r10 r11
+    mov  r9, rdx
+    mov  rdx, rcx
+    cinvoke printf, .fmtDebug2, rdx, r11, r9
+    pop  r11 r10 r9 r8 rdx rcx
+    jmp .afterDebug2
+  .fmtDebug2 db 'resizing buffer ptr %p from %d to %d bytes', 13, 10, 0
+  .afterDebug2:
+  end if
 
   ; ----------------------------------------------------------------------------
   ; Log reallocation if if needed
@@ -352,7 +349,7 @@ end if
   mov     rcx, [r12 + Buffer_t.bytesPtr] ; rcx = old memory block
   call    [realloc]                      ; rax = new memory block
   test    rax, rax
-  jz      .errorOutOfMemory
+  jz      __MOLD_PrintErrorAndDie.outOfMemory
 
   mov     [r12 + Buffer_t.bytesPtr], rax ; rv.bytesPtr = new memory block
 
@@ -377,11 +374,6 @@ end if
   pop     r12
 
   ret
-
-.errorOutOfMemory:
-  cinvoke printf, 'error: out of memory'
-  cinvoke ExitProcess, -1
-endp
 
 ;###############################################################################
 ;
@@ -498,7 +490,7 @@ end if
   mov     rcx, [r12 + Buffer_t.bytesPtr] ; rcx = old memory block
   cinvoke realloc                        ; rax = new memory block
   test    rax, rax
-  jz      .errorOutOfMemory
+  jz      __MOLD_PrintErrorAndDie.outOfMemory
 
   mov     [r12 + Buffer_t.bytesPtr], rax ; rv.bytesPtr = new memory block
 
@@ -526,28 +518,8 @@ end if
 
   ret
 
-.errorOutOfMemory:
-  cinvoke printf, 'error: out of memory'
-  cinvoke ExitProcess, -1
 
-
-
-proc __MOLD_MemoryDump buf
-    push rax r10 r11 r12
-
-    ; rcx = buf
-;    mov rax, [rcx + Buffer_t.capacity]
-;    mov r10, [rcx + Buffer_t.refCnt]
-;    mov r12, [r11 + 0]
-;    cinvoke printf, "Buffer_t(%d, %d, %p): %x ...", rax, r10, r11, r12
-
-    pop r12 r11 r10 rax
-
-    ret
-endp
-
-
-proc __MOLD_MemoryLogAlloc
+__MOLD_MemoryLogAlloc:
   ; rcx = size in bytes
 
   inc  qword [MemoryAllocCnt]
@@ -561,12 +533,11 @@ proc __MOLD_MemoryLogAlloc
 
   ret
 
-if DEBUG
-.fmt db "; malloc, %d bytes (allocated: %d, freed: %d, realloc: %d)", 13, 10, 0
-end if
-endp
+  if DEBUG
+  .fmt db "; malloc, %d bytes (allocated: %d, freed: %d, realloc: %d)", 13, 10, 0
+  end if
 
-proc __MOLD_MemoryLogFree
+__MOLD_MemoryLogFree:
   ; rcx = size in bytes
 
   inc  qword [MemoryFreeCnt]
@@ -579,25 +550,23 @@ proc __MOLD_MemoryLogFree
 
   ret
 
-if DEBUG
-.fmt db "; free (allocated: %d, freed: %d, realloc: %d)", 13, 10, 0
-end if
-endp
+  if DEBUG
+  .fmt db "; free (allocated: %d, freed: %d, realloc: %d)", 13, 10, 0
+  end if
 
-proc __MOLD_MemoryLogRealloc
+__MOLD_MemoryLogRealloc:
   ; rcx = size in bytes
 
   inc  qword [MemoryReallocCnt]
 
   if DEBUG
-  push    rax rcx rdx r8 r9 r10 r11
-  cinvoke printf, .fmt, rdx, [MemoryAllocCnt], [MemoryFreeCnt], [MemoryReallocCnt]
-  pop     r11 r10 r9 r8 rdx rcx rax
+    push    rax rcx rdx r8 r9 r10 r11
+    cinvoke printf, .fmt, rdx, [MemoryAllocCnt], [MemoryFreeCnt], [MemoryReallocCnt]
+    pop     r11 r10 r9 r8 rdx rcx rax
   end if
 
   ret
 
-if DEBUG
-.fmt db "; realloc, %d bytes (allocated: %d, freed: %d, realloc: %d)", 13, 10, 0
-end if
-endp
+  if DEBUG
+    .fmt db "; realloc, %d bytes (allocated: %d, freed: %d, realloc: %d)", 13, 10, 0
+  end if

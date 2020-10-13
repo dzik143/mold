@@ -15,18 +15,15 @@ __MOLD_VCall:
   mov  r11, [r11 + Object_t.vtable]     ; r11 = this.vtable
 
   sub  r10d, dword [r11]                ; r10 = 8*id - offsetStart
-  js   __MOLD_NullMethodCalled          ; is method out of range?
+                                        ; is method out of range?
+  js   __MOLD_PrintErrorAndDie.nullMethodCalled
+
 
   cmp  r10d, dword [r11 + 4]            ; 8*id  offsetEnd > 0
-  ja   __MOLD_NullMethodCalled          ; is method out of range?
+                                        ; is method out of range?
+  ja   __MOLD_PrintErrorAndDie.nullMethodCalled
 
   jmp  qword [8 + r11 + r10]            ; call this.vtable[id]
 
-proc __MOLD_NullMethodCalled
-  push    rax
-  push    r10
-  cinvoke printf, 'error: pure virtual called'
-  pop     r10
-  pop     rax
-  int 3
-endp
+__MOLD_NullMethodCalled:
+  jmp  __MOLD_PrintErrorAndDie.nullMethodCalled

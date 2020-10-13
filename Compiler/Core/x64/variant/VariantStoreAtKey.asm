@@ -1,3 +1,7 @@
+db 0xca, 0xfe, 0xca, 0xfe, 0xca, 0xfe, 0xca, 0xfe, 0xca, 0xfe
+db 0xca, 0xfe, 0xca, 0xfe, 0xca, 0xfe, 0xca, 0xfe, 0xca, 0xfe
+
+
 ;###############################################################################
 ;
 ; Store single item in the box using string key.
@@ -63,12 +67,16 @@ __MOLD_VariantStoreAtKey_int32:
 
 __MOLD_VariantStoreAtKey_variant:
 __MOLD_VariantStoreAtKey_string:
+__MOLD_VariantStoreAtKey:
 
-proc __MOLD_VariantStoreAtKey
+    push      rbp
+    mov       rbp, rsp
+    sub       rsp, 32
+
     ; TODO: Avoid temp stack values.
-    local .keyPtr   dq ?
-    local .valuePtr dq ?
-    local .box      dq ?
+    .keyPtr   EQU rbp - 8
+    .valuePtr EQU rbp - 16
+    .box      EQU rbp - 24
 
     DEBUG_CHECK_VARIANT rcx
     DEBUG_CHECK_VARIANT rdx
@@ -228,5 +236,9 @@ proc __MOLD_VariantStoreAtKey
 
     DEBUG_CHECK_VARIANT r8
 
+    leave
     ret
-endp
+
+    restore .keyPtr
+    restore .valuePtr
+    restore .box

@@ -30,7 +30,7 @@ name__MOLD_MemoryAddRef              db '__MOLD_MemoryAddRef', 0
 name__MOLD_MemoryRelease             db '__MOLD_MemoryRelease', 0
 name__MOLD_MemoryIncreaseBufferTwice db '__MOLD_MemoryIncreaseBufferTwice', 0
 name__MOLD_MemoryRealloc             db '__MOLD_MemoryRealloc', 0
-name__MOLD_MemoryDump                db '__MOLD_MemoryDump', 0
+;name__MOLD_MemoryDump                db '__MOLD_MemoryDump', 0
 
 ; Variant.asm
 name__MOLD_VariantCheck                       db '__MOLD_VariantCheck', 0
@@ -70,7 +70,7 @@ name__MOLD_VariantMove                        db '__MOLD_VariantMove', 0
 ;name__MOLD_InitArgv                           db '__MOLD_InitArgv', 0
 name__MOLD_Main                               db '__MOLD_Main', 0
 name__MOLD_Halt                               db '__MOLD_Halt', 0
-name__MOLD_NullMethodCalled                   db '__MOLD_NullMethodCalled', 0
+;name__MOLD_NullMethodCalled                   db '__MOLD_NullMethodCalled', 0
 ;name__MOLD_OpenExternalModule                 db '__MOLD_OpenExternalModule', 0
 ;name__MOLD_LoadExternalFunction               db '__MOLD_LoadExternalFunction', 0
 name__MOLD_Peek                               db '__MOLD_Peek', 0

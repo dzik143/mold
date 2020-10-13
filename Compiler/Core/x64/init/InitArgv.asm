@@ -4,21 +4,25 @@
 ;
 ;###############################################################################
 
-proc __MOLD_InitArgv
+__MOLD_InitArgv:
 
-    local .startupinfo db 128 dup (?)
-    local .msvcrt_argv dq ?
-    local .msvcrt_env  dq ?
+    push   rbp
+    mov    rbp,rsp
+    sub    rsp, 144
+
+    startupinfo EQU rbp - 144
+    msvcrt_argv EQU rbp - 144 - 8
+    msvcrt_env  EQU rbp - 144 - 16
 
     push      r12
     push      r13
     push      r14
 
     lea       rcx, [argc + Variant_t.value]
-    lea       rdx, [.msvcrt_argv]
-    lea       r8,  [.msvcrt_env]
+    lea       rdx, [msvcrt_argv]
+    lea       r8,  [msvcrt_env]
     xor       r9, r9
-    lea       rax, [.startupinfo]
+    lea       rax, [startupinfo]
     push      rax
     cinvoke   __getmainargs
     add       rsp, 8
@@ -32,7 +36,7 @@ proc __MOLD_InitArgv
     mov       [rcx + Array_t.itemsCnt], rax    ; argv.itemsCnt = argc (integer)
     lea       rcx, [rcx + Array_t.items]       ; rcx           = argv.items (Variant_t *)
 
-    mov       rax, [.msvcrt_argv]              ; rax = msvcrt_argv (char **)
+    mov       rax, [msvcrt_argv]               ; rax = msvcrt_argv (char **)
 
 .pushItem:
     mov       rdx, [rax]
@@ -78,9 +82,12 @@ proc __MOLD_InitArgv
 
     mov       dword [argc + Variant_t.type], VARIANT_INTEGER
 
-    pop       r14
-    pop       r13
-    pop       r12
-
+    pop    r14
+    pop    r13
+    pop    r12
+    leave
     ret
-endp
+
+    restore startupinfo
+    restore msvcrt_argv
+    restore msvcrt_env

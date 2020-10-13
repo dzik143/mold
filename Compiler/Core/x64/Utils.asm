@@ -100,7 +100,7 @@ struct EXCEPTION_RECORD
   ExceptionInformation dq ?
 ends
 
-proc __MOLD_ResolveSymbol
+__MOLD_ResolveSymbol:
    ; rcx = <ptr>
    push   r12
 
@@ -130,7 +130,6 @@ proc __MOLD_ResolveSymbol
 
 .fmtBroken db '?', 0
 .fmtNull   db '(null)', 0
-endp
 
 ;###############################################################################
 ;

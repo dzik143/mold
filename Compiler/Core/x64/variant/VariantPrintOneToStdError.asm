@@ -6,18 +6,16 @@
 ;
 ;###############################################################################
 
-proc __MOLD_PrintVariantToStdError uses r12
-
-    local .buf:Variant_t
+__MOLD_PrintVariantToStdError:
 
     DEBUG_CHECK_VARIANT rcx
 
     push    r12
 
-    lea     rdx, [.buf]
+    lea     rdx, [__TrashBin]
     call    __MOLD_VariantConvertToString   ; rdx = str(value) (Variant_t)
 
-    lea     rcx, [.buf]
+    lea     rcx, [__TrashBin]
     mov     rcx, [rcx + Variant_t.value]    ; rcx = str(value) (Buffer_t)
     mov     r12, [rcx + Buffer_t.bytesPtr]  ; rcx = str(value) (String_t)
 
@@ -37,5 +35,4 @@ proc __MOLD_PrintVariantToStdError uses r12
     pop     r12
     ret
 
-.fmtNewLine db 13, 10
-endp
+  .fmtNewLine db 13, 10

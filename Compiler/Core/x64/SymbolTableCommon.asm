@@ -30,7 +30,7 @@ dq __MOLD_MemoryAddRef              , name__MOLD_MemoryAddRef
 dq __MOLD_MemoryRelease             , name__MOLD_MemoryRelease
 dq __MOLD_MemoryIncreaseBufferTwice , name__MOLD_MemoryIncreaseBufferTwice
 dq __MOLD_MemoryRealloc             , name__MOLD_MemoryRealloc
-dq __MOLD_MemoryDump                , name__MOLD_MemoryDump
+;dq __MOLD_MemoryDump                , name__MOLD_MemoryDump
 
 ; Variant.asm
 dq __MOLD_VariantCheck                       , name__MOLD_VariantCheck
@@ -70,7 +70,7 @@ dq __MOLD_VariantMove                        , name__MOLD_VariantMove
 ;dq __MOLD_InitArgv                           , name__MOLD_InitArgv
 dq __MOLD_Main                               , name__MOLD_Main
 dq __MOLD_Halt                               , name__MOLD_Halt
-dq __MOLD_NullMethodCalled                   , name__MOLD_NullMethodCalled
+;dq __MOLD_NullMethodCalled                   , name__MOLD_NullMethodCalled
 ;dq __MOLD_OpenExternalModule                 , name__MOLD_OpenExternalModule
 ;dq __MOLD_LoadExternalFunction               , name__MOLD_LoadExternalFunction
 dq __MOLD_Peek                               , name__MOLD_Peek
