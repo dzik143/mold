@@ -58,19 +58,6 @@ entry start
 section '.text' readable executable
 
 ; ------------------------------------------------------------------------------
-;       Read only data in code section, move to new section if you want
-; ------------------------------------------------------------------------------
-
-__literals:
-
-  .LoadLibraryA db 'LoadLibraryA', 0
-  .User32       db 'user32.dll'  , 0
-  .MessageBoxA  db 'MessageBoxA' , 0
-
-  .messageText    db '', 0;This executable has no imports table', 0
-  .messageCaption db '', 0;PE32+ without imports table', 0
-
-; ------------------------------------------------------------------------------
 ;                                 Entry point
 ; ------------------------------------------------------------------------------
 
@@ -245,3 +232,16 @@ start:
 
     add   rsp, 40
     ret
+
+; ------------------------------------------------------------------------------
+;       Read only data in code section, move to new section if you want
+; ------------------------------------------------------------------------------
+
+__literals:
+
+  .LoadLibraryA db 'LoadLibraryA', 0
+  .User32       db 'user32.dll'  , 0
+  .MessageBoxA  db 'MessageBoxA' , 0
+
+  .messageText    db '', 0;This executable has no imports table', 0
+  .messageCaption db '', 0;PE32+ without imports table', 0
