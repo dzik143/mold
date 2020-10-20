@@ -140,17 +140,17 @@ class MIRQuadCollector extends PipeAbstract
         print item[1] ~ ':'
 
       elif opcode is 'print'
-        print '   ', this._pad(opcode, 28), item[1]
+        print '   ', this._pad(opcode, 18), item[1]
 
       elif opcode is 'call'
-        print '   ', this._pad(opcode, 28), this._pad(item[1], 8), this._pad(item[2], 8), item[3]
+        print '   ', this._pad(opcode, 18), this._pad(item[1], 8), this._pad(item[2], 8), item[3]
 
       else
         dst = item[1]
         x   = item[2]
         y   = item[3]
 
-        paddedOpcode = this._pad(opcode, 28)
+        paddedOpcode = this._pad(opcode, 18)
         paddedDst    = this._pad(dst, 8)
         paddedX      = this._pad(x, 8)
         paddedY      = this._pad(y, 8)

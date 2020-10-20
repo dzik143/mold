@@ -246,10 +246,10 @@ function MIR1_GetOpcodeAsText(opcode) -> rv
     rv = 'load.key'
 
   elif opcode is MIR1_OPCODE_CREATE_VARIANT_FROM
-    rv = 'create.variant.from'
+    rv = 'variant.from'
 
   elif opcode is MIR1_OPCODE_CAST_VARIANT_TO
-    rv = 'cast.variant.to'
+    rv = 'variant.to'
 
   elif opcode is MIR1_OPCODE_INIT_FRAME
     rv = 'init.frame'

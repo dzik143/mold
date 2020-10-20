@@ -1,16 +1,21 @@
-Unreleased
-----------
+0.5.20201020 (released on 2020-10-20):
+--------------------------------------
+
   Internal maintain:
     - MIR: Addded cmp_is_typeof and cmp_is_not_typeof opcodes,
     - MIR: Simplify code for unimplemented methods,
-    - Translator: Skip unused call params.
-    - Translator: Removed obsolete _loadImmAsVariant() call.
+    - MIR: Use integer for MIR1 opcodes,
+    - Translator: Skip unused call params,
+    - Translator: Removed obsolete _loadImmAsVariant() call,
+    - X64: Split code into routine-sorted files,
+    - X64: Don't use proc/endp macros,
+    - X64: Don't use library/import macros (imports section).
 
   Dropped syntax:
     - Function parameters can not be overwritten anymore.
 
-0.4.200831 (released on 2020-08-31):
-------------------------------------
+0.4.20200831 (released on 2020-08-31):
+--------------------------------------
 
   New syntax:
     - Built-in conditions x is/isnt typename:
@@ -42,8 +47,8 @@ Unreleased
     - Translator: Better temp vars allocation,
     - Translator: Simpler AST node creation.
 
-0.3.200720 (released on 2020-07-20):
-------------------------------------
+0.3.20200720 (released on 2020-07-20):
+--------------------------------------
 
   Dropped syntax:
     - x[key] is not allowed for maps anymore, use x{key} instead.
@@ -71,8 +76,8 @@ Unreleased
     - Translator: Better static type adjustment
     - Translator: More static errors with source line presented
 
-0.2.200706 (released on 2020-07-06)
------------------------------------
+0.2.20200706 (released on 2020-07-06)
+-------------------------------------
   Implemented:
     - RDTSC based profiler (--profiler option)
 
@@ -96,8 +101,8 @@ Unreleased
   Internal maintain:
     - Major clean up the parser code
 
-0.1.191126 (released on 2019-11-26)
------------------------------------
+0.1.20191126 (released on 2019-11-26)
+-------------------------------------
 
   First release with assigned version.
 

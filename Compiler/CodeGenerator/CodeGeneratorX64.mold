@@ -644,7 +644,7 @@ class CodeGeneratorX64
 
     print 'format PE64 console 5.0'
     print 'entry __MOLD_Main'
-    print "include 'win64a.inc'"
+    print "include '__mold_temp.inc'"
 
     print '; ------------------------------------------------------------------------------'
     print ';                                 Code section'
