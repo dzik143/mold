@@ -26,7 +26,7 @@ __MOLD_InitArgv:
     push      rax
 
     sub       rsp, 32
-    call      [__getmainargs]
+    call      [getmainargs]
     add       rsp, 32 + 8
 
     lea       rcx, [argv]
