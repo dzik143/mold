@@ -649,11 +649,12 @@ class X64Translator extends PipeAbstract
     endif
   endmethod
 
-  method emitCoreALU2(opcode, item)
+  method emitCoreALU2(originalOpcode, item)
     # TODO: Review it.
     # Why we need to swap regs here?
-    reg = item.reg
-    rm  = item.rm
+    reg    = item.reg
+    rm     = item.rm
+    opcode = originalOpcode
 
     if (reg isnt -1) and (item.rm isnt -1)
       item.reg = item.rm

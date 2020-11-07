@@ -62,11 +62,11 @@ class X64Encoder
   #                             Common helpers
   # ----------------------------------------------------------------------------
 
-  method emitModRegRM(addressMode, reg, rm)
+  method emitModRegRM(addressMode, originalReg, originalRm)
     # 7 6 | 5 4 3 | 2 1 0
     # mod | reg   | r/m
-    reg = bitand(reg, 0x7)
-    rm  = bitand(rm,  0x7)
+    reg = bitand(originalReg, 0x7)
+    rm  = bitand(originalRm,  0x7)
     this.emitByte(addressMode * 64 + reg * 8 + rm)
   endmethod
 
@@ -144,11 +144,15 @@ class X64Encoder
     this.emitCore(opcode, X64_MOD_REGISTER, regDst, regSrc)
   endmethod
 
-  method emitCore_m_r(opcode, regBase, scale, regIndex, disp, regSrc)
+  method emitCore_m_r(opcode, inRegBase, inScale, inRegIndex, disp, regSrc)
     global X64_MOD_INDIRECT, X64_MOD_DISP8, X64_MOD_DISP32
     global X64_RM_SIB_MODE, X64_RM_RIP_DISP_MODE
     global X64_SIB_BASE_NONE
     global X64_RIP, X64_EBP, X64_RBP, X64_RSP
+
+    regBase  = inRegBase
+    scale    = inScale
+    regIndex = inRegIndex
 
     if regIndex is X64_RSP
       die('error: rsp register cannot be used as index')
@@ -271,9 +275,9 @@ class X64Encoder
     endif
   endmethod
 
-  method emitCore_r_m(opcode, regDst, regBase, scale, regIndex, disp)
+  method emitCore_r_m(inOpcode, regDst, regBase, scale, regIndex, disp)
     # Set direction flag in primary opcode byte to swap r<->m direction.
-    opcode = bitor(opcode, 2)
+    opcode = bitor(inOpcode, 2)
     this.emitCore_m_r(opcode, regBase, scale, regIndex, disp, regDst)
   endmethod
 
@@ -342,7 +346,7 @@ class X64Encoder
     endif
   endmethod
 
-  method emitCore_m_imm(opcode, regBase, scale, regIndex, disp, imm, dataSize)
+  method emitCore_m_imm(inOpcode, regBase, scale, regIndex, disp, imm, dataSize)
     global X64_ALU_RM8_IMM8_GROUP
     global X64_ADC, X64_ADD, X64_AND, X64_CMP, X64_SBB, X64_SUB, X64_OR, X64_XOR
 
@@ -353,20 +357,21 @@ class X64Encoder
       this.emitPrefix64()
     endif
 
-    if ((opcode is X64_ADC) or
-        (opcode is X64_ADD) or
-        (opcode is X64_AND) or
-        (opcode is X64_CMP) or
-        (opcode is X64_SBB) or
-        (opcode is X64_SUB) or
-        (opcode is X64_OR) or
-        (opcode is X64_XOR))
+    if ((inOpcode is X64_ADC) or
+        (inOpcode is X64_ADD) or
+        (inOpcode is X64_AND) or
+        (inOpcode is X64_CMP) or
+        (inOpcode is X64_SBB) or
+        (inOpcode is X64_SUB) or
+        (inOpcode is X64_OR) or
+        (inOpcode is X64_XOR))
 
       # Sub-opcode to encode inside Reg-Mod-RM byte.
-      operationId = opcode // 8
+      operationId = inOpcode // 8
       opcode      = X64_ALU_RM8_IMM8_GROUP
     else
       operationId = 0
+      opcode      = inOpcode
     endif
 
     if dataSize > 1
@@ -416,26 +421,27 @@ class X64Encoder
     this.emitCore_group_r(X64_UNARY8_GROUP, operationId, reg)
   endmethod
 
-  method emitCore_unaryGroup_m(operationId, base, scale, index, disp, dataSize)
+  method emitCore_unaryGroup_m(inOperationId, base, scale, index, disp, dataSize)
     global X64_UNARY8_GROUP
     global X64_UNARY32_GROUP
     opcode = X64_UNARY32_GROUP
 
     if dataSize is 2
       # access word (2-bytes)
-      operationId = operationId + 16
+      operationId = inOperationId + 16
 
     elif dataSize is 4
       # access word (2-bytes)
-      operationId = operationId + 32
+      operationId = inOperationId + 32
 
     elif dataSize is 8
       # access qword (8-bytes)
-      operationId = operationId + 48
+      operationId = inOperationId + 48
 
     else
       # access single byte (8-bit)
-      opcode = X64_UNARY8_GROUP
+      opcode      = X64_UNARY8_GROUP
+      operationId = inOperationId
     endif
 
     this.emitCore_group_m(opcode, operationId, base, scale, index, disp)
@@ -1734,20 +1740,20 @@ class X64Encoder
   #   loadall - 80286 only
   #-----------------------------------------------------------------------------
 
-  method emitCore286_r_r(opcode, regDst, regSrc)
+  method emitCore286_r_r(opcode, inRegDst, regSrc)
     # TODO: Clean up this mess.
     # We avoid setting up size bit in primary opcode.
     # TODO: Why we need to swap operands?
-    this.emitSizePrefixIfNeeded(regDst)
-    regDst = bitand(regDst, 0x7)
+    this.emitSizePrefixIfNeeded(inRegDst)
+    regDst = bitand(inRegDst, 0x7)
     this.emitCore_r_r(opcode, regDst, regSrc)
   endmethod
 
-  method emitCore286_r_m(opcode, regDst, regBase, scale, regIndex, disp)
+  method emitCore286_r_m(opcode, inRegDst, regBase, scale, regIndex, disp)
     # TODO: Clean up this mess.
     # We avoid setting up size bit in primary opcode.
-    this.emitSizePrefixIfNeeded(regDst)
-    regDst = bitand(regDst, 0x7)
+    this.emitSizePrefixIfNeeded(inRegDst)
+    regDst = bitand(inRegDst, 0x7)
     this.emitCore_r_m(opcode, regDst, regBase, scale, regIndex, disp)
   endmethod
 
@@ -2248,12 +2254,14 @@ class X64Encoder
     this.emitByte(X64_OUTSD)
   endmethod
 
-  method emitCore_movExtend_r_r(opcode, regDst, regSrc)
+  method emitCore_movExtend_r_r(inOpcode, regDst, regSrc)
     global X64_MOD_REGISTER
     # TODO: Clean up this mess.
     this.emitSizePrefixIfNeeded(regDst)
     if X64_IsReg8(regSrc) is false
-      opcode = bitor(opcode, 256)
+      opcode = bitor(inOpcode, 256)
+    else
+      opcode = inOpcode
     endif
 
     this.emitWord(opcode)
@@ -2658,9 +2666,9 @@ class X64Encoder
   method emitFPU_sti(opcode, sti)
     # TODO: Optimize it.
     # xx yy+i
-    stiId  = bitand(sti, 0x7)
-    opcode = bitor(opcode, 256 * stiId)
-    this.emitWord(opcode)
+    stiId      = bitand(sti, 0x7)
+    opcodeFull = bitor(opcode, 256 * stiId)
+    this.emitWord(opcodeFull)
   endmethod
 
   method emitFPU_m(mixedOpcode, regBase, scale, regIndex, disp)
@@ -4004,8 +4012,8 @@ class X64Encoder
     global X64_PSHUFW
     # TODO: Clean up this mess.
     # Avoid emmiting 0x48 prefix.
-    mmDst = bitand(mmDst, 7)
-    this.emitCore_r_r(X64_PSHUFW, mmDst, mmSrc)
+    mmDstId = bitand(mmDst, 7)
+    this.emitCore_r_r(X64_PSHUFW, mmDstId, mmSrc)
     this.emitByte(imm8)
   endmethod
 
@@ -4013,8 +4021,8 @@ class X64Encoder
     global X64_PSHUFW
     # TODO: Clean up this mess.
     # Avoid emmiting 0x48 prefix.
-    mmDst = bitand(mmDst, 7)
-    this.emitCore_r_m(X64_PSHUFW, mmDst, regBase, scale, regIndex, disp)
+    mmDstId = bitand(mmDst, 7)
+    this.emitCore_r_m(X64_PSHUFW, mmDstId, regBase, scale, regIndex, disp)
     this.emitByte(imm8)
   endmethod
 
@@ -4022,8 +4030,8 @@ class X64Encoder
     global X64_PINSRW
     # TODO: Clean up this mess.
     # Avoid emmiting 0x48 prefix.
-    mmDst = bitand(mmDst, 7)
-    this.emitCore_r_r(X64_PINSRW, mmDst, regSrc)
+    mmDstId = bitand(mmDst, 7)
+    this.emitCore_r_r(X64_PINSRW, mmDstId, regSrc)
     this.emitByte(imm8)
   endmethod
 
@@ -4031,8 +4039,8 @@ class X64Encoder
     global X64_PINSRW
     # TODO: Clean up this mess.
     # Avoid emmiting 0x48 prefix.
-    mmDst = bitand(mmDst, 7)
-    this.emitCore_r_m(X64_PINSRW, mmDst, regBase, scale, regIndex, disp)
+    mmDstId = bitand(mmDst, 7)
+    this.emitCore_r_m(X64_PINSRW, mmDstId, regBase, scale, regIndex, disp)
     this.emitByte(imm8)
   endmethod
 
@@ -4040,8 +4048,8 @@ class X64Encoder
     global X64_PEXTRW
     # TODO: Clean up this mess.
     # Avoid emmiting 0x48 prefix.
-    regDst = bitand(regDst, 7)
-    this.emitCore_r_r(X64_PEXTRW, regDst, mmSrc)
+    regDstId = bitand(regDst, 7)
+    this.emitCore_r_r(X64_PEXTRW, regDstId, mmSrc)
     this.emitByte(imm8)
   endmethod
 
@@ -4049,8 +4057,8 @@ class X64Encoder
     global X64_PMOVMSKB
     # TODO: Clean up this mess.
     # Avoid emmiting 0x48 prefix.
-    regDst = bitand(regDst, 7)
-    this.emitCore_r_r(X64_PMOVMSKB, regDst, mmSrc)
+    regDstId = bitand(regDst, 7)
+    this.emitCore_r_r(X64_PMOVMSKB, regDstId, mmSrc)
   endmethod
 
   method pminub_mm_mm(mmDst, mmSrc)

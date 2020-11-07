@@ -50,11 +50,12 @@ class X64Parser extends AbstractDescentParser
     this.currentLabelName     = ''
   endmethod
 
-  method _emitLabel(name) -> labelObj
-    if name[0] is '.'
-      name = this.currentLabelName ~ name
+  method _emitLabel(inName) -> labelObj
+    if inName[0] is '.'
+      name = this.currentLabelName ~ inName
     else
-      this.currentLabelName = name
+      this.currentLabelName = inName
+      name = inName
     endif
 
     offset   = this.outputObject.getCurrentPosition()
