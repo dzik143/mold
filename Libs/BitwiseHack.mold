@@ -1,4 +1,9 @@
-function hex(x) -> rv
+function hex(value) -> rv
+  # TODO: Clean up this mess.
+  # Force variant to handle 64-bit values.
+  x = null
+  x = value
+
   digits = '0123456789abcdef'
   rv     = ''
 
@@ -21,8 +26,7 @@ function hex(x) -> rv
     while x > 0
       d = x // 16
       r = x - d * 16
-      # TODO: Fix crash when '' concatenation is missing.
-      rv = '' + digits[r] + rv
+      rv = digits[r] ~ rv
       x  = d
     endwhile
   endif
