@@ -1,11 +1,11 @@
-r0  (eax)
-r1  (ecx)
-r2  (edx)
-r3  (ebx)
-r4  (esp) - stos
-r5  (ebp) - ramka
-r6  (esi) - io source
-r7  (edi) - io destination
+r0  (rax)
+r1  (rcx)
+r2  (rdx)
+r3  (rbx)
+r4  (rsp) - stos
+r5  (rbp) - ramka
+r6  (rsi) - io source
+r7  (rdi) - io destination
 r8
 r9
 r10
@@ -29,3 +29,15 @@ xmm0 ,xmm1 ,xmm2 ,xmm3  :
 xmm4 ,xmm5 ,xmm6 ,xmm7  :
 xmm8 ,xmm9 ,xmm10,xmm11 :
 xmm12,xmm13,xmm14,xmm15 :
+
+----------------------------------------------------------
+
+temp    : rax
+?       : rbx
+?       : rsi, rdi
+strack  : rsp
+fbase   : rbp
+params  : rcx, rdx, r8 , r9
+shadow  : r10, r11, r12, r13
+?       : r14
+retaddr : r15

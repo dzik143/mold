@@ -97,6 +97,10 @@ class SymbolTable
     this._error('attemp to assign ' ~ AST_ConvertDataTypeToText(newType) ~ ' to ' ~ AST_ConvertDataTypeToText(oldType))
   endmethod
 
+  method _errorTypeExpected(expectedType, foundType)
+    this._error(AST_ConvertDataTypeToText(expectedType) ~ ' is expected, but ' ~ AST_ConvertDataTypeToText(foundType) ~ ' found')
+  endmethod
+
   method _errorIfUsedAsNumber(name)
     symbolInfo = this.lookup(name)
     if symbolInfo.usedAsNumber is defined
