@@ -41,6 +41,7 @@ __MOLD_InitArgv:
     mov       rax, [msvcrt_argv]               ; rax = msvcrt_argv (char **)
 
 .pushItem:
+
     mov       rdx, [rax]
     test      rdx, rdx
     jz        .done

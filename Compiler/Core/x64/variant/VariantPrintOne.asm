@@ -62,14 +62,16 @@ __MOLD_PrintVariant:
     jz      .ordinaryString
 
 .oneCharacterString:
-    cinvoke printf, .fmtChar, dl
-    ret
+    mov     cl, dl
+    jmp     [putchar]
 
 .ordinaryString:
+    lea     rcx, [.fmtString]
     mov     rdx, [rdx + Buffer_t.bytesPtr]
     lea     rdx, [rdx + String_t.text]
-    cinvoke printf, .fmtString, rdx
-
+    sub     rsp, 32
+    call    [printf]
+    add     rsp, 32
     ret
 
     ; ------------------------------------------
@@ -86,7 +88,9 @@ __MOLD_PrintVariant:
 
     push    rcx
     mov     cl, '['
-    cinvoke putchar
+    sub     rsp, 32
+    call    [putchar]
+    add     rsp, 32
     pop     rcx
 
     lea     rbx, [.fmtEmpty]
@@ -97,7 +101,9 @@ __MOLD_PrintVariant:
     call    __MOLD_ForDriver_Generic
 
     mov     cl, ']'
-    cinvoke putchar
+    sub     rsp, 32
+    call    [putchar]
+    add     rsp, 32
 
     pop     rbx
 

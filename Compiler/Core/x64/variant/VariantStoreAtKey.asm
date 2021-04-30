@@ -162,8 +162,8 @@ __MOLD_VariantStoreAtKey:
 
     lea       rcx, [rcx + String_t.text]
     lea       rdx, [rdx + String_t.text]
+    call      [strcmp]
 
-    cinvoke   strcmp
     test      rax, rax
     pop       r12 r11 r10 r9 r8 rdx rcx rax
 

@@ -83,7 +83,7 @@ __MOLD_VariantLoadFromKey_string:
     mov    rdx, [rdx + Buffer_t.bytesPtr]
     lea    rdx, [rdx + String_t.text]
     mov    rcx, r11                             ; rcx  = key (String_t)
-    cinvoke strcmp
+    call   [strcmp]
     test   rax, rax
     pop    r11 r10 r9 r8 rdx rcx rax
     jz     .mapBucketFound
