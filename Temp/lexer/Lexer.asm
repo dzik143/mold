@@ -97,10 +97,14 @@ __MOLD_LexerInternal:
       mov   eax, 0                         ; rax = 0
       mov   edx, 0                         ; rdx = 0
       mov   r8, rsi                        ; r8  = keep original pointer
-                                           ; we use it calculate token length
+                                           ; we use it to calculate token len
 
       or    al, byte [rsi]                 ; rax = the first character
-      jle  .eof_or_above127                ; accept 7-bit ascii only
+      jle   .eof_or_above127               ; accept 7-bit ascii only
+
+      ; TODO: Optimize it.
+      cmp   word [rsi], COMMENT_MULTI_BEGIN
+      jz    .many_lines_comment
 
     ; --------------------------------------------------------------------------
     ;                  Dispatch type of the first character
@@ -234,6 +238,20 @@ __MOLD_LexerInternal:
       jmp   .one_line_comment
 
     ; --------------------------------------------------------------------------
+    ;                            Many lines comment
+    ; --------------------------------------------------------------------------
+
+.many_lines_comment:
+      ; Go on until end sequence matched.
+      ; TODO: Optimize it.
+      inc   rsi
+      inc   r8
+
+      cmp   word [rsi], COMMENT_MULTI_END
+      jnz   .many_lines_comment
+
+
+    ; --------------------------------------------------------------------------
     ;                                 String
     ; --------------------------------------------------------------------------
 
@@ -314,7 +332,7 @@ __MOLD_LexerInternal:
       setz  dl                             ; rdx = 1 if matched, 0 otherwise
 
       add   rsi, rdx                       ; eat second character if matched
-      mov   al, byte [r9 + rdx]            ; rax = token id
+      mov   al, byte [r9 + 1 + rdx]        ; rax = token id
 
       ret
 
@@ -421,9 +439,9 @@ __MOLD_LexerInternal:
   db 0   , 0  , 0  , 0 ; 2a * (unused)
   db 0   , 0  , 0  , 0 ; 2b + (unused)
   db 0   , 0  , 0  , 0 ; 2c , (unused)
-  db '>' , 32 , 69 , 0 ; 2d - or ->
-  db '.' , 10 , 58 , 0 ; 2e . or ..
-  db '/' , 67 , 46 , 0 ; 2f / or //
+  db '>' , 69 , 32 , 0 ; 2d - or ->
+  db '.' , 58 , 10 , 0 ; 2e . or ..
+  db '/' , 46 , 67 , 0 ; 2f / or //
 
   db 0   , 0  , 0  , 0 ; 30 0 (unused)
   db 0   , 0  , 0  , 0 ; 31 1 (unused)
@@ -437,8 +455,8 @@ __MOLD_LexerInternal:
   db 0   , 0  , 0  , 0 ; 39 9 (unused)
   db 0   , 0  , 0  , 0 ; 3a : (unused)
   db 0   , 0  , 0  , 0 ; 3b ; (unused)
-  db '=' , 32 , 69 , 0 ; 3c < or <=
-  db 0   , 10 , 58 , 0 ; 3d = (unused)
+  db '=' , 69 , 32 , 0 ; 3c < or <=
+  db 0   , 0  , 0  , 0 ; 3d = (unused)
   db '=' , 67 , 46 , 0 ; 3e > or >=
   db 0   , 0  , 0  , 0 ; 3f ? (unused)
 
@@ -573,7 +591,7 @@ __MOLD_LexerInternal:
 
 .keywordsList9:
   ;   01234567'         8   9  a  b  c  d  e  f
-  dq 'endmetho', 86   ;'d', 0, 0, 0, 0, 0, 0, 0
+  dq 'endmetho', 20   ;'d', 0, 0, 0, 0, 0, 0, 0
   dq 0, 0
   dq 0, 0
   dq 0, 0
@@ -584,7 +602,7 @@ __MOLD_LexerInternal:
 
 .keywordsList8:
   dq 'endclass', 22
-  dq 'endwhile', 95
+  dq 'endwhile', 4
   dq 'function', 31
   dq 0, 0
 
