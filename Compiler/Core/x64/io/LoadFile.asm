@@ -25,9 +25,27 @@ __MOLD_LoadFile:
     mov     rdx, [rdx + Buffer_t.bytesPtr]
     lea     rdx, [rdx + String_t.text]
 
-    push    rdx
-    cinvoke CreateFileA, rdx, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0
-    pop     rdx
+    ; ----------------------------------------------------------
+    ; CreateFileA(path, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0)
+
+    push    rdx                                   ; save file path
+    sub     rsp, 32 + 3*8 + 8                     ; shadow + params + align
+    xor     eax, eax                              ; rax = 0
+
+    mov     rcx, rdx                              ; param #1 = path
+    mov     edx, GENERIC_READ                     ; param #2 = GENERIC_READ
+    mov     r8d, eax                              ; param #3 = 0
+    mov     r9d, eax                              ; param #4 = 0
+    mov     qword [rsp + 32 + 0*8], OPEN_EXISTING ; param #5 = OPEN_EXISTING
+    mov     qword [rsp + 32 + 1*8], rax           ; param #6 = 0
+    mov     qword [rsp + 32 + 2*8], rax           ; param #7 = 0
+
+    call    [CreateFileA]
+
+    add     rsp, 32 + 3*8 + 8                     ; shadow + params + align
+    pop     rdx                                   ; rdx = file path
+
+    ; ---------------------------------------------------------
 
     cmp     rax, -1
     jz      .couldNotOpenError
@@ -35,7 +53,7 @@ __MOLD_LoadFile:
     mov     r12, rax
 
     ; --------------------------------------------------------------------------
-    ; cinvoke GetFileSize, r12, 0
+    ; GetFileSize(handle, 0)
 
     mov     rcx, r12      ; rcx = param #1 = file handle
     xor     edx, edx      ; rdx = param #2 = 0
@@ -59,9 +77,24 @@ __MOLD_LoadFile:
     mov     [rax + String_t.length], r13
     lea     rax, [rax + String_t.text]
 
+    ; -------------------------------------------------------
+    ; ReadFile(handle, buf, filesize, NumberOfBytesWritten, 0)
+    ; CloseHandle(handle)
+
     push    rax
-    cinvoke ReadFile, r12, rax, r13, NumberOfBytesWritten, 0
-    cinvoke CloseHandle, r12
+    sub     rsp, 32 + 3*8 + 8
+
+    mov     rcx, r12                   ; param #1 = handle
+    mov     rdx, rax                   ; param #2 = buf
+    mov     r8, r13                    ; param #3 = filesize
+    lea     r9, [NumberOfBytesWritten] ; param #4 = NumberOfBytesWritten
+    mov     qword [rsp + 32 + 0*8], 0  ; param #5 = null
+    call    [ReadFile]
+
+    mov     rcx, r12
+    call    [CloseHandle]
+
+    add     rsp, 32 + 3*8 + 8
     pop     rax
 
     ; --------------------------------------------------------------------------
@@ -81,9 +114,18 @@ __MOLD_LoadFile:
     ret
 
 .couldNotOpenError:
-    cinvoke printf, "error: could not open file '%s'", rdx
-    jmp __MOLD_Halt
+    lea     rcx, [.fmtCouldNotOpenError]
+    sub     rsp, 32
+    call    [printf]
+    add     rsp, 32
+    jmp     __MOLD_Halt
 
 .stringPathExpectedError:
-    cinvoke printf, "error: string path expected"
-    jmp __MOLD_Halt
+    lea     rcx, [.fmtStringPathExpectedError]
+    sub     rsp, 32
+    call    [printf]
+    add     rsp, 32
+    jmp     __MOLD_Halt
+
+.fmtCouldNotOpenError       db "error: could not open file '%s'", 0
+.fmtStringPathExpectedError db "error: string path expected", 0
