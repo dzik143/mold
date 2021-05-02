@@ -47,13 +47,28 @@ __MOLD_SysCall:
     mov     eax, CREATE_ALWAYS
 
 .openFinal:
-    mov     rcx, [rcx + Variant_t.value]
-    mov     rcx, [rcx + Buffer_t.bytesPtr]
-    lea     rcx, [rcx + String_t.text]
+    ;             1    2   3                4  5    6  7
+    ; CreateFileA(rcx, r8, FILE_SHARE_READ, 0, rax, 0, 0)
 
-    push    rdx
-    cinvoke CreateFileA, rcx, r8, FILE_SHARE_READ, 0, rax, 0, 0
-    pop     rdx
+    push    rdx                                   ; save file path
+    sub     rsp, 32 + 3*8 + 8                     ; shadow + params + align
+
+    mov     rcx, [rcx + Variant_t.value]          ;
+    mov     rcx, [rcx + Buffer_t.bytesPtr]        ;
+    lea     rcx, [rcx + String_t.text]            ; param #1 = path
+
+    mov     rdx, r8                               ; param #2
+    mov     r8, FILE_SHARE_READ                   ; param #3
+    mov     r9d, 0                                ; param #4 = 0
+
+    mov     qword [rsp + 32 + 0*8], rax           ; param #5 = rax
+    mov     qword [rsp + 32 + 1*8], 0             ; param #6 = 0
+    mov     qword [rsp + 32 + 2*8], 0             ; param #7 = 0
+
+    call    [CreateFileA]                         ; rax = handle
+
+    add     rsp, 32 + 3*8 + 8                     ; shadow + params + align
+    pop     rdx                                   ; rdx = file path
 
     mov     [rdx + Variant_t.value], rax
     mov     [rdx + Variant_t.type], VARIANT_INTEGER
