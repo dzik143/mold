@@ -576,7 +576,8 @@ __MOLD_PrintFormatFromMemory:
     add     rsi, rax             ; rsi = skip text in format stream
 
     ; TODO: Clean up this mess.
-    cinvoke printf, '%.*s'       ; print inline text with given length
+    lea     rcx, [.fmtPrintVarSizeString]
+    call    [printf]
     jmp     .fetch_next_param    ;
 
 .variantLocalPtr:
@@ -673,3 +674,5 @@ __MOLD_PrintFormatFromMemory:
 
 .notImplemented:
     jmp     __MOLD_PrintErrorAndDie.notImplemented
+
+.fmtPrintVarSizeString db '%.*s', 0
