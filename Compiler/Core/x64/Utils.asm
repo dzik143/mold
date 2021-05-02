@@ -146,7 +146,11 @@ __MOLD_PrintStackTraceItem:
     mov     rdx, rcx
     mov     r8, rax
     lea     rcx, [.fmt]
-    cinvoke printf
+
+    sub     rsp, 32
+    call    [printf]
+    add     rsp, 32
+
     ret
 
 .fmt db '%p <%s>', 13, 10, 0
@@ -353,7 +357,10 @@ __MOLD_DefaultExceptionHandler:
 
     mov     r8,  [r13 + CPU_CONTEXT.Rip]
     lea     rcx, [.fmtExceptionInfo]
-    cinvoke printf
+
+    sub     rsp, 32
+    call    [printf]
+    add     rsp, 32
 
     ; --------------------------------------------------------------------------
     ; Dump registers to stdout
@@ -379,14 +386,28 @@ __MOLD_DefaultExceptionHandler:
     ; --------------------------------------------------------------------------
 
 .corruptedStack:
-    cinvoke printf, .fmtCorruptedStack
+
+    ; -----------------
+    ; puts(fmtCorruptedStack)
+
+    sub     rsp, 32
+    lea     rcx, [.fmtCorruptedStack]
+    call    [puts]
+    add     rsp, 32
 
     ; --------------------------------------------------------------------------
     ; Terminate current curring process.
     ; --------------------------------------------------------------------------
 
 .done:
-    cinvoke printf, .fmtFinalMsg
+
+    ; -----------------
+    ; puts(fmtFinalMsg)
+
+    sub     rsp, 32
+    lea     rcx, [.fmtFinalMsg]
+    call    [puts]
+    add     rsp, 32
 
     mov     eax, 0
 
@@ -394,7 +415,14 @@ __MOLD_DefaultExceptionHandler:
     pop     r12
     pop     rbp
 
-    cinvoke ExitProcess, -1
+    ; ---------------
+    ; ExitProcess(-1)
+
+    add     rsp, 32
+    mov     rcx, -1
+    call    [ExitProcess]
+    add     rsp, 32
+
     ret
 
     ; --------------------------------------------------------------------------
@@ -427,7 +455,9 @@ __MOLD_PrintProfilerData:
   or    rdx, rdx
   jz    .done
 
-  cinvoke printf
+  sub   rsp, 32
+  call  [printf]
+  add   rsp, 32
 
   add   r12, 16
   jmp   .printOneEntry
@@ -541,7 +571,7 @@ __MOLD_PrintFormatFromMemory:
 
 .text8:
     lodsb                        ; rax = text length (int8)
-    mov     r8, rsi              ; rsi = text8 struct ptr
+    mov     r8, rsi              ; r8  = text8 struct ptr
     mov     rdx, rax             ; rdx = text length (int8)
     add     rsi, rax             ; rsi = skip text in format stream
 
