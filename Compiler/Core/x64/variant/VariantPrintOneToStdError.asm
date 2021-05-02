@@ -19,7 +19,15 @@ __MOLD_PrintVariantToStdError:
     mov     rcx, [rcx + Variant_t.value]    ; rcx = str(value) (Buffer_t)
     mov     r12, [rcx + Buffer_t.bytesPtr]  ; rcx = str(value) (String_t)
 
-    cinvoke GetStdHandle, -12
+    ; ------------------------------
+    ; GetStdHandle(STD_ERROR_HANDLE)
+
+    sub     rsp, 32                         ;
+    mov     rcx, -12                        ; rcx = STD_ERROR_HANDLE = -12
+    call    [GetStdHandle]                  ; rax = handle to stderr
+    add     rsp, 32                         ;
+
+    ; ------------------------------
 
     lea     r9,  [NumberOfBytesWritten]
     mov     r8,  [r12 + String_t.length]
