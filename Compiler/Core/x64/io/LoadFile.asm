@@ -8,8 +8,6 @@
 ;
 ;###############################################################################
 
-db 0xbb, 0xcc, 0xdd, 0xee, 0xff
-
 __MOLD_LoadFile:
     ; TODO: Handle read error
 
