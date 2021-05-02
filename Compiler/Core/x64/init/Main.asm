@@ -20,7 +20,7 @@ __MOLD_Main:
     ; ----------------------------------------------------------------------------
 
     ;mov     rcx, __MOLD_DefaultExceptionHandler
-    ;cinvoke SetUnhandledExceptionFilter
+    ;call    [SetUnhandledExceptionFilter]
 
     ; ----------------------------------------------------------------------------
     ; Init argv[] and argc variables.
@@ -60,8 +60,11 @@ __MOLD_Main:
       cmp     rax, [MemoryFreeCnt]
       je      .noMemoryLeaksOrDone
 
-      cinvoke printf, .fmt, [MemoryAllocCnt], [MemoryFreeCnt], [MemoryReallocCnt]
-
+      lea     rcx, [.fmt]
+      lea     rdx, [MemoryAllocCnt]
+      lea     r8,  [MemoryFreeCnt]
+      lea     r9,  [MemoryReallocCnt]
+      call    [printf]
       jmp     .noMemoryLeaksOrDone
 
       .fmt db "; PANIC! Memory leak detected! (allocated: %d, freed: %d, realloc: %d)", 13, 10, 0

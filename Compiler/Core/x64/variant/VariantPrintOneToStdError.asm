@@ -10,7 +10,8 @@ __MOLD_PrintVariantToStdError:
 
     DEBUG_CHECK_VARIANT rcx
 
-    push    r12
+    push    r12                             ;
+    sub     rsp, 64                         ;
 
     lea     rdx, [__TrashBin]
     call    __MOLD_VariantConvertToString   ; rdx = str(value) (Variant_t)
@@ -22,24 +23,31 @@ __MOLD_PrintVariantToStdError:
     ; ------------------------------
     ; GetStdHandle(STD_ERROR_HANDLE)
 
-    sub     rsp, 32                         ;
     mov     rcx, -12                        ; rcx = STD_ERROR_HANDLE = -12
     call    [GetStdHandle]                  ; rax = handle to stderr
-    add     rsp, 32                         ;
 
-    ; ------------------------------
+    ; ------------------------------------------------------------
+    ; WriteFile(handle, buf, bufSize, &NumberOfBytesWritten, NULL)
 
-    lea     r9,  [NumberOfBytesWritten]
-    mov     r8,  [r12 + String_t.length]
-    lea     rdx, [r12 + String_t.text]
-    mov     rcx, rax
+    mov     rcx, rax                        ; param #1 = handle
+    lea     rdx, [r12 + String_t.text]      ; param #2 = buf
+    mov     r8,  [r12 + String_t.length]    ; param #3 = bufSize
+    lea     r9,  [NumberOfBytesWritten]     ; param #4 = NumberOfBytesWritten
+    mov     qword [rsp + 32 + 0*8], 0       ; param #5 = null
+    mov     r12, rax                        ; r12 = handle
+    call    [WriteFile]
 
-    push    rax
-    cinvoke WriteFile, rcx, rdx, r8, r9, 0
-    pop     rax
+    ; ------------------------------------------------------------
+    ; WriteFile(handle, "\r\n", 2, &NumberOfBytesWritten, NULL)
 
-    cinvoke WriteFile, rax, .fmtNewLine, 2, NumberOfBytesWritten, 0
+    mov     rcx, r12                        ; param #1 = handle
+    lea     rdx, [.fmtNewLine]              ; param #2 = fmtNewLine
+    mov     r8d, 2                          ; param #3 = sizeof(fmtNewLine)
+    lea     r9,  [NumberOfBytesWritten]     ; param #4 = NumberOfBytesWritten
+    mov     qword [rsp + 32 + 0*8], 0       ; param #5 = null
+    call    [WriteFile]
 
+    add     rsp, 64
     pop     r12
     ret
 
