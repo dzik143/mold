@@ -8,6 +8,8 @@
 ;
 ;###############################################################################
 
+db 0xbb, 0xcc, 0xdd, 0xee, 0xff
+
 __MOLD_LoadFile:
     ; TODO: Handle read error
 
@@ -34,8 +36,19 @@ __MOLD_LoadFile:
 
     mov     r12, rax
 
-    cinvoke GetFileSize, r12, 0
-    mov     r13, rax
+    ; --------------------------------------------------------------------------
+    ; cinvoke GetFileSize, r12, 0
+
+    mov     rcx, r12      ; rcx = param #1 = file handle
+    xor     edx, edx      ; rdx = param #2 = 0
+
+    sub     rsp, 32       ;
+    call    [GetFileSize] ; rax = GetFileSize(handle) = file size in bytes
+    add     rsp, 32       ;
+
+    mov     r13, rax      ; r13 = GetFileSize(handle) = file size in bytes
+
+    ; --------------------------------------------------------------------------
 
     lea     rcx, [rax + 1]
     call    __MOLD_MemoryAlloc
