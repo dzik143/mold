@@ -38,6 +38,7 @@ __MOLD_PrintVariant:
 .fmtEmpty     db '', 0
 .fmtAfterKey  db ': ', 0
 .fmtChar      db '%c', 0
+.fmtObject    db '[object]', 0
 .jmpTable     dq .boolean, .array, .map, .object
 
 .complexOrBoolean:
@@ -50,11 +51,17 @@ __MOLD_PrintVariant:
     jz      .booleanFalse
 
 .booleanTrue:
-    cinvoke printf, .fmtTrue
+    sub     rsp, 32
+    lea     rcx, [.fmtTrue]
+    call    [printf]
+    add     rsp, 32
     ret
 
 .booleanFalse:
-    cinvoke printf, .fmtFalse
+    sub     rsp, 32
+    lea     rcx, [.fmtFalse]
+    call    [printf]
+    add     rsp, 32
     ret
 
 .string:
@@ -117,7 +124,11 @@ __MOLD_PrintVariant:
 
     push    rcx
     lea     rcx, [.fmtSeparator]
-    cinvoke printf
+
+    sub     rsp, 32
+    call    [printf]
+    add     rsp, 32
+
     pop     rcx
 
 .print_first_array_item:
@@ -133,7 +144,11 @@ __MOLD_PrintVariant:
 .map:
     push    rdx
     mov     cl, '{'
-    cinvoke putchar
+
+    sub     rsp, 32
+    call    [putchar]
+    add     rsp, 32
+
     pop     rdx
 
     push    rbx
@@ -154,10 +169,20 @@ __MOLD_PrintVariant:
     lea     rsi, [rdi + rax]                      ; rsi = map.index
 
 .mapNextItem:
-    cinvoke printf, r12
+
+    ; ---------
+    ; puts(sep)
+
+    mov     rcx, r12
+    sub     rsp, 32
+    call    [printf]
+    add     rsp, 32
+
     lea     r12, [.fmtSeparator]
 
+    ; ---------
     ; Print key
+
     mov     eax, [rsi]                            ; rcx = bucketIdx
     mov     rcx, rdi                              ; rcx = buckets
     add     rcx, rax                              ; rcx = buckets[bucketIdx]
@@ -166,7 +191,10 @@ __MOLD_PrintVariant:
     call     __MOLD_PrintVariantWithQuotas
 
     ; Print separator
-    cinvoke printf, .fmtAfterKey
+    sub     rsp, 32
+    lea     rcx, [.fmtAfterKey]
+    call    [printf]
+    add     rsp, 32
 
     ; Print value
     pop     rcx
@@ -180,7 +208,9 @@ __MOLD_PrintVariant:
 
 .mapEmpty:
     mov     cl, '}'
-    cinvoke putchar
+    sub     rsp, 32
+    call    [putchar]
+    add     rsp, 32
 
     pop     r12
     pop     rdi
@@ -189,9 +219,17 @@ __MOLD_PrintVariant:
     ret
 
 .object:
-    cinvoke printf, '[object]'
+    sub     rsp, 32
+    lea     rcx, [.fmtObject]
+    call    [printf]
+    add     rsp, 32
     ret
 
 .errorNonVariantItem:
-    cinvoke printf, '__MOLD_VariantPrint: error: non-variant inner types not implemented'
+    sub     rsp, 32
+    lea     rcx, [.fmtErrorNonVariantItem]
+    call    [puts]
+    add     rsp, 32
     int 3
+
+.fmtErrorNonVariantItem db '__MOLD_VariantPrint: error: non-variant inner types not implemented', 0
