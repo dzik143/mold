@@ -139,7 +139,7 @@ __MOLD_SysCall:
     mov     r9, NumberOfBytesReaded      ; lpNumberOfBytesRead
     mov     qword [rsp], 0               ; lpOverlapped
 
-    cinvoke ReadFile
+    call    [ReadFile]
 
     add     rsp, 32
     ret
@@ -168,7 +168,7 @@ __MOLD_SysCall:
     mov     r9, NumberOfBytesWritten     ; lpNumberOfBytesWritten
     mov     qword [rsp], 0               ; lpOverlapped
 
-    cinvoke WriteFile
+    call    [WriteFile]
 
     add     rsp, 32
     ret
@@ -227,7 +227,9 @@ __MOLD_SysCall:
     mov     rdx, 0                                   ; rdx = temp buf = NULL
     mov     r8, rdx                                  ; rdx = base = 0 = auto
 
-    cinvoke strtol                                   ; rcx = int(text)
+    sub     rsp, 32                                  ;
+    call    [strtol]                                 ; rcx = int(text)
+    add     rsp, 32                                  ;
 
     pop     rdx                                      ;
     mov     [rdx + Variant_t.type], VARIANT_INTEGER  ;
@@ -246,7 +248,11 @@ __MOLD_SysCall:
     lea     rcx, [rcx + String_t.text]               ; rcx = text (char*)
 
     push    rdx                                      ;
-    cinvoke atof                                     ; rcx = atof(text)
+
+    sub     rsp, 32                                  ;
+    call    [atof]                                   ; rcx = atof(text)
+    add     rsp, 32                                  ;
+
     pop     rdx                                      ;
 
     mov     [rdx + Variant_t.type], VARIANT_DOUBLE   ;
@@ -306,7 +312,9 @@ __MOLD_SysCall:
 ;    mov     rcx, [rcx + Buffer_t.bytesPtr]
 ;    lea     rcx, [rcx + String_t.text]
 ;
-;    cinvoke LoadLibrary                     ; rax = DLL Handle
+;    sub     rsp, 32                         ;
+;    call    [LoadLibrary]                   ; rax = DLL Handle
+;    add     rsp, 32                         ;
 ;    mov     rcx, rax                        ; rcx = DLL Handle
 ;
 ;    ; Import procedure from DLL
@@ -318,7 +326,9 @@ __MOLD_SysCall:
 ;    mov     rdx, [rdx + Buffer_t.bytesPtr]
 ;    lea     rdx, [rdx + String_t.text]
 ;
-;    cinvoke GetProcAddress                  ; rax = external procedure ptr
+;    sub     rsp, 32                         ;
+;    call    [GetProcAddress]                ; rax = external procedure ptr
+;    add     rsp, 32                         ;
 ;
 ;    ; Call imported procedure
 ;    ; TODO: Handle parameters.
@@ -471,7 +481,9 @@ __MOLD_SysCall:
     lea     rdx, [rcx + String_t.text + rdx]
     lea     rcx, [r9  + String_t.text]
 
-    cinvoke strncpy
+    sub     rsp, 32
+    call    [strncpy]
+    add     rsp, 32
 
     pop     r9
 
@@ -484,8 +496,15 @@ __MOLD_SysCall:
 ; ------------------------------------------------------------------------------
 
 .error:
-    cinvoke printf, '__MOLD_SysCall: Invalid syscall id: %d', eax
+    lea     rcx, [.fmtErrorInvalidSyscallId]
+    mov     edx, eax
+
+    sub     rsp, 32
+    call    [printf]
+    add     rsp, 32
     ret
+
+.fmtErrorInvalidSyscallId db '__MOLD_SysCall: Invalid syscall id: %d', 0
 
 ; ------------------------------------------------------------------------------
 ; Jump table to dispatch routine by syscall id
