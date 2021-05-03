@@ -12,10 +12,15 @@ macro DEBUG_POP_ALL
 
 macro DEBUG_MSG_INTERNAL msg
 {
-  jmp   .next
-  .fmt db msg, 0
+  local .fmt
+  local .afterFmt
 
-.next:
+  jmp   .afterFmt
+
+.fmt:
+  db msg, 0
+
+.afterFmt:
 
   sub   rsp, 32
 
@@ -61,10 +66,44 @@ macro DEBUG_PRINT3 fmt, x, y
   DEBUG_PUSH_ALL
 
   push x
-  pop  r8
-
   push y
+
+  pop  r8
+  pop  rdx
+
+  DEBUG_MSG_INTERNAL fmt
+  DEBUG_POP_ALL
+}
+
+macro DEBUG_PRINT4 fmt, x, y, z
+{
+  DEBUG_PUSH_ALL
+
+  push x
+  push y
+  push z
+
   pop  r9
+  pop  r8
+  pop  rdx
+
+  DEBUG_MSG_INTERNAL fmt
+  DEBUG_POP_ALL
+}
+
+macro DEBUG_PRINT5 fmt, a, b, c, d
+{
+  DEBUG_PUSH_ALL
+
+  push a
+  push b
+  push c
+  push d
+
+  pop  r10
+  pop  r9
+  pop  r8
+  pop  rdx
 
   DEBUG_MSG_INTERNAL fmt
   DEBUG_POP_ALL

@@ -60,27 +60,27 @@ __MOLD_VariantCheck:
     ret
 
 .wrongTypeError:
-    cinvoke printf, 'PANIC! Unexpected value type [%d]', rax
+    DEBUG_PRINT2 'PANIC! Unexpected value type [%d]', rax
     int 3
 
 .nullStringValueError:
-    cinvoke printf, 'PANIC! NULL string buffer'
+    DEBUG_PRINT1 'PANIC! NULL string buffer'
     int 3
 
 .badStringCapacityError:
-    cinvoke printf, 'PANIC! Bad string capacity [%d]', [rax + Buffer_t.capacity]
+    DEBUG_PRINT2 'PANIC! Bad string capacity [%d]', [rax + Buffer_t.capacity]
     int 3
 
 .badStringRefCntError:
-    cinvoke printf, 'PANIC! Bad string refCnt [%d]', [rax + Buffer_t.refCnt]
+    DEBUG_PRINT2 'PANIC! Bad string refCnt [%d]', [rax + Buffer_t.refCnt]
     int 3
 
 .badStringLengthError:
-    cinvoke printf, 'PANIC! Bad string length'
+    DEBUG_PRINT1 'PANIC! Bad string length'
     int 3
 
 .nullStringPointerError:
-    cinvoke printf, 'PANIC! NULL String_t pointer'
+    DEBUG_PRINT1 'PANIC! NULL String_t pointer'
     int 3
 
 macro DEBUG_CHECK_VARIANT x
