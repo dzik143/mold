@@ -1,9 +1,17 @@
 use64
 
+macro DEBUG_PUSH_ALL
+{
+  push rax rcx rdx r8 r9 r10
+}
+
+macro DEBUG_POP_ALL
+{
+  pop  r10 r9 r8 rdx rcx rax
+}
+
 macro DEBUG_MSG_INTERNAL msg
 {
-  push rax rcx rdx r8  r9  r10
-
   jmp   .next
   .fmt db msg, 0
 
@@ -21,51 +29,43 @@ macro DEBUG_MSG_INTERNAL msg
   call  [putchar]
 
   add   rsp, 32
-
-  pop  r10 r9  r8  rdx rcx rax
 }
 
 macro DEBUG_MSG msg
 {
-  push rax rcx rdx r8 r9 r10
+  DEBUG_PUSH_ALL
   DEBUG_MSG_INTERNAL msg
-  pop  r10 r9  r8  rdx rcx rax
+  DEBUG_POP_ALL
 }
 
 macro DEBUG_PRINT1 msg
 {
-  push rax rcx rdx r8 r9 r10
+  DEBUG_PUSH_ALL
   DEBUG_MSG_INTERNAL msg
-  pop  r10 r9  r8  rdx rcx rax
+  DEBUG_POP_ALL
 }
 
 macro DEBUG_PRINT2 fmt, x
 {
-  push rax rcx rdx r8  r9  r10
+  DEBUG_PUSH_ALL
 
-  push 0
-  mov  [rsp], x
+  push x
   pop  rdx
 
   DEBUG_MSG_INTERNAL fmt
-
-  pop  r10 r9  r8  rdx rcx rax
+  DEBUG_POP_ALL
 }
 
 macro DEBUG_PRINT3 fmt, x, y
 {
-  push rax rcx rdx r8  r9  r10
+  DEBUG_PUSH_ALL
 
-  push 0
-  mov  [rsp], x
-
-  push 0
-  mov  [rsp], y
-
+  push x
   pop  r8
-  pop  rdx
+
+  push y
+  pop  r9
 
   DEBUG_MSG_INTERNAL fmt
-
-  pop  r10 r9  r8  rdx rcx rax
+  DEBUG_POP_ALL
 }
