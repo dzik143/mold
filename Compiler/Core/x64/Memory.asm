@@ -71,7 +71,7 @@ __MOLD_MemoryAlloc:
 
   call    __MOLD_MemoryLogAlloc             ;
   mov     rcx, BUFFER_T_SIZE                ; rcx = size of Buffer_t struct
-  cinvoke malloc                            ; rax = pointer to new Buffer_t
+  call    [malloc]                          ; rax = pointer to new Buffer_t
   mov     [.bufferHolder], rax              ; save pointer to buffer holder
   test    rax, rax
   jz      __MOLD_PrintErrorAndDie.outOfMemory
@@ -82,7 +82,7 @@ __MOLD_MemoryAlloc:
 
   mov     rcx, [.alignedCapacity]           ; rcx = aligned capacity
   mov     rdx, 1                            ; rdx = 1
-  cinvoke calloc                            ; rax = new memory block
+  call    [calloc]                          ; rax = new memory block
   test    rax, rax
   jz      __MOLD_PrintErrorAndDie.outOfMemory
 
@@ -241,11 +241,17 @@ __MOLD_MemoryRelease:
   call    __MOLD_MemoryLogFree
   push    rcx
   mov     rcx, [rcx + Buffer_t.bytesPtr]
-  cinvoke free
+
+  sub     rsp, 32
+  call    [free]
+  add     rsp, 32
+
   pop     rcx
 
   ; TODO: REVIEW IT!
-  cinvoke free
+  sub     rsp, 32
+  call    [free]
+  add     rsp, 32
 
 .staticBuffer:
 .bufferInUse:
@@ -489,7 +495,11 @@ __MOLD_MemoryRealloc:
   ; ----------------------------------------------------------------------------
 
   mov     rcx, [r12 + Buffer_t.bytesPtr] ; rcx = old memory block
-  cinvoke realloc                        ; rax = new memory block
+
+  sub     rsp, 32
+  call    [realloc]                      ; rax = new memory block
+  add     rsp, 32
+
   test    rax, rax
   jz      __MOLD_PrintErrorAndDie.outOfMemory
 
