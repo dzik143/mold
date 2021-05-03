@@ -145,18 +145,19 @@ __MOLD_SysCall:
     jmp     .read_final
 
 .read_final:
-    sub     rsp, 32
+    sub     rsp, 64
     mov     [rdx + Variant_t.type], eax
     mov     [rdx + Variant_t.value], 0
 
-    mov     rcx, [rcx + Variant_t.value] ; hFile
-    lea     rdx, [rdx + Variant_t.value] ; lpBuffer
-    mov     r9, NumberOfBytesReaded      ; lpNumberOfBytesRead
-    mov     qword [rsp], 0               ; lpOverlapped
+    mov     rcx, [rcx + Variant_t.value] ; param #1 = hFile
+    lea     rdx, [rdx + Variant_t.value] ; param #2 = lpBuffer
+                                         ; param #3 = r8
+    mov     r9, NumberOfBytesReaded      ; param #4 = lpNumberOfBytesRead
+    mov     qword [rsp + 32], 0          ; param #5 = lpOverlapped
 
     call    [ReadFile]
 
-    add     rsp, 32
+    add     rsp, 64
     ret
 
 ; ------------------------------------------------------------------------------
@@ -175,17 +176,17 @@ __MOLD_SysCall:
 .write_dqword:
 
     mov     r8d, 0
-    sub     rsp, 32
-    mov     r8b, [.writeSizeTable + eax - 21]
+    sub     rsp, 64
 
-    mov     rcx, [rcx + Variant_t.value] ; hFile
-    lea     rdx, [rdx + Variant_t.value] ; lpBuffer
-    mov     r9, NumberOfBytesWritten     ; lpNumberOfBytesWritten
-    mov     qword [rsp], 0               ; lpOverlapped
+    mov     rcx, [rcx + Variant_t.value]      ; param #1 = hFile
+    lea     rdx, [rdx + Variant_t.value]      ; param #2 = lpBuffer
+    mov     r8b, [.writeSizeTable + eax - 21] ; param #3
+    mov     r9, NumberOfBytesWritten          ; param #4 = lpNumberOfBytesWritte
+    mov     qword [rsp + 32], 0               ; param #5 = lpOverlapped
 
     call    [WriteFile]
 
-    add     rsp, 32
+    add     rsp, 64
     ret
 
 ; ------------------------------------------------------------------------------
