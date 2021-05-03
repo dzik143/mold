@@ -151,7 +151,7 @@ __MOLD_SysCall:
 
     mov     rcx, [rcx + Variant_t.value] ; param #1 = hFile
     lea     rdx, [rdx + Variant_t.value] ; param #2 = lpBuffer
-                                         ; param #3 = r8
+                                         ; param #3 = r8 = size
     mov     r9, NumberOfBytesReaded      ; param #4 = lpNumberOfBytesRead
     mov     qword [rsp + 32], 0          ; param #5 = lpOverlapped
 
@@ -180,7 +180,7 @@ __MOLD_SysCall:
 
     mov     rcx, [rcx + Variant_t.value]      ; param #1 = hFile
     lea     rdx, [rdx + Variant_t.value]      ; param #2 = lpBuffer
-    mov     r8b, [.writeSizeTable + eax - 21] ; param #3
+    mov     r8b, [.writeSizeTable + eax - 21] ; param #3 = size
     mov     r9, NumberOfBytesWritten          ; param #4 = lpNumberOfBytesWritte
     mov     qword [rsp + 32], 0               ; param #5 = lpOverlapped
 
