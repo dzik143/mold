@@ -1,0 +1,8 @@
+TYPE  = SIMPLE_LIBRARY
+TITLE = LibMold
+
+ISRC  = Mold.h MoldCore.h MoldForDriver.h MoldMemory.h MoldVariantArray.h
+ISRC += MoldVariantMap.h MoldVariantObject.h
+
+CSRC  = MoldCore.c MoldForDriver.c MoldMemory.c MoldVariantArray.c
+CSRC += MoldVariantMap.c MoldVariantObject.c
