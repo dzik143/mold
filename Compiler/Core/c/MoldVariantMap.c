@@ -183,7 +183,7 @@ void __MOLD_VariantStoreAtKey_variant(Variant_t *box, Variant_t key, Variant_t v
 
   MapBucket_t *bucket = &(map -> buckets[bucketIdx]);
 
-  if (bucket -> value.type != VARIANT_UNDEFINED)
+  if (bucket -> key.type != VARIANT_UNDEFINED)
   {
     // Bucket is occupied.
     // Compare key to detect collision.
