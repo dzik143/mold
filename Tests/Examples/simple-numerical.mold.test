@@ -1,4 +1,7 @@
 TEST "sqrt(2) by Newton method"
+# TODO: Change abs_() -> abs()
+# TODO: We don't use abs() to avoid conflict with C built-in.
+
 #
 # Calculate sqrt(2) using iterative (Netwton) method.
 #
@@ -12,7 +15,7 @@ x     = 1.0
 delta = 1000000.0
 iter  = 0
 
-function abs(x) -> rv
+function abs_(x) -> rv
   if x < 0.0
     rv = -x
   else
@@ -22,7 +25,7 @@ endfunction
 
 while delta > 0.00001
   newX  = x / 2.0 * (3.0 - S * x*x)
-  delta = abs(x - newX)
+  delta = abs_(x - newX)
   x     = newX
   iter  = iter + 1
 

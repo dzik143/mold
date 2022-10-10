@@ -115,7 +115,7 @@ Add 2 2
 18
 -------------------------------------------------------------------------------
 
-TEST "for indexes in: "
+TEST "for indexes in: edit array inside loop"
 
 x = [1, 2, 3]
 

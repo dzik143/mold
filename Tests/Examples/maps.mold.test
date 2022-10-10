@@ -287,6 +287,7 @@ print 'var2_array  :', var2_array
 print 'var2_object :', var2_object
 print ''
 print 'map         :', x
+print 'len(map)    :', len(x)
 print ''
 
 # Store values in empty array.
@@ -314,6 +315,7 @@ print 'var2_array  :', var2_array
 print 'var2_object :', var2_object
 print ''
 print 'map         :', x
+print 'len(map)    :', len(x)
 print ''
 
 # Read fields back.
@@ -341,6 +343,7 @@ print 'var2_array  :', var2_array
 print 'var2_object :', var2_object
 print ''
 print 'map         :', x
+print 'len(map)    :', len(x)
 
 EXPECTED_OUTPUT:
 Initial state
@@ -360,6 +363,7 @@ var2_array  : [85, 84, 83, 82, 81]
 var2_object : [object]
 
 map         : {}
+len(map)    : 0
 
 After store
 ===========
@@ -378,6 +382,7 @@ var2_array  : [85, 84, 83, 82, 81]
 var2_object : [object]
 
 map         : {'integer': 1234, 'float': 5.670000, 'boolean': false, 'map': {'key1': 'value1'}, 'array': [81, 82, 83, 84, 85], 'object': [object]}
+len(map)    : 6
 
 After load
 ==========
@@ -396,4 +401,28 @@ var2_array  : [81, 82, 83, 84, 85]
 var2_object : [object]
 
 map         : {'integer': 1234, 'float': 5.670000, 'boolean': false, 'map': {'key1': 'value1'}, 'array': [81, 82, 83, 84, 85], 'object': [object]}
+len(map)    : 6
+-------------------------------------------------------------------------------
+
+TEST "Store and load mixed types in one map #2"
+
+ast = {
+  'children': [1,2,3]
+}
+
+proto = {
+  'name': 'start',
+  'children': ast.children
+}
+
+print 'len(ast)   =', len(ast)
+print 'len(proto) =', len(proto)
+print 'ast        =', ast
+print 'proto      =', proto
+
+EXPECTED_OUTPUT:
+len(ast)   = 1
+len(proto) = 2
+ast        = {'children': [1, 2, 3]}
+proto      = {'name': 'start', 'children': [1, 2, 3]}
 -------------------------------------------------------------------------------

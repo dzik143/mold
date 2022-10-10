@@ -540,3 +540,45 @@ EXPECTED_OUTPUT:
 (5) rv = 1234
 (7) rv = 1234
 -------------------------------------------------------------------------------
+
+TEST "Bug: Invalid signed comparison in optimized jmp table for idx < minValue"
+
+function foo(idx)
+  if idx is 5
+    print 'idx is 5'
+  elif idx is 6
+    print 'idx is 6'
+  elif idx is 7
+    print 'idx is 7'
+  elif idx is 8
+    print 'idx is 8'
+  elif idx is 9
+    print 'idx is 9'
+  else
+    print 'idx is something else'
+  endif
+endfunction
+
+# Pass idx below minimal value.
+# Should pass to default branch (otherwise).
+foo(4)
+
+EXPECTED_OUTPUT:
+idx is something else
+-------------------------------------------------------------------------------
+
+TEST "Bug: Not destroyed variant when loading null into reused tmp var"
+
+x = [1234]
+
+tmp = x[0] + 1
+print tmp
+
+x[1] = null
+
+print x
+
+EXPECTED_OUTPUT:
+1235
+[1234, undefined]
+-------------------------------------------------------------------------------
