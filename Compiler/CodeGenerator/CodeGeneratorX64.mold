@@ -1301,7 +1301,8 @@ class CodeGeneratorX64
         if ((opcode is MIR1_OPCODE_CALL) and
             (nameOrId is '__MOLD_ForDriver_Generic') or
             (nameOrId is '__MOLD_ForDriver_IndexesAndValuesInArray') or
-            (nameOrId is '__MOLD_ForDriver_IndexesAndValuesInArrayOrString'))
+            (nameOrId is '__MOLD_ForDriver_IndexesAndValuesInArrayOrString') or
+            (nameOrId is '__MOLD_ForDriver_KeysAndValuesInMap'))
 
           # TODO: Clean up this mess.
           this.pushOneParameterBeforeCall(params[0], 0)
@@ -1329,6 +1330,7 @@ class CodeGeneratorX64
           # Generate call opcode.
           if opcode is MIR1_OPCODE_SYSCALL
             # dst = syscall(id, ...)
+            # TODO: Why we sometimes got string 'id' here?
             this._syscall(nameOrId)
 
           elif opcode is MIR1_OPCODE_CALL

@@ -32,6 +32,7 @@ import 'AST/ASTTranslatorMIR0.mold'
 import 'AST/ASTTranslatorMIR1.mold'
 import 'MIR/MIRQuadCollector.mold'
 import 'CodeGenerator/CodeGeneratorX64.mold'
+import 'CodeGenerator/CodeGeneratorC.mold'
 import 'MIR/MIRQuadOptimizer.mold'
 import 'VM/VMachineStack.mold'
 
@@ -75,6 +76,10 @@ for idx in 1 .. argc
   elif argv[idx] is '--asm'
     # Generate assembler output
     mode = 'asm'
+
+  elif argv[idx] is '--output-c'
+    # Generate C output
+    mode = 'c'
 
   elif argv[idx] is '--mir0'
     # Generate MIR0 output (stack based)
@@ -293,6 +298,20 @@ else
         # Generate x64 code.
         app.logDebug('Generating x64 code...')
         codeGenerator = new CodeGeneratorX64()
+
+        # TODO: Better way to pass generator options.
+        codeGenerator.isProfilerEnabled = isProfilerEnabled
+        codeGenerator.run(code)
+
+      elif mode is 'c'
+        # TODO: Better way to pass quads + meta.
+        code             = astTranslator.code
+        code.quads       = mirQuadCollector.getQuads()
+        code.symbolTable = app.getSymbolTable()
+
+        # Generate x64 code.
+        app.logDebug('Generating C code...')
+        codeGenerator = new CodeGeneratorC()
 
         # TODO: Better way to pass generator options.
         codeGenerator.isProfilerEnabled = isProfilerEnabled

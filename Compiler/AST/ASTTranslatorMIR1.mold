@@ -429,8 +429,16 @@ class ASTTranslatorMIR1 extends ASTTranslator
       name = proto.name
     endif
 
+    # TODO: Clean up this mess.
+    if ((proto.isConstructor is defined) and
+        (proto.isConstructor is true))
+      rvForCall = null
+    else
+      rvForCall = rv
+    endif
+
     # TODO: Use emitTwoArgsOpcode() after fix.
-    this._emitOneItem([MIR1_OPCODE_CALL, rv, name, params])
+    this._emitOneItem([MIR1_OPCODE_CALL, rvForCall, name, params])
 
     if ((proto.isConstructor is defined) and
         (proto.isConstructor is true))
@@ -581,11 +589,12 @@ class ASTTranslatorMIR1 extends ASTTranslator
       methodId = this.code.createMethod(methodName)
     endif
 
-    if this.mapOfCalledMethods{methodName} is undefined
-      this.arrayOfCalledMethods[@afterlast] = methodName
+    methodNameWithParamsCnt = methodName ~ '$' ~ str(paramsCnt - 1)
+    if this.mapOfCalledMethods{methodNameWithParamsCnt} is undefined
+      this.arrayOfCalledMethods[@afterlast] = methodNameWithParamsCnt
     endif
 
-    this.mapOfCalledMethods{methodName} = true
+    this.mapOfCalledMethods{methodNameWithParamsCnt} = true
 
     params = this.popParametersBeforeCall(paramsCnt)
 
@@ -648,7 +657,9 @@ class ASTTranslatorMIR1 extends ASTTranslator
     global MIR1_OPCODE_JMP
     global MIR1_OPCODE_INNER_RET
 
-    labelForBegin = this.symbolTable.createLabel()
+    # TODO: Clean up this mess.
+    # TODO: Better way to detect inner function in C target.
+    labelForBegin = 'loopBody_' ~ this.symbolTable.createLabel()
     labelForEnd   = this.symbolTable.createLabel()
 
     this.emitComment('')
@@ -876,11 +887,15 @@ class ASTTranslatorMIR1 extends ASTTranslator
     codeAst   = children[0]
     rvName    = funcProto.rv
 
-    this.methodEmitted{funcProto.name} = true
+    this.methodEmitted{funcProto.name ~ '$' ~ str(paramsCnt)} = true
 
     this.emitComment('-----------------------------------------------')
     this.emitComment('function ' ~ funcName)
     this.emitComment('-----------------------------------------------')
+
+    # TODO: Clean up this mess.
+    # We inject symbols to the AST for forward declarations in C target.
+    funcProto.symbols = this.symbolTable.exportSymbols()
 
     # TODO: Simplify it.
     symbolTable      = this.symbolTable
@@ -956,7 +971,18 @@ class ASTTranslatorMIR1 extends ASTTranslator
     for values methodName in this.arrayOfCalledMethods
       if this.methodEmitted{methodName} is undefined
         # TODO: Show source line.
-        die("error: object has no method '" ~ methodName ~ "'")
+        # TODO: Use subtr, find etc.
+        # Convert foo$3 -> foo.
+        idx = 0
+        methodNameLen = len(methodName)
+        shortMethodName = ''
+
+        while (methodName[idx] isnt '$') and (idx < methodNameLen)
+          shortMethodName = shortMethodName ~ methodName[idx]
+          idx = idx + 1
+        endwhile
+
+        die("error: object has no method '" ~ shortMethodName ~ "'")
       endif
     endfor
   endmethod

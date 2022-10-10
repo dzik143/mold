@@ -616,6 +616,7 @@ class ASTTranslator
           # TODO: Remove this fix.
           methodProto.isConstructor = true
 
+          # TODO: Why we can't pass null rv for MIR0?
           unusedRv = this._getTempVar('variant')
           this._call(unusedRv, methodProto, params, paramsCnt)
           this._releaseTempVar(unusedRv)
