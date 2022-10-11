@@ -100,7 +100,7 @@ class CodeGeneratorC
     rv = rv ~ ';'
   endmethod
 
-  method emitConstant(name, value, wantDeepIdx, deepIdx)
+  method emitConstant(name, value, wantDeepIdx, deepIdx, isAnonymouse)
     type             = typeof(value)
     isContentEmmited = false
 
@@ -128,18 +128,22 @@ class CodeGeneratorC
         endif
       endif
 
+      if isAnonymouse is false
+        print 'Variant_t', name, '= {'
+      endif
+
       # Dispatch type.
       if type is 'integer'
-        print 'Variant_t', name, '= { VARIANT_INTEGER, 0,', value, '};'
+        print '  VARIANT_INTEGER, 0,', value, ','
 
       elif type is 'float'
-        print 'Variant_t', name, '= { VARIANT_DOUBLE, 0, valueAsFloat64:', value, '};'
+        print '  VARIANT_DOUBLE, 0, valueAsFloat64:', value, ','
 
       elif type is 'string'
-        print 'Variant_t', name, '= { VARIANT_STRING, 0, (uint64_t) &', bufferName, '};'
+        print '  VARIANT_STRING, 0, (uint64_t) &', bufferName, ','
 
       elif type is 'array'
-        print 'Variant_t', name, '= { VARIANT_ARRAY, 0, (uint64_t) &', bufferName, '};'
+        print '  VARIANT_ARRAY, 0, (uint64_t) &', bufferName, ','
 
       elif type is 'boolean'
         if value is true
@@ -148,13 +152,18 @@ class CodeGeneratorC
           valueAsInteger = '0'
         endif
 
-        print 'Variant_t', name, '= { VARIANT_BOOLEAN, 0,', valueAsInteger, '};'
+        print '  VARIANT_BOOLEAN, 0,', valueAsInteger, ','
 
       elif type is 'undefined'
-        print 'Variant_t', name, '= { 0 };'
+        print '  0, 0, 0,'
 
       else
         die('error: unhandled type: ' ~ type)
+      endif
+
+      if isAnonymouse is false
+        print '};'
+        print ''
       endif
     endif
 
@@ -242,8 +251,8 @@ class CodeGeneratorC
       goOn = true
 
       while (goOn is true) and (innerItemIdx < itemsCnt)
-        itemValue  = items[innerItemIdx]
-        itemType   = typeof(itemValue)
+        itemValue = items[innerItemIdx]
+        itemType  = typeof(itemValue)
 
         if itemType isnt innerType
           # Various types in one array.
@@ -271,6 +280,15 @@ class CodeGeneratorC
            innerSize  = 1
            structName = 'Array_int16_t'
           endif
+
+        else
+          # Non-integer primitive.
+          # Fall-back to variant storage and don't go anymore.
+          # TODO: Don't duplcate code.
+          # TODO: Handle non-integer primitives in const arrays.
+          innerTypeForEmit = '0'
+          structName       = 'Array_t'
+          goOn             = false
         endif
 
         # Go to next item.
@@ -310,14 +328,18 @@ class CodeGeneratorC
         # Don't go on recursively.
         itemsCnt = -1
       endif
-
-      print '};'
     endif
 
     # Go on recursively for variant arrays.
     for itemIdx in 0 .. itemsCnt
-      this.emitConstant(name ~ '_' ~ str(itemIdx), items[itemIdx], wantDeepIdx, deepIdx)
+      this.emitConstant(name ~ '_' ~ str(itemIdx), items[itemIdx], wantDeepIdx, deepIdx, true)
     endfor
+
+    # Close C array.
+    if wantDeepIdx is deepIdx
+      print '};'
+      print ''
+    endif
   endmethod
 
 
@@ -529,7 +551,7 @@ class CodeGeneratorC
         if (symbolInfo.kind is SYMBOL_KIND_CONST) and (symbolInfo.readHits > 0)
           name  = symbolInfo.name
           value = symbolInfo.value
-          this.emitConstant(name, value, deepIdx, 0)
+          this.emitConstant(name, value, deepIdx, 0, false)
         endif
       endfor
     endwhile
