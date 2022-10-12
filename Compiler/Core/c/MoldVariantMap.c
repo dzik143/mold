@@ -157,20 +157,6 @@ void __MOLD_VariantStoreAtKey_variant(Variant_t *box, Variant_t key, Variant_t v
     __MOLD_PrintErrorAndDie_stringKeyExpected();
   }
 
-  // TODO: Clean up this mess.
-  Variant_t keyToCopyIntoBucket = key;
-
-  // Check for optimized one-character key.
-  static String_t  TempOneCharBytes  = { 1, 0, 0 };
-  static Buffer_t  TempOneCharHolder = { 10, -1, 0, &TempOneCharBytes };
-  static Variant_t TempOneCharString = { VARIANT_STRING, 0, (uint64_t) &TempOneCharHolder };
-
-  if (key.flags & VARIANT_FLAG_ONE_CHARACTER)
-  {
-    TempOneCharBytes.text[0] = key.valueAsUInt8;
-    key = TempOneCharString;
-  }
-
   // Decode map and string objects.
   Map_t    *map    = (Map_t *)    box -> valueAsBufferPtr -> bytesPtr;
   String_t *string = (String_t *) key.valueAsBufferPtr -> bytesPtr;
@@ -183,27 +169,21 @@ void __MOLD_VariantStoreAtKey_variant(Variant_t *box, Variant_t key, Variant_t v
 
   MapBucket_t *bucket = &(map -> buckets[bucketIdx]);
 
-  if (bucket -> key.type != VARIANT_UNDEFINED)
-  {
-    // Bucket is occupied.
-    // Compare key to detect collision.
-    String_t *bucketKeyString = (String_t *) bucket -> key.valueAsBufferPtr -> bytesPtr;
+  // Skip current bucket as long as:
+  // - bucket is occupied,
+  // - and bucket has already the same key as we're searching for.
+  //
+  // Otherwise:
+  // - if bucket is free - we stop here, and put new key here from the scratch,
+  // - if bucket has different key - we had collision and go on to next one.
+  //
+  // Note: See hash key collision algorithm: "open address".
 
-    if (strcmp(string -> text, bucketKeyString -> text) != 0)
-    {
-      // Collision - it's not a key, which we search for.
-      // Open address - find first free bucket.
-      while (bucket -> key.type != VARIANT_UNDEFINED)
-      {
-        bucketIdx = (bucketIdx + 1) % map -> bucketsCnt;
-        bucket = &(map -> buckets[bucketIdx]);
-      }
-    }
-  }
-  else
+  while ((bucket -> key.type != VARIANT_UNDEFINED) &&
+         (!__MOLD_cmp_eq_string(key, bucket -> key)))
   {
-    // Bucket is free.
-    // Do nothing.
+    bucketIdx = (bucketIdx + 1) % map -> bucketsCnt;
+    bucket = &(map -> buckets[bucketIdx]);
   }
 
   // Conditional: Set new key if bucket is filled for the first time.
@@ -211,7 +191,7 @@ void __MOLD_VariantStoreAtKey_variant(Variant_t *box, Variant_t key, Variant_t v
   {
     // Always copy original caller delivered key to keep one-char strings
     // wihout touch.
-    memcpy(&bucket -> key, &keyToCopyIntoBucket, sizeof(Variant_t));
+    bucket -> key = key;
     map -> bucketsUsedCnt++;
 
     // Updated pointers to first/last buckets for fast forEach loop.
