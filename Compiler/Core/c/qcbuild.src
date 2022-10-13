@@ -1,8 +1,12 @@
 TYPE  = SIMPLE_LIBRARY
 TITLE = LibMold
 
-ISRC  = Mold.h MoldCore.h MoldForDriver.h MoldMemory.h MoldVariantArray.h
-ISRC += MoldVariantMap.h MoldVariantObject.h
+ISRC  = Mold.h MoldCore.h MoldForDriver.h MoldMemory.h MoldVariantString.h
+ISRC += MoldVariantArray.h MoldVariantMap.h MoldVariantObject.h MoldError.h
+ISRC += MoldPrint.h
 
 CSRC  = MoldCore.c MoldForDriver.c MoldMemory.c MoldVariantArray.c
-CSRC += MoldVariantMap.c MoldVariantObject.c
+CSRC += MoldVariantString.c MoldVariantMap.c MoldVariantObject.c MoldError.c
+CSRC += MoldPrint.c
+
+DEFINES = -Werror -Wall

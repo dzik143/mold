@@ -18,26 +18,22 @@
 *                                                                              *
 *******************************************************************************/
 
-#ifndef _MoldMemory_H
-#define _MoldMemory_H
+#ifndef _MoldPrint_H
+#define _MoldPrint_H
 
-#include <stdlib.h>
-#include <stdint.h>
+#include <stdio.h>
 
-typedef struct Buffer
-{
-  uint64_t capacity;
-   int64_t refCnt;
-  uint64_t flags;
-  void* bytesPtr;
-} Buffer_t;
+void __MOLD_PrintToFile_variant(FILE *f, Variant_t *x);
 
+void __MOLD_VariantPrint(Variant_t x);
+void __MOLD_Print_space();
+void __MOLD_Print_EOL();
 
-Buffer_t *__MOLD_MemoryAlloc(uint32_t sizeInBytes);
+void __MOLD_Print_variant(Variant_t *x);
+void __MOLD_Print_string(Variant_t x);
+void __MOLD_Print_bool32(int32_t x);
+void __MOLD_Print_int32(int32_t x);
+void __MOLD_Print_int64(int64_t x);
+void __MOLD_Print_float64(float64_t x);
 
-void __MOLD_MemoryAddRef(Buffer_t *buf);
-void __MOLD_MemoryRelease(Buffer_t *buf);
-void __MOLD_MemoryRealloc(Buffer_t *buf, uint64_t newCapacity);
-void __MOLD_MemoryIncreaseBufferTwice(Buffer_t *buf);
-
-#endif /* _MoldMemory_H */
+#endif /* _MoldPrint_H */

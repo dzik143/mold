@@ -1,6 +1,27 @@
+/*******************************************************************************
+*                                                                              *
+* This file is part of Mold project.                                           *
+* Copyright (C) 2015, 2022 Sylwester Wysocki <sw143@wp.pl>                     *
+*                                                                              *
+* This program is free software: you can redistribute it and/or modify         *
+* it under the terms of the GNU General Public License as published by         *
+* the Free Software Foundation, either version 3 of the License, or            *
+* (at your option) any later version.                                          *
+*                                                                              *
+* This program is distributed in the hope that it will be useful,              *
+* but WITHOUT ANY WARRANTY; without even the implied warranty of               *
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                *
+* GNU General Public License for more details.                                 *
+*                                                                              *
+* You should have received a copy of the GNU General Public License            *
+* along with this program. If not, see <http://www.gnu.org/licenses/>          *
+*                                                                              *
+*******************************************************************************/
 #include <stdio.h>
+
 #include <string.h>
 
+#include "MoldError.h"
 #include "MoldVariantArray.h"
 #include "MoldVariantMap.h"
 #include "MoldVariantObject.h"
@@ -111,24 +132,27 @@ Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t box, Variant_t key)
 
   MapBucket_t *bucket = &(map -> buckets[bucketIdx]);
 
+  // Skip current bucket as long as:
+  // - bucket is occupied,
+  // - and bucket has already different key as we're searching for.
+  //
+  // Otherwise:
+  // - if bucket is free - we stop here, key not found,
+  // - if bucket has the same key - matched, key is found.
+  //
+  // Note: See hash key collision algorithm: "open address".
+
+  while ((bucket -> key.type != VARIANT_UNDEFINED) &&
+         (!__MOLD_cmp_eq_string(key, bucket -> key)))
+  {
+    bucketIdx = (bucketIdx + 1) % map -> bucketsCnt;
+    bucket    = &(map -> buckets[bucketIdx]);
+  }
+
+  // Load result value if key is found.
   if (bucket -> key.type != VARIANT_UNDEFINED)
   {
-    // Bucket is occupied.
-    // Compare key to detect collision.
-    while ((bucket -> key.type != VARIANT_UNDEFINED) &&
-           (!__MOLD_cmp_eq_string(key, bucket -> key)))
-    {
-      // Collision - it's not a key, which we search for.
-      // Open address - go to next bucket and try again.
-      bucketIdx = (bucketIdx + 1) % map -> bucketsCnt;
-      bucket    = &(map -> buckets[bucketIdx]);
-    }
-
-    // Set result value.
-    if (bucket -> key.type != VARIANT_UNDEFINED)
-    {
-      memcpy(&rv, &bucket -> value, sizeof(Variant_t));
-    }
+    memcpy(&rv, &bucket -> value, sizeof(Variant_t));
   }
 
   return rv;
@@ -164,11 +188,11 @@ void __MOLD_VariantStoreAtKey_variant(Variant_t *box, Variant_t key, Variant_t v
 
   // Skip current bucket as long as:
   // - bucket is occupied,
-  // - and bucket has already the same key as we're searching for.
+  // - and bucket has already different key as we're searching for.
   //
   // Otherwise:
   // - if bucket is free - we stop here, and put new key here from the scratch,
-  // - if bucket has different key - we had collision and go on to next one.
+  // - if bucket has the same key - we had collision and go on to next one.
   //
   // Note: See hash key collision algorithm: "open address".
 

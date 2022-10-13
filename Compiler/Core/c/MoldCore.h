@@ -1,3 +1,23 @@
+/*******************************************************************************
+*                                                                              *
+* This file is part of Mold project.                                           *
+* Copyright (C) 2015, 2022 Sylwester Wysocki <sw143@wp.pl>                     *
+*                                                                              *
+* This program is free software: you can redistribute it and/or modify         *
+* it under the terms of the GNU General Public License as published by         *
+* the Free Software Foundation, either version 3 of the License, or            *
+* (at your option) any later version.                                          *
+*                                                                              *
+* This program is distributed in the hope that it will be useful,              *
+* but WITHOUT ANY WARRANTY; without even the implied warranty of               *
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                *
+* GNU General Public License for more details.                                 *
+*                                                                              *
+* You should have received a copy of the GNU General Public License            *
+* along with this program. If not, see <http://www.gnu.org/licenses/>          *
+*                                                                              *
+*******************************************************************************/
+
 #ifndef _MoldCore_H
 #define _MoldCore_H
 
@@ -64,12 +84,6 @@ typedef struct Variant
     struct Buffer *valueAsBufferPtr;
   };
 } Variant_t;
-
-typedef struct String
-{
-  uint64_t length;
-  char text[];
-} String_t;
 
 extern Variant_t argc;
 extern Variant_t argv;
@@ -160,9 +174,6 @@ bool32_t __MOLD_cmp_gt_variant(Variant_t x, Variant_t y);
 bool32_t __MOLD_cmp_le_variant(Variant_t x, Variant_t y);
 bool32_t __MOLD_cmp_ge_variant(Variant_t x, Variant_t y);
 
-bool32_t __MOLD_cmp_eq_string(Variant_t x, Variant_t y);
-bool32_t __MOLD_cmp_ne_string(Variant_t x, Variant_t y);
-
 bool32_t __MOLD_cmp_eq_bool32(bool32_t x, bool32_t y);
 bool32_t __MOLD_cmp_ne_bool32(bool32_t x, bool32_t y);
 
@@ -177,7 +188,6 @@ bool32_t  __MOLD_VariantCastTo_bool32(Variant_t *);
 Variant_t __MOLD_Str(Variant_t);
 
 void __MOLD_Exit();
-void __MOLD_Die(Variant_t msg);
 
 Variant_t __MOLD_GetTypeId(Variant_t x);
 Variant_t __MOLD_Len(Variant_t x);
@@ -188,26 +198,12 @@ Variant_t __MOLD_Bitand(Variant_t x, Variant_t y);
 Variant_t __MOLD_Bitor (Variant_t x, Variant_t y);
 Variant_t __MOLD_Bitxor(Variant_t x, Variant_t y);
 
-Variant_t __MOLD_SubStr(Variant_t x, Variant_t idx, Variant_t len);
-
 Variant_t __MOLD_ParseInteger(Variant_t x);
 Variant_t __MOLD_ParseFloat(Variant_t x);
 
 Variant_t __MOLD_FileLoad(Variant_t path);
 
-void __MOLD_VariantStringJoin(Variant_t *, Variant_t *, Variant_t *);
-
-void __MOLD_PrintErrorAndDie_outOfMemory();
-void __MOLD_PrintErrorAndDie_negativeIndex();
-void __MOLD_PrintErrorAndDie_notIterable();
-void __MOLD_PrintErrorAndDie_arrayOrStringExpected();
-void __MOLD_PrintErrorAndDie_stringKeyExpected();
-void __MOLD_PrintErrorAndDie_mapOrObjectExpected();
-void __MOLD_PrintErrorAndDie_nullMethodCalled();
-void __MOLD_PrintErrorAndDie_notImplemented();
-
 void __MOLD_InitArgv(int, char **);
-void __MOLD_InitExceptions();
 
 Variant_t __MOLD_SysCall(uint32_t id, ...);
 
