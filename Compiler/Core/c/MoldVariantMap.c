@@ -1,22 +1,21 @@
-/*******************************************************************************
-*                                                                              *
-* This file is part of Mold project.                                           *
-* Copyright (C) 2015, 2022 Sylwester Wysocki <sw143@wp.pl>                     *
-*                                                                              *
-* This program is free software: you can redistribute it and/or modify         *
-* it under the terms of the GNU General Public License as published by         *
-* the Free Software Foundation, either version 3 of the License, or            *
-* (at your option) any later version.                                          *
-*                                                                              *
-* This program is distributed in the hope that it will be useful,              *
-* but WITHOUT ANY WARRANTY; without even the implied warranty of               *
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                *
-* GNU General Public License for more details.                                 *
-*                                                                              *
-* You should have received a copy of the GNU General Public License            *
-* along with this program. If not, see <http://www.gnu.org/licenses/>          *
-*                                                                              *
-*******************************************************************************/
+/**************************************************************************/
+/* This file is part of Mold project.                                     */
+/* Copyright (C) 2015, 2022 Sylwester Wysocki <sw143@wp.pl>               */
+/*                                                                        */
+/* This program is free software: you can redistribute it and/or modify   */
+/* it under the terms of the GNU General Public License as published by   */
+/* the Free Software Foundation, either version 3 of the License, or      */
+/* (at your option) any later version.                                    */
+/*                                                                        */
+/* This program is distributed in the hope that it will be useful,        */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of         */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          */
+/* GNU General Public License for more details.                           */
+/*                                                                        */
+/* You should have received a copy of the GNU General Public License      */
+/* along with this program. If not, see <http://www.gnu.org/licenses/>    */
+/*                                                                        */
+/**************************************************************************/
 #include <stdio.h>
 
 #include <string.h>
@@ -47,7 +46,7 @@ uint32_t __MOLD_hashDJB2(Variant_t *x)
     const char *str = ((String_t *) (x -> valueAsBufferPtr -> bytesPtr)) -> text;
 
     // Perform one cycle per each ascii character.
-    while (c = *str++)
+    while ((c = *str++))
     {
       // hash * 33 + c
       hash = ((hash << 5) + hash) + c;

@@ -1,27 +1,27 @@
-/*******************************************************************************
-*                                                                              *
-* This file is part of Mold project.                                           *
-* Copyright (C) 2015, 2022 Sylwester Wysocki <sw143@wp.pl>                     *
-*                                                                              *
-* This program is free software: you can redistribute it and/or modify         *
-* it under the terms of the GNU General Public License as published by         *
-* the Free Software Foundation, either version 3 of the License, or            *
-* (at your option) any later version.                                          *
-*                                                                              *
-* This program is distributed in the hope that it will be useful,              *
-* but WITHOUT ANY WARRANTY; without even the implied warranty of               *
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                *
-* GNU General Public License for more details.                                 *
-*                                                                              *
-* You should have received a copy of the GNU General Public License            *
-* along with this program. If not, see <http://www.gnu.org/licenses/>          *
-*                                                                              *
-*******************************************************************************/
+/**************************************************************************/
+/* This file is part of Mold project.                                     */
+/* Copyright (C) 2015, 2022 Sylwester Wysocki <sw143@wp.pl>               */
+/*                                                                        */
+/* This program is free software: you can redistribute it and/or modify   */
+/* it under the terms of the GNU General Public License as published by   */
+/* the Free Software Foundation, either version 3 of the License, or      */
+/* (at your option) any later version.                                    */
+/*                                                                        */
+/* This program is distributed in the hope that it will be useful,        */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of         */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          */
+/* GNU General Public License for more details.                           */
+/*                                                                        */
+/* You should have received a copy of the GNU General Public License      */
+/* along with this program. If not, see <http://www.gnu.org/licenses/>    */
+/*                                                                        */
+/**************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <inttypes.h>
 
 #include "MoldCore.h"
 #include "MoldError.h"
@@ -195,8 +195,8 @@ Variant_t __MOLD_div_variant(Variant_t x, Variant_t y)
     __MOLD_PrintErrorAndDie_badType();
   }
 
-  float64_t xValue;
-  float64_t yValue;
+  float64_t xValue = 0.0;
+  float64_t yValue = 0.0;
 
   switch (x.type)
   {
@@ -281,7 +281,7 @@ Variant_t __MOLD_Typeof(Variant_t x) {
   static Buffer_t buffer_map       = { 4  , -1, 0, &bufferBytes_map };
   static Buffer_t buffer_object    = { 7  , -1, 0, &bufferBytes_object };
 
-  const Buffer_t *buf = NULL;
+  Buffer_t *buf = NULL;
 
   switch (x.type)
   {
@@ -303,7 +303,10 @@ Variant_t __MOLD_Typeof(Variant_t x) {
     }
   }
 
-  Variant_t rv = { VARIANT_STRING, 0, (uint64_t) buf };
+  Variant_t rv;
+
+  rv.type             = VARIANT_STRING;
+  rv.valueAsBufferPtr = buf;
 
   return rv;
 }
@@ -382,47 +385,6 @@ bool32_t __MOLD_VariantCastTo_bool32(Variant_t *x)
   return x -> valueAsInt32;
 }
 
-Variant_t __MOLD_Str(Variant_t x)
-{
-  Variant_t rv = { VARIANT_STRING };
-
-  if (x.type == VARIANT_STRING)
-  {
-    // Input is already a string - nothing to do.
-    rv = x;
-  }
-  else
-  {
-    // Input is not a string.
-    // We need to create new one.
-    const char *fmt = NULL;
-
-    switch (x.type)
-    {
-      case VARIANT_UNDEFINED: { fmt = "undefined"; break; }
-      case VARIANT_NULL:      { fmt = "null"; break; }
-      case VARIANT_INTEGER:   { fmt = "%lld"; break; }
-      case VARIANT_FLOAT:     { fmt = "%f"; break; }
-      case VARIANT_DOUBLE:    { fmt = "%lf"; break; }
-      case VARIANT_BOOLEAN:   { fmt = x.value ? "true" : "false"; break; }
-      case VARIANT_ARRAY:     { fmt = "[array]"; break; }
-      case VARIANT_MAP:       { fmt = "[map]"; break; }
-      case VARIANT_OBJECT:    { fmt = "[object]"; break; }
-
-      default:
-      {
-        __MOLD_PrintErrorAndDie_badType();
-      }
-    }
-
-    Buffer_t *buf = __MOLD_MemoryAlloc(32 + sizeof(String_t));
-    String_t *str = (String_t *) buf -> bytesPtr;
-    str -> length = snprintf(str -> text, 31, fmt, x.value);
-    rv.valueAsBufferPtr = buf;
-  }
-
-  return rv;
-}
 
 void __MOLD_Exit()
 {

@@ -1,22 +1,21 @@
-/*******************************************************************************
-*                                                                              *
-* This file is part of Mold project.                                           *
-* Copyright (C) 2015, 2022 Sylwester Wysocki <sw143@wp.pl>                     *
-*                                                                              *
-* This program is free software: you can redistribute it and/or modify         *
-* it under the terms of the GNU General Public License as published by         *
-* the Free Software Foundation, either version 3 of the License, or            *
-* (at your option) any later version.                                          *
-*                                                                              *
-* This program is distributed in the hope that it will be useful,              *
-* but WITHOUT ANY WARRANTY; without even the implied warranty of               *
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                *
-* GNU General Public License for more details.                                 *
-*                                                                              *
-* You should have received a copy of the GNU General Public License            *
-* along with this program. If not, see <http://www.gnu.org/licenses/>          *
-*                                                                              *
-*******************************************************************************/
+/**************************************************************************/
+/* This file is part of Mold project.                                     */
+/* Copyright (C) 2015, 2022 Sylwester Wysocki <sw143@wp.pl>               */
+/*                                                                        */
+/* This program is free software: you can redistribute it and/or modify   */
+/* it under the terms of the GNU General Public License as published by   */
+/* the Free Software Foundation, either version 3 of the License, or      */
+/* (at your option) any later version.                                    */
+/*                                                                        */
+/* This program is distributed in the hope that it will be useful,        */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of         */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          */
+/* GNU General Public License for more details.                           */
+/*                                                                        */
+/* You should have received a copy of the GNU General Public License      */
+/* along with this program. If not, see <http://www.gnu.org/licenses/>    */
+/*                                                                        */
+/**************************************************************************/
 
 #include <stdio.h>
 #include <errhandlingapi.h>
@@ -24,58 +23,7 @@
 #include "MoldError.h"
 #include "MoldPrint.h"
 
-static const char *errorMsg_generic                  = "generic";
-static const char *errorMsg_integerExpected          = "integer expected";
-static const char *errorMsg_integerIndexExpected     = "integer index expected";
-static const char *errorMsg_booleanExpected          = "boolean expected";
-static const char *errorMsg_floatExpected            = "float expected";
-static const char *errorMsg_stringKeyExpected        = "string key expected";
-static const char *errorMsg_stringExpected           = "string expected";
-static const char *errorMsg_mapOrObjectExpected      = "map or object expected";
-static const char *errorMsg_arrayExpected            = "array expected";
-static const char *errorMsg_arrayOrStringExpected    = "array or string expected";
-static const char *errorMsg_arrayStringOrMapExpected = "array, string or map expected";
-static const char *errorMsg_negativeIndex            = "negative array index";
-static const char *errorMsg_indexOutOfRange          = "index out of range";
-static const char *errorMsg_outOfMemory              = "out of memory";
-static const char *errorMsg_badType                  = "bad type";
-static const char *errorMsg_notImplemented           = "not implemented";
-static const char *errorMsg_implicitConversion       = "implicit type conversion not supported anymore";
-static const char *errorMsg_notComparable            = "not comparable";
-static const char *errorMsg_divideByZero             = "divide by zero";
-static const char *errorMsg_floatOverflow            = "floating point overflow";
-static const char *errorMsg_floatUnderflow           = "floating point underflow";
-static const char *errorMsg_notIterable              = "not iterable";
-static const char *errorMsg_nullMethodCalled         = "null method called";
-
-void __MOLD_PrintErrorAndDie(const char *msg)
-{
-  fprintf(stderr, "runtime error: %s\n", msg);
-
-  //char *ptr = NULL;
-  //ptr[0] = 0;
-
-  exit(-1);
-}
-
-void __MOLD_PrintErrorAndDie_badType()               { __MOLD_PrintErrorAndDie(errorMsg_badType); }
-void __MOLD_PrintErrorAndDie_stringExpected()        { __MOLD_PrintErrorAndDie(errorMsg_stringExpected); }
-void __MOLD_PrintErrorAndDie_stringKeyExpected()     { __MOLD_PrintErrorAndDie(errorMsg_stringKeyExpected); }
-void __MOLD_PrintErrorAndDie_integerExpected()       { __MOLD_PrintErrorAndDie(errorMsg_integerExpected); }
-void __MOLD_PrintErrorAndDie_floatExpected()         { __MOLD_PrintErrorAndDie(errorMsg_floatExpected); }
-void __MOLD_PrintErrorAndDie_booleanExpected()       { __MOLD_PrintErrorAndDie(errorMsg_booleanExpected); }
-void __MOLD_PrintErrorAndDie_arrayOrStringExpected() { __MOLD_PrintErrorAndDie(errorMsg_arrayOrStringExpected); }
-void __MOLD_PrintErrorAndDie_mapOrObjectExpected()   { __MOLD_PrintErrorAndDie(errorMsg_mapOrObjectExpected); }
-void __MOLD_PrintErrorAndDie_outOfMemory()           { __MOLD_PrintErrorAndDie(errorMsg_outOfMemory); }
-void __MOLD_PrintErrorAndDie_negativeIndex()         { __MOLD_PrintErrorAndDie(errorMsg_negativeIndex); }
-void __MOLD_PrintErrorAndDie_notIterable()           { __MOLD_PrintErrorAndDie(errorMsg_notIterable); }
-void __MOLD_PrintErrorAndDie_nullMethodCalled()      { __MOLD_PrintErrorAndDie(errorMsg_nullMethodCalled); }
-void __MOLD_PrintErrorAndDie_notImplemented()        { __MOLD_PrintErrorAndDie(errorMsg_notImplemented); }
-void __MOLD_PrintErrorAndDie_notComparable()         { __MOLD_PrintErrorAndDie(errorMsg_notComparable); }
-void __MOLD_PrintErrorAndDie_implicitConversion()    { __MOLD_PrintErrorAndDie(errorMsg_implicitConversion); }
-void __MOLD_PrintErrorAndDie_divideByZero()          { __MOLD_PrintErrorAndDie(errorMsg_divideByZero); }
-void __MOLD_PrintErrorAndDie_floatOverflow()         { __MOLD_PrintErrorAndDie(errorMsg_floatOverflow); }
-void __MOLD_PrintErrorAndDie_floatUnderflow()        { __MOLD_PrintErrorAndDie(errorMsg_floatUnderflow); }
+#define MOLD_DEFINE_ERROR_FCT(id, msg) void __MOLD_PrintErrorAndDie_##id() { __MOLD_PrintErrorAndDie(msg); }
 
 void __MOLD_Die(Variant_t msg)
 {
@@ -83,6 +31,38 @@ void __MOLD_Die(Variant_t msg)
   fprintf(stderr, "\n");
   exit(-1);
 }
+
+void __MOLD_PrintErrorAndDie(const char *msg)
+{
+  fprintf(stderr, "runtime error: %s\n", msg);
+  //char *ptr = NULL;
+  //ptr[0] = 0;
+  exit(-1);
+}
+
+MOLD_DEFINE_ERROR_FCT(generic                  , "generic")
+MOLD_DEFINE_ERROR_FCT(integerExpected          , "integer expected")
+MOLD_DEFINE_ERROR_FCT(integerIndexExpected     , "integer index expected")
+MOLD_DEFINE_ERROR_FCT(booleanExpected          , "boolean expected")
+MOLD_DEFINE_ERROR_FCT(floatExpected            , "float expected")
+MOLD_DEFINE_ERROR_FCT(stringKeyExpected        , "string key expected")
+MOLD_DEFINE_ERROR_FCT(stringExpected           , "string expected")
+MOLD_DEFINE_ERROR_FCT(mapOrObjectExpected      , "map or object expected")
+MOLD_DEFINE_ERROR_FCT(arrayExpected            , "array expected")
+MOLD_DEFINE_ERROR_FCT(arrayOrStringExpected    , "array or string expected")
+MOLD_DEFINE_ERROR_FCT(arrayStringOrMapExpected , "array, string or map expected")
+MOLD_DEFINE_ERROR_FCT(negativeIndex            , "negative array index")
+MOLD_DEFINE_ERROR_FCT(indexOutOfRange          , "index out of range")
+MOLD_DEFINE_ERROR_FCT(outOfMemory              , "out of memory")
+MOLD_DEFINE_ERROR_FCT(badType                  , "bad type")
+MOLD_DEFINE_ERROR_FCT(notImplemented           , "not implemented")
+MOLD_DEFINE_ERROR_FCT(implicitConversion       , "implicit type conversion not supported anymore")
+MOLD_DEFINE_ERROR_FCT(notComparable            , "not comparable")
+MOLD_DEFINE_ERROR_FCT(divideByZero             , "divide by zero")
+MOLD_DEFINE_ERROR_FCT(floatOverflow            , "floating point overflow")
+MOLD_DEFINE_ERROR_FCT(floatUnderflow           , "floating point underflow")
+MOLD_DEFINE_ERROR_FCT(notIterable              , "not iterable")
+MOLD_DEFINE_ERROR_FCT(nullMethodCalled         , "null method called")
 
 LONG WINAPI RedirectedSetUnhandledExceptionFilter(EXCEPTION_POINTERS *ExceptionInfo)
 {
