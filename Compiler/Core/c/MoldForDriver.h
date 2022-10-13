@@ -17,12 +17,18 @@ void __MOLD_ForDriver_IndexesAndValuesInString(Variant_t *box,
                                                Variant_t *iteratorValue,
                                                LoopBodyCbProto cb);
 
-void __MOLD_ForDriver_KeysAndValuesInMap(Map_t *map,
+void __MOLD_ForDriver_IndexesAndValuesInArrayOrString(Variant_t *box,
+                                                      void *iteratorIndexOrKey,
+                                                      Variant_t *iteratorValue,
+                                                      LoopBodyCbProto cb);
+
+void __MOLD_ForDriver_KeysAndValuesInMap(Variant_t *box,
                                          Variant_t *iteratorKey,
                                          Variant_t *iteratorValue,
                                          LoopBodyCbProto cb);
 
 void __MOLD_ForDriver_Generic(Variant_t *box, void *iteratorIndexOrKey,
                               Variant_t *iteratorValue, LoopBodyCbProto cb);
+
 
 #endif /* _MOLD_ForDriver */
