@@ -136,8 +136,6 @@ void __MOLD_ForDriver_KeysAndValuesInMap(Variant_t *box,
   Buffer_t *buf = box -> valueAsBufferPtr;
   Map_t    *map = (Map_t *) buf -> bytesPtr;
 
-  MapBucket_t *buckets = map -> buckets;
-
   MapBucket_t *bucket = map -> firstBucket;
 
   while (bucket != NULL)

@@ -90,9 +90,6 @@ void __MOLD_PrintToFile_variant(FILE *f, Variant_t *x)
 
     case VARIANT_ARRAY:
     {
-      Buffer_t *buf   = (Buffer_t *) x -> value;
-      Array_t  *array = (Array_t *) buf -> bytesPtr;
-
       Variant_t oneItem;
 
       const char *sep = "";
@@ -126,9 +123,6 @@ void __MOLD_PrintToFile_variant(FILE *f, Variant_t *x)
 
     case VARIANT_MAP:
     {
-      Buffer_t *buf = (Buffer_t *) x -> value;
-      Map_t    *map = (Map_t *) buf -> bytesPtr;
-
       Variant_t oneKey;
       Variant_t oneValue;
 
@@ -404,9 +398,6 @@ Variant_t __MOLD_idiv_variant(Variant_t x, Variant_t y) {
   if (x.type != y.type) {
     __MOLD_PrintErrorAndDie(errorMsg_badType);
   }
-
-  int64_t xValue;
-  int64_t yValue;
 
   switch (x.type) {
     case VARIANT_INTEGER: { rv.value = x.valueAsInt64 / y.valueAsInt64; break; }
