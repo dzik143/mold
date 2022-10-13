@@ -656,6 +656,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     global MIR1_OPCODE_CALL
     global MIR1_OPCODE_JMP
     global MIR1_OPCODE_INNER_RET
+    global AST_DATA_INTEGER
 
     # TODO: Clean up this mess.
     # TODO: Better way to detect inner function in C target.
@@ -681,16 +682,24 @@ class ASTTranslatorMIR1 extends ASTTranslator
     # TODO: Clean up this mess.
     iteratorKeyForMir   = '__TrashBin'
     iteratorValueForMir = '__TrashBin'
+    isIntegerKey        = false
 
     if iteratorKey is defined
       iteratorKeyForMir = iteratorKey
+
+      # TODO: Better way to avoid calling __MOLD_ForDriver_Generic()
+      # with pointer to int32 idx.
+      iteratorKeyInfo = this.symbolTable.lookup(iteratorKey)
+      isIntegerKey    = iteratorKeyInfo.astType is AST_DATA_INTEGER
     endif
 
     if iteratorValue is defined
       iteratorValueForMir = iteratorValue
     endif
 
-    if isMapMode is true
+    if isIntegerKey is true
+      funcName = '__MOLD_ForDriver_IndexesAndValuesInArrayOrString'
+    elif isMapMode is true
       funcName = '__MOLD_ForDriver_KeysAndValuesInMap'
     else
       funcName = '__MOLD_ForDriver_Generic'
