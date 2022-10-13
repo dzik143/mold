@@ -225,19 +225,25 @@ void __MOLD_VariantDestroy(Variant_t *x)
 
 Variant_t __MOLD_VariantCreateFrom_int32(int32_t x)
 {
-  Variant_t rv = {VARIANT_INTEGER, 0, x};
+  Variant_t rv;
+  rv.type = VARIANT_INTEGER;
+  rv.valueAsInt64 = x;
   return rv;
 }
 
 Variant_t __MOLD_VariantCreateFrom_int64(int64_t x)
 {
-  Variant_t rv = {VARIANT_INTEGER, 0, x};
+  Variant_t rv;
+  rv.type = VARIANT_INTEGER;
+  rv.valueAsInt64 = x;
   return rv;
 }
 
 Variant_t __MOLD_VariantCreateFrom_bool32(bool32_t x)
 {
-  Variant_t rv = {VARIANT_BOOLEAN, 0, x};
+  Variant_t rv;
+  rv.type = VARIANT_BOOLEAN;
+  rv.valueAsInt64 = x;
   return rv;
 }
 

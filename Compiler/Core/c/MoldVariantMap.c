@@ -270,6 +270,6 @@ void __MOLD_VariantStoreAtKey_bool32(Variant_t *box, Variant_t key, bool32_t val
 {
   Variant_t valueAsVariant;
   valueAsVariant.type         = VARIANT_BOOLEAN;
-  valueAsVariant.valueAsInt32 = value;
+  valueAsVariant.valueAsInt64 = value;
   __MOLD_VariantStoreAtKey_variant(box, key, valueAsVariant);
 }
