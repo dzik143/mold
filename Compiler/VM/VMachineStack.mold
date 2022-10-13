@@ -399,6 +399,10 @@ class VMachineStack
         valueId = item[2]
         bodyIp  = item[3]
 
+        if (box isnt map) and (box isnt object)
+          die('runtime error: map or object expected')
+        endif
+
         # TODO: Optimize id.
         for keys k values v in box
           # Update key iterator.
@@ -422,20 +426,38 @@ class VMachineStack
         bodyIp  = item[3]
 
         # TODO: Optimize it.
-        for indexes i values v in box
-          # Update key iterator.
-          if idxId is defined
-            _vm_locals[idxId] = i
+        # TODO: Clean up this mess.
+        if idxId is defined
+          if (box isnt array) and (box isnt string)
+            die('runtime error: array or string expected')
           endif
 
-          # Update value iterator.
-          if valueId is defined
-            _vm_locals[valueId] = v
-          endif
+          for indexes i values v in box
+            # Update key iterator.
+            if idxId is defined
+              _vm_locals[idxId] = i
+            endif
 
-          # Call function body.
-          this._call(bodyIp)
-        endfor
+            # Update value iterator.
+            if valueId is defined
+              _vm_locals[valueId] = v
+            endif
+
+            # Call function body.
+            this._call(bodyIp)
+          endfor
+
+        else
+          for values v in box
+            # Update value iterator.
+            if valueId is defined
+              _vm_locals[valueId] = v
+            endif
+
+            # Call function body.
+            this._call(bodyIp)
+          endfor
+        endif
 
       else
         die("unknown opcode '" ~ str(opcode) ~ "'")
