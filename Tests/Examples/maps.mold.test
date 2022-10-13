@@ -426,3 +426,190 @@ len(proto) = 2
 ast        = {'children': [1, 2, 3]}
 proto      = {'name': 'start', 'children': [1, 2, 3]}
 -------------------------------------------------------------------------------
+
+TEST "Hash colission (mod=16, DJB2) #1"
+
+x = {}
+x{'codeObj'} = null
+x{'stack'}   = 1234
+
+print x{'codeObj'}
+print x{'stack'}
+
+EXPECTED_OUTPUT:
+undefined
+1234
+-------------------------------------------------------------------------------
+
+TEST "Hash colission (mod=16, DJB2) #2"
+
+function foo(name)
+  newEntry = {
+    'name': name,
+    'kind': 1234
+  }
+  print newEntry
+endfunction
+
+foo('012345678901234567890123456789012345678901234567890123456789')
+
+EXPECTED_OUTPUT:
+{'name': '012345678901234567890123456789012345678901234567890123456789', 'kind': 1234}
+-------------------------------------------------------------------------------
+
+TEST "Overwrite value after hash colission (mod=16, DJB2)"
+
+x = {}
+x{'p1'} = 1
+x{'unresolvedJmps'} = 1111
+x{'unresolvedJmps'} = 9999
+
+print x
+
+EXPECTED_OUTPUT:
+{'p1': 1, 'unresolvedJmps': 9999}
+-------------------------------------------------------------------------------
+
+TEST "One character keys"
+
+x = {}
+
+# Insert by one-character keys (store first time).
+for idx in ord('A') .. ord('z') + 1
+  x{asc(idx)} = idx + 100
+endfor
+
+print 'x after store #1:', x
+
+# Overwrite by one-character keys (store second time).
+for idx in ord('A') .. ord('z') + 1
+  x{asc(idx)} = idx + 200
+endfor
+
+# Print whole map.
+print 'x after store #2:', x
+
+# Load by one-character keys.
+print ''
+print 'Load values one-by-one:'
+
+for idx in ord('A') .. ord('z') + 1
+  print x{asc(idx)}
+endfor
+
+# Load by imm string.
+print ''
+print 'Load values by imm keys:'
+print x{'A'}
+print x{'z'}
+
+EXPECTED_OUTPUT:
+x after store #1: {'A': 165, 'B': 166, 'C': 167, 'D': 168, 'E': 169, 'F': 170, 'G': 171, 'H': 172, 'I': 173, 'J': 174, 'K': 175, 'L': 176, 'M': 177, 'N': 178, 'O': 179, 'P': 180, 'Q': 181, 'R': 182, 'S': 183, 'T': 184, 'U': 185, 'V': 186, 'W': 187, 'X': 188, 'Y': 189, 'Z': 190, '[': 191, '\': 192, ']': 193, '^': 194, '_': 195, '`': 196, 'a': 197, 'b': 198, 'c': 199, 'd': 200, 'e': 201, 'f': 202, 'g': 203, 'h': 204, 'i': 205, 'j': 206, 'k': 207, 'l': 208, 'm': 209, 'n': 210, 'o': 211, 'p': 212, 'q': 213, 'r': 214, 's': 215, 't': 216, 'u': 217, 'v': 218, 'w': 219, 'x': 220, 'y': 221, 'z': 222}
+x after store #2: {'A': 265, 'B': 266, 'C': 267, 'D': 268, 'E': 269, 'F': 270, 'G': 271, 'H': 272, 'I': 273, 'J': 274, 'K': 275, 'L': 276, 'M': 277, 'N': 278, 'O': 279, 'P': 280, 'Q': 281, 'R': 282, 'S': 283, 'T': 284, 'U': 285, 'V': 286, 'W': 287, 'X': 288, 'Y': 289, 'Z': 290, '[': 291, '\': 292, ']': 293, '^': 294, '_': 295, '`': 296, 'a': 297, 'b': 298, 'c': 299, 'd': 300, 'e': 301, 'f': 302, 'g': 303, 'h': 304, 'i': 305, 'j': 306, 'k': 307, 'l': 308, 'm': 309, 'n': 310, 'o': 311, 'p': 312, 'q': 313, 'r': 314, 's': 315, 't': 316, 'u': 317, 'v': 318, 'w': 319, 'x': 320, 'y': 321, 'z': 322}
+
+Load values one-by-one:
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+308
+309
+310
+311
+312
+313
+314
+315
+316
+317
+318
+319
+320
+321
+322
+
+Load values by imm keys:
+265
+322
+-------------------------------------------------------------------------------
+
+TEST "Mixed types in one array #2"
+
+x = {}
+
+# Load big 64-bit number to set upper 32-bit.
+x{'value'} = 123456789123456789
+if x{'value'} is 123456789123456789
+  print 'value is 123456789123456789'
+endif
+
+# Boolean: true.
+x{'value'} = true
+if x{'value'} is true
+  print 'value is true'
+endif
+
+# Boolean: false.
+x{'value'} = false
+if x{'value'} is false
+  print 'value is false'
+endif
+
+# Float.
+x{'value'} = 3.14
+if x{'value'} is 3.14
+  print 'value is 3.14'
+endif
+
+# Small integer (non 64-bit).
+x{'value'} = 1234
+if x{'value'} is 1234
+  print 'value is 1234'
+endif
+
+EXPECTED_OUTPUT:
+value is 123456789123456789
+value is true
+value is false
+value is 3.14
+value is 1234
+-------------------------------------------------------------------------------

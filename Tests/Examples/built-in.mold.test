@@ -114,3 +114,52 @@ len(false)                : integer 1
 len([1,2,3,4,5]           : integer 5
 len({'x':5, 'y':6, 'z':7}): integer 3
 -------------------------------------------------------------------------------
+
+TEST "Built-in ord/asc #1 (SKIPPED!)"
+/*
+print ord('a')
+print ord('z')
+
+print asc(98)
+print asc(122)
+
+print asc(ord(asc(ord('X'))))
+
+EXPECTED____OUTPUT:
+97
+122
+b
+z
+X
+*/
+
+EXPECTED_OUTPUT:
+-------------------------------------------------------------------------------
+TEST "Built-in ord/asc #2"
+
+/*
+x = 'xyz'
+
+print ord(x[0])
+print ord(x[1])
+print ord(x[2])
+
+print asc(ord(asc(ord(x[0]))))
+
+EXPECTED___OUTPUT:
+120
+121
+122
+x
+*/
+EXPECTED_OUTPUT:
+-------------------------------------------------------------------------------
+
+TEST "Built-in FileLoad (temporary test as long better I/O is missing)"
+
+text = FileLoad('Data/test.txt')
+print len(text), '[', text, ']'
+
+EXPECTED_OUTPUT:
+20 [ hello from test.txt! ]
+-------------------------------------------------------------------------------

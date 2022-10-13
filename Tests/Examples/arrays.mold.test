@@ -74,6 +74,22 @@ modified1 : [1, 'two', 3.140000]
 modified2 : ['one', 2, 'pi']
 -------------------------------------------------------------------------------
 
+TEST "Set elements at runtime with init list"
+
+function foo(name)
+  newEntry = {
+    'name': name,
+    'kind': [1, [2, [3, {'key': 9999}]]]
+  }
+  print newEntry
+endfunction
+
+foo('012345678901234567890123456789012345678901234567890123456789')
+
+EXPECTED_OUTPUT:
+{'name': '012345678901234567890123456789012345678901234567890123456789', 'kind': [1, [2, [3, {'key': 9999}]]]}
+-------------------------------------------------------------------------------
+
 TEST "Duplicate array item by item"
 
 # Start from empty array.

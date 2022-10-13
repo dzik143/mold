@@ -22,15 +22,14 @@ y
 z
 -------------------------------------------------------------------------------
 
-TEST "for keys in: wrong type (array) (SKIPPED!)"
-#x = {}
-#for indexes idx in x
-#  print idx
-#endfor
-print 'OK'
+TEST "for keys in: wrong type (array)"
+x = [1,2,3]
+for keys k in x
+  print k
+endfor
 
-EXPECTED_OUTPUT:
-OK
+EXPECTED_ERROR:
+runtime error: map or object expected
 -------------------------------------------------------------------------------
 
 TEST "for keys in: concat map keys one-by-one"

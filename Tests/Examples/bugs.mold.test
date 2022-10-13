@@ -582,3 +582,16 @@ EXPECTED_OUTPUT:
 1235
 [1234, undefined]
 -------------------------------------------------------------------------------
+
+TEST "Bug: Removed MIR1 tmp, when both x and tmp are used."
+
+a = [1234]
+
+tmp = a[0] # BUG: Both x,tmp are used.
+x   = tmp  # BUG: tmp should not be removed without rename.
+
+print tmp, x
+
+EXPECTED_OUTPUT:
+1234 1234
+-------------------------------------------------------------------------------

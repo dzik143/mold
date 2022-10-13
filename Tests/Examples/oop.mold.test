@@ -871,3 +871,61 @@ false a b c d
 true  a b c d e
 false a b c d e
 --------------------------------------------------------------------------------
+
+TEST "Bug: Broken vtable on key hash conflict (codeObj vs stack, mod=16)"
+
+class A
+  method foo()
+    print 'A::foo()'
+  endmethod
+endclass
+
+class B
+  method constructor()
+    this.codeObj = null
+    this.stack   = new A()
+  endmethod
+
+  method run()
+    a = this.stack
+    a.foo()
+  endmethod
+endclass
+
+b = new B()
+b.run()
+
+EXPECTED_OUTPUT:
+A::foo()
+--------------------------------------------------------------------------------
+
+TEST "Bug: Hash conflict (p1 vs unresolvedJmps, mod=16, DJB2)"
+
+class A
+  method constructor()
+    this.p1 = 1
+    this.unresolvedJmps = 1111
+  endmethod
+
+  method foo()
+    # Load value.
+    unresolvedJmps = this.unresolvedJmps
+
+    # Print valuel.
+    print unresolvedJmps
+
+    # Update value.
+    this.unresolvedJmps = 9999
+  endmethod
+
+endclass
+
+obj = new A()
+obj.foo()
+obj.foo()
+
+
+EXPECTED_OUTPUT:
+1111
+9999
+--------------------------------------------------------------------------------

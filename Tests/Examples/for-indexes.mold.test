@@ -24,15 +24,14 @@ EXPECTED_OUTPUT:
 4
 -------------------------------------------------------------------------------
 
-TEST "for indexes in: wrong type (map) (SKIPPED!)"
-#x = {}
-#for indexes idx in x
-#  print idx
-#endfor
-print 'OK'
+TEST "for indexes in: wrong type (map)"
+x = {'a': 1, 'b': 2, 'c': 3}
+for indexes idx in x
+  print idx
+endfor
 
-EXPECTED_OUTPUT:
-OK
+EXPECTED_ERROR:
+runtime error: array or string expected
 -------------------------------------------------------------------------------
 
 TEST "for indexes in: empty string"

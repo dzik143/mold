@@ -530,6 +530,33 @@ A[0] o A[2]
 -4 isnt 8 gives true
 -------------------------------------------------------------------------------
 
+TEST "Compare dynamic type"
+
+function foo(x)
+  if x is string
+    if x is 'abcd'
+      print 'x is abcd'
+    endif
+
+  elif x is integer
+    if x is 1234
+      print 'x is 1234'
+    endif
+  endif
+endfunction
+
+foo('xyz')
+foo('abcd')
+foo(1234)
+foo(999)
+foo(true)
+foo(3.14)
+
+EXPECTED_OUTPUT:
+x is abcd
+x is 1234
+-------------------------------------------------------------------------------
+
 TEST "Type mismatch: integer is float"
 
 x = 1
