@@ -129,21 +129,21 @@ class CodeGeneratorC
       endif
 
       if isAnonymouse is false
-        print 'Variant_t', name, '= {'
+        print 'Variant_t', name, '='
       endif
 
       # Dispatch type.
       if type is 'integer'
-        print '  VARIANT_INTEGER, 0,', value, ','
+        print '  { VARIANT_INTEGER, 0,', value, '}'
 
       elif type is 'float'
-        print '  VARIANT_DOUBLE, 0, valueAsFloat64:', value, ','
+        print '  { VARIANT_DOUBLE, 0, valueAsFloat64:', value, '}'
 
       elif type is 'string'
-        print '  VARIANT_STRING, 0, (uint64_t) &', bufferName, ','
+        print '  { VARIANT_STRING, 0, (uint64_t) &', bufferName, '}'
 
       elif type is 'array'
-        print '  VARIANT_ARRAY, 0, (uint64_t) &', bufferName, ','
+        print '  { VARIANT_ARRAY, 0, (uint64_t) &', bufferName, '}'
 
       elif type is 'boolean'
         if value is true
@@ -152,20 +152,22 @@ class CodeGeneratorC
           valueAsInteger = '0'
         endif
 
-        print '  VARIANT_BOOLEAN, 0,', valueAsInteger, ','
+        print '  { VARIANT_BOOLEAN, 0,', valueAsInteger, '}'
 
       elif type is 'undefined'
-        print '  0, 0, 0,'
+        print '  { 0, 0, 0 }'
 
       else
         die('error: unhandled type: ' ~ type)
       endif
 
-      if isAnonymouse is false
-        print '};'
-        print ''
+      if isAnonymouse is true
+        print ','
+      else
+        print ';'
       endif
     endif
+
 
     # Emit buffer content for complex variables.
     if type is 'array'
@@ -307,6 +309,7 @@ class CodeGeneratorC
       print ' ', innerSize, ', // inner size'
       print '  0, 0, 0, // reserved'
       print ' ', itemsCnt, ', // itemsCnt'
+      print '  items: {'
 
       # Emit items as flat array if possible.
       if innerTypeForEmit isnt '0'
@@ -337,11 +340,10 @@ class CodeGeneratorC
 
     # Close C array.
     if wantDeepIdx is deepIdx
-      print '};'
+      print '}};'
       print ''
     endif
   endmethod
-
 
   method run(codeObj)
     global SYMBOL_KIND_VAR_LOCAL, SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_CONST
@@ -350,10 +352,10 @@ class CodeGeneratorC
 
     global REG_PARAMS_CNT, REG_PARAMS32, REG_PARAMS64
     global MIR_TO_VARIANT_TYPE_MAP, MIR_TYPE_SIZE_MAP
-    global VARIANT_INTEGER
-    global VARIANT_STRING
-    global VARIANT_DOUBLE
-    global VARIANT_BOOLEAN
+    global _VARIANT_INTEGER
+    global _VARIANT_STRING
+    global _VARIANT_DOUBLE
+    global _VARIANT_BOOLEAN
 
     global MIR1_OPCODE_COMMENT, MIR1_OPCODE_LABEL
     global MIR1_OPCODE_PROC, MIR1_OPCODE_ENDP
@@ -760,16 +762,16 @@ class CodeGeneratorC
             cmpResult = false
 
             if xType is 'float64'
-              cmpResult = y is VARIANT_DOUBLE
+              cmpResult = y is _VARIANT_DOUBLE
 
             elif xType is 'int32'
-              cmpResult = y is VARIANT_INTEGER
+              cmpResult = y is _VARIANT_INTEGER
 
             elif xType is 'bool32'
-              cmpResult = y is VARIANT_INTEGER
+              cmpResult = y is _VARIANT_INTEGER
 
             elif xType is 'string'
-              cmpResult = y is VARIANT_STRING
+              cmpResult = y is _VARIANT_STRING
             endif
 
             if opcode is MIR1_OPCODE_CMP_IS_TYPEOF
@@ -889,7 +891,12 @@ class CodeGeneratorC
           print '  __MOLD_Print_EOL();'
 
         elif opcode is MIR1_OPCODE_PROC
-          proto            = item[1]
+          proto = item[1]
+
+          # TODO: Fix me.
+          # TODO: Why it's crash here without below print?
+          #print ''
+
           currentProcProto = proto
           currentProcName  = proto.name
           currentProcRv    = proto.rv
@@ -1109,7 +1116,7 @@ class CodeGeneratorC
             (nameOrId is '__MOLD_ForDriver_KeysAndValuesInMap'))
 
           # TODO: Clean up this mess.
-          print ' ', '__MOLD_ForDriver_Generic', '(&', params[0], ', &', params[1], ', &', params[2], ', &', params[3], ');'
+          print ' ', nameOrId, '(&', params[0], ', &', params[1], ', &', params[2], ', &', params[3], ');'
 
         else
 
@@ -1131,16 +1138,20 @@ class CodeGeneratorC
           if opcode is MIR1_OPCODE_SYSCALL
             syscallName = syscallMap{str(nameOrId)}
 
+            if dst is defined
+              print ' ', dst, '='
+            endif
+
             if syscallName is defined
-              # TODO: Why we sometimes got string 'id' here?
               # dst = syscall(id, ...)
-              if dst is defined
-                print ' ', dst, '=', syscallName, '(', callList, ');'
+              print ' ', syscallName, '(', callList, ');'
+
+            elif nameOrId is string
+              if paramsCnt > 0
+                print '  __MOLD_SysCall(', nameOrId, ',', callList, ');'
               else
-                print ' ', syscallName, '(', callList, ');'
+                print '  __MOLD_SysCall(', nameOrId, ');'
               endif
-            else
-               print '// WARNING: Skipped unmapped syscall ID', nameOrId
             endif
 
           elif opcode is MIR1_OPCODE_CALL
@@ -1202,28 +1213,6 @@ class CodeGeneratorC
 
         elif opcodeMajor is MIR1_OPCODE_ALU2_GROUP
           print ' ', dst, '= __MOLD_' ~ MIR_ALU_OPCODES_FOR_INTEGERS[opcodeMinor]  ~ '_' ~ xType, '(', x, ',', y, ');'
-
-        /*
-        elif ((opcodeMajor is MIR1_OPCODE_CMP_CC_GROUP) or
-              (opcodeMajor is MIR1_OPCODE_JMP_IF_CC_GROUP))
-
-          die('Not implemented')
-
-          if xType is 'float64'
-            cmpFlag = MIR_COMPARE_FLAGS_FOR_FLOATS[opcodeMinor]
-            print '  comisd xmm0, xmm1'
-          else
-            cmpFlag = MIR_COMPARE_FLAGS_FOR_INTEGERS[opcodeMinor]
-            print '  cmp ecx, edx'
-          endif
-
-          if opcodeMajor is MIR1_OPCODE_CMP_CC_GROUP
-            print '  set' ~ cmpFlag, 'cl'
-            print '  and ecx, 1'
-          else
-            print '  j' ~ cmpFlag, dst
-          endif
-        */
 
         #
         # Arithmetic
