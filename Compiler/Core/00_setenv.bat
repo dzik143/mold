@@ -9,5 +9,6 @@ set TESTS=%CD%\..\..\Tests
 
 del %BUILD%\pass1.exe
 del %BUILD%\pass2.exe
+del source.exe
 
 mkdir %BUILD%

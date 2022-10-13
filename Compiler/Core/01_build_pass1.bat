@@ -4,7 +4,7 @@ echo Build: pass #1...
 
 cd   %COMPILER%
 call 1.bat
-mold --asm -O1 Main.mold >%BUILD%\pass1.asm
+mold --asm Main.mold >%BUILD%\pass1.asm
 
 cd   %CORE%
 call fasm %BUILD%\pass1.asm
