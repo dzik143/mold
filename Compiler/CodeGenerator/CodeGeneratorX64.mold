@@ -53,21 +53,22 @@ const MIR_COMPARE_FLAGS_FOR_FLOATS   = ['e', 'ne', 'b', 'ae', 'be', 'a']
 const MIR_ALU_OPCODES_FOR_INTEGERS = ['add'   , 'sub'   , 'imul'  , 'div'   , 'idiv']
 const MIR_ALU_OPCODES_FOR_FLOATS   = ['addsd' , 'subsd' , 'mulsd' , 'divsd' , 'divsd']
 
-const VARIANT_UNDEFINED = 0
-const VARIANT_NULL      = 1
+# TODO: Remove _ prefix.
+const _VARIANT_UNDEFINED = 0
+const _VARIANT_NULL      = 1
 
 # Primitives.
-const VARIANT_INTEGER   = 2
-const VARIANT_FLOAT     = 3
-const VARIANT_DOUBLE    = 4
-const VARIANT_STRING    = 5
-const VARIANT_BOOLEAN   = 6
+const _VARIANT_INTEGER   = 2
+const _VARIANT_FLOAT     = 3
+const _VARIANT_DOUBLE    = 4
+const _VARIANT_STRING    = 5
+const _VARIANT_BOOLEAN   = 6
 
 # Complex containers.
-const VARIANT_ARRAY     = 7
-const VARIANT_MAP       = 8
-const VARIANT_OBJECT    = 9
-const VARIANT_TYPE_MAX  = 9
+const _VARIANT_ARRAY     = 7
+const _VARIANT_MAP       = 8
+const _VARIANT_OBJECT    = 9
+const _VARIANT_TYPE_MAX  = 9
 
 class CodeGeneratorX64
 
@@ -182,7 +183,7 @@ class CodeGeneratorX64
       endif
 
       if symbolInfo is undefined
-        print '; WARNING: Failed to get variable size:', varName
+        die('error: failed to get variable size:' ~ varName)
         varSize = -1
 
       elif ((symbolInfo.type is undefined) or
@@ -600,10 +601,12 @@ class CodeGeneratorX64
     global SYMBOL_KIND_VAR_PARAM, SYMBOL_KIND_JMP_TABLE, SYMBOL_KIND_VAR_RETVAL
     global REG_PARAMS_CNT, REG_PARAMS32, REG_PARAMS64
     global MIR_TO_VARIANT_TYPE_MAP, MIR_TYPE_SIZE_MAP
-    global VARIANT_INTEGER
-    global VARIANT_STRING
-    global VARIANT_DOUBLE
-    global VARIANT_BOOLEAN
+
+    # TODO: Remove _ prefix.
+    global _VARIANT_INTEGER
+    global _VARIANT_STRING
+    global _VARIANT_DOUBLE
+    global _VARIANT_BOOLEAN
 
     global MIR1_OPCODE_COMMENT, MIR1_OPCODE_LABEL
     global MIR1_OPCODE_PROC, MIR1_OPCODE_ENDP
@@ -780,16 +783,16 @@ class CodeGeneratorX64
             cmpResult = false
 
             if xType is 'float64'
-              cmpResult = y is VARIANT_DOUBLE
+              cmpResult = y is _VARIANT_DOUBLE
 
             elif xType is 'int32'
-              cmpResult = y is VARIANT_INTEGER
+              cmpResult = y is _VARIANT_INTEGER
 
             elif xType is 'bool32'
-              cmpResult = y is VARIANT_INTEGER
+              cmpResult = y is _VARIANT_INTEGER
 
             elif xType is 'string'
-              cmpResult = y is VARIANT_STRING
+              cmpResult = y is _VARIANT_STRING
             endif
 
             if opcode is MIR1_OPCODE_CMP_IS_TYPEOF
