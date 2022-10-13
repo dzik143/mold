@@ -209,4 +209,6 @@ void __MOLD_PrintErrorAndDie_notImplemented();
 void __MOLD_InitArgv(int, char **);
 void __MOLD_InitExceptions();
 
+Variant_t __MOLD_SysCall(uint32_t id, ...);
+
 #endif /* _MoldCore_H */

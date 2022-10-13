@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include <errhandlingapi.h>
 
 #include "MoldCore.h"
@@ -794,7 +795,7 @@ Variant_t __MOLD_ParseInteger(Variant_t x)
   else
   {
     String_t *str = (String_t *) x.valueAsBufferPtr -> bytesPtr;
-    rv.value = strtol(str -> text, NULL, 0);
+    rv.value = strtoll(str -> text, NULL, 0);
   }
 
   return rv;
@@ -844,6 +845,7 @@ Variant_t __MOLD_FileLoad(Variant_t path)
     Buffer_t *newBuf = __MOLD_MemoryAlloc(sizeof(String_t) + fSize + 1);
     String_t *newStr = (String_t *) newBuf -> bytesPtr;
 
+    newStr -> length = fSize;
     rv.valueAsBufferPtr = newBuf;
 
     fread(&newStr -> text, fSize, 1, f);
@@ -1100,4 +1102,48 @@ bool32_t __MOLD_cmp_le_variant(Variant_t x, Variant_t y)
 bool32_t __MOLD_cmp_ge_variant(Variant_t x, Variant_t y)
 {
   return !__MOLD_cmp_lt_variant(x, y);
+}
+
+Variant_t __MOLD_SysCall(uint32_t id, ...)
+{
+  // TODO: Clean up this mess.
+  // TODO: Ugly work-around to implement VM syscall with id set at runtime.
+  Variant_t rv = { 0 };
+
+  va_list ptr;
+  va_start(ptr, id);
+
+  switch (id)
+  {
+    case 29: rv = __MOLD_FileLoad(va_arg(ptr, Variant_t)); break;
+
+    case 31: rv = __MOLD_Ord(va_arg(ptr, Variant_t)); break;
+    case 32: rv = __MOLD_Asc(va_arg(ptr, Variant_t)); break;
+
+    case 40:      __MOLD_Exit(); break;
+    case 41:      __MOLD_Die(va_arg(ptr, Variant_t)); break;
+    case 42: rv = __MOLD_Str(va_arg(ptr, Variant_t)); break;
+    case 43: rv = __MOLD_Len(va_arg(ptr, Variant_t)); break;
+    case 44: rv = __MOLD_Typeof(va_arg(ptr, Variant_t)); break;
+
+    case 50:
+    {
+      Variant_t x = va_arg(ptr, Variant_t);
+      Variant_t y = va_arg(ptr, Variant_t);
+      __MOLD_ArrayInsertAfterLast(x, y);
+      break;
+    }
+
+    case 57: rv = __MOLD_GetTypeId(va_arg(ptr, Variant_t)); break;
+
+    default:
+    {
+      fprintf(stderr, "runtime error: unknown syscall id: %d\n", id);
+      exit(-1);
+    }
+  }
+
+  va_end(ptr);
+
+  return rv;
 }
