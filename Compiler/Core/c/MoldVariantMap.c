@@ -7,16 +7,30 @@
 #include "MoldMemory.h"
 #include "MoldForDriver.h"
 
-uint32_t __MOLD_hashDJB2(const char *str)
+uint32_t __MOLD_hashDJB2(Variant_t *x)
 {
   // http://www.cse.yorku.ca/~oz/hash.html
   uint32_t hash = 5381;
   uint32_t c;
 
-  while (c = *str++)
+  if (x -> flags & VARIANT_FLAG_ONE_CHARACTER)
   {
-    // hash * 33 + c
-    hash = ((hash << 5) + hash) + c;
+    // One character string.
+    // One hard-coded cycle is needed.
+    hash = ((hash << 5) + hash) + x -> valueAsUInt8;
+  }
+  else
+  {
+    // Multi character string.
+    // Decode raw bytes buffer first.
+    const char *str = ((String_t *) (x -> valueAsBufferPtr -> bytesPtr)) -> text;
+
+    // Perform one cycle per each ascii character.
+    while (c = *str++)
+    {
+      // hash * 33 + c
+      hash = ((hash << 5) + hash) + c;
+    }
   }
 
   return hash;
@@ -86,23 +100,11 @@ Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t box, Variant_t key)
 
   Variant_t rv = {0};
 
-  // Check for optimized one-character key.
-  static String_t  TempOneCharBytes  = { 1, 0, 0 };
-  static Buffer_t  TempOneCharHolder = { 10, -1, 0, &TempOneCharBytes };
-  static Variant_t TempOneCharString = { VARIANT_STRING, 0, (uint64_t) &TempOneCharHolder };
-
-  if (key.flags & VARIANT_FLAG_ONE_CHARACTER)
-  {
-    TempOneCharBytes.text[0] = key.valueAsUInt8;
-    key = TempOneCharString;
-  }
-
   // Decode map and string objects.
-  Map_t    *map    = (Map_t *)    box.valueAsBufferPtr -> bytesPtr;
-  String_t *string = (String_t *) key.valueAsBufferPtr -> bytesPtr;
+  Map_t *map = (Map_t *) box.valueAsBufferPtr -> bytesPtr;
 
   // Calculate key hash.
-  uint32_t keyHash = __MOLD_hashDJB2(string -> text);
+  uint32_t keyHash = __MOLD_hashDJB2(&key);
 
   // Find bucket.
   uint32_t bucketIdx = keyHash % map -> bucketsCnt;
@@ -113,21 +115,13 @@ Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t box, Variant_t key)
   {
     // Bucket is occupied.
     // Compare key to detect collision.
-    String_t *bucketKeyString = (String_t *) bucket -> key.valueAsBufferPtr -> bytesPtr;
-
     while ((bucket -> key.type != VARIANT_UNDEFINED) &&
-           (strcmp(string -> text, bucketKeyString -> text) != 0))
+           (!__MOLD_cmp_eq_string(key, bucket -> key)))
     {
       // Collision - it's not a key, which we search for.
       // Open address - go to next bucket and try again.
       bucketIdx = (bucketIdx + 1) % map -> bucketsCnt;
-      bucket = &(map -> buckets[bucketIdx]);
-
-      // TODO: Clean up this mess.
-      if (bucket -> key.type != VARIANT_UNDEFINED)
-      {
-        bucketKeyString = (String_t *) bucket -> key.valueAsBufferPtr -> bytesPtr;
-      }
+      bucket    = &(map -> buckets[bucketIdx]);
     }
 
     // Set result value.
@@ -157,12 +151,11 @@ void __MOLD_VariantStoreAtKey_variant(Variant_t *box, Variant_t key, Variant_t v
     __MOLD_PrintErrorAndDie_stringKeyExpected();
   }
 
-  // Decode map and string objects.
-  Map_t    *map    = (Map_t *)    box -> valueAsBufferPtr -> bytesPtr;
-  String_t *string = (String_t *) key.valueAsBufferPtr -> bytesPtr;
+  // Decode map.
+  Map_t *map = (Map_t *) box -> valueAsBufferPtr -> bytesPtr;
 
   // Calculate key hash.
-  uint32_t keyHash = __MOLD_hashDJB2(string -> text);
+  uint32_t keyHash = __MOLD_hashDJB2(&key);
 
   // Find bucket.
   uint32_t bucketIdx = keyHash % map -> bucketsCnt;
