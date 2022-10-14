@@ -22,7 +22,10 @@
 
 #include "MoldCore.h"
 
-// TODO: Simplify it.
+// -----------------------------------------------------------------------------
+//                    Type definition: array of variants
+// -----------------------------------------------------------------------------
+
 typedef struct Array
 {
   uint32_t innerType;
@@ -33,6 +36,10 @@ typedef struct Array
   uint64_t itemsCnt;
   Variant_t items[];
 } Array_t;
+
+// -----------------------------------------------------------------------------
+//                      Type definition: array of int8
+// -----------------------------------------------------------------------------
 
 typedef struct Array_int8
 {
@@ -45,6 +52,10 @@ typedef struct Array_int8
   int8_t items[];
 } Array_int8_t;
 
+// -----------------------------------------------------------------------------
+//                     Type definition: array of int16
+// -----------------------------------------------------------------------------
+
 typedef struct Array_int16
 {
   uint32_t innerType;
@@ -55,6 +66,10 @@ typedef struct Array_int16
   uint64_t itemsCnt;
   int16_t items[];
 } Array_int16_t;
+
+// -----------------------------------------------------------------------------
+//                     Type definition: array of int32
+// -----------------------------------------------------------------------------
 
 typedef struct Array_int32
 {
@@ -67,6 +82,10 @@ typedef struct Array_int32
   int32_t items[];
 } Array_int32_t;
 
+// -----------------------------------------------------------------------------
+//                      Type definition: array of int64
+// -----------------------------------------------------------------------------
+
 typedef struct Array_int64
 {
   uint32_t innerType;
@@ -78,15 +97,20 @@ typedef struct Array_int64
   int64_t items[];
 } Array_int64_t;
 
+// -----------------------------------------------------------------------------
+//                                  Functions
+// -----------------------------------------------------------------------------
+
 Variant_t __MOLD_VariantArrayCreate();
 Variant_t __MOLD_VariantArrayCreateFromInitList(Variant_t initArray);
+
 Variant_t __MOLD_VariantLoadFromIndex(Variant_t box, int32_t idx);
 
 void __MOLD_VariantStoreAtIndex_variant(Variant_t *box, int32_t idx, Variant_t value);
-void __MOLD_VariantStoreAtIndex_string(Variant_t *box, int32_t idx, Variant_t value);
-void __MOLD_VariantStoreAtIndex_int32(Variant_t *box, int32_t idx, int32_t value);
-void __MOLD_VariantStoreAtIndex_int64(Variant_t *box, int32_t idx, int64_t value);
-void __MOLD_VariantStoreAtIndex_bool32(Variant_t *box, int32_t idx, bool32_t value);
+void __MOLD_VariantStoreAtIndex_string (Variant_t *box, int32_t idx, Variant_t value);
+void __MOLD_VariantStoreAtIndex_int32  (Variant_t *box, int32_t idx, int32_t value);
+void __MOLD_VariantStoreAtIndex_int64  (Variant_t *box, int32_t idx, int64_t value);
+void __MOLD_VariantStoreAtIndex_bool32 (Variant_t *box, int32_t idx, bool32_t value);
 void __MOLD_VariantStoreAtIndex_float64(Variant_t *box, int32_t idx, float64_t value);
 
 void __MOLD_ArrayInsertAfterLast(Variant_t box, Variant_t value);

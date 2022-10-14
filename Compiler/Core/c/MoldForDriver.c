@@ -169,14 +169,14 @@ void __MOLD_ForDriver_KeysAndValuesInMap(Variant_t *box,
   }
 }
 
-//
+// ----------------------------------------------------------------------------
 //  Process each (key, value) pairs in generic box.
 //
-//  box                - any box container (IN / Variant_t *)
-//  iteratorIndexOrKey - index/key iterator (OUT / Variant_t * / uint32*)
-//  iteratorValue      - value iterator (OUT / Variant_t *)
-//  cb                 - body loop callback (IN / function address)
-//
+//  box                - array, map or string container (IN)
+//  iteratorIndexOrKey - index or key iterator (OUT)
+//  iteratorValue      - value iterator (OUT)
+//  cb                 - body loop callback (IN)
+// ----------------------------------------------------------------------------
 
 void __MOLD_ForDriver_Generic(Variant_t *box, void *iteratorIndexOrKey,
                               Variant_t *iteratorValue, LoopBodyCbProto cb)
@@ -235,5 +235,4 @@ void __MOLD_ForDriver_IndexesAndValuesInArrayOrString(Variant_t *box,
       __MOLD_PrintErrorAndDie_arrayOrStringExpected();
     }
   }
-
 }

@@ -25,6 +25,20 @@
 #include "MoldMemory.h"
 #include "MoldForDriver.h"
 
+// #############################################################################
+//                             Create functions
+// #############################################################################
+
+// -----------------------------------------------------------------------------
+// Create new empty array.
+//
+// Pseudo code:
+//   ... = []
+//
+// Returns:
+//   New allocated array wrapped into Variant structure.
+// -----------------------------------------------------------------------------
+
 Variant_t __MOLD_VariantArrayCreate()
 {
   Variant_t rv;
@@ -36,11 +50,28 @@ Variant_t __MOLD_VariantArrayCreate()
   return rv;
 }
 
+// -----------------------------------------------------------------------------
+// Create array and init it with items from another one.
+//
+// WARNING: Only shallow copy is performed.
+//
+// Pseudo code:
+//   tmp    = []
+//   tmp[0] = initArray[0]
+//   tmp[1] = initArray[1]
+//   tmp[2] = initArray[2]
+//   ...
+//   ... = tmp
+//
+// Parameters:
+//   initArray[] - array of items to be shallow copied into new array (IN)
+//
+// Returns:
+//   Shallow copy of input array.
+// -----------------------------------------------------------------------------
+
 Variant_t __MOLD_VariantArrayCreateFromInitList(Variant_t initArray)
 {
-  // TODO: Review it.
-  // TODO: Clean up this mess.
-  // TODO: Optimize it.
   Variant_t rv = __MOLD_VariantArrayCreate();
   Variant_t oneItem;
   uint32_t idx;
@@ -59,6 +90,24 @@ Variant_t __MOLD_VariantArrayCreateFromInitList(Variant_t initArray)
 
   return rv;
 }
+
+// #############################################################################
+//                               Load functions
+// #############################################################################
+
+// -----------------------------------------------------------------------------
+// Load value stored at given index.
+//
+// Pseudo code:
+//  ... = box[idx]
+//
+// Parameters:
+//   box - source array (IN),
+//   idx - item array to be loaded (IN).
+//
+// Returns:
+//   Value stored at given index.
+// -----------------------------------------------------------------------------
 
 Variant_t __MOLD_VariantLoadFromIndex(Variant_t box, int32_t idx)
 {
@@ -135,19 +184,25 @@ Variant_t __MOLD_VariantLoadFromIndex(Variant_t box, int32_t idx)
   return rv;
 }
 
-//
+// #############################################################################
+//                             Store functions
+// #############################################################################
+
+// ----------------------------------------------------------------------------
 // Store one variant item in the array.
-// x[i] = ...
 //
-// box   - array to modify (Variant_t) (IN)
-// idx   - index, where to store item (uint32_t) (IN)
-// value - value to store (Variant_t) (IN)
+// Pseudo code:
+//   x[i] = value
 //
+// Parameters:
+//   box   - array to modify (Variant_t) (IN),
+//   idx   - index, where to store item (IN),
+//   value - value to store (Variant_t) (IN).
+// ----------------------------------------------------------------------------
 
 void __MOLD_VariantStoreAtIndex_variant(Variant_t *box, int32_t idx, Variant_t value)
 {
-  // TODO: Handle VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE.
-
+  // TODO: Handle VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE?
   Buffer_t *buf   = box -> valueAsBufferPtr;
   Array_t  *array = (Array_t *) buf -> bytesPtr;
 
@@ -179,48 +234,137 @@ void __MOLD_VariantStoreAtIndex_variant(Variant_t *box, int32_t idx, Variant_t v
   array -> items[idx] = value;
 }
 
+// ----------------------------------------------------------------------------
+// Store one string item in the array.
+//
+// Pseudo code:
+//   x[i] = "text"
+//
+// Parameters:
+//   box   - array to modify (Variant_t) (IN),
+//   idx   - index, where to store item (IN),
+//   value - value to store (Variant_t) (IN).
+// ----------------------------------------------------------------------------
+
 void __MOLD_VariantStoreAtIndex_string(Variant_t *box, int32_t idx, Variant_t value)
 {
   return __MOLD_VariantStoreAtIndex_variant(box, idx, value);
 }
 
+// ----------------------------------------------------------------------------
+// Store one int32 value in the array.
+//
+// Pseudo code:
+//   x[i] = <32-bit integer>
+//
+// Parameters:
+//   box   - array to modify (Variant_t) (IN),
+//   idx   - index, where to store item (IN),
+//   value - value to store (Variant_t) (IN).
+// ----------------------------------------------------------------------------
+
 void __MOLD_VariantStoreAtIndex_int32(Variant_t *box, int32_t idx, int32_t value)
 {
-  Variant_t valueAsVariant;
-  valueAsVariant.type = VARIANT_INTEGER;
-  valueAsVariant.valueAsInt64 = value;
+  Variant_t valueAsVariant =
+  {
+    type: VARIANT_INTEGER,
+    valueAsInt64: value
+  };
+
   __MOLD_VariantStoreAtIndex_variant(box, idx, valueAsVariant);
 }
+
+// ----------------------------------------------------------------------------
+// Store one int64 value in the array.
+//
+// Pseudo code:
+//   x[i] = <64-bit integer>
+//
+// Parameters:
+//   box   - array to modify (Variant_t) (IN),
+//   idx   - index, where to store item (IN),
+//   value - value to store (Variant_t) (IN).
+// ----------------------------------------------------------------------------
 
 void __MOLD_VariantStoreAtIndex_int64(Variant_t *box, int32_t idx, int64_t value)
 {
-  Variant_t valueAsVariant;
-  valueAsVariant.type = VARIANT_INTEGER;
-  valueAsVariant.valueAsInt64 = value;
+  Variant_t valueAsVariant =
+  {
+    type: VARIANT_INTEGER,
+    valueAsInt64: value
+  };
+
   __MOLD_VariantStoreAtIndex_variant(box, idx, valueAsVariant);
 }
+
+// ----------------------------------------------------------------------------
+// Store one float64 (double precision) item in the array.
+//
+// Pseudo code:
+//   x[i] = 3.14
+//
+// Parameters:
+//   box   - array to modify (Variant_t) (IN),
+//   idx   - index, where to store item (IN),
+//   value - value to store (Variant_t) (IN).
+// ----------------------------------------------------------------------------
 
 void __MOLD_VariantStoreAtIndex_float64(Variant_t *box, int32_t idx, float64_t value)
 {
-  Variant_t valueAsVariant;
-  valueAsVariant.type = VARIANT_DOUBLE;
-  valueAsVariant.valueAsFloat64 = value;
+  Variant_t valueAsVariant =
+  {
+    type: VARIANT_DOUBLE,
+    valueAsFloat64: value
+  };
+
   __MOLD_VariantStoreAtIndex_variant(box, idx, valueAsVariant);
 }
 
+// ----------------------------------------------------------------------------
+// Store one bool32 item in the array.
+//
+// Pseudo code:
+//   x[i] = true
+//
+// Parameters:
+//   box   - array to modify (Variant_t) (IN),
+//   idx   - index, where to store item (IN),
+//   value - value to store (Variant_t) (IN).
+// ----------------------------------------------------------------------------
+
 void __MOLD_VariantStoreAtIndex_bool32(Variant_t *box, int32_t idx, bool32_t value)
 {
-  Variant_t valueAsVariant;
-  valueAsVariant.type  = VARIANT_BOOLEAN;
-  valueAsVariant.value = value;
+  Variant_t valueAsVariant =
+  {
+    type: VARIANT_BOOLEAN,
+    valueAsInt64: value
+  };
+
   __MOLD_VariantStoreAtIndex_variant(box, idx, valueAsVariant);
 }
+
+// ----------------------------------------------------------------------------
+// Append variant item to the end of the array.
+// After that, array size is increased by one.
+//
+// 1, 2, 3, 4, 5, x
+//                ^
+//                New item goes here
+//
+// Pseudo code:
+//   box[box.length - 1] = value
+//
+// Parameters:
+//   box   - array to modify (IN),
+//   idx   - index, where to store item (IN),
+//   value - value to store (IN).
+// ----------------------------------------------------------------------------
 
 void __MOLD_ArrayInsertAfterLast(Variant_t box, Variant_t value)
 {
   if (box.type != VARIANT_ARRAY)
   {
-    __MOLD_PrintErrorAndDie_arrayOrStringExpected();
+    __MOLD_PrintErrorAndDie_arrayExpected();
   }
 
   Buffer_t *buf   = box.valueAsBufferPtr;

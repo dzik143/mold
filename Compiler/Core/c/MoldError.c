@@ -64,15 +64,6 @@ MOLD_DEFINE_ERROR_FCT(floatUnderflow           , "floating point underflow")
 MOLD_DEFINE_ERROR_FCT(notIterable              , "not iterable")
 MOLD_DEFINE_ERROR_FCT(nullMethodCalled         , "null method called")
 
-LONG WINAPI RedirectedSetUnhandledExceptionFilter(EXCEPTION_POINTERS *ExceptionInfo)
-{
-
-  // When the CRT calls SetUnhandledExceptionFilter with NULL parameter
-  // our handler will not get removed.
-  return 0;
-}
-
-
 LONG WINAPI __MOLD_SystemExceptionHandler(struct _EXCEPTION_POINTERS *ExceptionInfo)
 {
   switch (ExceptionInfo -> ExceptionRecord -> ExceptionCode)

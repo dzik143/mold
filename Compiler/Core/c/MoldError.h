@@ -24,26 +24,30 @@
 
 void __MOLD_Die(Variant_t msg);
 void __MOLD_PrintErrorAndDie(const char *msg);
+void __MOLD_InitExceptions();
 
-void __MOLD_PrintErrorAndDie_badType();
-void __MOLD_PrintErrorAndDie_outOfMemory();
-void __MOLD_PrintErrorAndDie_negativeIndex();
-void __MOLD_PrintErrorAndDie_notIterable();
-void __MOLD_PrintErrorAndDie_notComparable();
+void __MOLD_PrintErrorAndDie_generic();
 void __MOLD_PrintErrorAndDie_integerExpected();
+void __MOLD_PrintErrorAndDie_integerIndexExpected();
 void __MOLD_PrintErrorAndDie_booleanExpected();
 void __MOLD_PrintErrorAndDie_floatExpected();
+void __MOLD_PrintErrorAndDie_stringKeyExpected();
 void __MOLD_PrintErrorAndDie_stringExpected();
+void __MOLD_PrintErrorAndDie_mapOrObjectExpected();
+void __MOLD_PrintErrorAndDie_arrayExpected();
+void __MOLD_PrintErrorAndDie_arrayOrStringExpected();
+void __MOLD_PrintErrorAndDie_arrayStringOrMapExpected();
+void __MOLD_PrintErrorAndDie_negativeIndex();
+void __MOLD_PrintErrorAndDie_indexOutOfRange();
+void __MOLD_PrintErrorAndDie_outOfMemory();
+void __MOLD_PrintErrorAndDie_badType();
+void __MOLD_PrintErrorAndDie_notImplemented();
+void __MOLD_PrintErrorAndDie_implicitConversion();
+void __MOLD_PrintErrorAndDie_notComparable();
 void __MOLD_PrintErrorAndDie_divideByZero();
 void __MOLD_PrintErrorAndDie_floatOverflow();
 void __MOLD_PrintErrorAndDie_floatUnderflow();
-void __MOLD_PrintErrorAndDie_arrayOrStringExpected();
-void __MOLD_PrintErrorAndDie_stringKeyExpected();
-void __MOLD_PrintErrorAndDie_mapOrObjectExpected();
+void __MOLD_PrintErrorAndDie_notIterable();
 void __MOLD_PrintErrorAndDie_nullMethodCalled();
-void __MOLD_PrintErrorAndDie_notImplemented();
-void __MOLD_PrintErrorAndDie_implicitConversion();
-
-void __MOLD_InitExceptions();
 
 #endif /* _Mold_Error_H */

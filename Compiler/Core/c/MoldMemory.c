@@ -19,15 +19,20 @@
 
 #include <stdio.h>
 #include <string.h>
+
+#include "MoldError.h"
 #include "MoldMemory.h"
 
-// -----------------------------------------------------------------------------
+static int _cntAlloc = 0;
+static int _cntFree  = 0;
+
+// ----------------------------------------------------------------------------
 // Allocate new memory buffer.
 //
 // sizeInBytes - size of new buffer in bytes (IN).
 //
 // RETURNS: Pointer to new allocated Buffer_t struct.
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 Buffer_t *__MOLD_MemoryAlloc(uint32_t sizeInBytes)
 {
@@ -41,6 +46,11 @@ Buffer_t *__MOLD_MemoryAlloc(uint32_t sizeInBytes)
   // Allocate Buffer_t holder.
   rv = malloc(sizeof(Buffer_t));
 
+  if (rv == NULL)
+  {
+    __MOLD_PrintErrorAndDie_outOfMemory();
+  }
+
   // Allocate new memory block.
   bytesPtr = calloc(1, alignedCapacity);
 
@@ -50,8 +60,18 @@ Buffer_t *__MOLD_MemoryAlloc(uint32_t sizeInBytes)
   rv -> flags    = 0;
   rv -> bytesPtr = bytesPtr;
 
+  _cntAlloc++;
+
   return rv;
 }
+
+// ----------------------------------------------------------------------------
+// Increase buffer reference pointer.
+//
+// sizeInBytes - size of new buffer in bytes (IN).
+//
+// RETURNS: Pointer to new allocated Buffer_t struct.
+// ----------------------------------------------------------------------------
 
 void __MOLD_MemoryAddRef(Buffer_t *buf)
 {
@@ -61,10 +81,15 @@ void __MOLD_MemoryAddRef(Buffer_t *buf)
   }
 }
 
+// ----------------------------------------------------------------------------
+// Decrease buffer reference counter and free it if reaches 0.
+//
+// buf - pointer to the Buffer_t struct allocated by __MOLD_MemoryAlloc()
+//       before (IN/OUT).
+// ----------------------------------------------------------------------------
+
 void __MOLD_MemoryRelease(Buffer_t *buf)
 {
-  // printf("[ MEMORY ] Releasing buf PTR %p\n", buf);
-
   if (buf -> refCnt != -1)
   {
     buf -> refCnt--;
@@ -73,16 +98,24 @@ void __MOLD_MemoryRelease(Buffer_t *buf)
     {
       free(buf -> bytesPtr);
       free(buf);
+      _cntAlloc--;
     }
   }
 }
+
+// ----------------------------------------------------------------------------
+// Change (increase or decrease) buffer size to the desired value.
+//
+// buf - pointer to Buffer_t struct allocated by __MOLD_MemoryAlloc
+//       before (IN).
+//
+// newCapacity - desired size in bytes (IN).
+// ----------------------------------------------------------------------------
 
 void __MOLD_MemoryRealloc(Buffer_t *buf, uint64_t newCapacity)
 {
   if (buf -> refCnt != -1)
   {
-    // printf("[ MEMORY ] Realloc [buf %p][newCapacity %d]\n", buf, newCapacity);
-
     // Align new capacity to 64-bytes.
     newCapacity = (newCapacity + 64) & ~63;
 
@@ -90,6 +123,11 @@ void __MOLD_MemoryRealloc(Buffer_t *buf, uint64_t newCapacity)
     uint32_t oldCapacity = buf -> capacity;
 
     void *newBytesPtr = realloc(buf -> bytesPtr, newCapacity);
+
+    if (newBytesPtr == NULL)
+    {
+      __MOLD_PrintErrorAndDie_outOfMemory();
+    }
 
     // Zero fill new allocated content.
     memset(newBytesPtr + oldCapacity, 0, newCapacity - oldCapacity);
@@ -100,7 +138,27 @@ void __MOLD_MemoryRealloc(Buffer_t *buf, uint64_t newCapacity)
   }
 }
 
+// ----------------------------------------------------------------------------
+// Increase buffer capacity twice.
+//
+// buf - pointer to Buffer_t struct allocated by __MOLD_MemoryAlloc before (IN).
+//
+// RETURNS: Pointer to new Buffer_t struct.
+// ----------------------------------------------------------------------------
+
 void __MOLD_MemoryIncreaseBufferTwice(Buffer_t *buf)
 {
   __MOLD_MemoryRealloc(buf, buf -> capacity * 2);
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+
+void __MOLD_MemoryDieIfMemoryLeak()
+{
+  if (_cntAlloc != _cntFree)
+  {
+    fprintf(stderr, "error: memory leak detected!\n");
+  }
 }

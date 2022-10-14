@@ -22,7 +22,15 @@
 
 #include "MoldCore.h"
 
+// -----------------------------------------------------------------------------
+//                                  Defines
+// -----------------------------------------------------------------------------
+
 #define VARIANT_MAP_DEFAULT_BUCKETS_CNT 16
+
+// -----------------------------------------------------------------------------
+//                              Type definitions
+// -----------------------------------------------------------------------------
 
 typedef struct MapBucket
 {
@@ -42,7 +50,14 @@ typedef struct Map
   MapBucket_t buckets[];
 } Map_t;
 
+// -----------------------------------------------------------------------------
+//                                Functions
+// -----------------------------------------------------------------------------
+
+uint32_t __MOLD_hashDJB2(Variant_t *x);
+
 Variant_t __MOLD_VariantMapCreate();
+Variant_t __MOLD_VariantMapCreateWithCustomSize(uint32_t bucketsCnt);
 Variant_t __MOLD_VariantMapCreateFromInitList(Variant_t keys, Variant_t values);
 
 Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t box, Variant_t key);
@@ -54,7 +69,5 @@ void __MOLD_VariantStoreAtKey_int32(Variant_t *box, Variant_t key, int32_t value
 void __MOLD_VariantStoreAtKey_int64(Variant_t *box, Variant_t key, int64_t value);
 void __MOLD_VariantStoreAtKey_float64(Variant_t *box, Variant_t key, float64_t value);
 void __MOLD_VariantStoreAtKey_bool32(Variant_t *box, Variant_t key, bool32_t value);
-
-uint32_t __MOLD_hashDJB2(Variant_t *x);
 
 #endif /* _MoldVariantMap_H */

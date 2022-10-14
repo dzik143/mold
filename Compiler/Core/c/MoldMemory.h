@@ -23,6 +23,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+// -----------------------------------------------------------------------------
+//                              Type definitions
+// -----------------------------------------------------------------------------
+
 typedef struct Buffer
 {
   uint64_t capacity;
@@ -31,6 +35,9 @@ typedef struct Buffer
   void* bytesPtr;
 } Buffer_t;
 
+// -----------------------------------------------------------------------------
+//                                 Functions
+// -----------------------------------------------------------------------------
 
 Buffer_t *__MOLD_MemoryAlloc(uint32_t sizeInBytes);
 
@@ -38,5 +45,6 @@ void __MOLD_MemoryAddRef(Buffer_t *buf);
 void __MOLD_MemoryRelease(Buffer_t *buf);
 void __MOLD_MemoryRealloc(Buffer_t *buf, uint64_t newCapacity);
 void __MOLD_MemoryIncreaseBufferTwice(Buffer_t *buf);
+void __MOLD_MemoryDieIfMemoryLeak();
 
 #endif /* _MoldMemory_H */

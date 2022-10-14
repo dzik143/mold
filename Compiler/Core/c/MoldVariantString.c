@@ -17,8 +17,61 @@
 /*                                                                        */
 /**************************************************************************/
 
+#include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
+
+#include "MoldError.h"
 #include "MoldVariantString.h"
+
+// -----------------------------------------------------------------------------
+// Create new string and init it from C string buffer.
+//
+// Pseudo code:
+// ... = new string("text")
+//
+// Parameters:
+//   text - pointer to the zero terminated C string (IN).
+//
+// Returns:
+//   New allocated string set to given text wrapped into Variant container.
+// -----------------------------------------------------------------------------
+
+Variant_t __MOLD_VariantStringCreateFromCString(const char *text)
+{
+  Variant_t rv = { VARIANT_UNDEFINED };
+
+  if (text)
+  {
+    uint32_t textLen = strlen(text);
+    Buffer_t *buf    = __MOLD_MemoryAlloc(textLen + 1);
+    String_t *str    = (String_t *) buf -> bytesPtr;
+
+    memcpy(str -> text, text, textLen);
+
+    str -> length = textLen;
+
+    rv.type             = VARIANT_STRING;
+    rv.valueAsBufferPtr = buf;
+  }
+
+  return rv;
+}
+
+// -----------------------------------------------------------------------------
+// Compare two strings (EQual).
+//
+// Pseudo code:
+// ... = (x == y)
+//
+// Parameters:
+//   x - the first string to compare (IN),
+//   y - second string to compare (IN).
+//
+// Returns:
+//   1 if string are equal,
+//   0 otherwise.
+// -----------------------------------------------------------------------------
 
 bool32_t __MOLD_cmp_eq_string(Variant_t x, Variant_t y)
 {
@@ -68,10 +121,37 @@ bool32_t __MOLD_cmp_eq_string(Variant_t x, Variant_t y)
   return rv;
 }
 
+// -----------------------------------------------------------------------------
+// Inverted compare two strings (Not-Equal).
+//
+// Pseudo code:
+// ... = (x != y)
+//
+// Parameters:
+//   x - the first string to compare (IN),
+//   y - second string to compare (IN).
+//
+// Returns:
+//   1 if string are different (not equal),
+//   0 otherwise.
+// -----------------------------------------------------------------------------
+
 bool32_t __MOLD_cmp_ne_string(Variant_t x, Variant_t y)
 {
   return !__MOLD_cmp_eq_string(x, y);
 }
+
+// -----------------------------------------------------------------------------
+// Join (concatenate) two strings into another one.
+//
+// Pseudo code:
+//   dst = x + y
+//
+// Parameters:
+//   dst - existing variant, where to store joined strings (OUT),
+//   x   - the first string to join (IN),
+//   x   - second string to join (IN).
+// -----------------------------------------------------------------------------
 
 void __MOLD_VariantStringJoin(Variant_t *dst, Variant_t *x, Variant_t *y)
 {
@@ -82,8 +162,9 @@ void __MOLD_VariantStringJoin(Variant_t *dst, Variant_t *x, Variant_t *y)
   char *xText = NULL;
   char *yText = NULL;
 
-  //
-  // Fetch first source string.
+
+  // ------------------------------
+  // Fetch the first source string.
   //
 
   if (x -> flags & VARIANT_FLAG_ONE_CHARACTER)
@@ -99,7 +180,7 @@ void __MOLD_VariantStringJoin(Variant_t *dst, Variant_t *x, Variant_t *y)
     xText = (char *) xStr -> text;
   }
 
-  //
+  // ---------------------------
   // Fetch second source string.
   //
 
@@ -116,21 +197,21 @@ void __MOLD_VariantStringJoin(Variant_t *dst, Variant_t *x, Variant_t *y)
     yText = (char *) yStr -> text;
   }
 
-  //
+  // -------------------------------------------------------
   // Calculate destination length (without zero terminator).
   //
 
   uint64_t newSize = xLen + yLen;
 
-  //
+  // -------------------------------------------
   // Allocate new buffer for destination string.
-  // TODO: Use existing buffer if exists.
+  // TODO: Use existing buffer if possible.
   //
 
   Buffer_t *dstBuf = __MOLD_MemoryAlloc(sizeof(String_t) + newSize);
   String_t *dstStr = (String_t *) dstBuf -> bytesPtr;
 
-  //
+  // ------------------------------------------------
   // Join two source strings into destination buffer.
   //
 
@@ -140,9 +221,30 @@ void __MOLD_VariantStringJoin(Variant_t *dst, Variant_t *x, Variant_t *y)
   dstStr -> length = newSize;
 
   // Assign new buffer to result.
+  // --------------------------------------
   dst -> type             = VARIANT_STRING;
   dst -> valueAsBufferPtr = dstBuf;
 }
+
+// -----------------------------------------------------------------------------
+// Pull out the piece from the string.
+//
+// Parameters:
+//   str - source string with original full text (IN),
+//   idx - index of the first character to be pulled (IN),
+//   len - how many chars to be pulled or -1 for "up to end" beheavior (IN).
+//
+// Means:
+// - Find character no. <idx>,
+// - then copy <len> characters.
+//
+// Example:
+//   substr("abcdefg", 2, 3) gives "cde".
+//
+// Returns:
+//   New string contained substring from the source one.
+//
+// -----------------------------------------------------------------------------
 
 Variant_t __MOLD_SubStr(Variant_t strVariant, Variant_t idxVariant, Variant_t lenVariant)
 {
@@ -170,6 +272,17 @@ Variant_t __MOLD_SubStr(Variant_t strVariant, Variant_t idxVariant, Variant_t le
 
   return rv;
 }
+
+// -----------------------------------------------------------------------------
+// Convert any variant to the string.
+//
+// Parameters:
+//   x - any variant variable to be converted into text (IN).
+//
+// Returns:
+//   Text representation of input variable.
+// -----------------------------------------------------------------------------
+
 
 Variant_t __MOLD_Str(Variant_t x)
 {
@@ -209,6 +322,80 @@ Variant_t __MOLD_Str(Variant_t x)
     str -> length = snprintf(str -> text, 31, fmt, x.value);
     rv.valueAsBufferPtr = buf;
   }
+
+  return rv;
+}
+
+// -----------------------------------------------------------------------------
+// Get ascii number of given character.
+//
+// Parameters:
+//  x - one character string to be converted e.g. 'a' (IN)
+//
+// Returns:
+//   Ascii value of given character.
+// -----------------------------------------------------------------------------
+
+Variant_t __MOLD_Ord(Variant_t x)
+{
+  Variant_t rv = { VARIANT_INTEGER };
+
+  switch (x.type)
+  {
+    case VARIANT_STRING:
+    {
+      if (x.flags & VARIANT_FLAG_ONE_CHARACTER)
+      {
+        rv.value = x.valueAsUInt8;
+      }
+      else
+      {
+        String_t *str = (String_t *) x.valueAsBufferPtr -> bytesPtr;
+        rv.value = str -> text[0];
+      }
+
+      break;
+    }
+
+    case VARIANT_UNDEFINED:
+    {
+      rv.value = 0;
+      break;
+    }
+
+    case VARIANT_INTEGER:
+    {
+      rv.value = x.valueAsUInt8;
+      break;
+    }
+
+    default:
+    {
+      __MOLD_PrintErrorAndDie_stringExpected();
+    }
+  }
+
+  return rv;
+}
+
+// -----------------------------------------------------------------------------
+// Get character of given ascii number.
+//
+// Parameters:
+//  x - ascii number e.g. 65 (IN)
+//
+// Returns:
+//   Character with given ascii number.
+// -----------------------------------------------------------------------------
+
+Variant_t __MOLD_Asc(Variant_t x)
+{
+  Variant_t rv =
+  {
+    type: VARIANT_STRING,
+    flags: VARIANT_FLAG_ONE_CHARACTER,
+    value: x.value
+  };
 
   return rv;
 }
