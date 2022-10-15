@@ -60,6 +60,8 @@ Variant_t __MOLD_VariantMapCreate();
 Variant_t __MOLD_VariantMapCreateWithCustomSize(uint32_t bucketsCnt);
 Variant_t __MOLD_VariantMapCreateFromInitList(Variant_t keys, Variant_t values);
 
+void __MOLD_VariantMapRelease(Variant_t *x);
+
 Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t box, Variant_t key);
 Variant_t __MOLD_VariantLoadFromKey_string(Variant_t box, Variant_t key);
 

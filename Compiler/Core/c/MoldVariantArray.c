@@ -91,6 +91,46 @@ Variant_t __MOLD_VariantArrayCreateFromInitList(Variant_t initArray)
   return rv;
 }
 
+// -----------------------------------------------------------------------------
+// Release the array and it's item recursively.
+// This call tells, that the array is not needed anymore and may be freed.
+//
+// Pseudo code:
+//   delete x
+//
+// Parameters:
+//   x[] - array to be freed (IN).
+// -----------------------------------------------------------------------------
+
+void __MOLD_VariantArrayRelease(Variant_t *x)
+{
+  if (x -> type != VARIANT_UNDEFINED)
+  {
+    // Release array items if needed.
+    if (x -> valueAsBufferPtr -> refCnt == 1)
+    {
+      // We're going to free the whole array.
+      // Release stored items first.
+      Array_t *array = (Array_t *) (x -> valueAsBufferPtr -> bytesPtr);
+
+      if (array -> innerType == 0)
+      {
+        // Array of variants.
+        // Destroy stored items one-by-one.
+        for (uint32_t idx = 0; idx < array -> itemsCnt; idx++)
+        {
+          __MOLD_VariantDestroy(array -> items + idx);
+        }
+      }
+    }
+
+    // Release the array buffer itself.
+    __MOLD_MemoryRelease(x -> valueAsBufferPtr);
+
+    x -> type = VARIANT_UNDEFINED;
+  }
+}
+
 // #############################################################################
 //                               Load functions
 // #############################################################################
@@ -131,6 +171,9 @@ Variant_t __MOLD_VariantLoadFromIndex(Variant_t box, int32_t idx)
         {
           // Array of variants.
           memcpy(&rv, array -> items + idx, sizeof(Variant_t));
+
+          // Increse reference counter for the just loaded item.
+          __MOLD_VariantAddRef(&rv);
         }
         else
         {
@@ -226,6 +269,9 @@ void __MOLD_VariantStoreAtIndex_variant(Variant_t *box, int32_t idx, Variant_t v
       array = (Array_t *) buf -> bytesPtr;
     }
   }
+
+  // Increase reference counter for the new stored item.
+  __MOLD_VariantAddRef(&value);
 
   // Destroy old value if any.
   __MOLD_VariantDestroy(&array -> items[idx]);

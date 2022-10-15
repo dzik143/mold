@@ -225,10 +225,12 @@ Variant_t __MOLD_ParseInteger(Variant_t x);
 Variant_t __MOLD_ParseFloat(Variant_t x);
 Variant_t __MOLD_FileLoad(Variant_t path);
 
+void __MOLD_VariantAddRef(Variant_t *x);
 void __MOLD_VariantDestroy(Variant_t *x);
 
 void __MOLD_InitArgv(int _argc, char **_argv);
 
 Variant_t __MOLD_GetTypeId(Variant_t x);
+void __MOLD_VariantMove(Variant_t *dst, Variant_t *src);
 
 #endif /* _MoldCore_H */

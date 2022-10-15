@@ -104,6 +104,8 @@ typedef struct Array_int64
 Variant_t __MOLD_VariantArrayCreate();
 Variant_t __MOLD_VariantArrayCreateFromInitList(Variant_t initArray);
 
+void __MOLD_VariantArrayRelease(Variant_t *x);
+
 Variant_t __MOLD_VariantLoadFromIndex(Variant_t box, int32_t idx);
 
 void __MOLD_VariantStoreAtIndex_variant(Variant_t *box, int32_t idx, Variant_t value);

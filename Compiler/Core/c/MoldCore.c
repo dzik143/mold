@@ -536,6 +536,8 @@ Variant_t __MOLD_Len(Variant_t x)
       Buffer_t *buf = (Buffer_t *) x.value;
       Map_t *map = (Map_t *) buf -> bytesPtr;
       len = map -> bucketsUsedCnt;
+
+      break;
     }
 
     default:
@@ -742,6 +744,9 @@ void __MOLD_InitArgv(int _argc, char **_argv)
   {
     Variant_t oneArg = __MOLD_VariantStringCreateFromCString(_argv[i]);
     __MOLD_VariantStoreAtIndex_variant(&argv, i, oneArg);
+
+    // TODO: Review it.
+    __MOLD_VariantDestroy(&oneArg);
   }
 }
 
@@ -751,8 +756,108 @@ Variant_t __MOLD_GetTypeId(Variant_t x)
   return rv;
 }
 
+// -----------------------------------------------------------------------------
+// Free all resources alocated by variant variable if any.
+// Do nothing for primitives, but it's still correct.
+// This call tells, that the variable is not needed anymore and may be freed.
+//
+// Pseudo code:
+//   delete x
+//
+// Parameters:
+//   x - variable to be destroyed (IN/OUT).
+// -----------------------------------------------------------------------------
+
 void __MOLD_VariantDestroy(Variant_t *x)
 {
-  // TODO: Free memory.
+  // TODO: Temporary disbled.
   x -> type = VARIANT_UNDEFINED;
+  return;
+
+  switch (x -> type)
+  {
+    case VARIANT_UNDEFINED:
+    case VARIANT_NULL:
+    case VARIANT_INTEGER:
+    case VARIANT_FLOAT:
+    case VARIANT_DOUBLE:
+    case VARIANT_BOOLEAN:
+    {
+      // Primitive.
+      // Do nothing.
+      break;
+    }
+
+    case VARIANT_STRING:
+    {
+      __MOLD_VariantStringRelease(x);
+      break;
+    }
+
+    case VARIANT_ARRAY:
+    {
+      __MOLD_VariantArrayRelease(x);
+      break;
+    }
+
+    case VARIANT_MAP:
+    case VARIANT_OBJECT:
+    {
+      __MOLD_VariantMapRelease(x);
+      break;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Increase reference counter for dynamically alocatted variables.
+// Do nothing for primitives, but it still correct.
+//
+// Pseudo code:
+//   x.refCnt++
+//
+// Parameters:
+//   x - variable to referenced (IN/OUT).
+// -----------------------------------------------------------------------------
+
+void __MOLD_VariantAddRef(Variant_t *x)
+{
+  switch (x -> type)
+  {
+    case VARIANT_UNDEFINED:
+    case VARIANT_NULL:
+    case VARIANT_INTEGER:
+    case VARIANT_FLOAT:
+    case VARIANT_DOUBLE:
+    case VARIANT_BOOLEAN:
+    {
+      // Primitive.
+      // Do nothing.
+      break;
+    }
+
+    case VARIANT_STRING:
+    {
+      if (!(x -> flags & VARIANT_FLAG_ONE_CHARACTER))
+      {
+        __MOLD_MemoryAddRef(x -> valueAsBufferPtr);
+      }
+      break;
+    }
+
+    case VARIANT_ARRAY:
+    case VARIANT_MAP:
+    case VARIANT_OBJECT:
+    {
+        __MOLD_MemoryAddRef(x -> valueAsBufferPtr);
+      break;
+    }
+  }
+}
+
+void __MOLD_VariantMove(Variant_t *dst, Variant_t *src)
+{
+  __MOLD_VariantAddRef(src);
+  __MOLD_VariantDestroy(dst);
+  memcpy(dst, src, sizeof(Variant_t));
 }

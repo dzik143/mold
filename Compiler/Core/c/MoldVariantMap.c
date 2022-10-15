@@ -155,6 +155,12 @@ void __MOLD_ResizeMapIfNeeded(Variant_t *box)
     while (bucket != NULL)
     {
       __MOLD_VariantStoreAtKey_variant(&newMap, bucket -> key, bucket -> value);
+      // Key and values are already referenced after previous insert.
+      // Avoid increasing referencing twice and then memory leak.
+      __MOLD_VariantDestroy(&bucket -> key);
+      __MOLD_VariantDestroy(&bucket -> value);
+
+      // Go to next bucket.
       bucket = bucket -> nextBucket;
     }
 
@@ -270,6 +276,42 @@ Variant_t __MOLD_VariantMapCreateFromInitList(Variant_t keys, Variant_t values)
   return rv;
 }
 
+// -----------------------------------------------------------------------------
+// Release the maps and it's item recursively.
+// This call tells, that the map is not needed anymore and may be freed.
+//
+// Pseudo code:
+//   delete x
+//
+// Parameters:
+//   x{} - map to be freed (IN).
+// -----------------------------------------------------------------------------
+
+void __MOLD_VariantMapRelease(Variant_t *x)
+{
+  // Release array items if needed.
+  if (x -> valueAsBufferPtr -> refCnt == 1)
+  {
+    // We're going to free the whole map.
+    // Release stored keys and items first.
+    Map_t *map = (Map_t *) (x -> valueAsBufferPtr -> bytesPtr);
+
+    MapBucket_t *bucket = map -> firstBucket;
+
+    while (bucket != NULL)
+    {
+      __MOLD_VariantDestroy(&(bucket -> key));
+      __MOLD_VariantDestroy(&(bucket -> value));
+      bucket = bucket -> nextBucket;
+    }
+  }
+
+  // Release the map buffer itself.
+  __MOLD_MemoryRelease(x -> valueAsBufferPtr);
+
+  x -> type = VARIANT_UNDEFINED;
+}
+
 // #############################################################################
 //                           Load from key functions
 // #############################################################################
@@ -299,6 +341,9 @@ Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t box, Variant_t key)
   if (bucket -> key.type != VARIANT_UNDEFINED)
   {
     memcpy(&rv, &bucket -> value, sizeof(Variant_t));
+
+    // Increase reference counter for just loaded item.
+    __MOLD_VariantAddRef(&rv);
   }
 
   return rv;
@@ -342,13 +387,20 @@ Variant_t __MOLD_VariantLoadFromKey_string(Variant_t box, Variant_t key)
 
 void __MOLD_VariantStoreAtKey_variant(Variant_t *box, Variant_t key, Variant_t value)
 {
+  // Increase reference counter for the new stored value.
+  __MOLD_VariantAddRef(&value);
+
   // Find bucket.
   MapBucket_t *bucket = __MOLD_FindMapBucketByKey(box, &key);
 
   // Conditional: Set new key if bucket is filled for the first time.
   if (bucket -> key.type == VARIANT_UNDEFINED)
   {
+    // Set new key.
     bucket -> key = key;
+
+    // Increase reference counter for the key.
+    __MOLD_VariantAddRef(&key);
 
     // Decode map.
     Map_t *map = (Map_t *) box -> valueAsBufferPtr -> bytesPtr;
@@ -368,6 +420,11 @@ void __MOLD_VariantStoreAtKey_variant(Variant_t *box, Variant_t key, Variant_t v
     }
 
     map -> lastBucket = bucket;
+  }
+  else
+  {
+    // Destroy previous value.
+    __MOLD_VariantDestroy(&bucket -> value);
   }
 
   // Always: set new value at bucket.

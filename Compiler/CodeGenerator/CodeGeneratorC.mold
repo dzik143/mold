@@ -63,10 +63,11 @@ class CodeGeneratorC
   endmethod
 
   method variantMove(dst, src)
-    print '  __MOLD_VariantMove(', dst, ',', src, ')'
+    print '  __MOLD_VariantMove(&', dst, ', &', src, ');'
   endmethod
 
   method variantDestroy(x)
+/*
     #TODO
     global SYMBOL_KIND_VAR_LOCAL
     global SYMBOL_KIND_VAR_GLOBAL
@@ -79,8 +80,13 @@ class CodeGeneratorC
         (xInfo.kind is SYMBOL_KIND_VAR_GLOBAL) or
         (xInfo.kind is SYMBOL_KIND_VAR_RETVAL))
 
-      print '  __MOLD_VariantDestroy(&', x, ');'
+      if ((xInfo.type is undefined) or
+          (xInfo.type is 'string') or
+          (xInfo.type is 'variant'))
+        print '  __MOLD_VariantDestroy(&', x, ');'
+      endif
     endif
+*/
   endmethod
 
   method _hash(x) -> rv
@@ -836,7 +842,8 @@ class CodeGeneratorC
           endif
 
         elif opcode is MIR1_OPCODE_LOAD_NULL
-          this.variantDestroy(dst)
+          print ' ', dst, '.type = VARIANT_UNDEFINED;'
+          # this.variantDestroy(dst)
 
         elif opcode is MIR1_OPCODE_PRINT
           params        = dst
@@ -979,14 +986,13 @@ class CodeGeneratorC
 
         elif opcode is MIR1_OPCODE_MOVE
           # TODO: Review it.
-          #if (xType is 'variant') or (xType is 'string')
-          #  # Complex value - use function call.
-          #  this.variantDestroy(dst)
-          #  this.variantMove(dst, x)
-          #else
+          if (xType is 'variant') or (xType is 'string')
+            # Complex value - use function call.
+            this.variantMove(dst, x)
+          else
             # Primitive value - set value directly.
-          print ' ', dst, '=', x, ';'
-          #endif
+            print ' ', dst, '=', x, ';'
+          endif
 
         elif opcode is MIR1_OPCODE_NOP
           print '  // nop'
@@ -1021,7 +1027,14 @@ class CodeGeneratorC
 
               if ((oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and
                   ((oneItem.type is undefined) or (oneItem.type is 'variant')))
-                this.variantDestroy(oneItem.name)
+
+                if (oneItem.name is 'argv') or (oneItem.name is 'argc')
+                  # Skip argv[] and argc.
+                  # They're freed in main entry point function.
+                  # TODO: Better way to exclude argv[] and argc.
+                else
+                  this.variantDestroy(oneItem.name)
+                endif
               endif
             endfor
           endif
@@ -1070,9 +1083,12 @@ class CodeGeneratorC
               callList = callList ~ sep ~ paramToPass
             endfor
 
-            if currentProcRvType is defined
-              print '  Variant_t rv = {0};'
+            # TODO: Avoid returning a value for void functions.
+            # For now vcall wrapper always return value, because
+            # caller always assume there it is.
+            print '  Variant_t rv = {0};'
 
+            if currentProcRvType is defined
               valueAsField = MIR_TO_C_VARIANT_VALUE_AS_MAP_WRITE{currentProcRvType}
 
               if valueAsField is defined
@@ -1084,11 +1100,7 @@ class CodeGeneratorC
             endif
 
             print ' ', currentProcName, '(', callList, ');'
-
-            if currentProcRvType is defined
-              print '  return rv;'
-            endif
-
+            print '  return rv;'
             print '}'
           endif
 
@@ -1119,6 +1131,11 @@ class CodeGeneratorC
           print ' ', nameOrId, '(&', params[0], ', &', params[1], ', &', params[2], ', &', params[3], ');'
 
         else
+
+          # Destroy destination if needed.
+          if dst is defined
+            this.variantDestroy(dst)
+          endif
 
           # Push call parameters.
           callList = ''
@@ -1194,6 +1211,8 @@ class CodeGeneratorC
 
       elif opcode >= MIR1_FIRST_DST_OP_X_Y_OPCODE
 
+        this.variantDestroy(dst)
+
         opcodeMajor = bitand(opcode, 0xf8)
         opcodeMinor = bitand(opcode, 0x7)
 
@@ -1230,6 +1249,8 @@ class CodeGeneratorC
         # ----------------------------------------------------------------------
         #                          dst = opcode(x)
         # ----------------------------------------------------------------------
+
+        this.variantDestroy(dst)
 
         if opcode is MIR1_OPCODE_CAST_VARIANT_TO
           # Cast variant to primitive.
@@ -1277,7 +1298,11 @@ class CodeGeneratorC
     print 'int main(int _argc, char **_argv) {'
     print '  __MOLD_InitExceptions();'
     print '  __MOLD_InitArgv(_argc, _argv);'
+    print ''
     print '  start();'
+    print ''
+    print '  __MOLD_VariantDestroy(&argv);'
+    print '  __MOLD_MemoryDieIfMemoryLeak();'
     print '  return 0;'
     print '}'
 

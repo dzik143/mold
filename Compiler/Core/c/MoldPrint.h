@@ -21,6 +21,7 @@
 #define _MoldPrint_H
 
 #include <stdio.h>
+#include "MoldCore.h"
 
 void __MOLD_PrintToFile_variant(FILE *f, Variant_t *x);
 

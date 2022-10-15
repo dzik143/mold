@@ -18,7 +18,9 @@
 /**************************************************************************/
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <string.h>
+#include <assert.h>
 
 #include "MoldError.h"
 #include "MoldMemory.h"
@@ -61,6 +63,7 @@ Buffer_t *__MOLD_MemoryAlloc(uint32_t sizeInBytes)
   rv -> bytesPtr = bytesPtr;
 
   _cntAlloc++;
+  //printf("[ MEMORY ] allocated buffer, capacity %d, ptr %p\n", alignedCapacity, rv);
 
   return rv;
 }
@@ -78,6 +81,8 @@ void __MOLD_MemoryAddRef(Buffer_t *buf)
   if (buf -> refCnt != -1)
   {
     buf -> refCnt++;
+
+    // printf("[ MEMORY ] increased refCnt to %"PRId64", ptr %p\n", buf -> refCnt, buf);
   }
 }
 
@@ -90,17 +95,22 @@ void __MOLD_MemoryAddRef(Buffer_t *buf)
 
 void __MOLD_MemoryRelease(Buffer_t *buf)
 {
+  assert(buf -> refCnt != 0);
+
   if (buf -> refCnt != -1)
   {
     buf -> refCnt--;
+    // printf("[ MEMORY ] decreased refCnt to %"PRId64", ptr %p\n", buf -> refCnt, buf);
 
     if (buf -> refCnt == 0)
     {
       free(buf -> bytesPtr);
       free(buf);
-      _cntAlloc--;
+      _cntFree++;
+
+      // printf("[ MEMORY ] freed buffer, ptr %p\n", buf);
     }
-  }
+  };
 }
 
 // ----------------------------------------------------------------------------
@@ -135,6 +145,8 @@ void __MOLD_MemoryRealloc(Buffer_t *buf, uint64_t newCapacity)
     // Set up buffer struct.
     buf -> bytesPtr = newBytesPtr;
     buf -> capacity = newCapacity;
+
+    // printf("[ MEMORY ] realloc buffer, newCapacity %"PRId64", ptr %p\n", newCapacity, buf);
   }
 }
 
@@ -159,6 +171,6 @@ void __MOLD_MemoryDieIfMemoryLeak()
 {
   if (_cntAlloc != _cntFree)
   {
-    fprintf(stderr, "error: memory leak detected!\n");
+//    fprintf(stderr, "error: memory leak detected (alloc=%d, free=%d)!\n", _cntAlloc, _cntFree);
   }
 }

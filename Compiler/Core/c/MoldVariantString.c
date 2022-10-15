@@ -21,6 +21,7 @@
 #include <string.h>
 #include <inttypes.h>
 
+#include "MoldPrint.h"
 #include "MoldError.h"
 #include "MoldVariantString.h"
 
@@ -56,6 +57,28 @@ Variant_t __MOLD_VariantStringCreateFromCString(const char *text)
   }
 
   return rv;
+}
+
+// -----------------------------------------------------------------------------
+// Release the string.
+// This call tells, that the string is not needed anymore and may be freed.
+//
+// Pseudo code:
+//   delete x
+//
+// Parameters:
+//   x - string to be freed (IN).
+// -----------------------------------------------------------------------------
+
+void __MOLD_VariantStringRelease(Variant_t *x)
+{
+  // String - possible complex or primitive.
+  if (!(x -> flags & VARIANT_FLAG_ONE_CHARACTER))
+  {
+    // Multi-character string.
+    // Release the buffer.
+    __MOLD_MemoryRelease(x -> valueAsBufferPtr);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -155,7 +178,6 @@ bool32_t __MOLD_cmp_ne_string(Variant_t x, Variant_t y)
 
 void __MOLD_VariantStringJoin(Variant_t *dst, Variant_t *x, Variant_t *y)
 {
-  // TODO: Free existing variant if any.
   uint64_t xLen = 0;
   uint64_t yLen = 0;
 
@@ -219,6 +241,9 @@ void __MOLD_VariantStringJoin(Variant_t *dst, Variant_t *x, Variant_t *y)
   memcpy(dstStr -> text + xLen , yText, yLen);
 
   dstStr -> length = newSize;
+
+  // Free existing dst if any.
+  __MOLD_VariantDestroy(dst);
 
   // Assign new buffer to result.
   // --------------------------------------
