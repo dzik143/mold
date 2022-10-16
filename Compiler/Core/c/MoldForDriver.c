@@ -27,10 +27,12 @@ void __MOLD_ForDriver_IndexesAndValuesInArray(Array_t *array,
                                               Variant_t *iteratorValue,
                                               LoopBodyCbProto cb)
 {
+  uint32_t itemsCnt = array -> itemsCnt;
+
   if (array -> innerType == 0)
   {
     // Array of variants.
-    for (uint32_t idx = 0; idx < array -> itemsCnt; idx++)
+    for (uint32_t idx = 0; idx < itemsCnt; idx++)
     {
       *iteratorIndex = idx;
       *iteratorValue = array -> items[idx];
@@ -52,7 +54,7 @@ void __MOLD_ForDriver_IndexesAndValuesInArray(Array_t *array,
         // Array of 8-bit values.
         int8_t *values = (int8_t *) array -> items;
 
-        for (uint32_t idx = 0; idx < array -> itemsCnt; idx++)
+        for (uint32_t idx = 0; idx < itemsCnt; idx++)
         {
            *iteratorIndex = idx;
            iteratorValue -> value = values[idx];
@@ -67,7 +69,7 @@ void __MOLD_ForDriver_IndexesAndValuesInArray(Array_t *array,
         // Array of 16-bit values.
         int16_t *values = (int16_t *) array -> items;
 
-        for (uint32_t idx = 0; idx < array -> itemsCnt; idx++)
+        for (uint32_t idx = 0; idx < itemsCnt; idx++)
         {
            *iteratorIndex = idx;
            iteratorValue -> value = values[idx];
@@ -82,7 +84,7 @@ void __MOLD_ForDriver_IndexesAndValuesInArray(Array_t *array,
         // Array of 32-bit values.
         int32_t *values = (int32_t *) array -> items;
 
-        for (uint32_t idx = 0; idx < array -> itemsCnt; idx++)
+        for (uint32_t idx = 0; idx < itemsCnt; idx++)
         {
            *iteratorIndex = idx;
            iteratorValue -> value = values[idx];
@@ -97,7 +99,7 @@ void __MOLD_ForDriver_IndexesAndValuesInArray(Array_t *array,
         // Array of 64-bit values.
         int64_t *values = (int64_t *) array -> items;
 
-        for (uint32_t idx = 0; idx < array -> itemsCnt; idx++)
+        for (uint32_t idx = 0; idx < itemsCnt; idx++)
         {
            *iteratorIndex = idx;
            iteratorValue -> value = values[idx];
@@ -133,7 +135,9 @@ void __MOLD_ForDriver_IndexesAndValuesInString(Variant_t *box,
     Buffer_t *buf = box -> valueAsBufferPtr;
     String_t *str = (String_t *) buf -> bytesPtr;
 
-    for (uint32_t idx = 0; idx < str -> length; idx++)
+    uint32_t length = str -> length;
+
+    for (uint32_t idx = 0; idx < length; idx++)
     {
       *iteratorIndex = idx;
       iteratorValue -> value = str -> text[idx];
@@ -156,9 +160,11 @@ void __MOLD_ForDriver_KeysAndValuesInMap(Variant_t *box,
   Buffer_t *buf = box -> valueAsBufferPtr;
   Map_t    *map = (Map_t *) buf -> bytesPtr;
 
+  uint32_t bucketsUsedCnt = map -> bucketsUsedCnt;
+
   MapBucket_t *bucket = map -> firstBucket;
 
-  while (bucket != NULL)
+  for (uint32_t idx = 0; idx < bucketsUsedCnt; idx++)
   {
     memcpy(iteratorKey, &bucket -> key, sizeof(Variant_t));
     memcpy(iteratorValue, &bucket -> value, sizeof(Variant_t));
