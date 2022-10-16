@@ -156,6 +156,20 @@ const createInputOutputFilesPairSuite = options => {
                 expectedError: ''
               }
 
+            } else if (line.substr(0, 6) === 'xTEST ') {
+              const title     = line.substr(6).replace(/"/g, '')
+              sectionId = 'source'
+
+              idx++
+
+              tests[idx] = {
+                title,
+                source: '',
+                expectedOutput: '',
+                expectedError: '',
+                isDisabled: true
+              }
+
             } else if (line.indexOf('EXPECTED_OUTPUT') === 0) {
               sectionId = 'expectedOutput'
 
@@ -170,7 +184,13 @@ const createInputOutputFilesPairSuite = options => {
           // Create tests.
           for (let testData of tests) {
             testData.groupId = groupId
-            _createTest(testData)
+
+            if (testData.isDisabled) {
+              test('DISABLED: ' + testData.title, () => {});
+
+            } else {
+              _createTest(testData)
+            }
           }
         })
       }
