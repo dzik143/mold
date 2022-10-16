@@ -325,3 +325,31 @@ EXPECTED_OUTPUT:
 30 is above 20
 40 is above 20
 -------------------------------------------------------------------------------
+
+TEST "Increase array length inside for loop"
+
+x = [1,2,3]
+
+for values v in x
+  x[@afterlast] = v
+endfor
+
+print x
+
+EXPECTED_OUTPUT:
+[1, 2, 3, 1, 2, 3]
+-------------------------------------------------------------------------------
+
+TEST "Increase map size inside for loop"
+
+x = {'a': 1, 'b': 2, 'c': 3}
+
+for keys k values v in x
+  x{k ~ k} = v * v
+endfor
+
+print x
+
+EXPECTED_OUTPUT:
+{'a': 1, 'b': 2, 'c': 3, 'aa': 1, 'bb': 4, 'cc': 9}
+-------------------------------------------------------------------------------
