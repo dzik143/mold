@@ -1086,21 +1086,21 @@ class CodeGeneratorC
             # TODO: Avoid returning a value for void functions.
             # For now vcall wrapper always return value, because
             # caller always assume there it is.
-            print '  Variant_t rv = {0};'
+            print '  Variant_t __rv = {0};'
 
             if currentProcRvType is defined
               valueAsField = MIR_TO_C_VARIANT_VALUE_AS_MAP_WRITE{currentProcRvType}
 
               if valueAsField is defined
-                print '  rv.type =', MIR_TO_VARIANT_TYPE{currentProcRvType}, ';'
-                print '  rv.', valueAsField, '='
+                print '  __rv.type =', MIR_TO_VARIANT_TYPE{currentProcRvType}, ';'
+                print '  __rv.', valueAsField, '='
               else
-                print '  rv ='
+                print '  __rv ='
               endif
             endif
 
             print ' ', currentProcName, '(', callList, ');'
-            print '  return rv;'
+            print '  return __rv;'
             print '}'
           endif
 
