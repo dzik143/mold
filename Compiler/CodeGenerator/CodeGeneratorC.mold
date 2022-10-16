@@ -635,8 +635,6 @@ class CodeGeneratorC
     currentProcRv       = null
     currentProcRvType   = null
     currentSymbols      = {}
-    currentFrameSize    = 0
-    currentFrameOffsets = {}
 
     isInsideVcall = false
 
@@ -647,15 +645,6 @@ class CodeGeneratorC
     opcode         = 0
     originalOpcode = 0
     paramsCnt      = 0
-
-    # TODO: Remove it.
-    arrayOfProcedures     = []
-    arrayOfMessageFormats = []
-    fmtHashToIdMap        = {}
-
-    # TODO: Clean up this mess.
-    fakeSymbolInfoForEOL   = {'name': '__EOL'}
-    fakeSymbolInfoForGlued = {'name': '@glued'}
 
     #
     # Translate code section.
@@ -900,10 +889,6 @@ class CodeGeneratorC
         elif opcode is MIR1_OPCODE_PROC
           proto = item[1]
 
-          # TODO: Fix me.
-          # TODO: Why it's crash here without below print?
-          #print ''
-
           currentProcProto = proto
           currentProcName  = proto.name
           currentProcRv    = proto.rv
@@ -927,7 +912,7 @@ class CodeGeneratorC
 
           # Extra entry point for virtual call.
           # Virtual call params are always variants.
-          # We need to translave variants to primitive before go on.
+          # We need to translate variants to primitive before go on.
           if currentSymbols{'this'} is defined
             isInsideVcall = true
             paramsProtoForC = 'Variant_t this'
@@ -946,8 +931,6 @@ class CodeGeneratorC
           # Ordinary entry point.
           # This address can be called directly with primitive params.
           print returnTypeForC, currentProcName, '(', paramsProtoForC, ') {'
-
-          arrayOfProcedures[@afterlast] = currentProcName
 
           # Profiler code if needed.
           if this.isProfilerEnabled is true
