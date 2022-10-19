@@ -595,3 +595,31 @@ print tmp, x
 EXPECTED_OUTPUT:
 1234 1234
 -------------------------------------------------------------------------------
+
+TEST "Bug: Broken CSE"
+
+class A
+  method constructor()
+    this.lastDst = [1,2,3]
+  endmethod
+
+  method processOneItem(item)
+    dst = item[0]
+
+    this.lastDst[@afterlast] = 'XXX'
+    for values oneItem in dst
+      this.lastDst[@afterlast] = oneItem
+    endfor
+
+    dst = this.lastDst
+    print this.lastDst
+
+  endmethod
+endclass
+
+obj = new A()
+obj.processOneItem([[4,5,6]])
+
+EXPECTED_OUTPUT:
+[1, 2, 3, 'XXX', 4, 5, 6]
+-------------------------------------------------------------------------------
