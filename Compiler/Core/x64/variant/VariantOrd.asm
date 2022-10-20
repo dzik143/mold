@@ -1,11 +1,12 @@
 __MOLD_Ord:
 __mold_ord:
-    mov    rax, [rcx + Variant_t.value]    ; rax = string (Buffer_t)
 
     ; TODO: Review it.
+    xor    eax, eax
     cmp    [rcx + Variant_t.type], VARIANT_STRING
     jnz    .notString ;__MOLD_PrintErrorAndDie.stringExpected
 
+    mov    rax, [rcx + Variant_t.value]    ; rax = string (Buffer_t)
     test   [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
     jnz    .oneCharacterString
 

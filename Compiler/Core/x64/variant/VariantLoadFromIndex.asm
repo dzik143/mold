@@ -104,25 +104,29 @@ __MOLD_VariantLoadFromIndex:
 
     ; TODO: Clean up this mess.
     test   [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
-    cmovnz eax, dword [rcx + Variant_t.value]
-    jnz    .oneCharacterSource
+    jz     .dynamicString
+    test   edx, edx
+    jnz    .nonZeroIndexForOneCharSource
 
-    xor    eax, eax                               ; rax = 0
+    mov    eax, dword [rcx + Variant_t.value]
+    jmp    .oneCharacterSource
+
+.dynamicString:
     mov    rcx, [rcx + Variant_t.value]           ; rcx = string buffer (Buffer_t)
     mov    rcx, [rcx + Buffer_t.bytesPtr]         ; rcx = string buffer (String_t)
 
     cmp    rdx, [rcx + String_t.length]           ;
     jae    .stringOutOfRangePeek                  ;
 
-    mov    al, [rcx + String_t.text + rdx]        ; rax = str[idx] (char)
+    movzx  eax, byte [rcx + String_t.text + rdx]  ; rax = str[idx] (char)
 
 .oneCharacterSource:
     mov    [r8 + Variant_t.type], VARIANT_STRING  ; rv.type  = string
     mov    [r8 + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    mov    [r8 + Variant_t.value], rax            ; rv.value = box[idx] (char)
 
 .stringOutOfRangePeek:
-
-    mov    [r8 + Variant_t.value], rax            ; rv.value = box[idx] (char)
+.nonZeroIndexForOneCharSource:
 
     DEBUG_CHECK_VARIANT r8
 
