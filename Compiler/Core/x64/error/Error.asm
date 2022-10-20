@@ -78,6 +78,7 @@ DefErrorEntry nullMethodCalled
     sub     rsp, 32
     call    [WriteFile]
     add     rsp, 64 + 32 + 8
+
     mov     ecx, -1
     call    [ExitProcess]
 

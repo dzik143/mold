@@ -102,6 +102,11 @@ __MOLD_VariantLoadFromIndex:
     ; Get char at index
     ; --------------------------------------------------------------------------
 
+    ; TODO: Clean up this mess.
+    test   [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    cmovnz eax, dword [rcx + Variant_t.value]
+    jnz    .oneCharacterSource
+
     xor    eax, eax                               ; rax = 0
     mov    rcx, [rcx + Variant_t.value]           ; rcx = string buffer (Buffer_t)
     mov    rcx, [rcx + Buffer_t.bytesPtr]         ; rcx = string buffer (String_t)
@@ -110,8 +115,10 @@ __MOLD_VariantLoadFromIndex:
     jae    .stringOutOfRangePeek                  ;
 
     mov    al, [rcx + String_t.text + rdx]        ; rax = str[idx] (char)
+
+.oneCharacterSource:
     mov    [r8 + Variant_t.type], VARIANT_STRING  ; rv.type  = string
-    or     [r8 + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
+    mov    [r8 + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
 
 .stringOutOfRangePeek:
 

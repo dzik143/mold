@@ -217,18 +217,6 @@ __MOLD_SysCall:
     ret
 
 ; ------------------------------------------------------------------------------
-; Convert char to byte
-; rcx - one character string (IN)
-; rdx - ascii code (OUT)
-; ------------------------------------------------------------------------------
-
-.ord:
-    mov     rax, [rcx + Variant_t.value]
-    mov     [rdx + Variant_t.type], VARIANT_INTEGER
-    mov     [rdx + Variant_t.value], rax
-    ret
-
-; ------------------------------------------------------------------------------
 ; Convert string to integer
 ; rcx - number as text e.g. '1234' (IN)
 ; rdx - integer value (OUT)
@@ -562,7 +550,7 @@ __MOLD_SysCall:
   dq .loadFile      ; 29
   dq .error         ; 30
 
-  dq .ord           ; 31
+  dq __MOLD_Ord     ; 31
   dq .asc           ; 32
   dq .parse_integer ; 33
   dq .parse_float   ; 34

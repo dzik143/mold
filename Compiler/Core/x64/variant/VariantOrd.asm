@@ -2,9 +2,9 @@ __MOLD_Ord:
 __mold_ord:
     mov    rax, [rcx + Variant_t.value]    ; rax = string (Buffer_t)
 
+    ; TODO: Review it.
     cmp    [rcx + Variant_t.type], VARIANT_STRING
-    jnz    __MOLD_PrintErrorAndDie.stringExpected
-
+    jnz    .notString ;__MOLD_PrintErrorAndDie.stringExpected
 
     test   [rcx + Variant_t.flags], VARIANT_FLAG_ONE_CHARACTER
     jnz    .oneCharacterString
@@ -15,7 +15,7 @@ __mold_ord:
 
 .notString:
 .oneCharacterString:
-    and    rax, 0xff                       ; rax = string[index]
-    mov    [rdi + Variant_t.value], rax
-    mov    [rdi + Variant_t.type], VARIANT_INTEGER
+    and    eax, 0xff                       ; rax = string[index]
+    mov    [rdx + Variant_t.value], rax
+    mov    [rdx + Variant_t.type], VARIANT_INTEGER
     ret

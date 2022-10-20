@@ -63,7 +63,7 @@ __MOLD_VariantStoreAtIndex_primitiveDone:
 ;
 ; rcx = box   (Variant_t) (IN)
 ; rdx = index (int32)     (IN)
-; r8  = rv    (Variant_t) (IN)
+; r8  = value (Variant_t) (IN)
 ;
 ;###############################################################################
 
