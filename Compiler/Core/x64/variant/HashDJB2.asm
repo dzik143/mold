@@ -3,7 +3,7 @@
 ; Calculate DJB2 string hash.
 ; http://www.cse.yorku.ca/~oz/hash.html
 ;
-; rcx = zero terminated string (IN)
+; rcx = zero terminated string (IN / String_t*)
 ;
 ; RETURNS: DJB2 hash (rax)
 ;

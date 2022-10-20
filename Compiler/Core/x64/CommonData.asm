@@ -137,5 +137,6 @@ __MOLD_TypeNames:
                      db 'object', 0
 
 ; TODO: Clean up this mess.
-__TrashBin Variant_t ?
+__TrashBin  Variant_t ?
+__TrashBin2 Variant_t ?
 __MOLD_TempFmt dq ?

@@ -111,7 +111,7 @@ __MOLD_VariantStoreAtKey:
     push      rdx
     push      r8
 
-    lea       rcx, [__TrashBin]
+    lea       rcx, [__TrashBin2]
     mov       dl, byte [rdx + Variant_t.value]
     call      __MOLD_VariantStringCreateFromOneChar
 
@@ -119,7 +119,7 @@ __MOLD_VariantStoreAtKey:
     pop       rdx
     pop       rcx
 
-    lea       rdx, [__TrashBin]
+    lea       rdx, [__TrashBin2]
 
 .key_is_dynamic:
 
