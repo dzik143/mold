@@ -35,6 +35,7 @@ __MOLD_VariantStringCreateFromOneChar:
 
     mov     rax, [rcx + Variant_t.value]
     mov     rax, [rax + Buffer_t.bytesPtr]
+    mov     byte [rax + String_t.length], 1
     mov     byte [rax + String_t.text], dl
 
     ret
