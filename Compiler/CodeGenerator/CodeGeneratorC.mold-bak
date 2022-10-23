@@ -1,0 +1,1499 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (C) 2015, 2022 Sylwester Wysocki <sw143@wp.pl>                     #
+#                                                                              #
+# This program is free software: you can redistribute it and/or modify         #
+# it under the terms of the GNU General Public License as published by         #
+# the Free Software Foundation, either version 3 of the License, or            #
+# (at your option) any later version.                                          #
+#                                                                              #
+# This program is distributed in the hope that it will be useful,              #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of               #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                #
+# GNU General Public License for more details.                                 #
+#                                                                              #
+# You should have received a copy of the GNU General Public License            #
+# along with this program. If not, see <http://www.gnu.org/licenses/>          #
+#                                                                              #
+################################################################################
+
+class CodeGeneratorC
+
+  method constructor()
+    this.symbols             = {}
+    this.globals             = {}
+    this.isProfilerEnabled   = false
+    this.mapOfEmittedBuffers = {}
+    this.isBufferEmitted     = {}
+  endmethod
+
+  method _getSymbolType(id) -> rv
+    global SYMBOL_KIND_LABEL
+
+    if id is string
+      rv = 'variant'
+      symbolInfo = this.symbols{id}
+
+      if symbolInfo is defined
+        if symbolInfo.type is defined
+          rv = symbolInfo.type
+
+        elif symbolInfo.kind is SYMBOL_KIND_LABEL
+          rv = 'label'
+        endif
+      endif
+
+    elif id is integer
+      if (id < -2147483648) or (id > 2147483647)
+        rv = 'int64'
+      else
+        rv = 'int32'
+      endif
+
+    elif id is float
+      rv = 'float64'
+
+    elif id is boolean
+      rv = 'bool32'
+
+    else
+      rv = 'custom'
+    endif
+  endmethod
+
+  method variantMove(dst, src)
+    print '  __MOLD_VariantMove(&', dst, ', &', src, ');'
+  endmethod
+
+  method variantDestroy(x)
+/*
+    #TODO
+    global SYMBOL_KIND_VAR_LOCAL
+    global SYMBOL_KIND_VAR_GLOBAL
+    global SYMBOL_KIND_VAR_RETVAL
+
+    xInfo = this.symbols{x}
+
+    if ((xInfo is undefined) or
+        (xInfo.kind is SYMBOL_KIND_VAR_LOCAL) or
+        (xInfo.kind is SYMBOL_KIND_VAR_GLOBAL) or
+        (xInfo.kind is SYMBOL_KIND_VAR_RETVAL))
+
+      if ((xInfo.type is undefined) or
+          (xInfo.type is 'string') or
+          (xInfo.type is 'variant'))
+        print '  __MOLD_VariantDestroy(&', x, ');'
+      endif
+    endif
+*/
+  endmethod
+
+  method _hash(x) -> rv
+    # TODO: Optimize it.
+    rv = typeof(x) ~ ':'
+
+    if x is array
+      rv = rv ~ str(len(x)) ~ ':'
+      for values item in x
+        rv = rv ~ this._hash(item)
+      endfor
+
+    else
+      rv = rv ~ str(x)
+    endif
+
+    rv = rv ~ ';'
+  endmethod
+
+  method emitConstant(name, value, wantDeepIdx, deepIdx, isAnonymouse)
+    type             = typeof(value)
+    isContentEmmited = false
+
+    if wantDeepIdx is deepIdx
+      bufferName = null
+
+      if (type is 'array') or (type is 'string')
+        # Check did we emit another buffer with the same content.
+        hash       = this._hash(value)
+        bufferName = this.mapOfEmittedBuffers{hash}
+
+        if bufferName is defined
+          # Buffer is already emited.
+          # Just use it for another variable.
+          print '// Reuse already emitted buffer'
+          this.isBufferEmitted{name} = true
+
+        else
+          # Buffer is unique at this moment.
+          # Generate new buffer name and go on.
+          bufferName = name ~ '_buffer'
+
+          # Save buffer name for further calls.
+          this.mapOfEmittedBuffers{hash} = bufferName
+        endif
+      endif
+
+      if isAnonymouse is false
+        print 'Variant_t', name, '='
+      endif
+
+      # Dispatch type.
+      if type is 'integer'
+        print '  { VARIANT_INTEGER, 0,', value, '}'
+
+      elif type is 'float'
+        print '  { VARIANT_DOUBLE, 0, valueAsFloat64:', value, '}'
+
+      elif type is 'string'
+        print '  { VARIANT_STRING, 0, (uint64_t) &', bufferName, '}'
+
+      elif type is 'array'
+        print '  { VARIANT_ARRAY, 0, (uint64_t) &', bufferName, '}'
+
+      elif type is 'boolean'
+        if value is true
+          valueAsInteger = '1'
+        else
+          valueAsInteger = '0'
+        endif
+
+        print '  { VARIANT_BOOLEAN, 0,', valueAsInteger, '}'
+
+      elif type is 'undefined'
+        print '  { 0, 0, 0 }'
+
+      else
+        die('error: unhandled type: ' ~ type)
+      endif
+
+      if isAnonymouse is true
+        print ','
+      else
+        print ';'
+      endif
+    endif
+
+
+    # Emit buffer content for complex variables.
+    if type is 'array'
+      this.emitArrayBufferHead(name, value, wantDeepIdx, deepIdx + 1)
+    elif type is 'string'
+      this.emitStringBufferHead(name, value, wantDeepIdx, deepIdx + 1)
+    endif
+  endmethod
+
+  method emitStringBufferHead(name, value, wantDeep, deepIdx)
+    if this.isBufferEmitted{name} is undefined
+      if wantDeep is deepIdx
+        bufferName      = name ~ '_buffer'
+        bufferNameBytes = name ~ '_bufferBytes'
+        print  'Buffer_t', bufferName, '= {', len(value) + 1, ', -1, 0, &', bufferNameBytes, '};'
+      endif
+    endif
+
+    this.emitStringBufferContent(name, value, wantDeep, deepIdx + 1)
+  endmethod
+
+  method escapeString(text) -> rv
+    rv = '"'
+    for values character in text
+      if character is '"'
+        rv = rv ~ '", 34, "'
+      else
+        rv = rv ~ character
+      endif
+    endfor
+    rv = rv ~ '"'
+  endmethod
+
+  method emitStringBufferContent(name, value, wantDeep, deepIdx)
+    if wantDeep is deepIdx
+      bufferNameBytes = name ~ '_bufferBytes'
+      stringLen       = len(value)
+
+      # TODO: Handle 64-bit strings.
+      bytesAsText = str(bitand(stringLen, 0xff))
+      bytesAsText = bytesAsText ~ ',' ~ str(bitand(stringLen // 0xff     , 0xff))
+      bytesAsText = bytesAsText ~ ',' ~ str(bitand(stringLen // 0xffff   , 0xff))
+      bytesAsText = bytesAsText ~ ',' ~ str(bitand(stringLen // 0xffffff , 0xff))
+      bytesAsText = bytesAsText ~ ',0,0,0,0  '
+
+      for values character in value
+        bytesAsText = bytesAsText ~ ',' ~ str(ord(character))
+      endfor
+
+      print 'uint8_t', bufferNameBytes, '[', '] = {', bytesAsText, ',0 };'
+    endif
+  endmethod
+
+  method emitArrayBufferHead(name, items, wantDeepIdx, deepIdx)
+    if this.isBufferEmitted{name} is undefined
+      if wantDeepIdx is deepIdx
+        itemsCnt        = len(items)
+        bufferName      = name ~ '_buffer'
+        bufferNameBytes = name ~ '_bufferBytes'
+
+        print 'Buffer_t', bufferName, ' = {', itemsCnt * 16, ', -1, 0, &', bufferNameBytes, '};'
+      endif
+
+      this.emitArrayBufferContent(name, items, wantDeepIdx, deepIdx + 1)
+    endif
+  endmethod
+
+  method emitArrayBufferContent(name, items, wantDeepIdx, deepIdx)
+    itemsCnt = len(items)
+
+    if wantDeepIdx is deepIdx
+      # TODO: Optimize it.
+      # TODO: Move innerType check to earliear stage.
+      innerType        = typeof(items[0])
+      innerSize        = 0
+      innerTypeForEmit = '0'
+      structName       = 'Array_int8_t'
+      innerValueMin    = items[0] # TODO: Use MAX_INTEGER like const?
+      innerValueMax    = items[0] # TODO: Use MIN_INTEGER like const?
+      innerItemIdx     = 0
+      itemValue        = null
+
+      goOn = true
+
+      while (goOn is true) and (innerItemIdx < itemsCnt)
+        itemValue = items[innerItemIdx]
+        itemType  = typeof(itemValue)
+
+        if itemType isnt innerType
+          # Various types in one array.
+          # Fall-back to variant storage and don't go anymore.
+          innerTypeForEmit = '0'
+          structName       = 'Array_t'
+          goOn             = false
+
+        elif itemType is 'integer'
+          innerTypeForEmit = 'VARIANT_INTEGER'
+
+          # Track max/min values to compact array storage.
+          if (innerSize < 3) and ((itemValue < -2147483648) or (itemValue > 2147483647))
+           # 2^3 bytes = 8 bytes = 64 bit (qword)
+           innerSize  = 3
+           structName = 'Array_int64_t'
+
+          elif (innerSize < 2) and ((itemValue < -32768) or (itemValue > 32767))
+           # 2^2 bytes = 4 bytes = 32 bit (dword)
+           innerSize  = 2
+           structName = 'Array_int32_t'
+
+          elif (innerSize < 2) and ((itemValue < -128) or (itemValue > 127))
+           # 2^1 bytes = 2 bytes = 16 bit (word)
+           innerSize  = 1
+           structName = 'Array_int16_t'
+          endif
+
+        else
+          # Non-integer primitive.
+          # Fall-back to variant storage and don't go anymore.
+          # TODO: Don't duplcate code.
+          # TODO: Handle non-integer primitives in const arrays.
+          innerTypeForEmit = '0'
+          structName       = 'Array_t'
+          goOn             = false
+        endif
+
+        # Go to next item.
+        innerItemIdx = innerItemIdx + 1
+      endwhile
+
+      # print '; innerType:'     , innerType
+      # print '; innerValueMin:' , innerValueMin
+      # print '; innerValueMax:' , innerValueMax
+
+      bufferName      = name ~ '_buffer'
+      bufferNameBytes = name ~ '_bufferBytes'
+
+      print structName, bufferNameBytes, '= {'
+      print ' ', innerTypeForEmit, ', // inner type'
+      print ' ', innerSize, ', // inner size'
+      print '  0, 0, 0, // reserved'
+      print ' ', itemsCnt, ', // itemsCnt'
+      print '  items: {'
+
+      # Emit items as flat array if possible.
+      if innerTypeForEmit isnt '0'
+        sep = ' '
+
+        for itemIdx in 0 .. itemsCnt
+          __mold_printToStdOutput(sep)
+
+          if items[itemIdx] is defined
+            __mold_printToStdOutput(items[itemIdx])
+          else
+            __mold_printToStdOutput('0')
+          endif
+
+          sep = ', '
+        endfor
+        print ''
+
+        # Don't go on recursively.
+        itemsCnt = -1
+      endif
+    endif
+
+    # Go on recursively for variant arrays.
+    for itemIdx in 0 .. itemsCnt
+      this.emitConstant(name ~ '_' ~ str(itemIdx), items[itemIdx], wantDeepIdx, deepIdx, true)
+    endfor
+
+    # Close C array.
+    if wantDeepIdx is deepIdx
+      print '}};'
+      print ''
+    endif
+  endmethod
+
+  method _getHandlerFct(opcode) -> rv
+    global MIR1_OPCODE_COMMENT, MIR1_OPCODE_LABEL
+    global MIR1_OPCODE_PROC, MIR1_OPCODE_ENDP
+    global MIR1_OPCODE_MOVE, MIR1_OPCODE_CONV
+    global MIR1_OPCODE_NEG, MIR1_OPCODE_ADD, MIR1_OPCODE_SUB
+    global MIR1_OPCODE_MUL, MIR1_OPCODE_DIV, MIR1_OPCODE_IDIV
+    global MIR1_OPCODE_CMP_EQ, MIR1_OPCODE_CMP_NE, MIR1_OPCODE_CMP_LT
+    global MIR1_OPCODE_CMP_LE, MIR1_OPCODE_CMP_GT, MIR1_OPCODE_CMP_GE
+    global MIR1_OPCODE_CMP_IS_TYPEOF, MIR1_OPCODE_CMP_IS_NOT_TYPEOF
+    global MIR1_OPCODE_JMP_IF_TYPEOF, MIR1_OPCODE_JMP_IF_NOT_TYPEOF
+    global MIR1_OPCODE_JMP, MIR1_OPCODE_JMP_BY_TABLE
+    global MIR1_OPCODE_JMP_IF_TRUE, MIR1_OPCODE_JMP_IF_FALSE
+    global MIR1_OPCODE_JMP_IF_EQ, MIR1_OPCODE_JMP_IF_NE
+    global MIR1_OPCODE_JMP_IF_LT, MIR1_OPCODE_JMP_IF_LE
+    global MIR1_OPCODE_JMP_IF_GT, MIR1_OPCODE_JMP_IF_GE
+    global MIR1_OPCODE_CALL, MIR1_OPCODE_VCALL, MIR1_OPCODE_SYSCALL
+    global MIR1_OPCODE_RET, MIR1_OPCODE_INNER_RET
+    global MIR1_OPCODE_NOP, MIR1_OPCODE_STRING_JOIN
+    global MIR1_OPCODE_LOAD_NULL, MIR1_OPCODE_PRINT
+    global MIR1_OPCODE_CREATE_OBJECT, MIR1_OPCODE_CREATE_ARRAY
+    global MIR1_OPCODE_CREATE_MAP
+    global MIR1_OPCODE_STORE_INDEX, MIR1_OPCODE_LOAD_INDEX
+    global MIR1_OPCODE_STORE_KEY, MIR1_OPCODE_LOAD_KEY
+    global MIR1_OPCODE_CREATE_VARIANT_FROM, MIR1_OPCODE_CAST_VARIANT_TO
+    global MIR1_OPCODE_INIT_FRAME, MIR1_OPCODE_CLEAR_VAR
+    global MIR1_OPCODE_CMP_CC_GROUP, MIR1_OPCODE_JMP_IF_CC_GROUP
+
+    if opcode is MIR1_OPCODE_MOVE
+      rv = '__mir1_move'
+
+    elif opcode is MIR1_OPCODE_CONV
+      rv = '__mir1_conv'
+
+    elif opcode is MIR1_OPCODE_NEG
+      rv = '__mir1_neg'
+
+    elif opcode is MIR1_OPCODE_ADD
+      rv = '__mir1_add'
+
+    elif opcode is MIR1_OPCODE_SUB
+      rv = '__mir1_sub'
+
+    elif opcode is MIR1_OPCODE_MUL
+      rv = '__mir1_mul'
+
+    elif opcode is MIR1_OPCODE_DIV
+      rv = '__mir1_div'
+
+    elif opcode is MIR1_OPCODE_IDIV
+      rv = '__mir1_idiv'
+
+    elif opcode is MIR1_OPCODE_CMP_EQ
+      rv = '__mir1_cmpEQ'
+
+    elif opcode is MIR1_OPCODE_CMP_NE
+      rv = '__mir1_cmpNE'
+
+    elif opcode is MIR1_OPCODE_CMP_LT
+      rv = '__mir1_cmpLT'
+
+    elif opcode is MIR1_OPCODE_CMP_GE
+      rv = '__mir1_cmpGE'
+
+    elif opcode is MIR1_OPCODE_CMP_LE
+      rv = '__mir1_cmpLE'
+
+    elif opcode is MIR1_OPCODE_CMP_GT
+      rv = '__mir1_cmpGT'
+
+    elif opcode is MIR1_OPCODE_JMP_IF_EQ
+      rv = '__mir1_jmpIfEQ'
+
+    elif opcode is MIR1_OPCODE_JMP_IF_NE
+      rv = '__mir1_jmpIfNE'
+
+    elif opcode is MIR1_OPCODE_JMP_IF_LT
+      rv = '__mir1_jmpIfLT'
+
+    elif opcode is MIR1_OPCODE_JMP_IF_GE
+      rv = '__mir1_jmpIfGE'
+
+    elif opcode is MIR1_OPCODE_JMP_IF_LE
+      rv = '__mir1_jmpIfLE'
+
+    elif opcode is MIR1_OPCODE_JMP_IF_GT
+      rv = '__mir1_jmpIfGT'
+
+    elif opcode is MIR1_OPCODE_CMP_IS_TYPEOF
+      rv = '__mir1_cmpTypeof'
+
+    elif opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF
+      rv = '__mir1_cmpNotTypeof'
+
+    elif opcode is MIR1_OPCODE_JMP_IF_TYPEOF
+      rv = '__mir1_jmpIfTypeof'
+
+    elif opcode is MIR1_OPCODE_JMP_IF_NOT_TYPEOF
+      rv = '__mir1_jmpIfNotTypeof'
+
+    elif opcode is MIR1_OPCODE_JMP
+      rv = '__mir1_jmp'
+
+    elif opcode is MIR1_OPCODE_JMP_IF_TRUE
+      rv = '__mir1_jmpIfTrue'
+
+    elif opcode is MIR1_OPCODE_JMP_IF_FALSE
+      rv = '__mir1_jmpIfFalse'
+
+    elif opcode is MIR1_OPCODE_CREATE_OBJECT
+      rv = '__mir1_createObject'
+
+    elif opcode is MIR1_OPCODE_CREATE_ARRAY
+      rv = '__mir1_createArray'
+
+    elif opcode is MIR1_OPCODE_CREATE_MAP
+      rv = '__mir1_createMap'
+
+    elif opcode is MIR1_OPCODE_STORE_INDEX
+      rv = '__mir1_storeIndex'
+
+    elif opcode is MIR1_OPCODE_LOAD_INDEX
+      rv = '__mir1_loadIndex'
+
+    elif opcode is MIR1_OPCODE_STORE_KEY
+      rv = '__mir1_storeKey'
+
+    elif opcode is MIR1_OPCODE_LOAD_KEY
+      rv = '__mir1_loadKey'
+
+    elif opcode is MIR1_OPCODE_CREATE_VARIANT_FROM
+      rv = '__mir1_variantFrom'
+
+    elif opcode is MIR1_OPCODE_CAST_VARIANT_TO
+      rv = '__mir1_variantTo'
+
+    elif opcode is MIR1_OPCODE_STRING_JOIN
+      rv = '__mir1_stringJoin'
+
+    elif opcode is MIR1_OPCODE_LOAD_NULL
+      rv = '__mir1_loadNull'
+
+    else
+      rv = null
+    endif
+  endmethod
+
+  method run(codeObj)
+    global SYMBOL_KIND_VAR_LOCAL, SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_CONST
+    global SYMBOL_KIND_VAR_PARAM, SYMBOL_KIND_JMP_TABLE, SYMBOL_KIND_VAR_RETVAL
+    global SYMBOL_KIND_FUNCTION
+
+    global REG_PARAMS_CNT, REG_PARAMS32, REG_PARAMS64
+    global MIR_TO_VARIANT_TYPE_MAP, MIR_TYPE_SIZE_MAP
+    global _VARIANT_INTEGER
+    global _VARIANT_STRING
+    global _VARIANT_DOUBLE
+    global _VARIANT_BOOLEAN
+
+    global MIR1_OPCODE_COMMENT, MIR1_OPCODE_LABEL
+    global MIR1_OPCODE_PROC, MIR1_OPCODE_ENDP
+    global MIR1_OPCODE_MOVE, MIR1_OPCODE_CONV
+    global MIR1_OPCODE_NEG, MIR1_OPCODE_ADD, MIR1_OPCODE_SUB
+    global MIR1_OPCODE_MUL, MIR1_OPCODE_DIV, MIR1_OPCODE_IDIV
+    global MIR1_OPCODE_CMP_EQ, MIR1_OPCODE_CMP_NE, MIR1_OPCODE_CMP_LT
+    global MIR1_OPCODE_CMP_LE, MIR1_OPCODE_CMP_GT, MIR1_OPCODE_CMP_GE
+    global MIR1_OPCODE_CMP_IS_TYPEOF, MIR1_OPCODE_CMP_IS_NOT_TYPEOF
+    global MIR1_OPCODE_JMP_IF_TYPEOF, MIR1_OPCODE_JMP_IF_NOT_TYPEOF
+    global MIR1_OPCODE_JMP, MIR1_OPCODE_JMP_BY_TABLE
+    global MIR1_OPCODE_JMP_IF_TRUE, MIR1_OPCODE_JMP_IF_FALSE
+    global MIR1_OPCODE_JMP_IF_EQ, MIR1_OPCODE_JMP_IF_NE
+    global MIR1_OPCODE_JMP_IF_LT, MIR1_OPCODE_JMP_IF_LE
+    global MIR1_OPCODE_JMP_IF_GT, MIR1_OPCODE_JMP_IF_GE
+    global MIR1_OPCODE_CALL, MIR1_OPCODE_VCALL, MIR1_OPCODE_SYSCALL
+    global MIR1_OPCODE_RET, MIR1_OPCODE_INNER_RET
+    global MIR1_OPCODE_NOP, MIR1_OPCODE_STRING_JOIN
+    global MIR1_OPCODE_LOAD_NULL, MIR1_OPCODE_PRINT
+    global MIR1_OPCODE_CREATE_OBJECT, MIR1_OPCODE_CREATE_ARRAY
+    global MIR1_OPCODE_CREATE_MAP
+    global MIR1_OPCODE_STORE_INDEX, MIR1_OPCODE_LOAD_INDEX
+    global MIR1_OPCODE_STORE_KEY, MIR1_OPCODE_LOAD_KEY
+    global MIR1_OPCODE_CREATE_VARIANT_FROM, MIR1_OPCODE_CAST_VARIANT_TO
+    global MIR1_OPCODE_INIT_FRAME
+    global MIR1_OPCODE_CMP_CC_GROUP, MIR1_OPCODE_JMP_IF_CC_GROUP
+    global MIR_COMPARE_FLAGS_FOR_INTEGERS, MIR_COMPARE_FLAGS_FOR_FLOATS
+    global MIR_ALU_OPCODES_FOR_INTEGERS, MIR_ALU_OPCODES_FOR_FLOATS
+    global MIR1_OPCODE_ALU2_GROUP
+
+    global MIR1_FIRST_DST_OP_X_Y_OPCODE
+    global MIR1_FIRST_CALL_LIKE_OPCODE
+    global MIR1_FIRST_CUSTOM_OPCODE
+
+    # TODO: Clean up this mess.
+    syscallMap = {
+      '2': '__MOLD_FileOpenForRead',   # 2
+      '3': '__MOLD_FileOpenForWrite',  # 3
+      '4': '__MOLD_FileOpenForCreate', # 4
+      '5': '__MOLD_FileClose',         # 5
+
+      '8':  '__MOLD_FileReadInt8',      # 8
+      '9':  '__MOLD_FileReadInt16',     # 9
+      '10': '__MOLD_FileReadInt32',     # 10
+      '11': '__MOLD_FileReadInt64',     # 11
+
+      '14': '__MOLD_FileReadFloat32',   # 14
+      '15': '__MOLD_FileReadFloat64',   # 15
+      '16': '__MOLD_FileReadBool8',     # 16
+      '17': '__MOLD_FileReadBool16',    # 17
+      '18': '__MOLD_FileReadBool32',    # 18
+      '19': '__MOLD_FileReadBool64',    # 19
+      '20': '__MOLD_FileReadChar',      # 20
+
+      '21': '__MOLD_FileWriteBinary8',   # 21
+      '22': '__MOLD_FileWriteBinary16',  # 22
+      '23': '__MOLD_FileWriteBinary32',  # 23
+      '24': '__MOLD_FileWriteBinary64',  # 24
+      '25': '__MOLD_FileWriteBinary128', # 25
+
+      '29': '__MOLD_FileLoad',      # 29
+
+      '30': '__MOLD_EmptySyscall',  # 30
+
+      '31': '__MOLD_Ord',           # 31
+      '32': '__MOLD_Asc',           # 32
+      '33': '__MOLD_ParseInteger',  # 33
+      '34': '__MOLD_ParseFloat',    # 34
+
+      '35': '__MOLD_Bitand',        # 35
+      '36': '__MOLD_Bitor',         # 36
+      '37': '__MOLD_Bitxor',        # 37
+      '38': '__MOLD_Bitnot',        # 38
+
+      '39': '__MOLD_CallExternal',  # 39
+
+      '40': '__MOLD_Exit',          # 40
+      '41': '__MOLD_Die',           # 41
+      '42': '__MOLD_Str',           # 42
+      '43': '__MOLD_Len',           # 43
+      '44': '__MOLD_Typeof',        # 44
+
+      '45': '__MOLD_VariantPrint',  # 45
+      '46': '__MOLD_Warning',       # 46
+
+      '50': '__MOLD_ArrayInsertAfterLast',
+      '51': '__MOLD_ArrayInsertBeforeFirst',
+
+      '55': '__MOLD_SubStr',
+      '56': '__MOLD_InnerTypeOf',
+      '57': '__MOLD_GetTypeId'
+    }
+
+    # TODO: Clean up this mess.
+    const MIR_COMPARE_FLAGS = ['eq', 'ne', 'lt', 'ge', 'le', 'gt']
+
+    MIR_TO_C_TYPE_MAP = {
+      'variant': 'Variant_t',
+      'string':  'Variant_t',
+      'int32':   'int32_t',
+      'int64':   'int64_t',
+      'float32': 'float32_t',
+      'float64': 'float64_t',
+      'bool32':  'bool32_t'
+    }
+
+    # Used during conversion: variant -> primitive.
+    # Read needed minimum.
+    MIR_TO_C_VARIANT_VALUE_AS_MAP = {
+      'int32':   'valueAsInt32',
+      'int64':   'valueAsInt64',
+      'float32': 'valueAsFloat32',
+      'float64': 'valueAsFloat64',
+      'bool32':  'valueAsInt32'
+    }
+
+    # TODO: Review it.
+    # Used during conversion: primitive -> variant.
+    # Store as many as possible to avoid unexpected beheaviors:
+    # - non zeroed higher 32-bit,
+    # - not extended sign bits etc.
+    MIR_TO_C_VARIANT_VALUE_AS_MAP_WRITE = {
+      'int32':   'valueAsInt64',
+      'int64':   'valueAsInt64',
+      'float32': 'valueAsFloat32',
+      'float64': 'valueAsFloat64',
+      'bool32':  'valueAsInt64'
+    }
+
+    MIR_TO_VARIANT_TYPE = {
+      'int32':   'VARIANT_INTEGER',
+      'int64':   'VARIANT_INTEGER',
+      'float32': 'VARIANT_FLOAT',
+      'float64': 'VARIANT_DOUBLE',
+      'bool32':  'VARIANT_BOOLEAN'
+    }
+
+    print '#include <Mold.h>'
+
+    print '// -----------------------------------------------------------------------------'
+    print '//                                 Data section'
+    print '// -----------------------------------------------------------------------------'
+
+    this.globals = codeObj.symbolTable.exportSymbols()
+
+    print ''
+    print '// Global vars'
+    print '// -----------'
+
+    for values oneItem in this.globals
+      if (oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and (oneItem.writeHits > 0)
+        if ((oneItem.type is 'variant') or
+            (oneItem.type is 'string') or
+            (oneItem.type is undefined))
+          print 'Variant_t', oneItem.name, '= {0};'
+
+        elif oneItem.type is 'int64'
+          print 'int64_t', oneItem.name, '= 0;'
+
+        elif oneItem.type is 'int32'
+          print 'int32_t', oneItem.name, '= 0;'
+
+        elif oneItem.type is 'float64'
+          print 'float64_t', oneItem.name, '= 0.0;'
+
+        elif oneItem.type is 'bool32'
+          print 'bool32_t', oneItem.name, '= 0;'
+
+        else
+          die('error: unhandled global type: ' ~ str(oneItem.type))
+        endif
+      endif
+    endfor
+
+    #
+    # TODO: Dump constant data to another section to catch access
+    # violation on write attemp.
+    #
+
+    print '// Constants'
+    print '// ---------'
+
+    # TODO: Clean up this mess.
+    print 'Variant_t __undefined = { 0 };'
+
+    # TODO: Optimize it.
+    # TODO: Use reverse for with step.
+    deepIdx = 16
+    while deepIdx > 0
+      deepIdx = deepIdx - 1
+
+      # print '// iter', deepIdx
+
+      for values symbolInfo in this.globals
+        if (symbolInfo.kind is SYMBOL_KIND_CONST) and (symbolInfo.readHits > 0)
+          name  = symbolInfo.name
+          value = symbolInfo.value
+          this.emitConstant(name, value, deepIdx, 0, false)
+        endif
+      endfor
+    endwhile
+
+    # Emit vtables forward declarations.
+    print ''
+    print '// forward declarations: vtables'
+    print '// -----------------------------'
+
+    classList = codeObj.classList
+
+    for values oneClassProto in classList
+      print 'extern void *__vtable_' ~ oneClassProto.name, '[];'
+    endfor
+
+    # Emit functions forward declarations.
+    # TODO: Clean up this mess.
+    # TODO: Don't duplicate code.
+
+    print ''
+    print '// forward declarations: functions'
+    print '// -------------------------------'
+
+    for values oneItem in this.globals
+      if oneItem.kind is SYMBOL_KIND_FUNCTION
+        proto = oneItem.proto
+
+        if (proto.builtIn is undefined) or (proto.builtIn is false)
+          # Build C function proto.
+          if proto.rv is defined
+            symbolInfo     = proto.symbols{proto.rv}
+            returnTypeForC = MIR_TO_C_TYPE_MAP{symbolInfo.type}
+          else
+            returnTypeForC = 'void'
+          endif
+
+          if proto.symbols{'this'} is defined
+            paramsProtoForC = 'Variant_t this'
+            sep = ', '
+          else
+            paramsProtoForC = ''
+            sep = ''
+          endif
+
+          # Build params for ordinary call.
+          # Possible primitive types.
+          for values paramName in proto.params
+            symbolInfo  = proto.symbols{paramName}
+            symbolTypeC = MIR_TO_C_TYPE_MAP{symbolInfo.type}
+            paramsProtoForC = paramsProtoForC ~ sep ~ symbolTypeC
+            sep = ', '
+          endfor
+
+          # Ordinary entry point.
+          # This address can be called directly with primitive params.
+          print returnTypeForC, proto.fullName, '(', paramsProtoForC, ');'
+        endif
+      endif
+    endfor
+
+    print '// -----------------------------------------------------------------------------'
+    print '//                                 Code section'
+    print '// -----------------------------------------------------------------------------'
+
+    #
+    # Fetch code and code metas.
+    #
+
+    quads = codeObj.quads
+
+    currentProcProto    = null
+    currentProcName     = null
+    currentProcRv       = null
+    currentProcRvType   = null
+    currentSymbols      = {}
+
+    isInsideVcall = false
+
+    dst = null
+    x   = null
+    y   = null
+
+    opcode         = 0
+    originalOpcode = 0
+    paramsCnt      = 0
+
+    #
+    # Translate code section.
+    #
+
+    for values item in quads
+      # Fetch instruction
+      itemCnt = len(item)
+      opcode  = item[0]
+      dst     = item[1]
+      x       = item[2]
+      y       = item[3]
+
+      dstType = this._getSymbolType(dst)
+      xType   = this._getSymbolType(x)
+      yType   = this._getSymbolType(y)
+
+      #if ((opcode isnt MIR1_OPCODE_COMMENT) and
+      #    (opcode isnt MIR1_OPCODE_PROC) and
+      #    (opcode isnt MIR1_OPCODE_INIT_FRAME))
+      #  print '  // [C]', MIR1_GetOpcodeAsText(opcode), '(', opcode, ')', dst, x, y
+      #endif
+
+      isOpcodeHandled = true
+/*
+      opcodeHandlerFct = this._getHandlerFct(opcode)
+
+      if opcodeHandlerFct is defined
+        # Prepare C function to use.
+        # Prepare argument for call list.
+        dstForEmit = ''
+        xForEmit   = ''
+        yForEmit   = ''
+        sep1       = ''
+        sep2       = ''
+
+        if dst is defined
+          dstForEmit = dst
+          opcodeHandlerFct = opcodeHandlerFct ~ '_' ~ dstType
+        endif
+
+        if x is defined
+          xForEmit = x
+          opcodeHandlerFct = opcodeHandlerFct ~ '_' ~ xType
+          sep1 = ', '
+        endif
+
+        if y is defined
+          yForEmit = y
+          opcodeHandlerFct = opcodeHandlerFct ~ '_' ~ yType
+          sep2 = ', '
+        endif
+
+        # Emit C call.
+        print '  ' ~ opcodeHandlerFct ~ '(' ~ dstForEmit ~ sep1 ~ xForEmit ~ sep2 ~ yForEmit ~ ')'
+
+
+      # ----------------------------------------------------------------------
+      #                   Opcodes with custom handlers
+      # ----------------------------------------------------------------------
+*/
+      if opcode >= MIR1_FIRST_CUSTOM_OPCODE
+
+        if opcode is MIR1_OPCODE_CREATE_ARRAY
+          this.variantDestroy(dst)
+          if x is defined
+            print ' ', dst, '= __MOLD_VariantArrayCreateFromInitList(&', x, ');'
+          else
+            print ' ', dst, '= __MOLD_VariantArrayCreate();'
+          endif
+
+        elif opcode is MIR1_OPCODE_CREATE_MAP
+          this.variantDestroy(dst)
+          if x is defined
+            print ' ', dst, '= __MOLD_VariantMapCreateFromInitList(&', x, ',&', y, ');'
+          else
+            print ' ', dst, '= __MOLD_VariantMapCreate();'
+          endif
+
+        elif opcode is MIR1_OPCODE_JMP_BY_TABLE
+          symbolInfo = codeObj.symbolTable.lookup(dst)
+
+          # Emit jmp table.
+          labels       = symbolInfo.labels
+          defaultLabel = symbolInfo.defaultLabel
+
+          print '  static void *', symbolInfo.name, '[] = {'
+
+          # TODO: Remove out-of-range labels at earlier stage.
+          for labelIdx in symbolInfo.valueMin .. symbolInfo.valueMax + 1
+            nextLabel = labels[labelIdx]
+
+            if nextLabel is undefined
+              print '   &&', defaultLabel, ', //', labelIdx, ' (otherwise)'
+            else
+              print '   &&', nextLabel, ', //', labelIdx
+            endif
+          endfor
+
+          print '   &&', defaultLabel, '// explicit default case'
+          print '  };'
+          print ''
+
+          # Emit goto by table.
+          # if (x - valueMin > valueMax - valueMin) {
+          #   goto dst[defaultLabel];
+          # } else {
+          #   goto *dst[x];
+          # }
+          valueRange = symbolInfo.valueMax - symbolInfo.valueMin
+
+          print '  if ((uint32_t)', x, '-', symbolInfo.valueMin, '>', valueRange, ') {'
+          print '    goto', symbolInfo.defaultLabel, ';'
+          print '  } else {'
+          print '    goto *', dst, '[', x, ' -', symbolInfo.valueMin, '];'
+          print '  }'
+
+        elif opcode is MIR1_OPCODE_STRING_JOIN
+          print '  __MOLD_VariantStringJoin(&', dst, ', &', x, ', &', y, ');'
+
+        elif ((opcode is MIR1_OPCODE_CMP_IS_TYPEOF) or
+              (opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF) or
+              (opcode is MIR1_OPCODE_JMP_IF_TYPEOF) or
+              (opcode is MIR1_OPCODE_JMP_IF_NOT_TYPEOF))
+
+          if xType is 'variant'
+            if opcode is MIR1_OPCODE_CMP_IS_TYPEOF
+              print ' ', dst, '=', x, '.type ==', y, ';'
+
+            elif opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF
+              print ' ', dst, '=', x, '.type !=', y, ';'
+
+            elif opcode is MIR1_OPCODE_JMP_IF_TYPEOF
+              print '  if (', x, '.type ==', y, ') goto', dst, ';'
+
+            elif opcode is MIR1_OPCODE_JMP_IF_NOT_TYPEOF
+              print '  if (', x, '.type !=', y, ') goto', dst, ';'
+            endif
+
+          else
+            # TODO: Resolve at earlier stage.
+            cmpResult = false
+
+            if xType is 'float64'
+              cmpResult = y is _VARIANT_DOUBLE
+
+            elif xType is 'int32'
+              cmpResult = y is _VARIANT_INTEGER
+
+            elif xType is 'bool32'
+              cmpResult = y is _VARIANT_INTEGER
+
+            elif xType is 'string'
+              cmpResult = y is _VARIANT_STRING
+            endif
+
+            if opcode is MIR1_OPCODE_CMP_IS_TYPEOF
+              print ' ', dst, '=', cmpResult, ';'
+
+            elif opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF
+              # TODO: Use not x
+              if cmpResult is true
+                print ' ', dst, '= false;'
+              else
+                print ' ', dst, '= true;'
+              endif
+
+            elif opcode is MIR1_OPCODE_JMP_IF_TYPEOF
+              if cmpResult is true
+                print '  goto', dst, ';'
+              endif
+
+            elif opcode is MIR1_OPCODE_JMP_IF_NOT_TYPEOF
+              if cmpResult is false
+                print '  goto', dst, ';'
+              endif
+            endif
+          endif
+
+        elif opcode is MIR1_OPCODE_CREATE_OBJECT
+          this.variantDestroy(dst)
+          print ' ', dst, '= __MOLD_VariantObjectCreate(', '__vtable_' ~ str(x), ');'
+
+        elif opcode is MIR1_OPCODE_STORE_INDEX
+          # dst[x] := y
+          print '  __MOLD_VariantStoreAtIndex_' ~ yType, '(&', dst, ',', x, ',', y, ');'
+
+        elif opcode is MIR1_OPCODE_STORE_KEY
+          # dst{x} := y
+          print '  __MOLD_VariantStoreAtKey_' ~ yType, '(&', dst, ',&', x, ',', y, ');'
+
+        elif opcode is MIR1_OPCODE_COMMENT
+          print '//', dst
+
+        elif opcode is MIR1_OPCODE_LABEL
+          # TODO: Clean up this mess.
+          # TODO: Better way to detect inner function.
+          # TODO: Implement substr() like function.
+          if (dst[0] is 'l') and (dst[1] is 'o')
+            # Inner function begin: loopBegin_lxxx:
+            print '  void', dst, '() {'
+
+          else
+            # General case: lxxx:
+            print dst, ':;'
+          endif
+
+        elif opcode is MIR1_OPCODE_JMP
+          # TODO: Clean up this mess.
+          if dst is '__MOLD_PrintErrorAndDie.notImplemented'
+            print '  __MOLD_PrintErrorAndDie_notImplemented();'
+            print '}'
+
+          else
+            print '  goto', dst, ';'
+          endif
+
+        elif opcode is MIR1_OPCODE_LOAD_NULL
+          print ' ', dst, '.type = VARIANT_UNDEFINED;'
+          # this.variantDestroy(dst)
+
+        elif opcode is MIR1_OPCODE_PRINT
+          params        = dst
+          isSpaceNeeded = false
+
+          for values oneParam in params
+            # Emit space separator if needed.
+            if isSpaceNeeded is true
+              # TODO: Clean up this mess.
+              if ((oneParam isnt string) or
+                  ((oneParam isnt '@glued') and (oneParam isnt '__EOL')))
+                print '  __MOLD_Print_space();'
+              endif
+            endif
+
+            isSpaceNeeded = true
+
+            if oneParam is string
+              symbolInfo = currentSymbols{oneParam}
+
+              if oneParam is '__EOL'
+                print '  __MOLD_Print_EOL();'
+                isSpaceNeeded = false
+
+              elif oneParam is '@glued'
+                # Do nothing.
+                isSpaceNeeded = false
+
+              else
+                if symbolInfo isnt defined
+                  # TODO: Clean up this mess.
+                  # Try global.
+                  symbolInfo = codeObj.symbolTable.lookup(oneParam)
+                endif
+
+
+                if (symbolInfo.type isnt defined) or (symbolInfo.type is 'variant')
+                  # Complex variable.
+                  print '  __MOLD_Print_variant(&', oneParam, ');'
+                else
+                  # Primitive variable.
+                  print '  __MOLD_Print_' ~ str(symbolInfo.type), '(', oneParam, ');'
+                endif
+              endif
+
+            else
+              # Immediate value.
+              print '  __MOLD_Print_' ~ this._getSymbolType(oneParam), '(', oneParam, ');'
+            endif
+          endfor
+
+          print '  __MOLD_Print_EOL();'
+
+        elif opcode is MIR1_OPCODE_PROC
+          proto = item[1]
+
+          # TODO: Fix me.
+          # TODO: Why it's crash here without below print?
+          #print ''
+
+          currentProcProto = proto
+          currentProcName  = proto.name
+          currentProcRv    = proto.rv
+          currentSymbols   = proto.symbols
+          isInsideVcall    = false
+
+          if currentProcRv is defined
+            symbolInfo        = currentSymbols{currentProcRv}
+            currentProcRvType = symbolInfo.type
+          endif
+
+          # Build C function proto.
+          if currentProcRv is defined
+            returnTypeForC = MIR_TO_C_TYPE_MAP{currentProcRvType}
+          else
+            returnTypeForC = 'void'
+          endif
+
+          paramsProtoForC = ''
+          sep = ''
+
+          # Extra entry point for virtual call.
+          # Virtual call params are always variants.
+          # We need to translave variants to primitive before go on.
+          if currentSymbols{'this'} is defined
+            isInsideVcall = true
+            paramsProtoForC = 'Variant_t this'
+            sep = ', '
+          endif
+
+          # Build params for ordinary call.
+          # Possible primitive types.
+          for indexes paramIdx values paramName in proto.params
+            symbolInfo  = currentSymbols{paramName}
+            symbolTypeC = MIR_TO_C_TYPE_MAP{symbolInfo.type}
+            paramsProtoForC = paramsProtoForC ~ sep ~ symbolTypeC ~ ' ' ~ symbolInfo.name
+            sep = ', '
+          endfor
+
+          # Ordinary entry point.
+          # This address can be called directly with primitive params.
+          print returnTypeForC, currentProcName, '(', paramsProtoForC, ') {'
+
+          # Profiler code if needed.
+          if this.isProfilerEnabled is true
+            die('C: Profiler not implemented')
+          endif
+
+        elif opcode is MIR1_OPCODE_INIT_FRAME
+          currentFrame = dst
+          symbols      = currentFrame.symbols
+          params       = currentFrame.params
+
+          # Clean up this mess.
+          this.symbols = symbols
+
+          print '  // Local variables'
+
+          if currentProcRv is defined
+            print ' ', MIR_TO_C_TYPE_MAP{currentProcRvType}, currentProcRv, ';'
+          endif
+
+          for values oneItem in symbols
+            if oneItem.kind is SYMBOL_KIND_VAR_LOCAL
+              if ((oneItem.type is undefined) or
+                  (oneItem.type is 'variant') or
+                  (oneItem.type is 'string'))
+
+                # Local Variant_t variable - init to undefined.
+                print '  Variant_t', oneItem.name, '= {0};'
+
+              else
+                # Primitive type.
+                print ' ', oneItem.type ~ '_t', oneItem.name, ';'
+              endif
+            endif
+          endfor
+
+        elif opcode is MIR1_OPCODE_MOVE
+          # TODO: Review it.
+          if (xType is 'variant') or (xType is 'string')
+            # Complex value - use function call.
+            this.variantMove(dst, x)
+          else
+            # Primitive value - set value directly.
+            print ' ', dst, '=', x, ';'
+          endif
+
+        elif opcode is MIR1_OPCODE_NOP
+          print '  // nop'
+
+        elif opcode is MIR1_OPCODE_RET
+          print '  // clean frame'
+
+          # TODO: Clean up this mess.
+          for values oneItem in currentSymbols
+            # TODO: Clean up this mess.
+            if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) and
+                ((oneItem.type is undefined) or (oneItem.type is 'variant') or (oneItem.type is 'string')))
+
+              if oneItem.usedAsIterator is defined
+                # Symbol is used as loop iterator.
+                # It's only dump reference for existing box values or keys.
+                print '  // Skipped loop iterator', oneItem.name
+
+              else
+                this.variantDestroy(oneItem.name)
+              endif
+            endif
+          endfor
+
+          # Profiler code if needed.
+          if this.isProfilerEnabled is true
+            die('C: Profiler not implemented')
+          endif
+
+          if currentProcName is 'start'
+            for values oneItem in currentSymbols
+
+              if ((oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and
+                  ((oneItem.type is undefined) or (oneItem.type is 'variant')))
+
+                if (oneItem.name is 'argv') or (oneItem.name is 'argc')
+                  # Skip argv[] and argc.
+                  # They're freed in main entry point function.
+                  # TODO: Better way to exclude argv[] and argc.
+                else
+                  this.variantDestroy(oneItem.name)
+                endif
+              endif
+            endfor
+          endif
+
+          if currentProcRv is defined
+            print '  return', currentProcRv, ';'
+          endif
+
+          print '}'
+
+        elif opcode is MIR1_OPCODE_INNER_RET
+          # TODO: Review it?
+          print '  }'
+
+        elif opcode is MIR1_OPCODE_ENDP
+
+          # Build vcall wrapper if needed.
+          if isInsideVcall is true
+            # Build params for virtual call.
+            # All parameters are variants.
+            # TODO: Handle vcall with non-variant params?
+            paramsProtoForC = 'Variant_t this'
+            sep = ', '
+
+            for values paramName in currentProcProto.params
+              paramsProtoForC = paramsProtoForC ~ sep ~ 'Variant_t ' ~ paramName
+              sep = ', '
+            endfor
+
+            print ''
+            print 'Variant_t __vcall' ~ currentProcName, '(', paramsProtoForC, ') {'
+
+            callList = 'this'
+            sep      = ', '
+
+            for values paramName in currentProcProto.params
+              symbolInfo   = currentSymbols{paramName}
+              valueAsField = MIR_TO_C_VARIANT_VALUE_AS_MAP{symbolInfo.type}
+
+              if valueAsField is defined
+                paramToPass = paramName ~ '.' ~ valueAsField
+              else
+                paramToPass = paramName
+              endif
+
+              callList = callList ~ sep ~ paramToPass
+            endfor
+
+            # TODO: Avoid returning a value for void functions.
+            # For now vcall wrapper always return value, because
+            # caller always assume there it is.
+            print '  Variant_t __rv = {0};'
+
+            if currentProcRvType is defined
+              valueAsField = MIR_TO_C_VARIANT_VALUE_AS_MAP_WRITE{currentProcRvType}
+
+              if valueAsField is defined
+                print '  __rv.type =', MIR_TO_VARIANT_TYPE{currentProcRvType}, ';'
+                print '  __rv.', valueAsField, '='
+              else
+                print '  __rv ='
+              endif
+            endif
+
+            print ' ', currentProcName, '(', callList, ');'
+            print '  return __rv;'
+            print '}'
+          endif
+
+          # TODO: Is it really needed?
+          currentProcRvType = null
+
+        else
+          isOpcodeHandled = false
+        endif
+
+      # ------------------------------------------------------------------------
+      #                           Call-like opcodes
+      # ------------------------------------------------------------------------
+
+      elif opcode >= MIR1_FIRST_CALL_LIKE_OPCODE
+        # dst = x(y, ....)
+        nameOrId  = x
+        params    = y
+        paramsCnt = len(params)
+
+        if ((opcode is MIR1_OPCODE_CALL) and
+            (nameOrId is '__MOLD_ForDriver_Generic') or
+            (nameOrId is '__MOLD_ForDriver_IndexesAndValuesInArray') or
+            (nameOrId is '__MOLD_ForDriver_IndexesAndValuesInArrayOrString') or
+            (nameOrId is '__MOLD_ForDriver_KeysAndValuesInMap'))
+
+          # TODO: Clean up this mess.
+          print ' ', nameOrId, '(&', params[0], ', &', params[1], ', &', params[2], ', &', params[3], ');'
+
+        else
+
+          # Destroy destination if needed.
+          if dst is defined
+            this.variantDestroy(dst)
+          endif
+
+          # Push call parameters.
+          callList = ''
+          sep      = ''
+          for values oneParam in params
+            # TODO: Clean up this mess.
+            if oneParam is defined
+              callList = callList ~ sep ~ str(oneParam)
+            else
+              callList = callList ~ sep ~ '__undefined'
+            endif
+
+            sep = ', '
+          endfor
+
+          # Generate call opcode.
+          if opcode is MIR1_OPCODE_SYSCALL
+            syscallName = syscallMap{str(nameOrId)}
+
+            if dst is defined
+              print ' ', dst, '='
+            endif
+
+            if syscallName is defined
+              # dst = syscall(id, ...)
+              print ' ', syscallName, '(', callList, ');'
+
+            elif nameOrId is string
+              if paramsCnt > 0
+                print '  __MOLD_SysCall(', nameOrId, ',', callList, ');'
+              else
+                print '  __MOLD_SysCall(', nameOrId, ');'
+              endif
+            endif
+
+          elif opcode is MIR1_OPCODE_CALL
+            # dst = foo(...)
+            if dst is defined
+              print ' ', dst, '=', nameOrId, '(', callList, ');'
+            else
+              print ' ', nameOrId, '(', callList, ');'
+            endif
+
+          elif opcode is MIR1_OPCODE_VCALL
+            methodId = nameOrId
+            protoC   = ''
+            sep      = ''
+
+            for indexes idx in params
+              protoC = protoC ~ sep ~ 'Variant_t'
+              sep = ','
+            endfor
+
+            if dst is defined
+              # dst = obj.foo(...)
+              print ' ', dst, '= ((Variant_t (*)(', protoC, '))'
+            else
+              # obj.foo(...)
+              print '  ((void (*)(', protoC, '))'
+            endif
+
+            print '  ((Object_t *)', params[0], '.valueAsBufferPtr -> bytesPtr) -> vtable[', methodId, '])'
+            print '  (', callList, ');'
+
+          else
+            isOpcodeHandled = false
+          endif
+        endif
+
+      # ------------------------------------------------------------------------
+      #                         Opcodes: dst = op(x, y)
+      # ------------------------------------------------------------------------
+
+      elif opcode >= MIR1_FIRST_DST_OP_X_Y_OPCODE
+
+        this.variantDestroy(dst)
+
+        opcodeMajor = bitand(opcode, 0xf8)
+        opcodeMinor = bitand(opcode, 0x7)
+
+        if opcode is MIR1_OPCODE_LOAD_INDEX
+          # dst := x[y]
+          print ' ', dst, '= __MOLD_VariantLoadFromIndex(&', x, ',', y, ');'
+
+        elif opcode is MIR1_OPCODE_LOAD_KEY
+          # dst := x{y}
+          print ' ', dst, '= __MOLD_VariantLoadFromKey_' ~ dstType, '(&', x, ',&', y, ');'
+
+        elif opcodeMajor is MIR1_OPCODE_CMP_CC_GROUP
+          print ' ', dst, '= __MOLD_cmp_' ~ MIR_COMPARE_FLAGS[opcodeMinor] ~ '_' ~ xType, '(', x, ',', y, ');'
+
+        elif opcodeMajor is MIR1_OPCODE_JMP_IF_CC_GROUP
+            print '  if (__MOLD_cmp_' ~ MIR_COMPARE_FLAGS[opcodeMinor] ~ '_' ~ xType, '(', x, ',', y, ')) goto', dst, ';'
+
+        elif opcodeMajor is MIR1_OPCODE_ALU2_GROUP
+          print ' ', dst, '= __MOLD_' ~ MIR_ALU_OPCODES_FOR_INTEGERS[opcodeMinor]  ~ '_' ~ xType, '(', x, ',', y, ');'
+
+        #
+        # Arithmetic
+        #
+
+        elif opcodeMajor is MIR1_OPCODE_ALU2_GROUP
+          print ' ', dst, '= __MOLD_' ~ MIR1_GetOpcodeAsText(opcode) ~ '_' ~ xType, '(', x, ',', y, ');'
+
+        else
+          isOpcodeHandled = false
+        endif
+
+      else
+
+        # ----------------------------------------------------------------------
+        #                          dst = opcode(x)
+        # ----------------------------------------------------------------------
+
+        this.variantDestroy(dst)
+
+        if opcode is MIR1_OPCODE_CAST_VARIANT_TO
+          # Cast variant to primitive.
+          # dst = x.value
+          print ' ', dst, '= __MOLD_VariantCastTo_' ~ dstType, '(&', x, ');'
+
+        elif opcode is MIR1_OPCODE_CREATE_VARIANT_FROM
+          # Create variant from primitive.
+          # dst.value = x
+          print ' ', dst, '= __MOLD_VariantCreateFrom_' ~ xType,'(', x, ');'
+
+        elif opcode is MIR1_OPCODE_NEG
+          print ' ', dst, '= __MOLD_neg_' ~ xType, '(', x, ');'
+
+        elif opcode is MIR1_OPCODE_JMP_IF_TRUE
+          if xType is 'variant'
+            print '  if (', x, '.value) goto', dst, ';'
+          elif xType is 'bool32'
+            print '  if (', x, ') goto', dst, ';'
+          endif
+
+        elif opcode is MIR1_OPCODE_JMP_IF_FALSE
+          if xType is 'variant'
+            print '  if (!', x, '.value) goto', dst, ';'
+          elif xType is 'bool32'
+            print '  if (!', x, ') goto', dst, ';'
+          endif
+
+        else
+          isOpcodeHandled = false
+        endif
+      endif
+
+      if isOpcodeHandled is false
+        die('error: unhandled opcode "' ~ MIR1_GetOpcodeAsText(opcode) ~ '"')
+      endif
+
+      # Separate MIR opcodes by new line for better readability.
+      if opcode isnt MIR1_OPCODE_COMMENT
+        print ''
+      endif
+    endfor
+
+    # TODO: Clean up this mess.
+    print 'int main(int _argc, char **_argv) {'
+    print '  __MOLD_InitExceptions();'
+    print '  __MOLD_InitArgv(_argc, _argv);'
+    print ''
+    print '  start();'
+    print ''
+    print '  __MOLD_VariantDestroy(&argv);'
+    print '  __MOLD_MemoryDieIfMemoryLeak();'
+    print '  return 0;'
+    print '}'
+
+    # Build vtables.
+    print ''
+    print '// vtables'
+    print '// -------'
+
+    for values classProto in codeObj.classList
+      print 'void *__vtable_' ~ classProto.name, '[] = {'
+
+      for indexes methodIdx values methodName in codeObj.methodsList
+        methodProto = classProto.vtable{methodName}
+
+        if methodProto is undefined
+          methodPtr = '__MOLD_PrintErrorAndDie_nullMethodCalled'
+        else
+          methodPtr = '__vcall' ~ methodProto.fullName
+        endif
+
+        print '  &', methodPtr, ', //', methodName, '(', methodIdx, ')'
+      endfor
+
+      print '};'
+      print ''
+    endfor
+
+  endmethod
+endclass

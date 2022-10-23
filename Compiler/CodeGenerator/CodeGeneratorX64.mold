@@ -382,7 +382,14 @@ class CodeGeneratorX64
         print name, 'Variant_t VARIANT_DOUBLE, 0,', value
 
       elif type is 'string'
-        print name, 'Variant_t VARIANT_STRING, 0,', bufferName
+        if len(value) is 1
+          # One character string.
+          # Possible improvement: Handle empty string?
+          print name, 'Variant_t VARIANT_STRING, VARIANT_FLAG_ONE_CHARACTER,', ord(value)
+        else
+          # Multicharacter string.
+          print name, 'Variant_t VARIANT_STRING, 0,', bufferName
+        endif
 
       elif type is 'array'
         print name, 'Variant_t VARIANT_ARRAY, 0,', bufferName
@@ -407,7 +414,8 @@ class CodeGeneratorX64
     # Emit buffer content for complex variables.
     if type is 'array'
       this.emitArrayBufferHead(name, value, wantDeepIdx, deepIdx + 1)
-    elif type is 'string'
+
+    elif (type is 'string') and (len(value) isnt 1)
       this.emitStringBufferHead(name, value, wantDeepIdx, deepIdx + 1)
     endif
   endmethod
