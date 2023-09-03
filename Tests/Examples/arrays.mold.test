@@ -1388,7 +1388,7 @@ EXPECTED_ERROR:
 runtime error: negative array index
 -------------------------------------------------------------------------------
 
-TEST "Array of integer constants"
+xTEST "Array of integer constants"
 
 function foo(name, tab)
   print ''

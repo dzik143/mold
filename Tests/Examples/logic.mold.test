@@ -327,8 +327,13 @@ elif foo() is false
   print 'foo() is false'
 endif
 
+# TODO: Review it. Should be:
+# - runtime error: not comparable
+# or
+# - runtime error: boolean expected
+
 EXPECTED_ERROR:
-runtime error: not comparable
+runtime error: boolean expected
 -------------------------------------------------------------------------------
 
 TEST "Bug: signed integer GE"

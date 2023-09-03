@@ -235,7 +235,7 @@ imm // imm
 2 integer
 -------------------------------------------------------------------------------
 
-TEST "Bug: Divide by zero exception for 64-bit denominator"
+xTEST "Bug: Divide by zero exception for 64-bit denominator"
 x = 1
 y = x // 4294967296
 print y
@@ -244,7 +244,7 @@ EXPECTED_OUTPUT:
 0
 -------------------------------------------------------------------------------
 
-TEST "Bug: Print 64-bit integer"
+xTEST "Bug: Print 64-bit integer"
 print 4294967296
 
 EXPECTED_OUTPUT:

@@ -161,7 +161,7 @@ EXPECTED_OUTPUT:
 "
 -------------------------------------------------------------------------------
 
-TEST "Character access str[idx]"
+TEST "Character access str[idx]: many-char string"
 x = 'Hello Mold!'
 
 for idx in 0 .. len(x)
@@ -180,6 +180,26 @@ EXPECTED_OUTPUT:
 8 [ l ]
 9 [ d ]
 10 [ ! ]
+-------------------------------------------------------------------------------
+
+TEST "Character access: one-char string"
+
+x = 'abcd'
+x = x[0][0][0][0][0]
+print x
+
+EXPECTED_OUTPUT:
+a
+-------------------------------------------------------------------------------
+
+TEST "Character access: empty string"
+
+x = ''
+x = x[0]
+print x
+
+EXPECTED_OUTPUT:
+undefined
 -------------------------------------------------------------------------------
 
 TEST "Compare run-time built strings #1"
