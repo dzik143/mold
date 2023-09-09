@@ -1,0 +1,214 @@
+# [ ARCHIVE / OBSOLETE ]
+
+# ------------------------------------------------------------------------------
+#                                Requirements
+# ------------------------------------------------------------------------------
+
+# Lazy load ready (don't search all imports to find-out where is X come from).
+  use A
+  use B
+  # Only B is searched to find foo() symbol.
+  B::foo()
+
+# 2. Avoid name conflicts (local alias)
+  a1 = require('./v1/A')
+  a2 = require('./v2/A')
+  a1::foo()
+  a2::foo()
+
+# Map to filesystem easily.
+# 1 file = 1 module without extra declarations.
+# No extra "module" declarations needed.
+  c = require('../a/b/c')
+  c::foo()
+
+# Independent of the OS (a/b vs a\b).
+  # ISSUE (Is it really an issue?):
+  A = require('./a\b\c') # Windows like path, does *NOT* work on Linux
+  B = require('./a/b/c') # Linux like path
+
+# Distinguish local vs global modules.
+  globalIo = require('io')   # Search build-in / common dir
+  localIo  = require('./io') # Search for this one file
+
+# Access to the parent directory.
+  A = require('../a')
+
+# Import selected symbols into local namespace.
+  import (
+    veryLongAndComplexNameFoo,
+    anotherVeryLongNameBar,
+    oneMoreComplexNameXxx
+  ) from '../libs/utils/someComplexModuleNameInAnotherFile'
+
+# ------------------------------------------------------------------------------
+#                                Tasks: version1
+# ------------------------------------------------------------------------------
+
+# Import module, access by prefix (implicit name from filename):
+import from '../libs/utils/abc.mold'
+abc::foo()
+
+# Import module, access by prefix (explicit name):
+import from '../libs/utils/v1/abc.mold' as abc1
+import from '../libs/utils/v2/abc.mold' as abc2
+abc1::foo()
+abc2::foo()
+
+# Import symbols selective into local namespace:
+import foo from '../libs/utils/abc.mold'
+foo()
+
+# Import symbols selective into local namespace, but sometimes access by prefix
+import foo from '../libs/utils/abc.mold' as abc
+foo()
+abc::foo()
+
+# Import symbols selective into local namespace (with aliases):
+import foo as foo1 from '../libs/utils/v1/abc.mold'
+import foo as foo2 from '../libs/utils/v2/abc.mold'
+foo1()
+foo2()
+
+# Complex, real-life example with multiline
+import (
+  veryLongAndComplexNameFoo as foo,
+  anotherVeryLongNameBar,
+  oneMoreComplexNameXxx
+) from '../libs/utils/someComplexModuleNameInAnotherFile' as abc
+
+foo()
+anotherVeryLongNameBar()
+oneMoreComplexNameXxx()
+abc::veryLongAndComplexNameFoo()
+
+# ------------------------------------------------------------------------------
+#                            Tasks: version1 (short)
+# ------------------------------------------------------------------------------
+
+# Import many module, access by prefix:
+import (
+  from '../libs/utils/abc.mold',
+  from '../libs/utils/xyz.mold'
+)
+abc::foo()
+xyz::bar()
+
+# Import module, access by prefix (explicit name):
+import (
+  from '../libs/utils/v1/abc.mold' as abc1,
+  from '../libs/utils/v2/abc.mold' as abc2
+)
+
+# Import symbols selective into local namespace (with aliases):
+import (
+  foo as foo1 from '../libs/utils/v1/abc.mold',
+  foo as foo2 from '../libs/utils/v2/abc.mold'
+)
+foo1()
+foo2()
+
+# Complex, real-life example with multiline
+import (
+  (
+    veryLongAndComplexNameFoo as foo1,
+    anotherVeryLongNameBar    as anotherVeryLongNameBarV1,
+    oneMoreComplexNameXxx     as oneMoreComplexNameXxxV2
+  ) from '../libs/utils/v1/someComplexModuleNameInAnotherFile' as abc1,
+
+  (
+    veryLongAndComplexNameFoo as foo2,
+    anotherVeryLongNameBar    as anotherVeryLongNameBarV2,
+    oneMoreComplexNameXxx     as oneMoreComplexNameXxxV2
+  ) from '../libs/utils/v2/someComplexModuleNameInAnotherFile' as abc2,
+)
+
+foo1()
+anotherVeryLongNameBar1()
+oneMoreComplexNameXxx1()
+abc1::veryLongAndComplexNameFoo()
+
+foo2()
+anotherVeryLongNameBar2()
+oneMoreComplexNameXxx2()
+abc2::veryLongAndComplexNameFoo()
+
+# ------------------------------------------------------------------------------
+#                                Tasks: version2
+# ------------------------------------------------------------------------------
+
+# Import module, access by prefix (implicit name from filename):
+use '../libs/utils/abc.mold'
+abc::foo()
+
+# Import module, access by prefix (explicit name):
+use '../libs/utils/v1/abc.mold' as abc1
+use '../libs/utils/v2/abc.mold' as abc2
+abc1::foo()
+abc2::foo()
+
+# Import symbols selective into local namespace:
+use '../libs/utils/abc.mold'
+import foo from abc
+foo()
+
+# Import symbols selective into local namespace, but sometimes access by prefix
+use '../libs/utils/abc.mold' as abc
+import foo from abc
+foo()
+abc::foo()
+
+# Import symbols selective into local namespace (with aliases):
+use '../libs/utils/v1/abc.mold' as abc1
+use '../libs/utils/v2/abc.mold' as abc2
+
+import foo as foo1 from abc1
+import foo as foo2 from abc2
+foo1()
+foo2()
+
+# Complex, real-life example with multiline
+use '../libs/utils/someComplexModuleNameInAnotherFile' as abc
+
+import (
+  veryLongAndComplexNameFoo as foo,
+  anotherVeryLongNameBar,
+  oneMoreComplexNameXxx
+) from abc
+
+foo()
+anotherVeryLongNameBar()
+oneMoreComplexNameXxx()
+abc::veryLongAndComplexNameFoo()
+
+# ------------------------------------------------------------------------------
+#                                   Links
+# ------------------------------------------------------------------------------
+
+# https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)
+# https://networking.ringofsaturn.com/Web/syntax-across-languages.php
+# https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)
+#
+# Related keywords in different languages:
+# - include, import, load, require, source
+# - mod, extern, from, use, uses, with, using
+
+# ------------------------------------------------------------------------------
+#                        Import from parent direcotory
+# ------------------------------------------------------------------------------
+
+# Load file from parent directory.
+
+# Python:
+# No as-is support - extra "tricks" are needed:
+# https://vegibit.com/how-to-import-module-from-parent-directory-in-python/
+# https://www.geeksforgeeks.org/python-import-from-parent-directory/
+
+# Rust:
+import bar from super::foo::bar;
+
+# Javascript:
+A = require('../A')
+
+# Go:
+# - Not file-system based (?), explicitly package declarations are needed.

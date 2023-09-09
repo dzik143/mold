@@ -1,0 +1,138 @@
+# 2023-09-10
+
+# ------------------------------------------------------------------------------
+# Import module, access by prefix (implicit name from filename):
+# ------------------------------------------------------------------------------
+
+import from '../libs/utils/abc.mold'
+abc::foo()
+
+# ------------------------------------------------------------------------------
+# Import module, access by prefix (explicit name).
+# ------------------------------------------------------------------------------
+
+import from '../libs/utils/v1/abc.mold' as abc1
+import from '../libs/utils/v2/abc.mold' as abc2
+abc1::foo()
+abc2::foo()
+
+# ------------------------------------------------------------------------------
+# Import symbols selective into local namespace.
+# ------------------------------------------------------------------------------
+
+import foo from '../libs/utils/abc.mold'
+foo()
+
+# ------------------------------------------------------------------------------
+# Import symbols selective into local namespace, but sometimes access by prefix.
+# ------------------------------------------------------------------------------
+
+import foo from '../libs/utils/abc.mold' as abc
+foo()
+abc::foo()
+
+# ------------------------------------------------------------------------------
+# Import symbols selective into local namespace (with aliases).
+# ------------------------------------------------------------------------------
+
+import foo as foo1 from '../libs/utils/v1/abc.mold'
+import foo as foo2 from '../libs/utils/v2/abc.mold'
+foo1()
+foo2()
+
+# ------------------------------------------------------------------------------
+# Complex, real-life example with multiline.
+# ------------------------------------------------------------------------------
+
+import (
+  veryLongAndComplexNameFoo as foo,
+  anotherVeryLongNameBar,
+  oneMoreComplexNameXxx
+) from '../libs/utils/someComplexModuleNameInAnotherFile' as abc
+
+foo()
+anotherVeryLongNameBar()
+oneMoreComplexNameXxx()
+abc::veryLongAndComplexNameFoo()
+
+# ------------------------------------------------------------------------------
+#                                Requirements
+# ------------------------------------------------------------------------------
+
+# 1. Lazy load ready (don't search all imports to find-out where is X come from).
+# 2. Avoid name conflicts (local alias)
+# 3. Map to filesystem easily.
+# 4. Independent of the OS (a/b vs a\b).
+# 5. Distinguish local vs global modules.
+# 6. Access to the parent directory.
+# 7. Import selected symbols into local namespace.
+
+# ----------------------------------------------------------------------------
+# Lazy load ready (don't search all imports to find-out where is X come from).
+# ------------------------------------------------------------------------------
+
+import from 'A.mold'
+import from 'B.mold'
+# Only B is searched to find foo() symbol.
+B::foo()
+
+# Avoid name conflicts (local alias)
+import from './v1/A.mold' as a1
+import from './v2/B.mold' as a2
+a1::foo()
+a2::foo()
+
+# ------------------------------------------------------------------------------
+# Map to filesystem easily.
+# 1 file = 1 module without extra declarations.
+# No extra "module" declarations needed inside imported file.
+# ------------------------------------------------------------------------------
+
+# test.mold
+# The file, which we're going to import.
+function foo()
+  print 'foo() called!'
+endfunction
+
+# main.mold
+# File, which we're going to directly run:
+# $ mold ./main.mold
+import from './test.mold'
+test::foo()
+
+# ------------------------------------------------------------------------------
+# Independent of the OS (a/b vs a\b).
+# ------------------------------------------------------------------------------
+
+import from './a/b/c.mold'
+import from '.\x\y\z.mold'
+
+c::foo()
+z::foo()
+
+# ------------------------------------------------------------------------------
+# Distinguish local vs global modules.
+# ------------------------------------------------------------------------------
+
+import from 'io'        as ioGlobal # Search build-in / common dir
+import from './io.mold' as ioLocal  # Search for this one file
+
+ioGlobal::foo()
+ioLocal::foo()
+
+# -----------------------------------------------------------------------------
+# Access to the parent directory.
+# -----------------------------------------------------------------------------
+
+import from '../a'
+a::foo()
+
+# ------------------------------------------------------------------------------
+# Import selected symbols into local namespace.
+# ------------------------------------------------------------------------------
+
+import (
+  veryLongAndComplexNameFoo,
+  anotherVeryLongNameBar,
+  oneMoreComplexNameXxx
+) from '../libs/utils/someComplexModuleNameInAnotherFile'
