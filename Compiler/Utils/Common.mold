@@ -51,3 +51,135 @@ function UTILS_PadString(originalItem, desiredLen) -> rv
     endfor
   endif
 endfunction
+
+# Get base name (file name without extension) from the path.
+# Example:
+# - path     : './aaa/bbb/ccc/ddd.txt'
+# - baseName : 'ddd'
+function UTILS_GetBaseNameFromPath(path) -> baseName
+  lastSepIdx = 0
+  lastDotIdx = 0
+
+  # TODO: Handle files with multiple extensions (test.a.b.c.mold).
+  for indexes idx values oneChar in path
+    if (oneChar is '/') or (oneChar is '\')
+      lastSepIdx = idx
+    elif oneChar is '.'
+      lastDotIdx = idx
+    endif
+  endfor
+
+  # TODO: Use substr.
+  baseName = __mold_syscall(55, path, lastSepIdx + 1, lastDotIdx - lastSepIdx - 1)
+endfunction
+
+# Get directory name from the path.
+# Example:
+# - path     : './aaa/bbb/ccc/ddd.txt'
+# - baseName : './aaa/bbb/ccc'
+function UTILS_GetDirNameFromPath(path) -> dirName
+  lastSepIdx = 0
+
+  for indexes idx values oneChar in path
+    if (oneChar is '/') or (oneChar is '\')
+      lastSepIdx = idx
+    endif
+  endfor
+
+  # TODO: Use substr.
+  dirName = __mold_syscall(55, path, 0, lastSepIdx)
+endfunction
+
+# Split path into tokens.
+# Example:
+# - path: './aaa/bbb/ccc/ddd.txt'
+# - tokens : ['aaa', 'bbb', 'ccc', 'ddd']
+function UTILS_TokenizePath(path) -> tokens
+  tokens = []
+  currentTokenBeginIdx = 0
+
+  for indexes idx values oneChar in path
+    if (oneChar is '/') or (oneChar is '\')
+      if idx > currentTokenBeginIdx
+        # TODO: Use substr.
+        tokens[@afterlast] = __mold_syscall(55, path, currentTokenBeginIdx, idx - currentTokenBeginIdx)
+      endif
+      currentTokenBeginIdx = idx + 1
+    endif
+  endfor
+
+  # The last remaining token if exists.
+  if currentTokenBeginIdx < len(path)
+    tokens[@afterlast] = __mold_syscall(55, path, currentTokenBeginIdx, -1)
+  endif
+endfunction
+
+# Normalize path.
+# Example:
+# - path    : './a/b/../c/../../x/y/z/test.txt'
+# - results : './x/y/z/test.txt'
+function UTILS_NormalizePath(path) -> rv
+  # Split path into tokens (slashes and backslashes).
+  tokens = UTILS_TokenizePath(path)
+
+  if len(tokens) > 0
+    # Remove unneded tokens basing on '.' and '..'.
+    normalizedTokens    = []
+    normalizedTokensCnt = 0
+
+    for indexes idx values oneToken in tokens
+      if ((oneToken is '..') and
+          (normalizedTokensCnt > 0) and
+          (normalizedTokens[normalizedTokensCnt - 1] isnt '..'))
+        # 'a/b/..' -> 'a/b'
+        normalizedTokensCnt = normalizedTokensCnt - 1
+
+      elif oneToken is '.'
+        # a/b/. -> 'a/b'
+
+      else
+        # Default case.
+        normalizedTokens[normalizedTokensCnt] = oneToken
+        normalizedTokensCnt = normalizedTokensCnt + 1
+      endif
+    endfor
+
+    # Build result path.
+    rv  = ''
+    sep = ''
+
+    # Add extra './' prefix for relative paths.
+    if path[0] is '.'
+      # Relative path:
+      # - './a/b/c'
+      # - '../a/b/c'
+      # Keep the './' prefix.
+      if (len(normalizedTokens) is 0) or (normalizedTokens[0] isnt '..')
+        rv  = '.'
+        sep = '/'
+      endif
+
+    else
+      # Absolute path:
+      # - 'a/b/c'
+      # - '/a/b/c'
+      # - 'C:/a/b/c'
+      if (len(normalizedTokens) > 0) or (normalizedTokens[0] is '..')
+        # Error - absolute path out-of-the root.
+        # Too many '..'.
+        # TODO: Better error handling.
+        die("error: non-relative path out-of-the root: '" ~ path ~ "'")
+      endif
+    endif
+
+    # Join normalized tokens one-by-one into the result path.
+    for values oneToken in normalizedTokens
+      rv  = rv ~ sep ~ oneToken
+      sep = '/'
+    endfor
+
+  else
+    # Empty path - nothing to do.
+    rv = ''
+  endif
+endfunction
