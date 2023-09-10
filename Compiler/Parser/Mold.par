@@ -86,13 +86,18 @@ stmt
   ;
 
 // -----------------------------------------------------------------------------
-//                             Built-in directives
+//                              Import modules
+// -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+//                        Built-in directives: other
 // -----------------------------------------------------------------------------
 
 stmt_directive
   : "print"  rval_list_one_line [* @@ = 'print'  *]
   | "global" rval_list_one_line [* @@ = 'global' *]
   | "import" rval_list_one_line [* @@ = 'import' *]
+  | "import" "from" rval [* @@ = 'importFrom' *]
 
   // TODO: More general handlers?
   | expr '[' "@afterlast" ']'   '=' rval [* @@ = '__mold_arrayInsertAfterLast' *]
