@@ -4,7 +4,7 @@
 #   - but x and y is *NOT* valid.
 #
 # 2. There is no "not" operator inside if conditions.
-#   a. PROBLEM: Try to say what below code examples should do:
+#   a. ISSUE: Try to say what below code examples should do:
 #     - if x is not y,
 #     - if x is (not y),
 #     - if not x is y

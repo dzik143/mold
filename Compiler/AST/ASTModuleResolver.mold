@@ -20,6 +20,7 @@
 
 import 'AST/AST.mold'
 import 'Parser/ParserMold.mold'
+import 'Utils/Common.mold'
 
 class ASTModuleResolver
   method constructor(app)
@@ -28,7 +29,7 @@ class ASTModuleResolver
     this.parser          = new Parser()
   endmethod
 
-  method resolveImports(ast)
+  method _resolveImportsInternal(ast, pathPrefix)
     global AST_OPCODE_CALL
 
     program     = ast.children[0]
@@ -61,11 +62,50 @@ class ASTModuleResolver
           endfor
         endif
 
+      elif (oneChild.opcode is AST_OPCODE_CALL) and (oneChild.value is 'importFrom')
+        # import from 'A'
+        # import foo from 'A'
+        modulePath = oneChild.children[0].value
+        moduleDir  = UTILS_GetDirNameFromPath(modulePath)
+
+        if moduleDir isnt '.'
+          newPathPrefix = pathPrefix ~ '/' ~ moduleDir
+        else
+          newPathPrefix = pathPrefix
+        endif
+
+        moduleBase = UTILS_GetBaseNameFromPath(modulePath)
+        moduleName = UTILS_NormalizePath(newPathPrefix ~ '/' ~ moduleBase ~ '.mold')
+
+        if this.importedModules{moduleName} is undefined
+          # Load only once.
+          this.importedModules{moduleName} = true
+
+          this.app.logDebug('Resolving module [' ~ str(moduleName) ~ ']...')
+
+          # Parse source into AST tree.
+          importedAst = this.parser.parseFile(moduleName)
+
+          # Resolve imports recursively.
+          this._resolveImportsInternal(importedAst, newPathPrefix)
+
+          importedProgram  = importedAst.children[0]
+          importedChildren = importedProgram.children
+
+          for values oneImportedChild in importedChildren
+            newChildren[@afterlast] = oneImportedChild
+          endfor
+        endif
+
       else
         newChildren[@afterlast] = oneChild
       endif
     endfor
 
     program.children = newChildren
+  endmethod
+
+  method resolveImports(ast)
+    this._resolveImportsInternal(ast, '.')
   endmethod
 endclass
