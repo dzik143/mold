@@ -21,22 +21,22 @@
 DEBUG_AST_OPTIMIZER = false
 DEBUG_MOLD          = false
 
-import 'AST/AST.mold'
-import 'Parser/ParserMold.mold'
+import './AST/AST.mold'
+import './Parser/ParserMold.mold'
 
-import 'AppMold.mold'
-import 'AST/ASTSymbolsCollector.mold'
-import 'AST/ASTPrinterText.mold'
-import 'AST/ASTPrinterHtml.mold'
-import 'AST/ASTTranslatorMIR0.mold'
-import 'AST/ASTTranslatorMIR1.mold'
-import 'MIR/MIRQuadCollector.mold'
-import 'CodeGenerator/CodeGeneratorX64.mold'
-import 'CodeGenerator/CodeGeneratorC.mold'
-import 'MIR/MIRQuadOptimizer.mold'
-import 'VM/VMachineStack.mold'
+import './AppMold.mold'
+import './AST/ASTSymbolsCollector.mold'
+import './AST/ASTPrinterText.mold'
+import './AST/ASTPrinterHtml.mold'
+import './AST/ASTTranslatorMIR0.mold'
+import './AST/ASTTranslatorMIR1.mold'
+import './MIR/MIRQuadCollector.mold'
+import './CodeGenerator/CodeGeneratorX64.mold'
+import './CodeGenerator/CodeGeneratorC.mold'
+import './MIR/MIRQuadOptimizer.mold'
+import './VM/VMachineStack.mold'
 
-VERSION_STRING = '0.5.20210430'
+VERSION_STRING = '0.6.20250608'
 
 # ------------------------------------------------------------------------------
 #                              Helper functions

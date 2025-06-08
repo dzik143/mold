@@ -18,8 +18,8 @@
 #                                                                              #
 ################################################################################
 
-import 'AST/AST.mold'
-import 'AST/ASTUtils.mold'
+import './AST.mold'
+import './ASTUtils.mold'
 
 class ASTOptimizerDeadCodeRemove
   method constructor(app)

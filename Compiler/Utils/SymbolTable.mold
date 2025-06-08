@@ -30,7 +30,7 @@ SYMBOL_KIND_CLASS      = 8
 SYMBOL_KIND_METHOD     = 9
 SYMBOL_KIND_JMP_TABLE  = 10
 
-import 'AST/ASTUtils.mold'
+import '../AST/ASTUtils.mold'
 
 SYMBOL_KIND_AS_TEXT = [
   '[error]',

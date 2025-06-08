@@ -18,8 +18,8 @@
 #                                                                              #
 ################################################################################
 
-import 'AST/AST.mold'
-import 'AST/ASTUtils.mold'
+import './AST.mold'
+import './ASTUtils.mold'
 
 const MOLD_SYSCALL_ZERO_ARGS = 0x0000
 const MOLD_SYSCALL_ONE_ARG   = 0x1000

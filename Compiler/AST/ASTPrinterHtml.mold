@@ -18,10 +18,11 @@
 #                                                                              #
 ################################################################################
 
-import 'AST/AST.mold'
-import 'AST/ASTUtils.mold'
-import 'Utils/SymbolTable.mold'
-import 'Utils/Common.mold'
+import '../Utils/SymbolTable.mold'
+import '../Utils/Common.mold'
+
+import './AST.mold'
+import './ASTUtils.mold'
 
 class ASTPrinterHtml
 

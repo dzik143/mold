@@ -18,7 +18,7 @@
 #                                                                              #
 ################################################################################
 
-import 'Utils/PipeAbstract.mold'
+import '../Utils/PipeAbstract.mold'
 
 class MIRQuadCollector extends PipeAbstract
 

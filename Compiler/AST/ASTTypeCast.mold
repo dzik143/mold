@@ -18,8 +18,8 @@
 #                                                                              #
 ################################################################################
 
-import 'AST/AST.mold'
-import 'AST/ASTUtils.mold'
+import './AST.mold'
+import './ASTUtils.mold'
 
 class ASTTypeCast
   method constructor(app)

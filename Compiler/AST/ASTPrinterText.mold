@@ -18,9 +18,10 @@
 #                                                                              #
 ################################################################################
 
-import 'AST/AST.mold'
-import 'AST/ASTUtils.mold'
-import 'Utils/SymbolTable.mold'
+import '../Utils/SymbolTable.mold'
+
+import './AST.mold'
+import './ASTUtils.mold'
 
 SHOW_TYPE_CAST_NODES_ENABLED = false
 

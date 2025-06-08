@@ -1,1 +1,1 @@
-import 'Parser/_Parser.mold'
+import './_Parser.mold'
