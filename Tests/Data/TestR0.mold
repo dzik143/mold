@@ -1,0 +1,2 @@
+print 'Hello from R0!'
+import './TestR1.mold'
