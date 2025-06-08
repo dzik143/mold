@@ -26,6 +26,7 @@
 #include "MoldCore.h"
 #include "MoldError.h"
 #include "MoldForDriver.h"
+#include "MoldVariantString.h"
 
 // -----------------------------------------------------------------------------
 //                             Global variables
@@ -474,6 +475,12 @@ Variant_t __MOLD_Bitxor(Variant_t x, Variant_t y)
   return rv;
 }
 
+Variant_t __MOLD_Bitnot(Variant_t x)
+{
+  Variant_t rv = { type: VARIANT_INTEGER, value: ~x.value };
+  return rv;
+}
+
 // -----------------------------------------------------------------------------
 //                                    Utils
 // -----------------------------------------------------------------------------
@@ -570,6 +577,35 @@ Variant_t __MOLD_SysCall(uint32_t id, ...)
 
     case 31: rv = __MOLD_Ord(va_arg(ptr, Variant_t)); break;
     case 32: rv = __MOLD_Asc(va_arg(ptr, Variant_t)); break;
+    case 33: rv = __MOLD_ParseInteger(va_arg(ptr, Variant_t)); break;
+    case 34: rv = __MOLD_ParseFloat(va_arg(ptr, Variant_t)); break;
+
+    case 35: {
+      Variant_t x = va_arg(ptr, Variant_t);
+      Variant_t y = va_arg(ptr, Variant_t);
+      rv = __MOLD_Bitand(x, y);
+      break;
+    }
+
+    case 36: {
+      Variant_t x = va_arg(ptr, Variant_t);
+      Variant_t y = va_arg(ptr, Variant_t);
+      rv = __MOLD_Bitor(x, y);
+      break;
+    };
+
+    case 37: {
+      Variant_t x = va_arg(ptr, Variant_t);
+      Variant_t y = va_arg(ptr, Variant_t);
+      rv = __MOLD_Bitxor(x, y);
+      break;
+    };
+
+    case 38: {
+      Variant_t x = va_arg(ptr, Variant_t);
+      rv = __MOLD_Bitnot(x);
+      break;
+    };
 
     case 40:      __MOLD_Exit(); break;
     case 41:      __MOLD_Die(va_arg(ptr, Variant_t)); break;
@@ -582,6 +618,15 @@ Variant_t __MOLD_SysCall(uint32_t id, ...)
       Variant_t x = va_arg(ptr, Variant_t);
       Variant_t y = va_arg(ptr, Variant_t);
       __MOLD_ArrayInsertAfterLast(x, y);
+      break;
+    }
+
+    case 55:
+    {
+      Variant_t str = va_arg(ptr, Variant_t);
+      Variant_t idx = va_arg(ptr, Variant_t);
+      Variant_t len = va_arg(ptr, Variant_t);
+      rv = __MOLD_SubStr(str, idx, len);
       break;
     }
 

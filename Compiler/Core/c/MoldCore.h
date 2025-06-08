@@ -211,6 +211,7 @@ bool32_t  __MOLD_VariantCastTo_bool32 (Variant_t *x);
 Variant_t __MOLD_Bitand(Variant_t x, Variant_t y);
 Variant_t __MOLD_Bitor (Variant_t x, Variant_t y);
 Variant_t __MOLD_Bitxor(Variant_t x, Variant_t y);
+Variant_t __MOLD_Bitnot(Variant_t x);
 
 // -----------------------------------------------------------------------------
 //                                    Utils
