@@ -63,7 +63,8 @@ Buffer_t *__MOLD_MemoryAlloc(uint32_t sizeInBytes)
   rv -> bytesPtr = bytesPtr;
 
   _cntAlloc++;
-  //printf("[ MEMORY ] allocated buffer, capacity %d, ptr %p\n", alignedCapacity, rv);
+
+  // printf("[ MEMORY ] allocated buffer, capacity %d, ptr %p\n", alignedCapacity, rv);
 
   return rv;
 }
@@ -171,6 +172,6 @@ void __MOLD_MemoryDieIfMemoryLeak()
 {
   if (_cntAlloc != _cntFree)
   {
-//    fprintf(stderr, "error: memory leak detected (alloc=%d, free=%d)!\n", _cntAlloc, _cntFree);
+    fprintf(stderr, "error: memory leak detected (alloc=%d, free=%d)!\n", _cntAlloc, _cntFree);
   }
 }

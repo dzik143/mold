@@ -184,7 +184,6 @@ void __MOLD_VariantStringJoin(Variant_t *dst, Variant_t *x, Variant_t *y)
   char *xText = NULL;
   char *yText = NULL;
 
-
   // ------------------------------
   // Fetch the first source string.
   //
@@ -316,6 +315,8 @@ Variant_t __MOLD_Str(Variant_t x)
   if (x.type == VARIANT_STRING)
   {
     // Input is already a string - nothing to do.
+    // TODO: Review it.
+    __MOLD_VariantAddRef(&x);
     rv = x;
   }
   else
