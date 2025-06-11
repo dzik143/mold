@@ -815,10 +815,6 @@ Variant_t __MOLD_GetTypeId(Variant_t x)
 
 void __MOLD_VariantDestroy(Variant_t *x)
 {
-  // TODO: Temporary disbled.
-  x -> type = VARIANT_UNDEFINED;
-  return;
-
   switch (x -> type)
   {
     case VARIANT_UNDEFINED:
