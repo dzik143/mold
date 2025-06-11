@@ -67,7 +67,6 @@ class CodeGeneratorC
   endmethod
 
   method variantDestroy(x)
-/*
     #TODO
     global SYMBOL_KIND_VAR_LOCAL
     global SYMBOL_KIND_VAR_GLOBAL
@@ -80,13 +79,11 @@ class CodeGeneratorC
         (xInfo.kind is SYMBOL_KIND_VAR_GLOBAL) or
         (xInfo.kind is SYMBOL_KIND_VAR_RETVAL))
 
-      if ((xInfo.type is undefined) or
-          (xInfo.type is 'string') or
+      if ((xInfo.type is 'string') or
           (xInfo.type is 'variant'))
         print '  __MOLD_VariantDestroy(&', x, ');'
       endif
     endif
-*/
   endmethod
 
   method _hash(x) -> rv
@@ -935,12 +932,10 @@ class CodeGeneratorC
 
           print '  // Local variables'
 
-          if currentProcRv is defined
-            print ' ', MIR_TO_C_TYPE_MAP{currentProcRvType}, currentProcRv, ';'
-          endif
-
           for values oneItem in symbols
-            if oneItem.kind is SYMBOL_KIND_VAR_LOCAL
+            if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) or
+                (oneItem.kind is SYMBOL_KIND_VAR_RETVAL))
+
               if ((oneItem.type is undefined) or
                   (oneItem.type is 'variant') or
                   (oneItem.type is 'string'))
