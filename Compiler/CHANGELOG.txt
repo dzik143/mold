@@ -1,8 +1,22 @@
+Unreleased
+----------
+  - Handled relative paths in import statement.
+  - Bug fixes:
+    - C: Fixed freeing buffer twice after __MOLD_Str(string) call,
+    - C: Destroy dst before read in x = x[idx] like code.
+
+0.6.20230903 (released on 2023-09-03):
+--------------------------------------
+
+  Internal maintain:
+    - X64: Don't use cinvoke macro,
+    - C: Reenabled C target.
+
 0.5.20201020 (released on 2020-10-20):
 --------------------------------------
 
   Internal maintain:
-    - MIR: Addded cmp_is_typeof and cmp_is_not_typeof opcodes,
+    - MIR: Added cmp_is_typeof and cmp_is_not_typeof opcodes,
     - MIR: Simplify code for unimplemented methods,
     - MIR: Use integer for MIR1 opcodes,
     - Translator: Skip unused call params,
