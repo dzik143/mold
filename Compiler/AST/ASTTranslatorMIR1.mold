@@ -431,11 +431,27 @@ class ASTTranslatorMIR1 extends ASTTranslator
     endif
 
     # TODO: Clean up this mess.
+    useTempRv = false
+    rvForCall = rv
+
     if ((proto.isConstructor is defined) and
         (proto.isConstructor is true))
       rvForCall = null
-    else
-      rvForCall = rv
+
+    elif rv is defined
+      # TODO: Why we need to check both symbolTable and symbolTableForTemps ?
+      if this.symbolTable.symbols{rv} is defined
+        rvType = this.symbolTable.symbols{rv}.type
+      elif this.symbolTableForTemps.symbols{rv} is defined
+        rvType = this.symbolTableForTemps.symbols{rv}.type
+      else
+        rvType = null
+      endif
+
+      if rvType is string
+        rvForCall = this._getTempVar(rvType)
+        useTempRv = true
+      endif
     endif
 
     # TODO: Use emitTwoArgsOpcode() after fix.
@@ -450,6 +466,11 @@ class ASTTranslatorMIR1 extends ASTTranslator
       this.push(params[0])
 
     else
+      if useTempRv is true
+        this._loadVariable(rvForCall)
+        this._assign(rv, rvForCall)
+        this._releaseTempVar(rvForCall)
+      endif
       this.push(rv)
     endif
   endmethod
@@ -462,14 +483,38 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.push(rv)
   endmethod
 
-  method _loadFromIndex(rv, unusedBox, unusedIdx)
+  method _loadFromIndex(rv, box, unusedIdx)
     global MIR1_OPCODE_LOAD_INDEX
-    this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_LOAD_INDEX, rv)
+    if rv is box
+      # TODO: Clean up this mess.
+      # Dirty fix for x = x[idx] issue.
+      tmp = this._getTempVar('variant')
+      this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_LOAD_INDEX, tmp)
+      this._loadVariable(tmp)
+      this._assign(rv, tmp)
+      this._releaseTempVar(tmp)
+
+    else
+      # Default case.
+      this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_LOAD_INDEX, rv)
+    endif
   endmethod
 
-  method _loadFromKey(rv, unusedBox, unusedKey)
+  method _loadFromKey(rv, box, unusedKey)
     global MIR1_OPCODE_LOAD_KEY
-    this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_LOAD_KEY, rv)
+    if rv is box
+      # TODO: Clean up this mess.
+      # Dirty fix for x = x[idx] issue.
+      tmp = this._getTempVar('variant')
+      this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_LOAD_KEY, tmp)
+      this._loadVariable(tmp)
+      this._assign(rv, tmp)
+      this._releaseTempVar(tmp)
+
+    else
+      # Default case.
+      this.popTwoArgsAndEmitOpcode(MIR1_OPCODE_LOAD_KEY, rv)
+    endif
   endmethod
 
   method _storeAtIndex(unusedBox, unusedIdx, unusedValue)
@@ -600,7 +645,33 @@ class ASTTranslatorMIR1 extends ASTTranslator
     params = this.popParametersBeforeCall(paramsCnt)
 
     # TODO: Use emitTwoArgsOpcode() if fixed.
-    this._emitOneItem([MIR1_OPCODE_VCALL, rv, methodId, params])
+    # TODO: Why we need to check both symbolTable and symbolTableForTemps ?
+    useTmpRv  = false
+    rvForCall = rv
+
+    if rv is defined
+      if this.symbolTable.symbols{rv} is defined
+        rvType = this.symbolTable.symbols{rv}.type
+      elif this.symbolTableForTemps.symbols{rv} is defined
+        rvType = this.symbolTableForTemps.symbols{rv}.type
+      else
+        rvType = null
+      endif
+
+      if rvType is string
+        useTmpRv  = true
+        rvForCall = this._getTempVar(rvType)
+      endif
+    endif
+
+    this._emitOneItem([MIR1_OPCODE_VCALL, rvForCall, methodId, params])
+
+    if useTmpRv is true
+      this._loadVariable(rvForCall)
+      this._assign(rv, rvForCall)
+      this._releaseTempVar(rvForCall)
+    endif
+
     this.push(rv)
   endmethod
 

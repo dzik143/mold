@@ -709,11 +709,6 @@ class ASTTranslator
       params[idx] = this._evaluateNode(oneChild)
     endfor
 
-    # TODO: Simplify it.
-    for values oneParam in params
-      this._releaseTempVar(oneParam)
-    endfor
-
     if funcName is 'super'
       this._callSuper(rv, params, paramsCnt)
 
@@ -724,9 +719,13 @@ class ASTTranslator
       # Generic foo(x,y,z...) call.
       isRetValUsed = rv is defined
       funcEntry = this.symbolTable.lookupFunction(funcName, childrenCnt, isRetValUsed)
-      funcProto = funcEntry.proto
-      this._call(rv, funcProto, params, paramsCnt)
+      this._call(rv, funcEntry.proto, params, paramsCnt)
     endif
+
+    # TODO: Simplify it.
+    for values oneParam in params
+      this._releaseTempVar(oneParam)
+    endfor
   endmethod
 
   method _evaluateNodeInvokeMethod(rv, ast)
@@ -734,6 +733,16 @@ class ASTTranslator
     children    = ast.children
     childrenCnt = len(children)
 
+    # Evaluate parameters.
+    # params[0] should be a "this" parameter.
+    params    = []
+    paramsCnt = childrenCnt
+
+    for indexes idx values oneChild in children
+      params[idx] = this._evaluateNode(oneChild)
+    endfor
+
+/*
     # Evaluate this and try to resolve static className
     # (compilation time) if possible.
     thiz = this._evaluateNode(children[0])
@@ -745,7 +754,7 @@ class ASTTranslator
 
     for idx in 1 .. childrenCnt
       params[idx] = this._evaluateNode(children[idx])
-    endfor
+    endfor */
 
     # Virtual method call.
     this._invokeMethod(rv, methodName, params, paramsCnt)
@@ -840,7 +849,6 @@ class ASTTranslator
         # Special case: x = x ~ y
         if ((children[1].opcode is AST_OPCODE_STRING_JOIN) and
             (lval is children[1].children[0].value))
-
           symbolInfo = this.symbolTable.lookup(lval)
 
           # TODO: Is it still needed?
