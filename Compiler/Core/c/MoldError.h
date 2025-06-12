@@ -68,7 +68,8 @@ void __MOLD_PrintErrorAndDie_nullMethodCalled();
   ASSERT_VARIANT_PTR_ANY(x) \
   assert(((x) -> type == VARIANT_STRING) || ((x) -> type >= VARIANT_ARRAY)); \
   assert((x) -> valueAsBufferPtr != NULL); \
-  assert((x) -> valueAsBufferPtr -> refCnt != 0);
+  assert((x) -> valueAsBufferPtr -> refCnt != 0); \
+  assert((x) -> valueAsBufferPtr -> bytesPtr != NULL);
 
 # define ASSERT_VARIANT_PTR_ARRAY(x) \
   ASSERT_VARIANT_PTR_COMPLEX(x) \
@@ -76,21 +77,25 @@ void __MOLD_PrintErrorAndDie_nullMethodCalled();
 
 # define ASSERT_VARIANT_PTR_MAP_OR_OBJECT(x) \
   ASSERT_VARIANT_PTR_COMPLEX(x) \
-  assert(((x) -> type == VARIANT_MAP) || ((x) -> type == VARIANT_OBJECT));
+  assert(((x) -> type == VARIANT_MAP) || ((x) -> type == VARIANT_OBJECT)); \
+  assert(((Map_t*)(x) -> valueAsBufferPtr -> bytesPtr) -> bucketsCnt >= 2);
 
 # define ASSERT_VARIANT_PTR_MAP(x) \
-  ASSERT_VARIANT_PTR_COMPLEX(x) \
+  ASSERT_VARIANT_PTR_MAP_OR_OBJECT(x) \
   assert((x) -> type == VARIANT_MAP);
 
 # define ASSERT_VARIANT_PTR_OBJECT(x) \
-  ASSERT_VARIANT_PTR_COMPLEX(x) \
+  ASSERT_VARIANT_PTR_MAP_OR_OBJECT(x) \
   assert((x) -> type == VARIANT_OBJECT);
 
 # define ASSERT_VARIANT_PTR_STRING(x) \
   ASSERT_VARIANT_PTR_ANY(x) \
   assert((x) -> type == VARIANT_STRING); \
-  assert((x) -> valueAsBufferPtr != NULL); \
-  if (((x) -> flags & VARIANT_FLAG_ONE_CHARACTER) == 0) { assert((x) -> valueAsBufferPtr -> refCnt != 0); }
+  if (((x) -> flags & VARIANT_FLAG_ONE_CHARACTER) == 0) { \
+    assert((x) -> valueAsBufferPtr != NULL); \
+    assert((x) -> valueAsBufferPtr -> refCnt != 0); \
+    assert((x) -> valueAsBufferPtr -> bytesPtr != NULL); \
+  }
 
 # define ASSERT_VARIANT_PTR_ARRAY_OR_STRING(x) \
   ASSERT_VARIANT_PTR_ANY(x) \

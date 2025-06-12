@@ -27,6 +27,11 @@ void __MOLD_ForDriver_IndexesAndValuesInArray(Array_t *array,
                                               Variant_t *iteratorValue,
                                               LoopBodyCbProto cb)
 {
+  assert(array != NULL);
+  assert(iteratorIndex != NULL);
+  assert(iteratorValue != NULL);
+  assert(cb != NULL);
+
   uint32_t itemsCnt = array -> itemsCnt;
 
   if (array -> innerType == 0)
@@ -36,6 +41,7 @@ void __MOLD_ForDriver_IndexesAndValuesInArray(Array_t *array,
     {
       *iteratorIndex = idx;
       *iteratorValue = array -> items[idx];
+      ASSERT_VARIANT_PTR_ANY(iteratorValue);
       cb();
     }
   }
@@ -58,6 +64,7 @@ void __MOLD_ForDriver_IndexesAndValuesInArray(Array_t *array,
         {
            *iteratorIndex = idx;
            iteratorValue -> value = values[idx];
+           ASSERT_VARIANT_PTR_INTEGER(iteratorValue);
            cb();
         }
 
@@ -73,6 +80,7 @@ void __MOLD_ForDriver_IndexesAndValuesInArray(Array_t *array,
         {
            *iteratorIndex = idx;
            iteratorValue -> value = values[idx];
+           ASSERT_VARIANT_PTR_INTEGER(iteratorValue);
            cb();
         }
 
@@ -88,6 +96,7 @@ void __MOLD_ForDriver_IndexesAndValuesInArray(Array_t *array,
         {
            *iteratorIndex = idx;
            iteratorValue -> value = values[idx];
+           ASSERT_VARIANT_PTR_INTEGER(iteratorValue);
            cb();
         }
 
@@ -103,6 +112,7 @@ void __MOLD_ForDriver_IndexesAndValuesInArray(Array_t *array,
         {
            *iteratorIndex = idx;
            iteratorValue -> value = values[idx];
+           ASSERT_VARIANT_PTR_INTEGER(iteratorValue);
            cb();
         }
 
@@ -117,6 +127,11 @@ void __MOLD_ForDriver_IndexesAndValuesInString(Variant_t *box,
                                                Variant_t *iteratorValue,
                                                LoopBodyCbProto cb)
 {
+  assert(box != NULL);
+  assert(iteratorIndex != NULL);
+  assert(iteratorValue != NULL);
+  assert(cb != NULL);
+
   iteratorValue -> type  = VARIANT_STRING;
   iteratorValue -> flags = VARIANT_FLAG_ONE_CHARACTER;
 
@@ -126,6 +141,7 @@ void __MOLD_ForDriver_IndexesAndValuesInString(Variant_t *box,
     // Just pass it to caller.
     *iteratorIndex = 0;
     iteratorValue -> value = box -> valueAsInt8;
+    ASSERT_VARIANT_PTR_STRING(iteratorValue);
     cb();
   }
   else
@@ -141,6 +157,7 @@ void __MOLD_ForDriver_IndexesAndValuesInString(Variant_t *box,
     {
       *iteratorIndex = idx;
       iteratorValue -> value = str -> text[idx];
+      ASSERT_VARIANT_PTR_STRING(iteratorValue);
       cb();
     }
   }
@@ -169,6 +186,9 @@ void __MOLD_ForDriver_KeysAndValuesInMap(Variant_t *box,
     memcpy(iteratorKey, &bucket -> key, sizeof(Variant_t));
     memcpy(iteratorValue, &bucket -> value, sizeof(Variant_t));
 
+    ASSERT_VARIANT_PTR_STRING(iteratorKey);
+    ASSERT_VARIANT_PTR_ANY(iteratorValue);
+
     bucket = bucket -> nextBucket;
 
     cb();
@@ -187,6 +207,8 @@ void __MOLD_ForDriver_KeysAndValuesInMap(Variant_t *box,
 void __MOLD_ForDriver_Generic(Variant_t *box, void *iteratorIndexOrKey,
                               Variant_t *iteratorValue, LoopBodyCbProto cb)
 {
+  ASSERT_VARIANT_PTR_COMPLEX(box);
+
   // Redirect unused iterators to trash bin.
   if (iteratorIndexOrKey == NULL) iteratorIndexOrKey = &__TrashBin;
   if (iteratorValue      == NULL) iteratorValue      = &__TrashBin;
