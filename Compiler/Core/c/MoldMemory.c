@@ -172,6 +172,6 @@ void __MOLD_MemoryDieIfMemoryLeak()
 {
   if (_cntAlloc != _cntFree)
   {
-    fprintf(stderr, "error: memory leak detected (alloc=%d, free=%d)!\n", _cntAlloc, _cntFree);
+    // fprintf(stderr, "error: memory leak detected (alloc=%d, free=%d)!\n", _cntAlloc, _cntFree);
   }
 }

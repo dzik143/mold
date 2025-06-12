@@ -66,6 +66,9 @@ MOLD_DEFINE_ERROR_FCT(nullMethodCalled         , "null method called")
 
 LONG WINAPI __MOLD_SystemExceptionHandler(struct _EXCEPTION_POINTERS *ExceptionInfo)
 {
+  fflush(stdout);
+  fflush(stderr);
+
   switch (ExceptionInfo -> ExceptionRecord -> ExceptionCode)
   {
     case 0xc00000be: __MOLD_PrintErrorAndDie_divideByZero();
@@ -75,6 +78,8 @@ LONG WINAPI __MOLD_SystemExceptionHandler(struct _EXCEPTION_POINTERS *ExceptionI
 
     default:
     {
+      fprintf(stderr, "runtime error: generic %lx\n", ExceptionInfo -> ExceptionRecord -> ExceptionCode);
+      abort();
     }
   }
 

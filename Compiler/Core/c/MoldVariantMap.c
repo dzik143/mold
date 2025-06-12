@@ -43,6 +43,8 @@
 
 uint32_t __MOLD_hashDJB2(Variant_t *x)
 {
+  ASSERT_VARIANT_PTR_STRING(x);
+
   uint32_t hash = 5381;
   uint32_t c;
 
@@ -87,6 +89,9 @@ uint32_t __MOLD_hashDJB2(Variant_t *x)
 
 MapBucket_t *__MOLD_FindMapBucketByKey(Variant_t *box, Variant_t *key)
 {
+  ASSERT_VARIANT_PTR_MAP_OR_OBJECT(box);
+  ASSERT_VARIANT_PTR_ANY(key);
+
   if ((box -> type != VARIANT_MAP) && (box -> type != VARIANT_OBJECT))
   {
     __MOLD_PrintErrorAndDie_mapOrObjectExpected();
@@ -129,6 +134,9 @@ MapBucket_t *__MOLD_FindMapBucketByKey(Variant_t *box, Variant_t *key)
     bucket    = &(map -> buckets[bucketIdx]);
   }
 
+  ASSERT_VARIANT_PTR_MAP_OR_OBJECT(box);
+  ASSERT_VARIANT_PTR_ANY(key);
+
   return bucket;
 }
 
@@ -142,6 +150,8 @@ MapBucket_t *__MOLD_FindMapBucketByKey(Variant_t *box, Variant_t *key)
 
 void __MOLD_ResizeMapIfNeeded(Variant_t *box)
 {
+  ASSERT_VARIANT_PTR_MAP_OR_OBJECT(box);
+
   // Decode map.
   Map_t *map = (Map_t *) box -> valueAsBufferPtr -> bytesPtr;
 
@@ -182,6 +192,8 @@ void __MOLD_ResizeMapIfNeeded(Variant_t *box)
     // Release old buffer.
     __MOLD_MemoryRelease(newMap.valueAsBufferPtr);
   }
+
+  ASSERT_VARIANT_PTR_MAP_OR_OBJECT(box);
 }
 
 // #############################################################################
@@ -214,6 +226,8 @@ Variant_t __MOLD_VariantMapCreateWithCustomSize(uint32_t bucketsCnt)
   rv.type             = VARIANT_MAP;
   rv.flags            = 0;
   rv.valueAsBufferPtr = buf;
+
+  ASSERT_VARIANT_PTR_MAP(&rv);
 
   return rv;
 }
@@ -254,6 +268,9 @@ Variant_t __MOLD_VariantMapCreate()
 
 Variant_t __MOLD_VariantMapCreateFromInitList(Variant_t keys, Variant_t values)
 {
+  ASSERT_VARIANT_PTR_ARRAY(&keys);
+  ASSERT_VARIANT_PTR_ARRAY(&values);
+
   Variant_t rv = __MOLD_VariantMapCreate();
 
   Variant_t oneKey;
@@ -273,6 +290,10 @@ Variant_t __MOLD_VariantMapCreateFromInitList(Variant_t keys, Variant_t values)
     &_copyOneKeyValuePair
   );
 
+  ASSERT_VARIANT_PTR_ARRAY(&keys);
+  ASSERT_VARIANT_PTR_ARRAY(&values);
+  ASSERT_VARIANT_PTR_MAP(&rv);
+
   return rv;
 }
 
@@ -289,6 +310,8 @@ Variant_t __MOLD_VariantMapCreateFromInitList(Variant_t keys, Variant_t values)
 
 void __MOLD_VariantMapRelease(Variant_t *x)
 {
+  ASSERT_VARIANT_PTR_MAP_OR_OBJECT(x);
+
   // Release array items if needed.
   if (x -> valueAsBufferPtr -> refCnt == 1)
   {
@@ -332,6 +355,9 @@ void __MOLD_VariantMapRelease(Variant_t *x)
 
 Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t box, Variant_t key)
 {
+  ASSERT_VARIANT_PTR_MAP_OR_OBJECT(&box);
+  ASSERT_VARIANT_PTR_STRING(&key);
+
   Variant_t rv = {0};
 
   // Find bucket.
@@ -345,6 +371,10 @@ Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t box, Variant_t key)
     // Increase reference counter for just loaded item.
     __MOLD_VariantAddRef(&rv);
   }
+
+  ASSERT_VARIANT_PTR_MAP_OR_OBJECT(&box);
+  ASSERT_VARIANT_PTR_STRING(&key);
+  ASSERT_VARIANT_PTR_ANY(&rv);
 
   return rv;
 }
@@ -387,6 +417,10 @@ Variant_t __MOLD_VariantLoadFromKey_string(Variant_t box, Variant_t key)
 
 void __MOLD_VariantStoreAtKey_variant(Variant_t *box, Variant_t key, Variant_t value)
 {
+  ASSERT_VARIANT_PTR_MAP_OR_OBJECT(box);
+  ASSERT_VARIANT_PTR_STRING(&key);
+  ASSERT_VARIANT_PTR_ANY(&value);
+
   // Increase reference counter for the new stored value.
   __MOLD_VariantAddRef(&value);
 
@@ -432,6 +466,10 @@ void __MOLD_VariantStoreAtKey_variant(Variant_t *box, Variant_t key, Variant_t v
 
   // Resize map if needed.
   __MOLD_ResizeMapIfNeeded(box);
+
+  ASSERT_VARIANT_PTR_MAP_OR_OBJECT(box);
+  ASSERT_VARIANT_PTR_STRING(&key);
+  ASSERT_VARIANT_PTR_ANY(&value);
 }
 
 // ----------------------------------------------------------------------------

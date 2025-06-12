@@ -815,6 +815,8 @@ Variant_t __MOLD_GetTypeId(Variant_t x)
 
 void __MOLD_VariantDestroy(Variant_t *x)
 {
+  ASSERT_VARIANT_PTR_ANY(x);
+
   switch (x -> type)
   {
     case VARIANT_UNDEFINED:

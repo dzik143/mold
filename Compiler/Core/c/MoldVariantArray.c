@@ -72,6 +72,8 @@ Variant_t __MOLD_VariantArrayCreate()
 
 Variant_t __MOLD_VariantArrayCreateFromInitList(Variant_t initArray)
 {
+  ASSERT_VARIANT_PTR_ARRAY(&initArray);
+
   Variant_t rv = __MOLD_VariantArrayCreate();
   Variant_t oneItem;
   uint32_t idx;
@@ -87,6 +89,8 @@ Variant_t __MOLD_VariantArrayCreateFromInitList(Variant_t initArray)
     &oneItem,
     &_copyOneItem
   );
+
+  ASSERT_VARIANT_PTR_ARRAY(&rv);
 
   return rv;
 }
@@ -104,6 +108,8 @@ Variant_t __MOLD_VariantArrayCreateFromInitList(Variant_t initArray)
 
 void __MOLD_VariantArrayRelease(Variant_t *x)
 {
+  ASSERT_VARIANT_PTR_ARRAY(x);
+
   if (x -> type != VARIANT_UNDEFINED)
   {
     // Release array items if needed.
@@ -127,7 +133,8 @@ void __MOLD_VariantArrayRelease(Variant_t *x)
     // Release the array buffer itself.
     __MOLD_MemoryRelease(x -> valueAsBufferPtr);
 
-    x -> type = VARIANT_UNDEFINED;
+    x -> valueAsBufferPtr = NULL;
+    x -> type             = VARIANT_UNDEFINED;
   }
 }
 
@@ -151,6 +158,8 @@ void __MOLD_VariantArrayRelease(Variant_t *x)
 
 Variant_t __MOLD_VariantLoadFromIndex(Variant_t box, int32_t idx)
 {
+  ASSERT_VARIANT_PTR_ARRAY_OR_STRING(&box);
+
   Variant_t rv = { VARIANT_UNDEFINED };
 
   if (idx < 0)
@@ -224,6 +233,8 @@ Variant_t __MOLD_VariantLoadFromIndex(Variant_t box, int32_t idx)
     }
   }
 
+  ASSERT_VARIANT_PTR_ANY(&rv);
+
   return rv;
 }
 
@@ -245,6 +256,9 @@ Variant_t __MOLD_VariantLoadFromIndex(Variant_t box, int32_t idx)
 
 void __MOLD_VariantStoreAtIndex_variant(Variant_t *box, int32_t idx, Variant_t value)
 {
+  ASSERT_VARIANT_PTR_ARRAY(box);
+  ASSERT_VARIANT_PTR_ANY(&value);
+
   // TODO: Handle VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE?
   Buffer_t *buf   = box -> valueAsBufferPtr;
   Array_t  *array = (Array_t *) buf -> bytesPtr;
@@ -278,6 +292,9 @@ void __MOLD_VariantStoreAtIndex_variant(Variant_t *box, int32_t idx, Variant_t v
 
   // Put new item into array slot
   array -> items[idx] = value;
+
+  ASSERT_VARIANT_PTR_ARRAY(box);
+  ASSERT_VARIANT_PTR_ANY(&value);
 }
 
 // ----------------------------------------------------------------------------
@@ -408,6 +425,9 @@ void __MOLD_VariantStoreAtIndex_bool32(Variant_t *box, int32_t idx, bool32_t val
 
 void __MOLD_ArrayInsertAfterLast(Variant_t box, Variant_t value)
 {
+  ASSERT_VARIANT_PTR_ARRAY(&box);
+  ASSERT_VARIANT_PTR_ANY(&value);
+
   if (box.type != VARIANT_ARRAY)
   {
     __MOLD_PrintErrorAndDie_arrayExpected();

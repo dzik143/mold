@@ -20,6 +20,7 @@
 #ifndef _MoldError_H
 #define _MoldError_H
 
+#include <assert.h>
 #include "MoldCore.h"
 
 void __MOLD_Die(Variant_t msg);
@@ -49,5 +50,66 @@ void __MOLD_PrintErrorAndDie_floatOverflow();
 void __MOLD_PrintErrorAndDie_floatUnderflow();
 void __MOLD_PrintErrorAndDie_notIterable();
 void __MOLD_PrintErrorAndDie_nullMethodCalled();
+
+#undef ASSERT_VARIANT_ENABLED
+
+#ifdef ASSERT_VARIANT_ENABLED
+
+# define ASSERT_VARIANT_PTR_ANY(x) \
+  assert((x) != NULL); \
+  assert((x) -> type >= 0); \
+  assert((x) -> type <= VARIANT_TYPE_MAX);
+
+# define ASSERT_VARIANT_PTR_INTEGER(x) \
+  ASSERT_VARIANT_PTR_ANY(x) \
+  assert((x) -> type == VARIANT_INTEGER); \
+
+# define ASSERT_VARIANT_PTR_COMPLEX(x) \
+  ASSERT_VARIANT_PTR_ANY(x) \
+  assert(((x) -> type == VARIANT_STRING) || ((x) -> type >= VARIANT_ARRAY)); \
+  assert((x) -> valueAsBufferPtr != NULL); \
+  assert((x) -> valueAsBufferPtr -> refCnt != 0);
+
+# define ASSERT_VARIANT_PTR_ARRAY(x) \
+  ASSERT_VARIANT_PTR_COMPLEX(x) \
+  assert((x) -> type == VARIANT_ARRAY); \
+
+# define ASSERT_VARIANT_PTR_MAP_OR_OBJECT(x) \
+  ASSERT_VARIANT_PTR_COMPLEX(x) \
+  assert(((x) -> type == VARIANT_MAP) || ((x) -> type == VARIANT_OBJECT));
+
+# define ASSERT_VARIANT_PTR_MAP(x) \
+  ASSERT_VARIANT_PTR_COMPLEX(x) \
+  assert((x) -> type == VARIANT_MAP);
+
+# define ASSERT_VARIANT_PTR_OBJECT(x) \
+  ASSERT_VARIANT_PTR_COMPLEX(x) \
+  assert((x) -> type == VARIANT_OBJECT);
+
+# define ASSERT_VARIANT_PTR_STRING(x) \
+  ASSERT_VARIANT_PTR_ANY(x) \
+  assert((x) -> type == VARIANT_STRING); \
+  assert((x) -> valueAsBufferPtr != NULL); \
+  if (((x) -> flags & VARIANT_FLAG_ONE_CHARACTER) == 0) { assert((x) -> valueAsBufferPtr -> refCnt != 0); }
+
+# define ASSERT_VARIANT_PTR_ARRAY_OR_STRING(x) \
+  ASSERT_VARIANT_PTR_ANY(x) \
+  assert(((x) -> type == VARIANT_ARRAY) || ((x) -> type == VARIANT_STRING)); \
+  if ((x) -> type == VARIANT_ARRAY)  { ASSERT_VARIANT_PTR_ARRAY(x); } \
+  if ((x) -> type == VARIANT_STRING) { ASSERT_VARIANT_PTR_STRING(x); }
+
+#else
+
+# define ASSERT_VARIANT_PTR_ANY(x)
+# define ASSERT_VARIANT_PTR_INTEGER(x)
+# define ASSERT_VARIANT_PTR_COMPLEX(x)
+# define ASSERT_VARIANT_PTR_ARRAY(x)
+# define ASSERT_VARIANT_PTR_MAP_OR_OBJECT(x)
+# define ASSERT_VARIANT_PTR_MAP(x)
+# define ASSERT_VARIANT_PTR_OBJECT(x)
+# define ASSERT_VARIANT_PTR_STRING(x)
+# define ASSERT_VARIANT_PTR_ARRAY_OR_STRING(x)
+
+#endif /* VARIANT_ASSERT_ENABLED */
 
 #endif /* _Mold_Error_H */

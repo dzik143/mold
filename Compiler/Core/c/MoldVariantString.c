@@ -56,6 +56,8 @@ Variant_t __MOLD_VariantStringCreateFromCString(const char *text)
     rv.valueAsBufferPtr = buf;
   }
 
+  ASSERT_VARIANT_PTR_STRING(&rv);
+
   return rv;
 }
 
@@ -72,6 +74,8 @@ Variant_t __MOLD_VariantStringCreateFromCString(const char *text)
 
 void __MOLD_VariantStringRelease(Variant_t *x)
 {
+  ASSERT_VARIANT_PTR_STRING(x);
+
   // String - possible complex or primitive.
   if (!(x -> flags & VARIANT_FLAG_ONE_CHARACTER))
   {
@@ -98,6 +102,9 @@ void __MOLD_VariantStringRelease(Variant_t *x)
 
 bool32_t __MOLD_cmp_eq_string(Variant_t x, Variant_t y)
 {
+  ASSERT_VARIANT_PTR_STRING(&x);
+  ASSERT_VARIANT_PTR_STRING(&y);
+
   bool32_t rv = 0;
 
   if (x.flags & VARIANT_FLAG_ONE_CHARACTER)
@@ -178,6 +185,9 @@ bool32_t __MOLD_cmp_ne_string(Variant_t x, Variant_t y)
 
 void __MOLD_VariantStringJoin(Variant_t *dst, Variant_t *x, Variant_t *y)
 {
+  ASSERT_VARIANT_PTR_STRING(x);
+  ASSERT_VARIANT_PTR_STRING(y);
+
   uint64_t xLen = 0;
   uint64_t yLen = 0;
 
@@ -248,6 +258,10 @@ void __MOLD_VariantStringJoin(Variant_t *dst, Variant_t *x, Variant_t *y)
   // --------------------------------------
   dst -> type             = VARIANT_STRING;
   dst -> valueAsBufferPtr = dstBuf;
+
+  ASSERT_VARIANT_PTR_STRING(dst);
+  ASSERT_VARIANT_PTR_STRING(x);
+  ASSERT_VARIANT_PTR_STRING(y);
 }
 
 // -----------------------------------------------------------------------------
@@ -272,6 +286,10 @@ void __MOLD_VariantStringJoin(Variant_t *dst, Variant_t *x, Variant_t *y)
 
 Variant_t __MOLD_SubStr(Variant_t strVariant, Variant_t idxVariant, Variant_t lenVariant)
 {
+  ASSERT_VARIANT_PTR_STRING(&strVariant);
+  ASSERT_VARIANT_PTR_INTEGER(&idxVariant);
+  ASSERT_VARIANT_PTR_INTEGER(&lenVariant);
+
   Variant_t rv;
 
   String_t *str = (String_t *) strVariant.valueAsBufferPtr -> bytesPtr;
@@ -291,8 +309,11 @@ Variant_t __MOLD_SubStr(Variant_t strVariant, Variant_t idxVariant, Variant_t le
 
   rv.type             = VARIANT_STRING;
   rv.valueAsBufferPtr = newBuf;
+  rv.flags            = 0;
 
   memcpy(newStr -> text, str -> text + idx, len);
+
+  ASSERT_VARIANT_PTR_STRING(&rv);
 
   return rv;
 }
@@ -310,6 +331,8 @@ Variant_t __MOLD_SubStr(Variant_t strVariant, Variant_t idxVariant, Variant_t le
 
 Variant_t __MOLD_Str(Variant_t x)
 {
+  ASSERT_VARIANT_PTR_ANY(&x);
+
   Variant_t rv = { VARIANT_STRING };
 
   if (x.type == VARIANT_STRING)
@@ -349,6 +372,9 @@ Variant_t __MOLD_Str(Variant_t x)
     rv.valueAsBufferPtr = buf;
   }
 
+  ASSERT_VARIANT_PTR_ANY(&x);
+  ASSERT_VARIANT_PTR_STRING(&rv);
+
   return rv;
 }
 
@@ -364,6 +390,8 @@ Variant_t __MOLD_Str(Variant_t x)
 
 Variant_t __MOLD_Ord(Variant_t x)
 {
+  ASSERT_VARIANT_PTR_ANY(&x);
+
   Variant_t rv = { VARIANT_INTEGER };
 
   switch (x.type)
@@ -401,6 +429,8 @@ Variant_t __MOLD_Ord(Variant_t x)
     }
   }
 
+  ASSERT_VARIANT_PTR_INTEGER(&rv);
+
   return rv;
 }
 
@@ -416,12 +446,16 @@ Variant_t __MOLD_Ord(Variant_t x)
 
 Variant_t __MOLD_Asc(Variant_t x)
 {
+  ASSERT_VARIANT_PTR_INTEGER(&x);
+
   Variant_t rv =
   {
     type: VARIANT_STRING,
     flags: VARIANT_FLAG_ONE_CHARACTER,
     value: x.value
   };
+
+  ASSERT_VARIANT_PTR_STRING(&rv);
 
   return rv;
 }
