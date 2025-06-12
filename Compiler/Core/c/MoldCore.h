@@ -76,6 +76,8 @@ typedef struct Variant
 
 #define VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE 1
 #define VARIANT_FLAG_ONE_CHARACTER            2
+// Used to avoid circular references during print.
+#define VARIANT_FLAG_NODE_VISITED             4
 
 // -----------------------------------------------------------------------------
 //                             Global variables

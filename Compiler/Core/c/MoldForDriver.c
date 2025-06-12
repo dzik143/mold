@@ -17,6 +17,7 @@
 /*                                                                        */
 /**************************************************************************/
 
+#include <stdio.h>
 #include <string.h>
 
 #include "MoldError.h"
@@ -42,7 +43,22 @@ void __MOLD_ForDriver_IndexesAndValuesInArray(Array_t *array,
       *iteratorIndex = idx;
       *iteratorValue = array -> items[idx];
       ASSERT_VARIANT_PTR_ANY(iteratorValue);
-      cb();
+
+      if (array -> items[idx].flags & VARIANT_FLAG_NODE_VISITED)
+      {
+        // Node was already visited even before us.
+        // Don't touch the flags - just pass-through item as-is.
+        cb();
+      }
+      else
+      {
+        // Node was not visited yet.
+        // Mark that node is visited to avoid infinite loop on circular
+        // reference.
+        array -> items[idx].flags |= VARIANT_FLAG_NODE_VISITED;
+        cb();
+        array -> items[idx].flags &= ~VARIANT_FLAG_NODE_VISITED;
+      }
     }
   }
   else
@@ -183,15 +199,29 @@ void __MOLD_ForDriver_KeysAndValuesInMap(Variant_t *box,
 
   for (uint32_t idx = 0; idx < bucketsUsedCnt; idx++)
   {
-    memcpy(iteratorKey, &bucket -> key, sizeof(Variant_t));
+    memcpy(iteratorKey  , &bucket -> key  , sizeof(Variant_t));
     memcpy(iteratorValue, &bucket -> value, sizeof(Variant_t));
 
     ASSERT_VARIANT_PTR_STRING(iteratorKey);
     ASSERT_VARIANT_PTR_ANY(iteratorValue);
 
-    bucket = bucket -> nextBucket;
+    if ((bucket -> value).flags & VARIANT_FLAG_NODE_VISITED)
+    {
+      // Node was already visited even before us.
+      // Don't touch the flags - just pass-through item as-is.
+      cb();
+    }
+    else
+    {
+      // Node was not visited yet.
+      // Mark that node is visited to avoid infinite loop on circular
+      // reference.
+      (bucket -> value).flags |= VARIANT_FLAG_NODE_VISITED;
+      cb();
+      (bucket -> value).flags &= ~VARIANT_FLAG_NODE_VISITED;
+    }
 
-    cb();
+    bucket = bucket -> nextBucket;
   }
 }
 

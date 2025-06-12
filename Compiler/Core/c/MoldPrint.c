@@ -25,15 +25,33 @@
 #include "MoldForDriver.h"
 #include "MoldPrint.h"
 
+// Possible improvement: Possibility to set max deep at runtime?
+static uint32_t __MOLD_PrintMaxDeep = 8;
+
 // -----------------------------------------------------------------------------
 // Print variant variable to the C stream.
 //
-// f - output C stream e.g. stdout (IN),
-// x - variable to be printed (IN).
+// f       - output C stream e.g. stdout (IN),
+// x       - variable to be printed (IN),
+// deepIdx - current deep level to avoid printing too much (IN).
 // -----------------------------------------------------------------------------
 
-void __MOLD_PrintToFile_variant(FILE *f, Variant_t *x)
+static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x, uint32_t deepIdx)
 {
+  // Extra guard to avoid infinite loops on circular references.
+  if (x -> flags & VARIANT_FLAG_NODE_VISITED)
+  {
+    fprintf(f, "[circular]");
+    return;
+  }
+
+  if (deepIdx > __MOLD_PrintMaxDeep) {
+    fprintf(f, "...");
+    return;
+  }
+
+  deepIdx++;
+
   switch (x -> type)
   {
     // ------------------------------------------------------------------------
@@ -93,12 +111,12 @@ void __MOLD_PrintToFile_variant(FILE *f, Variant_t *x)
         if (oneItem.type == VARIANT_STRING)
         {
           putc('\'', f);
-          __MOLD_PrintToFile_variant(f, &oneItem);
+          __MOLD_PrintToFile_variantInternal(f, &oneItem, deepIdx);
           putc('\'', f);
         }
         else
         {
-          __MOLD_PrintToFile_variant(f, &oneItem);
+          __MOLD_PrintToFile_variantInternal(f, &oneItem, deepIdx);
         }
 
         sep = ", ";
@@ -116,7 +134,9 @@ void __MOLD_PrintToFile_variant(FILE *f, Variant_t *x)
     // ------------------------------------------------------------------------
 
     case VARIANT_MAP:
+    case VARIANT_OBJECT:
     {
+      // Possible improvement: Print methods/className for objects?
       Variant_t oneKey;
       Variant_t oneValue;
 
@@ -127,18 +147,18 @@ void __MOLD_PrintToFile_variant(FILE *f, Variant_t *x)
       void _printOneKeyValuePair()
       {
         fprintf(f, "%s'", sep);
-        __MOLD_PrintToFile_variant(f, &oneKey);
+        __MOLD_PrintToFile_variantInternal(f, &oneKey, deepIdx);
         fprintf(f, "': ");
 
         if (oneValue.type == VARIANT_STRING)
         {
           putc('\'', f);
-          __MOLD_PrintToFile_variant(f, &oneValue);
+          __MOLD_PrintToFile_variantInternal(f, &oneValue, deepIdx);
           putc('\'', f);
         }
         else
         {
-          __MOLD_PrintToFile_variant(f, &oneValue);
+          __MOLD_PrintToFile_variantInternal(f, &oneValue, deepIdx);
         }
 
         sep = ", ";
@@ -151,21 +171,16 @@ void __MOLD_PrintToFile_variant(FILE *f, Variant_t *x)
       break;
     }
 
-    // ------------------------------------------------------------------------
-    //                        TODO: Print object
-    // ------------------------------------------------------------------------
-
-    case VARIANT_OBJECT:
-    {
-      fprintf(f, "[object]");
-      break;
-    }
-
     default:
     {
       __MOLD_PrintErrorAndDie_badType();
     }
   }
+}
+
+void __MOLD_PrintToFile_variant(FILE *f, Variant_t *x)
+{
+  __MOLD_PrintToFile_variantInternal(f, x, 0);
 }
 
 // -----------------------------------------------------------------------------
