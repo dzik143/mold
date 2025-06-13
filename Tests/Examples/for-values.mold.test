@@ -135,7 +135,7 @@ for values v in x
 endfor
 
 EXPECTED_ERROR:
-runtime error: not iterable
+./temp/source.mold:4:18: error: not iterable
 -------------------------------------------------------------------------------
 
 TEST "for values in: iteration inside functionc call"

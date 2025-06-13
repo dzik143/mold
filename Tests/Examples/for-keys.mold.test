@@ -29,7 +29,7 @@ for keys k in x
 endfor
 
 EXPECTED_ERROR:
-runtime error: map or object expected
+./temp/source.mold:2:16: error: map or object expected
 -------------------------------------------------------------------------------
 
 TEST "for keys in: concat map keys one-by-one"

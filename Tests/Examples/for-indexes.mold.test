@@ -31,7 +31,7 @@ for indexes idx in x
 endfor
 
 EXPECTED_ERROR:
-runtime error: array or string expected
+./temp/source.mold:2:21: error: array or string expected
 -------------------------------------------------------------------------------
 
 TEST "for indexes in: empty string"
