@@ -195,6 +195,16 @@ EXPECTED_ERROR:
 runtime error: array or string expected
 -------------------------------------------------------------------------------
 
+TEST "Load x[i] into x (overwrite source)"
+# TODO: Should it generate runtime error (assign integer to array) or not?
+x = [ 1234 ]
+x = x[0]
+print x
+
+EXPECTED_OUTPUT:
+1234
+-------------------------------------------------------------------------------
+
 TEST "Bug: Realloc array more than 2x at single insert"
 
 x       = []
@@ -1436,4 +1446,32 @@ EXPECTED_OUTPUT:
   3 0
   4 0
   5 0
+-------------------------------------------------------------------------------
+
+TEST "Circular reference"
+
+box1 = ['a', 'b', 'c']
+box2 = ['d', 'e', 'f']
+
+box1[3] = box2
+box2[3] = box1
+box2[4] = box1
+
+print 'box1 =', box1
+print 'box1 =', box1
+print 'box1 =', box1
+
+print ''
+print 'box2 =', box2
+print 'box2 =', box2
+print 'box2 =', box2
+
+EXPECTED_OUTPUT:
+box1 = ['a', 'b', 'c', ['d', 'e', 'f', ['a', 'b', 'c', [circular]], ['a', 'b', 'c', [circular]]]]
+box1 = ['a', 'b', 'c', ['d', 'e', 'f', ['a', 'b', 'c', [circular]], ['a', 'b', 'c', [circular]]]]
+box1 = ['a', 'b', 'c', ['d', 'e', 'f', ['a', 'b', 'c', [circular]], ['a', 'b', 'c', [circular]]]]
+
+box2 = ['d', 'e', 'f', ['a', 'b', 'c', ['d', 'e', 'f', [circular], ['a', 'b', 'c', [circular]]]], ['a', 'b', 'c', ['d', 'e', 'f', ['a', 'b', 'c', [circular]], [circular]]]]
+box2 = ['d', 'e', 'f', ['a', 'b', 'c', ['d', 'e', 'f', [circular], ['a', 'b', 'c', [circular]]]], ['a', 'b', 'c', ['d', 'e', 'f', ['a', 'b', 'c', [circular]], [circular]]]]
+box2 = ['d', 'e', 'f', ['a', 'b', 'c', ['d', 'e', 'f', [circular], ['a', 'b', 'c', [circular]]]], ['a', 'b', 'c', ['d', 'e', 'f', ['a', 'b', 'c', [circular]], [circular]]]]
 -------------------------------------------------------------------------------

@@ -613,3 +613,41 @@ value is false
 value is 3.14
 value is 1234
 -------------------------------------------------------------------------------
+
+TEST "Load x{key} into x (overwrite source)"
+# TODO: Should it generate runtime error (assign integer to map) or not?
+x = { 'key': 1234 }
+x = x{'key'}
+print x
+
+EXPECTED_OUTPUT:
+1234
+-------------------------------------------------------------------------------
+
+TEST "Circular reference"
+
+box1 = {}
+box2 = {}
+
+box1{'box2'} = box2
+box2{'box1'} = box1
+box2{'box2'} = box2
+
+print 'box1 =', box1
+print 'box1 =', box1
+print 'box1 =', box1
+
+print ''
+print 'box2 =', box2
+print 'box2 =', box2
+print 'box2 =', box2
+
+EXPECTED_OUTPUT:
+box1 = {'box2': {'box1': {'box2': [circular]}, 'box2': {'box1': {'box2': [circular]}, 'box2': [circular]}}}
+box1 = {'box2': {'box1': {'box2': [circular]}, 'box2': {'box1': {'box2': [circular]}, 'box2': [circular]}}}
+box1 = {'box2': {'box1': {'box2': [circular]}, 'box2': {'box1': {'box2': [circular]}, 'box2': [circular]}}}
+
+box2 = {'box1': {'box2': {'box1': [circular], 'box2': {'box1': [circular], 'box2': [circular]}}}, 'box2': {'box1': {'box2': {'box1': [circular], 'box2': [circular]}}, 'box2': [circular]}}
+box2 = {'box1': {'box2': {'box1': [circular], 'box2': {'box1': [circular], 'box2': [circular]}}}, 'box2': {'box1': {'box2': {'box1': [circular], 'box2': [circular]}}, 'box2': [circular]}}
+box2 = {'box1': {'box2': {'box1': [circular], 'box2': {'box1': [circular], 'box2': [circular]}}}, 'box2': {'box1': {'box2': {'box1': [circular], 'box2': [circular]}}, 'box2': [circular]}}
+-------------------------------------------------------------------------------

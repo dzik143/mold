@@ -333,7 +333,7 @@ endif
 # - runtime error: boolean expected
 
 EXPECTED_ERROR:
-runtime error: boolean expected
+runtime error: not comparable
 -------------------------------------------------------------------------------
 
 TEST "Bug: signed integer GE"

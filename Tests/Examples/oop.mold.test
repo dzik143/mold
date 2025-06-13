@@ -393,6 +393,12 @@ class App
     this.obj = new Base(this)
   endmethod
 
+  method destroy()
+    # TODO: Review it?
+    # Avoid memory leak due to circular reference.
+    this.obj = null
+  endmethod
+
   method bar(x)
     print 'App::bar(', x, ')'
   endmethod
@@ -405,6 +411,10 @@ endclass
 
 app = new App()
 app.foo(1)
+
+# TODO: Review it?
+# Avoid memory leak due to circular reference.
+app.destroy()
 
 EXPECTED_OUTPUT:
 App::foo( 1 )
