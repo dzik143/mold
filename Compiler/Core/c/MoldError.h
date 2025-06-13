@@ -58,7 +58,9 @@ void __MOLD_PrintErrorAndDie_nullMethodCalled();
 # define ASSERT_VARIANT_PTR_ANY(x) \
   assert((x) != NULL); \
   assert((x) -> type >= 0); \
-  assert((x) -> type <= VARIANT_TYPE_MAX);
+  assert((x) -> type <= VARIANT_TYPE_MAX); \
+  assert((x) -> flags != 0xdeadbeef); \
+  assert((x) -> valueAsInt64 != 0xdeadbeef);
 
 # define ASSERT_VARIANT_PTR_INTEGER(x) \
   ASSERT_VARIANT_PTR_ANY(x) \

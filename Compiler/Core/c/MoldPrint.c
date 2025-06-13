@@ -26,7 +26,7 @@
 #include "MoldPrint.h"
 
 // Possible improvement: Possibility to set max deep at runtime?
-static uint32_t __MOLD_PrintMaxDeep = 8;
+static uint32_t __MOLD_PrintMaxDeep = 16;
 
 // -----------------------------------------------------------------------------
 // Print variant variable to the C stream.
@@ -38,19 +38,19 @@ static uint32_t __MOLD_PrintMaxDeep = 8;
 
 static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x, uint32_t deepIdx)
 {
+  // Avoid printing too much.
+  if ((x -> type >= VARIANT_ARRAY) && (deepIdx > __MOLD_PrintMaxDeep)) {
+    fprintf(f, "...");
+    return;
+  }
+  deepIdx++;
+
   // Extra guard to avoid infinite loops on circular references.
   if (x -> flags & VARIANT_FLAG_NODE_VISITED)
   {
     fprintf(f, "[circular]");
     return;
   }
-
-  if (deepIdx > __MOLD_PrintMaxDeep) {
-    fprintf(f, "...");
-    return;
-  }
-
-  deepIdx++;
 
   switch (x -> type)
   {
@@ -111,7 +111,7 @@ static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x, uint32_t d
         if (oneItem.type == VARIANT_STRING)
         {
           putc('\'', f);
-          __MOLD_PrintToFile_variantInternal(f, &oneItem, deepIdx);
+          __MOLD_PrintToFile_variantInternal(f, &oneItem, 0);
           putc('\'', f);
         }
         else

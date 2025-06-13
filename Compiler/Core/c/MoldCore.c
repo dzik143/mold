@@ -850,6 +850,10 @@ void __MOLD_VariantDestroy(Variant_t *x)
       break;
     }
   }
+
+  x -> type         = VARIANT_UNDEFINED;
+  x -> flags        = 0xdeadbeef;
+  x -> valueAsInt64 = 0xdeadbeef;
 }
 
 // -----------------------------------------------------------------------------

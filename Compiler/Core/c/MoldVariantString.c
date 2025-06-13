@@ -258,6 +258,7 @@ void __MOLD_VariantStringJoin(Variant_t *dst, Variant_t *x, Variant_t *y)
   // --------------------------------------
   dst -> type             = VARIANT_STRING;
   dst -> valueAsBufferPtr = dstBuf;
+  dst -> flags            = 0;
 
   ASSERT_VARIANT_PTR_STRING(dst);
   ASSERT_VARIANT_PTR_STRING(x);

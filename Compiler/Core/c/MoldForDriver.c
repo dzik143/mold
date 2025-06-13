@@ -237,7 +237,7 @@ void __MOLD_ForDriver_KeysAndValuesInMap(Variant_t *box,
 void __MOLD_ForDriver_Generic(Variant_t *box, void *iteratorIndexOrKey,
                               Variant_t *iteratorValue, LoopBodyCbProto cb)
 {
-  ASSERT_VARIANT_PTR_COMPLEX(box);
+  ASSERT_VARIANT_PTR_ANY(box);
 
   // Redirect unused iterators to trash bin.
   if (iteratorIndexOrKey == NULL) iteratorIndexOrKey = &__TrashBin;
@@ -248,6 +248,7 @@ void __MOLD_ForDriver_Generic(Variant_t *box, void *iteratorIndexOrKey,
   {
     case VARIANT_ARRAY:
     {
+      ASSERT_VARIANT_PTR_ARRAY(box);
       Buffer_t *buf  = box -> valueAsBufferPtr;
       Array_t *array = (Array_t *) buf -> bytesPtr;
       __MOLD_ForDriver_IndexesAndValuesInArray(array, iteratorIndexOrKey, iteratorValue, cb);
@@ -256,6 +257,7 @@ void __MOLD_ForDriver_Generic(Variant_t *box, void *iteratorIndexOrKey,
 
     case VARIANT_STRING:
     {
+      ASSERT_VARIANT_PTR_STRING(box);
       __MOLD_ForDriver_IndexesAndValuesInString(box, iteratorIndexOrKey, iteratorValue, cb);
       break;
     }
@@ -263,6 +265,7 @@ void __MOLD_ForDriver_Generic(Variant_t *box, void *iteratorIndexOrKey,
     case VARIANT_MAP:
     case VARIANT_OBJECT:
     {
+      ASSERT_VARIANT_PTR_MAP_OR_OBJECT(box);
       __MOLD_ForDriver_KeysAndValuesInMap(box, iteratorIndexOrKey, iteratorValue, cb);
       break;
     }

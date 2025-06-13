@@ -158,7 +158,7 @@ void __MOLD_VariantArrayRelease(Variant_t *x)
 
 Variant_t __MOLD_VariantLoadFromIndex(Variant_t box, int32_t idx)
 {
-  ASSERT_VARIANT_PTR_ARRAY_OR_STRING(&box);
+  ASSERT_VARIANT_PTR_ANY(&box);
 
   Variant_t rv = { VARIANT_UNDEFINED };
 
@@ -171,6 +171,8 @@ Variant_t __MOLD_VariantLoadFromIndex(Variant_t box, int32_t idx)
   {
     case VARIANT_ARRAY:
     {
+      ASSERT_VARIANT_PTR_ARRAY(&box);
+
       Buffer_t *buf = box.valueAsBufferPtr;
       Array_t  *array = (Array_t *) buf -> bytesPtr;
 
@@ -205,6 +207,8 @@ Variant_t __MOLD_VariantLoadFromIndex(Variant_t box, int32_t idx)
 
     case VARIANT_STRING:
     {
+      ASSERT_VARIANT_PTR_STRING(&box);
+
       if (box.flags & VARIANT_FLAG_ONE_CHARACTER)
       {
         // One character string - just return itself.
