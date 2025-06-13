@@ -89,9 +89,6 @@ uint32_t __MOLD_hashDJB2(Variant_t *x)
 
 MapBucket_t *__MOLD_FindMapBucketByKey(Variant_t *box, Variant_t *key)
 {
-  ASSERT_VARIANT_PTR_MAP_OR_OBJECT(box);
-  ASSERT_VARIANT_PTR_ANY(key);
-
   if ((box -> type != VARIANT_MAP) && (box -> type != VARIANT_OBJECT))
   {
     __MOLD_PrintErrorAndDie_mapOrObjectExpected();
@@ -102,8 +99,14 @@ MapBucket_t *__MOLD_FindMapBucketByKey(Variant_t *box, Variant_t *key)
     __MOLD_PrintErrorAndDie_stringKeyExpected();
   }
 
+  ASSERT_VARIANT_PTR_MAP_OR_OBJECT(box);
+  ASSERT_VARIANT_PTR_STRING(key);
+
   // Decode map.
   Map_t *map = (Map_t *) box -> valueAsBufferPtr -> bytesPtr;
+
+  assert(map != NULL);
+  assert((uint64_t) map != 0xdeadbeef);
 
   // Calculate key hash.
   uint32_t keyHash = __MOLD_hashDJB2(key);

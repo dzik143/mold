@@ -51,7 +51,7 @@ void __MOLD_PrintErrorAndDie_floatUnderflow();
 void __MOLD_PrintErrorAndDie_notIterable();
 void __MOLD_PrintErrorAndDie_nullMethodCalled();
 
-#undef ASSERT_VARIANT_ENABLED
+#define ASSERT_VARIANT_ENABLED
 
 #ifdef ASSERT_VARIANT_ENABLED
 
@@ -60,18 +60,22 @@ void __MOLD_PrintErrorAndDie_nullMethodCalled();
   assert((x) -> type >= 0); \
   assert((x) -> type <= VARIANT_TYPE_MAX); \
   assert((x) -> flags != 0xdeadbeef); \
-  assert((x) -> valueAsInt64 != 0xdeadbeef);
+  assert((x) -> flags >> 3 == 0); \
+  assert((x) -> valueAsInt64 != 0xdeadbeef); \
+  assert((x) -> valueAsInt64 != 0xfeeefeeefeeefeee);
 
 # define ASSERT_VARIANT_PTR_INTEGER(x) \
   ASSERT_VARIANT_PTR_ANY(x) \
-  assert((x) -> type == VARIANT_INTEGER); \
+  assert((x) -> type == VARIANT_INTEGER);
 
 # define ASSERT_VARIANT_PTR_COMPLEX(x) \
   ASSERT_VARIANT_PTR_ANY(x) \
   assert(((x) -> type == VARIANT_STRING) || ((x) -> type >= VARIANT_ARRAY)); \
   assert((x) -> valueAsBufferPtr != NULL); \
   assert((x) -> valueAsBufferPtr -> refCnt != 0); \
-  assert((x) -> valueAsBufferPtr -> bytesPtr != NULL);
+  assert((x) -> valueAsBufferPtr -> bytesPtr != NULL); \
+  assert((int64_t)((x) -> valueAsBufferPtr -> bytesPtr) != 0xdeadbeef); \
+  assert((int64_t)((x) -> valueAsBufferPtr -> bytesPtr) != 0xfeeefeeefeeefeee);
 
 # define ASSERT_VARIANT_PTR_ARRAY(x) \
   ASSERT_VARIANT_PTR_COMPLEX(x) \
@@ -97,6 +101,8 @@ void __MOLD_PrintErrorAndDie_nullMethodCalled();
     assert((x) -> valueAsBufferPtr != NULL); \
     assert((x) -> valueAsBufferPtr -> refCnt != 0); \
     assert((x) -> valueAsBufferPtr -> bytesPtr != NULL); \
+    assert((uint64_t)((x) -> valueAsBufferPtr -> bytesPtr) != 0xdeadbeef); \
+    assert((uint64_t)((x) -> valueAsBufferPtr -> bytesPtr) != 0xfeeefeeefeeefeee); \
   }
 
 # define ASSERT_VARIANT_PTR_ARRAY_OR_STRING(x) \
