@@ -41,11 +41,11 @@
 
 Variant_t __MOLD_VariantArrayCreate()
 {
-  Variant_t rv;
-
-  rv.type             = VARIANT_ARRAY;
-  rv.flags            = 0;
-  rv.valueAsBufferPtr = __MOLD_MemoryAlloc(64);
+  Variant_t rv = {
+    type: VARIANT_ARRAY,
+    flags: 0,
+    valueAsBufferPtr: __MOLD_MemoryAlloc(64)
+  };
 
   return rv;
 }
@@ -335,7 +335,8 @@ void __MOLD_VariantStoreAtIndex_int32(Variant_t *box, int32_t idx, int32_t value
   Variant_t valueAsVariant =
   {
     type: VARIANT_INTEGER,
-    valueAsInt64: value
+    valueAsInt64: value,
+    flags: 0
   };
 
   __MOLD_VariantStoreAtIndex_variant(box, idx, valueAsVariant);
@@ -358,7 +359,8 @@ void __MOLD_VariantStoreAtIndex_int64(Variant_t *box, int32_t idx, int64_t value
   Variant_t valueAsVariant =
   {
     type: VARIANT_INTEGER,
-    valueAsInt64: value
+    valueAsInt64: value,
+    flags: 0
   };
 
   __MOLD_VariantStoreAtIndex_variant(box, idx, valueAsVariant);
@@ -381,7 +383,8 @@ void __MOLD_VariantStoreAtIndex_float64(Variant_t *box, int32_t idx, float64_t v
   Variant_t valueAsVariant =
   {
     type: VARIANT_DOUBLE,
-    valueAsFloat64: value
+    valueAsFloat64: value,
+    flags: 0
   };
 
   __MOLD_VariantStoreAtIndex_variant(box, idx, valueAsVariant);
@@ -404,7 +407,8 @@ void __MOLD_VariantStoreAtIndex_bool32(Variant_t *box, int32_t idx, bool32_t val
   Variant_t valueAsVariant =
   {
     type: VARIANT_BOOLEAN,
-    valueAsInt64: value
+    valueAsInt64: value,
+    flags: 0
   };
 
   __MOLD_VariantStoreAtIndex_variant(box, idx, valueAsVariant);

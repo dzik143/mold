@@ -358,7 +358,7 @@ Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t box, Variant_t key)
   ASSERT_VARIANT_PTR_MAP_OR_OBJECT(&box);
   ASSERT_VARIANT_PTR_STRING(&key);
 
-  Variant_t rv = {0};
+  Variant_t rv = { VARIANT_UNDEFINED };
 
   // Find bucket.
   MapBucket_t *bucket = __MOLD_FindMapBucketByKey(&box, &key);
@@ -503,7 +503,7 @@ void __MOLD_VariantStoreAtKey_string(Variant_t *box, Variant_t key, Variant_t va
 
 void __MOLD_VariantStoreAtKey_int32(Variant_t *box, Variant_t key, int32_t value)
 {
-  Variant_t valueAsVariant = { type: VARIANT_INTEGER, valueAsInt64: value };
+  Variant_t valueAsVariant = { type: VARIANT_INTEGER, valueAsInt64: value, flags: 0 };
   __MOLD_VariantStoreAtKey_variant(box, key, valueAsVariant);
 }
 
@@ -521,7 +521,7 @@ void __MOLD_VariantStoreAtKey_int32(Variant_t *box, Variant_t key, int32_t value
 
 void __MOLD_VariantStoreAtKey_int64(Variant_t *box, Variant_t key, int64_t value)
 {
-  Variant_t valueAsVariant = { type: VARIANT_INTEGER, valueAsInt64: value };
+  Variant_t valueAsVariant = { type: VARIANT_INTEGER, valueAsInt64: value, flags: 0 };
   __MOLD_VariantStoreAtKey_variant(box, key, valueAsVariant);
 }
 
@@ -539,7 +539,7 @@ void __MOLD_VariantStoreAtKey_int64(Variant_t *box, Variant_t key, int64_t value
 
 void __MOLD_VariantStoreAtKey_float64(Variant_t *box, Variant_t key, float64_t value)
 {
-  Variant_t valueAsVariant = { type: VARIANT_DOUBLE, valueAsFloat64: value };
+  Variant_t valueAsVariant = { type: VARIANT_DOUBLE, valueAsFloat64: value, flags: 0 };
   __MOLD_VariantStoreAtKey_variant(box, key, valueAsVariant);
 }
 
@@ -557,6 +557,6 @@ void __MOLD_VariantStoreAtKey_float64(Variant_t *box, Variant_t key, float64_t v
 
 void __MOLD_VariantStoreAtKey_bool32(Variant_t *box, Variant_t key, bool32_t value)
 {
-  Variant_t valueAsVariant = { type: VARIANT_BOOLEAN, valueAsInt64: value };
+  Variant_t valueAsVariant = { type: VARIANT_BOOLEAN, valueAsInt64: value, flags: 0 };
   __MOLD_VariantStoreAtKey_variant(box, key, valueAsVariant);
 }

@@ -32,9 +32,9 @@
 //                             Global variables
 // -----------------------------------------------------------------------------
 
-Variant_t argc;
-Variant_t argv;
-Variant_t __TrashBin;
+Variant_t argc       = { VARIANT_UNDEFINED };
+Variant_t argv       = { VARIANT_UNDEFINED };
+Variant_t __TrashBin = { VARIANT_UNDEFINED };
 
 // -----------------------------------------------------------------------------
 //                Convert: create variant from primitives
@@ -42,31 +42,31 @@ Variant_t __TrashBin;
 
 Variant_t __MOLD_VariantCreateFrom_int32(int32_t x)
 {
-  Variant_t rv = { type: VARIANT_INTEGER, valueAsInt64: x };
+  Variant_t rv = { type: VARIANT_INTEGER, valueAsInt64: x, flags: 0 };
   return rv;
 }
 
 Variant_t __MOLD_VariantCreateFrom_int64(int64_t x)
 {
-  Variant_t rv = { type: VARIANT_INTEGER, valueAsInt64: x };
+  Variant_t rv = { type: VARIANT_INTEGER, valueAsInt64: x, flags: 0 };
   return rv;
 }
 
 Variant_t __MOLD_VariantCreateFrom_bool32(bool32_t x)
 {
-  Variant_t rv = { type: VARIANT_BOOLEAN, valueAsInt64: x };
+  Variant_t rv = { type: VARIANT_BOOLEAN, valueAsInt64: x, flags: 0 };
   return rv;
 }
 
 Variant_t __MOLD_VariantCreateFrom_float32(float32_t x)
 {
-  Variant_t rv = { type: VARIANT_FLOAT, valueAsFloat32: x };
+  Variant_t rv = { type: VARIANT_FLOAT, valueAsFloat32: x, flags: 0 };
   return rv;
 }
 
 Variant_t __MOLD_VariantCreateFrom_float64(float64_t x)
 {
-  Variant_t rv = { type: VARIANT_DOUBLE, valueAsFloat64: x };
+  Variant_t rv = { type: VARIANT_DOUBLE, valueAsFloat64: x, flags: 0 };
   return rv;
 }
 
@@ -131,7 +131,7 @@ Variant_t __MOLD_neg_variant(Variant_t x)
 
 Variant_t __MOLD_add_variant(Variant_t x, Variant_t y)
 {
-  Variant_t rv = { x.type };
+  Variant_t rv = { x.type, flags: 0 };
 
   if (x.type != y.type)
   {
@@ -155,7 +155,7 @@ Variant_t __MOLD_add_variant(Variant_t x, Variant_t y)
 
 Variant_t __MOLD_sub_variant(Variant_t x, Variant_t y)
 {
-  Variant_t rv = { x.type };
+  Variant_t rv = { x.type, flags: 0 };
 
   if (x.type != y.type)
   {
@@ -179,7 +179,7 @@ Variant_t __MOLD_sub_variant(Variant_t x, Variant_t y)
 
 Variant_t __MOLD_mul_variant(Variant_t x, Variant_t y)
 {
-  Variant_t rv = { x.type };
+  Variant_t rv = { x.type, flags: 0 };
 
   if (x.type != y.type)
   {
@@ -459,25 +459,25 @@ bool32_t __MOLD_VariantCastTo_bool32(Variant_t *x)
 
 Variant_t __MOLD_Bitand(Variant_t x, Variant_t y)
 {
-  Variant_t rv = { type: VARIANT_INTEGER, value: x.value & y.value };
+  Variant_t rv = { type: VARIANT_INTEGER, value: x.value & y.value, flags: 0 };
   return rv;
 }
 
 Variant_t __MOLD_Bitor(Variant_t x, Variant_t y)
 {
-  Variant_t rv = { type: VARIANT_INTEGER, value: x.value | y.value };
+  Variant_t rv = { type: VARIANT_INTEGER, value: x.value | y.value, flags: 0 };
   return rv;
 }
 
 Variant_t __MOLD_Bitxor(Variant_t x, Variant_t y)
 {
-  Variant_t rv = { type: VARIANT_INTEGER, value: x.value ^ y.value };
+  Variant_t rv = { type: VARIANT_INTEGER, value: x.value ^ y.value, flags: 0 };
   return rv;
 }
 
 Variant_t __MOLD_Bitnot(Variant_t x)
 {
-  Variant_t rv = { type: VARIANT_INTEGER, value: ~x.value };
+  Variant_t rv = { type: VARIANT_INTEGER, value: ~x.value, flags: 0 };
   return rv;
 }
 
@@ -556,7 +556,8 @@ Variant_t __MOLD_Len(Variant_t x)
   Variant_t rv =
   {
     type: VARIANT_INTEGER,
-    value: len
+    value: len,
+    flags: 0
   };
 
   return rv;
@@ -692,7 +693,8 @@ Variant_t __MOLD_Typeof(Variant_t x)
   Variant_t rv =
   {
     type: VARIANT_STRING,
-    valueAsBufferPtr: buf
+    valueAsBufferPtr: buf,
+    flags: 0
   };
 
   return rv;
@@ -700,9 +702,7 @@ Variant_t __MOLD_Typeof(Variant_t x)
 
 Variant_t __MOLD_ParseInteger(Variant_t x)
 {
-  Variant_t rv;
-
-  rv.type  = VARIANT_INTEGER;
+  Variant_t rv = { type: VARIANT_INTEGER, flags: 0 };
 
   if (x.flags & VARIANT_FLAG_ONE_CHARACTER)
   {
@@ -719,9 +719,7 @@ Variant_t __MOLD_ParseInteger(Variant_t x)
 
 Variant_t __MOLD_ParseFloat(Variant_t x)
 {
-  Variant_t rv;
-
-  rv.type  = VARIANT_DOUBLE;
+  Variant_t rv = { type: VARIANT_DOUBLE, flags: 0 };
 
   if (x.flags & VARIANT_FLAG_ONE_CHARACTER)
   {
@@ -778,6 +776,10 @@ Variant_t __MOLD_FileLoad(Variant_t path)
 
 void __MOLD_InitArgv(int _argc, char **_argv)
 {
+  // TEMP!!!
+  setvbuf(stdout, NULL, _IONBF, 0);
+  setvbuf(stderr, NULL, _IONBF, 0);
+
   // Init argc global.
   argc.type  = VARIANT_INTEGER;
   argc.value = _argc;
@@ -797,7 +799,7 @@ void __MOLD_InitArgv(int _argc, char **_argv)
 
 Variant_t __MOLD_GetTypeId(Variant_t x)
 {
-  Variant_t rv = { type: VARIANT_INTEGER, value: x.type };
+  Variant_t rv = { type: VARIANT_INTEGER, value: x.type, flags: 0 };
   return rv;
 }
 

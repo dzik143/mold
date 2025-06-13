@@ -291,7 +291,7 @@ Variant_t __MOLD_SubStr(Variant_t strVariant, Variant_t idxVariant, Variant_t le
   ASSERT_VARIANT_PTR_INTEGER(&idxVariant);
   ASSERT_VARIANT_PTR_INTEGER(&lenVariant);
 
-  Variant_t rv;
+  Variant_t rv = { VARIANT_STRING };
 
   String_t *str = (String_t *) strVariant.valueAsBufferPtr -> bytesPtr;
 
@@ -308,9 +308,7 @@ Variant_t __MOLD_SubStr(Variant_t strVariant, Variant_t idxVariant, Variant_t le
 
   newStr -> length = len;
 
-  rv.type             = VARIANT_STRING;
   rv.valueAsBufferPtr = newBuf;
-  rv.flags            = 0;
 
   memcpy(newStr -> text, str -> text + idx, len);
 

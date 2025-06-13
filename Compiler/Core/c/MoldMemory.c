@@ -106,6 +106,9 @@ void __MOLD_MemoryRelease(Buffer_t *buf)
     if (buf -> refCnt == 0)
     {
       free(buf -> bytesPtr);
+
+      *((uint64_t *) (&buf -> bytesPtr)) = 0xdeadbeef;
+
       free(buf);
       _cntFree++;
 
