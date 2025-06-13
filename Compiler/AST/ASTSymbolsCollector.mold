@@ -91,6 +91,7 @@ class ASTSymbolsCollector
     global AST_DATA_UNDEFINED
     global AST_DATA_BOOL
     global AST_DATA_OBJECT
+    global AST_DATA_MAP
     global AST_DATA_ARRAY
     global AST_DATA_STRING
     global SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_VAR_RETVAL, SYMBOL_KIND_CONST
@@ -639,9 +640,10 @@ class ASTSymbolsCollector
       # for indexes idx in box
 
       # Two last nodes are box and loop body.
-      iteratorsCnt = childrenCnt - 2
-      boxNode      = children[childrenCnt - 2]
-      bodyNode     = children[childrenCnt - 1]
+      iteratorsCnt   = childrenCnt - 2
+      indexOrKeyNode = children[0]
+      boxNode        = children[childrenCnt - 2]
+      bodyNode       = children[childrenCnt - 1]
 
       # TODO: Optimize it.
       bodyNode.symbolTable = symbolTable.enterScopeForLoop()
@@ -666,11 +668,36 @@ class ASTSymbolsCollector
       boxNode.symbolInfo = bodyNode.symbolTable.lookupForRead(boxNode.value)
 
       # TODO: Clean up this mess.
+      boxAstType = AST_GetDataType(boxNode)
+      this.app.setLogContext(boxNode)
+
       if (opcode is AST_OPCODE_FOR_INDEXES) or (opcode is AST_OPCODE_FOR_INDEXES_VALUES)
-        bodyNode.symbolTable.useAsIndex(children[0].value)
+        bodyNode.symbolTable.useAsIndex(indexOrKeyNode.value)
+
+        if ((boxAstType isnt AST_DATA_ARRAY) and
+            (boxAstType isnt AST_DATA_STRING) and
+            (boxAstType isnt -1))
+          this.app.logError('array or string expected')
+        endif
 
       elif (opcode is AST_OPCODE_FOR_KEYS) or (opcode is AST_OPCODE_FOR_KEYS_VALUES)
-        bodyNode.symbolTable.useAsKey(children[0].value)
+        bodyNode.symbolTable.useAsKey(indexOrKeyNode.value)
+
+        # TODO: Review it - use symbolTable.useAsXxx() ?
+        if ((boxAstType isnt AST_DATA_MAP) and
+            (boxAstType isnt AST_DATA_OBJECT) and
+            (boxAstType isnt -1))
+          this.app.logError('map or object expected')
+        endif
+
+      else
+        if ((boxAstType isnt AST_DATA_MAP) and
+            (boxAstType isnt AST_DATA_OBJECT) and
+            (boxAstType isnt AST_DATA_STRING) and
+            (boxAstType isnt AST_DATA_ARRAY) and
+            (boxAstType isnt -1))
+          this.app.logError('not iterable')
+        endif
       endif
 
       # Clean up this mess.

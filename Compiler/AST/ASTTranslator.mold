@@ -916,8 +916,10 @@ class ASTTranslator
     elif opcode is AST_OPCODE_FOR_VALUES
       # for values v in box
       iteratorValue = children[0].value
-      box           = this._evaluateNode(children[1])
+      boxNode       = children[1]
       loopBodyNode  = children[2]
+
+      box = this._evaluateNode(boxNode)
 
       # Enter loop scope.
       this._enterScope(loopBodyNode)
