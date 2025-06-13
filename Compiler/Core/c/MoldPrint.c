@@ -43,14 +43,15 @@ static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x, uint32_t d
     fprintf(f, "...");
     return;
   }
-  deepIdx++;
 
   // Extra guard to avoid infinite loops on circular references.
-  if (x -> flags & VARIANT_FLAG_NODE_VISITED)
+  if ((deepIdx > 0) && (x -> flags & VARIANT_FLAG_NODE_VISITED))
   {
     fprintf(f, "[circular]");
     return;
   }
+
+  deepIdx++;
 
   switch (x -> type)
   {
@@ -134,9 +135,7 @@ static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x, uint32_t d
     // ------------------------------------------------------------------------
 
     case VARIANT_MAP:
-    case VARIANT_OBJECT:
     {
-      // Possible improvement: Print methods/className for objects?
       Variant_t oneKey;
       Variant_t oneValue;
 
@@ -168,6 +167,14 @@ static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x, uint32_t d
 
       putc('}', f);
 
+      break;
+    }
+
+    case VARIANT_OBJECT:
+    {
+      // TODO: Fix printing "classProto" under VM.
+      // Possible improvement: Print methods/className for objects?
+      fprintf(f, "[object]");
       break;
     }
 
