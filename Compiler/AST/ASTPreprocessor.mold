@@ -106,7 +106,11 @@ class ASTPreprocessor
     global AST_OPCODE_CLASS_METHOD
     global AST_DATA_STRING
     global AST_DATA_INTEGER
+    global AST_DATA_BOOL
     global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ
+    global AST_OPCODE_COMPARE_GT, AST_OPCODE_COMPARE_GE
+    global AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
+    global AST_OPCODE_BOOL_OR, AST_OPCODE_BOOL_AND
     global MOLD_SYSCALL_MAP
     global AST_OPCODE_REFERENCE_BY_INDEX
     global AST_DATA_SELECTOR
@@ -130,6 +134,58 @@ class ASTPreprocessor
     # TODO: Better way to pass current line/column to error
     # handler.
     this.app.setLogContext(node)
+
+    # Handle @any(...) and @all(...) placeholders if logic expressions.
+    if ((opcode is AST_OPCODE_COMPARE_EQ) or
+        (opcode is AST_OPCODE_COMPARE_NEQ) or
+        (opcode is AST_OPCODE_COMPARE_GT) or
+        (opcode is AST_OPCODE_COMPARE_GE) or
+        (opcode is AST_OPCODE_COMPARE_LT) or
+        (opcode is AST_OPCODE_COMPARE_LE))
+      # if x OP y
+      x = children[0]
+      y = children[1]
+
+      # Possible improvement: Avoid code duplication?
+      if ((x.opcode is AST_OPCODE_CALL) and
+          (x.value  is '@any'))
+        # Replace:
+        #   @any(x1, x2, x3) OP y
+        # By:
+        #   (x1 OP y) or (x2 OP y) or (x3 OP y) or ...
+        newNode = AST_CreateNode(AST_DATA_BOOL, false, [])
+        for indexes n values xn in x.children
+          nextOpNode = AST_CreateNode(opcode, '', [ xn, y ])
+          newNode    = AST_CreateNode(AST_OPCODE_BOOL_OR, 'or', [ newNode, nextOpNode ])
+        endfor
+        node.opcode   = newNode.opcode
+        node.children = newNode.children
+        # Expand placeholders in just created nodes recurively.
+        # In this case we handle IF @any(...) is @any(...) like expressions.
+        this._processNode(node)
+      endif
+
+      if ((y.opcode is AST_OPCODE_CALL) and
+          (y.value  is '@any'))
+        # Replace:
+        #   x OP @any(y1, y2, y3, ...)
+        # By:
+        #   (x OP y1) or (x OP y2) or (x OP y3) or ...
+        newNode = AST_CreateNode(AST_DATA_BOOL, false, [])
+        for indexes n values yn in y.children
+          nextOpNode = AST_CreateNode(opcode, '', [ x, yn ])
+          newNode    = AST_CreateNode(AST_OPCODE_BOOL_OR, 'or', [ newNode, nextOpNode ])
+        endfor
+        node.opcode   = newNode.opcode
+        node.children = newNode.children
+        # Expand placeholders in just created nodes recurively.
+        # In this case we handle IF @any(...) is @any(...) like expressions.
+        this._processNode(node)
+      endif
+
+      opcode   = node.opcode
+      children = node.children
+    endif
 
     # Process current node.
     if ((opcode is AST_OPCODE_COMPARE_EQ) or

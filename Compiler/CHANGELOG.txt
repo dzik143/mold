@@ -1,9 +1,14 @@
 Unreleased
 ----------
-  - Handled relative paths in import statement.
+  - Handled relative paths in import statement,
+  - C: Handled circular references in VariantPrint,
+  - C: Refuse attempt to modify loop iterator at translation level,
+  - New syntax:
+    - @any(...) placeholder in logic expressions,
   - Bug fixes:
     - C: Fixed freeing buffer twice after __MOLD_Str(string) call,
-    - C: Destroy dst before read in x = x[idx] like code.
+    - C: Destroy dst before read in x = x[idx] like code,
+    - C: Incorrectly destroy iterator var (should not be called).
 
 0.6.20230903 (released on 2023-09-03):
 --------------------------------------
