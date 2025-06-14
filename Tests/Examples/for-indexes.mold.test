@@ -127,3 +127,15 @@ print x
 EXPECTED_OUTPUT:
 [10, 20, 30]
 -------------------------------------------------------------------------------
+
+TEST "for indexes in: attempt to modify loop iterator"
+
+x = [1, 2, 3]
+
+for indexes idx in x
+  idx = 1
+endfor
+
+EXPECTED_ERROR:
+./temp/source.mold:5:10: error: loop iterators can not be overwritten: 'idx'
+-------------------------------------------------------------------------------

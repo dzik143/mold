@@ -116,3 +116,27 @@ EXPECTED_OUTPUT:
 {'one': 1, 'two': 2}
 {'one': 1, 'two': 2, 'three': 3}
 -------------------------------------------------------------------------------
+
+TEST "for keys in: attempt to modify key iterator"
+
+x = { 'one': 1, 'two': 2, 'three': 3 }
+
+for keys k in x
+  k = 'changedKey'
+endfor
+
+EXPECTED_ERROR:
+./temp/source.mold:5:19: error: loop iterators can not be overwritten: 'k'
+-------------------------------------------------------------------------------
+
+TEST "for keys in: attempt to modify value iterator"
+
+x = { 'one': 1, 'two': 2, 'three': 3 }
+
+for keys k values v in x
+  v = 'changedValue'
+endfor
+
+EXPECTED_ERROR:
+./temp/source.mold:5:21: error: loop iterators can not be overwritten: 'v'
+-------------------------------------------------------------------------------
