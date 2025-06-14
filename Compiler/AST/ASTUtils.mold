@@ -587,21 +587,11 @@ endfunction
 
 function AST_IsPrimitiveImm(x) -> rv
   global AST_DATA_OBJECT
-  # TODO: Review it.
-  # TODO: Is undefined primitive?
-  if x.opcode < AST_DATA_OBJECT
-    rv = true
-  else
-    rv = false
-  endif
+  rv = x.opcode < AST_DATA_OBJECT
 endfunction
 
 function AST_IsImmWithValue(x, value) -> rv
-  if (AST_IsImm(x) is true) and (x.value is value)
-    rv = true
-  else
-    rv = false
-  endif
+  rv = (AST_IsImm(x) is true) and (x.value is value)
 endfunction
 
 function AST_IsEmpty(x) -> rv
@@ -609,11 +599,7 @@ function AST_IsEmpty(x) -> rv
 endfunction
 
 function AST_IsImmOrVar(x) -> rv
-  if (AST_IsImm(x) is true) or (AST_IsVar(x) is true)
-    rv = true
-  else
-    rv = false
-  endif
+  rv = (AST_IsImm(x) is true) or (AST_IsVar(x) is true)
 endfunction
 
 function AST_HasSideEffects(node) -> rv
@@ -803,16 +789,11 @@ endfunction
 
 function AST_IsDataNode(node) -> rv
   global AST_OPCODE_PROGRAM
-  if node.opcode < AST_OPCODE_PROGRAM
-    rv = true
-  else
-    rv = false
-  endif
+  rv = node.opcode < AST_OPCODE_PROGRAM
 endfunction
 
 function AST_ConvertDataTypeToText(dataType) -> rv
   global AST_DataTypeNames
-
   if (dataType is defined) and (dataType > 0)
     rv = AST_DataTypeNames[dataType]
   else
@@ -823,7 +804,6 @@ endfunction
 function AST_ConvertDataTypeToMIR(dataType) -> rv
   # TODO: Clean up this mess?
   global AST_DataTypeForMIR
-
   if (dataType is defined) and (dataType > 0)
     rv = AST_DataTypeForMIR[dataType]
   else
@@ -1046,9 +1026,8 @@ function AST_IsOkAsBox(node) -> rv
   global AST_OPCODE_REFERENCE_BY_INDEX
   global AST_OPCODE_REFERENCE_BY_KEY
 
+  # TODO: Simplify it.
   rv = false
-
-  # Simplify it.
   if ((node.opcode is AST_OPCODE_VARIABLE) or
       (node.opcode is AST_OPCODE_REFERENCE_BY_INDEX) or
       (node.opcode is AST_OPCODE_REFERENCE_BY_KEY))
