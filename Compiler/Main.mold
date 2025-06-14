@@ -222,8 +222,9 @@ else
     app.logDebug('Dead code elimination...')
     app.getAstOptimizerDeadCodeRemove().processNode(ast)
 
-    app.logDebug('Common subexpression elimination (CSE)...')
-    app.getAstOptimizerCSE().processNode(ast)
+    # TODO: Review it (temporary disabled).
+    #app.logDebug('Common subexpression elimination (CSE)...')
+    #app.getAstOptimizerCSE().processNode(ast)
 
   else
     die('error: optimization level #' ~ str(optimizationLevel) ~ ' is not implemented yet')
