@@ -976,8 +976,6 @@ function AST_TypeCast(node, dstDataType) -> rv
   global AST_DATA_STRING
   global AST_DATA_OBJECT
 
-  #print 'AST_TypeCast', typeof(node), dstDataType
-
   rv = node
 
   if node.opcode is AST_OPCODE_TYPE_CAST

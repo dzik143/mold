@@ -545,7 +545,8 @@ class CodeGeneratorC
       # print '// iter', deepIdx
 
       for values symbolInfo in this.globals
-        if (symbolInfo.kind is SYMBOL_KIND_CONST) and (symbolInfo.readHits > 0)
+        if ((symbolInfo.kind is SYMBOL_KIND_CONST) and
+            (symbolInfo.readHits > 0))
           name  = symbolInfo.name
           value = symbolInfo.value
           this.emitConstant(name, value, deepIdx, 0, false)

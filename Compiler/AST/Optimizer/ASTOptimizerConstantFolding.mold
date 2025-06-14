@@ -198,12 +198,12 @@ class ASTOptimizerConstantFolding
     else
       # General case - go on.
       if opcode is AST_DATA_ARRAY
-        if typeof(value) isnt 'array'
+        if value isnt array
           this._processNodeArray(node)
         endif
 
       elif opcode is AST_DATA_MAP
-        if typeof(value) isnt 'map'
+        if value isnt map
           this._processNodeMap(node)
         endif
 
@@ -242,13 +242,13 @@ class ASTOptimizerConstantFolding
           # Convert variable to constant if possible.
           # TODO: Clean up this mess.
           if ((node.storedValue is defined) and
-              (typeof(node.storedValue) isnt 'array') and
+              (node.storedValue isnt array) and
               (AST_IsImm(node.storedValue) is true))
 
-            if typeof(node.storedValue) isnt 'array'
+            if node.storedValue isnt array
 
-              if ((typeof(node.storedValue.value) isnt 'array') and
-                  (typeof(node.storedValue.value) isnt 'map'))
+              if ((node.storedValue.value isnt array) and
+                  (node.storedValue.value isnt map))
 
                 if this.globals.isset(value) is false
                   newValue = node.storedValue.value
@@ -334,7 +334,7 @@ class ASTOptimizerConstantFolding
             newValue = x.symbolInfo.value{y.value}
           endif
 
-          if (typeof(newValue) isnt 'array') and (typeof(newValue) isnt 'map')
+          if (newValue isnt array) and (newValue isnt map)
             x.symbolInfo.readHits = x.symbolInfo.readHits - 1
           endif
         endif

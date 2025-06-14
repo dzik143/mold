@@ -412,10 +412,6 @@ class ASTTranslatorMIR1 extends ASTTranslator
     global SYMBOL_KIND_VAR_RETVAL
 
     if (typeof(dst) isnt typeof(src)) or (dst isnt src)
-      # TODO: Is it really needed?
-      #dstInfo      = this.symbolTable.lookup(dst)
-      #dstInfo.type = AST_ConvertDataTypeToMIR(dstInfo.astType)
-
       this.emitMoveVariantOpcode(dst, this.popForRead())
     endif
   endmethod

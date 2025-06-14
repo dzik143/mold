@@ -147,16 +147,26 @@ class ASTPreprocessor
       y = children[1]
 
       # Possible improvement: Avoid code duplication?
+      # Possible improvement: Support for flat or/and with many args?
       if ((x.opcode is AST_OPCODE_CALL) and
-          (x.value  is '@any'))
+          (x.value  is @any('@any', '@all')))
         # Replace:
         #   @any(x1, x2, x3) OP y
+        #   @all(x1, x2, x3) OP y
         # By:
-        #   (x1 OP y) or (x2 OP y) or (x3 OP y) or ...
-        newNode = AST_CreateNode(AST_DATA_BOOL, false, [])
-        for indexes n values xn in x.children
+        #   (x1 OP y) or  (x2 OP y) or  (x3 OP y) or  ...
+        #   (x1 OP y) and (x2 OP y) and (x3 OP y) and ...
+        if x.value is '@any'
+          newNode     = AST_CreateNode(AST_DATA_BOOL, false, [])
+          logicOpcode = AST_OPCODE_BOOL_OR
+        else
+          newNode     = AST_CreateNode(AST_DATA_BOOL, true, [])
+          logicOpcode = AST_OPCODE_BOOL_AND
+        endif
+
+        for values xn in x.children
           nextOpNode = AST_CreateNode(opcode, '', [ xn, AST_CloneNode(y) ])
-          newNode    = AST_CreateNode(AST_OPCODE_BOOL_OR, 'or', [ newNode, nextOpNode ])
+          newNode    = AST_CreateNode(logicOpcode, '', [ newNode, nextOpNode ])
         endfor
         node.opcode   = newNode.opcode
         node.children = newNode.children
@@ -166,15 +176,24 @@ class ASTPreprocessor
       endif
 
       if ((y.opcode is AST_OPCODE_CALL) and
-          (y.value  is '@any'))
+          (y.value  is @any('@any', '@all')))
         # Replace:
         #   x OP @any(y1, y2, y3, ...)
+        #   x OP @all(y1, y2, y3, ...)
         # By:
-        #   (x OP y1) or (x OP y2) or (x OP y3) or ...
-        newNode = AST_CreateNode(AST_DATA_BOOL, false, [])
-        for indexes n values yn in y.children
+        #   (x OP y1) or  (x OP y2) or  (x OP y3) or ...
+        #   (x OP y1) and (x OP y2) and (x OP y3) or ...
+        if y.value is '@any'
+          newNode     = AST_CreateNode(AST_DATA_BOOL, false, [])
+          logicOpcode = AST_OPCODE_BOOL_OR
+        else
+          newNode     = AST_CreateNode(AST_DATA_BOOL, true, [])
+          logicOpcode = AST_OPCODE_BOOL_AND
+        endif
+
+        for values yn in y.children
           nextOpNode = AST_CreateNode(opcode, '', [ AST_CloneNode(x), yn ])
-          newNode    = AST_CreateNode(AST_OPCODE_BOOL_OR, 'or', [ newNode, nextOpNode ])
+          newNode    = AST_CreateNode(logicOpcode, '', [ newNode, nextOpNode ])
         endfor
         node.opcode   = newNode.opcode
         node.children = newNode.children
