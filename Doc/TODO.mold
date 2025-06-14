@@ -214,6 +214,15 @@ remove from arrayBox      indexes x,y,z
 insert to mapBox   keys    a,b,c values x,y,z
 insert to arrayBox indexes 1,2,3 values x,y,z
 
+delete from arrayOrMapBox values v where v.x is null
+insert into arrayOfMapBox keys [ 'a1', 'a2', 'a3' ] values [ 1, 2, 3]
+
+result = select from arrayOrMapBox values v where v.x isnt null
+
+for values v in arrayOrMapBox where v.x isnt null
+  ...
+endfor
+
 ##############################
 
 remove from arrayOfMapBox
@@ -282,3 +291,142 @@ push to box values x,y,z
 remove from box values x,y,z
 
 insert to box values x,y,z
+
+#################################################
+
+# Relative array selectors:
+  x[@random]   - random item from the array            (lval, rval)
+  x[@center]   - item just in-the-half of array        (lval, rval)
+  x[@after i]  -
+  x[@before i] -
+
+# Function like and() and or() in IF syntax:
+
+  if and(a, b, c)
+  endif
+
+  if or(a, b, c)
+  endif
+
+  if and(
+    a,
+    b,
+    or(x, y),
+    or(x, z)
+  )
+  endif
+
+# @all and @any placeholders
+
+  if x is @any(1, 2, 3)   | if (x is 1) or (x is 2) or (x is 3)
+  ...                     | endif
+                          |
+
+  if box[@any] is null    | isAnyValueMatched = false
+  ...                     | for values v in box
+                          |   if v is null
+                          |     isAnyValueMatched = true
+                          |     break
+                          |   endif
+                          | endfor
+                          | if isAnyValueMatched is true
+                          | ...
+
+  if box[@all].value > 0  | areAllValuesMatched = true
+                          | for values v in box
+                          |   isOneValueMatched = v.value > 0
+                          |   if isOneValueMatched is false
+                          |     areAllValuesMatched = false
+                          |     break
+                          |   endif
+                          | endfor
+                          | if areAllValuesMatches is true
+                          | ...
+
+  # Call function over pool of params (single param):
+  foo(@all(1, 2, 3))      | foo(1)
+                          | foo(2)
+                          | foo(3)
+
+  # Call function over pool of params and store returned values in a
+  # flat array:
+  results[@afterlast] = foo(@all(1, 2, 3)) | results[@afterlast] = foo(1)
+                                           | results[@afterlast] = foo(2)
+                                           | results[@afterlast] = foo(3)
+
+  # Call function over pool of possible input params (two params):
+  x = [ 'a', 'b', 'c' ]   | x = [ 'a', 'b', 'c' ]   | foo('a', 1)
+  y = [ 1, 2, 3 ]         | y = [ 1, 2, 3 ]         | foo('a', 2)
+                          |                         | foo('a', 3)
+  foo(x[@all], y[@all])   | for values v1 in x      | foo('b', 1)
+                          |   for values v2 in y    | foo('b', 2)
+                          |     foo(v1, v2)         | foo('b', 3)
+                          |   endfor                | foo('c', 1)
+                          | endfor                  | foo('c', 2)
+                          |                         | foo('c', 3)
+
+  # Theoretical code without sense (overwrite x variable many times):
+  x = box[@all]         | x = box[0]  | for values v in box
+                        | x = box[1]  |   x = v
+                        | x = box[2]  | endfor
+                        | x = ...     |
+
+  # Sum all values in array:
+  sum = sum + box[@all] | sum = sum + box[0] | for values v in box
+                        | sum = sum + box[1] |   sum = sum + v
+                        | sum = sum + box[2] | endfor
+                        | sum = sum + box[3] |
+                        | ...                |
+                        |                    |
+
+  # Matrix multiplication (square):
+  for k from 0 to n                     | for i from 0 to n
+    sum = sum + A[@all, k] * B[k, @all] |   for j from 0 to n
+  endfor                                |     for k from 0 to n
+                                        |       sum = sum + A[i,k] * B[k,j]
+                                        |     endfor
+                                        |   endfor
+                                        | endfor
+                                        |
+                                        |
+
+- where keyword
+  for values v in x where v.value < 5 | for values v in x
+  endfor                              |   if v.values < 5
+                                      |   endif
+                                      | endfor
+
+# Data / var owner
+# - limited to file / class / function ?
+# - only owner can change data (even after return)
+# - for the outer world data is read-only
+
+
+# Access to build-in function like methods.
+map(x).sortByKey()
+map(x).sortByValues()
+array(x).sort()
+str(x).charAt()
+
+# Explicit types to avoid ambiguity.
+for values v in array(x)
+endfor
+
+for keys k in map(x)
+endfor
+
+for indexes v in string(x)
+endfor
+
+# Lambda functions (anonymous)
+map(x).sortByValues(function (a,b) -> compareResult
+  if   (a.foo > b.foo) then compareResult = 1
+  elif (a.foo < b.foo) then compareResult = -1
+  else then compareResult = 0
+endfunction)
+
+map(x).sortByValues(function (a,b) -> compareResult
+  compareResult = if   (a.foo > b.foo) then 1
+                  elif (a.foo < b.foo) then -1
+                  else then 0
+endfunction)
