@@ -599,7 +599,8 @@ function AST_IsEmpty(x) -> rv
 endfunction
 
 function AST_IsImmOrVar(x) -> rv
-  rv = (AST_IsImm(x) is true) or (AST_IsVar(x) is true)
+  rv = @any(AST_IsImm(x),
+            AST_IsVar(x)) is true
 endfunction
 
 function AST_HasSideEffects(node) -> rv
@@ -631,7 +632,8 @@ function AST_HasSideEffects(node) -> rv
       endif
     endif
 
-  elif (opcode is AST_OPCODE_CALL_NEW) or (opcode is AST_OPCODE_VCALL)
+  elif opcode is @any(AST_OPCODE_CALL_NEW,
+                      AST_OPCODE_VCALL)
     # TODO: Check function protos.
     rv = true
 
@@ -668,7 +670,9 @@ function AST_GetHashInternal(node, isCodeMode) -> rv
   else
     # First ask for hash at this node - calculate it from stratch
     # and save for further calls.
-    if (opcode is AST_DATA_MAP) or (opcode is AST_DATA_ARRAY)
+    if opcode is @any(AST_DATA_MAP,
+                      AST_DATA_ARRAY)
+
       rv = '@' ~ str(node.id)
 
     elif opcode is AST_DATA_STRING
@@ -729,12 +733,11 @@ function AST_GetHashInternal(node, isCodeMode) -> rv
     elif AST_IsPrimitiveImm(node) is true
       rv = AST_GetOpcodeAsShortText(opcode) ~ str(node.value)
 
-    elif ((opcode is AST_OPCODE_CALL) or
-          (opcode is AST_OPCODE_CALL_NEW) or
-          (opcode is AST_OPCODE_VCALL))
+    elif opcode is @any(AST_OPCODE_CALL,
+                        AST_OPCODE_CALL_NEW,
+                        AST_OPCODE_VCALL)
 
       # TODO: Review it.
-
       if (isCodeMode is false) and (AST_HasSideEffects(node) is true)
         # Called function has side effect.
         # Eeach call to function is unique.
@@ -906,13 +909,13 @@ function AST_GetDataType(node) -> rv
         y = AST_GetDataType(children[1])
 
         # TODO: Validate types.
-        if ((opcode is AST_OPCODE_ADD) or
-            (opcode is AST_OPCODE_MUL) or
-            (opcode is AST_OPCODE_SUB))
+        if opcode is @any(AST_OPCODE_ADD,
+                          AST_OPCODE_MUL,
+                          AST_OPCODE_SUB)
 
-          if (x is AST_DATA_DOUBLE) or (y is AST_DATA_DOUBLE)
+          if @any(x, y) is AST_DATA_DOUBLE
             rv = AST_DATA_DOUBLE
-          elif (x is -1) or (y is -1)
+          elif @any(x, y) is -1
             rv = -1
           else
             rv = x
@@ -923,14 +926,14 @@ function AST_GetDataType(node) -> rv
           rv = AST_DATA_STRING
 
         elif opcode is AST_OPCODE_DIV
-          if (x is -1) or (y is -1)
+          if @any(x, y) is -1
             rv = -1
           else
             rv = AST_DATA_DOUBLE
           endif
 
         elif opcode is AST_OPCODE_IDIV
-          if (x is -1) or (y is -1)
+          if @any(x, y) is -1
             rv = -1
           else
             rv = AST_DATA_INTEGER
@@ -948,9 +951,9 @@ function AST_GetDataType(node) -> rv
         if opcode is AST_OPCODE_NEG
           rv = xType
 
-        elif ((opcode is AST_OPCODE_BOOL_NOT) or
-              (opcode is AST_OPCODE_IS_TYPEOF) or
-              (opcode is AST_OPCODE_IS_NOT_TYPEOF))
+        elif opcode is @any(AST_OPCODE_BOOL_NOT,
+                            AST_OPCODE_IS_TYPEOF,
+                            AST_OPCODE_IS_NOT_TYPEOF)
           rv = AST_DATA_BOOL
         endif
       endif
@@ -1026,13 +1029,9 @@ function AST_IsOkAsBox(node) -> rv
   global AST_OPCODE_REFERENCE_BY_INDEX
   global AST_OPCODE_REFERENCE_BY_KEY
 
-  # TODO: Simplify it.
-  rv = false
-  if ((node.opcode is AST_OPCODE_VARIABLE) or
-      (node.opcode is AST_OPCODE_REFERENCE_BY_INDEX) or
-      (node.opcode is AST_OPCODE_REFERENCE_BY_KEY))
-    rv = true
-  endif
+  rv = node.opcode is @any(AST_OPCODE_VARIABLE,
+                           AST_OPCODE_REFERENCE_BY_INDEX,
+                           AST_OPCODE_REFERENCE_BY_KEY)
 endfunction
 
 function AST_CloneNode(node) -> rv

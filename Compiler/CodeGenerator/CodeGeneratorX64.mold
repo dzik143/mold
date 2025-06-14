@@ -95,7 +95,7 @@ class CodeGeneratorX64
   method storeResultAfterCall(dst)
     type = this._getSymbolType(dst)
 
-    if (type is 'int32') or (type is 'bool32')
+    if type is @any('int32', 'bool32')
       print '  mov dword [', dst, '], ecx'
 
     elif type is 'int64'
@@ -104,7 +104,7 @@ class CodeGeneratorX64
     elif type is 'float64'
       print '  movq qword [', dst, '], xmm0'
 
-    elif (type is 'variant') or (type is 'string')
+    elif type is @any('variant', 'string')
       # Do nothing.
       # Non-primitive result should be passed via pointer parameter.
 
@@ -139,9 +139,14 @@ class CodeGeneratorX64
   endmethod
 
   method call3AndDestroy(name, x, y, dst)
-    if (x is dst) or (y is dst)
+    if @any(x, y) is dst
+      # Specal cases (overlapped dst and src):
+      #   x = foo(x, y)
+      #   y = foo(x, y)
       this.call3(name, x, y, dst)
     else
+      # General case:
+      #   dst = foo(x, y)
       this.variantDestroy(dst)
       this.call3(name, x, y, dst)
     endif
@@ -162,9 +167,9 @@ class CodeGeneratorX64
     xInfo = this.symbols{x}
 
     if ((xInfo is undefined) or
-        (xInfo.kind is SYMBOL_KIND_VAR_LOCAL) or
-        (xInfo.kind is SYMBOL_KIND_VAR_GLOBAL) or
-        (xInfo.kind is SYMBOL_KIND_VAR_RETVAL))
+        (xInfo.kind is @any(SYMBOL_KIND_VAR_LOCAL,
+                            SYMBOL_KIND_VAR_GLOBAL,
+                            SYMBOL_KIND_VAR_RETVAL)))
 
       print '  lea  rcx, [', x, ']'
       print '  call __MOLD_VariantDestroy'
@@ -186,16 +191,14 @@ class CodeGeneratorX64
         die('error: failed to get variable size:' ~ varName)
         varSize = -1
 
-      elif ((symbolInfo.type is undefined) or
-          (symbolInfo.type is 'variant') or
-          (symbolInfo.type is 'string'))
+      elif symbolInfo.type is @any(undefined, 'variant', 'string')
         # TODO: Review it.
         varSize = 16
 
-      elif (symbolInfo.type is 'int64') or (symbolInfo.type is 'float64')
+      elif symbolInfo.type is @any('int64', 'float64')
         varSize = 8
 
-      elif (symbolInfo.type is 'int32') or (symbolInfo.type is 'bool32')
+      elif symbolInfo.type is @any('int32', 'bool32')
         varSize = 4
 
       else
@@ -324,7 +327,7 @@ class CodeGeneratorX64
   method setDestinationVariableBeforeCall(dst, paramIdx)
     # TODO: Optimize it.
     dstType = this._getSymbolType(dst)
-    if (dstType is 'variant') or (dstType is 'string')
+    if dstType is @any('variant', 'string')
       this.pushOneParameterBeforeCall(dst, paramIdx)
     endif
   endmethod
@@ -353,7 +356,7 @@ class CodeGeneratorX64
     if wantDeepIdx is deepIdx
       bufferName = null
 
-      if (type is 'array') or (type is 'string')
+      if type is @any('array', 'string')
         # Check did we emit another buffer with the same content.
         hash       = this._hash(value)
         bufferName = this.mapOfEmittedBuffers{hash}
@@ -760,10 +763,10 @@ class CodeGeneratorX64
         elif opcode is MIR1_OPCODE_STRING_JOIN
           this.call3AndDestroy('__MOLD_VariantStringJoin', x, y, dst)
 
-        elif ((opcode is MIR1_OPCODE_CMP_IS_TYPEOF) or
-              (opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF) or
-              (opcode is MIR1_OPCODE_JMP_IF_TYPEOF) or
-              (opcode is MIR1_OPCODE_JMP_IF_NOT_TYPEOF))
+        elif opcode is @any(MIR1_OPCODE_CMP_IS_TYPEOF,
+                            MIR1_OPCODE_CMP_IS_NOT_TYPEOF,
+                            MIR1_OPCODE_JMP_IF_TYPEOF,
+                            MIR1_OPCODE_JMP_IF_NOT_TYPEOF)
 
           if xType is 'variant'
             this.pushOneParameterBeforeCall(x, 0)
@@ -1076,13 +1079,10 @@ class CodeGeneratorX64
           # TODO: Clean up this mess.
           # TODO: Don't repeat code.
           for values symbol in symbols
-            if (symbol.readHits > 0) or (symbol.writeHits > 0)
+            if @any(symbol.readHits, symbol.writeHits) > 0
               if symbol.kind is SYMBOL_KIND_VAR_LOCAL
 
-                if ((symbol.type is undefined) or
-                    (symbol.type is 'variant') or
-                    (symbol.type is 'string'))
-
+                if symbol.type is @any(undefined, 'variant', 'string')
                   varSize          = 16
                   currentFrameSize = currentFrameSize + varSize
                   symbol.rbpOffset = - (8 + currentFrameSize)
@@ -1094,7 +1094,7 @@ class CodeGeneratorX64
 
           # Pass #2: Allocate primitive values on stack.
           for values symbol in symbols
-            if (symbol.readHits > 0) or (symbol.writeHits > 0)
+            if @any(symbol.readHits, symbol.writeHits) > 0
               if symbol.kind is SYMBOL_KIND_VAR_LOCAL
                 varSize = this.getVariableSize(symbol.name)
                 if varSize < 16
@@ -1128,10 +1128,7 @@ class CodeGeneratorX64
 
           for values oneItem in symbols
             if oneItem.kind is SYMBOL_KIND_VAR_LOCAL
-              if ((oneItem.type is undefined) or
-                  (oneItem.type is 'variant') or
-                  (oneItem.type is 'string'))
-
+              if oneItem.type is @any(undefined, 'variant', 'string')
                 # Local Variant_t variable - init to undefined.
                 if oneItem.usedAsIterator is defined
                   # Symbol is used as loop iterator.
@@ -1148,7 +1145,7 @@ class CodeGeneratorX64
 
             elif oneItem.kind is SYMBOL_KIND_VAR_PARAM
               # Call parameter - copy to local var.
-              if (oneItem.readHits > 0) or (oneItem.writeHits > 0)
+              if @any(oneItem.readHits, oneItem.writeHits) > 0
                 varSize    = this.getVariableSize(oneItem.name)
                 movOpcode8 = 'mov'
 
@@ -1182,12 +1179,11 @@ class CodeGeneratorX64
             print ''
             for values oneItem in symbols
               # TODO: Better way to exclude external vars.
-              if (oneItem.name is 'argv') or (oneItem.name is 'argc')
+              if oneItem.name is @any('argv', 'argc')
                 # Do nothing.
 
               elif ((oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and
-                    ((oneItem.type is undefined) or (oneItem.type is 'variant')))
-
+                    (oneItem.type is @any(undefined, 'variant')))
                 print '  mov [' ~ oneItem.name ~ ' + Variant_t.type], VARIANT_UNDEFINED'
               endif
             endfor
@@ -1198,7 +1194,7 @@ class CodeGeneratorX64
           print '  ; ----'
 
         elif opcode is MIR1_OPCODE_MOVE
-          if (xType is 'variant') or (xType is 'string')
+          if xType is @any('variant', 'string')
             this.variantDestroy(dst)
             this.variantMove(dst, x)
           else
@@ -1218,7 +1214,7 @@ class CodeGeneratorX64
           for values oneItem in currentSymbols
             # TODO: Clean up this mess.
             if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) and
-                ((oneItem.type is undefined) or (oneItem.type is 'variant') or (oneItem.type is 'string')))
+                (oneItem.type is @any(undefined, 'variant', 'string')))
 
               if oneItem.usedAsIterator is defined
                 # Symbol is used as loop iterator.
@@ -1256,7 +1252,7 @@ class CodeGeneratorX64
             for values oneItem in currentSymbols
 
               if ((oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and
-                  ((oneItem.type is undefined) or (oneItem.type is 'variant')))
+                  (oneItem.type is @any(undefined, 'variant')))
 
                 this.variantDestroy(oneItem.name)
               endif
@@ -1285,11 +1281,11 @@ class CodeGeneratorX64
           print ''
           # TODO: Clean up this mess.
           for values oneItem in currentSymbols
-            if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) or
-                (oneItem.kind is SYMBOL_KIND_VAR_PARAM) or
-                (oneItem.kind is SYMBOL_KIND_VAR_RETVAL))
+            if oneItem.kind is @any(SYMBOL_KIND_VAR_LOCAL,
+                                    SYMBOL_KIND_VAR_PARAM,
+                                    SYMBOL_KIND_VAR_RETVAL)
 
-              if (oneItem.readHits > 0) or (oneItem.writeHits > 0)
+              if @any(oneItem.readHits, oneItem.writeHits) > 0
                 print '  restore', oneItem.name
               endif
             endif
@@ -1310,10 +1306,10 @@ class CodeGeneratorX64
         paramsCnt = len(params)
 
         if ((opcode is MIR1_OPCODE_CALL) and
-            (nameOrId is '__MOLD_ForDriver_Generic') or
-            (nameOrId is '__MOLD_ForDriver_IndexesAndValuesInArray') or
-            (nameOrId is '__MOLD_ForDriver_IndexesAndValuesInArrayOrString') or
-            (nameOrId is '__MOLD_ForDriver_KeysAndValuesInMap'))
+            (nameOrId is @any('__MOLD_ForDriver_Generic',
+                              '__MOLD_ForDriver_IndexesAndValuesInArray',
+                              '__MOLD_ForDriver_IndexesAndValuesInArrayOrString',
+                              '__MOLD_ForDriver_KeysAndValuesInMap')))
 
           # TODO: Clean up this mess.
           this.pushOneParameterBeforeCall(params[0], 0)
@@ -1404,7 +1400,7 @@ class CodeGeneratorX64
           # dst := x{y}
           print '  call __MOLD_VariantLoadFromKey_' ~ dstType
 
-        elif (xType is 'variant') or (xType is 'string')
+        elif xType is @any('variant', 'string')
           if opcodeMajor is MIR1_OPCODE_CMP_CC_GROUP
             print '  call __MOLD_Variant_cmp_' ~ MIR_COMPARE_FLAGS_FOR_INTEGERS[opcodeMinor]
 
@@ -1417,8 +1413,8 @@ class CodeGeneratorX64
             print '  call __MOLD_Variant_' ~ MIR_ALU_OPCODES_FOR_INTEGERS[opcodeMinor]
           endif
 
-        elif ((opcodeMajor is MIR1_OPCODE_CMP_CC_GROUP) or
-              (opcodeMajor is MIR1_OPCODE_JMP_IF_CC_GROUP))
+        elif opcodeMajor is @any(MIR1_OPCODE_CMP_CC_GROUP,
+                                 MIR1_OPCODE_JMP_IF_CC_GROUP)
 
           if xType is 'float64'
             cmpFlag = MIR_COMPARE_FLAGS_FOR_FLOATS[opcodeMinor]
@@ -1503,8 +1499,8 @@ class CodeGeneratorX64
             this.call('__MOLD_VariantNeg')
           endif
 
-        elif ((opcode is MIR1_OPCODE_JMP_IF_TRUE) or
-              (opcode is MIR1_OPCODE_JMP_IF_FALSE))
+        elif opcode is @any(MIR1_OPCODE_JMP_IF_TRUE,
+                            MIR1_OPCODE_JMP_IF_FALSE)
 
           if xType is 'variant'
             print '  test byte [rcx + Variant_t.value], 0'
@@ -1556,9 +1552,7 @@ class CodeGeneratorX64
 
     for values oneItem in this.globals
       if (oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and (oneItem.writeHits > 0)
-        if ((oneItem.type is 'variant') or
-            (oneItem.type is 'string') or
-            (oneItem.type is undefined))
+        if oneItem.type is @any('variant', 'string', undefined)
           print oneItem.name, ' Variant_t 0, 0, 0'
 
         elif oneItem.type is 'int64'
@@ -1623,7 +1617,8 @@ class CodeGeneratorX64
           endif
 
         elif symbolInfo.rbpOffset is defined
-          if (symbolInfo.kind is SYMBOL_KIND_VAR_PARAM) and ((type is 'variant') or (type is 'string'))
+          if ((symbolInfo.kind is SYMBOL_KIND_VAR_PARAM) and
+              (type is @any('variant', 'string')))
             print '  db FMT_LOCAL_variant_ptr'
           else
             print '  db FMT_LOCAL_' ~ type
@@ -1633,7 +1628,7 @@ class CodeGeneratorX64
         elif symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
           print '  db FMT_RETVAL_' ~ type
 
-        elif (symbolInfo.kind is SYMBOL_KIND_VAR_GLOBAL) or (symbolInfo.kind is SYMBOL_KIND_CONST)
+        elif symbolInfo.kind is @any(SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_CONST)
           print '  db FMT_GLOBAL_' ~ type
           print '  dq', symbolInfo.name
 

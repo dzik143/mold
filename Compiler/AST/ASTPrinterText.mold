@@ -42,11 +42,11 @@ class ASTPrinterText
     useParentForY = false
 
     # Check is parenthesis
-    if ((node.opcode is AST_OPCODE_MUL) or
-        (node.opcode is AST_OPCODE_DIV) or
-        (node.opcode is AST_OPCODE_IDIV) or
-        (node.opcode is AST_OPCODE_BOOL_AND) or
-        (node.opcode is AST_OPCODE_BOOL_OR))
+    if node.opcode is @any(AST_OPCODE_MUL,
+                           AST_OPCODE_DIV,
+                           AST_OPCODE_IDIV,
+                           AST_OPCODE_BOOL_AND,
+                           AST_OPCODE_BOOL_OR)
 
       useParentForX = AST_IsImmOrVar(x) isnt true
       useParentForY = AST_IsImmOrVar(y) isnt true
@@ -245,7 +245,7 @@ class ASTPrinterText
         for values item in symbols
           if (item.kind is SYMBOL_KIND_CONST) and (item.readHits > 0)
             value = item.value
-            if (value is array) or (value is map)
+            if value is @any(array, map)
               print prefix, ' const', item.name, '=', value
             #else
             #  print prefix, ' ', symbolInfo.name, '=', value
@@ -264,7 +264,9 @@ class ASTPrinterText
       this._printNode_codeBlock(prefix, node)
       print 'endclass'
 
-    elif (opcode is AST_OPCODE_CLASS_METHOD) or (opcode is AST_OPCODE_FUNCTION)
+    elif opcode is @any(AST_OPCODE_CLASS_METHOD,
+                        AST_OPCODE_FUNCTION)
+
       if opcode is AST_OPCODE_CLASS_METHOD
         __mold_printToStdOutput(prefix ~ 'method ')
       else
@@ -473,7 +475,7 @@ class ASTPrinterText
 
     elif opcode is AST_OPCODE_NEG
       __mold_printToStdOutput('- ')
-      if (x.opcode is AST_OPCODE_ADD) or (x.opcode is AST_OPCODE_SUB)
+      if x.opcode is @any(AST_OPCODE_ADD, AST_OPCODE_SUB)
         __mold_printToStdOutput('(')
         this._printNode('', x)
         __mold_printToStdOutput(')')

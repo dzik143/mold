@@ -249,8 +249,8 @@ class ASTEvaluator
       if lval.opcode is AST_OPCODE_VARIABLE
         this._assignValue(valuesMap, lval, rval)
 
-      elif ((lval.opcode is AST_OPCODE_REFERENCE_BY_INDEX) or
-            (lval.opcode is AST_OPCODE_REFERENCE_BY_KEY))
+      elif lval.opcode is @any(AST_OPCODE_REFERENCE_BY_INDEX,
+                               AST_OPCODE_REFERENCE_BY_KEY)
         # TODO: Review it.
         if AST_IsOkAsBox(lval.children[0]) is false
           # Error - lval should stores variable name.
@@ -286,9 +286,9 @@ class ASTEvaluator
       # N-th loop rotate.
       this._processConditionalNode(valuesMap, body)
 
-    elif ((opcode is AST_OPCODE_FOR_VALUES) or
-          (opcode is AST_OPCODE_FOR_KEYS) or
-          (opcode is AST_OPCODE_FOR_INDEXES))
+    elif opcode is @any(AST_OPCODE_FOR_VALUES,
+                        AST_OPCODE_FOR_KEYS,
+                        AST_OPCODE_FOR_INDEXES)
 
       # TODO: Review it.
       # for values v in box
@@ -299,8 +299,8 @@ class ASTEvaluator
       # N-th loop rotate.
       this._processConditionalNode(valuesMap, body)
 
-    elif ((opcode is AST_OPCODE_FOR_KEYS_VALUES) or
-          (opcode is AST_OPCODE_FOR_INDEXES_VALUES))
+    elif opcode is @any(AST_OPCODE_FOR_KEYS_VALUES,
+                        AST_OPCODE_FOR_INDEXES_VALUES)
 
       # TODO: Review it.
       # for values v in box
@@ -323,7 +323,8 @@ class ASTEvaluator
       this._processConditionalNode(valuesMap, cond)
       this._processConditionalNode(valuesMap, body)
 
-    elif (opcode is AST_OPCODE_CALL) or (opcode is AST_OPCODE_VCALL)
+    elif opcode is @any(AST_OPCODE_CALL,
+                        AST_OPCODE_VCALL)
       # foo(a, b, c, ...)
       # obj.foo(a,b, c, ...)
       # Parameter may be changed inside call.
@@ -337,12 +338,11 @@ class ASTEvaluator
           if symbolInfo is defined
             astType = symbolInfo.astType
 
-            if ((astType is undefined) or
-                (astType is -1) or
-                (astType is AST_DATA_OBJECT) or
-                (astType is AST_DATA_MAP) or
-                (astType is AST_DATA_ARRAY))
-
+            if astType is @any(undefined,
+                               -1,
+                               AST_DATA_OBJECT,
+                               AST_DATA_MAP,
+                               AST_DATA_ARRAY)
               # Unknown or box like variable is passed as call parameter.
               # We assume that it may be changed inside function.
               this._assignValue(valuesMap, childNode, childNode)
@@ -354,7 +354,8 @@ class ASTEvaluator
       endfor
 
     else
-      if (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
+      if opcode is @any(AST_OPCODE_FUNCTION,
+                        AST_OPCODE_CLASS_METHOD)
         newValuesMap = {}
       else
         newValuesMap = valuesMap

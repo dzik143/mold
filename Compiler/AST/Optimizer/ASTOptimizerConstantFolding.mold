@@ -226,7 +226,9 @@ class ASTOptimizerConstantFolding
           endif
         endfor
 
-        if (opcode is AST_OPCODE_MUL) or (opcode is AST_OPCODE_ADD)
+        if opcode is @any(AST_OPCODE_MUL,
+                          AST_OPCODE_ADD)
+
           if (y.opcode is opcode)
             # imm * (imm * a) * gives (imm * imm) * a
             # imm * (imm + a) + gives (imm + imm) + a
@@ -259,14 +261,9 @@ class ASTOptimizerConstantFolding
             symbolInfo = this.globals.lookup(value)
             # TODO: Handle imm arrays/maps/objects.
             if symbolInfo.writeHits is 1
-
-              if ((typeof(symbolInfo.value) is 'integer') or
-                  (typeof(symbolInfo.value) is 'float') or
-                  (typeof(symbolInfo.value) is 'boolean'))
-
-                # TODO: Review it.
+              if symbolInfo.value is @any(integer, float, boolean)
+                # Constant integer, float or boolean value.
                 newValue = symbolInfo.value
-                #symbolInfo.kind = SYMBOL_KIND_CONST
               endif
             endif
           endif
@@ -353,14 +350,14 @@ class ASTOptimizerConstantFolding
               sysCallId = node.sysCallId
               xValue    = x.value
 
-              if ((sysCallId is MOLD_SYSCALL_ID_ORD) or
-                  (sysCallId is MOLD_SYSCALL_ID_ASC) or
-                  (sysCallId is MOLD_SYSCALL_ID_PARSE_INTEGER) or
-                  (sysCallId is MOLD_SYSCALL_ID_PARSE_FLOAT) or
-                  (sysCallId is MOLD_SYSCALL_ID_STR) or
-                  (sysCallId is MOLD_SYSCALL_ID_LEN) or
-                  (sysCallId is MOLD_SYSCALL_ID_TYPEOF) or
-                  (sysCallId is MOLD_SYSCALL_ID_GET_TYPEID))
+              if sysCallId is @any(MOLD_SYSCALL_ID_ORD,
+                                   MOLD_SYSCALL_ID_ASC,
+                                   MOLD_SYSCALL_ID_PARSE_INTEGER,
+                                   MOLD_SYSCALL_ID_PARSE_FLOAT,
+                                   MOLD_SYSCALL_ID_STR,
+                                   MOLD_SYSCALL_ID_LEN,
+                                   MOLD_SYSCALL_ID_TYPEOF,
+                                   MOLD_SYSCALL_ID_GET_TYPEID)
 
                 newValue = __mold_syscall(sysCallId, xValue)
               endif
@@ -437,7 +434,7 @@ class ASTOptimizerConstantFolding
               endif
 
             elif opcode is AST_OPCODE_BOOL_OR
-              if (x.value is true) or (y.value is true)
+              if @any(x.value, y.value) is true
                 newValue = true
               else
                 newValue = false

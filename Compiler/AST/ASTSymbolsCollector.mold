@@ -204,7 +204,9 @@ class ASTSymbolsCollector
       node.proto = classProto
       symbolTable.insertClass(className, classProto)
 
-    elif (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
+    elif opcode is @any(AST_OPCODE_FUNCTION,
+                        AST_OPCODE_CLASS_METHOD)
+
       nodeBody  = children[0]
       funcProto = node
       value     = node.value
@@ -629,11 +631,11 @@ class ASTSymbolsCollector
       this._collectSymbolsFromRightNode(symbolTable, idxStepNode)
       this._collectSymbolsFromLeftNode(symbolTable, bodyNode)
 
-    elif ((opcode is AST_OPCODE_FOR_VALUES) or
-          (opcode is AST_OPCODE_FOR_KEYS) or
-          (opcode is AST_OPCODE_FOR_KEYS_VALUES) or
-          (opcode is AST_OPCODE_FOR_INDEXES) or
-          (opcode is AST_OPCODE_FOR_INDEXES_VALUES))
+    elif opcode is @any(AST_OPCODE_FOR_VALUES,
+                        AST_OPCODE_FOR_KEYS,
+                        AST_OPCODE_FOR_KEYS_VALUES,
+                        AST_OPCODE_FOR_INDEXES,
+                        AST_OPCODE_FOR_INDEXES_VALUES)
 
       # for values v in box
       # for keys k in box
@@ -671,7 +673,9 @@ class ASTSymbolsCollector
       boxAstType = AST_GetDataType(boxNode)
       this.app.setLogContext(boxNode)
 
-      if (opcode is AST_OPCODE_FOR_INDEXES) or (opcode is AST_OPCODE_FOR_INDEXES_VALUES)
+      if opcode is @any(AST_OPCODE_FOR_INDEXES,
+                        AST_OPCODE_FOR_INDEXES_VALUES)
+
         bodyNode.symbolTable.useAsIndex(indexOrKeyNode.value)
 
         if ((boxAstType isnt AST_DATA_ARRAY) and
@@ -680,7 +684,9 @@ class ASTSymbolsCollector
           this.app.logError('array or string expected')
         endif
 
-      elif (opcode is AST_OPCODE_FOR_KEYS) or (opcode is AST_OPCODE_FOR_KEYS_VALUES)
+      elif opcode is @any(AST_OPCODE_FOR_KEYS,
+                          AST_OPCODE_FOR_KEYS_VALUES)
+
         bodyNode.symbolTable.useAsKey(indexOrKeyNode.value)
 
         # TODO: Review it - use symbolTable.useAsXxx() ?
@@ -733,10 +739,10 @@ class ASTSymbolsCollector
       if opcode is AST_OPCODE_CALL
         funcName = node.value
 
-        if ((funcName is 'print') or
-            (funcName is 'super') or
-            (funcName is '__mold_syscall') or
-            (funcName is 'global'))
+        if funcName is @any('print',
+                            'super',
+                            '__mold_syscall',
+                            'global')
 
           # One of built-in function - declaration is not needed.
           if symbolTable.isset(funcName) is false
@@ -798,15 +804,15 @@ class ASTSymbolsCollector
         endfor
       endif
 
-      if ((opcode is AST_OPCODE_ADD) or
-          (opcode is AST_OPCODE_SUB) or
-          (opcode is AST_OPCODE_MUL) or
-          (opcode is AST_OPCODE_DIV) or
-          (opcode is AST_OPCODE_IDIV) or
-          (opcode is AST_OPCODE_COMPARE_LT) or
-          (opcode is AST_OPCODE_COMPARE_LE) or
-          (opcode is AST_OPCODE_COMPARE_GT) or
-          (opcode is AST_OPCODE_COMPARE_GE))
+      if opcode is @any(AST_OPCODE_ADD,
+                        AST_OPCODE_SUB,
+                        AST_OPCODE_MUL,
+                        AST_OPCODE_DIV,
+                        AST_OPCODE_IDIV,
+                        AST_OPCODE_COMPARE_LT,
+                        AST_OPCODE_COMPARE_LE,
+                        AST_OPCODE_COMPARE_GT,
+                        AST_OPCODE_COMPARE_GE)
 
         # Numbers operators:
         # x + y
@@ -846,8 +852,8 @@ class ASTSymbolsCollector
           symbolTable.useAsNumber(x.value)
         endif
 
-      elif ((opcode is AST_OPCODE_COMPARE_EQ) or
-            (opcode is AST_OPCODE_COMPARE_NEQ))
+      elif opcode is @any(AST_OPCODE_COMPARE_EQ,
+                          AST_OPCODE_COMPARE_NEQ)
 
         # Compare operators:
         # x is y

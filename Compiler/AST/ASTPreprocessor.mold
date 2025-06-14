@@ -136,12 +136,12 @@ class ASTPreprocessor
     this.app.setLogContext(node)
 
     # Handle @any(...) and @all(...) placeholders if logic expressions.
-    if ((opcode is AST_OPCODE_COMPARE_EQ) or
-        (opcode is AST_OPCODE_COMPARE_NEQ) or
-        (opcode is AST_OPCODE_COMPARE_GT) or
-        (opcode is AST_OPCODE_COMPARE_GE) or
-        (opcode is AST_OPCODE_COMPARE_LT) or
-        (opcode is AST_OPCODE_COMPARE_LE))
+    if opcode is @any(AST_OPCODE_COMPARE_EQ,
+                      AST_OPCODE_COMPARE_NEQ,
+                      AST_OPCODE_COMPARE_GT,
+                      AST_OPCODE_COMPARE_GE,
+                      AST_OPCODE_COMPARE_LT,
+                      AST_OPCODE_COMPARE_LE)
       # if x OP y
       x = children[0]
       y = children[1]
@@ -155,7 +155,7 @@ class ASTPreprocessor
         #   (x1 OP y) or (x2 OP y) or (x3 OP y) or ...
         newNode = AST_CreateNode(AST_DATA_BOOL, false, [])
         for indexes n values xn in x.children
-          nextOpNode = AST_CreateNode(opcode, '', [ xn, y ])
+          nextOpNode = AST_CreateNode(opcode, '', [ xn, AST_CloneNode(y) ])
           newNode    = AST_CreateNode(AST_OPCODE_BOOL_OR, 'or', [ newNode, nextOpNode ])
         endfor
         node.opcode   = newNode.opcode
@@ -173,7 +173,7 @@ class ASTPreprocessor
         #   (x OP y1) or (x OP y2) or (x OP y3) or ...
         newNode = AST_CreateNode(AST_DATA_BOOL, false, [])
         for indexes n values yn in y.children
-          nextOpNode = AST_CreateNode(opcode, '', [ x, yn ])
+          nextOpNode = AST_CreateNode(opcode, '', [ AST_CloneNode(x), yn ])
           newNode    = AST_CreateNode(AST_OPCODE_BOOL_OR, 'or', [ newNode, nextOpNode ])
         endfor
         node.opcode   = newNode.opcode
@@ -188,8 +188,8 @@ class ASTPreprocessor
     endif
 
     # Process current node.
-    if ((opcode is AST_OPCODE_COMPARE_EQ) or
-        (opcode is AST_OPCODE_COMPARE_NEQ))
+    if opcode is @any(AST_OPCODE_COMPARE_EQ,
+                      AST_OPCODE_COMPARE_NEQ)
 
       # TODO: Review it.
       # x is y
@@ -299,7 +299,8 @@ class ASTPreprocessor
         this.app.logError("unsupported selector '" ~ selector ~ "'")
       endif
 
-    elif (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
+    elif opcode is @any(AST_OPCODE_FUNCTION,
+                        AST_OPCODE_CLASS_METHOD)
       # TODO: Clean up this mess.
       funcName   = node.value
       funcParams = []

@@ -185,9 +185,8 @@ class SymbolTable
     if rv is defined
       if (tab.procLevel is 0) and (this.procLevel > 0)
 
-        if ((rv.kind is SYMBOL_KIND_VAR_LOCAL) or
-            (rv.kind is SYMBOL_KIND_VAR_GLOBAL))
-
+        if rv.kind is @any(SYMBOL_KIND_VAR_LOCAL,
+                           SYMBOL_KIND_VAR_GLOBAL)
           x  = []
           rv = x[0]
         endif
@@ -635,8 +634,7 @@ class SymbolTable
       elif oldType is -1
         # <variant> = ...
         # Type is already variant.
-        if ((symbolInfo.isAstTypeFrozen is undefined) or
-            (symbolInfo.isAstTypeFrozen is false))
+        if symbolInfo.isAstTypeFrozen is @any(undefined, false)
           # Change type to concrete one, but only if it's not explicit
           # frozen to variant.
           goOn = true

@@ -91,11 +91,11 @@ class ASTPrinterHtml
       print '<tr><td><small>has side effects</small></td></tr>'
     endif
 
-    if (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
+    if opcode is @any(AST_OPCODE_FUNCTION, AST_OPCODE_CLASS_METHOD)
       print '<tr><td>', node.name, '</td></tr>'
     endif
 
-    if (opcode is AST_OPCODE_BLOCK) or (opcode is AST_OPCODE_PROGRAM)
+    if opcode is @any(AST_OPCODE_BLOCK, AST_OPCODE_PROGRAM)
       if node.symbolTable is defined
         print '<tr><td>'
         this._printSymbolTable(node.symbolTable)
@@ -117,9 +117,9 @@ class ASTPrinterHtml
 
     else
       if ((opcode < AST_OPCODE_PROGRAM) or
-          (opcode is AST_OPCODE_CALL) or
-          (opcode is AST_OPCODE_VCALL) or
-          (opcode is AST_OPCODE_VARIABLE))
+          (opcode is @any(AST_OPCODE_CALL,
+                          AST_OPCODE_VCALL,
+                          AST_OPCODE_VARIABLE)))
 
         value = node.value
         if value is string

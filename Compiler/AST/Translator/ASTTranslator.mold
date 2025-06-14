@@ -280,7 +280,7 @@ class ASTTranslator
     methodProto = this.currentFunctionProto
     classProto  = this.currentClassProto
 
-    if (methodProto is undefined) or (methodProto.fullName is undefined)
+    if @any(methodProto, methodProto.fullName) is undefined
       this._error('super called outside of class')
 
     elif methodProto.name isnt 'constructor'
@@ -556,9 +556,9 @@ class ASTTranslator
         # Imm data node, just return value.
         this._loadImm(rv, value)
 
-        if ((opcode is AST_DATA_INTEGER) or
-            (opcode is AST_DATA_BOOL) or
-            (opcode is AST_DATA_DOUBLE))
+        if opcode is @any(AST_DATA_INTEGER,
+                          AST_DATA_BOOL,
+                          AST_DATA_DOUBLE)
 
           this._releaseTempVar(rv)
           rv = value
@@ -858,8 +858,8 @@ class ASTTranslator
         # Simplify it.
         this._releaseTempVar(rval)
 
-      elif ((lval.opcode is AST_OPCODE_REFERENCE_BY_INDEX) or
-            (lval.opcode is AST_OPCODE_REFERENCE_BY_KEY))
+      elif lval.opcode is @any(AST_OPCODE_REFERENCE_BY_INDEX,
+                               AST_OPCODE_REFERENCE_BY_KEY)
         # x[i] = y
         boxNode   = lval.children[0]
         indexNode = lval.children[1]
@@ -929,8 +929,8 @@ class ASTTranslator
       # TODO: Simplify it.
       this._releaseTempVar(box)
 
-    elif ((opcode is AST_OPCODE_FOR_KEYS) or
-          (opcode is AST_OPCODE_FOR_INDEXES))
+    elif opcode is @any(AST_OPCODE_FOR_KEYS,
+                        AST_OPCODE_FOR_INDEXES)
 
       # for values v in box
       iteratorKey  = children[0].value
@@ -947,8 +947,8 @@ class ASTTranslator
       # TODO: Simplify it.
       this._releaseTempVar(box)
 
-    elif ((opcode is AST_OPCODE_FOR_KEYS_VALUES) or
-          (opcode is AST_OPCODE_FOR_INDEXES_VALUES))
+    elif opcode is @any(AST_OPCODE_FOR_KEYS_VALUES,
+                        AST_OPCODE_FOR_INDEXES_VALUES)
 
       # for keys k values v in box
       iteratorKey   = children[0].value

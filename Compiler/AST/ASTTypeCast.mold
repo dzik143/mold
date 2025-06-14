@@ -90,20 +90,20 @@ class ASTTypeCast
             children[1] = AST_TypeCast(y, astDataTypeLeft)
           endif
 
-        elif ((x.opcode is AST_OPCODE_REFERENCE_BY_INDEX) or
-              (x.opcode is AST_OPCODE_REFERENCE_BY_KEY))
+        elif x.opcode is @any(AST_OPCODE_REFERENCE_BY_INDEX,
+                              AST_OPCODE_REFERENCE_BY_KEY)
           # x[i] = y
           # x{i} = y
           # Do nothing.
           # We already able to handle any value types.
         endif
 
-      elif ((opcode is AST_OPCODE_ADD) or
-            (opcode is AST_OPCODE_MUL) or
-            (opcode is AST_OPCODE_SUB) or
-            (opcode is AST_OPCODE_DIV) or
-            (opcode is AST_OPCODE_IDIV) or
-            ((opcode >= AST_OPCODE_COMPARE_EQ) and (opcode <= AST_OPCODE_COMPARE_LE)))
+      elif ((opcode is @any(AST_OPCODE_ADD,
+                            AST_OPCODE_MUL,
+                            AST_OPCODE_SUB,
+                            AST_OPCODE_DIV,
+                            AST_OPCODE_IDIV)) or
+           ((opcode >= AST_OPCODE_COMPARE_EQ) and (opcode <= AST_OPCODE_COMPARE_LE)))
 
         x = children[0]
         y = children[1]
@@ -129,7 +129,8 @@ class ASTTypeCast
           endif
         endif
 
-      elif (opcode is AST_OPCODE_BOOL_AND) or (opcode is AST_OPCODE_BOOL_OR)
+      elif opcode is @any(AST_OPCODE_BOOL_AND,
+                          AST_OPCODE_BOOL_OR)
         # TODO: Review it.
         children[0] = AST_TypeCast(children[0], AST_DATA_BOOL)
         children[1] = AST_TypeCast(children[1], AST_DATA_BOOL)

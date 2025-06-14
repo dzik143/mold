@@ -73,8 +73,8 @@ class MIRQuadOptimizer extends PipeAbstract
 
     # print '[ MIRQuadOptimizer ]', opcode
 
-    if ((this.lastOpcode is MIR1_OPCODE_STORE_INDEX) or
-        (this.lastOpcode is MIR1_OPCODE_STORE_KEY))
+    if this.lastOpcode is @any(MIR1_OPCODE_STORE_INDEX,
+                               MIR1_OPCODE_STORE_KEY)
       this._emitOneItem(item)
 
     elif this.lastOpcode is MIR1_OPCODE_CALL
@@ -115,8 +115,8 @@ class MIRQuadOptimizer extends PipeAbstract
       lastItem    = buffer[@last]
       lastItem[1] = dst
 */
-    elif ((opcode is MIR1_OPCODE_JMP_IF_FALSE) or
-          (opcode is MIR1_OPCODE_JMP_IF_TRUE))
+    elif opcode is @any(MIR1_OPCODE_JMP_IF_FALSE,
+                        MIR1_OPCODE_JMP_IF_TRUE)
 
       lastOpcode      = this.lastOpcode
       lastOpcodeMajor = bitand(lastOpcode, 0xf8)

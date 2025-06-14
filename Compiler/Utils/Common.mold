@@ -62,7 +62,7 @@ function UTILS_GetBaseNameFromPath(path) -> baseName
 
   # TODO: Handle files with multiple extensions (test.a.b.c.mold).
   for indexes idx values oneChar in path
-    if (oneChar is '/') or (oneChar is '\')
+    if oneChar is @any('/', '\')
       lastSepIdx = idx
     elif oneChar is '.'
       lastDotIdx = idx
@@ -81,7 +81,7 @@ function UTILS_GetDirNameFromPath(path) -> dirName
   lastSepIdx = 0
 
   for indexes idx values oneChar in path
-    if (oneChar is '/') or (oneChar is '\')
+    if oneChar is @any('/', '\')
       lastSepIdx = idx
     endif
   endfor
@@ -99,7 +99,7 @@ function UTILS_TokenizePath(path) -> tokens
   currentTokenBeginIdx = 0
 
   for indexes idx values oneChar in path
-    if (oneChar is '/') or (oneChar is '\')
+    if oneChar is @any('/', '\')
       if idx > currentTokenBeginIdx
         # TODO: Use substr.
         tokens[@afterlast] = __mold_syscall(55, path, currentTokenBeginIdx, idx - currentTokenBeginIdx)

@@ -79,12 +79,11 @@ class CodeGeneratorC
       # It's only dump reference for existing box values or keys.
       print '  // Skipped destroying loop iterator', x
 
-    elif ((xInfo.kind is SYMBOL_KIND_VAR_LOCAL) or
-          (xInfo.kind is SYMBOL_KIND_VAR_GLOBAL) or
-          (xInfo.kind is SYMBOL_KIND_VAR_RETVAL))
+    elif xInfo.kind is @any(SYMBOL_KIND_VAR_LOCAL,
+                            SYMBOL_KIND_VAR_GLOBAL,
+                            SYMBOL_KIND_VAR_RETVAL)
 
-      if ((xInfo.type is 'string') or
-          (xInfo.type is 'variant'))
+      if xInfo.type is @any('string', 'variant')
         print '  __MOLD_VariantDestroy(&', x, ');'
       endif
     endif
@@ -114,7 +113,7 @@ class CodeGeneratorC
     if wantDeepIdx is deepIdx
       bufferName = null
 
-      if (type is 'array') or (type is 'string')
+      if type is @any('array', 'string')
         # Check did we emit another buffer with the same content.
         hash       = this._hash(value)
         bufferName = this.mapOfEmittedBuffers{hash}
@@ -505,7 +504,7 @@ class CodeGeneratorC
         if oneItem.type is undefined
           die("error: unset type for global variable '" ~ oneItem.name ~ "'")
 
-        elif (oneItem.type is 'variant') or (oneItem.type is 'string')
+        elif oneItem.type is @any('variant', 'string')
           print 'Variant_t', oneItem.name, '= {0};'
 
         elif oneItem.type is 'int64'
@@ -577,7 +576,7 @@ class CodeGeneratorC
       if oneItem.kind is SYMBOL_KIND_FUNCTION
         proto = oneItem.proto
 
-        if (proto.builtIn is undefined) or (proto.builtIn is false)
+        if proto.builtIn is @any(undefined, false)
           # Build C function proto.
           if proto.rv is defined
             symbolInfo     = proto.symbols{proto.rv}
@@ -723,10 +722,10 @@ class CodeGeneratorC
         elif opcode is MIR1_OPCODE_STRING_JOIN
           print '  __MOLD_VariantStringJoin(&', dst, ', &', x, ', &', y, ');'
 
-        elif ((opcode is MIR1_OPCODE_CMP_IS_TYPEOF) or
-              (opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF) or
-              (opcode is MIR1_OPCODE_JMP_IF_TYPEOF) or
-              (opcode is MIR1_OPCODE_JMP_IF_NOT_TYPEOF))
+        elif opcode is @any(MIR1_OPCODE_CMP_IS_TYPEOF,
+                            MIR1_OPCODE_CMP_IS_NOT_TYPEOF,
+                            MIR1_OPCODE_JMP_IF_TYPEOF,
+                            MIR1_OPCODE_JMP_IF_NOT_TYPEOF)
 
           if xType is 'variant'
             if opcode is MIR1_OPCODE_CMP_IS_TYPEOF
@@ -860,7 +859,7 @@ class CodeGeneratorC
                 endif
 
 
-                if (symbolInfo.type isnt defined) or (symbolInfo.type is 'variant')
+                if symbolInfo.type is @any(undefined, 'variant')
                   # Complex variable.
                   print '  __MOLD_Print_variant(&', oneParam, ');'
                 else
@@ -939,13 +938,10 @@ class CodeGeneratorC
           print '  // Local variables'
 
           for values oneItem in symbols
-            if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) or
-                (oneItem.kind is SYMBOL_KIND_VAR_RETVAL))
+            if oneItem.kind is @any(SYMBOL_KIND_VAR_LOCAL,
+                                    SYMBOL_KIND_VAR_RETVAL)
 
-              if ((oneItem.type is undefined) or
-                  (oneItem.type is 'variant') or
-                  (oneItem.type is 'string'))
-
+              if oneItem.type is @any(undefined, 'variant', 'string')
                 # Local Variant_t variable - init to undefined.
                 print '  Variant_t', oneItem.name, '= {0};'
 
@@ -958,7 +954,7 @@ class CodeGeneratorC
 
         elif opcode is MIR1_OPCODE_MOVE
           # TODO: Review it.
-          if (xType is 'variant') or (xType is 'string')
+          if xType is @any('variant', 'string')
             # Complex value - use function call.
             this.variantMove(dst, x)
           else
@@ -986,7 +982,7 @@ class CodeGeneratorC
           if currentProcName is 'start'
             for values oneItem in currentSymbols
               if oneItem.kind is SYMBOL_KIND_VAR_GLOBAL
-                if (oneItem.name is 'argv') or (oneItem.name is 'argc')
+                if oneItem.name is @any('argv', 'argc')
                   # Skip argv[] and argc.
                   # They're freed in main entry point function.
                   # TODO: Better way to exclude argv[] and argc.
@@ -1080,10 +1076,10 @@ class CodeGeneratorC
         paramsCnt = len(params)
 
         if ((opcode is MIR1_OPCODE_CALL) and
-            (nameOrId is '__MOLD_ForDriver_Generic') or
-            (nameOrId is '__MOLD_ForDriver_IndexesAndValuesInArray') or
-            (nameOrId is '__MOLD_ForDriver_IndexesAndValuesInArrayOrString') or
-            (nameOrId is '__MOLD_ForDriver_KeysAndValuesInMap'))
+            (nameOrId is @any('__MOLD_ForDriver_Generic',
+                              '__MOLD_ForDriver_IndexesAndValuesInArray',
+                              '__MOLD_ForDriver_IndexesAndValuesInArrayOrString',
+                              '__MOLD_ForDriver_KeysAndValuesInMap')))
 
           # TODO: Clean up this mess.
           print ' ', nameOrId, '(&', params[0], ', &', params[1], ', &', params[2], ', &', params[3], ');'

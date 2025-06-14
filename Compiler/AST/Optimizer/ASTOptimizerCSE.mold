@@ -123,7 +123,9 @@ class ASTOptimizerCSE
         children[1] = newRval
       endif
 
-    elif (opcode is AST_OPCODE_IF) or (opcode is AST_OPCODE_SWITCH)
+    elif opcode is @any(AST_OPCODE_IF,
+                        AST_OPCODE_SWITCH)
+
       # TODO: Enable IF branches.
       # IF branch or function/method.
       # Start new expression table from scratch.
@@ -143,15 +145,17 @@ class ASTOptimizerCSE
         this._processInnerNode(oneChild, {}, symbolTable)
       endfor
 
-    elif (opcode is AST_OPCODE_FUNCTION) or (opcode is AST_OPCODE_CLASS_METHOD)
+    elif opcode is @any(AST_OPCODE_FUNCTION,
+                        AST_OPCODE_CLASS_METHOD)
+
       # IF branch or function/method.
       # Start new expression table from scratch.
       for values oneChild in children
         this._processInnerNode(oneChild, {}, symbolTable)
       endfor
 
-    elif ((opcode is AST_OPCODE_CALL) or
-          (opcode is AST_OPCODE_VCALL))
+    elif opcode is @any(AST_OPCODE_CALL,
+                        AST_OPCODE_VCALL)
 
       for indexes childIdx values childNode in children
         AST_PrefetchHash(childNode)
@@ -274,8 +278,8 @@ class ASTOptimizerCSE
 
             for values oneChild in commonBlock.children
               if (isCseEmited is false)
-                if ((oneChild is lastInstructionNode1) or
-                    (oneChild is lastInstructionNode2))
+                if oneChild is @any(lastInstructionNode1,
+                                    lastInstructionNode2)
 
                   # Push __csexx = ... before first usage.
                   isCseEmited = true
