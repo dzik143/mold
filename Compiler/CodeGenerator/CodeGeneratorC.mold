@@ -821,6 +821,7 @@ class CodeGeneratorC
           endif
 
         elif opcode is MIR1_OPCODE_LOAD_NULL
+          # TODO: Review it?
           print ' ', dst, '.type = VARIANT_UNDEFINED;'
           # this.variantDestroy(dst)
 
@@ -971,20 +972,9 @@ class CodeGeneratorC
         elif opcode is MIR1_OPCODE_RET
           print '  // clean frame'
 
-          # TODO: Clean up this mess.
           for values oneItem in currentSymbols
-            # TODO: Clean up this mess.
-            if ((oneItem.kind is SYMBOL_KIND_VAR_LOCAL) and
-                ((oneItem.type is undefined) or (oneItem.type is 'variant') or (oneItem.type is 'string')))
-
-              if oneItem.usedAsIterator is defined
-                # Symbol is used as loop iterator.
-                # It's only dump reference for existing box values or keys.
-                print '  // Skipped loop iterator', oneItem.name
-
-              else
-                this.variantDestroy(oneItem.name)
-              endif
+            if oneItem.kind is SYMBOL_KIND_VAR_LOCAL
+              this.variantDestroy(oneItem.name)
             endif
           endfor
 
@@ -995,10 +985,7 @@ class CodeGeneratorC
 
           if currentProcName is 'start'
             for values oneItem in currentSymbols
-
-              if ((oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and
-                  ((oneItem.type is undefined) or (oneItem.type is 'variant')))
-
+              if oneItem.kind is SYMBOL_KIND_VAR_GLOBAL
                 if (oneItem.name is 'argv') or (oneItem.name is 'argc')
                   # Skip argv[] and argc.
                   # They're freed in main entry point function.
