@@ -18,7 +18,7 @@
 #                                                                              #
 ################################################################################
 
-import './AST.mold'
+import '../AST.mold'
 
 class ASTOptimizerConstantFolding
   method constructor(app)

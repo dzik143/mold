@@ -18,9 +18,9 @@
 #                                                                              #
 ################################################################################
 
-import '../MIR/MIR.mold'
-import '../MIR/MIR1.mold'
-import '../Utils/Stack.mold'
+import '../../MIR/MIR.mold'
+import '../../MIR/MIR1.mold'
+import '../../Utils/Stack.mold'
 
 import './ASTTranslator.mold'
 

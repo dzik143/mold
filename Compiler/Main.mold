@@ -28,8 +28,10 @@ import './AppMold.mold'
 import './AST/ASTSymbolsCollector.mold'
 import './AST/ASTPrinterText.mold'
 import './AST/ASTPrinterHtml.mold'
-import './AST/ASTTranslatorMIR0.mold'
-import './AST/ASTTranslatorMIR1.mold'
+
+import './AST/Translator/ASTTranslatorMIR0.mold'
+import './AST/Translator/ASTTranslatorMIR1.mold'
+
 import './MIR/MIRQuadCollector.mold'
 import './CodeGenerator/CodeGeneratorX64.mold'
 import './CodeGenerator/CodeGeneratorC.mold'

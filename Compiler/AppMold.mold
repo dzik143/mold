@@ -23,13 +23,15 @@ import 'AST/ASTModuleResolver.mold'
 import 'AST/ASTSymbolsCollector.mold'
 import 'AST/ASTEvaluator.mold'
 import 'AST/ASTPreprocessor.mold'
-import 'AST/ASTOptimizerConstantFolding.mold'
-import 'AST/ASTOptimizerCSE.mold'
-import 'AST/ASTOptimizerDeadCodeRemove.mold'
-import 'AST/ASTOptimizerVCall.mold'
-import 'AST/ASTOptimizerIf.mold'
-import 'AST/ASTOptimizerInline.mold'
 import 'AST/ASTTypeCast.mold'
+
+import 'AST/Optimizer/ASTOptimizerConstantFolding.mold'
+import 'AST/Optimizer/ASTOptimizerCSE.mold'
+import 'AST/Optimizer/ASTOptimizerDeadCodeRemove.mold'
+import 'AST/Optimizer/ASTOptimizerVCall.mold'
+import 'AST/Optimizer/ASTOptimizerIf.mold'
+import 'AST/Optimizer/ASTOptimizerInline.mold'
+
 
 # TODO: Clean up this mess.
 import 'MIR/MIR.mold'
@@ -143,5 +145,21 @@ class AppMold
 
   method getAstTypeCast() -> rv
     rv = this.astTypeCast
+  endmethod
+
+  method destroy()
+    # Possible improvement: Handle cyclic references in the smarter way?
+    this.symbolTable                 = null
+    this.astOptimizerConstantFolding = null
+    this.astSymbolsCollector         = null
+    this.astEvaluator                = null
+    this.astPreprocessor             = null
+    this.astOptimizerCSE             = null
+    this.astOptimizerDeadCodeRemove  = null
+    this.astOptimizerVCall           = null
+    this.astOptimizerIf              = null
+    this.astOptimizerInline          = null
+    this.astTypeCast                 = null
+    this.astModuleResolver           = null
   endmethod
 endclass

@@ -67,7 +67,6 @@ class CodeGeneratorC
   endmethod
 
   method variantDestroy(x)
-    #TODO
     global SYMBOL_KIND_VAR_LOCAL
     global SYMBOL_KIND_VAR_GLOBAL
     global SYMBOL_KIND_VAR_RETVAL
@@ -503,9 +502,10 @@ class CodeGeneratorC
 
     for values oneItem in this.globals
       if (oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and (oneItem.writeHits > 0)
-        if ((oneItem.type is 'variant') or
-            (oneItem.type is 'string') or
-            (oneItem.type is undefined))
+        if oneItem.type is undefined
+          die("error: unset type for global variable '" ~ oneItem.name ~ "'")
+
+        elif (oneItem.type is 'variant') or (oneItem.type is 'string')
           print 'Variant_t', oneItem.name, '= {0};'
 
         elif oneItem.type is 'int64'

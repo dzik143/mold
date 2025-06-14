@@ -18,7 +18,7 @@
 #                                                                              #
 ################################################################################
 
-import '../MIR/MIR.mold'
+import '../../MIR/MIR.mold'
 import './ASTTranslator.mold'
 
 class ASTTranslatorMIR0 extends ASTTranslator
