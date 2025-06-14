@@ -66,8 +66,9 @@ void __MOLD_ForDriver_IndexesAndValuesInArray(Array_t *array,
     // Array of given type.
     // TODO: Simplify it.
     // TODO: Handle array of double.
-    iteratorValue -> type = array -> innerType;
+    iteratorValue -> type  = array -> innerType;
     iteratorValue -> value = 0;
+    iteratorValue -> flags = 0;
 
     switch (array -> itemSize)
     {
@@ -136,6 +137,8 @@ void __MOLD_ForDriver_IndexesAndValuesInArray(Array_t *array,
       }
     }
   }
+
+  memset(iteratorValue, 0, sizeof(Variant_t));
 }
 
 void __MOLD_ForDriver_IndexesAndValuesInString(Variant_t *box,
@@ -177,6 +180,9 @@ void __MOLD_ForDriver_IndexesAndValuesInString(Variant_t *box,
       cb();
     }
   }
+
+  // Clear iterator variable after loop exit.
+  memset(iteratorValue, 0, sizeof(Variant_t));
 }
 
 void __MOLD_ForDriver_KeysAndValuesInMap(Variant_t *box,
@@ -223,6 +229,10 @@ void __MOLD_ForDriver_KeysAndValuesInMap(Variant_t *box,
 
     bucket = bucket -> nextBucket;
   }
+
+  // Clear iterator variables after loop exit.
+  memset(iteratorKey   , 0, sizeof(Variant_t));
+  memset(iteratorValue , 0, sizeof(Variant_t));
 }
 
 // ----------------------------------------------------------------------------
