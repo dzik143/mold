@@ -440,8 +440,8 @@ class Parser
       # PARSER: Match symbol agains grammar.
       # ------------------------------------
 
-      # TODO: Remove hardcoded token id.
-      if (SCANERLESS_MODE_ENABLED is false) and (currentSym is 50)
+      # TODO: Remove hardcoded token id for whitspaces ?
+      if (SCANERLESS_MODE_ENABLED is false) and (currentSym is 52)
         # Skip all white spaces in classical one scaner / one parser flow.
         # Skip this one token and try another one on next iteration.
         # Update counters for line and column.
