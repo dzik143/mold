@@ -74,10 +74,15 @@ class CodeGeneratorC
 
     xInfo = this.symbols{x}
 
-    if ((xInfo is undefined) or
-        (xInfo.kind is SYMBOL_KIND_VAR_LOCAL) or
-        (xInfo.kind is SYMBOL_KIND_VAR_GLOBAL) or
-        (xInfo.kind is SYMBOL_KIND_VAR_RETVAL))
+    if ((xInfo.usedAsIterator is defined) and
+        (xInfo.usedAsIterator is true))
+      # Symbol is used as loop iterator.
+      # It's only dump reference for existing box values or keys.
+      print '  // Skipped destroying loop iterator', x
+
+    elif ((xInfo.kind is SYMBOL_KIND_VAR_LOCAL) or
+          (xInfo.kind is SYMBOL_KIND_VAR_GLOBAL) or
+          (xInfo.kind is SYMBOL_KIND_VAR_RETVAL))
 
       if ((xInfo.type is 'string') or
           (xInfo.type is 'variant'))
