@@ -226,6 +226,11 @@ class SymbolTable
     if rv.kind is SYMBOL_KIND_VAR_PARAM
       this._error("function parameters can not be overwritten: '" ~ name ~ "'")
     endif
+
+    # Possible improvement: Use different kind for loop iterators?
+    if rv.usedAsIterator is defined
+      this._error("loop iterators can not be overwritten: '" ~ name ~ "'")
+    endif
   endmethod
 
   method lookupForReadAndWrite(name) -> rv
