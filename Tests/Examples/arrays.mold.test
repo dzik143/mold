@@ -1467,11 +1467,11 @@ print 'box2 =', box2
 print 'box2 =', box2
 
 EXPECTED_OUTPUT:
-box1 = ['a', 'b', 'c', ['d', 'e', 'f', ['a', 'b', 'c', [circular]], ['a', 'b', 'c', [circular]]]]
-box1 = ['a', 'b', 'c', ['d', 'e', 'f', ['a', 'b', 'c', [circular]], ['a', 'b', 'c', [circular]]]]
-box1 = ['a', 'b', 'c', ['d', 'e', 'f', ['a', 'b', 'c', [circular]], ['a', 'b', 'c', [circular]]]]
+box1 = ['a', 'b', 'c', ['d', 'e', 'f', <circular>, <circular>]]
+box1 = ['a', 'b', 'c', ['d', 'e', 'f', <circular>, <circular>]]
+box1 = ['a', 'b', 'c', ['d', 'e', 'f', <circular>, <circular>]]
 
-box2 = ['d', 'e', 'f', ['a', 'b', 'c', ['d', 'e', 'f', [circular], ['a', 'b', 'c', [circular]]]], ['a', 'b', 'c', ['d', 'e', 'f', ['a', 'b', 'c', [circular]], [circular]]]]
-box2 = ['d', 'e', 'f', ['a', 'b', 'c', ['d', 'e', 'f', [circular], ['a', 'b', 'c', [circular]]]], ['a', 'b', 'c', ['d', 'e', 'f', ['a', 'b', 'c', [circular]], [circular]]]]
-box2 = ['d', 'e', 'f', ['a', 'b', 'c', ['d', 'e', 'f', [circular], ['a', 'b', 'c', [circular]]]], ['a', 'b', 'c', ['d', 'e', 'f', ['a', 'b', 'c', [circular]], [circular]]]]
+box2 = ['d', 'e', 'f', ['a', 'b', 'c', <circular>], <circular>]
+box2 = ['d', 'e', 'f', ['a', 'b', 'c', <circular>], <circular>]
+box2 = ['d', 'e', 'f', ['a', 'b', 'c', <circular>], <circular>]
 -------------------------------------------------------------------------------

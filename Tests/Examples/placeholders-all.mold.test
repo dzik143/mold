@@ -1,0 +1,94 @@
+TEST "if @all(...) is 0"
+
+function foo(x,y,z)
+  if @all(x,y,z) is 0
+     print 'All values from the pool (', x, y, z, ') are zeroes'
+   else
+     print '*NOT* all values from the pool(', x, y, z, ') are zeroes'
+  endif
+endfunction
+
+foo(0,0,0)
+foo(1,0,0)
+foo(0,1,0)
+foo(0,1,1)
+foo(0,0,1)
+
+EXPECTED_OUTPUT:
+All values from the pool ( 0 0 0 ) are zeroes
+*NOT* all values from the pool( 1 0 0 ) are zeroes
+*NOT* all values from the pool( 0 1 0 ) are zeroes
+*NOT* all values from the pool( 0 1 1 ) are zeroes
+*NOT* all values from the pool( 0 0 1 ) are zeroes
+-------------------------------------------------------------------------------
+
+TEST "If @all(...) is typename"
+
+function foo(x,y,z)
+  if @all(x,y,z) is integer
+     print 'All values from the pool (', x, y, z, ') are integers'
+   else
+     print '*NOT* all values from the pool(', x, y, z, ') are integers'
+  endif
+endfunction
+
+foo(1.2, 'abc' , [])
+foo(1.2, 2000  , [])
+foo(1.2, 'abc' , -3)
+foo(100, 2000  , -3)
+
+EXPECTED_OUTPUT:
+*NOT* all values from the pool( 1.200000 abc [] ) are integers
+*NOT* all values from the pool( 1.200000 2000 [] ) are integers
+*NOT* all values from the pool( 1.200000 abc -3 ) are integers
+All values from the pool ( 100 2000 -3 ) are integers
+-------------------------------------------------------------------------------
+
+TEST "Use @all(...) as 'and' with many arguments"
+
+print 'x y z'
+
+for x in 1 .. 4
+  for y in 1 .. 4
+    for z in 1 .. 4
+      print x, y, z
+      if @all(x is 1,
+              y is 2,
+              z is 3) is true
+        print 'Bingo! (x is 1) and (y is 2) and (z is 3)'
+      endif
+    endfor
+  endfor
+endfor
+
+EXPECTED_OUTPUT:
+x y z
+1 1 1
+1 1 2
+1 1 3
+1 2 1
+1 2 2
+1 2 3
+Bingo! (x is 1) and (y is 2) and (z is 3)
+1 3 1
+1 3 2
+1 3 3
+2 1 1
+2 1 2
+2 1 3
+2 2 1
+2 2 2
+2 2 3
+2 3 1
+2 3 2
+2 3 3
+3 1 1
+3 1 2
+3 1 3
+3 2 1
+3 2 2
+3 2 3
+3 3 1
+3 3 2
+3 3 3
+-------------------------------------------------------------------------------

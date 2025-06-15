@@ -353,14 +353,14 @@ var1_float  : 5.670000
 var1_boolean: false
 var1_map    : {'key1': 'value1'}
 var1_array  : [81, 82, 83, 84, 85]
-var1_object : [object]
+var1_object : <object>
 
 var2_integer: 4321
 var2_float  : 7.650000
 var2_boolean: true
 var2_map    : {'key2': 'value2'}
 var2_array  : [85, 84, 83, 82, 81]
-var2_object : [object]
+var2_object : <object>
 
 map         : {}
 len(map)    : 0
@@ -372,16 +372,16 @@ var1_float  : 5.670000
 var1_boolean: false
 var1_map    : {'key1': 'value1'}
 var1_array  : [81, 82, 83, 84, 85]
-var1_object : [object]
+var1_object : <object>
 
 var2_integer: 4321
 var2_float  : 7.650000
 var2_boolean: true
 var2_map    : {'key2': 'value2'}
 var2_array  : [85, 84, 83, 82, 81]
-var2_object : [object]
+var2_object : <object>
 
-map         : {'integer': 1234, 'float': 5.670000, 'boolean': false, 'map': {'key1': 'value1'}, 'array': [81, 82, 83, 84, 85], 'object': [object]}
+map         : {'integer': 1234, 'float': 5.670000, 'boolean': false, 'map': {'key1': 'value1'}, 'array': [81, 82, 83, 84, 85], 'object': <object>}
 len(map)    : 6
 
 After load
@@ -391,16 +391,16 @@ var1_float  : 5.670000
 var1_boolean: false
 var1_map    : {'key1': 'value1'}
 var1_array  : [81, 82, 83, 84, 85]
-var1_object : [object]
+var1_object : <object>
 
 var2_integer: 1234
 var2_float  : 5.670000
 var2_boolean: false
 var2_map    : {'key1': 'value1'}
 var2_array  : [81, 82, 83, 84, 85]
-var2_object : [object]
+var2_object : <object>
 
-map         : {'integer': 1234, 'float': 5.670000, 'boolean': false, 'map': {'key1': 'value1'}, 'array': [81, 82, 83, 84, 85], 'object': [object]}
+map         : {'integer': 1234, 'float': 5.670000, 'boolean': false, 'map': {'key1': 'value1'}, 'array': [81, 82, 83, 84, 85], 'object': <object>}
 len(map)    : 6
 -------------------------------------------------------------------------------
 
@@ -626,28 +626,56 @@ EXPECTED_OUTPUT:
 
 TEST "Circular reference"
 
-box1 = {}
-box2 = {}
+box1 = { 'x1': 1 }
+box2 = { 'x2': 2 }
 
-box1{'box2'} = box2
-box2{'box1'} = box1
-box2{'box2'} = box2
+box1{'box2'}  = box2
+box2{'box1a'} = box1
+box2{'box1b'} = box1
 
-print 'box1 =', box1
-print 'box1 =', box1
-print 'box1 =', box1
+for idx in 0 .. 3
+  print '======='
+  print 'box1 =', box1
+  print 'box1 =', box1
+  print 'box1 =', box1
+  print 'box1 =', box1
 
-print ''
-print 'box2 =', box2
-print 'box2 =', box2
-print 'box2 =', box2
+  print '======='
+  print 'box2 =', box2
+  print 'box2 =', box2
+  print 'box2 =', box2
+  print 'box2 =', box2
+endfor
 
 EXPECTED_OUTPUT:
-box1 = {'box2': {'box1': {'box2': [circular]}, 'box2': {'box1': {'box2': [circular]}, 'box2': [circular]}}}
-box1 = {'box2': {'box1': {'box2': [circular]}, 'box2': {'box1': {'box2': [circular]}, 'box2': [circular]}}}
-box1 = {'box2': {'box1': {'box2': [circular]}, 'box2': {'box1': {'box2': [circular]}, 'box2': [circular]}}}
-
-box2 = {'box1': {'box2': {'box1': [circular], 'box2': {'box1': [circular], 'box2': [circular]}}}, 'box2': {'box1': {'box2': {'box1': [circular], 'box2': [circular]}}, 'box2': [circular]}}
-box2 = {'box1': {'box2': {'box1': [circular], 'box2': {'box1': [circular], 'box2': [circular]}}}, 'box2': {'box1': {'box2': {'box1': [circular], 'box2': [circular]}}, 'box2': [circular]}}
-box2 = {'box1': {'box2': {'box1': [circular], 'box2': {'box1': [circular], 'box2': [circular]}}}, 'box2': {'box1': {'box2': {'box1': [circular], 'box2': [circular]}}, 'box2': [circular]}}
+=======
+box1 = {'x1': 1, 'box2': {'x2': 2, 'box1a': <circular>, 'box1b': <circular>}}
+box1 = {'x1': 1, 'box2': {'x2': 2, 'box1a': <circular>, 'box1b': <circular>}}
+box1 = {'x1': 1, 'box2': {'x2': 2, 'box1a': <circular>, 'box1b': <circular>}}
+box1 = {'x1': 1, 'box2': {'x2': 2, 'box1a': <circular>, 'box1b': <circular>}}
+=======
+box2 = {'x2': 2, 'box1a': {'x1': 1, 'box2': <circular>}, 'box1b': <circular>}
+box2 = {'x2': 2, 'box1a': {'x1': 1, 'box2': <circular>}, 'box1b': <circular>}
+box2 = {'x2': 2, 'box1a': {'x1': 1, 'box2': <circular>}, 'box1b': <circular>}
+box2 = {'x2': 2, 'box1a': {'x1': 1, 'box2': <circular>}, 'box1b': <circular>}
+=======
+box1 = {'x1': 1, 'box2': {'x2': 2, 'box1a': <circular>, 'box1b': <circular>}}
+box1 = {'x1': 1, 'box2': {'x2': 2, 'box1a': <circular>, 'box1b': <circular>}}
+box1 = {'x1': 1, 'box2': {'x2': 2, 'box1a': <circular>, 'box1b': <circular>}}
+box1 = {'x1': 1, 'box2': {'x2': 2, 'box1a': <circular>, 'box1b': <circular>}}
+=======
+box2 = {'x2': 2, 'box1a': {'x1': 1, 'box2': <circular>}, 'box1b': <circular>}
+box2 = {'x2': 2, 'box1a': {'x1': 1, 'box2': <circular>}, 'box1b': <circular>}
+box2 = {'x2': 2, 'box1a': {'x1': 1, 'box2': <circular>}, 'box1b': <circular>}
+box2 = {'x2': 2, 'box1a': {'x1': 1, 'box2': <circular>}, 'box1b': <circular>}
+=======
+box1 = {'x1': 1, 'box2': {'x2': 2, 'box1a': <circular>, 'box1b': <circular>}}
+box1 = {'x1': 1, 'box2': {'x2': 2, 'box1a': <circular>, 'box1b': <circular>}}
+box1 = {'x1': 1, 'box2': {'x2': 2, 'box1a': <circular>, 'box1b': <circular>}}
+box1 = {'x1': 1, 'box2': {'x2': 2, 'box1a': <circular>, 'box1b': <circular>}}
+=======
+box2 = {'x2': 2, 'box1a': {'x1': 1, 'box2': <circular>}, 'box1b': <circular>}
+box2 = {'x2': 2, 'box1a': {'x1': 1, 'box2': <circular>}, 'box1b': <circular>}
+box2 = {'x2': 2, 'box1a': {'x1': 1, 'box2': <circular>}, 'box1b': <circular>}
+box2 = {'x2': 2, 'box1a': {'x1': 1, 'box2': <circular>}, 'box1b': <circular>}
 -------------------------------------------------------------------------------

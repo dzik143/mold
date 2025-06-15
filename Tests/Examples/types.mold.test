@@ -770,8 +770,8 @@ false is boolean
 {'one': 10, 'two': 20, 'three': 30} is defined
 {'one': 10, 'two': 20, 'three': 30} is map
 
-[object] is defined
-[object] is object
+<object> is defined
+<object> is object
 -------------------------------------------------------------------------------
 
 TEST "Compare: x isnt typename"
@@ -877,12 +877,12 @@ false isnt object
 {'one': 10, 'two': 20, 'three': 30} isnt array
 {'one': 10, 'two': 20, 'three': 30} isnt object
 
-[object] isnt undefined
-[object] isnt integer
-[object] isnt float
-[object] isnt boolean
-[object] isnt array
-[object] isnt map
+<object> isnt undefined
+<object> isnt integer
+<object> isnt float
+<object> isnt boolean
+<object> isnt array
+<object> isnt map
 -------------------------------------------------------------------------------
 
 TEST "Bug: 32-bit unsigned treated as signed when expanding to 64-bit (SKIPPED!)"
