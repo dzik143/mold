@@ -73,8 +73,7 @@ class CodeGeneratorC
 
     xInfo = this.symbols{x}
 
-    if ((xInfo.usedAsIterator is defined) and
-        (xInfo.usedAsIterator is true))
+    if xInfo.usedAsIterator is @all(defined, true)
       # Symbol is used as loop iterator.
       # It's only dump reference for existing box values or keys.
       print '  // Skipped destroying loop iterator', x
@@ -652,9 +651,10 @@ class CodeGeneratorC
       xType   = this._getSymbolType(x)
       yType   = this._getSymbolType(y)
 
-      if ((opcode isnt MIR1_OPCODE_COMMENT) and
-          (opcode isnt MIR1_OPCODE_PROC) and
-          (opcode isnt MIR1_OPCODE_INIT_FRAME))
+      if opcode isnt @all(MIR1_OPCODE_COMMENT,
+                          MIR1_OPCODE_PROC,
+                          MIR1_OPCODE_INIT_FRAME)
+
         print '  // [C]', MIR1_GetOpcodeAsText(opcode), '(', opcode, ')', dst, x, y
       endif
 
@@ -834,7 +834,7 @@ class CodeGeneratorC
             if isSpaceNeeded is true
               # TODO: Clean up this mess.
               if ((oneParam isnt string) or
-                  ((oneParam isnt '@glued') and (oneParam isnt '__EOL')))
+                  (oneParam isnt @all('@glued', '__EOL')))
                 print '  __MOLD_Print_space();'
               endif
             endif

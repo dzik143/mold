@@ -45,10 +45,10 @@ class ASTOptimizerIf
     childrenCnt = len(children)
     cond        = children[0]
 
-    if ((opcode is AST_OPCODE_IF) and
-        (childrenCnt is 3) and
-        (cond.opcode is AST_OPCODE_COMPARE_EQ) and
-        (cond.children[1].opcode is AST_DATA_INTEGER))
+    if @all(opcode is AST_OPCODE_IF,
+            childrenCnt is 3,
+            cond.opcode is AST_OPCODE_COMPARE_EQ,
+            cond.children[1].opcode is AST_DATA_INTEGER) is true
 
       # if cond1
       #   ...
@@ -78,9 +78,9 @@ class ASTOptimizerIf
 
         if currentIfNode.opcode is AST_OPCODE_IF
 
-          if ((cond.opcode is AST_OPCODE_COMPARE_EQ) and
-              (cond.children[1].opcode is AST_DATA_INTEGER) and
-              (AST_GetHash(cond.children[0]) is exprHash))
+          if @all(cond.opcode is AST_OPCODE_COMPARE_EQ,
+                  cond.children[1].opcode is AST_DATA_INTEGER,
+                  AST_GetHash(cond.children[0]) is exprHash) is true
 
             # TODO: Handle values ranges.
             # x is imm

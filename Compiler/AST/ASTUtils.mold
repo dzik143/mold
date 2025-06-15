@@ -860,7 +860,7 @@ function AST_GetDataType(node) -> rv
     elif opcode is AST_OPCODE_VARIABLE
       symbolInfo = node.symbolInfo
 
-      if (symbolInfo is defined) and (symbolInfo.astType is defined)
+      if @all(symbolInfo, symbolInfo.astType) is defined
         rv = symbolInfo.astType
       endif
 
@@ -870,22 +870,16 @@ function AST_GetDataType(node) -> rv
     elif opcode is AST_OPCODE_REFERENCE_BY_INDEX
       # TODO: Why we need this if here?
       box = node.children[0]
-      if ((box.opcode is AST_OPCODE_VARIABLE) and
-          (box.symbolInfo is defined) and
-          (box.symbolInfo.astInnerType is defined))
 
+      if @all(box.opcode is AST_OPCODE_VARIABLE,
+              box.symbolInfo is defined,
+              box.symbolInfo.astInnerType is defined) is true
         rv = box.symbolInfo.astInnerType
       endif
 
     elif opcode is AST_OPCODE_CALL
-      # TODO: Clean up this mess.
-      #if ((node.value is '__mold_syscall') and
-      #    (node.sysCallId is integer) and
-      #    (node.sysCallId is MOLD_SYSCALL_ID_LEN))
-      #  rv = AST_DATA_INTEGER
-
-      if ((node.symbolInfo is defined) and
-          (node.symbolInfo.proto.astTypeRetVal is defined))
+      if @all(node.symbolInfo,
+              node.symbolInfo.proto.astTypeRetVal) is defined
         rv = node.symbolInfo.proto.astTypeRetVal
       endif
 

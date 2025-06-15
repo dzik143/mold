@@ -191,9 +191,9 @@ class ASTEvaluator
     if opcode is AST_OPCODE_VARIABLE
       symbolInfo = node.symbolInfo
 
-      if ((symbolInfo is defined) and
-          (symbolInfo.kind is SYMBOL_KIND_VAR_GLOBAL) and
-          (symbolInfo.writeHits > 1))
+      if @all(symbolInfo is defined,
+              symbolInfo.kind is SYMBOL_KIND_VAR_GLOBAL,
+              symbolInfo.writeHits > 1) is true
 
         # Non-constant global. Treat as unique.
         node.storedValue = node

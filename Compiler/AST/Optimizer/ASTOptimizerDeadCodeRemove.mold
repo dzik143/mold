@@ -262,8 +262,8 @@ class ASTOptimizerDeadCodeRemove
       # TODO: Use x is empty?
       # TODO: Decrease read/call hits counter?
       # TODO: Remove called function if no any caller left?
-      if ((symbolInfo.proto is defined) and
-          (symbolInfo.proto.children is defined))
+      if @all(symbolInfo.proto,
+              symbolInfo.proto.children) is defined
 
         if len(symbolInfo.proto.children[0].children) is 0
           this._debug('Useless function call at node #' ~ str(node.id) ~ ' (' ~ value ~ ')')

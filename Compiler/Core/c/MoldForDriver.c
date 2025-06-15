@@ -43,22 +43,7 @@ void __MOLD_ForDriver_IndexesAndValuesInArray(Array_t *array,
       *iteratorIndex = idx;
       *iteratorValue = array -> items[idx];
       ASSERT_VARIANT_PTR_ANY(iteratorValue);
-
-      if (array -> items[idx].flags & VARIANT_FLAG_NODE_VISITED)
-      {
-        // Node was already visited even before us.
-        // Don't touch the flags - just pass-through item as-is.
-        cb();
-      }
-      else
-      {
-        // Node was not visited yet.
-        // Mark that node is visited to avoid infinite loop on circular
-        // reference.
-        array -> items[idx].flags |= VARIANT_FLAG_NODE_VISITED;
-        cb();
-        array -> items[idx].flags &= ~VARIANT_FLAG_NODE_VISITED;
-      }
+      cb();
     }
   }
   else
@@ -210,22 +195,7 @@ void __MOLD_ForDriver_KeysAndValuesInMap(Variant_t *box,
 
     ASSERT_VARIANT_PTR_STRING(iteratorKey);
     ASSERT_VARIANT_PTR_ANY(iteratorValue);
-
-    if ((bucket -> value).flags & VARIANT_FLAG_NODE_VISITED)
-    {
-      // Node was already visited even before us.
-      // Don't touch the flags - just pass-through item as-is.
-      cb();
-    }
-    else
-    {
-      // Node was not visited yet.
-      // Mark that node is visited to avoid infinite loop on circular
-      // reference.
-      (bucket -> value).flags |= VARIANT_FLAG_NODE_VISITED;
-      cb();
-      (bucket -> value).flags &= ~VARIANT_FLAG_NODE_VISITED;
-    }
+    cb();
 
     bucket = bucket -> nextBucket;
   }

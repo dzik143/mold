@@ -53,14 +53,13 @@ class ASTOptimizerVCall
       if symbolInfoThiz is defined
         classProto = thiz.symbolInfo.classProto
 
-        if (classProto is defined) and (classProto.vtable is defined)
+        if @all(classProto, classProto.vtable) is defined
           # We already know class proto.
           # Convert vcall to ordinary call.
           methodProto = classProto.vtable{node.value}
 
           if methodProto is defined
-            if ((methodProto.isOverloaded is defined) and
-                (methodProto.isOverloaded is true))
+            if methodProto.isOverloaded is @all(defined, true)
               # Method is overloaded by another class.
               # Keep virtual call.
               this._debug('Skipped vcall [' ~ node.value ~ '] at node #' ~ str(node.id))
@@ -86,9 +85,7 @@ class ASTOptimizerVCall
               symbolTable       = blockNode.symbolTable
               currentMethodName = symbolTable.getCurrentFunctionName()
 
-              if ((currentMethodName is defined) and
-                  (currentMethodName is methodProto.fullName))
-
+              if currentMethodName is @all(defined, methodProto.fullName)
                 this._debug('Recursive call detected at node #' ~ str(node.id) ~ ' (' ~ methodProto.fullName ~ ')')
                 node.symbolInfo.proto.isRecursive = true
               endif

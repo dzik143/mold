@@ -39,7 +39,9 @@ class ASTModuleResolver
 
     for values oneChild in children
 
-      if (oneChild.opcode is AST_OPCODE_CALL) and (oneChild.value is 'import')
+      if ((oneChild.opcode is AST_OPCODE_CALL) and
+          (oneChild.value is 'import'))
+
         # TODO: Verify parameters.
         modulePath     = oneChild.children[0].value
         modulePathDir  = UTILS_GetDirNameFromPath(modulePath)
@@ -66,7 +68,9 @@ class ASTModuleResolver
           endfor
         endif
 
-      elif (oneChild.opcode is AST_OPCODE_CALL) and (oneChild.value is 'importFrom')
+      elif ((oneChild.opcode is AST_OPCODE_CALL) and
+            (oneChild.value is 'importFrom'))
+
         # import from 'A'
         # import foo from 'A'
         modulePath = oneChild.children[0].value

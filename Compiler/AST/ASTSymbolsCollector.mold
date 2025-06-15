@@ -126,7 +126,8 @@ class ASTSymbolsCollector
     endfor
 
     # TODO: Clean up this mess.
-    if (opcode is AST_OPCODE_VARIABLE) and (node.value is '__this_placeholder__')
+    if ((opcode is AST_OPCODE_VARIABLE) and
+        (node.value is '__this_placeholder__'))
       # Do nothing.
 
     elif opcode is AST_OPCODE_PROGRAM
@@ -268,7 +269,9 @@ class ASTSymbolsCollector
 
         # TODO: Review it.
         # Mark unused parameters.
-        if (symbolInfo.readHits is 0) and (symbolInfo.writeHits is 0)
+        if @all(symbolInfo.readHits,
+                symbolInfo.writeHits) is 0
+
           astTypeParams[@afterlast] = AST_DATA_NONE
         else
           astTypeParams[@afterlast] = symbolInfo.astType
@@ -327,8 +330,7 @@ class ASTSymbolsCollector
       node.symbolInfo = symbolInfo
 
       # TODO: Clean up this mess.
-      if ((node.__isUsedAsTypeofArg is defined) and
-          (node.__isUsedAsTypeofArg is true))
+      if node.__isUsedAsTypeofArg is @all(defined, true)
         # User called typeof(x) directly.
         # Keep variant type.
         symbolTable.useAsTypeofArg(node.value)
@@ -410,7 +412,9 @@ class ASTSymbolsCollector
       if lval.opcode is AST_OPCODE_VARIABLE
         # TODO: Review it.
         # Handle constant arrays.
-        if (rval.opcode is AST_DATA_ARRAY) and (rval.value is array)
+        if ((rval.opcode is AST_DATA_ARRAY) and
+            (rval.value is array))
+
           # Insert new constant.
           symbolInfo  = symbolTable.insertConst(lval.value, rval.value)
           node.opcode = AST_OPCODE_NOP
@@ -458,7 +462,8 @@ class ASTSymbolsCollector
             oldClassProto = symbolInfo.classProto
             newClassProto = symbolTable.lookupClass(rval.value).proto
 
-            if (oldClassProto is defined) and (oldClassProto isnt newClassProto)
+            if ((oldClassProto is defined) and
+                (oldClassProto isnt newClassProto))
               # Class mismatch.
               # obj = new A()
               # obj = new B()
@@ -678,9 +683,7 @@ class ASTSymbolsCollector
 
         bodyNode.symbolTable.useAsIndex(indexOrKeyNode.value)
 
-        if ((boxAstType isnt AST_DATA_ARRAY) and
-            (boxAstType isnt AST_DATA_STRING) and
-            (boxAstType isnt -1))
+        if boxAstType isnt @all(AST_DATA_ARRAY, AST_DATA_STRING, -1)
           this.app.logError('array or string expected')
         endif
 
@@ -690,18 +693,16 @@ class ASTSymbolsCollector
         bodyNode.symbolTable.useAsKey(indexOrKeyNode.value)
 
         # TODO: Review it - use symbolTable.useAsXxx() ?
-        if ((boxAstType isnt AST_DATA_MAP) and
-            (boxAstType isnt AST_DATA_OBJECT) and
-            (boxAstType isnt -1))
+        if boxAstType isnt @all(AST_DATA_MAP, AST_DATA_OBJECT, -1)
           this.app.logError('map or object expected')
         endif
 
       else
-        if ((boxAstType isnt AST_DATA_MAP) and
-            (boxAstType isnt AST_DATA_OBJECT) and
-            (boxAstType isnt AST_DATA_STRING) and
-            (boxAstType isnt AST_DATA_ARRAY) and
-            (boxAstType isnt -1))
+        if boxAstType isnt @all(AST_DATA_MAP,
+                                AST_DATA_OBJECT,
+                                AST_DATA_STRING,
+                                AST_DATA_ARRAY,
+                                -1)
           this.app.logError('not iterable')
         endif
       endif
@@ -778,9 +779,7 @@ class ASTSymbolsCollector
         currentFunctionName = symbolTable.getCurrentFunctionName()
 
         # Mark recursive calls. We use it in further optizations.
-        if ((currentFunctionName is defined) and
-            (currentFunctionName is funcName))
-
+        if currentFunctionName is @all(defined, funcName)
           this._debug('Recursive call detected at node #' ~ str(node.id) ~ ' (' ~ funcName ~ ')')
           node.symbolInfo.proto.isRecursive = true
         endif
@@ -894,7 +893,7 @@ class ASTSymbolsCollector
     global AST_OPCODE_BLOCK
 
     # Only code blocks should store symbol table.
-    if (node.opcode isnt AST_OPCODE_BLOCK) and (node.opcode isnt AST_OPCODE_PROGRAM)
+    if node.opcode isnt @all(AST_OPCODE_BLOCK, AST_OPCODE_PROGRAM)
       die('error: only block or program nodes can own symbol table')
     endif
 

@@ -86,9 +86,9 @@ class ASTPrinterText
     global AST_OPCODE_CLASS
     global AST_OPCODE_CLASS_METHOD
 
-    if ((node.opcode isnt AST_OPCODE_CLASS) and
-        (node.opcode isnt AST_OPCODE_FUNCTION) and
-        (node.opcode isnt AST_OPCODE_CLASS_METHOD))
+    if node.opcode isnt @all(AST_OPCODE_CLASS,
+                             AST_OPCODE_FUNCTION,
+                             AST_OPCODE_CLASS_METHOD)
 
       prefix = currentPrefix ~ '  '
     else
@@ -99,9 +99,9 @@ class ASTPrinterText
       if childNode.opcode isnt AST_OPCODE_NOP
         this._printNode(prefix, childNode)
 
-        if ((childNode.opcode isnt AST_OPCODE_BLOCK) and
-            (childNode.opcode isnt AST_OPCODE_IF) and
-            (node.opcode isnt AST_OPCODE_CLASS))
+        if @all(childNode.opcode isnt AST_OPCODE_BLOCK,
+                childNode.opcode isnt AST_OPCODE_IF,
+                node.opcode      isnt AST_OPCODE_CLASS) is true
 
           print ''
         endif
@@ -446,9 +446,9 @@ class ASTPrinterText
     elif opcode is AST_OPCODE_VARIABLE
       symbolInfo = node.symbolInfo
 
-      if ((symbolInfo is defined) and
-          (symbolInfo.kind is SYMBOL_KIND_CONST) and
-          (symbolInfo.value is string))
+      if @all(symbolInfo       is defined,
+              symbolInfo.kind  is SYMBOL_KIND_CONST,
+              symbolInfo.value is string) is true
 
         value = "'" ~ str(symbolInfo.value) ~ "'"
       endif

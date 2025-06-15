@@ -129,8 +129,7 @@ class ASTTranslator
       # Check type of current variable.
       symbolInfo = this.symbolTable.lookup(currentVar)
 
-      if ((symbolInfo.type is defined) and
-          (symbolInfo.type is wantedType))
+      if symbolInfo.type is @all(defined, wantedType)
         # Current variable has the same type as wanted one.
         # We can use it directly.
         rv = currentVar
@@ -381,9 +380,9 @@ class ASTTranslator
     this.app.setLogContext(ast)
 
     # TODO: Review it.
-    if ((ast.parent is defined) and
-        (ast.parent.opcode is AST_OPCODE_DECLARE_OR_ASSIGN) and
-        (ast.parent.children[0].opcode is AST_OPCODE_VARIABLE))
+    if @all(ast.parent is defined,
+            ast.parent.opcode is AST_OPCODE_DECLARE_OR_ASSIGN,
+            ast.parent.children[0].opcode is AST_OPCODE_VARIABLE) is true
       # x = ...
       rv = ast.parent.children[0].value
     endif

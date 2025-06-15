@@ -934,8 +934,8 @@ class CodeGeneratorX64
           # Extra entry point for virtual call.
           # Virtual call params are always variants.
           # We need to translave variants to primitive before go on.
-          if ((currentSymbols{'this'} is defined) and
-              (codeObj.methodsMap{proto.shortName} is defined))
+          if @all(currentSymbols{'this'},
+                  codeObj.methodsMap{proto.shortName}) is defined
 
             isInsideVcall = true
             paramsCnt     = len(proto.params)
@@ -945,7 +945,7 @@ class CodeGeneratorX64
             for indexes paramIdx values paramName in proto.params
               symbolInfo = currentSymbols{paramName}
 
-              if (symbolInfo.readHits is 0) and (symbolInfo.writeHits is 0)
+              if @all(symbolInfo.readHits, symbolInfo.writeHits) is 0
                 print '  ; skipped unused parameter [', paramName, ']'
               else
                 symbolType = symbolInfo.type

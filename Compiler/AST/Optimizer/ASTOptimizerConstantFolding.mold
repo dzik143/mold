@@ -241,15 +241,12 @@ class ASTOptimizerConstantFolding
         elif opcode is AST_OPCODE_VARIABLE
           # Convert variable to constant if possible.
           # TODO: Clean up this mess.
-          if ((node.storedValue is defined) and
-              (node.storedValue isnt array) and
-              (AST_IsImm(node.storedValue) is true))
+          if @all(node.storedValue is defined,
+                  node.storedValue isnt array,
+                  AST_IsImm(node.storedValue)) is true
 
             if node.storedValue isnt array
-
-              if ((node.storedValue.value isnt array) and
-                  (node.storedValue.value isnt map))
-
+              if node.storedValue.value isnt @all(array, map)
                 if this.globals.isset(value) is false
                   newValue = node.storedValue.value
                 endif
@@ -308,22 +305,21 @@ class ASTOptimizerConstantFolding
           node.children = newParams
 
         # TODO: Why symbolInfo.value is never set here?
-        elif ((opcode is AST_OPCODE_CALL) and
-              (value is '__mold_syscall') and
-              (node.symbolInfoForSyscallId is defined) and
-              (node.symbolInfoForSyscallId.writeHits <= 1) and
-              (node.symbolInfoForSyscallId.value is integer))
+        elif @all(opcode is AST_OPCODE_CALL,
+                  value is '__mold_syscall',
+                  node.symbolInfoForSyscallId is defined,
+                  node.symbolInfoForSyscallId.writeHits <= 1,
+                  node.symbolInfoForSyscallId.value is integer) is true
 
           this._debug('Set syscall id at node #' ~ str(node.id) ~ ' to imm "' ~ str(node.symbolInfoForSyscallId.value) ~ '" (integer)')
-
           node.sysCallId = node.symbolInfoForSyscallId.value
           node.symbolInfoForSyscallId.readHits = node.symbolInfoForSyscallId.readHits - 1
 
         # TODO: Review it.
-        elif (((opcode is AST_OPCODE_REFERENCE_BY_INDEX) or (opcode is AST_OPCODE_REFERENCE_BY_KEY)) and
-              (x.opcode is AST_OPCODE_VARIABLE) and
-              (x.symbolInfo.kind is SYMBOL_KIND_CONST) and
-              (AST_IsImm(y) is true))
+        elif @all(opcode is @any(AST_OPCODE_REFERENCE_BY_INDEX, AST_OPCODE_REFERENCE_BY_KEY),
+                  x.opcode is AST_OPCODE_VARIABLE,
+                  x.symbolInfo.kind is SYMBOL_KIND_CONST,
+                  AST_IsImm(y)) is true
 
           # box[i] or box{key}
           # Access to constant array with imm index.
@@ -334,7 +330,7 @@ class ASTOptimizerConstantFolding
             newValue = x.symbolInfo.value{y.value}
           endif
 
-          if (newValue isnt array) and (newValue isnt map)
+          if newValue isnt @all(array, map)
             x.symbolInfo.readHits = x.symbolInfo.readHits - 1
           endif
         endif
@@ -399,46 +395,22 @@ class ASTOptimizerConstantFolding
               newValue = x.value isnt y.value
 
             elif opcode is AST_OPCODE_COMPARE_LT
-              if x.value < y.value
-                newValue = true
-              else
-                newValue = false
-              endif
+              newValue = x.value < y.value
 
             elif opcode is AST_OPCODE_COMPARE_LE
-              if x.value <= y.value
-                newValue = true
-              else
-                newValue = false
-              endif
+              newValue = x.value <= y.value
 
             elif opcode is AST_OPCODE_COMPARE_GT
-              if x.value > y.value
-                newValue = true
-              else
-                newValue = false
-              endif
+              newValue = x.value > y.value
 
             elif opcode is AST_OPCODE_COMPARE_GE
-              if x.value >= y.value
-                newValue = true
-              else
-                newValue = false
-              endif
+              newValue = x.value >= y.value
 
             elif opcode is AST_OPCODE_BOOL_AND
-              if (x.value is true) and (y.value is true)
-                newValue = true
-              else
-                newValue = false
-              endif
+              newValue = @all(x.value, y.value) is true
 
             elif opcode is AST_OPCODE_BOOL_OR
-              if @any(x.value, y.value) is true
-                newValue = true
-              else
-                newValue = false
-              endif
+              newValue = @any(x.value, y.value) is true
 
             elif opcode is AST_OPCODE_REFERENCE_BY_INDEX
               # x[y]
@@ -451,10 +423,10 @@ class ASTOptimizerConstantFolding
           endif
 
         # TODO: Why we sometimes get non-integer sysCallId here?
-        elif ((opcode is AST_OPCODE_CALL) and
-              (value is '__mold_syscall') and
-              (node.sysCallId is integer) and
-              (node.sysCallId is MOLD_SYSCALL_ID_TYPEOF))
+        elif @all(opcode is AST_OPCODE_CALL,
+                  value  is '__mold_syscall',
+                  node.sysCallId is integer,
+                  node.sysCallId is MOLD_SYSCALL_ID_TYPEOF) is true
 
           # typeof(...) - non imm variant.
           # Maybe we already know type?

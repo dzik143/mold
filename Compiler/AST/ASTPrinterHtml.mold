@@ -87,7 +87,7 @@ class ASTPrinterHtml
       print '<tr><td><small><i>', node.hash, '</i></small></td></tr>'
     endif
 
-    if (node.hasSideEffects is defined) and (node.hasSideEffects is true)
+    if node.hasSideEffects is @all(defined, true)
       print '<tr><td><small>has side effects</small></td></tr>'
     endif
 

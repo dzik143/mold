@@ -430,8 +430,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     useTempRv = false
     rvForCall = rv
 
-    if ((proto.isConstructor is defined) and
-        (proto.isConstructor is true))
+    if proto.isConstructor is @all(defined, true)
       rvForCall = null
 
     elif rv is defined
@@ -453,9 +452,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     # TODO: Use emitTwoArgsOpcode() after fix.
     this._emitOneItem([MIR1_OPCODE_CALL, rvForCall, name, params])
 
-    if ((proto.isConstructor is defined) and
-        (proto.isConstructor is true))
-
+    if proto.isConstructor is @all(defined, true)
       # TODO: Handle it in better way.
       # We need it to avoid eating new result (this pointer)
       # when constructor called just after.
@@ -914,10 +911,10 @@ class ASTTranslatorMIR1 extends ASTTranslator
       fmt[@afterlast] = '@glued'
       this._evaluateStringFormatItemNode(fmt, node.children[1])
 
-    elif ((node.opcode is AST_OPCODE_CALL) and
-          (node.value is '__mold_syscall') and
-          (node.sysCallId is integer) and
-          (node.sysCallId is MOLD_SYSCALL_ID_STR))
+    elif @all(node.opcode    is AST_OPCODE_CALL,
+              node.value     is '__mold_syscall',
+              node.sysCallId is integer,
+              node.sysCallId is MOLD_SYSCALL_ID_STR) is true
       # TODO: Clean up this mess.
       # str(x) -> x
       this._evaluateStringFormatItemNode(fmt, node.children[0])

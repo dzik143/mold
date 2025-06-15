@@ -25,36 +25,65 @@
 #include "MoldForDriver.h"
 #include "MoldPrint.h"
 
-// Possible improvement: Possibility to set max deep at runtime?
-static uint32_t __MOLD_PrintMaxDeep = 16;
+// TODO: Review it - is it really needed?
+static void __MOLD_ClenUpAfterPrint(Variant_t *x) {
+  x -> flags &= ~VARIANT_FLAG_NODE_VISITED;
+
+  switch (x -> type) {
+    case VARIANT_ARRAY: {
+      // Decode array from the variant box.
+      Buffer_t *buf = x -> valueAsBufferPtr;
+      Array_t *array = (Array_t *) buf -> bytesPtr;
+
+      if (array -> innerType == 0) {
+        if ((array -> itemsCnt > 0) &&
+            (array -> items[0].flags & VARIANT_FLAG_NODE_VISITED)) {
+          // Array was visited during print.
+          // Switch back to non-visited before next print call.
+          for (uint32_t idx = 0; idx < array -> itemsCnt; idx++) {
+            __MOLD_ClenUpAfterPrint(&array -> items[idx]);
+          }
+        }
+      }
+
+      break;
+    }
+
+    case VARIANT_MAP: {
+      // Decode map from the variant box.
+      Buffer_t *buf = x -> valueAsBufferPtr;
+      Map_t    *map = (Map_t *) buf -> bytesPtr;
+
+      uint32_t bucketsUsedCnt = map -> bucketsUsedCnt;
+      MapBucket_t *bucket     = map -> firstBucket;
+
+      if (bucket && bucket -> key.flags & VARIANT_FLAG_NODE_VISITED) {
+        // Map was visited during print.
+        // Switch back to non-visited before next print call.
+        for (uint32_t idx = 0; idx < bucketsUsedCnt; idx++) {
+          __MOLD_ClenUpAfterPrint(&bucket -> key);
+          __MOLD_ClenUpAfterPrint(&bucket -> value);
+          bucket = bucket -> nextBucket;
+        }
+      }
+    }
+
+    break;
+  }
+}
 
 // -----------------------------------------------------------------------------
 // Print variant variable to the C stream.
 //
-// f       - output C stream e.g. stdout (IN),
-// x       - variable to be printed (IN),
-// deepIdx - current deep level to avoid printing too much (IN).
+// f - output C stream e.g. stdout (IN),
+// x - variable to be printed (IN),
 // -----------------------------------------------------------------------------
 
-static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x, uint32_t deepIdx)
-{
-  // Avoid printing too much.
-  if ((x -> type >= VARIANT_ARRAY) && (deepIdx > __MOLD_PrintMaxDeep)) {
-    fprintf(f, "...");
-    return;
-  }
-
+static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x) {
   // Extra guard to avoid infinite loops on circular references.
-  if ((deepIdx > 0) && (x -> flags & VARIANT_FLAG_NODE_VISITED))
-  {
-    fprintf(f, "[circular]");
-    return;
-  }
+  x -> flags |= VARIANT_FLAG_NODE_VISITED;
 
-  deepIdx++;
-
-  switch (x -> type)
-  {
+  switch (x -> type) {
     // ------------------------------------------------------------------------
     //                         Print primitives
     // ------------------------------------------------------------------------
@@ -65,8 +94,7 @@ static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x, uint32_t d
     case VARIANT_FLOAT:     { fprintf(f, "%f", x -> valueAsFloat32); break; }
     case VARIANT_DOUBLE:    { fprintf(f, "%lf", x -> valueAsFloat64); break; }
 
-    case VARIANT_BOOLEAN:
-    {
+    case VARIANT_BOOLEAN: {
       fprintf(f, "%s", (x -> valueAsInt32) ? "true" : "false");
       break;
     }
@@ -75,8 +103,7 @@ static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x, uint32_t d
     //                           Print string
     // ------------------------------------------------------------------------
 
-    case VARIANT_STRING:
-    {
+    case VARIANT_STRING: {
       if (x -> flags & VARIANT_FLAG_ONE_CHARACTER) {
         // One character string.
         // Just put single char directly.
@@ -97,35 +124,36 @@ static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x, uint32_t d
     //                          Print array[]
     // ------------------------------------------------------------------------
 
-    case VARIANT_ARRAY:
-    {
-      Variant_t oneItem;
+    case VARIANT_ARRAY: {
+      // Decode array from the variant box.
+      Buffer_t *buf = x -> valueAsBufferPtr;
+      Array_t *array = (Array_t *) buf -> bytesPtr;
 
-      const char *sep = "";
+      if (array -> innerType == 0) {
+        if ((array -> itemsCnt > 0) &&
+            (array -> items[0].flags & VARIANT_FLAG_NODE_VISITED)) {
+          // Circular reference - array already printed.
+          fputs("<circular>", f);
 
-      fprintf(f, "[");
+        } else {
+          // Array was not visited yet - print it now.
+          const char *sep = "";
+          fputc('[', f);
 
-      void _printOneItem()
-      {
-        fprintf(f, sep);
+          for (uint32_t idx = 0; idx < array -> itemsCnt; idx++) {
+            // Separate items by comma: x1, x2, x3, ...
+            fputs(sep, f);
+            sep = ", ";
 
-        if (oneItem.type == VARIANT_STRING)
-        {
-          putc('\'', f);
-          __MOLD_PrintToFile_variantInternal(f, &oneItem, 0);
-          putc('\'', f);
+            // Print next item value and wrap into 'value' if needed.
+            if ((array -> items[idx].type) == VARIANT_STRING) fputc('\'', f);
+            __MOLD_PrintToFile_variantInternal(f, &array -> items[idx]);
+            if ((array -> items[idx].type) == VARIANT_STRING) fputc('\'', f);
+          }
         }
-        else
-        {
-          __MOLD_PrintToFile_variantInternal(f, &oneItem, deepIdx);
-        }
-
-        sep = ", ";
       }
 
-      __MOLD_ForDriver_Generic(x, NULL, &oneItem, &_printOneItem);
-
-      fprintf(f, "]");
+      fputc(']', f);
 
       break;
     }
@@ -134,60 +162,60 @@ static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x, uint32_t d
     //                        Print key, value map{}
     // ------------------------------------------------------------------------
 
-    case VARIANT_MAP:
-    {
-      Variant_t oneKey;
-      Variant_t oneValue;
+    case VARIANT_MAP: {
+      // Decode map from the variant box.
+      Buffer_t *buf = x -> valueAsBufferPtr;
+      Map_t    *map = (Map_t *) buf -> bytesPtr;
 
-      const char *sep = "";
+      uint32_t bucketsUsedCnt = map -> bucketsUsedCnt;
+      MapBucket_t *bucket     = map -> firstBucket;
 
-      fprintf(f, "{");
+      if (bucket && bucket -> key.flags & VARIANT_FLAG_NODE_VISITED) {
+        fputs("<circular>", f);
 
-      void _printOneKeyValuePair()
-      {
-        fprintf(f, "%s'", sep);
-        __MOLD_PrintToFile_variantInternal(f, &oneKey, deepIdx);
-        fprintf(f, "': ");
+      } else {
+        // Map was not visited yet - print it now.
+        const char *sep = "";
+        fputc('{', f);
 
-        if (oneValue.type == VARIANT_STRING)
-        {
-          putc('\'', f);
-          __MOLD_PrintToFile_variantInternal(f, &oneValue, deepIdx);
-          putc('\'', f);
+        for (uint32_t idx = 0; idx < bucketsUsedCnt; idx++) {
+          // Print key.
+          fprintf(f, "%s'", sep);
+          __MOLD_PrintToFile_variantInternal(f, &bucket -> key);
+          fputs("': ", f);
+
+          // Print value.
+          if (bucket -> value.type == VARIANT_STRING) putc('\'', f);
+          __MOLD_PrintToFile_variantInternal(f, &bucket -> value);
+          if (bucket -> value.type == VARIANT_STRING) putc('\'', f);
+
+          // Go to next bucket if any.
+          sep    = ", ";
+          bucket = bucket -> nextBucket;
         }
-        else
-        {
-          __MOLD_PrintToFile_variantInternal(f, &oneValue, deepIdx);
-        }
 
-        sep = ", ";
+        putc('}', f);
       }
 
-      __MOLD_ForDriver_Generic(x, &oneKey, &oneValue, &_printOneKeyValuePair);
-
-      putc('}', f);
-
       break;
     }
 
-    case VARIANT_OBJECT:
-    {
+    case VARIANT_OBJECT: {
       // TODO: Fix printing "classProto" under VM.
       // Possible improvement: Print methods/className for objects?
-      fprintf(f, "[object]");
+      fprintf(f, "<object>");
       break;
     }
 
-    default:
-    {
+    default: {
       __MOLD_PrintErrorAndDie_badType();
     }
   }
 }
 
-void __MOLD_PrintToFile_variant(FILE *f, Variant_t *x)
-{
-  __MOLD_PrintToFile_variantInternal(f, x, 0);
+void __MOLD_PrintToFile_variant(FILE *f, Variant_t *x) {
+  __MOLD_PrintToFile_variantInternal(f, x);
+  __MOLD_ClenUpAfterPrint(x);
 }
 
 // -----------------------------------------------------------------------------
@@ -203,8 +231,7 @@ void __MOLD_Print_int64(int64_t x)     { printf("%"PRId64, x); }
 void __MOLD_Print_float64(float64_t x) { printf("%lf", x); }
 void __MOLD_Print_bool32(int32_t x)    { printf(x ? "true" : "false"); }
 
-void __MOLD_Print_variant(Variant_t *x)
-{
+void __MOLD_Print_variant(Variant_t *x) {
   __MOLD_PrintToFile_variant(stdout, x);
 }
 
