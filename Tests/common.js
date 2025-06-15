@@ -200,7 +200,7 @@ const createInputOutputFilesPairSuite = options => {
             testData.groupId = groupId
 
             if (g_generateExamples) {
-              if (!testData.isDisabled) {
+              if (!testData.isDisabled && (testData.expectedError === '')) {
                 if (!fs.existsSync(GENERATED_EXAMPLES_DIR + fullGroupId)){
                   fs.mkdirSync(GENERATED_EXAMPLES_DIR + fullGroupId);
                 }
@@ -210,7 +210,8 @@ const createInputOutputFilesPairSuite = options => {
                             + testIdx.toString().padStart(3, '0')
                             + '.mold';
 
-                const fcontent = '# ' + testData.title + "\r\n"
+                const fcontent = '# '
+                               + testData.title + "\r\n"
                                + testData.source;
 
                 testIdx++;
