@@ -26,6 +26,9 @@ const process = require('process')
 
 let g_testSingleFileOnly = null
 let g_binaryPath         = 'mold'
+let g_generateExamples   = false;
+
+const GENERATED_EXAMPLES_DIR = './_generated-examples/';
 
 for (let idx = 2; idx < process.argv.length; idx++) {
   if (process.argv[idx] === '--testName') {
@@ -34,6 +37,13 @@ for (let idx = 2; idx < process.argv.length; idx++) {
 
   } else if (process.argv[idx] === '--binaryPath') {
     g_binaryPath = process.argv[idx + 1]
+    idx++
+
+  } else if (process.argv[idx] === '--generateExamples') {
+    if (!fs.existsSync(GENERATED_EXAMPLES_DIR)){
+      fs.mkdirSync(GENERATED_EXAMPLES_DIR);
+    }
+    g_generateExamples = true;
     idx++
   }
 }
@@ -130,8 +140,10 @@ const createInputOutputFilesPairSuite = options => {
           const lines     = inp.split(/\r?\n/)
           let   sectionId = 'head'
 
-          let groupId = path.basename(file, '.mold.test')
-          const sepIdx  = groupId.indexOf('-')
+          let groupId     = path.basename(file, '.mold.test')
+          let fullGroupId = groupId;
+
+          const sepIdx = groupId.indexOf('-')
 
           if (sepIdx !== -1) {
             groupId = groupId.substr(sepIdx + 1)
@@ -182,10 +194,31 @@ const createInputOutputFilesPairSuite = options => {
           }
 
           // Create tests.
+          let testIdx = 1;
+
           for (let testData of tests) {
             testData.groupId = groupId
 
-            if (testData.isDisabled) {
+            if (g_generateExamples) {
+              if (!testData.isDisabled) {
+                if (!fs.existsSync(GENERATED_EXAMPLES_DIR + fullGroupId)){
+                  fs.mkdirSync(GENERATED_EXAMPLES_DIR + fullGroupId);
+                }
+
+                const fname = GENERATED_EXAMPLES_DIR + fullGroupId + '/'
+                            + fullGroupId + '-'
+                            + testIdx.toString().padStart(3, '0')
+                            + '.mold';
+
+                const fcontent = '# ' + testData.title + "\r\n"
+                               + testData.source;
+
+                testIdx++;
+                console.log(`Generating ${fname}...`);
+                fs.writeFileSync(fname, fcontent);
+              }
+
+            } else if (testData.isDisabled) {
               test('DISABLED: ' + testData.title, () => {});
 
             } else {
