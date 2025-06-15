@@ -38,7 +38,7 @@ import './CodeGenerator/CodeGeneratorC.mold'
 import './MIR/MIRQuadOptimizer.mold'
 import './VM/VMachineStack.mold'
 
-VERSION_STRING = '0.6.20250608'
+VERSION_STRING = '0.7.20250615'
 
 # ------------------------------------------------------------------------------
 #                              Helper functions
@@ -48,8 +48,20 @@ function BadUsageError()
   global VERSION_STRING
 
   print 'Mold version', VERSION_STRING
-  print 'Usage:'
-  print '  mold [-c] [--asm] [--mir0] [--mir] [--profiler] <input.mold>'
+  print 'Usage:   mold <options> <input.mold>'
+  print 'Example: mold --asm source.mold'
+  print ''
+  print 'Available options:'
+  print '  --asm - generate assembly code'
+  print '  --ast - generate AST tree'
+  print '  --output-c - generate C code'
+  print '  --mir0 - generate MIR0 code (stack)'
+  print '  --mir1 - generate MIR1 code (register)'
+  print '  --profiler - inject runtime profiler code'
+  print '  --output-html - render AST as HTML document'
+  print '  --prettyPrinter - render back source code with standarized formatting'
+  print '  -O0 - disable all optimizations'
+  print '  -O1 - enable optimizations level 1'
   exit()
 endfunction
 
@@ -102,6 +114,10 @@ for idx in 1 .. argc
   elif argv[idx] is '--prettyPrinter'
     # Show parsed mold code
     mode = 'prettyPrinter'
+
+  elif argv[idx] is '--output-html'
+    # Show parsed code as HTML doc
+      mode = 'html'
 
   elif argv[idx] is '--debug-parser'
     # Enable debug logs
@@ -268,6 +284,10 @@ else
       # Show formatted mold code.
       astPrinterText = new ASTPrinterText()
       astPrinterText.printNode(ast)
+
+    elif mode is 'html'
+      astPrinterHtml = new ASTPrinterHtml()
+      astPrinterHtml.printNode(ast)
 
     else
       # Go on with further code processing.
