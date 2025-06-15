@@ -351,7 +351,7 @@ class ASTPrinterText
         if arrayOfValues is defined
           # Render when value1, value2, ..., valueN list
           __mold_printToStdOutput(prefix)
-          __mold_printToStdOutput('  when ')
+          __mold_printToStdOutput('  case ')
           sep = ''
 
           for values oneValue in arrayOfValues

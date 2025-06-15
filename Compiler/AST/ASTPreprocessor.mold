@@ -121,6 +121,9 @@ class ASTPreprocessor
     global AST_OPCODE_NOP
     global MOLD_SYSCALL_ID_LEN
     global MOLD_SYSCALL_ID_DIE
+    global AST_OPCODE_IF
+    global AST_OPCODE_FOR_VALUES, AST_OPCODE_FOR_KEYS, AST_OPCODE_FOR_INDEXES
+    global AST_OPCODE_FOR_KEYS_VALUES, AST_OPCODE_FOR_INDEXES_VALUES
 
     opcode   = node.opcode
     children = node.children
@@ -367,6 +370,87 @@ class ASTPreprocessor
 
       # Inject code block.
       node.children = [funcCode]
+
+    elif opcode is @any(AST_OPCODE_FOR_VALUES,
+                        AST_OPCODE_FOR_KEYS,
+                        AST_OPCODE_FOR_INDEXES)
+      # for values  v in box [ where condition ] body
+      # for keys    k in box [ where condition ] body
+      # for indexes i in box [ where condition ] body
+      if len(children) is 4
+        # There is optional where condition passed.
+        # Move where to the body part.
+        # Possible improvement: Smarter way to handle where condition?
+        #
+        # Replace:
+        #   for ... where cond
+        #   endfor
+        #
+        # By:
+        #   for ...
+        #     if cond
+        #       ...
+        #     endif
+        #   endfor
+        valuesKeysOrIndexesNode = children[0]
+        boxNode                 = children[1]
+        whereConditionNode      = children[2]
+        bodyNode                = children[3]
+
+        newBodyNode = AST_CreateNode(AST_OPCODE_BLOCK, '', [
+          AST_CreateNode(AST_OPCODE_IF, 'if', [
+            whereConditionNode,
+            bodyNode
+          ])
+        ])
+
+        node.children = [
+          valuesKeysOrIndexesNode,
+          boxNode,
+          newBodyNode
+        ]
+      endif
+
+    elif opcode is @any(AST_OPCODE_FOR_KEYS_VALUES,
+                        AST_OPCODE_FOR_INDEXES_VALUES)
+      # Possible improvemen: Avoid code duplication?
+      # for indexes i values v in box [ where condition ] body
+      # for keys    k values v in box [ where condition ] body
+      if len(children) is 5
+        # There is optional where condition passed.
+        # Move where to the body part.
+        # Possible improvement: Smarter way to handle where condition?
+        #
+        # Replace:
+        #   for ... where cond
+        #   endfor
+        #
+        # By:
+        #   for ...
+        #     if cond
+        #       ...
+        #     endif
+        #   endfor
+        indexesOrKeysNode  = children[0]
+        valuesNode         = children[1]
+        boxNode            = children[2]
+        whereConditionNode = children[3]
+        bodyNode           = children[4]
+
+        newBodyNode = AST_CreateNode(AST_OPCODE_BLOCK, '', [
+          AST_CreateNode(AST_OPCODE_IF, 'if', [
+            whereConditionNode,
+            bodyNode
+          ])
+        ])
+
+        node.children = [
+          indexesOrKeysNode,
+          valuesNode,
+          boxNode,
+          newBodyNode
+        ]
+      endif
     endif
   endmethod
 
