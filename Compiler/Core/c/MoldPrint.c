@@ -25,7 +25,13 @@
 #include "MoldForDriver.h"
 #include "MoldPrint.h"
 
-// TODO: Review it - is it really needed?
+// Remove visited flags recursively set during __MOLD_VariantPrint before.
+// We set visited flag to catch circular references and avoid infinite
+// loop.
+// Because nodes may be connceted in any way, we walkthrough the tree
+// twice during print:
+// - first pass  - print nodes and mark visited node (to print once),
+// - second pass - clean up visited flags.
 static void __MOLD_ClenUpAfterPrint(Variant_t *x) {
   x -> flags &= ~VARIANT_FLAG_NODE_VISITED;
 
@@ -130,6 +136,8 @@ static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x) {
       Array_t *array = (Array_t *) buf -> bytesPtr;
 
       if (array -> innerType == 0) {
+        // Generic array of variants - potentially complex boxes inside.
+        // Track visited nodes during printing.
         if ((array -> itemsCnt > 0) &&
             (array -> items[0].flags & VARIANT_FLAG_NODE_VISITED)) {
           // Circular reference - array already printed.
@@ -150,10 +158,35 @@ static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x) {
             __MOLD_PrintToFile_variantInternal(f, &array -> items[idx]);
             if ((array -> items[idx].type) == VARIANT_STRING) fputc('\'', f);
           }
-        }
-      }
 
-      fputc(']', f);
+          fputc(']', f);
+        }
+
+      } else {
+        // Typed array - use general for driver.
+        // Possible improvement: Don't duplicate the code.
+        Variant_t oneItem;
+        uint32_t idx;
+
+        const char *sep = "";
+        fputc('[', f);
+
+        void _printOneItem() {
+          // Separate items by comma: x1, x2, x3, ...
+          fputs(sep, f);
+          sep = ", ";
+
+          // Print next item value and wrap into 'value' if needed.
+          if (oneItem.type == VARIANT_STRING) fputc('\'', f);
+          __MOLD_PrintToFile_variantInternal(f, &oneItem);
+          if (oneItem.type == VARIANT_STRING) fputc('\'', f);
+        }
+
+        // Print all items one-by-one.
+        __MOLD_ForDriver_IndexesAndValuesInArray(array, &idx, &oneItem, _printOneItem);
+
+        fputc(']', f);
+      }
 
       break;
     }

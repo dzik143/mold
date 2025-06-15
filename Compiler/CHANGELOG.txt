@@ -1,10 +1,15 @@
 Unreleased
 ----------
+  ...
+
+0.7.20250615 (released on 2025-06-15)
+-------------------------------------
   - Handled relative paths in import statement,
   - C: Handled circular references in VariantPrint,
   - C: Refuse attempt to modify loop iterator at translation level,
   - New syntax:
-    - @any(...) placeholder in logic expressions,
+    - @any/@all placeholders in logic expressions,
+    - where condition inside for each like loops,
   - Bug fixes:
     - C: Fixed freeing buffer twice after __MOLD_Str(string) call,
     - C: Destroy dst before read in x = x[idx] like code,
@@ -136,8 +141,8 @@ Unreleased
     - No more C bootstrap, code is self-hosted,
     - No more C target, only MIR and X64 assembler are supported.
 
-unnamed version (around 2015)
------------------------------
+releases without assigned versions (around 2015)
+------------------------------------------------
 
   - Init bootstrap in C
   - Interpreter
