@@ -398,27 +398,27 @@ for_step
 //
 
 stmt_for_values:
-  "for" "values" var "in" rval
+  "for" "values" var "in" rval ("where" condition)?
   stmt_list
   "endfor";
 
 stmt_for_keys:
-  "for" "keys" var "in" rval
+  "for" "keys" var "in" rval ("where" condition)?
   stmt_list
   "endfor";
 
 stmt_for_indexes:
-  "for" "indexes" var "in" rval
+  "for" "indexes" var "in" rval ("where" condition)?
   stmt_list
   "endfor";
 
 stmt_for_keys_values:
-  "for" "keys" var "values" var "in" rval
+  "for" "keys" var "values" var "in" rval ("where" condition)?
   stmt_list
   "endfor";
 
 stmt_for_indexes_values:
-  "for" "indexes" var "values" var "in" rval
+  "for" "indexes" var "values" var "in" rval ("where" condition)?
   stmt_list
   "endfor";
 
