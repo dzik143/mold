@@ -1,0 +1,134 @@
+TEST "Iterate over array with where condition"
+
+x = [ 0, 10, 20, 30, 40, 50, 60, 70, 80, 90 ]
+
+print ''
+print 'Values below 30 or above 60'
+print '==========================='
+
+for values v in x where (v < 30) or (v > 60)
+  print v
+endfor
+
+print ''
+print 'Skip the first item'
+print '==================='
+
+for indexes idx values v in x where idx > 0
+  print idx, v
+endfor
+
+print ''
+print 'Count up to 3 items (no value needed)'
+print '====================================='
+
+for indexes idx in x where idx < 3
+  print idx
+endfor
+
+EXPECTED_OUTPUT:
+
+Values below 30 or above 60
+===========================
+0
+10
+20
+70
+80
+90
+
+Skip the first item
+===================
+1 10
+2 20
+3 30
+4 40
+5 50
+6 60
+7 70
+8 80
+9 90
+
+Count up to 3 items (no value needed)
+=====================================
+0
+1
+2
+-------------------------------------------------------------------------------
+
+TEST "Iterate over map with where condition"
+
+users = {
+  'ann':   { 'age': 19 },
+  'bob':   { 'age': 30 },
+  'clark': { 'age': 55 },
+  'danny': { 'age': 15 }
+}
+
+print ''
+print 'Users with age below 21 y.o.'
+print '============================'
+
+for keys name values userData in users where userData.age < 21
+  print name, userData
+endfor
+
+print ''
+print 'Users with short names (3 characters or less)'
+print '============================================='
+
+for keys name in users where len(name) <= 3
+  print name
+endfor
+
+EXPECTED_OUTPUT:
+
+Users with age below 21 y.o.
+============================
+ann {'age': 19}
+danny {'age': 15}
+
+Users with short names (3 characters or less)
+=============================================
+ann
+bob
+-------------------------------------------------------------------------------
+
+TEST "Iterate over string with where condition"
+
+#       012345678
+text = 'eglebegle'
+#       ^  ^ ^  ^
+
+print ''
+print "List indexes, where letter 'e' occures"
+print '======================================'
+
+for indexes idx values v in text where v is 'e'
+  print "Letter 'e' found at index", idx
+endfor
+
+print ''
+print "List letters with ASCII number above 101"
+print '========================================'
+
+for values v in text where ord(v) > 101
+  print 'ord(', v, ') =', ord(v)
+endfor
+
+EXPECTED_OUTPUT:
+
+List indexes, where letter 'e' occures
+======================================
+Letter 'e' found at index 0
+Letter 'e' found at index 3
+Letter 'e' found at index 5
+Letter 'e' found at index 8
+
+List letters with ASCII number above 101
+========================================
+ord( g ) = 103
+ord( l ) = 108
+ord( g ) = 103
+ord( l ) = 108
+-------------------------------------------------------------------------------
