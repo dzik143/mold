@@ -448,6 +448,33 @@ class CodeGeneratorC
     endif
   endmethod
 
+  method _declareVar(symbolInfo)
+    mirType = symbolInfo.type
+    name    = symbolInfo.name
+
+    if symbolInfo.writeHits is 0
+      print '  // Skipped unused variable', name
+
+    elif mirType is @any('variant', 'string')
+      print 'Variant_t', name, '= {0};'
+
+    elif mirType is 'int64'
+      print 'int64_t', name, '= 0;'
+
+    elif mirType is 'int32'
+      print 'int32_t', name, '= 0;'
+
+    elif mirType is 'float64'
+      print 'float64_t', name, '= 0.0;'
+
+    elif mirType is 'bool32'
+      print 'bool32_t', name, '= 0;'
+
+    else
+      die('error: unhandled MIR type: ' ~ str(mirType))
+    endif
+  endmethod
+
   method run(codeObj)
     global SYMBOL_KIND_VAR_LOCAL, SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_CONST
     global SYMBOL_KIND_VAR_PARAM, SYMBOL_KIND_JMP_TABLE, SYMBOL_KIND_VAR_RETVAL
@@ -512,30 +539,8 @@ class CodeGeneratorC
     print '// Global vars'
     print '// -----------'
 
-    for values oneItem in this.globals
-      if (oneItem.kind is SYMBOL_KIND_VAR_GLOBAL) and (oneItem.writeHits > 0)
-        if oneItem.type is undefined
-          die("error: unset type for global variable '" ~ oneItem.name ~ "'")
-
-        elif oneItem.type is @any('variant', 'string')
-          print 'Variant_t', oneItem.name, '= {0};'
-
-        elif oneItem.type is 'int64'
-          print 'int64_t', oneItem.name, '= 0;'
-
-        elif oneItem.type is 'int32'
-          print 'int32_t', oneItem.name, '= 0;'
-
-        elif oneItem.type is 'float64'
-          print 'float64_t', oneItem.name, '= 0.0;'
-
-        elif oneItem.type is 'bool32'
-          print 'bool32_t', oneItem.name, '= 0;'
-
-        else
-          die('error: unhandled global type: ' ~ str(oneItem.type))
-        endif
-      endif
+    for values oneItem in this.globals where oneItem.kind is SYMBOL_KIND_VAR_GLOBAL
+      this._declareVar(oneItem)
     endfor
 
     #
@@ -951,19 +956,10 @@ class CodeGeneratorC
           this.symbols = symbols
 
           print '  // Local variables'
-
           for values oneItem in symbols
             if oneItem.kind is @any(SYMBOL_KIND_VAR_LOCAL,
                                     SYMBOL_KIND_VAR_RETVAL)
-
-              if oneItem.type is @any(undefined, 'variant', 'string')
-                # Local Variant_t variable - init to undefined.
-                print '  Variant_t', oneItem.name, '= {0};'
-
-              else
-                # Primitive type.
-                print ' ', oneItem.type ~ '_t', oneItem.name, ';'
-              endif
+              this._declareVar(oneItem)
             endif
           endfor
 
