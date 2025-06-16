@@ -18,8 +18,118 @@
 #                                                                              #
 ################################################################################
 
-class CodeGeneratorC
+# ------------------------------------------------------------------------------
+#                                  Constants
+# ------------------------------------------------------------------------------
 
+# TODO: Clean up this mess.
+SYSCALL_ID_TO_C_FUNCTION_MAP = {
+  '2': '__MOLD_FileOpenForRead',   # 2
+  '3': '__MOLD_FileOpenForWrite',  # 3
+  '4': '__MOLD_FileOpenForCreate', # 4
+  '5': '__MOLD_FileClose',         # 5
+
+  '8':  '__MOLD_FileReadInt8',      # 8
+  '9':  '__MOLD_FileReadInt16',     # 9
+  '10': '__MOLD_FileReadInt32',     # 10
+  '11': '__MOLD_FileReadInt64',     # 11
+
+  '14': '__MOLD_FileReadFloat32',   # 14
+  '15': '__MOLD_FileReadFloat64',   # 15
+  '16': '__MOLD_FileReadBool8',     # 16
+  '17': '__MOLD_FileReadBool16',    # 17
+  '18': '__MOLD_FileReadBool32',    # 18
+  '19': '__MOLD_FileReadBool64',    # 19
+  '20': '__MOLD_FileReadChar',      # 20
+
+  '21': '__MOLD_FileWriteBinary8',   # 21
+  '22': '__MOLD_FileWriteBinary16',  # 22
+  '23': '__MOLD_FileWriteBinary32',  # 23
+  '24': '__MOLD_FileWriteBinary64',  # 24
+  '25': '__MOLD_FileWriteBinary128', # 25
+
+  '29': '__MOLD_FileLoad',      # 29
+
+  '30': '__MOLD_EmptySyscall',  # 30
+
+  '31': '__MOLD_Ord',           # 31
+  '32': '__MOLD_Asc',           # 32
+  '33': '__MOLD_ParseInteger',  # 33
+  '34': '__MOLD_ParseFloat',    # 34
+
+  '35': '__MOLD_Bitand',        # 35
+  '36': '__MOLD_Bitor',         # 36
+  '37': '__MOLD_Bitxor',        # 37
+  '38': '__MOLD_Bitnot',        # 38
+
+  '39': '__MOLD_CallExternal',  # 39
+
+  '40': '__MOLD_Exit',          # 40
+  '41': '__MOLD_Die',           # 41
+  '42': '__MOLD_Str',           # 42
+  '43': '__MOLD_Len',           # 43
+  '44': '__MOLD_Typeof',        # 44
+
+  '45': '__MOLD_VariantPrint',  # 45
+  '46': '__MOLD_Warning',       # 46
+
+  '50': '__MOLD_ArrayInsertAfterLast',
+  '51': '__MOLD_ArrayInsertBeforeFirst',
+
+  '55': '__MOLD_SubStr',
+  '56': '__MOLD_InnerTypeOf',
+  '57': '__MOLD_GetTypeId'
+}
+
+# TODO: Clean up this mess.
+const MIR_COMPARE_FLAGS = ['eq', 'ne', 'lt', 'ge', 'le', 'gt']
+
+MIR_TO_C_TYPE_MAP = {
+  'variant': 'Variant_t',
+  'string':  'Variant_t',
+  'int32':   'int32_t',
+  'int64':   'int64_t',
+  'float32': 'float32_t',
+  'float64': 'float64_t',
+  'bool32':  'bool32_t'
+}
+
+# Used during conversion: variant -> primitive.
+# Read needed minimum.
+MIR_TO_C_VARIANT_VALUE_AS_MAP = {
+  'int32':   'valueAsInt32',
+  'int64':   'valueAsInt64',
+  'float32': 'valueAsFloat32',
+  'float64': 'valueAsFloat64',
+  'bool32':  'valueAsInt32'
+}
+
+# TODO: Review it.
+# Used during conversion: primitive -> variant.
+# Store as many as possible to avoid unexpected beheaviors:
+# - non zeroed higher 32-bit,
+# - not extended sign bits etc.
+MIR_TO_C_VARIANT_VALUE_AS_MAP_WRITE = {
+  'int32':   'valueAsInt64',
+  'int64':   'valueAsInt64',
+  'float32': 'valueAsFloat32',
+  'float64': 'valueAsFloat64',
+  'bool32':  'valueAsInt64'
+}
+
+MIR_TO_VARIANT_TYPE = {
+  'int32':   'VARIANT_INTEGER',
+  'int64':   'VARIANT_INTEGER',
+  'float32': 'VARIANT_FLOAT',
+  'float64': 'VARIANT_DOUBLE',
+  'bool32':  'VARIANT_BOOLEAN'
+}
+
+# ------------------------------------------------------------------------------
+#                        CodeGenerator for C target
+# ------------------------------------------------------------------------------
+
+class CodeGeneratorC
   method constructor()
     this.symbols             = {}
     this.globals             = {}
@@ -383,108 +493,12 @@ class CodeGeneratorC
     global MIR1_FIRST_CALL_LIKE_OPCODE
     global MIR1_FIRST_CUSTOM_OPCODE
 
-    # TODO: Clean up this mess.
-    syscallMap = {
-      '2': '__MOLD_FileOpenForRead',   # 2
-      '3': '__MOLD_FileOpenForWrite',  # 3
-      '4': '__MOLD_FileOpenForCreate', # 4
-      '5': '__MOLD_FileClose',         # 5
-
-      '8':  '__MOLD_FileReadInt8',      # 8
-      '9':  '__MOLD_FileReadInt16',     # 9
-      '10': '__MOLD_FileReadInt32',     # 10
-      '11': '__MOLD_FileReadInt64',     # 11
-
-      '14': '__MOLD_FileReadFloat32',   # 14
-      '15': '__MOLD_FileReadFloat64',   # 15
-      '16': '__MOLD_FileReadBool8',     # 16
-      '17': '__MOLD_FileReadBool16',    # 17
-      '18': '__MOLD_FileReadBool32',    # 18
-      '19': '__MOLD_FileReadBool64',    # 19
-      '20': '__MOLD_FileReadChar',      # 20
-
-      '21': '__MOLD_FileWriteBinary8',   # 21
-      '22': '__MOLD_FileWriteBinary16',  # 22
-      '23': '__MOLD_FileWriteBinary32',  # 23
-      '24': '__MOLD_FileWriteBinary64',  # 24
-      '25': '__MOLD_FileWriteBinary128', # 25
-
-      '29': '__MOLD_FileLoad',      # 29
-
-      '30': '__MOLD_EmptySyscall',  # 30
-
-      '31': '__MOLD_Ord',           # 31
-      '32': '__MOLD_Asc',           # 32
-      '33': '__MOLD_ParseInteger',  # 33
-      '34': '__MOLD_ParseFloat',    # 34
-
-      '35': '__MOLD_Bitand',        # 35
-      '36': '__MOLD_Bitor',         # 36
-      '37': '__MOLD_Bitxor',        # 37
-      '38': '__MOLD_Bitnot',        # 38
-
-      '39': '__MOLD_CallExternal',  # 39
-
-      '40': '__MOLD_Exit',          # 40
-      '41': '__MOLD_Die',           # 41
-      '42': '__MOLD_Str',           # 42
-      '43': '__MOLD_Len',           # 43
-      '44': '__MOLD_Typeof',        # 44
-
-      '45': '__MOLD_VariantPrint',  # 45
-      '46': '__MOLD_Warning',       # 46
-
-      '50': '__MOLD_ArrayInsertAfterLast',
-      '51': '__MOLD_ArrayInsertBeforeFirst',
-
-      '55': '__MOLD_SubStr',
-      '56': '__MOLD_InnerTypeOf',
-      '57': '__MOLD_GetTypeId'
-    }
-
-    # TODO: Clean up this mess.
-    const MIR_COMPARE_FLAGS = ['eq', 'ne', 'lt', 'ge', 'le', 'gt']
-
-    MIR_TO_C_TYPE_MAP = {
-      'variant': 'Variant_t',
-      'string':  'Variant_t',
-      'int32':   'int32_t',
-      'int64':   'int64_t',
-      'float32': 'float32_t',
-      'float64': 'float64_t',
-      'bool32':  'bool32_t'
-    }
-
-    # Used during conversion: variant -> primitive.
-    # Read needed minimum.
-    MIR_TO_C_VARIANT_VALUE_AS_MAP = {
-      'int32':   'valueAsInt32',
-      'int64':   'valueAsInt64',
-      'float32': 'valueAsFloat32',
-      'float64': 'valueAsFloat64',
-      'bool32':  'valueAsInt32'
-    }
-
-    # TODO: Review it.
-    # Used during conversion: primitive -> variant.
-    # Store as many as possible to avoid unexpected beheaviors:
-    # - non zeroed higher 32-bit,
-    # - not extended sign bits etc.
-    MIR_TO_C_VARIANT_VALUE_AS_MAP_WRITE = {
-      'int32':   'valueAsInt64',
-      'int64':   'valueAsInt64',
-      'float32': 'valueAsFloat32',
-      'float64': 'valueAsFloat64',
-      'bool32':  'valueAsInt64'
-    }
-
-    MIR_TO_VARIANT_TYPE = {
-      'int32':   'VARIANT_INTEGER',
-      'int64':   'VARIANT_INTEGER',
-      'float32': 'VARIANT_FLOAT',
-      'float64': 'VARIANT_DOUBLE',
-      'bool32':  'VARIANT_BOOLEAN'
-    }
+    global SYSCALL_ID_TO_C_FUNCTION_MAP
+    global MIR_COMPARE_FLAGS
+    global MIR_TO_C_TYPE_MAP
+    global MIR_TO_C_VARIANT_VALUE_AS_MAP
+    global MIR_TO_C_VARIANT_VALUE_AS_MAP_WRITE
+    global MIR_TO_VARIANT_TYPE
 
     print '#include <Mold.h>'
 
@@ -1108,7 +1122,7 @@ class CodeGeneratorC
 
           # Generate call opcode.
           if opcode is MIR1_OPCODE_SYSCALL
-            syscallName = syscallMap{str(nameOrId)}
+            syscallName = SYSCALL_ID_TO_C_FUNCTION_MAP{str(nameOrId)}
 
             if dst is defined
               print ' ', dst, '='
