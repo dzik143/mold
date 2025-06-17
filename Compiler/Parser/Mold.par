@@ -29,8 +29,14 @@
 
 @SELECTOR '@' 'A-Za-z'* ;
 
-@STRING              '"' !'"\r\n'* '"'    | '\'' !'\'\r\n'* '\'' ;
-@UNTERMINATED_STRING '"' !'"'*     '\r\n' | '\'' !'\''*     '\r\n' ;
+@STRING  '"'  !'"\r\n'*  '"'  | // "example text"
+         '\'' !'\'\r\n'* '\'' ; // 'example text'
+
+@STRING_FMT '`' !'"\r\n'* '`' ; // `x = ${x}`
+
+@UNTERMINATED_STRING '"'  !'"'*  '\r\n' | // "unterminated text...
+                     '\'' !'\''* '\r\n' | // 'unterminated text...
+                     '`'  !'`'*  '\r\n' ; // `unterminated text...
 
 @FLOAT   '0-9'+ '.' '0-9'+;
 @INTEGER '0-9'+ | "0x" '0-9a-fA-F'+;
@@ -504,6 +510,7 @@ expr_imm
   | integer
   | float
   | string
+  | string_fmt
   | imm_array
 
   | @IDENT [* @@ = constantsMap{@1}
@@ -513,9 +520,10 @@ expr_imm
            *]
   ;
 
-imm : integer =AST_DATA_INTEGER
-    | float   =AST_DATA_DOUBLE
-    | string  =AST_DATA_STRING
+imm : integer    =AST_DATA_INTEGER
+    | float      =AST_DATA_DOUBLE
+    | string     =AST_DATA_STRING
+    | string_fmt =AST_DATA_STRING_FMT
     | "null"  [* @@ = null *] =AST_DATA_UNDEFINED
     ;
 
@@ -530,6 +538,10 @@ string:
              @@ = __mold_syscall(55, @1, 1, len(@1) - 2) *]
   | error_unterminated_string
   ;
+
+string_fmt:
+  @STRING_FMT [* # TODO: Remove hardcoded value (substr)
+                 @@ = __mold_syscall(55, @1, 1, len(@1) - 2) *];
 
 bool
   : "true"  [* @@ = true *]  =AST_DATA_BOOL
