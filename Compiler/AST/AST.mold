@@ -35,7 +35,8 @@ const AST_DATA_UNDEFINED = 8
 const AST_DATA_ARRAY     = 9
 const AST_DATA_MAP       = 10
 
-const AST_DATA_SELECTOR = 20
+const AST_DATA_SELECTOR   = 20
+const AST_DATA_STRING_FMT = 21
 
 const AST_OPCODE_PROGRAM  = 30
 const AST_OPCODE_BLOCK    = 31

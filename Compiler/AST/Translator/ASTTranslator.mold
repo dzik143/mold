@@ -844,17 +844,6 @@ class ASTTranslator
         lval = lval.value
         rval = this._evaluateNode(children[1])
         this._assign(lval, rval)
-
-        # Special case: x = x ~ y
-        if ((children[1].opcode is AST_OPCODE_STRING_JOIN) and
-            (lval is children[1].children[0].value))
-          symbolInfo = this.symbolTable.lookup(lval)
-
-          # TODO: Is it still needed?
-          # symbolInfo.duplicateOnFirstWrite = true
-        endif
-
-        # Simplify it.
         this._releaseTempVar(rval)
 
       elif lval.opcode is @any(AST_OPCODE_REFERENCE_BY_INDEX,

@@ -104,7 +104,7 @@ class ASTPreprocessor
     global AST_OPCODE_SUB
     global AST_OPCODE_BLOCK
     global AST_OPCODE_CLASS_METHOD
-    global AST_DATA_STRING
+    global AST_DATA_STRING, AST_DATA_STRING_FMT
     global AST_DATA_INTEGER
     global AST_DATA_BOOL
     global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ
@@ -113,6 +113,7 @@ class ASTPreprocessor
     global AST_OPCODE_BOOL_OR, AST_OPCODE_BOOL_AND
     global MOLD_SYSCALL_MAP
     global AST_OPCODE_REFERENCE_BY_INDEX
+    global AST_OPCODE_STRING_JOIN
     global AST_DATA_SELECTOR
     global AST_OPCODE_FUNCTION
     global AST_OPCODE_CLASS_METHOD
@@ -121,6 +122,7 @@ class ASTPreprocessor
     global AST_OPCODE_NOP
     global MOLD_SYSCALL_ID_LEN
     global MOLD_SYSCALL_ID_DIE
+    global MOLD_SYSCALL_ID_STR
     global AST_OPCODE_IF
     global AST_OPCODE_FOR_VALUES, AST_OPCODE_FOR_KEYS, AST_OPCODE_FOR_INDEXES
     global AST_OPCODE_FOR_KEYS_VALUES, AST_OPCODE_FOR_INDEXES_VALUES
@@ -450,6 +452,100 @@ class ASTPreprocessor
           boxNode,
           newBodyNode
         ]
+      endif
+
+    elif opcode is AST_DATA_STRING_FMT
+      if node.value is ''
+        # Empty string. Just convert to string imm.
+        node.opcode = AST_DATA_STRING
+
+      else
+        # Expand string formatting e.g. `x = ${x}`.
+        isFmtPartialMatched = false
+        isFmtMatched        = false
+        currentToken        = ''
+
+        tokenNodes = []
+
+        for indexes idx values oneChar in node.value
+          if isFmtMatched is true
+            # We're inside ${...} placeholder.
+            if oneChar is '}'
+              # The whole ${varName} token matched.
+              # Create new VAR node.
+              newTokenNode = AST_CreateNode(AST_OPCODE_VARIABLE, currentToken, [])
+
+              # Inject logContext from current node to render proper
+              # line/column during error.
+              newTokenNode.filePath = node.filePath
+              newTokenNode.column   = node.column
+              newTokenNode.line     = node.line
+
+              tokenNodes[@afterlast] = AST_CreateNodeSysCall(MOLD_SYSCALL_ID_STR, [ newTokenNode ])
+
+              # Reset scanner state.
+              isFmtPartialMatched = false
+              isFmtMatched        = false
+              currentToken        = ''
+
+            else
+              # Still collecting varName inside ${...} placeholder.
+              currentToken = currentToken ~ oneChar
+            endif
+
+          elif isFmtPartialMatched is true
+            # We already matched $ dollar sign, continue.
+            if oneChar is '{'
+              # The beginning of ${...} placeholder.
+              # Flush already accumulated raw string.
+              tokenNodes[@afterlast] = AST_CreateNode(AST_DATA_STRING, currentToken, [])
+
+              # Update scanner state.
+              isFmtMatched = true
+              currentToken = ''
+
+            else
+              # False alarm - it's not an ${...} opening.
+              # Example: "The price is 43$."
+              # Possible improvement: Use look-ahead ?
+              isFmtPartialMatched = false
+              currentToken = currentToken ~ '$' ~ oneChar
+            endif
+
+          elif oneChar is '$'
+            # We partially matched ${...} placeholder.
+            # Continue and we'll checkout what is the next character.
+            isFmtPartialMatched = true
+
+          else
+            # Collect current token.
+            # It may be "literal" or ${...} placeholder.
+            currentToken = currentToken ~ oneChar
+          endif
+        endfor
+
+        if @any(isFmtPartialMatched, isFmtMatched) is true
+          this.app.logError('unterminated ${...} placeholder')
+
+        elif len(currentToken) > 0
+          # Flush remaining raw string token if any.
+          tokenNodes[@afterlast] = AST_CreateNode(AST_DATA_STRING, currentToken, [])
+        endif
+
+        # Apply expanded node
+        # Possible improvement: Use STRING_JOIN with multiple args?
+        newNode = tokenNodes[0]
+
+        for idx in 1 .. len(tokenNodes)
+          # TODO: Why tests fail if there is str(x) around each token here?
+          newNode = AST_CreateNode(AST_OPCODE_STRING_JOIN, '', [
+            newNode,
+            tokenNodes[idx]
+          ])
+        endfor
+
+        node.opcode   = newNode.opcode
+        node.children = newNode.children
       endif
     endif
   endmethod

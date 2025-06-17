@@ -142,11 +142,9 @@ class ASTPrinterHtml
     endif
 
     if opcode is AST_OPCODE_VARIABLE
-
       print '<tr><td><hr>'
 
       if node.storedValue is array
-
         for values item in node.storedValue
           print '@' ~ str(item.id), '<br>'
         endfor
