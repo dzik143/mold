@@ -81,7 +81,6 @@ SYSCALL_ID_TO_C_FUNCTION_MAP = {
   '57': '__MOLD_GetTypeId'
 }
 
-# TODO: Clean up this mess.
 const MIR_COMPARE_FLAGS = ['eq', 'ne', 'lt', 'ge', 'le', 'gt']
 
 MIR_TO_C_TYPE_MAP = {
@@ -104,7 +103,6 @@ MIR_TO_C_VARIANT_VALUE_AS_MAP = {
   'bool32':  'valueAsInt32'
 }
 
-# TODO: Review it.
 # Used during conversion: primitive -> variant.
 # Store as many as possible to avoid unexpected beheaviors:
 # - non zeroed higher 32-bit,
@@ -475,6 +473,39 @@ class CodeGeneratorC
     endif
   endmethod
 
+  method _renderFunctionProto(proto) -> rv
+    global MIR_TO_C_TYPE_MAP
+
+    # Build C function proto.
+    if proto.rv is defined
+      symbolInfo     = proto.symbols{proto.rv}
+      returnTypeForC = MIR_TO_C_TYPE_MAP{symbolInfo.type}
+    else
+      returnTypeForC = 'void'
+    endif
+
+    if proto.symbols{'this'} is defined
+      paramsProtoForC = 'Variant_t this'
+      sep = ', '
+    else
+      paramsProtoForC = ''
+      sep = ''
+    endif
+
+    # Build params for ordinary call.
+    # Possible primitive types.
+    for values paramName in proto.params
+      symbolInfo  = proto.symbols{paramName}
+      symbolTypeC = MIR_TO_C_TYPE_MAP{symbolInfo.type}
+      paramsProtoForC = paramsProtoForC ~ sep ~ symbolTypeC
+      sep = ', '
+    endfor
+
+    # Build final C function proto:
+    # Example: int foo(double x, Variant_t y)
+    rv = returnTypeForC ~ ' ' ~ proto.fullName ~ '(' ~ paramsProtoForC ~ ')'
+  endmethod
+
   method run(codeObj)
     global SYMBOL_KIND_VAR_LOCAL, SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_CONST
     global SYMBOL_KIND_VAR_PARAM, SYMBOL_KIND_JMP_TABLE, SYMBOL_KIND_VAR_RETVAL
@@ -573,6 +604,7 @@ class CodeGeneratorC
     endwhile
 
     # Emit vtables forward declarations.
+
     print ''
     print '// forward declarations: vtables'
     print '// -----------------------------'
@@ -584,8 +616,6 @@ class CodeGeneratorC
     endfor
 
     # Emit functions forward declarations.
-    # TODO: Clean up this mess.
-    # TODO: Don't duplicate code.
 
     print ''
     print '// forward declarations: functions'
@@ -593,37 +623,8 @@ class CodeGeneratorC
 
     for values oneItem in this.globals
       if oneItem.kind is SYMBOL_KIND_FUNCTION
-        proto = oneItem.proto
-
-        if proto.builtIn is @any(undefined, false)
-          # Build C function proto.
-          if proto.rv is defined
-            symbolInfo     = proto.symbols{proto.rv}
-            returnTypeForC = MIR_TO_C_TYPE_MAP{symbolInfo.type}
-          else
-            returnTypeForC = 'void'
-          endif
-
-          if proto.symbols{'this'} is defined
-            paramsProtoForC = 'Variant_t this'
-            sep = ', '
-          else
-            paramsProtoForC = ''
-            sep = ''
-          endif
-
-          # Build params for ordinary call.
-          # Possible primitive types.
-          for values paramName in proto.params
-            symbolInfo  = proto.symbols{paramName}
-            symbolTypeC = MIR_TO_C_TYPE_MAP{symbolInfo.type}
-            paramsProtoForC = paramsProtoForC ~ sep ~ symbolTypeC
-            sep = ', '
-          endfor
-
-          # Ordinary entry point.
-          # This address can be called directly with primitive params.
-          print returnTypeForC, proto.fullName, '(', paramsProtoForC, ');'
+        if oneItem.proto.builtIn is @any(undefined, false)
+          print this._renderFunctionProto(oneItem.proto), ';'
         endif
       endif
     endfor
@@ -941,6 +942,8 @@ class CodeGeneratorC
           # Ordinary entry point.
           # This address can be called directly with primitive params.
           print returnTypeForC, currentProcName, '(', paramsProtoForC, ') {'
+
+
 
           # Profiler code if needed.
           if this.isProfilerEnabled is true
