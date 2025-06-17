@@ -497,13 +497,20 @@ class CodeGeneratorC
     for values paramName in proto.params
       symbolInfo  = proto.symbols{paramName}
       symbolTypeC = MIR_TO_C_TYPE_MAP{symbolInfo.type}
-      paramsProtoForC = paramsProtoForC ~ sep ~ symbolTypeC
+      paramsProtoForC = paramsProtoForC ~ sep ~ symbolTypeC ~ ' ' ~ paramName
       sep = ', '
     endfor
 
+    # TODO: Why sometimes we get fullName and sometimes name?
+    if proto.fullName is defined
+      nameForC = proto.fullName
+    else
+      nameForC = proto.name
+    endif
+
     # Build final C function proto:
     # Example: int foo(double x, Variant_t y)
-    rv = returnTypeForC ~ ' ' ~ proto.fullName ~ '(' ~ paramsProtoForC ~ ')'
+    rv = returnTypeForC ~ ' ' ~ nameForC ~ '(' ~ paramsProtoForC ~ ')'
   endmethod
 
   method run(codeObj)
@@ -898,52 +905,20 @@ class CodeGeneratorC
           print '  __MOLD_Print_EOL();'
 
         elif opcode is MIR1_OPCODE_PROC
-          proto = item[1]
-
-          currentProcProto = proto
-          currentProcName  = proto.name
-          currentProcRv    = proto.rv
-          currentSymbols   = proto.symbols
-          isInsideVcall    = false
+          # Remember info about current procedure.
+          currentProcProto = item[1]
+          currentProcName  = currentProcProto.name
+          currentProcRv    = currentProcProto.rv
+          currentSymbols   = currentProcProto.symbols
+          isInsideVcall    = currentSymbols{'this'} is defined
 
           if currentProcRv is defined
-            symbolInfo        = currentSymbols{currentProcRv}
-            currentProcRvType = symbolInfo.type
+            currentProcRvType = currentSymbols{currentProcRv}.type
           endif
-
-          # Build C function proto.
-          if currentProcRv is defined
-            returnTypeForC = MIR_TO_C_TYPE_MAP{currentProcRvType}
-          else
-            returnTypeForC = 'void'
-          endif
-
-          paramsProtoForC = ''
-          sep = ''
-
-          # Extra entry point for virtual call.
-          # Virtual call params are always variants.
-          # We need to translate variants to primitive before go on.
-          if currentSymbols{'this'} is defined
-            isInsideVcall = true
-            paramsProtoForC = 'Variant_t this'
-            sep = ', '
-          endif
-
-          # Build params for ordinary call.
-          # Possible primitive types.
-          for values paramName in proto.params
-            symbolInfo  = currentSymbols{paramName}
-            symbolTypeC = MIR_TO_C_TYPE_MAP{symbolInfo.type}
-            paramsProtoForC = paramsProtoForC ~ sep ~ symbolTypeC ~ ' ' ~ symbolInfo.name
-            sep = ', '
-          endfor
 
           # Ordinary entry point.
           # This address can be called directly with primitive params.
-          print returnTypeForC, currentProcName, '(', paramsProtoForC, ') {'
-
-
+          print this._renderFunctionProto(currentProcProto), '{'
 
           # Profiler code if needed.
           if this.isProfilerEnabled is true
@@ -1018,8 +993,8 @@ class CodeGeneratorC
           print '  }'
 
         elif opcode is MIR1_OPCODE_ENDP
+          # Build vcall wrapper for virtual call if needed.
 
-          # Build vcall wrapper if needed.
           if isInsideVcall is true
             # Build params for virtual call.
             # All parameters are variants.
