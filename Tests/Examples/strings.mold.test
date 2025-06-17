@@ -350,33 +350,27 @@ x      = XxxxxxxxxxxxxxxxxxxxxxxxxxxX>>> o <<<YyyyyyyyyyyyyyyyyyyyyyyyyyyY
 len(x) = 65
 -------------------------------------------------------------------------------
 
-TEST "Overlapped source and destination string: x = x ~ y (OBSOLETE)"
-/*
+TEST "Use call param while concatenating"
 function final(x)
   print x ~ ':final'
 endfunction
 
 function bar(x)
-  x = x ~ ':bar'
-  final(x)
+  newX = x ~ ':bar'
+  final(newX)
 endfunction
 
 function foo(x)
-  x = x ~ ':foo'
-  bar(x)
-  bar(x)
+  newX = x ~ ':foo'
+  bar(newX)
+  bar(newX)
 endfunction
 
 foo('init')
 
-EXPECTEDDD_OOOUTPUT:
-init:foo:bar:final
-init:foo:bar:final
-*/
-
-print 'OK'
 EXPECTED_OUTPUT:
-OK
+init:foo:bar:final
+init:foo:bar:final
 -------------------------------------------------------------------------------
 TEST "Overlapped source and destination string: x = y ~ x"
 
@@ -574,4 +568,69 @@ EXPECTED_OUTPUT:
 20
 30
 40
+-------------------------------------------------------------------------------
+
+TEST "Print formatted string"
+
+x = 1
+y = 'two'
+z = true
+
+print ``
+print `Just text without any placeholder.`
+print `${x}`
+print `${x}${x}${x}`
+print `x = ${x}`
+print `(x,y,z) = (${x},${y},${z})`
+print `I can still render '$' sign.`
+print `prefix_${y}`
+
+EXPECTED_OUTPUT:
+
+Just text without any placeholder.
+1
+111
+x = 1
+(x,y,z) = (1,two,true)
+I can still render '$' sign.
+prefix_two
+-------------------------------------------------------------------------------
+
+TEST "Format string into variable"
+
+function renderMessage(x, y, z) -> rv
+  rv = `Hello from renderMessage(${x}, ${y}, ${z})!`
+endfunction
+
+print renderMessage(1, 'abc', true)
+print renderMessage(2, 'xyz', false)
+
+EXPECTED_OUTPUT:
+Hello from renderMessage(1, abc, true)!
+Hello from renderMessage(2, xyz, false)!
+-------------------------------------------------------------------------------
+
+TEST "Unterminated ${...} placeholder"
+
+x = 1234
+print `x = ${x{`
+
+EXPECTED_ERROR:
+./temp/source.mold:3:17: error: unterminated ${...} placeholder
+-------------------------------------------------------------------------------
+
+TEST "Unterminated string format"
+
+print `Hello Mold
+
+EXPECTED_ERROR:
+./temp/source.mold:4:1: error: unterminated string
+-------------------------------------------------------------------------------
+
+TEST "Undeclared variable inside string format"
+x = 1234
+print `${y}`
+
+EXPECTED_ERROR:
+./temp/source.mold:2:13: error: 'y' was not declared in this scope
 -------------------------------------------------------------------------------

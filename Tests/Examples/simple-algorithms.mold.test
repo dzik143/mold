@@ -210,3 +210,52 @@ Ack( 3 , 4 ) = 125
 Ack( 3 , 5 ) = 253
 Ack( 3 , 6 ) = 509
 --------------------------------------------------------------------------------
+
+TEST "Hanoi(n) function (recursive)"
+
+# TODO: Handle 64-bit ints?
+function hanoi(n) -> rv
+  if n is 1
+    rv = 1
+  else
+    rv = 2 * hanoi(n - 1) + 1
+  endif
+endfunction
+
+for n in 1 .. 32
+  print 'hanoi(', n, ') =', hanoi(n)
+endfor
+
+EXPECTED_OUTPUT:
+hanoi( 1 ) = 1
+hanoi( 2 ) = 3
+hanoi( 3 ) = 7
+hanoi( 4 ) = 15
+hanoi( 5 ) = 31
+hanoi( 6 ) = 63
+hanoi( 7 ) = 127
+hanoi( 8 ) = 255
+hanoi( 9 ) = 511
+hanoi( 10 ) = 1023
+hanoi( 11 ) = 2047
+hanoi( 12 ) = 4095
+hanoi( 13 ) = 8191
+hanoi( 14 ) = 16383
+hanoi( 15 ) = 32767
+hanoi( 16 ) = 65535
+hanoi( 17 ) = 131071
+hanoi( 18 ) = 262143
+hanoi( 19 ) = 524287
+hanoi( 20 ) = 1048575
+hanoi( 21 ) = 2097151
+hanoi( 22 ) = 4194303
+hanoi( 23 ) = 8388607
+hanoi( 24 ) = 16777215
+hanoi( 25 ) = 33554431
+hanoi( 26 ) = 67108863
+hanoi( 27 ) = 134217727
+hanoi( 28 ) = 268435455
+hanoi( 29 ) = 536870911
+hanoi( 30 ) = 1073741823
+hanoi( 31 ) = 2147483647
+--------------------------------------------------------------------------------
