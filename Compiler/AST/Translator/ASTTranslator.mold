@@ -379,12 +379,34 @@ class ASTTranslator
     # TODO: Better way to pass source position to error handler.
     this.app.setLogContext(ast)
 
-    # TODO: Review it.
+    # Simple optimization to avoid extra temp var:
+    # tmp = foo(...)
+    # dst = tmp
     if @all(ast.parent is defined,
             ast.parent.opcode is AST_OPCODE_DECLARE_OR_ASSIGN,
             ast.parent.children[0].opcode is AST_OPCODE_VARIABLE) is true
       # x = ...
-      rv = ast.parent.children[0].value
+      # TODO: Use where / until ?
+      # Check for dst = foo(dst) like case.
+      # We don't need to go recursively, because deeper nodes generate
+      # own temp vars.
+      isDstSrcOverlapped = false
+      dstVar             = ast.parent.children[0].value
+
+      for values oneChild in children
+        if ((oneChild.opcode is AST_OPCODE_VARIABLE) and
+            (oneChild.value is dstVar))
+          # Overlapped source and destination.
+          # Trick doesn't not work.
+          isDstSrcOverlapped = true
+        endif
+      endfor
+
+      if isDstSrcOverlapped is false
+        # Skip unneded temp var between.
+        # Write rval result to the lval directly.
+        rv = dstVar
+      endif
     endif
 
     #
@@ -704,8 +726,8 @@ class ASTTranslator
     params    = []
     paramsCnt = childrenCnt
 
-    for indexes idx values oneChild in children
-      params[idx] = this._evaluateNode(oneChild)
+    for values oneChild in children
+      params[@afterlast] = this._evaluateNode(oneChild)
     endfor
 
     if funcName is 'super'
