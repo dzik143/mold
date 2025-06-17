@@ -299,7 +299,7 @@ function AST_GetOpcodeAsText(opcode) -> rv
     rv = 'VCALL'
 
   else
-    rv = '[UNKNOWN: ' ~ str(opcode) ~ ']'
+    rv = `[UNKNOWN: ${opcode}]`
   endif
 endfunction
 
@@ -494,7 +494,7 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   else
     # TODO: Handle terminal nodes.
     rv = 'error'
-    die('error: unhandled opcode: ' ~ str(opcode))
+    die(`error: unhandled opcode: ${opcode}`)
   endif
 endfunction
 
@@ -556,7 +556,7 @@ function AST_InvertBoolean(node)
     node.opcode = AST_OPCODE_IS_TYPEOF
 
   else
-    die('error: unhandled opcode in AST_InvertBoolean: ' ~ str(opcode))
+    die(`error: unhandled opcode in AST_InvertBoolean: ${opcode}`)
   endif
 
 endfunction

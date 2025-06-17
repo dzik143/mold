@@ -272,7 +272,7 @@ class ASTPreprocessor
         paramsPassedCnt   = len(node.children)
 
         if paramsExpectedCnt isnt paramsPassedCnt
-          this.app.logError('built-in ' ~ funcName ~ ' function requires exactly ' ~ str(paramsExpectedCnt) ~ ' parameter(s), but ' ~ str(paramsPassedCnt) ~ ' were passed')
+          this.app.logError(`built-in ${funcName} function requires exactly ${paramsExpectedCnt} parameter(s), but ${paramsPassedCnt} were passed`)
         endif
 
         # Map to related syscall routine.
@@ -320,7 +320,7 @@ class ASTPreprocessor
 
       else
         this.app.setLogContext(node)
-        this.app.logError("unsupported selector '" ~ selector ~ "'")
+        this.app.logError(`unsupported selector '${selector}'`)
       endif
 
     elif opcode is @any(AST_OPCODE_FUNCTION,
