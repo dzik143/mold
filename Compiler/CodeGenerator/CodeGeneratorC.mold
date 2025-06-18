@@ -214,13 +214,12 @@ class CodeGeneratorC
   endmethod
 
   method emitConstant(name, value, wantDeepIdx, deepIdx, isAnonymouse)
-    type             = typeof(value)
     isContentEmmited = false
 
     if wantDeepIdx is deepIdx
       bufferName = null
 
-      if type is @any('array', 'string')
+      if value is @any(array, string)
         # Check did we emit another buffer with the same content.
         hash       = this._hash(value)
         bufferName = this.mapOfEmittedBuffers{hash}
@@ -246,19 +245,19 @@ class CodeGeneratorC
       endif
 
       # Dispatch type.
-      if type is 'integer'
+      if value is integer
         print '  { VARIANT_INTEGER, 0,', value, '}'
 
-      elif type is 'float'
+      elif value is float
         print '  { VARIANT_DOUBLE, 0, valueAsFloat64:', value, '}'
 
-      elif type is 'string'
+      elif value is string
         print '  { VARIANT_STRING, 0, (uint64_t) &', bufferName, '}'
 
-      elif type is 'array'
+      elif value is array
         print '  { VARIANT_ARRAY, 0, (uint64_t) &', bufferName, '}'
 
-      elif type is 'boolean'
+      elif value is boolean
         if value is true
           valueAsInteger = '1'
         else
@@ -267,11 +266,11 @@ class CodeGeneratorC
 
         print '  { VARIANT_BOOLEAN, 0,', valueAsInteger, '}'
 
-      elif type is 'undefined'
+      elif value is undefined
         print '  { 0, 0, 0 }'
 
       else
-        die(`error: unhandled type: ${type}`)
+        die('error: unhandled type: ' ~ typeof(value))
       endif
 
       if isAnonymouse is true
@@ -283,9 +282,9 @@ class CodeGeneratorC
 
 
     # Emit buffer content for complex variables.
-    if type is 'array'
+    if value is array
       this.emitArrayBufferHead(name, value, wantDeepIdx, deepIdx + 1)
-    elif type is 'string'
+    elif value is string
       this.emitStringBufferHead(name, value, wantDeepIdx, deepIdx + 1)
     endif
   endmethod
@@ -671,6 +670,12 @@ class CodeGeneratorC
     currentProcRvType = null
     currentSymbols    = {}
 
+    # Split local vars into 2 groups:
+    # - varsToFree[] - potentally needs to be free on call exit,
+    # - varsToDrop[] - can be dropped safely without memory leak.
+    varsToFree = []
+    varsToDrop = []
+
     isInsideVcall = false
 
     dst = null
@@ -955,13 +960,45 @@ class CodeGeneratorC
           # Clean up this mess.
           this.symbols = symbols
 
-          print '  // Local variables'
+          # Split local vars into 2 groups:
+          # - varsToFree[] - potentally needs to be free on call exit,
+          # - varsToDrop[] - can be dropped safely without memory leak.
+          varsToFree = []
+          varsToDrop = []
+
           for values oneItem in symbols
-            if oneItem.kind is @any(SYMBOL_KIND_VAR_LOCAL,
-                                    SYMBOL_KIND_VAR_RETVAL)
-              this._declareVar(oneItem)
+            if oneItem.kind is SYMBOL_KIND_VAR_RETVAL
+              # Don't free return variable - should be passed to caller.
+              varsToDrop[@afterlast] = oneItem
+
+            elif oneItem.kind is SYMBOL_KIND_VAR_LOCAL
+              if oneItem.type is @any(undefined, 'string', 'variant')
+                # Variant local variables.
+                # It's potentially complex boxes with dynamically allocated
+                # buffer inside.
+                # Should be freed on call exit.
+                varsToFree[@afterlast] = oneItem
+              else
+                # Primitives - can be dropped without memory leak.
+                varsToDrop[@afterlast] = oneItem
+              endif
             endif
           endfor
+
+          if len(varsToFree) > 0
+            print '  // Local variables (to be freed on exit)'
+            print '  __MOLD_StackAlloc(', len(varsToFree), ');'
+            for indexes idx values oneItem in varsToFree
+              print '  #define', oneItem.name, `(__MOLD_StackPtr[${idx}])`
+            endfor
+          endif
+
+          if len(varsToDrop) > 0
+            print '  // Local variables (to be drop on exit)'
+            for values oneItem in varsToDrop
+              this._declareVar(oneItem)
+            endfor
+          endif
 
         elif opcode is MIR1_OPCODE_MOVE
           if xType is @any('variant', 'string')
@@ -976,13 +1013,13 @@ class CodeGeneratorC
           print '  // nop'
 
         elif opcode is MIR1_OPCODE_RET
-          print '  // clean frame'
-
-          for values oneItem in currentSymbols
-            if oneItem.kind is SYMBOL_KIND_VAR_LOCAL
-              this.variantDestroy(oneItem.name)
-            endif
-          endfor
+          if len(varsToFree) > 0
+            print '  // Clean up local frame'
+            print '  __MOLD_StackFree(', len(varsToFree), ');'
+            for indexes idx values oneItem in varsToFree
+              print '  #undef', oneItem.name
+            endfor
+          endif
 
           # Profiler code if needed.
           if this.isProfilerEnabled is true
@@ -990,6 +1027,7 @@ class CodeGeneratorC
           endif
 
           if currentProcName is 'start'
+            print '  // Clean up global frame
             for values oneItem in currentSymbols
               if oneItem.kind is SYMBOL_KIND_VAR_GLOBAL
                 if oneItem.name is @any('argv', 'argc')
