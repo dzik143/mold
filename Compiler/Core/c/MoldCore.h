@@ -79,6 +79,9 @@ typedef struct Variant
 // Used to avoid circular references during print.
 #define VARIANT_FLAG_NODE_VISITED             4
 
+// Size in Variant_t objects.
+#define MOLD_DEFAULT_STACK_SIZE (1024 * 64)
+
 // -----------------------------------------------------------------------------
 //                             Global variables
 // -----------------------------------------------------------------------------
@@ -86,6 +89,7 @@ typedef struct Variant
 extern Variant_t argc;
 extern Variant_t argv;
 extern Variant_t __TrashBin;
+extern Variant_t *__MOLD_StackPtr;
 
 // -----------------------------------------------------------------------------
 //                Convert: create variant from primitives
@@ -230,10 +234,14 @@ Variant_t __MOLD_FileLoad(Variant_t path);
 
 void __MOLD_VariantAddRef(Variant_t *x);
 void __MOLD_VariantDestroy(Variant_t *x);
+void __MOLD_VariantDestroyMany(Variant_t *x, uint32_t n);
 
 void __MOLD_InitArgv(int _argc, char **_argv);
 
 Variant_t __MOLD_GetTypeId(Variant_t x);
 void __MOLD_VariantMove(Variant_t *dst, Variant_t *src);
+
+void __MOLD_StackFree(uint32_t n);
+void __MOLD_StackAlloc(uint32_t n);
 
 #endif /* _MoldCore_H */

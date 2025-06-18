@@ -20,6 +20,10 @@
 #ifndef _Mold_H
 #define _Mold_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "MoldError.h"
 #include "MoldCore.h"
 #include "MoldPrint.h"
@@ -28,5 +32,9 @@
 #include "MoldVariantMap.h"
 #include "MoldVariantObject.h"
 #include "MoldForDriver.h"
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _Mold_H */

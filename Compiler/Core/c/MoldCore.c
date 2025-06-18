@@ -36,6 +36,10 @@ Variant_t argc       = { VARIANT_UNDEFINED };
 Variant_t argv       = { VARIANT_UNDEFINED };
 Variant_t __TrashBin = { VARIANT_UNDEFINED };
 
+// Custom stack to allocatable variant vars.
+static Variant_t __MOLD_Stack[MOLD_DEFAULT_STACK_SIZE];
+Variant_t *__MOLD_StackPtr = &__MOLD_Stack[MOLD_DEFAULT_STACK_SIZE];
+
 // -----------------------------------------------------------------------------
 //                Convert: create variant from primitives
 // -----------------------------------------------------------------------------
@@ -859,6 +863,25 @@ void __MOLD_VariantDestroy(Variant_t *x)
 }
 
 // -----------------------------------------------------------------------------
+// Helper function to free array of variants.
+//
+// Pseudo code:
+//   for i in 0 to n
+//     delete x[i]
+//   endfor
+//
+// Parameters:
+//   x - array of variables to be destroyed (IN/OUT).
+//   n - number of items in x[] array (IN).
+// -----------------------------------------------------------------------------
+
+void __MOLD_VariantDestroyMany(Variant_t *x, uint32_t n) {
+  for (uint32_t idx = 0; idx < n; idx++) {
+    __MOLD_VariantDestroy(&x[idx]);
+  }
+}
+
+// -----------------------------------------------------------------------------
 // Increase reference counter for dynamically alocatted variables.
 // Do nothing for primitives, but it still correct.
 //
@@ -904,9 +927,53 @@ void __MOLD_VariantAddRef(Variant_t *x)
   }
 }
 
+// -----------------------------------------------------------------------------
+// Move variant object from the source to the destination slots.
+// Source variant is destroyed if was not undefined.
+//
+// Pseudo code:
+//   x = y
+//
+// Parameters:
+//   dst - pointer to the destination variant slot (IN/OUT)
+//   src - pointer to the source variant slot (IN/OUT)
+// -----------------------------------------------------------------------------
+
 void __MOLD_VariantMove(Variant_t *dst, Variant_t *src)
 {
   __MOLD_VariantAddRef(src);
   __MOLD_VariantDestroy(dst);
   memcpy(dst, src, sizeof(Variant_t));
+}
+
+// -----------------------------------------------------------------------------
+// Allocate n x Variant_t items on internal MOLD stack available via
+// global __MOLD_StackPtr pointer.
+//
+// Parameters:
+//   n - number of Variant_t slots to allocate (IN).
+// -----------------------------------------------------------------------------
+
+void __MOLD_StackAlloc(uint32_t n) {
+  __MOLD_StackPtr -= n;
+  assert(__MOLD_StackPtr > __MOLD_Stack);
+  assert(__MOLD_StackPtr < __MOLD_Stack + sizeof(__MOLD_Stack));
+  memset(__MOLD_StackPtr, 0, n * sizeof(Variant_t));
+};
+
+// -----------------------------------------------------------------------------
+// Release stack frame allocated by __MOLD_StackAllocate() before.
+//
+// Parameters:
+//   n - frame size as number of Variant_t items (IN)
+// -----------------------------------------------------------------------------
+
+void __MOLD_StackFree(uint32_t n) {
+  while (n > 0) {
+    __MOLD_VariantDestroy(__MOLD_StackPtr);
+    __MOLD_StackPtr ++;
+    assert(__MOLD_StackPtr > __MOLD_Stack);
+    assert(__MOLD_StackPtr < __MOLD_Stack + sizeof(__MOLD_Stack));
+    n--;
+  }
 }
