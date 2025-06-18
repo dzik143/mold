@@ -1,0 +1,27 @@
+TEST "Simple constants test"
+const testInteger  = 1234
+const testBoolean1 = true
+const testBoolean2 = false
+const testFloat    = 3.14
+const testString   = 'abcdefg'
+const testArray    = [ 10, 20, 30, 40, 50 ]
+
+# TODO:
+# - const maps,
+# - non-integer const arrays,
+# - attempt to modify constant at runtime (should fail).
+print 'testInteger  =', testInteger  , typeof(testInteger)
+print 'testBoolean1 =', testBoolean1 , typeof(testBoolean1)
+print 'testBoolean2 =', testBoolean2 , typeof(testBoolean2)
+print 'testFloat    =', testFloat    , typeof(testFloat)
+print 'testString   =', testString   , typeof(testString)
+print 'testArray    =', testArray    , typeof(testArray)
+
+EXPECTED_OUTPUT:
+testInteger  = 1234 integer
+testBoolean1 = true boolean
+testBoolean2 = false boolean
+testFloat    = 3.140000 float
+testString   = abcdefg string
+testArray    = [10, 20, 30, 40, 50] array
+-------------------------------------------------------------------------------
