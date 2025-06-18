@@ -150,14 +150,14 @@ class ASTSymbolsCollector
       # Collect members.
       className   = node.value.name
       baseName    = node.value.baseName
-      vtable      = {}
+      vtableData  = {}
       baseMethods = {}
 
       # Build new class proto.
       classProto = {
         'name': className,
         'baseName': baseName,
-        'vtable': vtable
+        'vtable': vtableData
       }
 
       this.currentClassProto = classProto
@@ -170,7 +170,7 @@ class ASTSymbolsCollector
 
         # Merge base class first.
         for keys oneMethodName values methodProto in baseMethods
-          vtable{oneMethodName} = methodProto
+          vtableData{oneMethodName} = methodProto
         endfor
       endif
 
@@ -193,7 +193,7 @@ class ASTSymbolsCollector
             baseMethodProto.isOverloaded = true
           endif
 
-          vtable{methodName} = child
+          vtableData{methodName} = child
 
           this._collectSymbolsFromLeftNode(symbolTable, child)
         endif

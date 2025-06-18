@@ -312,8 +312,7 @@ class VMachineStack
         paramsCnt   = item[2]
         thiz        = stack.peekN(paramsCnt)
 
-        vtable      = thiz.__mold_vtable
-        methodProto = vtable{methodName}
+        methodProto = thiz.__mold_vtable{methodName}
 
         if methodProto is undefined
           die("error: object has no method '" ~ methodName ~ "'")
@@ -544,22 +543,22 @@ class VMachineStack
         txt = 'load.null'
 
       elif opcode is MIR_OPCODE_LOAD_IMM
-        type = typeof(item[1])
+        value = typeof(item[1])
 
-        if type is 'string'
+        if value is string
           if arg[0] is '"'
             txt = "load.string '" ~ arg ~ "'"
           else
             txt = 'load.string "' ~ arg ~ '"'
           endif
 
-        elif type is 'boolean'
+        elif value is boolean
           txt = 'load.boolean ' ~ str(arg)
 
-        elif type is 'integer'
+        elif value is integer
           txt = 'load.integer ' ~ str(arg)
 
-        elif type is 'float'
+        elif value is float
           txt = 'load.float ' ~ str(arg)
 
         else

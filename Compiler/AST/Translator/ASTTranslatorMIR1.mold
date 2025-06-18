@@ -712,7 +712,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.emitLabel(labelForEnd)
 
     this.emitComment('')
-    this.emitComment('END: for ' ~ str(iterName) ~ ' in ' ~ str(idxStart) ~ ' .. ' ~ str(idxEnd) ~ ' step ' ~ str(idxStep))
+    this.emitComment(`END: for ${iterName} in ${idxStart} .. ${idxEnd} step ${idxStep}`)
     this.emitComment('-----------------------------')
     this.emitComment('')
   endmethod

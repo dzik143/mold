@@ -93,26 +93,26 @@ class CodeGeneratorX64
   endmethod
 
   method storeResultAfterCall(dst)
-    type = this._getSymbolType(dst)
+    mirType = this._getSymbolType(dst)
 
-    if type is @any('int32', 'bool32')
+    if mirType is @any('int32', 'bool32')
       print '  mov dword [', dst, '], ecx'
 
-    elif type is 'int64'
+    elif mirType is 'int64'
       print '  mov qword [', dst, '], rcx'
 
-    elif type is 'float64'
+    elif mirType is 'float64'
       print '  movq qword [', dst, '], xmm0'
 
-    elif type is @any('variant', 'string')
+    elif mirType is @any('variant', 'string')
       # Do nothing.
       # Non-primitive result should be passed via pointer parameter.
 
-    elif type is 'label'
+    elif mirType is 'label'
       # Jump target - do nothing.
 
     else
-      die('unhandled result type: ' ~ type)
+      die('unhandled result type: ' ~ mirType)
     endif
   endmethod
 
@@ -350,13 +350,12 @@ class CodeGeneratorX64
   endmethod
 
   method emitConstant(name, value, wantDeepIdx, deepIdx)
-    type             = typeof(value)
     isContentEmmited = false
 
     if wantDeepIdx is deepIdx
       bufferName = null
 
-      if type is @any('array', 'string')
+      if value is @any(array, string)
         # Check did we emit another buffer with the same content.
         hash       = this._hash(value)
         bufferName = this.mapOfEmittedBuffers{hash}
@@ -378,13 +377,13 @@ class CodeGeneratorX64
       endif
 
       # Dispatch type.
-      if type is 'integer'
+      if value is integer
         print name, 'Variant_t VARIANT_INTEGER, 0,', value
 
-      elif type is 'float'
+      elif value is float
         print name, 'Variant_t VARIANT_DOUBLE, 0,', value
 
-      elif type is 'string'
+      elif value is string
         if len(value) is 1
           # One character string.
           # Possible improvement: Handle empty string?
@@ -394,10 +393,10 @@ class CodeGeneratorX64
           print name, 'Variant_t VARIANT_STRING, 0,', bufferName
         endif
 
-      elif type is 'array'
+      elif value is array
         print name, 'Variant_t VARIANT_ARRAY, 0,', bufferName
 
-      elif type is 'boolean'
+      elif value is boolean
         if value is true
           valueAsInteger = '1'
         else
@@ -406,19 +405,19 @@ class CodeGeneratorX64
 
         print name, 'Variant_t VARIANT_BOOLEAN, 0,', valueAsInteger
 
-      elif type is 'undefined'
+      elif value is undefined
         print name, 'Variant_t VARIANT_UNDEFINED, 0, 0'
 
       else
-        die('error: unhandled type: ' ~ type)
+        die('error: unhandled type: ' ~ typeof(value))
       endif
     endif
 
     # Emit buffer content for complex variables.
-    if type is 'array'
+    if value is array
       this.emitArrayBufferHead(name, value, wantDeepIdx, deepIdx + 1)
 
-    elif (type is 'string') and (len(value) isnt 1)
+    elif (value is string) and (len(value) isnt 1)
       this.emitStringBufferHead(name, value, wantDeepIdx, deepIdx + 1)
     endif
   endmethod
@@ -1595,9 +1594,9 @@ class CodeGeneratorX64
 
       for values symbolInfo in encodedFormat
         if symbolInfo.type is defined
-          type = symbolInfo.type
+          mirType = symbolInfo.type
         else
-          type = 'variant'
+          mirType = 'variant'
         endif
 
         if symbolInfo.name is '__EOL'
@@ -1618,18 +1617,18 @@ class CodeGeneratorX64
 
         elif symbolInfo.rbpOffset is defined
           if ((symbolInfo.kind is SYMBOL_KIND_VAR_PARAM) and
-              (type is @any('variant', 'string')))
+              (mirType is @any('variant', 'string')))
             print '  db FMT_LOCAL_variant_ptr'
           else
-            print '  db FMT_LOCAL_' ~ type
+            print '  db FMT_LOCAL_' ~ mirType
           endif
           print '  dw', symbolInfo.rbpOffset
 
         elif symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
-          print '  db FMT_RETVAL_' ~ type
+          print '  db FMT_RETVAL_' ~ mirType
 
         elif symbolInfo.kind is @any(SYMBOL_KIND_VAR_GLOBAL, SYMBOL_KIND_CONST)
-          print '  db FMT_GLOBAL_' ~ type
+          print '  db FMT_GLOBAL_' ~ mirType
           print '  dq', symbolInfo.name
 
         else
@@ -1700,7 +1699,7 @@ class CodeGeneratorX64
     for classIdx in 0 .. classListCnt
       classProto = classList[classIdx]
       className  = classProto.name
-      vtable     = classProto.vtable
+      vtableData = classProto.vtable
 
       print 'vtable_' ~ className ~ ':'
 
@@ -1710,7 +1709,7 @@ class CodeGeneratorX64
       firstMethodFound   = false
 
       for indexes methodIdx values methodName in methodsList
-        if vtable{methodName} is defined
+        if vtableData{methodName} is defined
           # Update index of last used method always, on all occerencies.
           lastUsedMethodIdx = methodIdx
 
@@ -1731,7 +1730,7 @@ class CodeGeneratorX64
         for methodIdx in firstUsedMethodIdx .. lastUsedMethodIdx + 1
         #for methodIdx in firstUsedMethodIdx .. methodsListCnt
           methodName  = methodsList[methodIdx]
-          methodProto = vtable{methodName}
+          methodProto = vtableData{methodName}
 
           if methodProto is undefined
             methodPtr = '__MOLD_PrintErrorAndDie.nullMethodCalled'

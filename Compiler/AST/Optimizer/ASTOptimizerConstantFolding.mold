@@ -38,9 +38,7 @@ class ASTOptimizerConstantFolding
     global AST_DATA_ARRAY, AST_DATA_MAP, AST_DATA_UNDEFINED
     global AST_OPCODE_VARIABLE
 
-    type = typeof(value)
-
-    this._debug('Set node #' ~ str(dst.id) ~ ' to imm "' ~ str(value) ~ '" (' ~ type ~ ')')
+    this._debug('Set node #' ~ str(dst.id) ~ ' to imm "' ~ str(value) ~ '" (' ~ typeof(value) ~ ')')
 
     if dst.opcode is AST_OPCODE_VARIABLE
       if dst.symbolInfo is defined
@@ -48,31 +46,31 @@ class ASTOptimizerConstantFolding
       endif
     endif
 
-    if type is 'boolean'
+    if value is boolean
       newOpcode = AST_DATA_BOOL
 
-    elif type is 'integer'
+    elif value is integer
       newOpcode = AST_DATA_INTEGER
 
-    elif type is 'float'
+    elif value is float
       newOpcode = AST_DATA_DOUBLE
 
-    elif type is 'string'
+    elif value is string
       newOpcode = AST_DATA_STRING
 
-    elif type is 'undefined'
+    elif value is undefined
       newOpcode = AST_DATA_UNDEFINED
 
-    elif type is 'array'
+    elif value is array
       newOpcode = AST_DATA_ARRAY
 
-    elif type is 'map'
+    elif value is map
       newOpcode = AST_DATA_MAP
 
     else
       # Remove newOpcode assign.
       newOpcode = -1
-      die('error: unhandled result in constant folding: ' ~ type)
+      die('error: unhandled result in constant folding: ' ~ typeof(value))
     endif
 
     dst.children = []
