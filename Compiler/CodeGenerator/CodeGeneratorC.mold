@@ -454,19 +454,19 @@ class CodeGeneratorC
       print '  // Skipped unused variable', name
 
     elif mirType is @any('variant', 'string')
-      print 'Variant_t', name, '= {0};'
+      print '  Variant_t', name, '= {0};'
 
     elif mirType is 'int64'
-      print 'int64_t', name, '= 0;'
+      print '  int64_t', name, '= 0;'
 
     elif mirType is 'int32'
-      print 'int32_t', name, '= 0;'
+      print '  int32_t', name, '= 0;'
 
     elif mirType is 'float64'
-      print 'float64_t', name, '= 0.0;'
+      print '  float64_t', name, '= 0.0;'
 
     elif mirType is 'bool32'
-      print 'bool32_t', name, '= 0;'
+      print '  bool32_t', name, '= 0;'
 
     else
       die(`error: unhandled MIR type: ${mirType}`)
@@ -717,17 +717,17 @@ class CodeGeneratorC
         if opcode is MIR1_OPCODE_CREATE_ARRAY
           this.variantDestroy(dst)
           if x is defined
-            print ` ${dst} = __MOLD_VariantArrayCreateFromInitList(${x});`
+            print `  ${dst} = __MOLD_VariantArrayCreateFromInitList(${x});`
           else
-            print ` ${dst} = __MOLD_VariantArrayCreate();`
+            print `  ${dst} = __MOLD_VariantArrayCreate();`
           endif
 
         elif opcode is MIR1_OPCODE_CREATE_MAP
           this.variantDestroy(dst)
           if x is defined
-            print ` ${dst} = __MOLD_VariantMapCreateFromInitList(${x}, ${y});`
+            print `  ${dst} = __MOLD_VariantMapCreateFromInitList(${x}, ${y});`
           else
-            print ` ${dst} = __MOLD_VariantMapCreate();`
+            print `  ${dst} = __MOLD_VariantMapCreate();`
           endif
 
         elif opcode is MIR1_OPCODE_JMP_BY_TABLE
@@ -813,11 +813,10 @@ class CodeGeneratorC
               print `  ${dst} = ${cmpResult};`
 
             elif opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF
-              # TODO: Use not x
               if cmpResult is true
-                print ` ${dst} = false;`
+                print `  ${dst} = false;`
               else
-                print ` ${dst} = true;`
+                print `  ${dst} = true;`
               endif
 
             elif opcode is MIR1_OPCODE_JMP_IF_TYPEOF
@@ -872,7 +871,7 @@ class CodeGeneratorC
 
         elif opcode is MIR1_OPCODE_LOAD_NULL
           # TODO: Review it?
-          print ` ${dst}.type = VARIANT_UNDEFINED;`
+          print `  ${dst}.type = VARIANT_UNDEFINED;`
           # this.variantDestroy(dst)
 
         elif opcode is MIR1_OPCODE_PRINT
@@ -970,7 +969,7 @@ class CodeGeneratorC
             this.variantMove(dst, x)
           else
             # Primitive value - set value directly.
-            print ` ${dst} = ${x};`
+            print `  ${dst} = ${x};`
           endif
 
         elif opcode is MIR1_OPCODE_NOP
@@ -1117,7 +1116,7 @@ class CodeGeneratorC
 
             if syscallName is defined
               # dst = syscall(id, ...)
-              print ` ${syscallName}(${callList});`
+              print `  ${syscallName}(${callList});`
 
             elif nameOrId is string
               if paramsCnt > 0
@@ -1174,15 +1173,15 @@ class CodeGeneratorC
 
         if opcode is MIR1_OPCODE_LOAD_INDEX
           # dst := x[y]
-          print ` ${dst} = __MOLD_VariantLoadFromIndex(${x}, ${y});`
+          print `  ${dst} = __MOLD_VariantLoadFromIndex(${x}, ${y});`
 
         elif opcode is MIR1_OPCODE_LOAD_KEY
           # dst := x{y}
-          print ` ${dst} = __MOLD_VariantLoadFromKey_${dstType}(${x}, ${y});`
+          print `  ${dst} = __MOLD_VariantLoadFromKey_${dstType}(${x}, ${y});`
 
         elif opcodeMajor is MIR1_OPCODE_CMP_CC_GROUP
           cc = MIR_COMPARE_FLAGS[opcodeMinor]
-          print ` ${dst} = __MOLD_cmp_${cc}_${xType}(${x}, ${y});`
+          print `  ${dst} = __MOLD_cmp_${cc}_${xType}(${x}, ${y});`
 
         elif opcodeMajor is MIR1_OPCODE_JMP_IF_CC_GROUP
           cc = MIR_COMPARE_FLAGS[opcodeMinor]
@@ -1190,14 +1189,14 @@ class CodeGeneratorC
 
         elif opcodeMajor is MIR1_OPCODE_ALU2_GROUP
           aluOpcode = MIR_ALU_OPCODES_FOR_INTEGERS[opcodeMinor]
-          print ` ${dst} = __MOLD_${aluOpcode}_${xType}(${x}, ${y});`
+          print `  ${dst} = __MOLD_${aluOpcode}_${xType}(${x}, ${y});`
 
         #
         # Arithmetic
         #
 
         elif opcodeMajor is MIR1_OPCODE_ALU2_GROUP
-          print ` ${dst} = __MOLD_${opcodeAsText}_${xType}(${x}, ${y});`
+          print `  ${dst} = __MOLD_${opcodeAsText}_${xType}(${x}, ${y});`
 
         else
           isOpcodeHandled = false
@@ -1214,7 +1213,7 @@ class CodeGeneratorC
         if opcode is MIR1_OPCODE_CAST_VARIANT_TO
           # Cast variant to primitive.
           # dst = x.value
-          print ` ${dst} = __MOLD_VariantCastTo_${dstType}(&${x});`
+          print `  ${dst} = __MOLD_VariantCastTo_${dstType}(&${x});`
 
         elif opcode is MIR1_OPCODE_CREATE_VARIANT_FROM
           # Create variant from primitive.
