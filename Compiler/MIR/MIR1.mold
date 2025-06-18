@@ -282,6 +282,6 @@ function MIR1_GetOpcodeAsText(opcode) -> rv
     rv = 'print'
 
   else
-    rv = '(BAD:' ~ str(opcode) ~ ')'
+    rv = `(BAD: ${opcode})`
   endif
 endfunction

@@ -18,17 +18,17 @@
 #                                                                              #
 ################################################################################
 
-SYMBOL_KIND_VAR_LOCAL  = 1
-SYMBOL_KIND_VAR_GLOBAL = 2
-SYMBOL_KIND_VAR_PARAM  = 3
-SYMBOL_KIND_VAR_RETVAL = 4
-SYMBOL_KIND_CONST      = 5
-SYMBOL_KIND_LABEL      = 6
+const SYMBOL_KIND_VAR_LOCAL  = 1
+const SYMBOL_KIND_VAR_GLOBAL = 2
+const SYMBOL_KIND_VAR_PARAM  = 3
+const SYMBOL_KIND_VAR_RETVAL = 4
+const SYMBOL_KIND_CONST      = 5
+const SYMBOL_KIND_LABEL      = 6
 
-SYMBOL_KIND_FUNCTION   = 7
-SYMBOL_KIND_CLASS      = 8
-SYMBOL_KIND_METHOD     = 9
-SYMBOL_KIND_JMP_TABLE  = 10
+const SYMBOL_KIND_FUNCTION   = 7
+const SYMBOL_KIND_CLASS      = 8
+const SYMBOL_KIND_METHOD     = 9
+const SYMBOL_KIND_JMP_TABLE  = 10
 
 import '../AST/ASTUtils.mold'
 
