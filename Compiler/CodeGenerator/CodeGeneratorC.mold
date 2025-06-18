@@ -1027,7 +1027,7 @@ class CodeGeneratorC
           endif
 
           if currentProcName is 'start'
-            print '  // Clean up global frame
+            print '  // Clean up global frame'
             for values oneItem in currentSymbols
               if oneItem.kind is SYMBOL_KIND_VAR_GLOBAL
                 if oneItem.name is @any('argv', 'argc')
