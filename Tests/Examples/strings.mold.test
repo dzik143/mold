@@ -570,6 +570,19 @@ EXPECTED_OUTPUT:
 40
 -------------------------------------------------------------------------------
 
+TEST "Stringify rv = str(rv)
+
+function foo(x) -> rv
+  rv = x
+  rv = str(rv)
+endfunction
+
+print foo('abc')
+
+EXPECTED_OUTPUT:
+abc
+-------------------------------------------------------------------------------
+
 TEST "Print formatted string"
 
 x = 1
