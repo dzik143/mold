@@ -201,15 +201,17 @@ import './_Tables.mold'
 #                                Constants
 # -----------------------------------------------------------------------------
 
-UNICC_ERROR  = 0
-UNICC_REDUCE = 1
-UNICC_SHIFT  = 2
+const UNICC_ERROR  = 0
+const UNICC_REDUCE = 1
+const UNICC_SHIFT  = 2
 
-PRODUCTION_EMIT_IDX   = 0
-PRODUCTION_LENGTH_IDX = 1
-PRODUCTION_LHS_IDX    = 2
+const PRODUCTION_EMIT_IDX   = 0
+const PRODUCTION_LENGTH_IDX = 1
+const PRODUCTION_LHS_IDX    = 2
 
-SCANERLESS_MODE_ENABLED = (@@number-of-dfa-machines > 1)
+# Run scanner and lexer as separated processeds pipelined one-by-one.
+# To change at runtime use condition: (@@number-of-dfa-machines > 1)
+const SCANERLESS_MODE_ENABLED = false
 
 # -----------------------------------------------------------------------------
 #                                Helper classes
