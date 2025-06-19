@@ -101,6 +101,12 @@ class ASTOptimizerConstantFolding
     endif
   endmethod
 
+  method _shallowCopy(dst, src)
+    dst.opcode   = src.opcode
+    dst.value    = src.value
+    dst.children = src.children
+  endmethod
+
   method _processNodeMap(node)
     valuesStatic  = {}
     useStaticList = false
@@ -228,8 +234,8 @@ class ASTOptimizerConstantFolding
                           AST_OPCODE_ADD)
 
           if (y.opcode is opcode)
-            # imm * (imm * a) * gives (imm * imm) * a
-            # imm * (imm + a) + gives (imm + imm) + a
+            # imm * (imm * a) gives (imm * imm) * a
+            # imm + (imm + a) gives (imm + imm) + a
             tmp              = y.children[1]
             y.children[1]    = node.children[0]
             node.children[0] = tmp
@@ -431,6 +437,46 @@ class ASTOptimizerConstantFolding
           astType = AST_GetDataType(x)
           if astType isnt -1
             newValue = AST_ConvertDataTypeToText(astType)
+          endif
+        endif
+
+        # Sometimes we can simplify the tree even if NOT all args are imm.
+        if newValue is undefined
+          if opcode is AST_OPCODE_BOOL_OR
+            if @any((x.opcode is AST_DATA_BOOL) and (x.value is true),
+                    (y.opcode is AST_DATA_BOOL) and (y.value is true)) is true
+              # true or y    -> true
+              # x    or true -> true
+              newValue = true
+
+            elif (x.opcode is AST_DATA_BOOL) and (x.value is false)
+              # false or y -> y
+              this._shallowCopy(node, y)
+              isNodeChanged = true
+
+            elif (y.opcode is AST_DATA_BOOL) and (y.value is false)
+              # x or false -> x
+              this._shallowCopy(node, x)
+              isNodeChanged = true
+            endif
+
+          elif opcode is AST_OPCODE_BOOL_AND
+            if @any((x.opcode is AST_DATA_BOOL) and (x.value is false),
+                    (y.opcode is AST_DATA_BOOL) and (y.value is false)) is true
+              # false and y     -> false
+              # x     and false -> false
+              newValue = false
+
+            elif (x.opcode is AST_DATA_BOOL) and (x.value is true)
+              # true and y -> y
+              this._shallowCopy(node, y)
+              isNodeChanged = true
+
+            elif (y.opcode is AST_DATA_BOOL) and (y.value is true)
+              # x and true -> x
+              this._shallowCopy(node, x)
+              isNodeChanged = true
+            endif
           endif
         endif
 
