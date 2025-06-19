@@ -579,3 +579,88 @@ true is NOT integer
 [] is NOT integer
 {} is NOT integer
 -------------------------------------------------------------------------------
+
+TEST "And/or with one imm arg"
+
+# x and y with at least one imm arg.
+function trueAndX(x) -> rv
+  rv = true and (x is 1234)
+endfunction
+
+function falseAndX(x) -> rv
+  rv = false and (x is 1234)
+endfunction
+
+function xAndTrue(x) -> rv
+  rv = (x is 1234) and true
+endfunction
+
+function xAndFalse(x) -> rv
+  rv = (x is 1234) and false
+endfunction
+
+# x and y with at least one imm arg.
+function trueOrX(x) -> rv
+  rv = true or (x is 1234)
+endfunction
+
+function falseOrX(x) -> rv
+  rv = false or (x is 1234)
+endfunction
+
+function xOrTrue(x) -> rv
+  rv = (x is 1234) or true
+endfunction
+
+function xOrFalse(x) -> rv
+  rv = (x is 1234) or false
+endfunction
+
+print 'When x is true...'
+print '================='
+print 'x     and true  ->', xAndTrue (1234)
+print 'x     and false ->', xAndFalse(1234)
+print 'true  and x     ->', trueAndX (1234)
+print 'false and x     ->', falseAndX(1234)
+
+print 'x     or true  ->', xOrTrue (1234)
+print 'x     or false ->', xOrFalse(1234)
+print 'true  or x     ->', trueOrX (1234)
+print 'false or x     ->', falseOrX(1234)
+
+print ''
+print 'When x is false...'
+print '================='
+print 'x     and true  ->', xAndTrue (666)
+print 'x     and false ->', xAndFalse(666)
+print 'true  and x     ->', trueAndX (666)
+print 'false and x     ->', falseAndX(666)
+
+print 'x     or true  ->', xOrTrue (666)
+print 'x     or false ->', xOrFalse(666)
+print 'true  or x     ->', trueOrX (666)
+print 'false or x     ->', falseOrX(666)
+
+EXPECTED_OUTPUT:
+When x is true...
+=================
+x     and true  -> true
+x     and false -> false
+true  and x     -> true
+false and x     -> false
+x     or true  -> true
+x     or false -> true
+true  or x     -> true
+false or x     -> true
+
+When x is false...
+=================
+x     and true  -> false
+x     and false -> false
+true  and x     -> false
+false and x     -> false
+x     or true  -> true
+x     or false -> false
+true  or x     -> true
+false or x     -> false
+-------------------------------------------------------------------------------
