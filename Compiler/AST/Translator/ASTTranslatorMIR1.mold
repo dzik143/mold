@@ -427,43 +427,22 @@ class ASTTranslatorMIR1 extends ASTTranslator
     endif
 
     # TODO: Clean up this mess.
-    useTempRv = false
     rvForCall = rv
-
     if proto.isConstructor is @all(defined, true)
       rvForCall = null
-
-    elif rv is defined
-      # TODO: Why we need to check both symbolTable and symbolTableForTemps ?
-      if this.symbolTable.symbols{rv} is defined
-        rvType = this.symbolTable.symbols{rv}.type
-      elif this.symbolTableForTemps.symbols{rv} is defined
-        rvType = this.symbolTableForTemps.symbols{rv}.type
-      else
-        rvType = null
-      endif
-
-      if rvType is string
-        rvForCall = this._getTempVar(rvType)
-        useTempRv = true
-      endif
     endif
 
     # TODO: Use emitTwoArgsOpcode() after fix.
     this._emitOneItem([MIR1_OPCODE_CALL, rvForCall, name, params])
 
     if proto.isConstructor is @all(defined, true)
+      # Special case: rv = new ClassName(...)
       # TODO: Handle it in better way.
       # We need it to avoid eating new result (this pointer)
       # when constructor called just after.
       this.push(params[0])
-
     else
-      if useTempRv is true
-        this._loadVariable(rvForCall)
-        this._assign(rv, rvForCall)
-        this._releaseTempVar(rvForCall)
-      endif
+      # Default scenario: rv = foo(...)
       this.push(rv)
     endif
   endmethod
