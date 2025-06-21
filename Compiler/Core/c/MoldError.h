@@ -35,6 +35,7 @@ void __MOLD_PrintErrorAndDie_floatExpected();
 void __MOLD_PrintErrorAndDie_stringKeyExpected();
 void __MOLD_PrintErrorAndDie_stringExpected();
 void __MOLD_PrintErrorAndDie_mapOrObjectExpected();
+void __MOLD_PrintErrorAndDie_objectExpected();
 void __MOLD_PrintErrorAndDie_arrayExpected();
 void __MOLD_PrintErrorAndDie_arrayOrStringExpected();
 void __MOLD_PrintErrorAndDie_arrayStringOrMapExpected();
@@ -50,6 +51,7 @@ void __MOLD_PrintErrorAndDie_floatOverflow();
 void __MOLD_PrintErrorAndDie_floatUnderflow();
 void __MOLD_PrintErrorAndDie_notIterable();
 void __MOLD_PrintErrorAndDie_nullMethodCalled();
+void __MOLD_PrintErrorAndDie_vcallOnNonObject();
 
 #define ASSERT_VARIANT_ENABLED
 
