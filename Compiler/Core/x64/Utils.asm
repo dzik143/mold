@@ -326,9 +326,9 @@ __MOLD_DefaultExceptionHandler:
     push    r12
     push    r13
 
-;    cmp     byte [CrashDetected], 1       ; are we inside exception?
-;    jz      .corruptedStack               ;
-;    mov     byte [CrashDetected], 1       ; avoid recursive exception
+    cmp     byte [CrashDetected], 1       ; are we inside exception?
+    jz      .corruptedStack               ;
+    mov     byte [CrashDetected], 1       ; avoid recursive exception
 
     mov     r12, [rcx]                    ; r12 = exception record (EXCEPTION_RECORD *)
     mov     r13, [rcx + 8]                ; r13 = cpu context (CONTEXT *)
