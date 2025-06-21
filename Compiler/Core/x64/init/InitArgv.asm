@@ -8,15 +8,16 @@ __MOLD_InitArgv:
 
     push   rbp
     mov    rbp,rsp
+
+    push   r12
+    push   r13
+    push   r14
+
     sub    rsp, 144
 
     startupinfo EQU rbp - 144
     msvcrt_argv EQU rbp - 144 - 8
     msvcrt_env  EQU rbp - 144 - 16
-
-    push      r12
-    push      r13
-    push      r14
 
     lea       rcx, [argc + Variant_t.value]
     lea       rdx, [msvcrt_argv]
@@ -95,7 +96,9 @@ __MOLD_InitArgv:
     pop       r14
     pop       r13
     pop       r12
+
     leave
+
     ret
 
     restore startupinfo

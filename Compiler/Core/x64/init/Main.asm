@@ -8,7 +8,8 @@ __MOLD_Main:
 
     push    rbp
     mov     rbp, rsp
-    sub     rsp, 32
+    push    rbx
+    sub     rsp, 32 + 8
 
     ; OLD IMPLEMENTATION
     mov     ecx, 1 ; first?
@@ -73,8 +74,8 @@ __MOLD_Main:
 
     end if
 
-    add     rsp, 32
-    pop     rbp
+    add     rsp, 32 + 8
+    pop     rbx
 
     mov     eax, 0
     call    [ExitProcess]
