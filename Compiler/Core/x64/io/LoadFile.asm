@@ -13,7 +13,7 @@ __MOLD_LoadFile:
 
     push    rbp
     mov     rbp, rsp
-    sub     rsp, 32
+    sub     rsp, 32 + 8
 
     push    r12
     push    r13
