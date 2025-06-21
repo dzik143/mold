@@ -38,7 +38,7 @@ __MOLD_PrintVariant:
 .fmtEmpty     db '', 0
 .fmtAfterKey  db ': ', 0
 .fmtChar      db '%c', 0
-.fmtObject    db '[object]', 0
+.fmtObject    db '<object>', 0
 .jmpTable     dq .boolean, .array, .map, .object
 
 .complexOrBoolean:
