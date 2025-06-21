@@ -952,6 +952,15 @@ class CodeGeneratorC
             die('C: Profiler not implemented')
           endif
 
+          # Extra guard against calling method on non-object e.g.
+          # obj = new A()
+          # obj = null
+          # obj.foo()
+          # Possible improvement: Optimize it.
+          if isInsideVcall is true
+            print '  if (this.type != VARIANT_OBJECT) __MOLD_PrintErrorAndDie_vcallOnNonObject();'
+          endif
+
         elif opcode is MIR1_OPCODE_INIT_FRAME
           currentFrame = dst
           symbols      = currentFrame.symbols
