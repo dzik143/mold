@@ -312,6 +312,11 @@ class VMachineStack
         paramsCnt   = item[2]
         thiz        = stack.peekN(paramsCnt)
 
+        if @any(thiz is undefined,
+                thiz.__mold_vtable is undefined) is true
+          die('runtime error: virtual call on non-object')
+        endif
+
         methodProto = thiz.__mold_vtable{methodName}
 
         if methodProto is undefined
