@@ -172,12 +172,9 @@ rval_list_one_line
 //
 
 rval_list_many_lines
-  : rval_list_many_lines ',' rval
-  | rval_list_many_lines ',' @EOL rval
-  | @EOL rval_list_many_lines
-  | rval_list_many_lines @EOL
+  : rval_list_many_lines ',' @EOL? rval
+  | @EOL rval_list_many_lines? @EOL?
   | rval
-  | @EOL
   ;
 
 //
@@ -185,12 +182,9 @@ rval_list_many_lines
 //
 
 key_value_list
-  : key_value_list ',' map_key ':' rval
-  | key_value_list ',' @EOL map_key ':' rval
-  | key_value_list @EOL
-  | @EOL key_value_list
+  : key_value_list ',' @EOL? map_key ':' rval
+  | @EOL key_value_list? @EOL?
   | map_key ':' rval
-  | @EOL
   ;
 
 map_key : string =AST_DATA_STRING;
