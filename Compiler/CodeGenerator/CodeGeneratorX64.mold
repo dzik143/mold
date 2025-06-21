@@ -1117,6 +1117,7 @@ class CodeGeneratorX64
             print '  push rdi'
             print '  mov  rdi, rax'
             print ''
+            currentFrameSize = currentFrameSize + 8
           endif
 
           print '  sub  rsp,', currentFrameSize
