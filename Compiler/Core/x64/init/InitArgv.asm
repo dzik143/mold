@@ -93,11 +93,13 @@ __MOLD_InitArgv:
 
     mov       dword [argc + Variant_t.type], VARIANT_INTEGER
 
+    add       rsp, 144
+
     pop       r14
     pop       r13
     pop       r12
 
-    leave
+    pop       rbp
 
     ret
 
