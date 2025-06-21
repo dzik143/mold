@@ -18,8 +18,8 @@
 #                                                                              #
 ################################################################################
 
-DEBUG_AST_OPTIMIZER = false
-DEBUG_MOLD          = false
+const DEBUG_AST_OPTIMIZER = false
+const DEBUG_MOLD          = false
 
 import './AST/AST.mold'
 import './Parser/ParserMold.mold'
