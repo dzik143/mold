@@ -1182,6 +1182,8 @@ class CodeGeneratorC
               sep = ','
             endfor
 
+            print '  if (', params[0], '.type != VARIANT_OBJECT) __MOLD_PrintErrorAndDie_vcallOnNonObject();'
+
             if dst is defined
               # dst = obj.foo(...)
               print `  ${dst} = ((Variant_t (*)(${protoC}))`
