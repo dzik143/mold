@@ -108,3 +108,27 @@ macro DEBUG_PRINT5 fmt, a, b, c, d
   DEBUG_MSG_INTERNAL fmt
   DEBUG_POP_ALL
 }
+
+macro DEBUG_ENSURE_STACK_UNALIGNED_16 {
+  local .stackIsUnaligned16
+  test rsp, 0xf
+  jnz  .stackIsUnaligned16
+  sub  rsp, 8
+  DEBUG_PRINT1  'PANIC! Stack is aligned to 16-bytes, but should *NOT* be'
+  int  3
+.stackIsUnaligned16:
+}
+
+macro DEBUG_ENSURE_STACK_ALIGNED_16 {
+  local .stackIsAligned16
+  test rsp, 0xf
+  jz   .stackIsAligned16
+  DEBUG_PRINT1  'PANIC! Stack is *NOT* aligned to 16-bytes, but should be'
+  int  3
+.stackIsAligned16:
+}
+
+macro W64CALL dst {
+  DEBUG_ENSURE_STACK_ALIGNED_16
+  call dst
+}
