@@ -30,90 +30,59 @@ class ASTModuleResolver
     this.parser          = new Parser()
   endmethod
 
-  method _resolveImportsInternal(ast, pathPrefix)
-    global AST_OPCODE_CALL
+  method _resolveImportsInternal(ast, path) -> moduleInfo
+    global AST_OPCODE_CALL, AST_OPCODE_MODULE, AST_OPCODE_NOP
 
-    program     = ast.children[0]
-    children    = program.children
-    newChildren = []
+    moduleInfo = this.importedModules{path}
 
-    for values oneChild in children
+    if moduleInfo is undefined
+      # Load module once.
+      this.app.logDebug(`Resolving module [ ${path} ]...`)
 
-      if ((oneChild.opcode is AST_OPCODE_CALL) and
-          (oneChild.value is 'import'))
+      moduleInfo = {
+        'path': path,
+        'ast': ast,
+        'arrayOfImportedModules': []
+      }
 
-        # TODO: Verify parameters.
-        modulePath     = oneChild.children[0].value
-        modulePathDir  = UTILS_GetDirNameFromPath(modulePath)
-        modulePathFull = UTILS_NormalizePath(`${pathPrefix}/${modulePath}`)
+      this.importedModules{path} = moduleInfo
 
-        if this.importedModules{modulePathFull} is undefined
-          # Load only once.
-          this.importedModules{modulePathFull} = true
+      program  = ast.children[0]
+      children = program.children
 
-          this.app.logDebug(`Resolving module [ ${modulePathFull} ]...`)
+      currentDir = UTILS_GetDirNameFromPath(path)
 
-          # Parse source into AST tree.
-          importedAst = this.parser.parseFile(modulePathFull)
+      for values oneChild in children
 
-          # Resolve imports recursively.
-          newPathPrefix = UTILS_NormalizePath(`${pathPrefix}/${modulePathDir}`)
-          this._resolveImportsInternal(importedAst, newPathPrefix)
-
-          importedProgram  = importedAst.children[0]
-          importedChildren = importedProgram.children
-
-          for values oneImportedChild in importedChildren
-            newChildren[@afterlast] = oneImportedChild
-          endfor
-        endif
-
-      elif ((oneChild.opcode is AST_OPCODE_CALL) and
-            (oneChild.value is 'importFrom'))
-
-        # import from 'A'
-        # import foo from 'A'
-        modulePath = oneChild.children[0].value
-        moduleDir  = UTILS_GetDirNameFromPath(modulePath)
-
-        if moduleDir isnt '.'
-          newPathPrefix = pathPrefix ~ '/' ~ moduleDir
-        else
-          newPathPrefix = pathPrefix
-        endif
-
-        moduleBase = UTILS_GetBaseNameFromPath(modulePath)
-        moduleName = UTILS_NormalizePath(`${newPathPrefix}/${moduleBase}.mold`)
-
-        if this.importedModules{moduleName} is undefined
-          # Load only once.
-          this.importedModules{moduleName} = true
-
-          this.app.logDebug(`Resolving module [ ${moduleName} ]...`)
-
-          # Parse source into AST tree.
-          importedAst = this.parser.parseFile(moduleName)
+        if ((oneChild.opcode is AST_OPCODE_CALL) and
+            (oneChild.value is 'import'))
 
           # Resolve imports recursively.
-          this._resolveImportsInternal(importedAst, newPathPrefix)
+          childPath     = oneChild.children[0].value
+          childPathFull = UTILS_NormalizePath(`${currentDir}/${childPath}`)
 
-          importedProgram  = importedAst.children[0]
-          importedChildren = importedProgram.children
+          # Parse source into AST tree.
+          importedAst    = this.parser.parseFile(childPathFull)
+          importedModule = this._resolveImportsInternal(importedAst, childPathFull)
 
-          for values oneImportedChild in importedChildren
-            newChildren[@afterlast] = oneImportedChild
-          endfor
+          # Collect imported modules.
+          moduleInfo.arrayOfImportedModules[@afterlast] = importedModule
+
+          oneChild.opcode   = AST_OPCODE_NOP
+          oneChild.children = []
         endif
+      endfor
+    endif
 
-      else
-        newChildren[@afterlast] = oneChild
-      endif
-    endfor
-
-    program.children = newChildren
+    ast.moduleInfo = moduleInfo
   endmethod
 
-  method resolveImports(ast)
-    this._resolveImportsInternal(ast, '.')
+  # TODO: Remove path param?
+  method resolveImports(ast, path)
+    this._resolveImportsInternal(ast, path)
+  endmethod
+
+  method getModules() -> rv
+    rv = this.importedModules
   endmethod
 endclass

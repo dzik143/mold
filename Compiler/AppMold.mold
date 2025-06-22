@@ -18,20 +18,24 @@
 #                                                                              #
 ################################################################################
 
-import 'Utils/SymbolTable.mold'
-import 'AST/ASTModuleResolver.mold'
-import 'AST/ASTSymbolsCollector.mold'
-import 'AST/ASTEvaluator.mold'
-import 'AST/ASTPreprocessor.mold'
-import 'AST/ASTTypeCast.mold'
+import './Parser/ParserMold.mold'
 
-import 'AST/Optimizer/ASTOptimizerConstantFolding.mold'
-import 'AST/Optimizer/ASTOptimizerCSE.mold'
-import 'AST/Optimizer/ASTOptimizerDeadCodeRemove.mold'
-import 'AST/Optimizer/ASTOptimizerVCall.mold'
-import 'AST/Optimizer/ASTOptimizerIf.mold'
-import 'AST/Optimizer/ASTOptimizerInline.mold'
+import './Utils/SymbolTable.mold'
+import './AST/ASTModuleResolver.mold'
+import './AST/ASTSymbolsCollector.mold'
+import './AST/ASTEvaluator.mold'
+import './AST/ASTPreprocessor.mold'
+import './AST/ASTTypeCast.mold'
 
+import './AST/Translator/ASTTranslatorMIR0.mold'
+import './AST/Translator/ASTTranslatorMIR1.mold'
+
+import './AST/Optimizer/ASTOptimizerConstantFolding.mold'
+import './AST/Optimizer/ASTOptimizerCSE.mold'
+import './AST/Optimizer/ASTOptimizerDeadCodeRemove.mold'
+import './AST/Optimizer/ASTOptimizerVCall.mold'
+import './AST/Optimizer/ASTOptimizerIf.mold'
+import './AST/Optimizer/ASTOptimizerInline.mold'
 
 # TODO: Clean up this mess.
 import 'MIR/MIR.mold'
@@ -47,6 +51,8 @@ class AppMold
     this.astSymbolsCollector         = new ASTSymbolsCollector(this)
     this.astEvaluator                = new ASTEvaluator(this)
     this.astPreprocessor             = new ASTPreprocessor(this)
+    this.astTranslatorMIR0           = new ASTTranslatorMIR0(this)
+    this.astTranslatorMIR1           = new ASTTranslatorMIR1(this)
     this.astOptimizerCSE             = new ASTOptimizerCSE(this)
     this.astOptimizerDeadCodeRemove  = new ASTOptimizerDeadCodeRemove(this)
     this.astOptimizerVCall           = new ASTOptimizerVCall(this)
@@ -54,13 +60,15 @@ class AppMold
     this.astOptimizerInline          = new ASTOptimizerInline(this)
     this.astTypeCast                 = new ASTTypeCast(this)
     this.astModuleResolver           = new ASTModuleResolver(this)
+    this.parser                      = new Parser()
+
+    # TODO: Move to better place?
+    this.loadedModules = {}
 
     # TODO: Clean up this mess.
     # TODO: Better way to pass current line/column to error
     # handler.
     this.clearLogContext()
-
-    this.code = new MIRCode()
     this.logDebug('Ready to work')
   endmethod
 
@@ -93,10 +101,6 @@ class AppMold
     logCtx    = this.logCtx
     msgPrefix = str(logCtx.filePath) ~ ':' ~ str(logCtx.line) ~ ':' ~ str(logCtx.column) ~ ': error: '
     die(msgPrefix ~ msg)
-  endmethod
-
-  method getMir1Code() -> rv
-    rv = this.code
   endmethod
 
   method getSymbolTable() -> rv
@@ -147,6 +151,18 @@ class AppMold
     rv = this.astTypeCast
   endmethod
 
+  method getParser() -> rv
+    rv = this.parser
+  endmethod
+
+  method getAstTranslatorMIR0() -> rv
+    rv = this.astTranslatorMIR0
+  endmethod
+
+  method getAstTranslatorMIR1() -> rv
+    rv = this.astTranslatorMIR1
+  endmethod
+
   method destroy()
     # Possible improvement: Handle cyclic references in the smarter way?
     this.symbolTable                 = null
@@ -161,5 +177,6 @@ class AppMold
     this.astOptimizerInline          = null
     this.astTypeCast                 = null
     this.astModuleResolver           = null
+    this.parser                      = null
   endmethod
 endclass

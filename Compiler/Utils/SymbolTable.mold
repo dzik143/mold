@@ -165,7 +165,7 @@ class SymbolTable
   endmethod
 
   method insertGlobal(name, entry)
-    this.app.getSymbolTable().insert(name, entry)
+    this.globalTable.insert(name, entry)
   endmethod
 
   method _lookupInternal(name) -> rv

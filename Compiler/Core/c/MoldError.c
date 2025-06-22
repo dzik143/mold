@@ -29,15 +29,13 @@ void __MOLD_Die(Variant_t msg)
 {
   __MOLD_PrintToFile_variant(stderr, &msg);
   fprintf(stderr, "\n");
-  exit(-1);
+  abort();
 }
 
 void __MOLD_PrintErrorAndDie(const char *msg)
 {
   fprintf(stderr, "runtime error: %s\n", msg);
-  //char *ptr = NULL;
-  //ptr[0] = 0;
-  exit(-1);
+  abort();
 }
 
 MOLD_DEFINE_ERROR_FCT(generic                  , "generic")

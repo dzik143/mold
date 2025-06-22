@@ -420,6 +420,13 @@ Variant_t __MOLD_VariantLoadFromKey_string(Variant_t box, Variant_t key)
 
 void __MOLD_VariantStoreAtKey_variant(Variant_t *box, Variant_t key, Variant_t value)
 {
+  if ((box != NULL) &&
+      (box -> type != VARIANT_MAP) &&
+      (box -> type != VARIANT_OBJECT))
+  {
+    __MOLD_PrintErrorAndDie_mapOrObjectExpected();
+  }
+
   ASSERT_VARIANT_PTR_MAP_OR_OBJECT(box);
   ASSERT_VARIANT_PTR_STRING(&key);
   ASSERT_VARIANT_PTR_ANY(&value);

@@ -24,7 +24,7 @@ import '../ASTUtils.mold'
 class ASTOptimizerVCall
   method constructor(app)
     this.app         = app
-    this.symbolTable = app.getSymbolTable()
+    this.symbolTable = null
   endmethod
 
   method _debug(msg)
@@ -36,6 +36,7 @@ class ASTOptimizerVCall
 
   method _processNode(node)
     global AST_OPCODE_VCALL
+    global AST_OPCODE_PROGRAM
     global AST_OPCODE_BLOCK
     global AST_OPCODE_CALL
 
@@ -45,7 +46,10 @@ class ASTOptimizerVCall
     children    = node.children
     childrenCnt = len(children)
 
-    if opcode is AST_OPCODE_VCALL
+    if opcode is AST_OPCODE_PROGRAM
+      this.symbolTable = node.moduleInfo.symbolTable
+
+    elif opcode is AST_OPCODE_VCALL
       # obj.foo(...)
       thiz           = children[0]
       symbolInfoThiz = thiz.symbolInfo

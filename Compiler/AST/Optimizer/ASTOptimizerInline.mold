@@ -23,9 +23,13 @@ import '../ASTUtils.mold'
 
 class ASTOptimizerInline
   method constructor(app)
-    this.app              = app
-    this.symbolTable      = app.getSymbolTable()
+    this.app = app
     this.symbolsCollector = app.getAstSymbolsCollector()
+
+    # TODO: Review it.
+    # OLD IMPLEMENTATION:
+    # this.symbolTable  = app.getSymbolTable()
+    this.symbolTable = null
   endmethod
 
   method _debug(msg)

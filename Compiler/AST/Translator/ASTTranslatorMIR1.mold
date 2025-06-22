@@ -36,7 +36,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
     this.app = app
 
     # TODO: Clean up this mess.
-    this.code         = app.getMir1Code()
+    this.code         = null
     this.stack        = new Stack()
     this.outputObject = null
 

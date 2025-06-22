@@ -787,7 +787,8 @@ class ASTTranslator
   endmethod
 
   method _executeNode(ast)
-    global AST_OPCODE_PROGRAM, AST_OPCODE_BLOCK, AST_OPCODE_DECLARE_OR_ASSIGN
+    global AST_OPCODE_PROGRAM, AST_OPCODE_BLOCK, AST_OPCODE_MODULE
+    global AST_OPCODE_DECLARE_OR_ASSIGN
     global AST_OPCODE_FOR_VALUES_RANGE, AST_OPCODE_WHILE
     global AST_OPCODE_CALL, AST_OPCODE_FUNCTION, AST_OPCODE_IF, AST_OPCODE_SWITCH
     global AST_OPCODE_VARIABLE
@@ -844,7 +845,7 @@ class ASTTranslator
       this._emitFunctionBody('start', funcProto)
       this.currentFunctionProto = null
 
-    elif opcode is AST_OPCODE_BLOCK
+    elif opcode is @any(AST_OPCODE_BLOCK, AST_OPCODE_MODULE)
       oldSymbolTable   = this.symbolTable
 
       this._enterScope(ast)

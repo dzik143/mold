@@ -131,7 +131,6 @@ class ASTSymbolsCollector
       # Do nothing.
 
     elif opcode is AST_OPCODE_PROGRAM
-      node.symbolTable = this.app.getSymbolTable()
       for values item in children
         this._collectSymbolsFromLeftNode(node.symbolTable, item)
       endfor
@@ -897,6 +896,6 @@ class ASTSymbolsCollector
       die('error: only block or program nodes can own symbol table')
     endif
 
-    this._collectSymbolsFromLeftNode(node.symbolTable, node)
+    this._collectSymbolsFromLeftNode(null, node)
   endmethod
 endclass

@@ -1,0 +1,51 @@
+class Module
+  method constructor(app)
+    this.app = app
+    this.ast = null
+    this.symbolTable = new SymbolTable(app)
+    this.mir0Code = null
+    this.mir1Code = null
+  endmethod
+
+  method loadFromSource(path)
+    # Parse source code into AST tree.
+    this.app.logDebug(`Parsing source [${path}]...`)
+    this.ast = this.app.getParser().parseFile(path)
+
+    # Resolve imports if any.
+    this.app.logDebug('Resolving imports...')
+    this.app.getAstModuleResolver().resolveImports(this.ast, path)
+
+    # Preprocess AST to expand built-in constructions.
+    # Example: x is defined => typeof(x) isnt 'undefined'
+    this.app.logDebug('Preprocessing AST...')
+    this.app.getAstPreprocessor().processNode(this.ast)
+
+    # Build symbol table.
+    # TODO: Simplify it.
+    this.app.logDebug('Building symbol table...')
+    this.ast.symbolTable = this.symbolTable
+    this.app.getAstSymbolsCollector().buildSymbolTable(this.ast)
+  endmethod
+
+  method buildMIR0()
+    this.mir0Code = this.app.getAstTranslatorMIR0().run(this.ast)
+  endmethod
+
+  method buildMIR1()
+    # TODO
+    # this.mir1Code = this.app.getAstTranslatorMir1().run(this.ast)
+  endmethod
+
+  method getMir0Code() -> rv
+    rv = this.mir0Code
+  endmethod
+
+  method getMir1Code() -> rv
+    rv = this.mir1Code
+  endmethod
+
+  method optimizeAst()
+    # TODO
+  endmethod
+endclass

@@ -1,0 +1,28 @@
+const DEBUG_AST_OPTIMIZER = true
+const DEBUG_MOLD          = true
+
+import './AST/AST.mold'
+import './AppMold.mold'
+import './Utils/Module.mold'
+import './Utils/PipeAbstract.mold'
+import './VM/VMachineStack.mold'
+
+path = './Core/source.mold'
+
+app = new AppMold()
+
+mainModule = new Module(app)
+mainModule.loadFromSource(path)
+
+mainModule.buildMIR0()
+mir0Code = mainModule.getMir0Code()
+
+# Load MIR0 code into virtual machine.
+vm = new VMachineStack()
+vm.loadCode(mir0Code)
+
+# Dump stack MIR0 only.
+vm.dumpCode()
+
+# Run virtual machine (stack based).
+vm.run()

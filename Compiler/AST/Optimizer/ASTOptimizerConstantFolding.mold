@@ -22,8 +22,11 @@ import '../AST.mold'
 
 class ASTOptimizerConstantFolding
   method constructor(app)
-    this.app = app
-    this.globals = app.getSymbolTable()
+    this.app     = app
+    # TODO: Review it.
+    # OLD IMPLEMENTATION:
+    # this.globals = app.getSymbolTable()
+    this.globals = null
   endmethod
 
   method _debug(msg)
@@ -196,7 +199,11 @@ class ASTOptimizerConstantFolding
     y           = children[1]
     areArgsImm  = true
 
-    if (opcode is AST_OPCODE_CALL) and (value is 'global')
+    if opcode is AST_OPCODE_PROGRAM
+      # TODO: Review it.
+      this.globals = node.moduleInfo.symbolTable
+
+    elif (opcode is AST_OPCODE_CALL) and (value is 'global')
       # Global import - do nothing.
 
     else
