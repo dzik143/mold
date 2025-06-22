@@ -61,6 +61,7 @@ class SymbolTable
     this.deepMax   = 128
     this.loopLevel = 0
     this.procLevel = 0
+    this.moduleId  = '__m0'
 
     # Track used literals to avoid emitting the same text
     # multiple times.
@@ -78,6 +79,7 @@ class SymbolTable
 
     this.parent      = null
     this.globalTable = this
+    this.moduleTable = this
 
     # TODO: Remove it when map iteration ready.
     this.symbols = {}
@@ -130,6 +132,8 @@ class SymbolTable
       entry.readHits  = 0
       entry.loopLevel = this.loopLevel
 
+      print '// INSERT', entry
+
       # Default data type to variant if not set.
       # TODO: Review it?
       #if entry.astType is undefined
@@ -165,7 +169,8 @@ class SymbolTable
   endmethod
 
   method insertGlobal(name, entry)
-    this.app.getSymbolTable().insert(name, entry)
+    fullName = this.moduleId ~ '_' ~ name
+    this.globalTable.insert(fullName, entry)
   endmethod
 
   method _lookupInternal(name) -> rv
@@ -350,7 +355,9 @@ class SymbolTable
     rv.deepIdx      = this.deepIdx + 1
     rv.procLevel    = this.procLevel
     rv.globalTable  = this.globalTable
+    rv.moduleTable  = this.moduleTable
     rv.functionName = this.functionName
+    rv.moduleId     = this.moduleId
   endmethod
 
   method enterScopeForLoop() -> rv
@@ -362,6 +369,12 @@ class SymbolTable
     rv              = this.enterScope()
     rv.procLevel    = this.procLevel + 1
     rv.functionName = functionName
+  endmethod
+
+  method enterScopeForModule(moduleId) -> rv
+    rv             = this.enterScope()
+    rv.moduleTable = this
+    rv.moduleId    = moduleId
   endmethod
 
   method leaveScope() -> rv
@@ -388,7 +401,16 @@ class SymbolTable
       'proto': proto
     }
 
-    this.insertGlobal(name, newEntry)
+    # Possible improvement: Simplify it.
+    if proto.builtIn is @all(defined, true)
+      # Built-in function - skip the module prefix.
+      this.globalTable.insert(name, newEntry)
+    else
+      # Default scenario.
+      # Extra module prefix should be emitted to distinguish symbols incoming
+      # from different modules e.g. __m1_foo() and __m2_foo().
+      this.insertGlobal(name, newEntry)
+    endif
   endmethod
 
   method lookupFunction(name, paramsCnt, isRetValUsed) -> rv
@@ -424,6 +446,10 @@ class SymbolTable
 
   method getCurrentFunctionName() -> rv
     rv = this.functionName
+  endmethod
+
+  method getCurrentModuleId() -> rv
+    rv = this.moduleId
   endmethod
 
   # ----------------------------------------------------------------------------

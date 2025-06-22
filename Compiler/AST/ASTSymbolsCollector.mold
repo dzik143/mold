@@ -65,6 +65,7 @@ class ASTSymbolsCollector
 
   method _collectSymbols(symbolTable, node, isLeftNode)
     global AST_OPCODE_PROGRAM
+    global AST_OPCODE_MODULE
     global AST_OPCODE_BLOCK
     global AST_OPCODE_VARIABLE
     global AST_OPCODE_DECLARE_OR_ASSIGN
@@ -130,8 +131,18 @@ class ASTSymbolsCollector
         (node.value is '__this_placeholder__'))
       # Do nothing.
 
-    elif opcode is AST_OPCODE_PROGRAM
+    elif opcode is @any(AST_OPCODE_PROGRAM, AST_OPCODE_MODULE)
+      # Fetch global symbol table from the main app.
       node.symbolTable = this.app.getSymbolTable()
+
+      # Enter module scope if needed.
+      if opcode is AST_OPCODE_MODULE
+        node.symbolTable = node.symbolTable.enterScopeForModule(node.value)
+      else
+        print '// PROGRAM', node.importedSymbols
+      endif
+
+      # Process child nodes recursively.
       for values item in children
         this._collectSymbolsFromLeftNode(node.symbolTable, item)
       endfor

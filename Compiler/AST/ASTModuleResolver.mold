@@ -28,28 +28,42 @@ class ASTModuleResolver
     this.app             = app
     this.importedModules = {}
     this.parser          = new Parser()
+    this.nextModuleIdx   = 1
+  endmethod
+
+  method getNextModuleId() -> rv
+    rv = '__m' ~ str(this.nextModuleIdx)
+    this.nextModuleIdx = this.nextModuleIdx + 1
   endmethod
 
   method _resolveImportsInternal(ast, pathPrefix)
+    global AST_OPCODE_MODULE
     global AST_OPCODE_CALL
+    global AST_OPCODE_NOP
 
-    program     = ast.children[0]
-    children    = program.children
-    newChildren = []
+    program         = ast.children[0]
+    children        = program.children
+    importedSymbols = {}
 
     for values oneChild in children
 
       if ((oneChild.opcode is AST_OPCODE_CALL) and
-          (oneChild.value is 'import'))
+          (oneChild.value  is @any('import', 'importFrom')))
 
         # TODO: Verify parameters.
-        modulePath     = oneChild.children[0].value
+        modulePath     = oneChild.children[@last].value
         modulePathDir  = UTILS_GetDirNameFromPath(modulePath)
         modulePathFull = UTILS_NormalizePath(`${pathPrefix}/${modulePath}`)
 
-        if this.importedModules{modulePathFull} is undefined
-          # Load only once.
-          this.importedModules{modulePathFull} = true
+        # Search for module in cache first.
+        moduleId = this.importedModules{modulePathFull}
+
+        originalChildren = oneChild.children
+
+        if moduleId is undefined
+          # Module not loaded yet - load it now.
+          moduleId = this.getNextModuleId()
+          this.importedModules{modulePathFull} = moduleId
 
           this.app.logDebug(`Resolving module [ ${modulePathFull} ]...`)
 
@@ -60,60 +74,36 @@ class ASTModuleResolver
           newPathPrefix = UTILS_NormalizePath(`${pathPrefix}/${modulePathDir}`)
           this._resolveImportsInternal(importedAst, newPathPrefix)
 
-          importedProgram  = importedAst.children[0]
-          importedChildren = importedProgram.children
+          oneChild.opcode   = AST_OPCODE_MODULE
+          oneChild.children = importedAst.children
+          oneChild.value    = 'importModuleOnce'
 
-          for values oneImportedChild in importedChildren
-            newChildren[@afterlast] = oneImportedChild
-          endfor
-        endif
-
-      elif ((oneChild.opcode is AST_OPCODE_CALL) and
-            (oneChild.value is 'importFrom'))
-
-        # import from 'A'
-        # import foo from 'A'
-        modulePath = oneChild.children[0].value
-        moduleDir  = UTILS_GetDirNameFromPath(modulePath)
-
-        if moduleDir isnt '.'
-          newPathPrefix = pathPrefix ~ '/' ~ moduleDir
         else
-          newPathPrefix = pathPrefix
+          oneChild.opcode   = AST_OPCODE_NOP
+          oneChild.value    = 'alreadyImported'
+          oneChild.children = []
         endif
 
-        moduleBase = UTILS_GetBaseNameFromPath(modulePath)
-        moduleName = UTILS_NormalizePath(`${newPathPrefix}/${moduleBase}.mold`)
+        # Build map of imported symbols.
+        # TODO: Simplify it.
+        for idx in 0 .. len(originalChildren) - 1
+          oneName = originalChildren[idx].value
+          importedSymbols{oneName} = moduleId ~ '_' ~ oneName
+        endfor
 
-        if this.importedModules{moduleName} is undefined
-          # Load only once.
-          this.importedModules{moduleName} = true
-
-          this.app.logDebug(`Resolving module [ ${moduleName} ]...`)
-
-          # Parse source into AST tree.
-          importedAst = this.parser.parseFile(moduleName)
-
-          # Resolve imports recursively.
-          this._resolveImportsInternal(importedAst, newPathPrefix)
-
-          importedProgram  = importedAst.children[0]
-          importedChildren = importedProgram.children
-
-          for values oneImportedChild in importedChildren
-            newChildren[@afterlast] = oneImportedChild
-          endfor
-        endif
-
-      else
-        newChildren[@afterlast] = oneChild
+        oneChild.value = moduleId
       endif
     endfor
 
-    program.children = newChildren
+    ast.importedSymbols = importedSymbols
+  endmethod
+
+  method getTranslationMapForModule(moduleId) -> rv
+    rv = this.translationMap{moduleId}
   endmethod
 
   method resolveImports(ast)
+    ast.value = '__m0'
     this._resolveImportsInternal(ast, '.')
   endmethod
 endclass
