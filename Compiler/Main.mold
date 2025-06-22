@@ -171,6 +171,11 @@ parser = new Parser()
 
 app.logDebug('Parsing source...')
 ast = parser.parseFile(path)
+# Resolve imports if any.
+
+app.logDebug('Resolving imports...')
+astModuleResolver = app.getAstModuleResolver()
+astModuleResolver.resolveImports(ast)
 
 #
 # Dispatch working mode.
@@ -185,11 +190,6 @@ elif mode is 'astjson'
   die('temporary disabled due to missing object printing')
 
 else
-  # Resolve imports if any.
-  app.logDebug('Resolving imports...')
-  astModuleResolver = app.getAstModuleResolver()
-  astModuleResolver.resolveImports(ast)
-
   # Preprocess AST to expand built-in constructions.
   # Example: x is defined => typeof(x) isnt 'undefined'
   app.logDebug('Preprocessing AST...')
