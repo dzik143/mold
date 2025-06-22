@@ -27,6 +27,7 @@
 #include "MoldError.h"
 #include "MoldForDriver.h"
 #include "MoldVariantString.h"
+#include "MoldPrint.h"
 
 // -----------------------------------------------------------------------------
 //                             Global variables
@@ -617,6 +618,13 @@ Variant_t __MOLD_SysCall(uint32_t id, ...)
     case 42: rv = __MOLD_Str(va_arg(ptr, Variant_t)); break;
     case 43: rv = __MOLD_Len(va_arg(ptr, Variant_t)); break;
     case 44: rv = __MOLD_Typeof(va_arg(ptr, Variant_t)); break;
+    case 45:      __MOLD_VariantPrint(va_arg(ptr, Variant_t)); break;
+
+    case 46: {
+      Variant_t x = va_arg(ptr, Variant_t);
+      __MOLD_PrintToFile_variant(stderr, &x);
+      break;
+    }
 
     case 50:
     {
