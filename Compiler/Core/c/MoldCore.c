@@ -39,7 +39,7 @@ Variant_t __TrashBin = { VARIANT_UNDEFINED };
 
 // Custom stack to allocatable variant vars.
 static Variant_t __MOLD_Stack[MOLD_DEFAULT_STACK_SIZE];
-Variant_t *__MOLD_StackPtr = &__MOLD_Stack[MOLD_DEFAULT_STACK_SIZE];
+Variant_t *__MOLD_StackPtr = &__MOLD_Stack[MOLD_DEFAULT_STACK_SIZE - 1];
 
 // -----------------------------------------------------------------------------
 //                Convert: create variant from primitives
@@ -965,7 +965,7 @@ void __MOLD_VariantMove(Variant_t *dst, Variant_t *src)
 void __MOLD_StackAlloc(uint32_t n) {
   __MOLD_StackPtr -= n;
   assert(__MOLD_StackPtr > __MOLD_Stack);
-  assert(__MOLD_StackPtr < __MOLD_Stack + sizeof(__MOLD_Stack));
+  assert(__MOLD_StackPtr < &__MOLD_Stack[MOLD_DEFAULT_STACK_SIZE]);
   memset(__MOLD_StackPtr, 0, n * sizeof(Variant_t));
 };
 
@@ -981,7 +981,7 @@ void __MOLD_StackFree(uint32_t n) {
     __MOLD_VariantDestroy(__MOLD_StackPtr);
     __MOLD_StackPtr ++;
     assert(__MOLD_StackPtr > __MOLD_Stack);
-    assert(__MOLD_StackPtr < __MOLD_Stack + sizeof(__MOLD_Stack));
+    assert(__MOLD_StackPtr < &__MOLD_Stack[MOLD_DEFAULT_STACK_SIZE]);
     n--;
   }
 }
