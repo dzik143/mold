@@ -170,10 +170,6 @@ class CodeGeneratorC
     endif
   endmethod
 
-  method variantMove(dst, src)
-    print `  __MOLD_VariantMove(&${dst}, &${src});`
-  endmethod
-
   method variantDestroy(x)
     global SYMBOL_KIND_VAR_LOCAL
     global SYMBOL_KIND_VAR_GLOBAL
@@ -494,7 +490,7 @@ class CodeGeneratorC
 
     # Add the first this parameter for class methods.
     if proto.symbols{'this'} is defined
-      paramsProtoForC = 'Variant_t this'
+      paramsProtoForC = 'Variant_t *this'
       sep = ', '
     else
       paramsProtoForC = ''
@@ -509,6 +505,12 @@ class CodeGeneratorC
       else
         symbolInfo  = proto.symbols{paramName}
         symbolTypeC = MIR_TO_C_TYPE_MAP{symbolInfo.type}
+      endif
+
+      # Expect variant types passed via pointers.
+      # Possible improvement: Simlify it?
+      if symbolTypeC is 'Variant_t'
+        symbolTypeC = 'Variant_t*'
       endif
 
       paramsProtoForC = paramsProtoForC ~ `${sep}${symbolTypeC} ${paramName}`
@@ -529,6 +531,57 @@ class CodeGeneratorC
     # Build final C function proto:
     # Example: int foo(double x, Variant_t y)
     rv = `${returnTypeForC} ${nameForC}(${paramsProtoForC})`
+  endmethod
+
+  method _getSymbolInfo(x) -> rv
+    rv = this.symbols{x}
+    if rv is undefined
+      rv = this.globals{x}
+    endif
+  endmethod
+
+  method _getParamForCall(x) -> rv
+    global SYMBOL_KIND_VAR_PARAM
+
+    rv = x
+
+    if x is defined
+      if x is @any(integer, float, boolean)
+        rv = str(x)
+
+      elif rv is string
+        symbolInfo = this._getSymbolInfo(x)
+
+        if ((symbolInfo is defined) and
+            (symbolInfo.type is @any(undefined, 'variant', 'string')) and
+            (symbolInfo.kind isnt SYMBOL_KIND_VAR_PARAM))
+          # Always pass variants via pointers.
+          # For current params is not needed, because we already get variants
+          # as pointers.
+          rv = `&${x}`
+
+        elif rv is '__TrashBin'
+          # Special case. This symbol is not defined in symbols table, but
+          # used internally as NULL output if one of output variable isnt used
+          # in ForEach loops.
+          # Possbile improvement: Simplify it?
+          rv = `&${x}`
+        endif
+      endif
+
+    else
+      rv = '&__undefined'
+    endif
+  endmethod
+
+  method _buildCallList(params) -> rv
+    rv  = ''
+    sep = ''
+
+    for values oneParam in params
+      rv  = rv ~ sep ~ this._getParamForCall(oneParam)
+      sep = ', '
+    endfor
   endmethod
 
   method run(codeObj)
@@ -702,6 +755,10 @@ class CodeGeneratorC
       xType   = this._getSymbolType(x)
       yType   = this._getSymbolType(y)
 
+      dstForCall = this._getParamForCall(dst)
+      xForCall   = this._getParamForCall(x)
+      yForCall   = this._getParamForCall(y)
+
       opcodeAsText = MIR1_GetOpcodeAsText(opcode)
 
       if opcode isnt @all(MIR1_OPCODE_COMMENT,
@@ -722,7 +779,7 @@ class CodeGeneratorC
         if opcode is MIR1_OPCODE_CREATE_ARRAY
           this.variantDestroy(dst)
           if x is defined
-            print `  ${dst} = __MOLD_VariantArrayCreateFromInitList(${x});`
+            print `  ${dst} = __MOLD_VariantArrayCreateFromInitList(${xForCall});`
           else
             print `  ${dst} = __MOLD_VariantArrayCreate();`
           endif
@@ -730,7 +787,7 @@ class CodeGeneratorC
         elif opcode is MIR1_OPCODE_CREATE_MAP
           this.variantDestroy(dst)
           if x is defined
-            print `  ${dst} = __MOLD_VariantMapCreateFromInitList(${x}, ${y});`
+            print `  ${dst} = __MOLD_VariantMapCreateFromInitList(${xForCall}, ${yForCall});`
           else
             print `  ${dst} = __MOLD_VariantMapCreate();`
           endif
@@ -776,7 +833,7 @@ class CodeGeneratorC
           print '  }'
 
         elif opcode is MIR1_OPCODE_STRING_JOIN
-          print `  __MOLD_VariantStringJoin(&${dst}, &${x}, &${y});`
+          print `  __MOLD_VariantStringJoin(${dstForCall}, ${xForCall}, ${yForCall});`
 
         elif opcode is @any(MIR1_OPCODE_CMP_IS_TYPEOF,
                             MIR1_OPCODE_CMP_IS_NOT_TYPEOF,
@@ -785,16 +842,16 @@ class CodeGeneratorC
 
           if xType is 'variant'
             if opcode is MIR1_OPCODE_CMP_IS_TYPEOF
-              print `  ${dst} = ${x}.type == ${y};`
+              print `  ${dst} = (${xForCall}) -> type == ${y};`
 
             elif opcode is MIR1_OPCODE_CMP_IS_NOT_TYPEOF
-              print `  ${dst} = ${x}.type != ${y};`
+              print `  ${dst} = (${xForCall}) -> type != ${y};`
 
             elif opcode is MIR1_OPCODE_JMP_IF_TYPEOF
-              print `  if (${x}.type == ${y}) goto ${dst};`
+              print `  if ((${xForCall}) -> type == ${y}) goto ${dst};`
 
             elif opcode is MIR1_OPCODE_JMP_IF_NOT_TYPEOF
-              print `  if (${x}.type != ${y}) goto ${dst};`
+              print `  if ((${xForCall}) -> type != ${y}) goto ${dst};`
             endif
 
           else
@@ -842,11 +899,11 @@ class CodeGeneratorC
 
         elif opcode is MIR1_OPCODE_STORE_INDEX
           # dst[x] := y
-          print `  __MOLD_VariantStoreAtIndex_${yType}(&${dst}, ${x}, ${y});`
+          print `  __MOLD_VariantStoreAtIndex_${yType}(${dstForCall}, ${xForCall}, ${yForCall});`
 
         elif opcode is MIR1_OPCODE_STORE_KEY
           # dst{x} := y
-          print `  __MOLD_VariantStoreAtKey_${yType}(&${dst}, ${x}, ${y});`
+          print `  __MOLD_VariantStoreAtKey_${yType}(${dstForCall}, ${xForCall}, ${yForCall});`
 
         elif opcode is MIR1_OPCODE_COMMENT
           print '//', dst
@@ -913,9 +970,10 @@ class CodeGeneratorC
                   symbolInfo = codeObj.symbolTable.lookup(oneParam)
                 endif
 
-                if symbolInfo.type is @any(undefined, 'variant')
+                if symbolInfo.type is @any(undefined, 'variant', 'string')
                   # Complex variable.
-                  print `  __MOLD_Print_variant(&${oneParam});`
+                  oneParamForCall = this._getParamForCall(oneParam)
+                  print `  __MOLD_Print_variant(${oneParamForCall});`
                 else
                   # Primitive variable.
                   mirType = symbolInfo.type
@@ -958,7 +1016,7 @@ class CodeGeneratorC
           # obj.foo()
           # Possible improvement: Optimize it.
           if isInsideVcall is true
-            print '  if (this.type != VARIANT_OBJECT) __MOLD_PrintErrorAndDie_vcallOnNonObject();'
+            print '  if (this -> type != VARIANT_OBJECT) __MOLD_PrintErrorAndDie_vcallOnNonObject();'
           endif
 
         elif opcode is MIR1_OPCODE_INIT_FRAME
@@ -1012,7 +1070,8 @@ class CodeGeneratorC
         elif opcode is MIR1_OPCODE_MOVE
           if xType is @any('variant', 'string')
             # Complex value - use function call.
-            this.variantMove(dst, x)
+            print `  __MOLD_VariantMove(${dstForCall}, ${xForCall});`
+
           else
             # Primitive value - set value directly.
             print `  ${dst} = ${x};`
@@ -1077,7 +1136,7 @@ class CodeGeneratorC
               valueAsField = MIR_TO_C_VARIANT_VALUE_AS_MAP{symbolInfo.type}
 
               if valueAsField is defined
-                paramToPass = `${paramName}.${valueAsField}`
+                paramToPass = `${paramName} -> ${valueAsField}`
               else
                 paramToPass = paramName
               endif
@@ -1129,8 +1188,11 @@ class CodeGeneratorC
                               '__MOLD_ForDriver_IndexesAndValuesInArrayOrString',
                               '__MOLD_ForDriver_KeysAndValuesInMap')))
 
-          # TODO: Clean up this mess.
-          print ' ', nameOrId, '(&', params[0], ', &', params[1], ', &', params[2], ', &', params[3], ');'
+          box      = this._getParamForCall(params[0])
+          idxOrKey = params[1]
+          value    = params[2]
+          cb       = params[3]
+          print `  ${nameOrId}(${box}, &${idxOrKey}, &${value}, ${cb});`
 
         else
 
@@ -1144,13 +1206,8 @@ class CodeGeneratorC
           sep      = ''
           for values oneParam in params
             # TODO: Clean up this mess.
-            if oneParam is defined
-              callList = callList ~ sep ~ str(oneParam)
-            else
-              callList = callList ~ sep ~ '__undefined'
-            endif
-
-            sep = ', '
+            callList = callList ~ sep ~ this._getParamForCall(oneParam)
+            sep      = ', '
           endfor
 
           # Generate call opcode.
@@ -1187,11 +1244,13 @@ class CodeGeneratorC
             sep      = ''
 
             for indexes idx in params
-              protoC = protoC ~ sep ~ 'Variant_t'
+              protoC = protoC ~ sep ~ 'Variant_t*'
               sep = ','
             endfor
 
-            print '  if (', params[0], '.type != VARIANT_OBJECT) __MOLD_PrintErrorAndDie_vcallOnNonObject();'
+            thisForCall = this._getParamForCall(params[0])
+
+            print `  if ((${thisForCall}) -> type != VARIANT_OBJECT) __MOLD_PrintErrorAndDie_vcallOnNonObject();`
 
             if dst is defined
               # dst = obj.foo(...)
@@ -1201,7 +1260,7 @@ class CodeGeneratorC
               print `  ((void (*)(${protoC}))`
             endif
 
-            print '  ((Object_t *)', params[0], '.valueAsBufferPtr -> bytesPtr) -> vtable[', methodId, '])'
+            print `  ((Object_t *) (${thisForCall}) -> valueAsBufferPtr -> bytesPtr) -> vtable[${methodId}])`
             print '  (', callList, ');'
 
           else
@@ -1222,30 +1281,30 @@ class CodeGeneratorC
 
         if opcode is MIR1_OPCODE_LOAD_INDEX
           # dst := x[y]
-          print `  ${dst} = __MOLD_VariantLoadFromIndex(${x}, ${y});`
+          print `  ${dst} = __MOLD_VariantLoadFromIndex(${xForCall}, ${yForCall});`
 
         elif opcode is MIR1_OPCODE_LOAD_KEY
           # dst := x{y}
-          print `  ${dst} = __MOLD_VariantLoadFromKey_${dstType}(${x}, ${y});`
+          print `  ${dst} = __MOLD_VariantLoadFromKey_${dstType}(${xForCall}, ${yForCall});`
 
         elif opcodeMajor is MIR1_OPCODE_CMP_CC_GROUP
           cc = MIR_COMPARE_FLAGS[opcodeMinor]
-          print `  ${dst} = __MOLD_cmp_${cc}_${xType}(${x}, ${y});`
+          print `  ${dst} = __MOLD_cmp_${cc}_${xType}(${xForCall}, ${yForCall});`
 
         elif opcodeMajor is MIR1_OPCODE_JMP_IF_CC_GROUP
           cc = MIR_COMPARE_FLAGS[opcodeMinor]
-          print `  if (__MOLD_cmp_${cc}_${xType}(${x}, ${y})) goto ${dst};`
+          print `  if (__MOLD_cmp_${cc}_${xType}(${xForCall}, ${yForCall})) goto ${dst};`
 
         elif opcodeMajor is MIR1_OPCODE_ALU2_GROUP
           aluOpcode = MIR_ALU_OPCODES_FOR_INTEGERS[opcodeMinor]
-          print `  ${dst} = __MOLD_${aluOpcode}_${xType}(${x}, ${y});`
+          print `  ${dst} = __MOLD_${aluOpcode}_${xType}(${xForCall}, ${yForCall});`
 
         #
         # Arithmetic
         #
 
         elif opcodeMajor is MIR1_OPCODE_ALU2_GROUP
-          print `  ${dst} = __MOLD_${opcodeAsText}_${xType}(${x}, ${y});`
+          print `  ${dst} = __MOLD_${opcodeAsText}_${xType}(${xForCall}, ${yForCall});`
 
         else
           isOpcodeHandled = false
@@ -1262,26 +1321,26 @@ class CodeGeneratorC
         if opcode is MIR1_OPCODE_CAST_VARIANT_TO
           # Cast variant to primitive.
           # dst = x.value
-          print `  ${dst} = __MOLD_VariantCastTo_${dstType}(&${x});`
+          print `  ${dst} = __MOLD_VariantCastTo_${dstType}(${xForCall});`
 
         elif opcode is MIR1_OPCODE_CREATE_VARIANT_FROM
           # Create variant from primitive.
           # dst.value = x
-          print `  ${dst} = __MOLD_VariantCreateFrom_${xType}(${x});`
+          print `  ${dst} = __MOLD_VariantCreateFrom_${xType}(${xForCall});`
 
         elif opcode is MIR1_OPCODE_NEG
-          print `  ${dst} = __MOLD_neg_${xType}(${x});`
+          print `  ${dst} = __MOLD_neg_${xType}(${xForCall});`
 
         elif opcode is MIR1_OPCODE_JMP_IF_TRUE
           if xType is 'variant'
-            print `  if (${x}.value) goto ${dst};`
+            print `  if ((${xForCall}) -> value) goto ${dst};`
           elif xType is 'bool32'
             print `  if (${x}) goto ${dst};`
           endif
 
         elif opcode is MIR1_OPCODE_JMP_IF_FALSE
           if xType is 'variant'
-            print `  if (!${x}.value) goto ${dst};`
+            print `  if (!(${xForCall}) -> value) goto ${dst};`
           elif xType is 'bool32'
             print `  if (!${x}) goto ${dst};`
           endif
