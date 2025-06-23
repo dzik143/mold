@@ -577,42 +577,35 @@ Variant_t __MOLD_SysCall(uint32_t id, ...)
   va_list ptr;
   va_start(ptr, id);
 
-  #define PTR_X (va_arg(ptr, Variant_t *))
-  #define PTR_Y (va_arg(ptr, Variant_t *))
+  Variant_t *x = va_arg(ptr, Variant_t *);
+  Variant_t *y = va_arg(ptr, Variant_t *);
+  Variant_t *z = va_arg(ptr, Variant_t *);
 
   switch (id)
   {
-    case 29: rv = __MOLD_FileLoad(PTR_X); break;
+    case 29: rv = __MOLD_FileLoad(x); break;
 
-    case 31: rv = __MOLD_Ord(PTR_X); break;
-    case 32: rv = __MOLD_Asc(PTR_X); break;
-    case 33: rv = __MOLD_ParseInteger(PTR_X); break;
-    case 34: rv = __MOLD_ParseFloat(PTR_X); break;
-    case 35: rv = __MOLD_Bitand(PTR_X, PTR_Y); break;
-    case 36: rv = __MOLD_Bitor(PTR_X, PTR_Y); break;
-    case 37: rv = __MOLD_Bitxor(PTR_X, PTR_Y); break;
-    case 38: rv = __MOLD_Bitnot(PTR_X); break;
+    case 31: rv = __MOLD_Ord(x); break;
+    case 32: rv = __MOLD_Asc(x); break;
+    case 33: rv = __MOLD_ParseInteger(x); break;
+    case 34: rv = __MOLD_ParseFloat(x); break;
+    case 35: rv = __MOLD_Bitand(x, y); break;
+    case 36: rv = __MOLD_Bitor(x, y); break;
+    case 37: rv = __MOLD_Bitxor(x, y); break;
+    case 38: rv = __MOLD_Bitnot(x); break;
 
     case 40:      __MOLD_Exit(); break;
-    case 41:      __MOLD_Die(PTR_X); break;
-    case 42: rv = __MOLD_Str(PTR_X); break;
-    case 43: rv = __MOLD_Len(PTR_X); break;
-    case 44: rv = __MOLD_Typeof(PTR_X); break;
-    case 45:      __MOLD_VariantPrint(PTR_X); break;
-    case 46:      __MOLD_PrintToFile_variant(stderr, PTR_X);  break;
+    case 41:      __MOLD_Die(x); break;
+    case 42: rv = __MOLD_Str(x); break;
+    case 43: rv = __MOLD_Len(x); break;
+    case 44: rv = __MOLD_Typeof(x); break;
+    case 45:      __MOLD_VariantPrint(x); break;
+    case 46:      __MOLD_PrintToFile_variant(stderr, x); break;
 
-    case 50:      __MOLD_ArrayInsertAfterLast(PTR_X, PTR_Y); break;
+    case 50:      __MOLD_ArrayInsertAfterLast(x, y); break;
 
-    case 55:
-    {
-      Variant_t *str = va_arg(ptr, Variant_t *);
-      Variant_t *idx = va_arg(ptr, Variant_t *);
-      Variant_t *len = va_arg(ptr, Variant_t *);
-      rv = __MOLD_SubStr(str, idx, len);
-      break;
-    }
-
-    case 57: rv = __MOLD_GetTypeId(PTR_X); break;
+    case 55: rv = __MOLD_SubStr(x,y,z); break;
+    case 57: rv = __MOLD_GetTypeId(x); break;
 
     default:
     {
@@ -624,9 +617,6 @@ Variant_t __MOLD_SysCall(uint32_t id, ...)
   va_end(ptr);
 
   return rv;
-
-  #undef PTR_X
-  #undef PTR_Y
 }
 
 Variant_t __MOLD_Typeof(const Variant_t *x)
