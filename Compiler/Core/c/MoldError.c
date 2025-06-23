@@ -25,9 +25,9 @@
 
 #define MOLD_DEFINE_ERROR_FCT(id, msg) void __MOLD_PrintErrorAndDie_##id() { __MOLD_PrintErrorAndDie(msg); }
 
-void __MOLD_Die(Variant_t msg)
+void __MOLD_Die(const Variant_t *msg)
 {
-  __MOLD_PrintToFile_variant(stderr, &msg);
+  __MOLD_PrintToFile_variant(stderr, (Variant_t *) msg);
   fprintf(stderr, "\n");
   exit(-1);
 }

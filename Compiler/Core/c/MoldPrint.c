@@ -258,7 +258,7 @@ void __MOLD_PrintToFile_variant(FILE *f, Variant_t *x) {
 void __MOLD_Print_space() { printf(" "); }
 void __MOLD_Print_EOL()   { printf("\n"); }
 
-void __MOLD_Print_string(Variant_t x)  { __MOLD_Print_variant(&x); }
+void __MOLD_Print_string(Variant_t *x) { __MOLD_Print_variant(x); }
 void __MOLD_Print_int32(int32_t x)     { printf("%d", x); }
 void __MOLD_Print_int64(int64_t x)     { printf("%"PRId64, x); }
 void __MOLD_Print_float64(float64_t x) { printf("%lf", x); }
@@ -268,4 +268,4 @@ void __MOLD_Print_variant(Variant_t *x) {
   __MOLD_PrintToFile_variant(stdout, x);
 }
 
-void __MOLD_VariantPrint(Variant_t x) { __MOLD_Print_variant(&x); }
+void __MOLD_VariantPrint(Variant_t *x) { __MOLD_Print_variant(x); }

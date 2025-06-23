@@ -54,22 +54,24 @@ typedef struct Map
 //                                Functions
 // -----------------------------------------------------------------------------
 
-uint32_t __MOLD_hashDJB2(Variant_t *x);
+uint32_t __MOLD_hashDJB2(const Variant_t *x);
 
 Variant_t __MOLD_VariantMapCreate();
 Variant_t __MOLD_VariantMapCreateWithCustomSize(uint32_t bucketsCnt);
-Variant_t __MOLD_VariantMapCreateFromInitList(Variant_t keys, Variant_t values);
+
+Variant_t __MOLD_VariantMapCreateFromInitList(const Variant_t *keys,
+                                              const Variant_t *values);
 
 void __MOLD_VariantMapRelease(Variant_t *x);
 
-Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t box, Variant_t key);
-Variant_t __MOLD_VariantLoadFromKey_string(Variant_t box, Variant_t key);
+Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t *box, Variant_t *key);
+Variant_t __MOLD_VariantLoadFromKey_string(Variant_t *box, Variant_t *key);
 
-void __MOLD_VariantStoreAtKey_variant(Variant_t *box, Variant_t key, Variant_t value);
-void __MOLD_VariantStoreAtKey_string(Variant_t *box, Variant_t key, Variant_t value);
-void __MOLD_VariantStoreAtKey_int32(Variant_t *box, Variant_t key, int32_t value);
-void __MOLD_VariantStoreAtKey_int64(Variant_t *box, Variant_t key, int64_t value);
-void __MOLD_VariantStoreAtKey_float64(Variant_t *box, Variant_t key, float64_t value);
-void __MOLD_VariantStoreAtKey_bool32(Variant_t *box, Variant_t key, bool32_t value);
+void __MOLD_VariantStoreAtKey_variant(Variant_t *box, const Variant_t *key, const Variant_t *value);
+void __MOLD_VariantStoreAtKey_string(Variant_t *box, const Variant_t *key, const Variant_t *value);
+void __MOLD_VariantStoreAtKey_int32(Variant_t *box, const Variant_t *key, int32_t value);
+void __MOLD_VariantStoreAtKey_int64(Variant_t *box, const Variant_t *key, int64_t value);
+void __MOLD_VariantStoreAtKey_float64(Variant_t *box, const Variant_t *key, float64_t value);
+void __MOLD_VariantStoreAtKey_bool32(Variant_t *box, const Variant_t *key, bool32_t value);
 
 #endif /* _MoldVariantMap_H */

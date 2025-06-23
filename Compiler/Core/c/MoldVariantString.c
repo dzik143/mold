@@ -100,47 +100,47 @@ void __MOLD_VariantStringRelease(Variant_t *x)
 //   0 otherwise.
 // -----------------------------------------------------------------------------
 
-bool32_t __MOLD_cmp_eq_string(Variant_t x, Variant_t y)
+bool32_t __MOLD_cmp_eq_string(const Variant_t *x, const Variant_t *y)
 {
-  ASSERT_VARIANT_PTR_STRING(&x);
-  ASSERT_VARIANT_PTR_STRING(&y);
+  ASSERT_VARIANT_PTR_STRING(x);
+  ASSERT_VARIANT_PTR_STRING(y);
 
   bool32_t rv = 0;
 
-  if (x.flags & VARIANT_FLAG_ONE_CHARACTER)
+  if (x -> flags & VARIANT_FLAG_ONE_CHARACTER)
   {
     // CHAR eq ?
-    if (y.flags & VARIANT_FLAG_ONE_CHARACTER)
+    if (y -> flags & VARIANT_FLAG_ONE_CHARACTER)
     {
       // CHAR eq CHAR
-      rv = (x.value == y.value);
+      rv = (x -> value == y -> value);
 
     }
     else
     {
       // CHAR eq STRING
-      Buffer_t *yBuf = (Buffer_t *) y.value;
+      Buffer_t *yBuf = (Buffer_t *) y -> value;
       String_t *yStr = (String_t *) yBuf -> bytesPtr;
-      rv = (yStr -> length == 1) && (yStr -> text[0] == x.value);
+      rv = (yStr -> length == 1) && (yStr -> text[0] == x -> value);
     }
 
   }
   else
   {
     // STRING eq ?
-    Buffer_t *xBuf = (Buffer_t *) x.value;
+    Buffer_t *xBuf = (Buffer_t *) x -> value;
     String_t *xStr = (String_t *) xBuf -> bytesPtr;
 
-    if (y.flags & VARIANT_FLAG_ONE_CHARACTER)
+    if (y -> flags & VARIANT_FLAG_ONE_CHARACTER)
     {
       // STRING eq CHAR
-      rv = (xStr -> length == 1) && (xStr -> text[0] == y.value);
+      rv = (xStr -> length == 1) && (xStr -> text[0] == y -> value);
 
     }
     else
     {
       // STRING eq STRING
-      Buffer_t *yBuf = (Buffer_t *) y.value;
+      Buffer_t *yBuf = (Buffer_t *) y -> value;
       String_t *yStr = (String_t *) yBuf -> bytesPtr;
 
       rv = (xStr -> length == yStr -> length) &&
@@ -166,7 +166,7 @@ bool32_t __MOLD_cmp_eq_string(Variant_t x, Variant_t y)
 //   0 otherwise.
 // -----------------------------------------------------------------------------
 
-bool32_t __MOLD_cmp_ne_string(Variant_t x, Variant_t y)
+bool32_t __MOLD_cmp_ne_string(const Variant_t *x, const Variant_t *y)
 {
   return !__MOLD_cmp_eq_string(x, y);
 }
@@ -183,7 +183,9 @@ bool32_t __MOLD_cmp_ne_string(Variant_t x, Variant_t y)
 //   x   - second string to join (IN).
 // -----------------------------------------------------------------------------
 
-void __MOLD_VariantStringJoin(Variant_t *dst, Variant_t *x, Variant_t *y)
+void __MOLD_VariantStringJoin(Variant_t *dst,
+                              const Variant_t *x,
+                              const Variant_t *y)
 {
   ASSERT_VARIANT_PTR_STRING(x);
   ASSERT_VARIANT_PTR_STRING(y);
@@ -285,18 +287,20 @@ void __MOLD_VariantStringJoin(Variant_t *dst, Variant_t *x, Variant_t *y)
 //
 // -----------------------------------------------------------------------------
 
-Variant_t __MOLD_SubStr(Variant_t strVariant, Variant_t idxVariant, Variant_t lenVariant)
+Variant_t __MOLD_SubStr(const Variant_t *strVariant,
+                        const Variant_t *idxVariant,
+                        const Variant_t *lenVariant)
 {
-  ASSERT_VARIANT_PTR_STRING(&strVariant);
-  ASSERT_VARIANT_PTR_INTEGER(&idxVariant);
-  ASSERT_VARIANT_PTR_INTEGER(&lenVariant);
+  ASSERT_VARIANT_PTR_STRING(strVariant);
+  ASSERT_VARIANT_PTR_INTEGER(idxVariant);
+  ASSERT_VARIANT_PTR_INTEGER(lenVariant);
 
   Variant_t rv = { VARIANT_STRING };
 
-  String_t *str = (String_t *) strVariant.valueAsBufferPtr -> bytesPtr;
+  String_t *str = (String_t *) strVariant -> valueAsBufferPtr -> bytesPtr;
 
-  int32_t idx = idxVariant.valueAsInt32;
-  int32_t len = lenVariant.valueAsInt32;
+  int32_t idx = idxVariant -> valueAsInt32;
+  int32_t len = lenVariant -> valueAsInt32;
 
   if ((len < 0) || (idx + len >= str -> length))
   {
@@ -328,18 +332,18 @@ Variant_t __MOLD_SubStr(Variant_t strVariant, Variant_t idxVariant, Variant_t le
 // -----------------------------------------------------------------------------
 
 
-Variant_t __MOLD_Str(Variant_t x)
+Variant_t __MOLD_Str(Variant_t *x)
 {
-  ASSERT_VARIANT_PTR_ANY(&x);
+  ASSERT_VARIANT_PTR_ANY(x);
 
   Variant_t rv = { VARIANT_STRING };
 
-  if (x.type == VARIANT_STRING)
+  if (x -> type == VARIANT_STRING)
   {
     // Input is already a string - nothing to do.
     // TODO: Review it.
-    __MOLD_VariantAddRef(&x);
-    rv = x;
+    __MOLD_VariantAddRef(x);
+    rv = *x;
   }
   else
   {
@@ -347,14 +351,14 @@ Variant_t __MOLD_Str(Variant_t x)
     // We need to create new one.
     const char *fmt = NULL;
 
-    switch (x.type)
+    switch (x -> type)
     {
       case VARIANT_UNDEFINED: { fmt = "undefined"; break; }
       case VARIANT_NULL:      { fmt = "null"; break; }
       case VARIANT_INTEGER:   { fmt = "%"PRId64; break; }
       case VARIANT_FLOAT:     { fmt = "%f"; break; }
       case VARIANT_DOUBLE:    { fmt = "%lf"; break; }
-      case VARIANT_BOOLEAN:   { fmt = x.value ? "true" : "false"; break; }
+      case VARIANT_BOOLEAN:   { fmt = x -> value ? "true" : "false"; break; }
       case VARIANT_ARRAY:     { fmt = "[array]"; break; }
       case VARIANT_MAP:       { fmt = "[map]"; break; }
       case VARIANT_OBJECT:    { fmt = "[object]"; break; }
@@ -367,11 +371,11 @@ Variant_t __MOLD_Str(Variant_t x)
 
     Buffer_t *buf = __MOLD_MemoryAlloc(32 + sizeof(String_t));
     String_t *str = (String_t *) buf -> bytesPtr;
-    str -> length = snprintf(str -> text, 31, fmt, x.value);
+    str -> length = snprintf(str -> text, 31, fmt, x -> value);
     rv.valueAsBufferPtr = buf;
   }
 
-  ASSERT_VARIANT_PTR_ANY(&x);
+  ASSERT_VARIANT_PTR_ANY(x);
   ASSERT_VARIANT_PTR_STRING(&rv);
 
   return rv;
@@ -387,23 +391,23 @@ Variant_t __MOLD_Str(Variant_t x)
 //   Ascii value of given character.
 // -----------------------------------------------------------------------------
 
-Variant_t __MOLD_Ord(Variant_t x)
+Variant_t __MOLD_Ord(const Variant_t *x)
 {
-  ASSERT_VARIANT_PTR_ANY(&x);
+  ASSERT_VARIANT_PTR_ANY(x);
 
   Variant_t rv = { VARIANT_INTEGER };
 
-  switch (x.type)
+  switch (x -> type)
   {
     case VARIANT_STRING:
     {
-      if (x.flags & VARIANT_FLAG_ONE_CHARACTER)
+      if (x -> flags & VARIANT_FLAG_ONE_CHARACTER)
       {
-        rv.value = x.valueAsUInt8;
+        rv.value = x -> valueAsUInt8;
       }
       else
       {
-        String_t *str = (String_t *) x.valueAsBufferPtr -> bytesPtr;
+        String_t *str = (String_t *) x -> valueAsBufferPtr -> bytesPtr;
         rv.value = str -> text[0];
       }
 
@@ -418,7 +422,7 @@ Variant_t __MOLD_Ord(Variant_t x)
 
     case VARIANT_INTEGER:
     {
-      rv.value = x.valueAsUInt8;
+      rv.value = x -> valueAsUInt8;
       break;
     }
 
@@ -443,15 +447,15 @@ Variant_t __MOLD_Ord(Variant_t x)
 //   Character with given ascii number.
 // -----------------------------------------------------------------------------
 
-Variant_t __MOLD_Asc(Variant_t x)
+Variant_t __MOLD_Asc(const Variant_t *x)
 {
-  ASSERT_VARIANT_PTR_INTEGER(&x);
+  ASSERT_VARIANT_PTR_INTEGER(x);
 
   Variant_t rv =
   {
     type: VARIANT_STRING,
     flags: VARIANT_FLAG_ONE_CHARACTER,
-    value: x.value
+    value: x -> value
   };
 
   ASSERT_VARIANT_PTR_STRING(&rv);

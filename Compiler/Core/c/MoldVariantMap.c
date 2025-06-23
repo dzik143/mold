@@ -41,7 +41,7 @@
 // RETURNS: hash value.
 // ----------------------------------------------------------------------------
 
-uint32_t __MOLD_hashDJB2(Variant_t *x)
+uint32_t __MOLD_hashDJB2(const Variant_t *x)
 {
   ASSERT_VARIANT_PTR_STRING(x);
 
@@ -87,7 +87,8 @@ uint32_t __MOLD_hashDJB2(Variant_t *x)
 // RETURNS: Pointer to bucket, where given key should be stored.
 // ----------------------------------------------------------------------------
 
-MapBucket_t *__MOLD_FindMapBucketByKey(Variant_t *box, Variant_t *key)
+static MapBucket_t *__MOLD_FindMapBucketByKey(const Variant_t *box,
+                                              const Variant_t *key)
 {
   if ((box -> type != VARIANT_MAP) && (box -> type != VARIANT_OBJECT))
   {
@@ -131,7 +132,7 @@ MapBucket_t *__MOLD_FindMapBucketByKey(Variant_t *box, Variant_t *key)
   // Note: See hash key collision algorithm: "open address".
 
   while ((bucket -> key.type != VARIANT_UNDEFINED) &&
-         (!__MOLD_cmp_eq_string(*key, bucket -> key)))
+         (!__MOLD_cmp_eq_string(key, &bucket -> key)))
   {
     bucketIdx = (bucketIdx + 1) % map -> bucketsCnt;
     bucket    = &(map -> buckets[bucketIdx]);
@@ -151,7 +152,7 @@ MapBucket_t *__MOLD_FindMapBucketByKey(Variant_t *box, Variant_t *key)
 //   box{} - map resize (IN/OUT)
 // ----------------------------------------------------------------------------
 
-void __MOLD_ResizeMapIfNeeded(Variant_t *box)
+static void __MOLD_ResizeMapIfNeeded(Variant_t *box)
 {
   ASSERT_VARIANT_PTR_MAP_OR_OBJECT(box);
 
@@ -167,7 +168,7 @@ void __MOLD_ResizeMapIfNeeded(Variant_t *box)
 
     while (bucket != NULL)
     {
-      __MOLD_VariantStoreAtKey_variant(&newMap, bucket -> key, bucket -> value);
+      __MOLD_VariantStoreAtKey_variant(&newMap, &bucket -> key, &bucket -> value);
       // Key and values are already referenced after previous insert.
       // Avoid increasing referencing twice and then memory leak.
       __MOLD_VariantDestroy(&bucket -> key);
@@ -269,10 +270,11 @@ Variant_t __MOLD_VariantMapCreate()
 //   New allocated map wrapped into Variant container.
 // ----------------------------------------------------------------------------
 
-Variant_t __MOLD_VariantMapCreateFromInitList(Variant_t keys, Variant_t values)
+Variant_t __MOLD_VariantMapCreateFromInitList(const Variant_t *keys,
+                                              const Variant_t *values)
 {
-  ASSERT_VARIANT_PTR_ARRAY(&keys);
-  ASSERT_VARIANT_PTR_ARRAY(&values);
+  ASSERT_VARIANT_PTR_ARRAY(keys);
+  ASSERT_VARIANT_PTR_ARRAY(values);
 
   Variant_t rv = __MOLD_VariantMapCreate();
 
@@ -283,18 +285,18 @@ Variant_t __MOLD_VariantMapCreateFromInitList(Variant_t keys, Variant_t values)
   void _copyOneKeyValuePair()
   {
     oneValue = __MOLD_VariantLoadFromIndex(values, idx);
-    __MOLD_VariantStoreAtKey_variant(&rv, oneKey, oneValue);
+    __MOLD_VariantStoreAtKey_variant(&rv, &oneKey, &oneValue);
   }
 
   __MOLD_ForDriver_IndexesAndValuesInArray(
-    (Array_t *) keys.valueAsBufferPtr -> bytesPtr,
+    (Array_t *) keys -> valueAsBufferPtr -> bytesPtr,
     &idx,
     &oneKey,
     &_copyOneKeyValuePair
   );
 
-  ASSERT_VARIANT_PTR_ARRAY(&keys);
-  ASSERT_VARIANT_PTR_ARRAY(&values);
+  ASSERT_VARIANT_PTR_ARRAY(keys);
+  ASSERT_VARIANT_PTR_ARRAY(values);
   ASSERT_VARIANT_PTR_MAP(&rv);
 
   return rv;
@@ -326,8 +328,8 @@ void __MOLD_VariantMapRelease(Variant_t *x)
 
     while (bucket != NULL)
     {
-      __MOLD_VariantDestroy(&(bucket -> key));
-      __MOLD_VariantDestroy(&(bucket -> value));
+      __MOLD_VariantDestroy(&bucket -> key);
+      __MOLD_VariantDestroy(&bucket -> value);
       bucket = bucket -> nextBucket;
     }
   }
@@ -356,15 +358,16 @@ void __MOLD_VariantMapRelease(Variant_t *x)
 //   Value stored at key.
 // ----------------------------------------------------------------------------
 
-Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t box, Variant_t key)
+Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t *box,
+                                            Variant_t *key)
 {
-  ASSERT_VARIANT_PTR_MAP_OR_OBJECT(&box);
-  ASSERT_VARIANT_PTR_STRING(&key);
+  ASSERT_VARIANT_PTR_MAP_OR_OBJECT(box);
+  ASSERT_VARIANT_PTR_STRING(key);
 
   Variant_t rv = { VARIANT_UNDEFINED };
 
   // Find bucket.
-  MapBucket_t *bucket = __MOLD_FindMapBucketByKey(&box, &key);
+  MapBucket_t *bucket = __MOLD_FindMapBucketByKey(box, key);
 
   // Load bucket value if key is found.
   if (bucket -> key.type != VARIANT_UNDEFINED)
@@ -375,8 +378,8 @@ Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t box, Variant_t key)
     __MOLD_VariantAddRef(&rv);
   }
 
-  ASSERT_VARIANT_PTR_MAP_OR_OBJECT(&box);
-  ASSERT_VARIANT_PTR_STRING(&key);
+  ASSERT_VARIANT_PTR_MAP_OR_OBJECT(box);
+  ASSERT_VARIANT_PTR_STRING(key);
   ASSERT_VARIANT_PTR_ANY(&rv);
 
   return rv;
@@ -397,7 +400,7 @@ Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t box, Variant_t key)
 //   - undefined variant otherwise.
 // ----------------------------------------------------------------------------
 
-Variant_t __MOLD_VariantLoadFromKey_string(Variant_t box, Variant_t key)
+Variant_t __MOLD_VariantLoadFromKey_string(Variant_t *box, Variant_t *key)
 {
   return __MOLD_VariantLoadFromKey_variant(box, key);
 }
@@ -418,26 +421,28 @@ Variant_t __MOLD_VariantLoadFromKey_string(Variant_t box, Variant_t key)
 //   value - value to store (IN)
 // ----------------------------------------------------------------------------
 
-void __MOLD_VariantStoreAtKey_variant(Variant_t *box, Variant_t key, Variant_t value)
+void __MOLD_VariantStoreAtKey_variant(Variant_t *box,
+                                      const Variant_t *key,
+                                      const Variant_t *value)
 {
   ASSERT_VARIANT_PTR_MAP_OR_OBJECT(box);
-  ASSERT_VARIANT_PTR_STRING(&key);
-  ASSERT_VARIANT_PTR_ANY(&value);
+  ASSERT_VARIANT_PTR_STRING(key);
+  ASSERT_VARIANT_PTR_ANY(value);
 
   // Increase reference counter for the new stored value.
-  __MOLD_VariantAddRef(&value);
+  __MOLD_VariantAddRef(value);
 
   // Find bucket.
-  MapBucket_t *bucket = __MOLD_FindMapBucketByKey(box, &key);
+  MapBucket_t *bucket = __MOLD_FindMapBucketByKey(box, key);
 
   // Conditional: Set new key if bucket is filled for the first time.
   if (bucket -> key.type == VARIANT_UNDEFINED)
   {
     // Set new key.
-    bucket -> key = key;
+    bucket -> key = *key;
 
     // Increase reference counter for the key.
-    __MOLD_VariantAddRef(&key);
+    __MOLD_VariantAddRef(key);
 
     // Decode map.
     Map_t *map = (Map_t *) box -> valueAsBufferPtr -> bytesPtr;
@@ -465,14 +470,14 @@ void __MOLD_VariantStoreAtKey_variant(Variant_t *box, Variant_t key, Variant_t v
   }
 
   // Always: set new value at bucket.
-  memcpy(&(bucket -> value), &value, sizeof(Variant_t));
+  memcpy(&(bucket -> value), value, sizeof(Variant_t));
 
   // Resize map if needed.
   __MOLD_ResizeMapIfNeeded(box);
 
   ASSERT_VARIANT_PTR_MAP_OR_OBJECT(box);
-  ASSERT_VARIANT_PTR_STRING(&key);
-  ASSERT_VARIANT_PTR_ANY(&value);
+  ASSERT_VARIANT_PTR_STRING(key);
+  ASSERT_VARIANT_PTR_ANY(value);
 }
 
 // ----------------------------------------------------------------------------
@@ -487,7 +492,9 @@ void __MOLD_VariantStoreAtKey_variant(Variant_t *box, Variant_t key, Variant_t v
 //   value - string value to store (IN)
 // ----------------------------------------------------------------------------
 
-void __MOLD_VariantStoreAtKey_string(Variant_t *box, Variant_t key, Variant_t value)
+void __MOLD_VariantStoreAtKey_string(Variant_t *box,
+                                     const Variant_t *key,
+                                     const Variant_t *value)
 {
   __MOLD_VariantStoreAtKey_variant(box, key, value);
 }
@@ -504,10 +511,12 @@ void __MOLD_VariantStoreAtKey_string(Variant_t *box, Variant_t key, Variant_t va
 //   value - int32 value to store (IN)
 // ----------------------------------------------------------------------------
 
-void __MOLD_VariantStoreAtKey_int32(Variant_t *box, Variant_t key, int32_t value)
+void __MOLD_VariantStoreAtKey_int32(Variant_t *box,
+                                    const Variant_t *key,
+                                    int32_t value)
 {
   Variant_t valueAsVariant = { type: VARIANT_INTEGER, valueAsInt64: value, flags: 0 };
-  __MOLD_VariantStoreAtKey_variant(box, key, valueAsVariant);
+  __MOLD_VariantStoreAtKey_variant(box, key, &valueAsVariant);
 }
 
 // ----------------------------------------------------------------------------
@@ -522,10 +531,12 @@ void __MOLD_VariantStoreAtKey_int32(Variant_t *box, Variant_t key, int32_t value
 //   value - int64 value to store (IN)
 // ----------------------------------------------------------------------------
 
-void __MOLD_VariantStoreAtKey_int64(Variant_t *box, Variant_t key, int64_t value)
+void __MOLD_VariantStoreAtKey_int64(Variant_t *box,
+                                    const Variant_t *key,
+                                    int64_t value)
 {
   Variant_t valueAsVariant = { type: VARIANT_INTEGER, valueAsInt64: value, flags: 0 };
-  __MOLD_VariantStoreAtKey_variant(box, key, valueAsVariant);
+  __MOLD_VariantStoreAtKey_variant(box, key, &valueAsVariant);
 }
 
 // ----------------------------------------------------------------------------
@@ -540,10 +551,12 @@ void __MOLD_VariantStoreAtKey_int64(Variant_t *box, Variant_t key, int64_t value
 //   value - int64 value to store (IN)
 // ----------------------------------------------------------------------------
 
-void __MOLD_VariantStoreAtKey_float64(Variant_t *box, Variant_t key, float64_t value)
+void __MOLD_VariantStoreAtKey_float64(Variant_t *box,
+                                      const Variant_t *key,
+                                      float64_t value)
 {
   Variant_t valueAsVariant = { type: VARIANT_DOUBLE, valueAsFloat64: value, flags: 0 };
-  __MOLD_VariantStoreAtKey_variant(box, key, valueAsVariant);
+  __MOLD_VariantStoreAtKey_variant(box, key, &valueAsVariant);
 }
 
 // ----------------------------------------------------------------------------
@@ -558,8 +571,10 @@ void __MOLD_VariantStoreAtKey_float64(Variant_t *box, Variant_t key, float64_t v
 //   value - bool32 value to store (IN)
 // ----------------------------------------------------------------------------
 
-void __MOLD_VariantStoreAtKey_bool32(Variant_t *box, Variant_t key, bool32_t value)
+void __MOLD_VariantStoreAtKey_bool32(Variant_t *box,
+                                     const Variant_t *key,
+                                     bool32_t value)
 {
   Variant_t valueAsVariant = { type: VARIANT_BOOLEAN, valueAsInt64: value, flags: 0 };
-  __MOLD_VariantStoreAtKey_variant(box, key, valueAsVariant);
+  __MOLD_VariantStoreAtKey_variant(box, key, &valueAsVariant);
 }

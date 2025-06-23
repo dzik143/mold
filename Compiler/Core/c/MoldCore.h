@@ -81,6 +81,7 @@ typedef struct Variant
 
 // Size in Variant_t objects.
 #define MOLD_DEFAULT_STACK_SIZE (1024 * 64)
+#define MOLD_DEFAULT_STACK_SIZE (1024 * 64)
 
 // -----------------------------------------------------------------------------
 //                             Global variables
@@ -141,13 +142,13 @@ int64_t   __MOLD_idiv_float64(float64_t x, float64_t y);
 //                    Arithmetic: variant vs variant
 // -----------------------------------------------------------------------------
 
-Variant_t __MOLD_neg_variant (Variant_t x);
-Variant_t __MOLD_add_variant (Variant_t x, Variant_t y);
-Variant_t __MOLD_sub_variant (Variant_t x, Variant_t y);
-Variant_t __MOLD_mul_variant (Variant_t x, Variant_t y);
-Variant_t __MOLD_imul_variant(Variant_t x, Variant_t y);
-Variant_t __MOLD_div_variant (Variant_t x, Variant_t y);
-Variant_t __MOLD_idiv_variant(Variant_t x, Variant_t y);
+Variant_t __MOLD_neg_variant (const Variant_t *x);
+Variant_t __MOLD_add_variant (const Variant_t *x, const Variant_t *y);
+Variant_t __MOLD_sub_variant (const Variant_t *x, const Variant_t *y);
+Variant_t __MOLD_mul_variant (const Variant_t *x, const Variant_t *y);
+Variant_t __MOLD_imul_variant(const Variant_t *x, const Variant_t *y);
+Variant_t __MOLD_div_variant (const Variant_t *x, const Variant_t *y);
+Variant_t __MOLD_idiv_variant(const Variant_t *x, const Variant_t *y);
 
 // -----------------------------------------------------------------------------
 //                         Compare: int32 vs int32
@@ -193,12 +194,12 @@ bool32_t __MOLD_cmp_ne_bool32(bool32_t x, bool32_t y);
 //                       Compare: variant vs variant
 // -----------------------------------------------------------------------------
 
-bool32_t __MOLD_cmp_eq_variant(Variant_t x, Variant_t y);
-bool32_t __MOLD_cmp_ne_variant(Variant_t x, Variant_t y);
-bool32_t __MOLD_cmp_lt_variant(Variant_t x, Variant_t y);
-bool32_t __MOLD_cmp_gt_variant(Variant_t x, Variant_t y);
-bool32_t __MOLD_cmp_le_variant(Variant_t x, Variant_t y);
-bool32_t __MOLD_cmp_ge_variant(Variant_t x, Variant_t y);
+bool32_t __MOLD_cmp_eq_variant(const Variant_t *x, const Variant_t *y);
+bool32_t __MOLD_cmp_ne_variant(const Variant_t *x, const Variant_t *y);
+bool32_t __MOLD_cmp_lt_variant(const Variant_t *x, const Variant_t *y);
+bool32_t __MOLD_cmp_gt_variant(const Variant_t *x, const Variant_t *y);
+bool32_t __MOLD_cmp_le_variant(const Variant_t *x, const Variant_t *y);
+bool32_t __MOLD_cmp_ge_variant(const Variant_t *x, const Variant_t *y);
 
 // -----------------------------------------------------------------------------
 //                       Cast variant into primitives
@@ -214,10 +215,10 @@ bool32_t  __MOLD_VariantCastTo_bool32 (Variant_t *x);
 //                       Bitwise: variant vs variant
 // -----------------------------------------------------------------------------
 
-Variant_t __MOLD_Bitand(Variant_t x, Variant_t y);
-Variant_t __MOLD_Bitor (Variant_t x, Variant_t y);
-Variant_t __MOLD_Bitxor(Variant_t x, Variant_t y);
-Variant_t __MOLD_Bitnot(Variant_t x);
+Variant_t __MOLD_Bitand(const Variant_t *x, const Variant_t *y);
+Variant_t __MOLD_Bitor (const Variant_t *x, const Variant_t *y);
+Variant_t __MOLD_Bitxor(const Variant_t *x, const Variant_t *y);
+Variant_t __MOLD_Bitnot(const Variant_t *x);
 
 // -----------------------------------------------------------------------------
 //                                    Utils
@@ -225,20 +226,20 @@ Variant_t __MOLD_Bitnot(Variant_t x);
 
 void __MOLD_Exit();
 
-Variant_t __MOLD_Len(Variant_t x);
+Variant_t __MOLD_Len(const Variant_t *x);
 Variant_t __MOLD_SysCall(uint32_t id, ...);
-Variant_t __MOLD_Typeof(Variant_t x);
-Variant_t __MOLD_ParseInteger(Variant_t x);
-Variant_t __MOLD_ParseFloat(Variant_t x);
-Variant_t __MOLD_FileLoad(Variant_t path);
+Variant_t __MOLD_Typeof(const Variant_t *x);
+Variant_t __MOLD_ParseInteger(const Variant_t *x);
+Variant_t __MOLD_ParseFloat(const Variant_t *x);
+Variant_t __MOLD_FileLoad(const Variant_t *path);
 
-void __MOLD_VariantAddRef(Variant_t *x);
+void __MOLD_VariantAddRef(const Variant_t *x);
 void __MOLD_VariantDestroy(Variant_t *x);
 void __MOLD_VariantDestroyMany(Variant_t *x, uint32_t n);
 
 void __MOLD_InitArgv(int _argc, char **_argv);
 
-Variant_t __MOLD_GetTypeId(Variant_t x);
+Variant_t __MOLD_GetTypeId(const Variant_t *x);
 void __MOLD_VariantMove(Variant_t *dst, Variant_t *src);
 
 void __MOLD_StackFree(uint32_t n);

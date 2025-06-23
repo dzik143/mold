@@ -32,15 +32,21 @@ Variant_t __MOLD_VariantStringCreateFromCString(const char *text);
 
 void __MOLD_VariantStringRelease(Variant_t *x);
 
-void __MOLD_VariantStringJoin(Variant_t *, Variant_t *, Variant_t *);
+void __MOLD_VariantStringJoin(Variant_t *dst,
+                              const Variant_t *x,
+                              const Variant_t *y);
 
-bool32_t __MOLD_cmp_eq_string(Variant_t x, Variant_t y);
-bool32_t __MOLD_cmp_ne_string(Variant_t x, Variant_t y);
+bool32_t __MOLD_cmp_eq_string(const Variant_t *x, const Variant_t *y);
+bool32_t __MOLD_cmp_ne_string(const Variant_t *x, const Variant_t *y);
 
-Variant_t __MOLD_Str(Variant_t);
-Variant_t __MOLD_SubStr(Variant_t x, Variant_t idx, Variant_t len);
+Variant_t __MOLD_Str(Variant_t *x);
 
-Variant_t __MOLD_Ord(Variant_t x);
-Variant_t __MOLD_Asc(Variant_t x);
+Variant_t __MOLD_SubStr(const Variant_t *x,
+                        const Variant_t *idx,
+                        const Variant_t *len);
+
+Variant_t __MOLD_Ord(const Variant_t *x);
+
+Variant_t __MOLD_Asc(const Variant_t *x);
 
 #endif /* _MoldVariantString_H */

@@ -70,9 +70,9 @@ Variant_t __MOLD_VariantArrayCreate()
 //   Shallow copy of input array.
 // -----------------------------------------------------------------------------
 
-Variant_t __MOLD_VariantArrayCreateFromInitList(Variant_t initArray)
+Variant_t __MOLD_VariantArrayCreateFromInitList(const Variant_t *initArray)
 {
-  ASSERT_VARIANT_PTR_ARRAY(&initArray);
+  ASSERT_VARIANT_PTR_ARRAY(initArray);
 
   Variant_t rv = __MOLD_VariantArrayCreate();
   Variant_t oneItem;
@@ -80,11 +80,11 @@ Variant_t __MOLD_VariantArrayCreateFromInitList(Variant_t initArray)
 
   void _copyOneItem()
   {
-    __MOLD_VariantStoreAtIndex_variant(&rv, idx, oneItem);
+    __MOLD_VariantStoreAtIndex_variant(&rv, idx, &oneItem);
   }
 
   __MOLD_ForDriver_IndexesAndValuesInArray(
-    (Array_t *) initArray.valueAsBufferPtr -> bytesPtr,
+    (Array_t *) initArray -> valueAsBufferPtr -> bytesPtr,
     &idx,
     &oneItem,
     &_copyOneItem
@@ -156,9 +156,9 @@ void __MOLD_VariantArrayRelease(Variant_t *x)
 //   Value stored at given index.
 // -----------------------------------------------------------------------------
 
-Variant_t __MOLD_VariantLoadFromIndex(Variant_t box, int32_t idx)
+Variant_t __MOLD_VariantLoadFromIndex(const Variant_t *box, int32_t idx)
 {
-  ASSERT_VARIANT_PTR_ANY(&box);
+  ASSERT_VARIANT_PTR_ANY(box);
 
   Variant_t rv = { VARIANT_UNDEFINED };
 
@@ -167,13 +167,13 @@ Variant_t __MOLD_VariantLoadFromIndex(Variant_t box, int32_t idx)
     __MOLD_PrintErrorAndDie_negativeIndex();
   }
 
-  switch (box.type)
+  switch (box -> type)
   {
     case VARIANT_ARRAY:
     {
-      ASSERT_VARIANT_PTR_ARRAY(&box);
+      ASSERT_VARIANT_PTR_ARRAY(box);
 
-      Buffer_t *buf = box.valueAsBufferPtr;
+      Buffer_t *buf = box -> valueAsBufferPtr;
       Array_t  *array = (Array_t *) buf -> bytesPtr;
 
       if (idx < array -> itemsCnt)
@@ -207,17 +207,17 @@ Variant_t __MOLD_VariantLoadFromIndex(Variant_t box, int32_t idx)
 
     case VARIANT_STRING:
     {
-      ASSERT_VARIANT_PTR_STRING(&box);
+      ASSERT_VARIANT_PTR_STRING(box);
 
-      if (box.flags & VARIANT_FLAG_ONE_CHARACTER)
+      if (box -> flags & VARIANT_FLAG_ONE_CHARACTER)
       {
         // One character string - just return itself.
-        rv = box;
+        rv = *box;
       }
       else
       {
         // Multiple character string.
-        Buffer_t *buf = box.valueAsBufferPtr;
+        Buffer_t *buf = box -> valueAsBufferPtr;
         String_t *str = (String_t *) buf -> bytesPtr;
 
         if (idx < str -> length)
@@ -258,10 +258,12 @@ Variant_t __MOLD_VariantLoadFromIndex(Variant_t box, int32_t idx)
 //   value - value to store (Variant_t) (IN).
 // ----------------------------------------------------------------------------
 
-void __MOLD_VariantStoreAtIndex_variant(Variant_t *box, int32_t idx, Variant_t value)
+void __MOLD_VariantStoreAtIndex_variant(Variant_t *box,
+                                        int32_t idx,
+                                        Variant_t *value)
 {
   ASSERT_VARIANT_PTR_ARRAY(box);
-  ASSERT_VARIANT_PTR_ANY(&value);
+  ASSERT_VARIANT_PTR_ANY(value);
 
   // TODO: Handle VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE?
   Buffer_t *buf   = box -> valueAsBufferPtr;
@@ -289,16 +291,16 @@ void __MOLD_VariantStoreAtIndex_variant(Variant_t *box, int32_t idx, Variant_t v
   }
 
   // Increase reference counter for the new stored item.
-  __MOLD_VariantAddRef(&value);
+  __MOLD_VariantAddRef(value);
 
   // Destroy old value if any.
   __MOLD_VariantDestroy(&array -> items[idx]);
 
   // Put new item into array slot
-  array -> items[idx] = value;
+  array -> items[idx] = *value;
 
   ASSERT_VARIANT_PTR_ARRAY(box);
-  ASSERT_VARIANT_PTR_ANY(&value);
+  ASSERT_VARIANT_PTR_ANY(value);
 }
 
 // ----------------------------------------------------------------------------
@@ -313,7 +315,7 @@ void __MOLD_VariantStoreAtIndex_variant(Variant_t *box, int32_t idx, Variant_t v
 //   value - value to store (Variant_t) (IN).
 // ----------------------------------------------------------------------------
 
-void __MOLD_VariantStoreAtIndex_string(Variant_t *box, int32_t idx, Variant_t value)
+void __MOLD_VariantStoreAtIndex_string(Variant_t *box, int32_t idx, Variant_t *value)
 {
   return __MOLD_VariantStoreAtIndex_variant(box, idx, value);
 }
@@ -339,7 +341,7 @@ void __MOLD_VariantStoreAtIndex_int32(Variant_t *box, int32_t idx, int32_t value
     flags: 0
   };
 
-  __MOLD_VariantStoreAtIndex_variant(box, idx, valueAsVariant);
+  __MOLD_VariantStoreAtIndex_variant(box, idx, &valueAsVariant);
 }
 
 // ----------------------------------------------------------------------------
@@ -363,7 +365,7 @@ void __MOLD_VariantStoreAtIndex_int64(Variant_t *box, int32_t idx, int64_t value
     flags: 0
   };
 
-  __MOLD_VariantStoreAtIndex_variant(box, idx, valueAsVariant);
+  __MOLD_VariantStoreAtIndex_variant(box, idx, &valueAsVariant);
 }
 
 // ----------------------------------------------------------------------------
@@ -387,7 +389,7 @@ void __MOLD_VariantStoreAtIndex_float64(Variant_t *box, int32_t idx, float64_t v
     flags: 0
   };
 
-  __MOLD_VariantStoreAtIndex_variant(box, idx, valueAsVariant);
+  __MOLD_VariantStoreAtIndex_variant(box, idx, &valueAsVariant);
 }
 
 // ----------------------------------------------------------------------------
@@ -411,7 +413,7 @@ void __MOLD_VariantStoreAtIndex_bool32(Variant_t *box, int32_t idx, bool32_t val
     flags: 0
   };
 
-  __MOLD_VariantStoreAtIndex_variant(box, idx, valueAsVariant);
+  __MOLD_VariantStoreAtIndex_variant(box, idx, &valueAsVariant);
 }
 
 // ----------------------------------------------------------------------------
@@ -431,18 +433,18 @@ void __MOLD_VariantStoreAtIndex_bool32(Variant_t *box, int32_t idx, bool32_t val
 //   value - value to store (IN).
 // ----------------------------------------------------------------------------
 
-void __MOLD_ArrayInsertAfterLast(Variant_t box, Variant_t value)
+void __MOLD_ArrayInsertAfterLast(Variant_t *box, Variant_t *value)
 {
-  ASSERT_VARIANT_PTR_ARRAY(&box);
-  ASSERT_VARIANT_PTR_ANY(&value);
+  ASSERT_VARIANT_PTR_ARRAY(box);
+  ASSERT_VARIANT_PTR_ANY(value);
 
-  if (box.type != VARIANT_ARRAY)
+  if (box -> type != VARIANT_ARRAY)
   {
     __MOLD_PrintErrorAndDie_arrayExpected();
   }
 
-  Buffer_t *buf   = box.valueAsBufferPtr;
+  Buffer_t *buf   = box -> valueAsBufferPtr;
   Array_t  *array = (Array_t *) buf -> bytesPtr;
 
-  __MOLD_VariantStoreAtIndex_variant(&box, array -> itemsCnt, value);
+  __MOLD_VariantStoreAtIndex_variant(box, array -> itemsCnt, value);
 }

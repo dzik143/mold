@@ -23,7 +23,7 @@
 #include <assert.h>
 #include "MoldCore.h"
 
-void __MOLD_Die(Variant_t msg);
+void __MOLD_Die(const Variant_t *msg);
 void __MOLD_PrintErrorAndDie(const char *msg);
 void __MOLD_InitExceptions();
 
