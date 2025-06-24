@@ -131,12 +131,6 @@ class SymbolTable
       entry.writeHits = 0
       entry.readHits  = 0
       entry.loopLevel = this.loopLevel
-
-      # Default data type to variant if not set.
-      # TODO: Review it?
-      #if entry.astType is undefined
-      #  entry.astType = -1
-      #endif
     endif
   endmethod
 
@@ -373,8 +367,6 @@ class SymbolTable
       this._error('unmatched scope leave')
     endif
 
-    # TODO: Review it.
-    #this.vacuum()
     rv = this.parent
   endmethod
 
@@ -434,6 +426,8 @@ class SymbolTable
 
   method insertClass(name, proto)
     global SYMBOL_KIND_CLASS
+
+    # Insert to class entry to the global table.
     newEntry = {
       'name': name,
       'kind': SYMBOL_KIND_CLASS,
@@ -442,9 +436,10 @@ class SymbolTable
 
     this.insertGlobal(name, newEntry)
 
+    # Update VCall map.
     # TODO: Clean up this mess.
-    # TODO: Use x ?? y like operator ?
     for keys methodName in proto.vtable
+      # TODO: Use x ?? y like operator ?
       bucket = this.globalTable.vcallMap{methodName}
       if bucket is undefined
         bucket = []
@@ -458,7 +453,7 @@ class SymbolTable
     global SYMBOL_KIND_CLASS
     rv = this.lookupGlobal(name)
     if rv.kind isnt SYMBOL_KIND_CLASS
-      this._error("'" ~ name ~ "' is not a class")
+      this._error(`'${name}' is not a class`)
     endif
   endmethod
 
@@ -507,7 +502,7 @@ class SymbolTable
         # It's a global constant. Do nothing.
       else
         # It's already declared as another kind.
-        this._error("conflicting declaration 'global " ~ name ~ "'")
+        this._error(`conflicting declaration 'global ${name}'`)
       endif
 
     else
@@ -705,9 +700,8 @@ class SymbolTable
 
     newSymbols = {}
 
-    # TODO: Use remove() if ready.
+    # TODO: Use remove() like if ready.
     for keys symbolId values symbolInfo in this.symbols
-      # TODO: Remove this hack.
       if ((symbolInfo.writeHits > 0) or
           (symbolInfo.readHits > 0) or
           (symbolInfo.kind is SYMBOL_KIND_VAR_PARAM) or
@@ -716,11 +710,6 @@ class SymbolTable
         # Variable is used at least once time. Keep it in table.
         newSymbols{symbolInfo.name} = symbolInfo
 
-        # TODO: Clean up this mess.
-        # Always keep return val.
-        #if symbolInfo.kind is SYMBOL_KIND_VAR_RETVAL
-        #  newSymbols{symbolInfo.alias} = symbolInfo
-        #endif
       else
         # Variable was never accesed for read. Remove it from table.
         this._debug('Removed unused symbol [' ~ symbolInfo.name ~ ']')
@@ -768,8 +757,8 @@ class SymbolTable
       poolCnt = poolObj.cnt - 1
 
       poolObj.cnt = poolCnt
-      rv = poolObj.pool[poolCnt]
-      this._debug('Get temp var [' ~ rv ~ '] from pool (' ~ wantedType ~ ')')
+      rv          = poolObj.pool[poolCnt]
+      this._debug(`Get temp var '${rv}' from the pool '${wantedType}'`)
 
       # TODO: Review it.
       symbolInfo           = this.lookup(rv)
@@ -786,10 +775,8 @@ class SymbolTable
       symbolInfo.isDeleted = false
       symbolInfo.type      = wantedType
 
-      this._debug('Allocated new temp var [' ~ rv ~ '] (' ~ wantedType ~ ')')
+      this._debug(`Allocated new temp var '${rv}' (${wantedType})`)
     endif
-
-    #symbolInfo.refCnt = 1
   endmethod
 
   method getTempVarForWrite(wantedType) -> rv
@@ -804,30 +791,23 @@ class SymbolTable
 
   method releaseTempVar(name)
     symbolInfo = this._lookupInternal(name)
-    # TODO: Clean up this mess.
+    # TODO: Simplify it?
     if ((symbolInfo is defined) and
         (symbolInfo.isTemp is defined) and
         (symbolInfo.isTemp is true) and
         (symbolInfo.isDeleted is false))
 
-      # TODO: Review it.
-
       symbolInfo.isDeleted = true
-      #symbolInfo.refCnt = symbolInfo.refCnt - 1
 
-      #if symbolInfo.refCnt is 0
-        # Variable is not used anymore.
-        # Push back to pool of temp variables available to use.
-        mirType = symbolInfo.type
+      # Variable is not used anymore.
+      # Push back to pool of temp variables available to use.
+      mirType = symbolInfo.type
 
-        if mirType is defined
-          poolObj = this.poolOfTempVars{mirType}
-          poolObj.pool[poolObj.cnt] = symbolInfo.name
-          poolObj.cnt               = poolObj.cnt + 1
-        endif
+      poolObj = this.poolOfTempVars{mirType}
+      poolObj.pool[poolObj.cnt] = symbolInfo.name
+      poolObj.cnt               = poolObj.cnt + 1
 
-        this._debug('Release temp var [' ~ symbolInfo.name ~ '] to pool (' ~ str(mirType) ~ ')')
-      #endif
+      this._debug('Release temp var [' ~ symbolInfo.name ~ '] to pool (' ~ str(mirType) ~ ')')
     endif
   endmethod
 endclass
