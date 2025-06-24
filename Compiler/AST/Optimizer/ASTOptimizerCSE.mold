@@ -269,8 +269,8 @@ class ASTOptimizerCSE
             matchedNode.value    = '__cse' ~ str(this._getNextId())
             matchedNode.children = []
 
-            commonBlock.symbolTable.lookupForWriteOrInsert(matchedNode.value)
-            commonBlock.symbolTable.lookupForRead(matchedNode.value)
+            unused = commonBlock.symbolTable.lookupForWriteOrInsert(matchedNode.value)
+            unused = commonBlock.symbolTable.lookupForRead(matchedNode.value)
 
             # TODO: Optimize it.
             newCommonBlockChildren = []
@@ -303,7 +303,7 @@ class ASTOptimizerCSE
 
           # TODO: Handle already assigned variable.
           if matchedNode.symbolTable is defined
-            matchedNode.symbolTable.lookupForRead(matchedNode.value)
+            unused = matchedNode.symbolTable.lookupForRead(matchedNode.value)
           endif
 
           rv = matchedNode
