@@ -43,7 +43,7 @@ t1 = new Test1()
 t1.bar()
 
 EXPECTED_ERROR:
-error: object has no method 'bar'
+./temp/source.mold:9:9: error: there is no method 'bar'
 -------------------------------------------------------------------------------
 
 TEST "Call to undeclared method #2"
@@ -58,7 +58,7 @@ t1 = new Test1()
 t1.foo()
 
 EXPECTED_ERROR:
-error: object has no method 'bar'
+./temp/source.mold:4:19: error: there is no method 'bar'
 -------------------------------------------------------------------------------
 
 TEST "Constructors"
@@ -938,4 +938,20 @@ obj.foo()
 EXPECTED_OUTPUT:
 1111
 9999
+--------------------------------------------------------------------------------
+
+TEST "VCall on null object"
+
+class A
+  method foo()
+    print 'A::foo() called!'
+  endmethod
+endclass
+
+obj = new A()
+obj = null
+obj.foo()
+
+EXPECTED_ERROR:
+runtime error: virtual call on non-object
 --------------------------------------------------------------------------------
