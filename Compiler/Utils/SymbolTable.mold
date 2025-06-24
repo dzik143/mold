@@ -178,21 +178,17 @@ class SymbolTable
 
     # Handle unimported global.
     # TODO: Clean up this mess.
-    if rv is defined
-      if (tab.procLevel is 0) and (this.procLevel > 0)
-
-        if rv.kind is @any(SYMBOL_KIND_VAR_LOCAL,
-                           SYMBOL_KIND_VAR_GLOBAL)
-          x  = []
-          rv = x[0]
-        endif
-      endif
+    if ((rv is defined) and
+        (tab.procLevel is 0) and
+        (this.procLevel > 0) and
+        (rv.kind is @any(SYMBOL_KIND_VAR_LOCAL,
+                         SYMBOL_KIND_VAR_GLOBAL)))
+      rv = null
     endif
   endmethod
 
   method lookup(name) -> rv
     rv = this._lookupInternal(name)
-
     if rv is undefined
       this._error("'" ~ name ~ "' was not declared in this scope")
     endif
@@ -219,12 +215,12 @@ class SymbolTable
     rv.writeHits = rv.writeHits + 1
 
     if rv.kind is SYMBOL_KIND_VAR_PARAM
-      this._error("function parameters can not be overwritten: '" ~ name ~ "'")
+      this._error(`function parameters can not be overwritten: '${name}'`)
     endif
 
     # Possible improvement: Use different kind for loop iterators?
     if rv.usedAsIterator is defined
-      this._error("loop iterators can not be overwritten: '" ~ name ~ "'")
+      this._error(`loop iterators can not be overwritten: '${name}'`)
     endif
   endmethod
 
@@ -392,7 +388,7 @@ class SymbolTable
     rv = this.lookup(name)
 
     if rv.kind isnt SYMBOL_KIND_FUNCTION
-      this._error("'" ~ name ~ "' is not a function")
+      this._error(`'${name}' is not a function`)
 
     elif rv.proto.builtIn is undefined
       # TODO: Clean up this mess.
@@ -407,10 +403,10 @@ class SymbolTable
         this._error("function '" ~ name ~ "' requires exactly " ~ str(len(rv.proto.params)) ~ ' parameters, but ' ~ str(passedParamsCnt) ~ ' were passed')
 
       elif (isRetValUsed is true) and (rv.proto.rv is undefined)
-        this._error("function '" ~ name ~ "' does not return a value")
+        this._error(`function '${name}' does not return a value`)
 
       elif (isRetValUsed is false) and (rv.proto.rv is defined)
-        this._error("unused return value of '" ~ name ~ "' function")
+        this._error(`unused return value of '${name}' function`)
       endif
 
     endif
@@ -565,8 +561,8 @@ class SymbolTable
       'astType': -1
     }
     this.insert(name, newEntry)
-    #this.symbols[name] = newEntry
-    # TODO: Is it really needed?
+    # Mark that return value is always readed to avoid
+    # treated as unused var.
     unused = this.lookupForRead(name)
   endmethod
 
@@ -577,8 +573,6 @@ class SymbolTable
       'kind': SYMBOL_KIND_CONST,
       'value': value
     }
-
-    # TODO: Review it
     this.insert(name, newEntry)
     this.globalTable.insert(name, newEntry)
   endmethod

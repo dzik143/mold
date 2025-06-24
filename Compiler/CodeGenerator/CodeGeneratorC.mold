@@ -765,7 +765,7 @@ class CodeGeneratorC
                           MIR1_OPCODE_PROC,
                           MIR1_OPCODE_INIT_FRAME)
 
-        print `  // [C] ${opcodeAsText} '(${opcode})' ${dst}, ${x}, ${y}`
+        print `  // [C] ${opcodeAsText}(${opcode}) dst=${dst}, x=${x}, y=${y}`
       endif
 
       isOpcodeHandled = true
