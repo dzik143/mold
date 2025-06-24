@@ -6,7 +6,7 @@ EXPECTED_ERROR:
 runtime error: divide by zero
 -------------------------------------------------------------------------------
 
-xTEST "SKIPPED: Divide by zero (float)"
+xTEST "Divide by zero (float)"
 
 print 3.14 / 0.0
 
@@ -14,7 +14,7 @@ EXPECTED_ERROR:
 runtime error: divide by zero
 -------------------------------------------------------------------------------
 
-xTEST "SKIPPED: Float overflow"
+xTEST "Float overflow"
 
 x = 9999999999999999.0
 print x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x
@@ -23,7 +23,7 @@ EXPECTED_ERROR:
 runtime error: floating point overflow
 -------------------------------------------------------------------------------
 
-xTEST "SKIPPED: Float underflow"
+xTEST "Float underflow"
 
 x = 9999999999999999.0
 print x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x/x
