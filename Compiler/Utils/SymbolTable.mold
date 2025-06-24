@@ -62,6 +62,9 @@ class SymbolTable
     this.loopLevel = 0
     this.procLevel = 0
 
+    # Map of defined symbols.
+    this.symbols = {}
+
     # Track used literals to avoid emitting the same text
     # multiple times.
     this.literals = {}
@@ -79,8 +82,7 @@ class SymbolTable
     this.parent      = null
     this.globalTable = this
 
-    # TODO: Remove it when map iteration ready.
-    this.symbols = {}
+    this.vcallMap = {}
   endmethod
 
   method _debug(msg)
@@ -437,7 +439,19 @@ class SymbolTable
       'kind': SYMBOL_KIND_CLASS,
       'proto': proto
     }
+
     this.insertGlobal(name, newEntry)
+
+    # TODO: Clean up this mess.
+    # TODO: Use x ?? y like operator ?
+    for keys methodName in proto.vtable
+      bucket = this.globalTable.vcallMap{methodName}
+      if bucket is undefined
+        bucket = []
+      endif
+      bucket[@afterlast] = newEntry
+      this.globalTable.vcallMap{methodName} = bucket
+    endfor
   endmethod
 
   method lookupClass(name) -> rv
@@ -445,6 +459,13 @@ class SymbolTable
     rv = this.lookupGlobal(name)
     if rv.kind isnt SYMBOL_KIND_CLASS
       this._error("'" ~ name ~ "' is not a class")
+    endif
+  endmethod
+
+  method lookupMethod(name) -> rv
+    rv = this.globalTable.vcallMap{name}
+    if rv is undefined
+      this._error(`there is no method '${name}'`)
     endif
   endmethod
 

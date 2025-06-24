@@ -244,12 +244,12 @@ class ASTSymbolsCollector
 
           # TODO: Review it.
           if funcProto.name is 'constructor'
-            nodeBody.symbolTable.lookupForRead('this')
+            unused = nodeBody.symbolTable.lookupForRead('this')
           endif
         endif
 
         for indexes paramIdx values paramName in funcProto.params
-          nodeBody.symbolTable.insertParam(paramName, paramShift + paramIdx)
+          unused = nodeBody.symbolTable.insertParam(paramName, paramShift + paramIdx)
 
           # TODO: Handle non-variant parameters.
           #if opcode is AST_OPCODE_CLASS_METHOD
@@ -315,7 +315,7 @@ class ASTSymbolsCollector
         this._collectSymbolsFromLeftNode(node.symbolTable, item)
       endfor
 
-      node.symbolTable.leaveScope()
+      unused = node.symbolTable.leaveScope()
 
     elif opcode is AST_OPCODE_VARIABLE
       if isLeftNode is true
@@ -358,7 +358,7 @@ class ASTSymbolsCollector
        # It's not needed - we already accessed box container.
        if nodeBox.opcode is AST_OPCODE_VARIABLE
          # x[i] = ... is read for x too.
-         symbolTable.lookupForRead(children[0].value)
+         unused = symbolTable.lookupForRead(children[0].value)
 
          # TODO: Review it.
          if isLeftNode is true
@@ -392,7 +392,7 @@ class ASTSymbolsCollector
        # It's not needed - we already accessed box container.
        if nodeBox.opcode is AST_OPCODE_VARIABLE
          # x[i] = ... is read for x too.
-         symbolTable.lookupForRead(children[0].value)
+         unused = symbolTable.lookupForRead(children[0].value)
 
          # Posible improvement: Distinguish between map and object.
          # Posible improvement: Distinguish between x.key and x{key}.
@@ -778,11 +778,14 @@ class ASTSymbolsCollector
         node.symbolInfo     = symbolTable.lookupForCall(node.value, childrenCnt, isRetValUsed)
         currentFunctionName = symbolTable.getCurrentFunctionName()
 
-        # Mark recursive calls. We use it in further optizations.
+        /*
+        # TODO
+        # Mark recursive calls. We use it in further optimizations.
         if currentFunctionName is @all(defined, funcName)
           this._debug('Recursive call detected at node #' ~ str(node.id) ~ ' (' ~ funcName ~ ')')
           node.symbolInfo.proto.isRecursive = true
         endif
+        */
 
         # Import global symbol.
         if funcName is 'global'

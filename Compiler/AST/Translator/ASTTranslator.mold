@@ -754,6 +754,10 @@ class ASTTranslator
     children    = ast.children
     childrenCnt = len(children)
 
+    # Verify does method exists anywhere?
+    # TODO: Verify parameters and class name if known?
+    unused = this.symbolTable.lookupMethod(methodName)
+
     # Evaluate parameters.
     # params[0] should be a "this" parameter.
     params    = []

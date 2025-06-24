@@ -295,7 +295,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
       # TODO: Review it.
       # TODO: Avoid move here?
       newConst = this.symbolTable.createConstFromValue(value)
-      this.symbolTable.lookupForRead(newConst)
+      unused = this.symbolTable.lookupForRead(newConst)
       this.emitOneArgOpcode(MIR1_OPCODE_CREATE_ARRAY, rv, newConst)
 
     elif value is map
@@ -312,8 +312,8 @@ class ASTTranslatorMIR1 extends ASTTranslator
       newConstKeys   = this.symbolTable.createConstFromValue(arrayOfKeys)
       newConstValues = this.symbolTable.createConstFromValue(arrayOfValues)
 
-      this.symbolTable.lookupForRead(newConstKeys)
-      this.symbolTable.lookupForRead(newConstValues)
+      unused = this.symbolTable.lookupForRead(newConstKeys)
+      unused = this.symbolTable.lookupForRead(newConstValues)
       this.emitTwoArgsOpcode(MIR1_OPCODE_CREATE_MAP, rv, newConstKeys, newConstValues)
 
     else
@@ -928,7 +928,7 @@ class ASTTranslatorMIR1 extends ASTTranslator
   endmethod
 
   method _declareClass(className, classProto)
-    this.code.createClass(classProto)
+    unused = this.code.createClass(classProto)
   endmethod
 
   method _emitFunctionBody(funcName, funcProto)

@@ -308,7 +308,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
       code.over()                 # [step, endIdx, step]
       code.loadLocal(iterId)      # [step, endIdx, step, iterId]
       code.add()                  # [step, endIdx, newIdx]
-      code.storeLocal(iterId)     # [step, endIdx]]
+      u = code.storeLocal(iterId) # [step, endIdx]]
       code.jmp(loopLabelId)       # [startIdx, endIdx, step]
 
     code.emitLabel(endLabelId)
@@ -415,7 +415,7 @@ class ASTTranslatorMIR0 extends ASTTranslator
   endmethod
 
   method _declareClass(className, classProto)
-    this.code.createClass(classProto)
+    unused = this.code.createClass(classProto)
   endmethod
 
   method _emitFunctionBody(funcName, funcProto)
