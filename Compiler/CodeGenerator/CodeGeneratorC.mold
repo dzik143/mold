@@ -1122,7 +1122,9 @@ class CodeGeneratorC
         elif opcode is MIR1_OPCODE_ENDP
           # Build vcall wrapper for virtual call if needed.
 
-          if isInsideVcall is true
+          if ((isInsideVcall is true) and
+              (codeObj.methodsMap{currentProcProto.shortName} is defined))
+
             # Emit function header with __vcall prefix e.g..
             # Variant_t __vcall_A_foo(Variant_t this, ...) {
             print this._renderFunctionProto(currentProcProto, true), '{'
