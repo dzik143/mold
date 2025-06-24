@@ -952,38 +952,18 @@ class CodeGeneratorC
 
             isSpaceNeeded = true
 
-            if oneParam is string
-              symbolInfo = currentSymbols{oneParam}
+            if oneParam is @all(string, '__EOL')
+              print '  __MOLD_Print_EOL();'
+              isSpaceNeeded = false
 
-              if oneParam is '__EOL'
-                print '  __MOLD_Print_EOL();'
-                isSpaceNeeded = false
-
-              elif oneParam is '@glued'
-                # Do nothing.
-                isSpaceNeeded = false
-
-              else
-                if symbolInfo isnt defined
-                  # TODO: Clean up this mess.
-                  # Try global.
-                  symbolInfo = codeObj.symbolTable.lookup(oneParam)
-                endif
-
-                if symbolInfo.type is @any(undefined, 'variant', 'string')
-                  # Complex variable.
-                  oneParamForCall = this._getParamForCall(oneParam)
-                  print `  __MOLD_Print_variant(${oneParamForCall});`
-                else
-                  # Primitive variable.
-                  mirType = symbolInfo.type
-                  print `  __MOLD_Print_${mirType}(${oneParam});`
-                endif
-              endif
+            elif oneParam is @all(string, '@glued')
+              # Do nothing.
+              isSpaceNeeded = false
 
             else
-              # Immediate value.
-              print '  __MOLD_Print_' ~ this._getSymbolType(oneParam), '(', oneParam, ');'
+              oneParamForCall = this._getParamForCall(oneParam)
+              mirType         = this._getSymbolType(oneParam)
+              print `  __MOLD_Print_${mirType}(${oneParamForCall});`
             endif
           endfor
 
