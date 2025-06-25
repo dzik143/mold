@@ -18,6 +18,7 @@
 /**************************************************************************/
 
 #include <inttypes.h>
+#include <stdarg.h>
 
 #include "MoldError.h"
 #include "MoldCore.h"
@@ -249,6 +250,41 @@ static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x) {
 void __MOLD_PrintToFile_variant(FILE *f, Variant_t *x) {
   __MOLD_PrintToFile_variantInternal(f, x);
   __MOLD_ClenUpAfterPrint(x);
+}
+
+void __MOLD_PrintFormat(const char *fmt, ...) {
+  va_list ptr;
+  va_start(ptr, fmt);
+
+  while (*fmt) {
+    switch (*fmt) {
+      // Possible improvement: Better tokens set?
+      case 's':
+      case 'v': __MOLD_Print_variant(va_arg(ptr, Variant_t *)); break;
+      case 'i': __MOLD_Print_int32  (va_arg(ptr, uint32_t));    break;
+      case 'I': __MOLD_Print_int64  (va_arg(ptr, uint64_t));    break;
+      case 'f': __MOLD_Print_float64(va_arg(ptr, float64_t));   break;
+      case 'b': __MOLD_Print_bool32 (va_arg(ptr, bool32_t));    break;
+      case '!': __MOLD_Print_EOL();                             break;
+      case '~': break;
+
+      default: {
+        fprintf(stderr, "runtime error: unhandled print fmt token '%c'", *fmt);
+        abort();
+      }
+    }
+
+    if ((fmt[0] != '~') &&
+        (fmt[1] !=  0 ) &&
+        (fmt[1] != '~') &&
+        (fmt[1] != '!')) {
+      __MOLD_Print_space();
+    }
+
+    fmt++;
+  }
+
+  //Variant_t *x = va_arg(ptr, Variant_t *);
 }
 
 // -----------------------------------------------------------------------------

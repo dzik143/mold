@@ -28,6 +28,7 @@ void __MOLD_PrintToFile_variant(FILE *f, Variant_t *x);
 void __MOLD_VariantPrint(Variant_t *x);
 void __MOLD_Print_space();
 void __MOLD_Print_EOL();
+void __MOLD_PrintFormat(const char *fmt, ...);
 
 void __MOLD_Print_variant(Variant_t *x);
 void __MOLD_Print_string(Variant_t *x);
