@@ -114,7 +114,6 @@ bool32_t __MOLD_cmp_eq_string(const Variant_t *x, const Variant_t *y)
     {
       // CHAR eq CHAR
       rv = (x -> value == y -> value);
-
     }
     else
     {
@@ -123,7 +122,6 @@ bool32_t __MOLD_cmp_eq_string(const Variant_t *x, const Variant_t *y)
       String_t *yStr = (String_t *) yBuf -> bytesPtr;
       rv = (yStr -> length == 1) && (yStr -> text[0] == x -> value);
     }
-
   }
   else
   {
@@ -135,7 +133,6 @@ bool32_t __MOLD_cmp_eq_string(const Variant_t *x, const Variant_t *y)
     {
       // STRING eq CHAR
       rv = (xStr -> length == 1) && (xStr -> text[0] == y -> value);
-
     }
     else
     {

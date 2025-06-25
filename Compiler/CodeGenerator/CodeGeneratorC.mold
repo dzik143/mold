@@ -937,37 +937,32 @@ class CodeGeneratorC
           # this.variantDestroy(dst)
 
         elif opcode is MIR1_OPCODE_PRINT
-          params        = dst
-          isSpaceNeeded = false
+          params   = dst
+          fmt      = ''
+          callList = ''
 
           for values oneParam in params
-            # Emit space separator if needed.
-            if isSpaceNeeded is true
-              # TODO: Clean up this mess.
-              if ((oneParam isnt string) or
-                  (oneParam isnt @all('@glued', '__EOL')))
-                print '  __MOLD_Print_space();'
+            if oneParam is @all(string, '__EOL')
+              token = '!'
+
+            elif oneParam is @all(string, '@glued')
+              token = '~'
+
+            else
+              mirType  = this._getSymbolType(oneParam)
+
+              if mirType is 'int64'
+                token    = 'I'
+              else
+                token    = mirType[0]
+                callList = callList ~ ',' ~ this._getParamForCall(oneParam)
               endif
             endif
 
-            isSpaceNeeded = true
-
-            if oneParam is @all(string, '__EOL')
-              print '  __MOLD_Print_EOL();'
-              isSpaceNeeded = false
-
-            elif oneParam is @all(string, '@glued')
-              # Do nothing.
-              isSpaceNeeded = false
-
-            else
-              oneParamForCall = this._getParamForCall(oneParam)
-              mirType         = this._getSymbolType(oneParam)
-              print `  __MOLD_Print_${mirType}(${oneParamForCall});`
-            endif
+            fmt = fmt ~ token
           endfor
 
-          print '  __MOLD_Print_EOL();'
+          print '  __MOLD_PrintFormat("' ~ fmt ~ '!"' ~ callList ~  ');'
 
         elif opcode is MIR1_OPCODE_PROC
           # Remember info about current procedure.

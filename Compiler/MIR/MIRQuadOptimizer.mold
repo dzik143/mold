@@ -85,9 +85,12 @@ class MIRQuadOptimizer extends PipeAbstract
       # Temporary fix for x = x.foo().
       this._emitOneItem(item)
 
-    elif ((opcode is MIR1_OPCODE_PRINT) and
-          (this.lastOpcode is MIR1_OPCODE_PRINT))
-      # TODO: Use if x,y are ... ?
+    elif @all(opcode, this.lastOpcode) is MIR1_OPCODE_PRINT
+      # Replace:
+      #   print a,b,c
+      #   print x,y,z
+      # By:
+      #   print a,b,c, __EOL, x,y,z
       this.lastDst[@afterlast] = '__EOL'
       for values oneItem in dst
         this.lastDst[@afterlast] = oneItem
