@@ -19,12 +19,63 @@
 
 #include <inttypes.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "MoldError.h"
 #include "MoldCore.h"
 #include "MoldVariantString.h"
 #include "MoldForDriver.h"
 #include "MoldPrint.h"
+
+#define __MOLD_DEFAULT_PRINT_BUFFER_SIZE 32
+
+// Forward declaration.
+struct __MOLD_PrintContext;
+
+typedef void (*__MOLD_WriteRawCallback)(struct __MOLD_PrintContext *ctx,
+                                        const char *data,
+                                        uint64_t dataSize);
+
+typedef struct __MOLD_PrintContext {
+  // Callback functions called by generic print code.
+  __MOLD_WriteRawCallback writeRawCb;
+
+  // Used durint print to file mode.
+  FILE *f;
+
+  // Used during print to string mode.
+  uint64_t bufCapacity;
+  uint64_t bufSize;
+  char *buf;
+} __MOLD_PrintContext_t;
+
+static void __MOLD_WriteRawToFileCallback(__MOLD_PrintContext_t *ctx,
+                                          const char *data,
+                                          uint64_t dataSize) {
+
+  assert(ctx != NULL);
+  assert(ctx -> f != NULL);
+  fwrite(data, dataSize, 1, ctx -> f);
+}
+
+static void __MOLD_WriteRawToBufferCallback(__MOLD_PrintContext_t *ctx,
+                                            const char *data,
+                                            uint64_t dataSize) {
+
+  assert(ctx != NULL);
+  assert(ctx -> buf != NULL);
+
+  if (dataSize > 0) {
+    if (ctx -> bufSize + dataSize >= ctx -> bufCapacity) {
+      ctx -> bufCapacity *= 2;
+      ctx -> buf = realloc(ctx -> buf, ctx -> bufCapacity);
+    }
+
+    memcpy(ctx -> buf + ctx -> bufSize, data, dataSize);
+    ctx -> bufSize += dataSize;
+    ctx -> buf[ctx -> bufSize] = 0;
+  }
+}
 
 // Remove visited flags recursively set during __MOLD_VariantPrint before.
 // We set visited flag to catch circular references and avoid infinite
@@ -86,23 +137,51 @@ static void __MOLD_ClenUpAfterPrint(Variant_t *x) {
 // x - variable to be printed (IN),
 // -----------------------------------------------------------------------------
 
-static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x) {
+static void __MOLD_PrintVariantInernal(__MOLD_PrintContext_t *ctx, Variant_t *x) {
+  assert(ctx != NULL);
+  assert(x != NULL);
+
+  #define EMIT_LITERAL(x) ctx -> writeRawCb(ctx, (x), sizeof(x) - 1);
+
   // Extra guard to avoid infinite loops on circular references.
   x -> flags |= VARIANT_FLAG_NODE_VISITED;
+
+  // Temp buffer to render primitives before emit.
+  char tmpBuf[31];
+  uint64_t tmpBufSize;
 
   switch (x -> type) {
     // ------------------------------------------------------------------------
     //                         Print primitives
     // ------------------------------------------------------------------------
 
-    case VARIANT_UNDEFINED: { fprintf(f, "undefined"); break; }
-    case VARIANT_NULL:      { fprintf(f, "null"); break; }
-    case VARIANT_INTEGER:   { fprintf(f, "%"PRId64, x -> valueAsInt64); break; }
-    case VARIANT_FLOAT:     { fprintf(f, "%f", x -> valueAsFloat32); break; }
-    case VARIANT_DOUBLE:    { fprintf(f, "%lf", x -> valueAsFloat64); break; }
+    case VARIANT_UNDEFINED: { EMIT_LITERAL("undefined"); break; }
+    case VARIANT_NULL:      { EMIT_LITERAL("null");      break; }
 
-    case VARIANT_BOOLEAN: {
-      fprintf(f, "%s", (x -> valueAsInt32) ? "true" : "false");
+    case VARIANT_INTEGER: {
+      tmpBufSize = snprintf(tmpBuf, sizeof(tmpBuf) - 1, "%"PRId64, x -> valueAsInt64);
+      ctx -> writeRawCb(ctx, tmpBuf, tmpBufSize);
+      break;
+    }
+
+    case VARIANT_FLOAT: {
+      tmpBufSize = snprintf(tmpBuf, sizeof(tmpBuf) - 1, "%f", x -> valueAsFloat32);
+      ctx -> writeRawCb(ctx, tmpBuf, tmpBufSize);
+      break;
+    }
+
+    case VARIANT_DOUBLE: {
+      tmpBufSize = snprintf(tmpBuf, sizeof(tmpBuf) - 1, "%lf", x -> valueAsFloat64);
+      ctx -> writeRawCb(ctx, tmpBuf, tmpBufSize);
+      break;
+    }
+
+    case VARIANT_BOOLEAN:   {
+      if (x -> valueAsInt32) {
+        EMIT_LITERAL("true");
+      } else {
+        EMIT_LITERAL("false");
+      }
       break;
     }
 
@@ -114,14 +193,14 @@ static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x) {
       if (x -> flags & VARIANT_FLAG_ONE_CHARACTER) {
         // One character string.
         // Just put single char directly.
-        putchar(x -> value);
+        ctx -> writeRawCb(ctx, &x -> valueAsChar, 1);
 
       } else {
         // Multicharacter string.
         // Decode string buffer first.
         Buffer_t *buf = (Buffer_t *) x -> value;
         String_t *str = (String_t *) buf -> bytesPtr;
-        fprintf(f, "%s", str -> text);
+        ctx -> writeRawCb(ctx, str -> text, str -> length);
       }
 
       break;
@@ -142,25 +221,25 @@ static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x) {
         if ((array -> itemsCnt > 0) &&
             (array -> items[0].flags & VARIANT_FLAG_NODE_VISITED)) {
           // Circular reference - array already printed.
-          fputs("<circular>", f);
+          EMIT_LITERAL("<circular>");
 
         } else {
           // Array was not visited yet - print it now.
-          const char *sep = "";
-          fputc('[', f);
+          EMIT_LITERAL("[");
 
           for (uint32_t idx = 0; idx < array -> itemsCnt; idx++) {
             // Separate items by comma: x1, x2, x3, ...
-            fputs(sep, f);
-            sep = ", ";
+            if (idx > 0) {
+              EMIT_LITERAL(", ");
+            }
 
             // Print next item value and wrap into 'value' if needed.
-            if ((array -> items[idx].type) == VARIANT_STRING) fputc('\'', f);
-            __MOLD_PrintToFile_variantInternal(f, &array -> items[idx]);
-            if ((array -> items[idx].type) == VARIANT_STRING) fputc('\'', f);
+            if ((array -> items[idx].type) == VARIANT_STRING) EMIT_LITERAL("'");
+            __MOLD_PrintVariantInernal(ctx, &array -> items[idx]);
+            if ((array -> items[idx].type) == VARIANT_STRING) EMIT_LITERAL("'");
           }
 
-          fputc(']', f);
+          EMIT_LITERAL("]");
         }
 
       } else {
@@ -169,24 +248,23 @@ static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x) {
         Variant_t oneItem;
         uint32_t idx;
 
-        const char *sep = "";
-        fputc('[', f);
+        EMIT_LITERAL("[");
 
         void _printOneItem() {
           // Separate items by comma: x1, x2, x3, ...
-          fputs(sep, f);
-          sep = ", ";
+          if (idx > 0) {
+            EMIT_LITERAL(", ");
+          }
 
           // Print next item value and wrap into 'value' if needed.
-          if (oneItem.type == VARIANT_STRING) fputc('\'', f);
-          __MOLD_PrintToFile_variantInternal(f, &oneItem);
-          if (oneItem.type == VARIANT_STRING) fputc('\'', f);
+          if (oneItem.type == VARIANT_STRING) EMIT_LITERAL("'");
+          __MOLD_PrintVariantInernal(ctx, &oneItem);
+          if (oneItem.type == VARIANT_STRING) EMIT_LITERAL("'");
         }
 
         // Print all items one-by-one.
         __MOLD_ForDriver_IndexesAndValuesInArray(array, &idx, &oneItem, _printOneItem);
-
-        fputc(']', f);
+        EMIT_LITERAL("]");
       }
 
       break;
@@ -205,30 +283,34 @@ static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x) {
       MapBucket_t *bucket     = map -> firstBucket;
 
       if (bucket && bucket -> key.flags & VARIANT_FLAG_NODE_VISITED) {
-        fputs("<circular>", f);
+        EMIT_LITERAL("<circular>");
 
       } else {
         // Map was not visited yet - print it now.
-        const char *sep = "";
-        fputc('{', f);
+        EMIT_LITERAL("{");
 
         for (uint32_t idx = 0; idx < bucketsUsedCnt; idx++) {
+          // Separate key:value pairs by commas:
+          // { 'key1': val1, 'key2': val2, ... }
+          if (idx > 0 ) {
+            EMIT_LITERAL(", ");
+          }
+
           // Print key.
-          fprintf(f, "%s'", sep);
-          __MOLD_PrintToFile_variantInternal(f, &bucket -> key);
-          fputs("': ", f);
+          EMIT_LITERAL("'");
+          __MOLD_PrintVariantInernal(ctx, &bucket -> key);
+          EMIT_LITERAL("': ");
 
           // Print value.
-          if (bucket -> value.type == VARIANT_STRING) putc('\'', f);
-          __MOLD_PrintToFile_variantInternal(f, &bucket -> value);
-          if (bucket -> value.type == VARIANT_STRING) putc('\'', f);
+          if (bucket -> value.type == VARIANT_STRING) EMIT_LITERAL("'");
+          __MOLD_PrintVariantInernal(ctx, &bucket -> value);
+          if (bucket -> value.type == VARIANT_STRING) EMIT_LITERAL("'");
 
           // Go to next bucket if any.
-          sep    = ", ";
           bucket = bucket -> nextBucket;
         }
 
-        putc('}', f);
+        EMIT_LITERAL("}");
       }
 
       break;
@@ -237,7 +319,7 @@ static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x) {
     case VARIANT_OBJECT: {
       // TODO: Fix printing "classProto" under VM.
       // Possible improvement: Print methods/className for objects?
-      fprintf(f, "<object>");
+      EMIT_LITERAL("<object>");
       break;
     }
 
@@ -245,11 +327,37 @@ static void __MOLD_PrintToFile_variantInternal(FILE *f, Variant_t *x) {
       __MOLD_PrintErrorAndDie_badType();
     }
   }
+
+  #undef EMIT_LITERAL
 }
 
 void __MOLD_PrintToFile_variant(FILE *f, Variant_t *x) {
-  __MOLD_PrintToFile_variantInternal(f, x);
+  __MOLD_PrintContext_t ctx = { 0 };
+
+  ctx.f = f;
+  ctx.writeRawCb = __MOLD_WriteRawToFileCallback;
+
+  __MOLD_PrintVariantInernal(&ctx, x);
   __MOLD_ClenUpAfterPrint(x);
+}
+
+Variant_t __MOLD_PrintToString_variant(Variant_t *x) {
+  __MOLD_PrintContext_t ctx = { 0 };
+
+  ctx.buf         = calloc(__MOLD_DEFAULT_PRINT_BUFFER_SIZE, 1);
+  ctx.bufCapacity = __MOLD_DEFAULT_PRINT_BUFFER_SIZE;
+  ctx.writeRawCb  = __MOLD_WriteRawToBufferCallback;
+
+  __MOLD_PrintVariantInernal(&ctx, x);
+  __MOLD_ClenUpAfterPrint(x);
+
+  // Possible improvement: Avoid buffer copy?
+  // Possible improvement: Pass result variant via pointer?
+  Variant_t rv = __MOLD_VariantStringCreateFromCString(ctx.buf);
+
+  free(ctx.buf);
+
+  return rv;
 }
 
 void __MOLD_PrintFormat(const char *fmt, ...) {
@@ -274,7 +382,9 @@ void __MOLD_PrintFormat(const char *fmt, ...) {
       }
     }
 
+    // Possible improvement: Simplify it?
     if ((fmt[0] != '~') &&
+        (fmt[0] != '!') &&
         (fmt[1] !=  0 ) &&
         (fmt[1] != '~') &&
         (fmt[1] != '!')) {
@@ -283,8 +393,6 @@ void __MOLD_PrintFormat(const char *fmt, ...) {
 
     fmt++;
   }
-
-  //Variant_t *x = va_arg(ptr, Variant_t *);
 }
 
 // -----------------------------------------------------------------------------

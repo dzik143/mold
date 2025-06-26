@@ -46,6 +46,7 @@ typedef struct Variant
     int64_t   valueAsInt64;
     float32_t valueAsFloat32;
     float64_t valueAsFloat64;
+    char      valueAsChar;
     struct Buffer *valueAsBufferPtr;
   };
 } Variant_t;

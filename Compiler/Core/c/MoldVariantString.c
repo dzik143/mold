@@ -107,7 +107,16 @@ bool32_t __MOLD_cmp_eq_string(const Variant_t *x, const Variant_t *y)
 
   bool32_t rv = 0;
 
-  if (x -> flags & VARIANT_FLAG_ONE_CHARACTER)
+  if (x -> valueAsInt64 == y -> valueAsInt64) {
+    // Both string uses the same buffer or stores the same
+    // single character.
+    // We still can't say anything if two strings use different
+    // buffers. Two different buffers may store the same string created
+    // at runtime.
+    //
+    rv = 1;
+  }
+  else if (x -> flags & VARIANT_FLAG_ONE_CHARACTER)
   {
     // CHAR eq ?
     if (y -> flags & VARIANT_FLAG_ONE_CHARACTER)
@@ -346,6 +355,11 @@ Variant_t __MOLD_Str(Variant_t *x)
   {
     // Input is not a string.
     // We need to create new one.
+    // Possible improvement: Optimize it.
+    rv = __MOLD_PrintToString_variant(x);
+
+    /*
+    OLD IMPLEMENTATION
     const char *fmt = NULL;
 
     switch (x -> type)
@@ -370,6 +384,7 @@ Variant_t __MOLD_Str(Variant_t *x)
     String_t *str = (String_t *) buf -> bytesPtr;
     str -> length = snprintf(str -> text, 31, fmt, x -> value);
     rv.valueAsBufferPtr = buf;
+    */
   }
 
   ASSERT_VARIANT_PTR_ANY(x);
