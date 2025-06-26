@@ -100,6 +100,7 @@ const MIR1_OPCODE_CMP_IS_NOT_TYPEOF = 85
 const MIR1_OPCODE_JMP_IF_TYPEOF     = 86
 const MIR1_OPCODE_JMP_IF_NOT_TYPEOF = 87
 const MIR1_OPCODE_STRING_JOIN       = 88
+const MIR1_OPCODE_BUILD_STRING      = 89
 
 function MIR1_GetOpcodeAsText(opcode) -> rv
   global MIR1_OPCODE_COMMENT, MIR1_OPCODE_LABEL
@@ -127,6 +128,7 @@ function MIR1_GetOpcodeAsText(opcode) -> rv
   global MIR1_OPCODE_CREATE_VARIANT_FROM, MIR1_OPCODE_CAST_VARIANT_TO
   global MIR1_OPCODE_INIT_FRAME
   global MIR1_OPCODE_CMP_CC_GROUP, MIR1_OPCODE_JMP_IF_CC_GROUP
+  global MIR1_OPCODE_BUILD_STRING
 
   if opcode is MIR1_OPCODE_COMMENT
     rv = 'comment'
@@ -280,6 +282,9 @@ function MIR1_GetOpcodeAsText(opcode) -> rv
 
   elif opcode is MIR1_OPCODE_PRINT
     rv = 'print'
+
+  elif opcode is MIR1_OPCODE_BUILD_STRING
+    rv = 'string.build'
 
   else
     rv = `(BAD: ${opcode})`

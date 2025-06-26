@@ -60,6 +60,13 @@ class ASTTranslatorMIR0 extends ASTTranslator
     this.code.stringJoin()
   endmethod
 
+  method _evaluateBuildString(rv, node)
+    for values oneChild in node.children
+      unused = this._evaluateNode(oneChild)
+    endfor
+    this.code.stringBuild(len(node.children))
+  endmethod
+
   method _sub(rv, x, y)
     this.code.sub()
   endmethod

@@ -195,7 +195,50 @@ class ASTOptimizerConstantFolding
     x           = children[0]
     y           = children[1]
     areArgsImm  = true
+/*
+    if (opcode is AST_OPCODE_BLOCK) and (childrenCnt >= 2)
+      # Try to join two print calls one-after-one.
+      # Possible improvement: Don't build new array at each block?
+      lastChild   = children[0]
+      newChildren = [lastChild]
 
+      for idx in 1 .. childrenCnt
+        currentChild = children[idx]
+
+        if ((@all(lastChild.opcode , currentChild.opcode) is AST_OPCODE_CALL) and
+            (@all(lastChild.value  , currentChild.value)  is 'print'))
+          # Replace:
+          #   print a,b,c
+          #   print x,y,z
+          # By:
+          #   print a,b, str(c) ~ EOL ~ x,y,z
+          # TODO: Clean up this mess - don't use STR_JOIN here?
+          isNodeChanged = true
+          lastChild.children[@last] = AST_CreateNode(AST_OPCODE_STRING_JOIN, '~', [
+            AST_CreateNodeSysCall(MOLD_SYSCALL_ID_STR, [ lastChild.children[@last] ]),
+            AST_CreateNode(AST_OPCODE_STRING_JOIN, '~', [
+              AST_CreateNode(AST_OPCODE_VARIABLE, '__EOL', []),
+              AST_CreateNodeSysCall(MOLD_SYSCALL_ID_STR, [ currentChild.children[0]])
+            ])
+          ])
+
+          # TODO: Use join() like call if ready?
+          for jdx in 1 .. len(currentChild.children)
+            lastChild.children[@afterlast] = currentChild.children[jdx]
+          endfor
+
+        else
+          newChildren[@afterlast] = currentChild
+        endif
+
+        lastChild = currentChild
+      endfor
+
+      node.children = newChildren
+      children      = newChildren
+      childrenCnt   = len(newChildren)
+    endif
+*/
     if (opcode is AST_OPCODE_CALL) and (value is 'global')
       # Global import - do nothing.
 

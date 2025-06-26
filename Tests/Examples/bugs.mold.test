@@ -118,11 +118,11 @@ EXPECTED_OUTPUT:
 9
 -------------------------------------------------------------------------------
 
-TEST "Bug: Unset register while calling calloc in str() (TEMPORARY DISABLED!!!)"
+TEST "Bug: Unset register while calling calloc in str()"
 
 print 'before loop'
 for idx in 0 .. 1024
-#  str(idx)
+  str(idx)
 endfor
 print 'after loop'
 

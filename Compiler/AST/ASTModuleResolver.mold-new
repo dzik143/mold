@@ -1,0 +1,88 @@
+################################################################################
+#                                                                              #
+# This file is part of Mold project.                                           #
+# Copyright (C) 2015, 2020 Sylwester Wysocki <sw143@wp.pl>                     #
+#                                                                              #
+# This program is free software: you can redistribute it and/or modify         #
+# it under the terms of the GNU General Public License as published by         #
+# the Free Software Foundation, either version 3 of the License, or            #
+# (at your option) any later version.                                          #
+#                                                                              #
+# This program is distributed in the hope that it will be useful,              #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of               #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                #
+# GNU General Public License for more details.                                 #
+#                                                                              #
+# You should have received a copy of the GNU General Public License            #
+# along with this program. If not, see <http://www.gnu.org/licenses/>          #
+#                                                                              #
+################################################################################
+
+import '../Parser/ParserMold.mold'
+import '../Utils/Common.mold'
+
+import './AST.mold'
+
+class ASTModuleResolver
+  method constructor(app)
+    this.app             = app
+    this.importedModules = {}
+    this.parser          = new Parser()
+  endmethod
+
+  method _resolveImportsInternal(ast, path) -> moduleInfo
+    global AST_OPCODE_CALL, AST_OPCODE_MODULE, AST_OPCODE_NOP
+
+    moduleInfo = this.importedModules{path}
+
+    if moduleInfo is undefined
+      # Load module once.
+      this.app.logDebug(`Resolving module [ ${path} ]...`)
+
+      moduleInfo = {
+        'path': path,
+        'ast': ast,
+        'arrayOfImportedModules': []
+      }
+
+      this.importedModules{path} = moduleInfo
+
+      program  = ast.children[0]
+      children = program.children
+
+      currentDir = UTILS_GetDirNameFromPath(path)
+
+      for values oneChild in children
+
+        if ((oneChild.opcode is AST_OPCODE_CALL) and
+            (oneChild.value is 'import'))
+
+          # Resolve imports recursively.
+          childPath     = oneChild.children[0].value
+          childPathFull = UTILS_NormalizePath(`${currentDir}/${childPath}`)
+
+          # Parse source into AST tree.
+          importedAst    = this.parser.parseFile(childPathFull)
+          importedModule = this._resolveImportsInternal(importedAst, childPathFull)
+
+          # Collect imported modules.
+          moduleInfo.arrayOfImportedModules[@afterlast] = importedModule
+
+          oneChild.opcode   = AST_OPCODE_NOP
+          oneChild.children = []
+        endif
+      endfor
+    endif
+
+    ast.moduleInfo = moduleInfo
+  endmethod
+
+  # TODO: Remove path param?
+  method resolveImports(ast, path)
+    this._resolveImportsInternal(ast, path)
+  endmethod
+
+  method getModules() -> rv
+    rv = this.importedModules
+  endmethod
+endclass

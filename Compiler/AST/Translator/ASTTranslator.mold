@@ -108,6 +108,7 @@ class ASTTranslator
   unimplemented method _executeNodeIf(cond, codeIfTrue, codeIfFalse)
   unimplemented method _executeNodeSwitch(node)
   unimplemented method _executeNodePrint(node)
+  unimplemented method _evaluateBuildString(node)
 
   # ----------------------------------------------------------------------------
   #                         Internal helpers (private)
@@ -367,6 +368,7 @@ class ASTTranslator
     global AST_OPCODE_IS_TYPEOF
     global AST_OPCODE_IS_NOT_TYPEOF
     global AST_DATA_NONE
+    global AST_OPCODE_BUILD_STRING
 
     opcode      = ast.opcode
     value       = ast.value
@@ -489,6 +491,11 @@ class ASTTranslator
           this._convert(rv, src, srcType, dstType)
         endif
       endif
+
+    elif opcode is AST_OPCODE_BUILD_STRING
+      # ... = `${x}` like
+      rv = this._getTempVarOrReuse(rv, 'string')
+      this._evaluateBuildString(rv, ast)
 
     else
       # TODO: Clean up this mess.

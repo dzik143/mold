@@ -38,5 +38,6 @@ void __MOLD_Print_int64(int64_t x);
 void __MOLD_Print_float64(float64_t x);
 
 Variant_t __MOLD_PrintToString_variant(Variant_t *x);
+Variant_t __MOLD_BuildString(const char *fmt, ...);
 
 #endif /* _MoldPrint_H */

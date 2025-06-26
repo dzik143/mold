@@ -78,7 +78,8 @@ SYSCALL_ID_TO_C_FUNCTION_MAP = {
 
   '55': '__MOLD_SubStr',
   '56': '__MOLD_InnerTypeOf',
-  '57': '__MOLD_GetTypeId'
+  '57': '__MOLD_GetTypeId',
+  '58': '__MOLD_BuildString'
 }
 
 const MIR_COMPARE_FLAGS = ['eq', 'ne', 'lt', 'ge', 'le', 'gt']
@@ -635,6 +636,7 @@ class CodeGeneratorC
     global MIR_TO_C_VARIANT_VALUE_AS_MAP
     global MIR_TO_C_VARIANT_VALUE_AS_MAP_WRITE
     global MIR_TO_VARIANT_TYPE
+    global MIR1_OPCODE_BUILD_STRING
 
     print '#include <Mold.h>'
 
@@ -936,10 +938,15 @@ class CodeGeneratorC
           print `  ${dst}.type = VARIANT_UNDEFINED;`
           # this.variantDestroy(dst)
 
-        elif opcode is MIR1_OPCODE_PRINT
+        elif opcode is @any(MIR1_OPCODE_PRINT,
+                            MIR1_OPCODE_BUILD_STRING)
           params   = dst
           fmt      = ''
           callList = ''
+
+          if opcode is MIR1_OPCODE_BUILD_STRING
+            params = x
+          endif
 
           for values oneParam in params
             if oneParam is @all(string, '__EOL')
@@ -962,7 +969,11 @@ class CodeGeneratorC
             fmt = fmt ~ token
           endfor
 
-          print '  __MOLD_PrintFormat("' ~ fmt ~ '!"' ~ callList ~  ');'
+          if opcode is MIR1_OPCODE_BUILD_STRING
+            print ' ', dst, '= __MOLD_BuildString("' ~  fmt ~ '"', callList, ');'
+          else
+            print '  __MOLD_PrintFormat("' ~ fmt ~  '!"', callList, ');'
+          endif
 
         elif opcode is MIR1_OPCODE_PROC
           # Remember info about current procedure.

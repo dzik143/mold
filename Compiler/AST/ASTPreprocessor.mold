@@ -104,7 +104,7 @@ class ASTPreprocessor
     global AST_OPCODE_SUB
     global AST_OPCODE_BLOCK
     global AST_OPCODE_CLASS_METHOD
-    global AST_DATA_STRING, AST_DATA_STRING_FMT
+    global AST_DATA_STRING, AST_OPCODE_BUILD_STRING
     global AST_DATA_INTEGER
     global AST_DATA_BOOL
     global AST_OPCODE_COMPARE_EQ, AST_OPCODE_COMPARE_NEQ
@@ -126,6 +126,7 @@ class ASTPreprocessor
     global AST_OPCODE_IF
     global AST_OPCODE_FOR_VALUES, AST_OPCODE_FOR_KEYS, AST_OPCODE_FOR_INDEXES
     global AST_OPCODE_FOR_KEYS_VALUES, AST_OPCODE_FOR_INDEXES_VALUES
+    global MOLD_SYSCALL_ID_BUILD_STRING
 
     opcode   = node.opcode
     children = node.children
@@ -454,7 +455,7 @@ class ASTPreprocessor
         ]
       endif
 
-    elif opcode is AST_DATA_STRING_FMT
+    elif opcode is AST_OPCODE_BUILD_STRING
       if node.value is ''
         # Empty string. Just convert to string imm.
         node.opcode = AST_DATA_STRING
@@ -465,7 +466,8 @@ class ASTPreprocessor
         isFmtMatched        = false
         currentToken        = ''
 
-        tokenNodes = []
+        tokenNodes   = []
+        formatString = ''
 
         for indexes idx values oneChar in node.value
           if isFmtMatched is true
@@ -481,7 +483,8 @@ class ASTPreprocessor
               newTokenNode.column   = node.column
               newTokenNode.line     = node.line
 
-              tokenNodes[@afterlast] = AST_CreateNodeSysCall(MOLD_SYSCALL_ID_STR, [ newTokenNode ])
+              # tokenNodes[@afterlast] = AST_CreateNodeSysCall(MOLD_SYSCALL_ID_STR, [ newTokenNode ])
+              tokenNodes[@afterlast] = newTokenNode
 
               # Reset scanner state.
               isFmtPartialMatched = false
@@ -532,7 +535,9 @@ class ASTPreprocessor
           tokenNodes[@afterlast] = AST_CreateNode(AST_DATA_STRING, currentToken, [])
         endif
 
-        # Apply expanded node
+        /*
+        OLD IMPLEMENTATION
+        # Apply expanded node.
         # Possible improvement: Use STRING_JOIN with multiple args?
         newNode = tokenNodes[0]
 
@@ -543,9 +548,17 @@ class ASTPreprocessor
             tokenNodes[idx]
           ])
         endfor
-
         node.opcode   = newNode.opcode
         node.children = newNode.children
+        */
+
+        node.children = tokenNodes
+
+        # newNode        = AST_CreateNodeSysCall(MOLD_SYSCALL_ID_BUILD_STRING, tokenNodes)
+        # node.opcode    = newNode.opcode
+        # node.children  = newNode.children
+        # node.value     = newNode.value
+        # node.sysCallId = newNode.sysCallId
       endif
     endif
   endmethod

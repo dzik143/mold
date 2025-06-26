@@ -518,7 +518,7 @@ imm : integer    =AST_DATA_INTEGER
     | float      =AST_DATA_DOUBLE
     | bool       =AST_DATA_BOOL
     | string     =AST_DATA_STRING
-    | string_fmt =AST_DATA_STRING_FMT
+    | string_fmt =AST_OPCODE_BUILD_STRING
     | "null"  [* @@ = null *] =AST_DATA_UNDEFINED
     ;
 

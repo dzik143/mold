@@ -71,6 +71,7 @@ class VMachineStack
     global MIR_OPCODE_INNER_RET
     global MIR_OPCODE_SYSCALL
     global MIR_OPCODE_STRING_JOIN
+    global MIR_OPCODE_STRING_BUILD
     global MIR_OPCODE_LOAD_NULL
     global argc, argv
 
@@ -353,6 +354,19 @@ class VMachineStack
 
         stack.eatN(paramsCnt2)
 
+      elif opcode is MIR_OPCODE_STRING_BUILD
+        # TODO: Review it.
+        # TODO: Do we really need opcode for it (syscall vs opcode) ?
+        paramsCnt = item[1]
+        rv        = ''
+
+        for idx in 0 .. paramsCnt
+          rv = rv ~ str(stack.peekN(paramsCnt - idx))
+        endfor
+
+        stack.eatN(paramsCnt)
+        stack.push(rv)
+
       elif opcode is MIR_OPCODE_SYSCALL
         # TODO: Clean up this mess.
         # TODO: Review it.
@@ -496,6 +510,7 @@ class VMachineStack
     global MIR_OPCODE_INNER_RET
     global MIR_OPCODE_SYSCALL
     global MIR_OPCODE_STRING_JOIN
+    global MIR_OPCODE_STRING_BUILD
     global MIR_OPCODE_LOAD_NULL
 
     codeObj     = this.code
@@ -580,6 +595,9 @@ class VMachineStack
 
       elif opcode is MIR_OPCODE_STRING_JOIN
         txt = 'string.join'
+
+      elif opcode is MIR_OPCODE_STRING_BUILD
+        txt = `string.build ${arg}`
 
       elif opcode is MIR_OPCODE_MUL
         txt = 'mul'

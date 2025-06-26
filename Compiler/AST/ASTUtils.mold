@@ -67,6 +67,7 @@ const MOLD_SYSCALL_ID_TYPEOF = 44
 
 const MOLD_SYSCALL_ID_INNER_TYPEOF = 56
 const MOLD_SYSCALL_ID_GET_TYPEID   = 57
+const MOLD_SYSCALL_ID_BUILD_STRING = 58
 
 #const MOLD_SYSCALL_ID_  '__mold_printToStdOutput': MOLD_SYSCALL_ONE_ARG + 45,
 #const MOLD_SYSCALL_ID_  '__mold_warning': MOLD_SYSCALL_ONE_ARG + 46,
@@ -177,6 +178,7 @@ function AST_GetOpcodeAsText(opcode) -> rv
   global AST_OPCODE_COMPARE_GE, AST_OPCODE_COMPARE_LT, AST_OPCODE_COMPARE_LE
   global AST_OPCODE_CALL_NEW, AST_OPCODE_VCALL
   global AST_OPCODE_STRING_JOIN
+  global AST_OPCODE_BUILD_STRING
 
   if opcode is AST_OPCODE_PROGRAM
     rv = 'PROGRAM'
@@ -298,6 +300,9 @@ function AST_GetOpcodeAsText(opcode) -> rv
   elif opcode is AST_OPCODE_VCALL
     rv = 'VCALL'
 
+  elif opcode is AST_OPCODE_BUILD_STRING
+    rv = 'BUILD_STRING'
+
   else
     rv = `[UNKNOWN: ${opcode}]`
   endif
@@ -353,6 +358,7 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
   global AST_OPCODE_FOR_INDEXES
   global AST_OPCODE_FOR_INDEXES_VALUES
   global AST_OPCODE_STRING_JOIN
+  global AST_OPCODE_BUILD_STRING
   global AST_OPCODE_IS_TYPEOF
   global AST_OPCODE_IS_NOT_TYPEOF
 
@@ -400,6 +406,9 @@ function AST_GetOpcodeAsShortText(opcode) -> rv
 
   elif opcode is AST_OPCODE_STRING_JOIN
     rv = '~'
+
+  elif opcode is AST_OPCODE_BUILD_STRING
+    rv = 'fmt'
 
   elif opcode is AST_OPCODE_SUB
     rv = '-'
@@ -839,6 +848,7 @@ function AST_GetDataType(node) -> rv
   global AST_OPCODE_STRING_JOIN
   global SYMBOL_KIND_CONST
   global MOLD_SYSCALL_ID_LEN
+  global AST_OPCODE_BUILD_STRING
 
   rv = -1
 
@@ -890,6 +900,10 @@ function AST_GetDataType(node) -> rv
       # TODO: Review it.
       # Always store null as variant.
       rv = -1
+
+    elif opcode is AST_OPCODE_BUILD_STRING
+      # `${x}` like
+      rv = AST_DATA_STRING
 
     else
       children    = node.children
@@ -957,7 +971,7 @@ function AST_GetDataType(node) -> rv
       # node._cachedAstDataType = rv
     endif
 
-    #print 'Detected ast type [', rv, '] at node #' ~ str(node.id)
+    # print 'Detected ast type [', rv, '] at node #' ~ str(node.id)
 
     if rv isnt integer
       die('error: unset AST data type at AST_GetDataType() at node #' ~ str(node.id))

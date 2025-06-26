@@ -75,7 +75,8 @@ const MIR_OPCODE_RETVAL_GUARD = 45
 const MIR_OPCODE_INIT_FRAME   = 46
 const MIR_OPCODE_SYSCALL      = 48
 
-const MIR_OPCODE_STRING_JOIN = 49
+const MIR_OPCODE_STRING_JOIN  = 49
+const MIR_OPCODE_STRING_BUILD = 50
 
 const MIR_OPCODE_FOR_EACH_KEYS    = 100
 const MIR_OPCODE_FOR_EACH_INDEXES = 101
@@ -236,6 +237,11 @@ class MIRCode
   method stringJoin()
     global MIR_OPCODE_STRING_JOIN
     this.push0(MIR_OPCODE_STRING_JOIN)
+  endmethod
+
+  method stringBuild(paramsCnt)
+    global MIR_OPCODE_STRING_BUILD
+    this.push1(MIR_OPCODE_STRING_BUILD, paramsCnt)
   endmethod
 
   method loadNull()

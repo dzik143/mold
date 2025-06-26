@@ -623,6 +623,18 @@ Hello from renderMessage(1, abc, true)!
 Hello from renderMessage(2, xyz, false)!
 -------------------------------------------------------------------------------
 
+TEST "Pass string format into function call directly"
+
+function foo(msg)
+  print 'foo(', msg, ')'
+endfunction
+
+x = 1234
+foo(`x is ${x}`)
+
+EXPECTED_OUTPUT:
+foo( x is 1234 )
+-------------------------------------------------------------------------------
 TEST "Unterminated ${...} placeholder"
 
 x = 1234

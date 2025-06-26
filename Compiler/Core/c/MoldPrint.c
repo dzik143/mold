@@ -395,6 +395,41 @@ void __MOLD_PrintFormat(const char *fmt, ...) {
   }
 }
 
+Variant_t __MOLD_BuildString(const char *fmt, ...) {
+  va_list ptr;
+  va_start(ptr, fmt);
+
+  // TODO: Optimize it.
+  // TODO: Reuse code from __MOLD_PrintFormat.
+  Variant_t rv = __MOLD_VariantStringCreateFromCString("");
+
+  while (*fmt) {
+    Variant_t nextItem;
+
+    switch (*fmt) {
+      // Possible improvement: Better tokens set?
+      case 's':
+      case 'v': nextItem = __MOLD_Str(va_arg(ptr, Variant_t *)); break;
+      case 'i': nextItem = __MOLD_VariantCreateFrom_int32(va_arg(ptr, uint32_t)); break;
+      case 'I': nextItem = __MOLD_VariantCreateFrom_int64(va_arg(ptr, uint64_t)); break;
+      case 'f': nextItem = __MOLD_VariantCreateFrom_float64(va_arg(ptr, float64_t)); break;
+      case 'b': nextItem = __MOLD_VariantCreateFrom_bool32(va_arg(ptr, bool32_t)); break;
+
+      default: {
+        fprintf(stderr, "runtime error: unhandled print fmt token '%c' (string mode)", *fmt);
+        abort();
+      }
+    }
+
+    nextItem = __MOLD_Str(&nextItem);
+    __MOLD_VariantStringJoin(&rv, &rv, &nextItem);
+
+    fmt++;
+  }
+
+  return rv;
+}
+
 // -----------------------------------------------------------------------------
 //         Helper wrappers to print single variable to the stdout
 // -----------------------------------------------------------------------------

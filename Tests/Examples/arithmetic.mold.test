@@ -148,7 +148,7 @@ EXPECTED_OUTPUT:
 OK
 -------------------------------------------------------------------------------
 
-TEST "Constant arithmetic (TEMPORARY TEST WITHOUT TYPE CONVERSION)"
+TEST "Constant arithmetic"
 
 neg_i  = -1
 neg_f  = -1.2
