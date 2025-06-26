@@ -25,8 +25,8 @@ str(5.67)                 : string 5.670000
 str("text")               : string text
 str(true)                 : string true
 str(false)                : string false
-str([1,2,3]               : string [array]
-str({'x':5, 'y':6, 'z':7}): string [map]
+str([1,2,3]               : string [1, 2, 3]
+str({'x':5, 'y':6, 'z':7}): string {'x': 5, 'y': 6, 'z': 7}
 -------------------------------------------------------------------------------
 TEST "Built-in exit"
 
