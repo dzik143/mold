@@ -385,11 +385,7 @@ class VMachineStack
         endif
 
         stack.eatN(paramsCnt)
-
         stack.push(rv)
-        # TODO: Clean up this mess.
-        unused = str(id)
-        #str(id)
 
       elif opcode is MIR_OPCODE_LOAD_ARGC
         stack.push(argc)
