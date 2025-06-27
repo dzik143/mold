@@ -900,9 +900,13 @@ class ASTTranslatorMIR1 extends ASTTranslator
       this._evaluateStringFormatItemNode(fmt, node.children[0])
 
     elif node.opcode is AST_OPCODE_BUILD_STRING
+      isGlued = false
       for values oneItem in node.children
+        if isGlued is true
+          fmt[@afterlast] = '@glued'
+        endif
         this._evaluateStringFormatItemNode(fmt, oneItem)
-        fmt[@afterlast] = '@glued'
+        isGlued = true
       endfor
 
     else
