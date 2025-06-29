@@ -443,6 +443,14 @@ void __MOLD_Print_int64(int64_t x)     { printf("%"PRId64, x); }
 void __MOLD_Print_float64(float64_t x) { printf("%lf", x); }
 void __MOLD_Print_bool32(int32_t x)    { printf(x ? "true" : "false"); }
 
+void __MOLD_Print_char(char x) {
+  fputc(x, stdout);
+}
+
+void __MOLD_Print_raw(const char *buf, uint32_t bufSize) {
+  fwrite(buf, bufSize, 1, stdout);
+}
+
 void __MOLD_Print_variant(Variant_t *x) {
   __MOLD_PrintToFile_variant(stdout, x);
 }

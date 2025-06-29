@@ -36,6 +36,8 @@ void __MOLD_Print_bool32(int32_t x);
 void __MOLD_Print_int32(int32_t x);
 void __MOLD_Print_int64(int64_t x);
 void __MOLD_Print_float64(float64_t x);
+void __MOLD_Print_char(char x);
+void __MOLD_Print_raw(const char *buf, uint32_t bufSize);
 
 Variant_t __MOLD_PrintToString_variant(Variant_t *x);
 Variant_t __MOLD_BuildString(const char *fmt, ...);
