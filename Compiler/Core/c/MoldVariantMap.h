@@ -56,11 +56,12 @@ typedef struct Map
 
 uint32_t __MOLD_hashDJB2(const Variant_t *x);
 
-Variant_t __MOLD_VariantMapCreate();
-Variant_t __MOLD_VariantMapCreateWithCustomSize(uint32_t bucketsCnt);
+void __MOLD_VariantMapCreate(Variant_t *dst);
+void __MOLD_VariantMapCreateWithCustomSize(Variant_t *dst, uint32_t bucketsCnt);
 
-Variant_t __MOLD_VariantMapCreateFromInitList(const Variant_t *keys,
-                                              const Variant_t *values);
+void __MOLD_VariantMapCreateFromInitList(Variant_t *dst,
+                                         const Variant_t *keys,
+                                         const Variant_t *values);
 
 void __MOLD_VariantMapRelease(Variant_t *x);
 

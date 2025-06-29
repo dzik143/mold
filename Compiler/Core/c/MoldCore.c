@@ -751,15 +751,15 @@ Variant_t __MOLD_FileLoad(const Variant_t *path)
 void __MOLD_InitArgv(int _argc, char **_argv)
 {
   // TEMP!!!
-  setvbuf(stdout, NULL, _IONBF, 0);
-  setvbuf(stderr, NULL, _IONBF, 0);
+  // setvbuf(stdout, NULL, _IONBF, 0);
+  // setvbuf(stderr, NULL, _IONBF, 0);
 
   // Init argc global.
   argc.type  = VARIANT_INTEGER;
   argc.value = _argc;
 
   // Init argv[] global.
-  argv = __MOLD_VariantArrayCreate();
+  __MOLD_VariantArrayCreate(&argv);
 
   for (int i = 0; _argv[i]; i++)
   {

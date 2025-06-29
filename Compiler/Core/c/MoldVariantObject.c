@@ -23,14 +23,12 @@
 #include "MoldVariantObject.h"
 #include "MoldMemory.h"
 
-Variant_t __MOLD_VariantObjectCreate(void **vtable)
+void __MOLD_VariantObjectCreate(Variant_t *dst, void **vtable)
 {
-  Variant_t rv = __MOLD_VariantMapCreate();
+  __MOLD_VariantMapCreate(dst);
 
-  rv.type = VARIANT_OBJECT;
+  dst -> type = VARIANT_OBJECT;
 
-  Object_t *obj = (Object_t *) rv.valueAsBufferPtr -> bytesPtr;
+  Object_t *obj = (Object_t *) dst -> valueAsBufferPtr -> bytesPtr;
   obj -> vtable = vtable;
-
-  return rv;
 }

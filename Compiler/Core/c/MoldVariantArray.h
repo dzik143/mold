@@ -101,8 +101,8 @@ typedef struct Array_int64
 //                                  Functions
 // -----------------------------------------------------------------------------
 
-Variant_t __MOLD_VariantArrayCreate();
-Variant_t __MOLD_VariantArrayCreateFromInitList(const Variant_t *initArray);
+void __MOLD_VariantArrayCreate(Variant_t *dst);
+void __MOLD_VariantArrayCreateFromInitList(Variant_t *dst, const Variant_t *initArray);
 
 void __MOLD_VariantArrayRelease(Variant_t *x);
 

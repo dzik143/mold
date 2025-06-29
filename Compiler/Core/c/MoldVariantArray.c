@@ -33,21 +33,21 @@
 // Create new empty array.
 //
 // Pseudo code:
-//   ... = []
+//   dst = []
 //
-// Returns:
-//   New allocated array wrapped into Variant structure.
+// Parameters:
+//   dst - pointer, where to store new array (OUT)
+//
 // -----------------------------------------------------------------------------
 
-Variant_t __MOLD_VariantArrayCreate()
+void __MOLD_VariantArrayCreate(Variant_t *dst)
 {
-  Variant_t rv = {
-    type: VARIANT_ARRAY,
-    flags: 0,
-    valueAsBufferPtr: __MOLD_MemoryAlloc(64)
-  };
+  __MOLD_VariantDestroy(dst);
 
-  return rv;
+  // Possible improvment: Reuse existing buffer if possible?
+  dst -> type  = VARIANT_ARRAY;
+  dst -> flags = 0;
+  dst -> valueAsBufferPtr = __MOLD_MemoryAlloc(64);
 }
 
 // -----------------------------------------------------------------------------
@@ -56,31 +56,29 @@ Variant_t __MOLD_VariantArrayCreate()
 // WARNING: Only shallow copy is performed.
 //
 // Pseudo code:
-//   tmp    = []
-//   tmp[0] = initArray[0]
-//   tmp[1] = initArray[1]
-//   tmp[2] = initArray[2]
+//   dst    = []
+//   dst[0] = initArray[0]
+//   dst[1] = initArray[1]
 //   ...
-//   ... = tmp
+//   dst[n] = initArray[n]
 //
 // Parameters:
-//   initArray[] - array of items to be shallow copied into new array (IN)
-//
-// Returns:
-//   Shallow copy of input array.
+//   dst         - pointer, where to store new array (OUT),
+//   initArray[] - array of items to be shallow copied into new array (IN).
 // -----------------------------------------------------------------------------
 
-Variant_t __MOLD_VariantArrayCreateFromInitList(const Variant_t *initArray)
+void __MOLD_VariantArrayCreateFromInitList(Variant_t *dst, const Variant_t *initArray)
 {
   ASSERT_VARIANT_PTR_ARRAY(initArray);
 
-  Variant_t rv = __MOLD_VariantArrayCreate();
+  __MOLD_VariantArrayCreate(dst);
+
   Variant_t oneItem;
   uint32_t idx;
 
   void _copyOneItem()
   {
-    __MOLD_VariantStoreAtIndex_variant(&rv, idx, &oneItem);
+    __MOLD_VariantStoreAtIndex_variant(dst, idx, &oneItem);
   }
 
   __MOLD_ForDriver_IndexesAndValuesInArray(
@@ -90,9 +88,7 @@ Variant_t __MOLD_VariantArrayCreateFromInitList(const Variant_t *initArray)
     &_copyOneItem
   );
 
-  ASSERT_VARIANT_PTR_ARRAY(&rv);
-
-  return rv;
+  ASSERT_VARIANT_PTR_ARRAY(dst);
 }
 
 // -----------------------------------------------------------------------------

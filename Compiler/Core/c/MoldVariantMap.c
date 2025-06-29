@@ -162,7 +162,9 @@ static void __MOLD_ResizeMapIfNeeded(Variant_t *box)
   // Resize map if needed.
   if (map -> bucketsUsedCnt > map -> bucketsCnt / 2)
   {
-    Variant_t newMap = __MOLD_VariantMapCreateWithCustomSize(map -> bucketsCnt * 2);
+    Variant_t newMap = { 0 };
+
+    __MOLD_VariantMapCreateWithCustomSize(&newMap, map -> bucketsCnt * 2);
 
     MapBucket_t *bucket = map -> firstBucket;
 
@@ -208,18 +210,18 @@ static void __MOLD_ResizeMapIfNeeded(Variant_t *box)
 // Create new empty map with desired capacity.
 //
 // Pseudocode:
-//   ... = new map(size)
+//   dst = new map(size)
 //
 // Parameters:
+//   dst        - new allocated map wrapped into Variant container (OUT),
 //   bucketsCnt - initial number of buckets (IN).
-//
-// Returns:
-//    New allocated map wrapped into Variant container.
 // ----------------------------------------------------------------------------
 
-Variant_t __MOLD_VariantMapCreateWithCustomSize(uint32_t bucketsCnt)
+void __MOLD_VariantMapCreateWithCustomSize(Variant_t *dst, uint32_t bucketsCnt)
 {
-  Variant_t rv;
+  ASSERT_VARIANT_PTR_ANY(dst);
+
+  __MOLD_VariantDestroy(dst);
 
   Buffer_t *buf = __MOLD_MemoryAlloc(sizeof(Map_t) + bucketsCnt * sizeof(MapBucket_t));
 
@@ -227,56 +229,53 @@ Variant_t __MOLD_VariantMapCreateWithCustomSize(uint32_t bucketsCnt)
 
   map -> bucketsCnt = bucketsCnt;
 
-  rv.type             = VARIANT_MAP;
-  rv.flags            = 0;
-  rv.valueAsBufferPtr = buf;
+  dst -> type             = VARIANT_MAP;
+  dst -> flags            = 0;
+  dst -> valueAsBufferPtr = buf;
 
-  ASSERT_VARIANT_PTR_MAP(&rv);
-
-  return rv;
+  ASSERT_VARIANT_PTR_MAP(dst);
 }
 
 // ----------------------------------------------------------------------------
 // Create new, empty map.
 //
 // Pseudo code:
-//   ... = {}
+//   dst = {}
 //
-// Returns:
-//   New allocated map wrapped into Variant container.
+// Parameters:
+//   dst - new allocated map wrapped into Variant container (OUT).
 // ----------------------------------------------------------------------------
 
-Variant_t __MOLD_VariantMapCreate()
+void __MOLD_VariantMapCreate(Variant_t *dst)
 {
-  return __MOLD_VariantMapCreateWithCustomSize(VARIANT_MAP_DEFAULT_BUCKETS_CNT);
+  __MOLD_VariantMapCreateWithCustomSize(dst, VARIANT_MAP_DEFAULT_BUCKETS_CNT);
 }
 
 // ----------------------------------------------------------------------------
 // Create new map and init it using keys[] and values[] arrays.
 //
 // Pseudo code:
-//   tmp = new map()
-//   tmp{key[0]} = value{0}
-//   tmp{key[1]} = value{1}
-//   tmp{key[2]} = value{2}
+//   dst = new map()
+//   dst{key[0]} = value[0]
+//   dst{key[1]} = value[1]
 //   ...
-//   ... = tmp
+//   dst{key[n]} = value[n]
 //
 // Parameters:
-//   keys[]   - array of keys to insert (IN)
-//   values[] - array of values to insert (IN)
-//
-// Returns:
-//   New allocated map wrapped into Variant container.
+//   dst      - new allocated map wrapped into Variant container (OUT),
+//   keys[]   - array of keys to insert (IN),
+//   values[] - array of values to insert (IN).
 // ----------------------------------------------------------------------------
 
-Variant_t __MOLD_VariantMapCreateFromInitList(const Variant_t *keys,
-                                              const Variant_t *values)
+void __MOLD_VariantMapCreateFromInitList(Variant_t *dst,
+                                         const Variant_t *keys,
+                                         const Variant_t *values)
 {
+  ASSERT_VARIANT_PTR_ANY(dst);
   ASSERT_VARIANT_PTR_ARRAY(keys);
   ASSERT_VARIANT_PTR_ARRAY(values);
 
-  Variant_t rv = __MOLD_VariantMapCreate();
+  __MOLD_VariantMapCreate(dst);
 
   Variant_t oneKey;
   Variant_t oneValue;
@@ -285,7 +284,7 @@ Variant_t __MOLD_VariantMapCreateFromInitList(const Variant_t *keys,
   void _copyOneKeyValuePair()
   {
     oneValue = __MOLD_VariantLoadFromIndex(values, idx);
-    __MOLD_VariantStoreAtKey_variant(&rv, &oneKey, &oneValue);
+    __MOLD_VariantStoreAtKey_variant(dst, &oneKey, &oneValue);
   }
 
   __MOLD_ForDriver_IndexesAndValuesInArray(
@@ -297,9 +296,7 @@ Variant_t __MOLD_VariantMapCreateFromInitList(const Variant_t *keys,
 
   ASSERT_VARIANT_PTR_ARRAY(keys);
   ASSERT_VARIANT_PTR_ARRAY(values);
-  ASSERT_VARIANT_PTR_MAP(&rv);
-
-  return rv;
+  ASSERT_VARIANT_PTR_MAP(dst);
 }
 
 // -----------------------------------------------------------------------------

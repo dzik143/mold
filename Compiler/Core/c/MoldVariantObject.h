@@ -35,6 +35,6 @@ typedef struct Object
   MapBucket_t buckets[1];
 } Object_t;
 
-Variant_t __MOLD_VariantObjectCreate(void **vtable);
+void __MOLD_VariantObjectCreate(Variant_t *dst, void **vtable);
 
 #endif /* _MoldVariantMap_H */
