@@ -779,19 +779,17 @@ class CodeGeneratorC
       if opcode >= MIR1_FIRST_CUSTOM_OPCODE
 
         if opcode is MIR1_OPCODE_CREATE_ARRAY
-          this.variantDestroy(dst)
           if x is defined
-            print `  ${dst} = __MOLD_VariantArrayCreateFromInitList(${xForCall});`
+            print `  __MOLD_VariantArrayCreateFromInitList(${dstForCall}, ${xForCall});`
           else
-            print `  ${dst} = __MOLD_VariantArrayCreate();`
+            print `  __MOLD_VariantArrayCreate(${dstForCall});`
           endif
 
         elif opcode is MIR1_OPCODE_CREATE_MAP
-          this.variantDestroy(dst)
           if x is defined
-            print `  ${dst} = __MOLD_VariantMapCreateFromInitList(${xForCall}, ${yForCall});`
+            print `  __MOLD_VariantMapCreateFromInitList(${dstForCall}, ${xForCall}, ${yForCall});`
           else
-            print `  ${dst} = __MOLD_VariantMapCreate();`
+            print `  __MOLD_VariantMapCreate(${dstForCall});`
           endif
 
         elif opcode is MIR1_OPCODE_JMP_BY_TABLE
@@ -896,8 +894,7 @@ class CodeGeneratorC
           endif
 
         elif opcode is MIR1_OPCODE_CREATE_OBJECT
-          this.variantDestroy(dst)
-          print `  ${dst} = __MOLD_VariantObjectCreate(__vtable_${x});`
+          print `  __MOLD_VariantObjectCreate(${dstForCall}, __vtable_${x});`
 
         elif opcode is MIR1_OPCODE_STORE_INDEX
           # dst[x] := y
