@@ -25,6 +25,8 @@ const MOLD_SYSCALL_ZERO_ARGS = 0x0000
 const MOLD_SYSCALL_ONE_ARG   = 0x1000
 const MOLD_SYSCALL_TWO_ARGS  = 0x2000
 
+USE_AST_OPCODE_BUILD_STRING = false
+
 MOLD_SYSCALL_MAP = {
   'FileOpenForRead':   MOLD_SYSCALL_ONE_ARG + 1,
   'FileOpenForWrite':  MOLD_SYSCALL_ONE_ARG + 2,
@@ -127,6 +129,7 @@ class ASTPreprocessor
     global AST_OPCODE_FOR_VALUES, AST_OPCODE_FOR_KEYS, AST_OPCODE_FOR_INDEXES
     global AST_OPCODE_FOR_KEYS_VALUES, AST_OPCODE_FOR_INDEXES_VALUES
     global MOLD_SYSCALL_ID_BUILD_STRING
+    global USE_AST_OPCODE_BUILD_STRING
 
     opcode   = node.opcode
     children = node.children
@@ -483,8 +486,11 @@ class ASTPreprocessor
               newTokenNode.column   = node.column
               newTokenNode.line     = node.line
 
-              # tokenNodes[@afterlast] = AST_CreateNodeSysCall(MOLD_SYSCALL_ID_STR, [ newTokenNode ])
-              tokenNodes[@afterlast] = newTokenNode
+              if USE_AST_OPCODE_BUILD_STRING is true
+                tokenNodes[@afterlast] = newTokenNode
+              else
+                tokenNodes[@afterlast] = AST_CreateNodeSysCall(MOLD_SYSCALL_ID_STR, [ newTokenNode ])
+              endif
 
               # Reset scanner state.
               isFmtPartialMatched = false
@@ -535,30 +541,28 @@ class ASTPreprocessor
           tokenNodes[@afterlast] = AST_CreateNode(AST_DATA_STRING, currentToken, [])
         endif
 
-        /*
-        OLD IMPLEMENTATION
-        # Apply expanded node.
-        # Possible improvement: Use STRING_JOIN with multiple args?
-        newNode = tokenNodes[0]
+        if USE_AST_OPCODE_BUILD_STRING is true
+          node.children = tokenNodes
+          # newNode        = AST_CreateNodeSysCall(MOLD_SYSCALL_ID_BUILD_STRING, tokenNodes)
+          # node.opcode    = newNode.opcode
+          # node.children  = newNode.children
+          # node.value     = newNode.value
+          # node.sysCallId = newNode.sysCallId
+        else
+          # Apply expanded node.
+          # Possible improvement: Use STRING_JOIN with multiple args?
+          newNode = tokenNodes[0]
 
-        for idx in 1 .. len(tokenNodes)
-          # TODO: Why tests fail if there is str(x) around each token here?
-          newNode = AST_CreateNode(AST_OPCODE_STRING_JOIN, '', [
-            newNode,
-            tokenNodes[idx]
-          ])
-        endfor
-        node.opcode   = newNode.opcode
-        node.children = newNode.children
-        */
-
-        node.children = tokenNodes
-
-        # newNode        = AST_CreateNodeSysCall(MOLD_SYSCALL_ID_BUILD_STRING, tokenNodes)
-        # node.opcode    = newNode.opcode
-        # node.children  = newNode.children
-        # node.value     = newNode.value
-        # node.sysCallId = newNode.sysCallId
+          for idx in 1 .. len(tokenNodes)
+            # TODO: Why tests fail if there is str(x) around each token here?
+            newNode = AST_CreateNode(AST_OPCODE_STRING_JOIN, '', [
+              newNode,
+              tokenNodes[idx]
+            ])
+          endfor
+          node.opcode   = newNode.opcode
+          node.children = newNode.children
+        endif
       endif
     endif
   endmethod
