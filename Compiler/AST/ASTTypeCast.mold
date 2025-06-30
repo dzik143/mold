@@ -170,9 +170,9 @@ class ASTTypeCast
         astTypeParams = funcProto.astTypeParams
 
         if astTypeParams is defined
-          for idx in 0 .. childrenCnt
+          for indexes idx values oneChild in children
             # Adjust argument type.
-            children[idx] = AST_TypeCast(children[idx], astTypeParams[firstParamIdx + idx])
+            children[idx] = AST_TypeCast(oneChild, astTypeParams[firstParamIdx + idx])
           endfor
 
         elif node.value isnt @all('global', 'print')
