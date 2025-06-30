@@ -848,6 +848,9 @@ function AST_GetDataType(node) -> rv
   global AST_OPCODE_STRING_JOIN
   global SYMBOL_KIND_CONST
   global MOLD_SYSCALL_ID_LEN
+  global MOLD_SYSCALL_ID_ORD
+  global MOLD_SYSCALL_ID_PARSE_INTEGER
+  global MOLD_SYSCALL_ID_PARSE_FLOAT
   global AST_OPCODE_BUILD_STRING
 
   rv = -1
@@ -888,7 +891,24 @@ function AST_GetDataType(node) -> rv
       endif
 
     elif opcode is AST_OPCODE_CALL
-      if @all(node.symbolInfo,
+      if ((node.value is '__mold_syscall') and
+          (node.sysCallId is integer))
+        # TODO: Handle syscall return type in the more general way?
+        if node.sysCallId is @any(MOLD_SYSCALL_ID_LEN,
+                                  MOLD_SYSCALL_ID_ORD)
+          # Note: Keep result of parseInteger() as variant to handle
+          # 64-bit integers.
+          # TODO: Better way to handle 64-bit ints?
+          rv = AST_DATA_INTEGER
+
+        elif node.sysCallId is MOLD_SYSCALL_ID_PARSE_FLOAT
+          rv = AST_DATA_DOUBLE
+
+        else
+          rv = -1
+        endif
+
+      elif @all(node.symbolInfo,
               node.symbolInfo.proto.astTypeRetVal) is defined
         rv = node.symbolInfo.proto.astTypeRetVal
       endif

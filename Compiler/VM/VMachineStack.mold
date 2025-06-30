@@ -357,14 +357,15 @@ class VMachineStack
       elif opcode is MIR_OPCODE_STRING_BUILD
         # TODO: Review it.
         # TODO: Do we really need opcode for it (syscall vs opcode) ?
-        paramsCnt = item[1]
-        rv        = ''
+        # TODO: Why paramsCnt generates integer vs variant type conflict?
+        paramsCnt2 = item[1]
+        rv         = ''
 
-        for idx in 0 .. paramsCnt
-          rv = rv ~ str(stack.peekN(paramsCnt - idx))
+        for idx in 0 .. paramsCnt2
+          rv = rv ~ str(stack.peekN(paramsCnt2 - idx))
         endfor
 
-        stack.eatN(paramsCnt)
+        stack.eatN(paramsCnt2)
         stack.push(rv)
 
       elif opcode is MIR_OPCODE_SYSCALL
