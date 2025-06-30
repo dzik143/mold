@@ -748,8 +748,11 @@ class ASTSymbolsCollector
           # One of built-in function - declaration is not needed.
           if symbolTable.isset(funcName) is false
             # TODO: Fill up proto?
-            # TODO: Handle non-variant ret-val.
-            symbolTable.insertFunction(funcName, {'builtIn': true, 'astTypeRetVal': -1})
+            # TODO: Better way to handle built-in protos?
+            symbolTable.insertFunction(funcName, {
+              'builtIn': true,
+              'astTypeRetVal': -1
+            })
           endif
 
           if funcName is 'super'
@@ -768,12 +771,7 @@ class ASTSymbolsCollector
         endif
 
         # Mark that function was called.
-        # TODO: Use not x.
-        if isLeftNode is true
-          isRetValUsed = false
-        else
-          isRetValUsed = true
-        endif
+        isRetValUsed = isLeftNode is false
 
         node.symbolInfo     = symbolTable.lookupForCall(node.value, childrenCnt, isRetValUsed)
         currentFunctionName = symbolTable.getCurrentFunctionName()
@@ -793,6 +791,18 @@ class ASTSymbolsCollector
             symbolTable.importGlobal(item.value)
           endfor
           goOnIntoChildren = false
+
+        else
+          # Remember, that vars were used to call function with specific
+          # input types.
+          astTypeParams = node.symbolInfo.proto.astTypeParams
+          if astTypeParams is defined
+            for indexes idx values item in children
+              if item.opcode is AST_OPCODE_VARIABLE
+                symbolTable.assignType(item.value, astTypeParams[idx])
+              endif
+            endfor
+          endif
         endif
 
       elif opcode is AST_OPCODE_VCALL
