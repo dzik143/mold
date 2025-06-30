@@ -45,7 +45,7 @@ Variant_t __MOLD_SubStr(const Variant_t *x,
                         const Variant_t *idx,
                         const Variant_t *len);
 
-Variant_t __MOLD_Ord(const Variant_t *x);
+uint32_t __MOLD_Ord(const Variant_t *x);
 
 Variant_t __MOLD_Asc(const Variant_t *x);
 

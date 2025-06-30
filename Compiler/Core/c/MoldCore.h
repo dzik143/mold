@@ -227,11 +227,12 @@ Variant_t __MOLD_Bitnot(const Variant_t *x);
 
 void __MOLD_Exit();
 
-Variant_t __MOLD_Len(const Variant_t *x);
+uint64_t  __MOLD_Len(const Variant_t *x);
+Variant_t __MOLD_ParseInteger(const Variant_t *x);
+float64_t __MOLD_ParseFloat(const Variant_t *x);
+
 Variant_t __MOLD_SysCall(uint32_t id, ...);
 Variant_t __MOLD_Typeof(const Variant_t *x);
-Variant_t __MOLD_ParseInteger(const Variant_t *x);
-Variant_t __MOLD_ParseFloat(const Variant_t *x);
 Variant_t __MOLD_FileLoad(const Variant_t *path);
 
 void __MOLD_VariantAddRef(const Variant_t *x);

@@ -403,11 +403,11 @@ Variant_t __MOLD_Str(Variant_t *x)
 //   Ascii value of given character.
 // -----------------------------------------------------------------------------
 
-Variant_t __MOLD_Ord(const Variant_t *x)
+uint32_t __MOLD_Ord(const Variant_t *x)
 {
   ASSERT_VARIANT_PTR_ANY(x);
 
-  Variant_t rv = { VARIANT_INTEGER };
+  uint32_t rv = 0;
 
   switch (x -> type)
   {
@@ -415,12 +415,12 @@ Variant_t __MOLD_Ord(const Variant_t *x)
     {
       if (x -> flags & VARIANT_FLAG_ONE_CHARACTER)
       {
-        rv.value = x -> valueAsUInt8;
+        rv = x -> valueAsUInt8;
       }
       else
       {
         String_t *str = (String_t *) x -> valueAsBufferPtr -> bytesPtr;
-        rv.value = str -> text[0];
+        rv = str -> text[0];
       }
 
       break;
@@ -428,13 +428,13 @@ Variant_t __MOLD_Ord(const Variant_t *x)
 
     case VARIANT_UNDEFINED:
     {
-      rv.value = 0;
+      rv = 0;
       break;
     }
 
     case VARIANT_INTEGER:
     {
-      rv.value = x -> valueAsUInt8;
+      rv = x -> valueAsUInt8;
       break;
     }
 
@@ -443,8 +443,6 @@ Variant_t __MOLD_Ord(const Variant_t *x)
       __MOLD_PrintErrorAndDie_stringExpected();
     }
   }
-
-  ASSERT_VARIANT_PTR_INTEGER(&rv);
 
   return rv;
 }

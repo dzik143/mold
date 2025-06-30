@@ -495,7 +495,7 @@ void __MOLD_Exit()
   exit(0);
 }
 
-Variant_t __MOLD_Len(const Variant_t *x)
+uint64_t __MOLD_Len(const Variant_t *x)
 {
   uint64_t len = 0;
 
@@ -558,14 +558,7 @@ Variant_t __MOLD_Len(const Variant_t *x)
     }
   }
 
-  Variant_t rv =
-  {
-    type: VARIANT_INTEGER,
-    value: len,
-    flags: 0
-  };
-
-  return rv;
+  return len;
 }
 
 Variant_t __MOLD_SysCall(uint32_t id, ...)
@@ -585,10 +578,10 @@ Variant_t __MOLD_SysCall(uint32_t id, ...)
   {
     case 29: rv = __MOLD_FileLoad(x); break;
 
-    case 31: rv = __MOLD_Ord(x); break;
+    case 31: rv = __MOLD_VariantCreateFrom_int32(__MOLD_Ord(x)); break;
     case 32: rv = __MOLD_Asc(x); break;
     case 33: rv = __MOLD_ParseInteger(x); break;
-    case 34: rv = __MOLD_ParseFloat(x); break;
+    case 34: rv = __MOLD_VariantCreateFrom_float64(__MOLD_ParseFloat(x)); break;
     case 35: rv = __MOLD_Bitand(x, y); break;
     case 36: rv = __MOLD_Bitor(x, y); break;
     case 37: rv = __MOLD_Bitxor(x, y); break;
@@ -597,7 +590,7 @@ Variant_t __MOLD_SysCall(uint32_t id, ...)
     case 40:      __MOLD_Exit(); break;
     case 41:      __MOLD_Die(x); break;
     case 42: rv = __MOLD_Str(x); break;
-    case 43: rv = __MOLD_Len(x); break;
+    case 43: rv = __MOLD_VariantCreateFrom_int64(__MOLD_Len(x)); break;
     case 44: rv = __MOLD_Typeof(x); break;
     case 45:      __MOLD_VariantPrint(x); break;
     case 46:      __MOLD_PrintToFile_variant(stderr, x); break;
@@ -676,33 +669,36 @@ Variant_t __MOLD_Typeof(const Variant_t *x)
 
 Variant_t __MOLD_ParseInteger(const Variant_t *x)
 {
-  Variant_t rv = { type: VARIANT_INTEGER, flags: 0 };
+  Variant_t rv = {
+    type: VARIANT_INTEGER,
+    flags: 0
+  };
 
   if (x -> flags & VARIANT_FLAG_ONE_CHARACTER)
   {
-    rv.value = strtol((const char *) &x -> value, NULL, 0);
+    rv.valueAsInt64 = strtol((const char *) &x -> value, NULL, 0);
   }
   else
   {
     String_t *str = (String_t *) x -> valueAsBufferPtr -> bytesPtr;
-    rv.value = strtoll(str -> text, NULL, 0);
+    rv.valueAsInt64 = strtoll(str -> text, NULL, 0);
   }
 
   return rv;
 }
 
-Variant_t __MOLD_ParseFloat(const Variant_t *x)
+float64_t __MOLD_ParseFloat(const Variant_t *x)
 {
-  Variant_t rv = { type: VARIANT_DOUBLE, flags: 0 };
+  float64_t rv;
 
   if (x -> flags & VARIANT_FLAG_ONE_CHARACTER)
   {
-    rv.valueAsFloat64 = atof((const char *) &x -> value);
+    rv = atof((const char *) &x -> value);
   }
   else
   {
     String_t *str = (String_t *) x -> valueAsBufferPtr -> bytesPtr;
-    rv.valueAsFloat64 = atof(str -> text);
+    rv = atof(str -> text);
   }
 
   return rv;

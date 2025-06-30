@@ -35,8 +35,6 @@ void __MOLD_Die(const Variant_t *msg)
 void __MOLD_PrintErrorAndDie(const char *msg)
 {
   fprintf(stderr, "runtime error: %s\n", msg);
-  //char *ptr = NULL;
-  //ptr[0] = 0;
   exit(-1);
 }
 
