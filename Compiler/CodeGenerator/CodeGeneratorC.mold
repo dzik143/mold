@@ -1201,7 +1201,7 @@ class CodeGeneratorC
             syscallName = SYSCALL_ID_TO_C_FUNCTION_MAP{str(nameOrId)}
 
             if dst is defined
-              print ' ', dst, '='
+              __mold_printToStdOutput(`  ${dst} =`)
             endif
 
             if syscallName is defined
@@ -1267,7 +1267,7 @@ class CodeGeneratorC
 
         if opcode is MIR1_OPCODE_LOAD_INDEX
           # dst := x[y]
-          print `  ${dst} = __MOLD_VariantLoadFromIndex(${xForCall}, ${yForCall});`
+          print `  ${dst} = __MOLD_VariantLoadFromIndex_${dstType}(${xForCall}, ${yForCall});`
 
         elif opcode is MIR1_OPCODE_LOAD_KEY
           # dst := x{y}
