@@ -345,9 +345,10 @@ void __MOLD_VariantMapRelease(Variant_t *x)
 // Load value stored at given key.
 //
 // Pseudo code:
-//   value = box{key}
+//   rv = box{key}
 //
 // Parameters:
+//   rv    - pointer, where to store loaded value (OUT)
 //   box{} - map where we searching for key (IN)
 //   key   - key to find (IN)
 //
@@ -355,13 +356,15 @@ void __MOLD_VariantMapRelease(Variant_t *x)
 //   Value stored at key.
 // ----------------------------------------------------------------------------
 
-Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t *box,
-                                            Variant_t *key)
+void __MOLD_VariantLoadFromKeyAndAssign_variant(Variant_t *rv,
+                                                Variant_t *box,
+                                                Variant_t *key)
 {
+  ASSERT_VARIANT_PTR_ANY(rv);
   ASSERT_VARIANT_PTR_MAP_OR_OBJECT(box);
   ASSERT_VARIANT_PTR_STRING(key);
 
-  Variant_t rv = { VARIANT_UNDEFINED };
+  __MOLD_VariantDestroy(rv);
 
   // Find bucket.
   MapBucket_t *bucket = __MOLD_FindMapBucketByKey(box, key);
@@ -369,16 +372,27 @@ Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t *box,
   // Load bucket value if key is found.
   if (bucket -> key.type != VARIANT_UNDEFINED)
   {
-    memcpy(&rv, &bucket -> value, sizeof(Variant_t));
+    memcpy(rv, &bucket -> value, sizeof(Variant_t));
 
     // Increase reference counter for just loaded item.
-    __MOLD_VariantAddRef(&rv);
+    __MOLD_VariantAddRef(rv);
+
+  }
+  else
+  {
+    // Key not found - set result to undefined.
+    memset(rv, 0, sizeof(Variant_t));
   }
 
   ASSERT_VARIANT_PTR_MAP_OR_OBJECT(box);
   ASSERT_VARIANT_PTR_STRING(key);
-  ASSERT_VARIANT_PTR_ANY(&rv);
+  ASSERT_VARIANT_PTR_ANY(rv);
+}
 
+Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t *box,
+                                            Variant_t *key) {
+  Variant_t rv = { 0 };
+  __MOLD_VariantLoadFromKeyAndAssign_variant(&rv, box, key);
   return rv;
 }
 
@@ -400,6 +414,12 @@ Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t *box,
 Variant_t __MOLD_VariantLoadFromKey_string(Variant_t *box, Variant_t *key)
 {
   return __MOLD_VariantLoadFromKey_variant(box, key);
+}
+
+void __MOLD_VariantLoadFromKeyAndAssign_string(Variant_t *rv,
+                                               Variant_t *box,
+                                               Variant_t *key) {
+  __MOLD_VariantLoadFromKeyAndAssign_variant(rv, box, key);
 }
 
 // #############################################################################

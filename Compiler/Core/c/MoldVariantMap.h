@@ -68,6 +68,14 @@ void __MOLD_VariantMapRelease(Variant_t *x);
 Variant_t __MOLD_VariantLoadFromKey_variant(Variant_t *box, Variant_t *key);
 Variant_t __MOLD_VariantLoadFromKey_string(Variant_t *box, Variant_t *key);
 
+void __MOLD_VariantLoadFromKeyAndAssign_variant(Variant_t *rv,
+                                                Variant_t *box,
+                                                Variant_t *key);
+
+void __MOLD_VariantLoadFromKeyAndAssign_string(Variant_t *rv,
+                                               Variant_t *box,
+                                               Variant_t *key);
+
 void __MOLD_VariantStoreAtKey_variant(Variant_t *box, const Variant_t *key, const Variant_t *value);
 void __MOLD_VariantStoreAtKey_string(Variant_t *box, const Variant_t *key, const Variant_t *value);
 void __MOLD_VariantStoreAtKey_int32(Variant_t *box, const Variant_t *key, int32_t value);

@@ -142,9 +142,10 @@ void __MOLD_VariantArrayRelease(Variant_t *x)
 // Load value stored at given index.
 //
 // Pseudo code:
-//  ... = box[idx]
+//  rv = box[idx]
 //
 // Parameters:
+//   rv  - buffer, where to store loaded item (OUT),
 //   box - source array (IN),
 //   idx - item array to be loaded (IN).
 //
@@ -152,11 +153,18 @@ void __MOLD_VariantArrayRelease(Variant_t *x)
 //   Value stored at given index.
 // -----------------------------------------------------------------------------
 
-Variant_t __MOLD_VariantLoadFromIndex(const Variant_t *box, int32_t idx)
+void __MOLD_VariantLoadFromIndexAndAssign(Variant_t *rv,
+                                          const Variant_t *box,
+                                          int32_t idx)
 {
   ASSERT_VARIANT_PTR_ANY(box);
+  ASSERT_VARIANT_PTR_ANY(rv);
 
-  Variant_t rv = { VARIANT_UNDEFINED };
+  __MOLD_VariantDestroy(rv);
+
+  // TODO: Optimize it.
+  // Set result to undefined before find.
+  memset(rv, 0, sizeof(Variant_t));
 
   if (idx < 0)
   {
@@ -177,23 +185,23 @@ Variant_t __MOLD_VariantLoadFromIndex(const Variant_t *box, int32_t idx)
         if (array -> innerType == 0)
         {
           // Array of variants.
-          memcpy(&rv, array -> items + idx, sizeof(Variant_t));
+          memcpy(rv, array -> items + idx, sizeof(Variant_t));
 
           // Increse reference counter for the just loaded item.
-          __MOLD_VariantAddRef(&rv);
+          __MOLD_VariantAddRef(rv);
         }
         else
         {
           // Array of primitives.
-          rv.type = array -> innerType;
+          rv -> type = array -> innerType;
 
           switch (array -> itemSize)
           {
             // TODO: Get it work with non-integer too.
-            case 0: rv.valueAsInt64 = ((int8_t *)  array -> items)[idx]; break;
-            case 1: rv.valueAsInt64 = ((int16_t *) array -> items)[idx]; break;
-            case 2: rv.valueAsInt64 = ((int32_t *) array -> items)[idx]; break;
-            case 3: rv.valueAsInt64 = ((int64_t *) array -> items)[idx]; break;
+            case 0: rv -> valueAsInt64 = ((int8_t *)  array -> items)[idx]; break;
+            case 1: rv -> valueAsInt64 = ((int16_t *) array -> items)[idx]; break;
+            case 2: rv -> valueAsInt64 = ((int32_t *) array -> items)[idx]; break;
+            case 3: rv -> valueAsInt64 = ((int64_t *) array -> items)[idx]; break;
           }
         }
       }
@@ -208,7 +216,7 @@ Variant_t __MOLD_VariantLoadFromIndex(const Variant_t *box, int32_t idx)
       if (box -> flags & VARIANT_FLAG_ONE_CHARACTER)
       {
         // One character string - just return itself.
-        rv = *box;
+        memcpy(rv, box, sizeof(Variant_t));
       }
       else
       {
@@ -218,9 +226,9 @@ Variant_t __MOLD_VariantLoadFromIndex(const Variant_t *box, int32_t idx)
 
         if (idx < str -> length)
         {
-          rv.type  = VARIANT_STRING;
-          rv.flags = VARIANT_FLAG_ONE_CHARACTER;
-          rv.value = str -> text[idx];
+          rv -> type  = VARIANT_STRING;
+          rv -> flags = VARIANT_FLAG_ONE_CHARACTER;
+          rv -> value = str -> text[idx];
         }
       }
 
@@ -233,12 +241,28 @@ Variant_t __MOLD_VariantLoadFromIndex(const Variant_t *box, int32_t idx)
     }
   }
 
-  ASSERT_VARIANT_PTR_ANY(&rv);
+  ASSERT_VARIANT_PTR_ANY(rv);
+}
 
+void __MOLD_VariantLoadFromIndexAndAssign_variant(Variant_t *rv,
+                                                  const Variant_t *box,
+                                                  int32_t idx) {
+  __MOLD_VariantLoadFromIndexAndAssign(rv, box, idx);
+}
+
+void __MOLD_VariantLoadFromIndexAndAssign_string(Variant_t *rv,
+                                                 const Variant_t *box,
+                                                 int32_t idx) {
+  __MOLD_VariantLoadFromIndexAndAssign(rv, box, idx);
+}
+
+Variant_t __MOLD_VariantLoadFromIndex(const Variant_t *box,
+                                              int32_t idx) {
+  Variant_t rv = { 0 };
+  __MOLD_VariantLoadFromIndexAndAssign(&rv, box, idx);
   return rv;
 }
 
-// TODO: Optimize it.
 Variant_t __MOLD_VariantLoadFromIndex_variant(const Variant_t *box, int32_t idx) {
   return __MOLD_VariantLoadFromIndex(box, idx);
 }
