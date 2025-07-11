@@ -238,6 +238,31 @@ Variant_t __MOLD_VariantLoadFromIndex(const Variant_t *box, int32_t idx)
   return rv;
 }
 
+// TODO: Optimize it.
+Variant_t __MOLD_VariantLoadFromIndex_variant(const Variant_t *box, int32_t idx) {
+  return __MOLD_VariantLoadFromIndex(box, idx);
+}
+
+Variant_t __MOLD_VariantLoadFromIndex_string (const Variant_t *box, int32_t idx) {
+  return __MOLD_VariantLoadFromIndex_variant(box, idx);
+}
+
+int32_t __MOLD_VariantLoadFromIndex_int32(const Variant_t *box, int32_t idx) {
+  return __MOLD_VariantLoadFromIndex_variant(box, idx).valueAsInt32;
+}
+
+int64_t __MOLD_VariantLoadFromIndex_int64(const Variant_t *box, int32_t idx) {
+  return __MOLD_VariantLoadFromIndex_variant(box, idx).valueAsInt64;
+}
+
+bool32_t __MOLD_VariantLoadFromIndex_bool32(const Variant_t *box, int32_t idx) {
+  return __MOLD_VariantLoadFromIndex_variant(box, idx).valueAsInt32;
+}
+
+float64_t __MOLD_VariantLoadFromIndex_float64(const Variant_t *box, int32_t idx) {
+  return __MOLD_VariantLoadFromIndex_variant(box, idx).valueAsFloat64;
+}
+
 // #############################################################################
 //                             Store functions
 // #############################################################################

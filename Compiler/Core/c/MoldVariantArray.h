@@ -106,7 +106,13 @@ void __MOLD_VariantArrayCreateFromInitList(Variant_t *dst, const Variant_t *init
 
 void __MOLD_VariantArrayRelease(Variant_t *x);
 
-Variant_t __MOLD_VariantLoadFromIndex(const Variant_t *box, int32_t idx);
+Variant_t __MOLD_VariantLoadFromIndex        (const Variant_t *box, int32_t idx);
+Variant_t __MOLD_VariantLoadFromIndex_variant(const Variant_t *box, int32_t idx);
+Variant_t __MOLD_VariantLoadFromIndex_string (const Variant_t *box, int32_t idx);
+int32_t   __MOLD_VariantLoadFromIndex_int32  (const Variant_t *box, int32_t idx);
+int64_t   __MOLD_VariantLoadFromIndex_int64  (const Variant_t *box, int32_t idx);
+bool32_t  __MOLD_VariantLoadFromIndex_bool32 (const Variant_t *box, int32_t idx);
+float64_t __MOLD_VariantLoadFromIndex_float64(const Variant_t *box, int32_t idx);
 
 void __MOLD_VariantStoreAtIndex_variant(Variant_t *box, int32_t idx, Variant_t *value);
 void __MOLD_VariantStoreAtIndex_string (Variant_t *box, int32_t idx, Variant_t *value);
