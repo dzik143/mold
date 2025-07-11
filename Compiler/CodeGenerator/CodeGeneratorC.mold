@@ -1260,37 +1260,35 @@ class CodeGeneratorC
 
       elif opcode >= MIR1_FIRST_DST_OP_X_Y_OPCODE
 
-        this.variantDestroy(dst)
-
         opcodeMajor = bitand(opcode, 0xf8)
         opcodeMinor = bitand(opcode, 0x7)
 
         if opcode is MIR1_OPCODE_LOAD_INDEX
           # dst := x[y]
-          print `  ${dst} = __MOLD_VariantLoadFromIndex_${dstType}(${xForCall}, ${yForCall});`
+          # Result is always variant.
+          # TODO: Handle non-variant items?
+          print `  __MOLD_VariantLoadFromIndexAndAssign_${dstType}(${dstForCall}, ${xForCall}, ${yForCall});`
 
         elif opcode is MIR1_OPCODE_LOAD_KEY
           # dst := x{y}
-          print `  ${dst} = __MOLD_VariantLoadFromKey_${dstType}(${xForCall}, ${yForCall});`
+          # Result is always variant.
+          # TODO: Handle non-variant items?
+          print `  __MOLD_VariantLoadFromKeyAndAssign_${dstType}(${dstForCall}, ${xForCall}, ${yForCall});`
 
         elif opcodeMajor is MIR1_OPCODE_CMP_CC_GROUP
+          # Result is always bool32.
           cc = MIR_COMPARE_FLAGS[opcodeMinor]
           print `  ${dst} = __MOLD_cmp_${cc}_${xType}(${xForCall}, ${yForCall});`
 
         elif opcodeMajor is MIR1_OPCODE_JMP_IF_CC_GROUP
+          # Result is always bool32.
           cc = MIR_COMPARE_FLAGS[opcodeMinor]
           print `  if (__MOLD_cmp_${cc}_${xType}(${xForCall}, ${yForCall})) goto ${dst};`
 
         elif opcodeMajor is MIR1_OPCODE_ALU2_GROUP
+          this.variantDestroy(dst)
           aluOpcode = MIR_ALU_OPCODES_FOR_INTEGERS[opcodeMinor]
           print `  ${dst} = __MOLD_${aluOpcode}_${xType}(${xForCall}, ${yForCall});`
-
-        #
-        # Arithmetic
-        #
-
-        elif opcodeMajor is MIR1_OPCODE_ALU2_GROUP
-          print `  ${dst} = __MOLD_${opcodeAsText}_${xType}(${xForCall}, ${yForCall});`
 
         else
           isOpcodeHandled = false
