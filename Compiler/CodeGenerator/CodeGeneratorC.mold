@@ -1302,8 +1302,6 @@ class CodeGeneratorC
         #                          dst = opcode(x)
         # ----------------------------------------------------------------------
 
-        this.variantDestroy(dst)
-
         if opcode is MIR1_OPCODE_CAST_VARIANT_TO
           # Cast variant to primitive.
           # dst = x.value
@@ -1312,9 +1310,10 @@ class CodeGeneratorC
         elif opcode is MIR1_OPCODE_CREATE_VARIANT_FROM
           # Create variant from primitive.
           # dst.value = x
-          print `  ${dst} = __MOLD_VariantCreateFrom_${xType}(${xForCall});`
+          print `  __MOLD_VariantAssign_${xType}(${dstForCall}, ${xForCall});`
 
         elif opcode is MIR1_OPCODE_NEG
+          this.variantDestroy(dst)
           print `  ${dst} = __MOLD_neg_${xType}(${xForCall});`
 
         elif opcode is MIR1_OPCODE_JMP_IF_TRUE
