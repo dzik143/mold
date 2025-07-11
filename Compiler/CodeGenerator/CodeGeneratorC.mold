@@ -956,11 +956,12 @@ class CodeGeneratorC
               mirType  = this._getSymbolType(oneParam)
 
               if mirType is 'int64'
-                token    = 'I'
+                token = 'I'
               else
-                token    = mirType[0]
-                callList = callList ~ ',' ~ this._getParamForCall(oneParam)
+                token = mirType[0]
               endif
+
+              callList = callList ~ ',' ~ this._getParamForCall(oneParam)
             endif
 
             fmt = fmt ~ token
