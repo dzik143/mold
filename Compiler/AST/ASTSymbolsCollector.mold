@@ -420,7 +420,12 @@ class ASTSymbolsCollector
           node.opcode = AST_OPCODE_NOP
 
 /*
-          TEMPORARY DISABLED DUE TO x[-10000] issue (should gives undefined)
+          TODO: Temporary disabled due to below scenario:
+          const arr = [ 1, 2, 3 ]
+          x = arr[10000] # <- read from out of bounds
+          # ISSUE: x should be undefined, but it's 0 due to
+          #        cast to integers
+
           # TODO: Review it.
           # TODO: Optimize it.
           innerType = AST_GetDataTypeFromValue(rval.value[0])
