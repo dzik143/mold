@@ -104,6 +104,16 @@ Variant_t __MOLD_VariantCreateFrom_float32(float32_t x);
 Variant_t __MOLD_VariantCreateFrom_float64(float64_t x);
 
 // -----------------------------------------------------------------------------
+//                    Assign: apply new value
+// -----------------------------------------------------------------------------
+
+void __MOLD_VariantAssign_int32(Variant_t *rv, int32_t x);
+void __MOLD_VariantAssign_int64(Variant_t *rv, int64_t x);
+void __MOLD_VariantAssign_bool32(Variant_t *rv, bool32_t x);
+void __MOLD_VariantAssign_float32(Variant_t *rv, float32_t x);
+void __MOLD_VariantAssign_float64(Variant_t *rv, float64_t x);
+
+// -----------------------------------------------------------------------------
 //                     Arithmetic: in32 vs int32
 // -----------------------------------------------------------------------------
 
