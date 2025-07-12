@@ -472,3 +472,25 @@ Variant_t __MOLD_Asc(const Variant_t *x)
 
   return rv;
 }
+
+void __MOLD_StrAndAssign(Variant_t *rv, Variant_t *x) {
+  // TODO: Clean up this mess.
+  __MOLD_VariantDestroy(rv);
+  *rv = __MOLD_Str(x);
+}
+
+void __MOLD_SubStrAndAssign(Variant_t *rv,
+                            const Variant_t *x,
+                            const Variant_t *idx,
+                            const Variant_t *len) {
+  // TODO: Clean up this mess.
+  __MOLD_VariantDestroy(rv);
+  *rv = __MOLD_SubStr(x, idx, len);
+}
+
+void __MOLD_AscAndAssign(Variant_t *rv, const Variant_t *x) {
+  // TODO: Clean up this mess.
+  ASSERT_VARIANT_PTR_ANY(rv);
+  __MOLD_VariantDestroy(rv);
+  *rv = __MOLD_Asc(x);
+}

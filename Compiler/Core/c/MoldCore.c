@@ -168,7 +168,8 @@ void __MOLD_negAndAssign_variant(Variant_t *rv, const Variant_t *x)
 
   __MOLD_VariantDestroy(rv);
 
-  memcpy(rv, x, sizeof(Variant_t));
+  rv -> type  = x -> type;
+  rv -> flags = 0;
 
   switch (x -> type)
   {
@@ -189,15 +190,15 @@ void __MOLD_addAndAssign_variant(Variant_t *rv, const Variant_t *x, const Varian
   ASSERT_VARIANT_PTR_ANY(x);
   ASSERT_VARIANT_PTR_ANY(y);
 
-  __MOLD_VariantDestroy(rv);
-
-  rv -> type  = x -> type;
-  rv -> flags = 0;
-
   if (x -> type != y -> type)
   {
     __MOLD_PrintErrorAndDie_badType();
   }
+
+  __MOLD_VariantDestroy(rv);
+
+  rv -> type  = x -> type;
+  rv -> flags = 0;
 
   switch (x -> type)
   {
@@ -218,15 +219,15 @@ void __MOLD_subAndAssign_variant(Variant_t *rv, const Variant_t *x, const Varian
   ASSERT_VARIANT_PTR_ANY(x);
   ASSERT_VARIANT_PTR_ANY(y);
 
-  __MOLD_VariantDestroy(rv);
-
-  rv -> type  = x -> type;
-  rv -> flags = 0;
-
   if (x -> type != y -> type)
   {
     __MOLD_PrintErrorAndDie_badType();
   }
+
+  __MOLD_VariantDestroy(rv);
+
+  rv -> type  = x -> type;
+  rv -> flags = 0;
 
   switch (x -> type)
   {
@@ -247,15 +248,15 @@ void __MOLD_mulAndAssign_variant(Variant_t *rv, const Variant_t *x, const Varian
   ASSERT_VARIANT_PTR_ANY(x);
   ASSERT_VARIANT_PTR_ANY(y);
 
-  __MOLD_VariantDestroy(rv);
-
-  rv -> type  = x -> type;
-  rv -> flags = 0;
-
   if (x -> type != y -> type)
   {
     __MOLD_PrintErrorAndDie_badType();
   }
+
+  __MOLD_VariantDestroy(rv);
+
+  rv -> type  = x -> type;
+  rv -> flags = 0;
 
   switch (x -> type)
   {
@@ -281,15 +282,15 @@ void __MOLD_divAndAssign_variant(Variant_t *rv, const Variant_t *x, const Varian
   ASSERT_VARIANT_PTR_ANY(x);
   ASSERT_VARIANT_PTR_ANY(y);
 
-  __MOLD_VariantDestroy(rv);
-
-  rv -> type  = VARIANT_DOUBLE;
-  rv -> flags = 0;
-
   if (x -> type != y -> type)
   {
     __MOLD_PrintErrorAndDie_badType();
   }
+
+  __MOLD_VariantDestroy(rv);
+
+  rv -> type  = VARIANT_DOUBLE;
+  rv -> flags = 0;
 
   float64_t xValue = 0.0;
   float64_t yValue = 0.0;
@@ -327,15 +328,15 @@ void __MOLD_idivAndAssign_variant(Variant_t *rv, const Variant_t *x, const Varia
   ASSERT_VARIANT_PTR_ANY(x);
   ASSERT_VARIANT_PTR_ANY(y);
 
-  __MOLD_VariantDestroy(rv);
-
-  rv -> type  = VARIANT_INTEGER;
-  rv -> flags = 0;
-
   if (x -> type != y -> type)
   {
     __MOLD_PrintErrorAndDie_badType();
   }
+
+  __MOLD_VariantDestroy(rv);
+
+  rv -> type  = VARIANT_INTEGER;
+  rv -> flags = 0;
 
   switch (x -> type)
   {
@@ -602,6 +603,30 @@ Variant_t __MOLD_Bitnot(const Variant_t *x)
   return rv;
 }
 
+void __MOLD_BitandAndAssign(Variant_t *rv, const Variant_t *x, const Variant_t *y) {
+  // TODO: Clean up this mess.
+  __MOLD_VariantDestroy(rv);
+  *rv = __MOLD_Bitand(x, y);
+}
+
+void __MOLD_BitorAndAssign(Variant_t *rv, const Variant_t *x, const Variant_t *y) {
+  // TODO: Clean up this mess.
+  __MOLD_VariantDestroy(rv);
+  *rv = __MOLD_Bitor(x, y);
+}
+
+void __MOLD_BitxorAndAssign(Variant_t *rv, const Variant_t *x, const Variant_t *y) {
+  // TODO: Clean up this mess.
+  __MOLD_VariantDestroy(rv);
+  *rv = __MOLD_Bitxor(x, y);
+}
+
+void __MOLD_BitnotAndAssign(Variant_t *rv, const Variant_t *x) {
+  // TODO: Clean up this mess.
+  __MOLD_VariantDestroy(rv);
+  *rv = __MOLD_Bitnot(x);
+}
+
 // -----------------------------------------------------------------------------
 //                                    Utils
 // -----------------------------------------------------------------------------
@@ -728,6 +753,56 @@ Variant_t __MOLD_SysCall(uint32_t id, ...)
   return rv;
 }
 
+void __MOLD_SysCallAndAssign(uint32_t id, Variant_t *rv, ...)
+{
+  // TODO: Clean up this mess.
+  // TODO: Ugly work-around to implement VM syscall with id set at runtime.
+  __MOLD_VariantDestroy(rv);
+  memset(rv, 0, sizeof(Variant_t));
+
+  va_list ptr;
+  va_start(ptr, rv);
+
+  Variant_t *x = va_arg(ptr, Variant_t *);
+  Variant_t *y = va_arg(ptr, Variant_t *);
+  Variant_t *z = va_arg(ptr, Variant_t *);
+
+  switch (id)
+  {
+    case 29: *rv = __MOLD_FileLoad(x); break;
+
+    case 31: *rv = __MOLD_VariantCreateFrom_int32(__MOLD_Ord(x)); break;
+    case 32: *rv = __MOLD_Asc(x); break;
+    case 33: *rv = __MOLD_ParseInteger(x); break;
+    case 34: *rv = __MOLD_VariantCreateFrom_float64(__MOLD_ParseFloat(x)); break;
+    case 35: *rv = __MOLD_Bitand(x, y); break;
+    case 36: *rv = __MOLD_Bitor(x, y); break;
+    case 37: *rv = __MOLD_Bitxor(x, y); break;
+    case 38: *rv = __MOLD_Bitnot(x); break;
+
+    case 40:       __MOLD_Exit(); break;
+    case 41:       __MOLD_Die(x); break;
+    case 42: *rv = __MOLD_Str(x); break;
+    case 43: *rv = __MOLD_VariantCreateFrom_int64(__MOLD_Len(x)); break;
+    case 44: *rv = __MOLD_Typeof(x); break;
+    case 45:       __MOLD_VariantPrint(x); break;
+    case 46:       __MOLD_PrintToFile_variant(stderr, x); break;
+
+    case 50:       __MOLD_ArrayInsertAfterLast(x, y); break;
+
+    case 55: *rv = __MOLD_SubStr(x,y,z); break;
+    case 57: *rv = __MOLD_GetTypeId(x); break;
+
+    default:
+    {
+      fprintf(stderr, "runtime error: unknown syscall id: %d\n", id);
+      exit(-1);
+    }
+  }
+
+  va_end(ptr);
+}
+
 Variant_t __MOLD_Typeof(const Variant_t *x)
 {
   static uint8_t bufferBytes_undefined[] = { 9,0,0,0,0,0,0,0 , 'u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd', 0 };
@@ -783,6 +858,12 @@ Variant_t __MOLD_Typeof(const Variant_t *x)
   return rv;
 }
 
+void __MOLD_TypeofAndAssign(Variant_t *rv, const Variant_t *x) {
+  // TODO: Clean up this mess.
+  __MOLD_VariantDestroy(rv);
+  *rv = __MOLD_Typeof(x);
+}
+
 Variant_t __MOLD_ParseInteger(const Variant_t *x)
 {
   Variant_t rv = {
@@ -801,6 +882,12 @@ Variant_t __MOLD_ParseInteger(const Variant_t *x)
   }
 
   return rv;
+}
+
+void __MOLD_ParseIntegerAndAssign(Variant_t *rv, const Variant_t *x) {
+  // TODO: Clean up this mess.
+  __MOLD_VariantDestroy(rv);
+  *rv = __MOLD_ParseInteger(x);
 }
 
 float64_t __MOLD_ParseFloat(const Variant_t *x)
@@ -855,9 +942,16 @@ Variant_t __MOLD_FileLoad(const Variant_t *path)
   else
   {
     fprintf(stderr, "error: could not open file '%s'", pathRaw);
+    exit(1);
   }
 
   return rv;
+}
+
+void __MOLD_FileLoadAndAssign(Variant_t *rv, const Variant_t *path) {
+  // TODO: Clean up this mess.
+  __MOLD_VariantDestroy(rv);
+  *rv = __MOLD_FileLoad(path);
 }
 
 void __MOLD_InitArgv(int _argc, char **_argv)
@@ -887,6 +981,16 @@ Variant_t __MOLD_GetTypeId(const Variant_t *x)
 {
   Variant_t rv = { type: VARIANT_INTEGER, value: x -> type, flags: 0 };
   return rv;
+}
+
+void __MOLD_GetTypeIdAndAssign(Variant_t *rv, const Variant_t *x) {
+  ASSERT_VARIANT_PTR_ANY(x);
+
+  __MOLD_VariantDestroy(rv);
+
+  rv -> type  = VARIANT_INTEGER;
+  rv -> flags = 0;
+  rv -> value = x -> type;
 }
 
 // -----------------------------------------------------------------------------

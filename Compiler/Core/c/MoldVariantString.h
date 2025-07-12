@@ -49,4 +49,13 @@ uint32_t __MOLD_Ord(const Variant_t *x);
 
 Variant_t __MOLD_Asc(const Variant_t *x);
 
+void __MOLD_StrAndAssign(Variant_t *rv, Variant_t *x);
+
+void __MOLD_SubStrAndAssign(Variant_t *rv,
+                            const Variant_t *x,
+                            const Variant_t *idx,
+                            const Variant_t *len);
+
+void __MOLD_AscAndAssign(Variant_t *rv, const Variant_t *x);
+
 #endif /* _MoldVariantString_H */

@@ -239,6 +239,11 @@ Variant_t __MOLD_Bitor (const Variant_t *x, const Variant_t *y);
 Variant_t __MOLD_Bitxor(const Variant_t *x, const Variant_t *y);
 Variant_t __MOLD_Bitnot(const Variant_t *x);
 
+void __MOLD_BitandAndAssign(Variant_t *rv, const Variant_t *x, const Variant_t *y);
+void __MOLD_BitorAndAssign (Variant_t *rv, const Variant_t *x, const Variant_t *y);
+void __MOLD_BitxorAndAssign(Variant_t *rv, const Variant_t *x, const Variant_t *y);
+void __MOLD_BitnotAndAssign(Variant_t *rv, const Variant_t *x);
+
 // -----------------------------------------------------------------------------
 //                                    Utils
 // -----------------------------------------------------------------------------
@@ -249,9 +254,15 @@ uint64_t  __MOLD_Len(const Variant_t *x);
 Variant_t __MOLD_ParseInteger(const Variant_t *x);
 float64_t __MOLD_ParseFloat(const Variant_t *x);
 
+void __MOLD_ParseIntegerAndAssign(Variant_t *rv, const Variant_t *x);
+
 Variant_t __MOLD_SysCall(uint32_t id, ...);
 Variant_t __MOLD_Typeof(const Variant_t *x);
 Variant_t __MOLD_FileLoad(const Variant_t *path);
+
+void __MOLD_SysCallAndAssign(uint32_t id, Variant_t *rv, ...);
+void __MOLD_TypeofAndAssign(Variant_t *rv, const Variant_t *x);
+void __MOLD_FileLoadAndAssign(Variant_t *rv, const Variant_t *path);
 
 void __MOLD_VariantAddRef(const Variant_t *x);
 void __MOLD_VariantDestroy(Variant_t *x);
@@ -260,6 +271,9 @@ void __MOLD_VariantDestroyMany(Variant_t *x, uint32_t n);
 void __MOLD_InitArgv(int _argc, char **_argv);
 
 Variant_t __MOLD_GetTypeId(const Variant_t *x);
+
+void  __MOLD_GetTypeIdAndAssign(Variant_t *rv, const Variant_t *x);
+
 void __MOLD_VariantMove(Variant_t *dst, Variant_t *src);
 
 void __MOLD_StackFree(uint32_t n);
