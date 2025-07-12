@@ -250,17 +250,15 @@ void __MOLD_BitnotAndAssign(Variant_t *rv, const Variant_t *x);
 
 void __MOLD_Exit();
 
+void __MOLD_SysCall(uint32_t id, Variant_t *rv, ...);
+
 uint64_t  __MOLD_Len(const Variant_t *x);
 Variant_t __MOLD_ParseInteger(const Variant_t *x);
 float64_t __MOLD_ParseFloat(const Variant_t *x);
-
-void __MOLD_ParseIntegerAndAssign(Variant_t *rv, const Variant_t *x);
-
-Variant_t __MOLD_SysCall(uint32_t id, ...);
 Variant_t __MOLD_Typeof(const Variant_t *x);
 Variant_t __MOLD_FileLoad(const Variant_t *path);
 
-void __MOLD_SysCallAndAssign(uint32_t id, Variant_t *rv, ...);
+void __MOLD_ParseIntegerAndAssign(Variant_t *rv, const Variant_t *x);
 void __MOLD_TypeofAndAssign(Variant_t *rv, const Variant_t *x);
 void __MOLD_FileLoadAndAssign(Variant_t *rv, const Variant_t *path);
 

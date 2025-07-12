@@ -702,58 +702,7 @@ uint64_t __MOLD_Len(const Variant_t *x)
   return len;
 }
 
-Variant_t __MOLD_SysCall(uint32_t id, ...)
-{
-  // TODO: Clean up this mess.
-  // TODO: Ugly work-around to implement VM syscall with id set at runtime.
-  Variant_t rv = { 0 };
-
-  va_list ptr;
-  va_start(ptr, id);
-
-  Variant_t *x = va_arg(ptr, Variant_t *);
-  Variant_t *y = va_arg(ptr, Variant_t *);
-  Variant_t *z = va_arg(ptr, Variant_t *);
-
-  switch (id)
-  {
-    case 29: rv = __MOLD_FileLoad(x); break;
-
-    case 31: rv = __MOLD_VariantCreateFrom_int32(__MOLD_Ord(x)); break;
-    case 32: rv = __MOLD_Asc(x); break;
-    case 33: rv = __MOLD_ParseInteger(x); break;
-    case 34: rv = __MOLD_VariantCreateFrom_float64(__MOLD_ParseFloat(x)); break;
-    case 35: rv = __MOLD_Bitand(x, y); break;
-    case 36: rv = __MOLD_Bitor(x, y); break;
-    case 37: rv = __MOLD_Bitxor(x, y); break;
-    case 38: rv = __MOLD_Bitnot(x); break;
-
-    case 40:      __MOLD_Exit(); break;
-    case 41:      __MOLD_Die(x); break;
-    case 42: rv = __MOLD_Str(x); break;
-    case 43: rv = __MOLD_VariantCreateFrom_int64(__MOLD_Len(x)); break;
-    case 44: rv = __MOLD_Typeof(x); break;
-    case 45:      __MOLD_VariantPrint(x); break;
-    case 46:      __MOLD_PrintToFile_variant(stderr, x); break;
-
-    case 50:      __MOLD_ArrayInsertAfterLast(x, y); break;
-
-    case 55: rv = __MOLD_SubStr(x,y,z); break;
-    case 57: rv = __MOLD_GetTypeId(x); break;
-
-    default:
-    {
-      fprintf(stderr, "runtime error: unknown syscall id: %d\n", id);
-      exit(-1);
-    }
-  }
-
-  va_end(ptr);
-
-  return rv;
-}
-
-void __MOLD_SysCallAndAssign(uint32_t id, Variant_t *rv, ...)
+void __MOLD_SysCall(uint32_t id, Variant_t *rv, ...)
 {
   // TODO: Clean up this mess.
   // TODO: Ugly work-around to implement VM syscall with id set at runtime.
