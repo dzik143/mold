@@ -60,4 +60,4 @@ arrayOfSources.forEach((fname) => {
   _processOneFile(fname);
 });
 
-fs.writeFileSync('_libmold-amalgamation_.c', finalHeaders + finalSources);
+fs.writeFileSync('_libmold-amalgamation_.h', finalHeaders + finalSources);

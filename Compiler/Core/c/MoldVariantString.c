@@ -290,15 +290,21 @@ void __MOLD_VariantStringJoin(Variant_t *dst,
 //
 // -----------------------------------------------------------------------------
 
-Variant_t __MOLD_SubStr(const Variant_t *strVariant,
-                        const Variant_t *idxVariant,
-                        const Variant_t *lenVariant)
+void __MOLD_SubStrAndAssign(Variant_t *rv,
+                            const Variant_t *strVariant,
+                            const Variant_t *idxVariant,
+                            const Variant_t *lenVariant)
 {
+
+  ASSERT_VARIANT_PTR_ANY(rv);
   ASSERT_VARIANT_PTR_STRING(strVariant);
   ASSERT_VARIANT_PTR_INTEGER(idxVariant);
   ASSERT_VARIANT_PTR_INTEGER(lenVariant);
 
-  Variant_t rv = { VARIANT_STRING };
+  if (rv != strVariant)
+  {
+    __MOLD_VariantDestroy(rv);
+  }
 
   String_t *str = (String_t *) strVariant -> valueAsBufferPtr -> bytesPtr;
 
@@ -310,18 +316,19 @@ Variant_t __MOLD_SubStr(const Variant_t *strVariant,
     len = str -> length - idx;
   }
 
+  // Possible improvement: Reuse existing buffer if possible?
   Buffer_t *newBuf = __MOLD_MemoryAlloc(sizeof(String_t) + len + 1);
   String_t *newStr = (String_t *) newBuf -> bytesPtr;
 
   newStr -> length = len;
 
-  rv.valueAsBufferPtr = newBuf;
+  rv -> type             = VARIANT_STRING;
+  rv -> valueAsBufferPtr = newBuf;
+  rv -> flags            = 0;
 
   memcpy(newStr -> text, str -> text + idx, len);
 
-  ASSERT_VARIANT_PTR_STRING(&rv);
-
-  return rv;
+  ASSERT_VARIANT_PTR_STRING(rv);
 }
 
 // -----------------------------------------------------------------------------
@@ -472,13 +479,13 @@ Variant_t __MOLD_Asc(const Variant_t *x)
   return rv;
 }
 
-void __MOLD_SubStrAndAssign(Variant_t *rv,
-                            const Variant_t *x,
-                            const Variant_t *idx,
-                            const Variant_t *len) {
+Variant_t __MOLD_SubStr(const Variant_t *x,
+                        const Variant_t *idx,
+                        const Variant_t *len) {
   // TODO: Clean up this mess.
-  __MOLD_VariantDestroy(rv);
-  *rv = __MOLD_SubStr(x, idx, len);
+  Variant_t rv = { 0 };
+  __MOLD_SubStrAndAssign(&rv, x, idx, len);
+  return rv;
 }
 
 void __MOLD_AscAndAssign(Variant_t *rv, const Variant_t *x) {
