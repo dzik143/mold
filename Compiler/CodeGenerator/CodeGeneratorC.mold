@@ -188,7 +188,11 @@ class CodeGeneratorC
                             SYMBOL_KIND_VAR_RETVAL)
 
       if xInfo.type is @any('string', 'variant')
-        print `  __MOLD_VariantDestroy(&${x});`
+        if xInfo.kind is SYMBOL_KIND_VAR_RETVAL
+          print `  __MOLD_VariantDestroy(${x});`
+        else
+          print `  __MOLD_VariantDestroy(&${x});`
+        endif
       endif
     endif
   endmethod
@@ -443,6 +447,8 @@ class CodeGeneratorC
   endmethod
 
   method _declareVar(symbolInfo)
+    global SYMBOL_KIND_VAR_RETVAL
+
     mirType = symbolInfo.type
     name    = symbolInfo.name
 
@@ -450,7 +456,11 @@ class CodeGeneratorC
       print '  // Skipped unused variable', name
 
     elif mirType is @any('variant', 'string')
-      print '  Variant_t', name, '= {0};'
+      if symbolInfo.kind isnt SYMBOL_KIND_VAR_RETVAL
+        print '  Variant_t', name, '= {0};'
+      else
+        print `  // Skipped non-primitive return value '${name}' (passed via pointer)`
+      endif
 
     elif mirType is 'int64'
       print '  int64_t', name, '= 0;'
@@ -498,6 +508,20 @@ class CodeGeneratorC
       sep = ''
     endif
 
+    # Pass variant return value via pointer.
+    if returnTypeForC is 'Variant_t'
+      # Move return value into the first param (out).
+      # TODO: Use rvName = @any(...) if ready?
+      rvName = proto.rv
+      if rvName is undefined
+        rvName = '__anonymousRv'
+      endif
+
+      paramsProtoForC = 'Variant_t *' ~ rvName ~ sep ~ paramsProtoForC
+      returnTypeForC  = 'void'
+      sep             = ', '
+    endif
+
     # Build params for ordinary call.
     # Possible primitive types.
     for values paramName in proto.params
@@ -530,7 +554,7 @@ class CodeGeneratorC
     endif
 
     # Build final C function proto:
-    # Example: int foo(double x, Variant_t y)
+    # Example: int foo(double x, Variant_t *y)
     rv = `${returnTypeForC} ${nameForC}(${paramsProtoForC})`
   endmethod
 
@@ -543,6 +567,7 @@ class CodeGeneratorC
 
   method _getParamForCall(x) -> rv
     global SYMBOL_KIND_VAR_PARAM
+    global SYMBOL_KIND_VAR_RETVAL
 
     rv = x
 
@@ -555,9 +580,10 @@ class CodeGeneratorC
 
         if ((symbolInfo is defined) and
             (symbolInfo.type is @any(undefined, 'variant', 'string')) and
-            (symbolInfo.kind isnt SYMBOL_KIND_VAR_PARAM))
+            (symbolInfo.kind isnt @all(SYMBOL_KIND_VAR_PARAM, SYMBOL_KIND_VAR_RETVAL)))
           # Always pass variants via pointers.
-          # For current params is not needed, because we already get variants
+          # For call params and return value & operator is unneded,
+          # bacuse we already have pointers available.
           # as pointers.
           rv = `&${x}`
 
@@ -932,8 +958,8 @@ class CodeGeneratorC
 
         elif opcode is MIR1_OPCODE_LOAD_NULL
           # TODO: Review it?
-          print `  ${dst}.type = VARIANT_UNDEFINED;`
           # this.variantDestroy(dst)
+          print `  (${dstForCall}) -> type  = VARIANT_UNDEFINED;`
 
         elif opcode is @any(MIR1_OPCODE_PRINT,
                             MIR1_OPCODE_BUILD_STRING)
@@ -1094,7 +1120,11 @@ class CodeGeneratorC
           endif
 
           if currentProcRv is defined
-            print '  return', currentProcRv, ';'
+            if currentProcRvType isnt @all('variant', 'string')
+              print '  return', currentProcRv, ';'
+            else
+              print `  // Skipped non-primitive return value '${currentProcRv}' (passed via pointer)`
+            endif
           endif
 
           print '}'
@@ -1114,8 +1144,14 @@ class CodeGeneratorC
             print this._renderFunctionProto(currentProcProto, true), '{'
 
             # Build params for virtual call.
-            callList = 'this'
-            sep      = ', '
+            if ((currentProcRv is defined) and
+                (currentProcRvType is @any('variant', 'string')))
+              callList = `${currentProcRv}, this`
+            else
+              callList = 'this'
+            endif
+
+            sep = ', '
 
             for values paramName in currentProcProto.params
               symbolInfo   = currentSymbols{paramName}
@@ -1133,21 +1169,19 @@ class CodeGeneratorC
             # TODO: Avoid returning a value for void functions.
             # For now vcall wrapper always return value, because
             # caller always assume there it is.
-            print '  Variant_t __rv = {0};'
-
             if currentProcRvType is defined
               valueAsField = MIR_TO_C_VARIANT_VALUE_AS_MAP_WRITE{currentProcRvType}
 
               if valueAsField is defined
-                print '  __rv.type =', MIR_TO_VARIANT_TYPE{currentProcRvType}, ';'
-                print `  __rv.${valueAsField} = `
-              else
-                print '  __rv ='
+                # Convert primitive return value into variant if needed.
+                # TODO: Handle non-variant return values for vcalls?
+                print `  ${currentProcRv} -> type =`, MIR_TO_VARIANT_TYPE{currentProcRvType}, ';'
+                print `  ${currentProcRv} -> ${valueAsField} = `
               endif
             endif
 
+            # Call original method as ordinary call.
             print `  ${currentProcName}(${callList});`
-            print '  return __rv;'
             print '}'
           endif
 
@@ -1181,15 +1215,20 @@ class CodeGeneratorC
           print `  ${nameOrId}(${box}, &${idxOrKey}, &${value}, ${cb});`
 
         else
+          # Push call parameters.
+          callList       = ''
+          sep            = ''
+          hasPrimitiveRv = false
 
-          # Destroy destination if needed.
-          if dst is defined
-            this.variantDestroy(dst)
+          if (dst is defined) and (opcode isnt MIR1_OPCODE_SYSCALL)
+            if dstType is @any('variant', 'string')
+              callList     = dstForCall
+              sep          = ', '
+            else
+              hasPrimitiveRv = true
+            endif
           endif
 
-          # Push call parameters.
-          callList = ''
-          sep      = ''
           for values oneParam in params
             # TODO: Clean up this mess.
             callList = callList ~ sep ~ this._getParamForCall(oneParam)
@@ -1201,7 +1240,17 @@ class CodeGeneratorC
             syscallName = SYSCALL_ID_TO_C_FUNCTION_MAP{str(nameOrId)}
 
             if dst is defined
-              __mold_printToStdOutput(`  ${dst} =`)
+              # TODO: Simplify it.
+              # TODO: Set return value via pointer?
+              # TODO: Move VariantDestroy into vcall dispatcher?
+              # Destroy destination if needed.
+              this.variantDestroy(dst)
+              if dstType is @any('variant', 'string')
+              # TODO: Clean up this mess.
+                __mold_printToStdOutput(`  *${dstForCall} =`)
+              else
+                __mold_printToStdOutput(`  ${dst} =`)
+              endif
             endif
 
             if syscallName is defined
@@ -1218,7 +1267,7 @@ class CodeGeneratorC
 
           elif opcode is MIR1_OPCODE_CALL
             # dst = foo(...)
-            if dst is defined
+            if hasPrimitiveRv is true
               print `  ${dst} = ${nameOrId}(${callList});`
             else
               print `  ${nameOrId}(${callList});`
@@ -1236,16 +1285,12 @@ class CodeGeneratorC
 
             thisForCall = this._getParamForCall(params[0])
 
-            print `  if ((${thisForCall}) -> type != VARIANT_OBJECT) __MOLD_PrintErrorAndDie_vcallOnNonObject();`
-
-            if dst is defined
-              # dst = obj.foo(...)
-              print `  ${dst} = ((Variant_t (*)(${protoC}))`
-            else
-              # obj.foo(...)
-              print `  ((void (*)(${protoC}))`
+            if dst is undefined
+              dst = '__TrashBin'
             endif
 
+            print `  if ((${thisForCall}) -> type != VARIANT_OBJECT) __MOLD_PrintErrorAndDie_vcallOnNonObject();`
+            print `  ((void (*)(Variant_t*, ${protoC}))`
             print `  ((Object_t *) (${thisForCall}) -> valueAsBufferPtr -> bytesPtr) -> vtable[${methodId}])`
             print '  (', callList, ');'
 
@@ -1286,9 +1331,12 @@ class CodeGeneratorC
           print `  if (__MOLD_cmp_${cc}_${xType}(${xForCall}, ${yForCall})) goto ${dst};`
 
         elif opcodeMajor is MIR1_OPCODE_ALU2_GROUP
-          this.variantDestroy(dst)
           aluOpcode = MIR_ALU_OPCODES_FOR_INTEGERS[opcodeMinor]
-          print `  ${dst} = __MOLD_${aluOpcode}_${xType}(${xForCall}, ${yForCall});`
+          if dstType is @any('variant', 'string')
+            print `  __MOLD_${aluOpcode}AndAssign_${xType}(${dstForCall}, ${xForCall}, ${yForCall});`
+          else
+            print `  ${dst} = __MOLD_${aluOpcode}_${xType}(${xForCall}, ${yForCall});`
+          endif
 
         else
           isOpcodeHandled = false
