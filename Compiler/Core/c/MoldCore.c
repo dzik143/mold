@@ -905,7 +905,7 @@ void __MOLD_FileLoadAndAssign(Variant_t *rv, const Variant_t *path) {
 
 void __MOLD_InitArgv(int _argc, char **_argv)
 {
-  Variant_t oneArg;
+  Variant_t oneArg = { 0 };
 
   // TEMP!!!
   // setvbuf(stdout, NULL, _IONBF, 0);
