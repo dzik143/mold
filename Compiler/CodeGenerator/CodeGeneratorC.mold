@@ -1220,7 +1220,7 @@ class CodeGeneratorC
           sep            = ''
           hasPrimitiveRv = false
 
-          if (dst is defined) and (opcode isnt MIR1_OPCODE_SYSCALL)
+          if dst is defined
             if dstType is @any('variant', 'string')
               callList     = dstForCall
               sep          = ', '
@@ -1239,30 +1239,21 @@ class CodeGeneratorC
           if opcode is MIR1_OPCODE_SYSCALL
             syscallName = SYSCALL_ID_TO_C_FUNCTION_MAP{str(nameOrId)}
 
-            if dst is defined
-              # TODO: Simplify it.
-              # TODO: Set return value via pointer?
-              # TODO: Move VariantDestroy into vcall dispatcher?
-              # Destroy destination if needed.
-              this.variantDestroy(dst)
-              if dstType is @any('variant', 'string')
-              # TODO: Clean up this mess.
-                __mold_printToStdOutput(`  *${dstForCall} =`)
-              else
-                __mold_printToStdOutput(`  ${dst} =`)
-              endif
+            # TODO: Clean up this mess.
+            if hasPrimitiveRv is true
+               __mold_printToStdOutput(`  ${dst} =`)
             endif
 
             if syscallName is defined
               # dst = syscall(id, ...)
-              print `  ${syscallName}(${callList});`
+              if (dst is undefined) or (hasPrimitiveRv is true)
+                print `  ${syscallName}(${callList});`
+              else
+                print `  ${syscallName}AndAssign(${callList});`
+              endif
 
             elif nameOrId is string
-              if paramsCnt > 0
-                print `  __MOLD_SysCall(${nameOrId}, ${callList});`
-              else
-                print `  __MOLD_SysCall(${nameOrId});`
-              endif
+              print `  __MOLD_SysCall(${nameOrId}, ${callList});`
             endif
 
           elif opcode is MIR1_OPCODE_CALL
@@ -1359,8 +1350,11 @@ class CodeGeneratorC
           print `  __MOLD_VariantAssign_${xType}(${dstForCall}, ${xForCall});`
 
         elif opcode is MIR1_OPCODE_NEG
-          this.variantDestroy(dst)
-          print `  ${dst} = __MOLD_neg_${xType}(${xForCall});`
+          if xType is 'variant'
+            print `  __MOLD_negAndAssign_${xType}(${dstForCall}, ${xForCall});`
+          else
+            print `  ${dst} = __MOLD_neg_${xType}(${xForCall});`
+          endif
 
         elif opcode is MIR1_OPCODE_JMP_IF_TRUE
           if xType is 'variant'
