@@ -341,7 +341,9 @@ void __MOLD_PrintToFile_variant(FILE *f, Variant_t *x) {
   __MOLD_ClenUpAfterPrint(x);
 }
 
-Variant_t __MOLD_PrintToString_variant(Variant_t *x) {
+void __MOLD_PrintToString_variant(Variant_t *rv, Variant_t *x) {
+  ASSERT_VARIANT_PTR_ANY(rv);
+
   __MOLD_PrintContext_t ctx = { 0 };
 
   ctx.buf         = calloc(__MOLD_DEFAULT_PRINT_BUFFER_SIZE, 1);
@@ -352,12 +354,9 @@ Variant_t __MOLD_PrintToString_variant(Variant_t *x) {
   __MOLD_ClenUpAfterPrint(x);
 
   // Possible improvement: Avoid buffer copy?
-  // Possible improvement: Pass result variant via pointer?
-  Variant_t rv = __MOLD_VariantStringCreateFromCString(ctx.buf);
+  __MOLD_VariantStringCreateFromCString(rv, ctx.buf);
 
   free(ctx.buf);
-
-  return rv;
 }
 
 void __MOLD_PrintFormat(const char *fmt, ...) {
@@ -395,25 +394,27 @@ void __MOLD_PrintFormat(const char *fmt, ...) {
   }
 }
 
-Variant_t __MOLD_BuildString(const char *fmt, ...) {
+void __MOLD_BuildString(Variant_t *rv, const char *fmt, ...) {
+  ASSERT_VARIANT_PTR_ANY(rv);
+
   va_list ptr;
   va_start(ptr, fmt);
 
   // TODO: Optimize it.
   // TODO: Reuse code from __MOLD_PrintFormat.
-  Variant_t rv = __MOLD_VariantStringCreateFromCString("");
+  __MOLD_VariantStringCreateFromCString(rv, "");
+
+  Variant_t nextItem = { 0 };
 
   while (*fmt) {
-    Variant_t nextItem;
-
     switch (*fmt) {
       // Possible improvement: Better tokens set?
       case 's':
-      case 'v': nextItem = __MOLD_Str(va_arg(ptr, Variant_t *)); break;
-      case 'i': nextItem = __MOLD_VariantCreateFrom_int32(va_arg(ptr, uint32_t)); break;
-      case 'I': nextItem = __MOLD_VariantCreateFrom_int64(va_arg(ptr, uint64_t)); break;
-      case 'f': nextItem = __MOLD_VariantCreateFrom_float64(va_arg(ptr, float64_t)); break;
-      case 'b': nextItem = __MOLD_VariantCreateFrom_bool32(va_arg(ptr, bool32_t)); break;
+      case 'v': __MOLD_StrAndAssign         (&nextItem, va_arg(ptr, Variant_t *)); break;
+      case 'i': __MOLD_VariantAssign_int32  (&nextItem, va_arg(ptr, uint32_t)); break;
+      case 'I': __MOLD_VariantAssign_int64  (&nextItem, va_arg(ptr, uint64_t)); break;
+      case 'f': __MOLD_VariantAssign_float64(&nextItem, va_arg(ptr, float64_t)); break;
+      case 'b': __MOLD_VariantAssign_bool32 (&nextItem, va_arg(ptr, bool32_t)); break;
 
       default: {
         fprintf(stderr, "runtime error: unhandled print fmt token '%c' (string mode)", *fmt);
@@ -421,13 +422,13 @@ Variant_t __MOLD_BuildString(const char *fmt, ...) {
       }
     }
 
-    nextItem = __MOLD_Str(&nextItem);
-    __MOLD_VariantStringJoin(&rv, &rv, &nextItem);
+    __MOLD_StrAndAssign(&nextItem, &nextItem);
+    __MOLD_VariantStringJoin(rv, rv, &nextItem);
 
     fmt++;
   }
 
-  return rv;
+  __MOLD_VariantDestroy(&nextItem);
 }
 
 // -----------------------------------------------------------------------------

@@ -28,7 +28,7 @@ typedef struct String
   char text[];
 } String_t;
 
-Variant_t __MOLD_VariantStringCreateFromCString(const char *text);
+void __MOLD_VariantStringCreateFromCString(Variant_t *rv, const char *text);
 
 void __MOLD_VariantStringRelease(Variant_t *x);
 

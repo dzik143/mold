@@ -29,36 +29,33 @@
 // Create new string and init it from C string buffer.
 //
 // Pseudo code:
-// ... = new string("text")
+// rv = new string("text")
 //
 // Parameters:
+//   rv   - pointer, where to store new allocated string (OUT),
 //   text - pointer to the zero terminated C string (IN).
-//
-// Returns:
-//   New allocated string set to given text wrapped into Variant container.
 // -----------------------------------------------------------------------------
 
-Variant_t __MOLD_VariantStringCreateFromCString(const char *text)
+void __MOLD_VariantStringCreateFromCString(Variant_t *rv, const char *text)
 {
-  Variant_t rv = { VARIANT_UNDEFINED };
+  ASSERT_VARIANT_PTR_ANY(rv);
+  assert(text != NULL);
 
-  if (text)
-  {
-    uint32_t textLen = strlen(text);
-    Buffer_t *buf    = __MOLD_MemoryAlloc(textLen + 1);
-    String_t *str    = (String_t *) buf -> bytesPtr;
+  __MOLD_VariantDestroy(rv);
 
-    memcpy(str -> text, text, textLen);
+  uint32_t textLen = strlen(text);
+  Buffer_t *buf    = __MOLD_MemoryAlloc(textLen + 1);
+  String_t *str    = (String_t *) buf -> bytesPtr;
 
-    str -> length = textLen;
+  memcpy(str -> text, text, textLen);
 
-    rv.type             = VARIANT_STRING;
-    rv.valueAsBufferPtr = buf;
-  }
+  str -> length = textLen;
 
-  ASSERT_VARIANT_PTR_STRING(&rv);
+  rv -> type             = VARIANT_STRING;
+  rv -> flags            = 0;
+  rv -> valueAsBufferPtr = buf;
 
-  return rv;
+  ASSERT_VARIANT_PTR_STRING(rv);
 }
 
 // -----------------------------------------------------------------------------
@@ -337,26 +334,24 @@ Variant_t __MOLD_SubStr(const Variant_t *strVariant,
 //   Text representation of input variable.
 // -----------------------------------------------------------------------------
 
-
-Variant_t __MOLD_Str(Variant_t *x)
+void __MOLD_StrAndAssign(Variant_t *rv, Variant_t *x)
 {
   ASSERT_VARIANT_PTR_ANY(x);
-
-  Variant_t rv = { VARIANT_STRING };
+  ASSERT_VARIANT_PTR_ANY(rv);
 
   if (x -> type == VARIANT_STRING)
   {
-    // Input is already a string - nothing to do.
-    // TODO: Review it.
-    __MOLD_VariantAddRef(x);
-    rv = *x;
+    // Input is already a string - just do a shallow copy.
+    if (rv != x)
+    {
+      __MOLD_VariantMove(rv, x);
+    }
   }
   else
   {
     // Input is not a string.
     // We need to create new one.
-    // Possible improvement: Optimize it.
-    rv = __MOLD_PrintToString_variant(x);
+    __MOLD_PrintToString_variant(rv, x);
 
     /*
     OLD IMPLEMENTATION
@@ -388,8 +383,12 @@ Variant_t __MOLD_Str(Variant_t *x)
   }
 
   ASSERT_VARIANT_PTR_ANY(x);
-  ASSERT_VARIANT_PTR_STRING(&rv);
+  ASSERT_VARIANT_PTR_STRING(rv);
+}
 
+Variant_t __MOLD_Str(Variant_t *x) {
+  Variant_t rv = { 0 };
+  __MOLD_StrAndAssign(&rv, x);
   return rv;
 }
 
@@ -471,12 +470,6 @@ Variant_t __MOLD_Asc(const Variant_t *x)
   ASSERT_VARIANT_PTR_STRING(&rv);
 
   return rv;
-}
-
-void __MOLD_StrAndAssign(Variant_t *rv, Variant_t *x) {
-  // TODO: Clean up this mess.
-  __MOLD_VariantDestroy(rv);
-  *rv = __MOLD_Str(x);
 }
 
 void __MOLD_SubStrAndAssign(Variant_t *rv,

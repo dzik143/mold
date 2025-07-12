@@ -905,6 +905,8 @@ void __MOLD_FileLoadAndAssign(Variant_t *rv, const Variant_t *path) {
 
 void __MOLD_InitArgv(int _argc, char **_argv)
 {
+  Variant_t oneArg;
+
   // TEMP!!!
   // setvbuf(stdout, NULL, _IONBF, 0);
   // setvbuf(stderr, NULL, _IONBF, 0);
@@ -918,12 +920,12 @@ void __MOLD_InitArgv(int _argc, char **_argv)
 
   for (int i = 0; _argv[i]; i++)
   {
-    Variant_t oneArg = __MOLD_VariantStringCreateFromCString(_argv[i]);
+    __MOLD_VariantStringCreateFromCString(&oneArg, _argv[i]);
     __MOLD_VariantStoreAtIndex_variant(&argv, i, &oneArg);
-
-    // TODO: Review it.
-    __MOLD_VariantDestroy(&oneArg);
   }
+
+  // TODO: Review it.
+  __MOLD_VariantDestroy(&oneArg);
 }
 
 Variant_t __MOLD_GetTypeId(const Variant_t *x)
