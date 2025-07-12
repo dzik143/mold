@@ -161,28 +161,38 @@ int64_t   __MOLD_idiv_float64(float64_t x, float64_t y) { return (int64_t) (x / 
 //                    Arithmetic: variant vs variant
 // -----------------------------------------------------------------------------
 
-Variant_t __MOLD_neg_variant(const Variant_t *x)
+void __MOLD_negAndAssign_variant(Variant_t *rv, const Variant_t *x)
 {
-  Variant_t rv = { x -> type };
+  ASSERT_VARIANT_PTR_ANY(rv);
+  ASSERT_VARIANT_PTR_ANY(x);
+
+  __MOLD_VariantDestroy(rv);
+
+  memcpy(rv, x, sizeof(Variant_t));
 
   switch (x -> type)
   {
-    case VARIANT_INTEGER: { rv.valueAsInt64   = -x -> valueAsInt64; break; }
-    case VARIANT_FLOAT:   { rv.valueAsFloat32 = -x -> valueAsFloat32; break; }
-    case VARIANT_DOUBLE:  { rv.valueAsFloat64 = -x -> valueAsFloat64; break; }
+    case VARIANT_INTEGER: { rv -> valueAsInt64   = -x -> valueAsInt64; break; }
+    case VARIANT_FLOAT:   { rv -> valueAsFloat32 = -x -> valueAsFloat32; break; }
+    case VARIANT_DOUBLE:  { rv -> valueAsFloat64 = -x -> valueAsFloat64; break; }
 
     default:
     {
       __MOLD_PrintErrorAndDie_badType();
     }
   }
-
-  return rv;
 }
 
-Variant_t __MOLD_add_variant(const Variant_t *x, const Variant_t *y)
+void __MOLD_addAndAssign_variant(Variant_t *rv, const Variant_t *x, const Variant_t *y)
 {
-  Variant_t rv = { x -> type, flags: 0 };
+  ASSERT_VARIANT_PTR_ANY(rv);
+  ASSERT_VARIANT_PTR_ANY(x);
+  ASSERT_VARIANT_PTR_ANY(y);
+
+  __MOLD_VariantDestroy(rv);
+
+  rv -> type  = x -> type;
+  rv -> flags = 0;
 
   if (x -> type != y -> type)
   {
@@ -191,22 +201,27 @@ Variant_t __MOLD_add_variant(const Variant_t *x, const Variant_t *y)
 
   switch (x -> type)
   {
-    case VARIANT_INTEGER: { rv.valueAsInt64   = x -> valueAsInt64   + y -> valueAsInt64; break; }
-    case VARIANT_FLOAT:   { rv.valueAsFloat32 = x -> valueAsFloat32 + y -> valueAsFloat32; break; }
-    case VARIANT_DOUBLE:  { rv.valueAsFloat64 = x -> valueAsFloat64 + y -> valueAsFloat64; break; }
+    case VARIANT_INTEGER: { rv -> valueAsInt64   = x -> valueAsInt64   + y -> valueAsInt64; break; }
+    case VARIANT_FLOAT:   { rv -> valueAsFloat32 = x -> valueAsFloat32 + y -> valueAsFloat32; break; }
+    case VARIANT_DOUBLE:  { rv -> valueAsFloat64 = x -> valueAsFloat64 + y -> valueAsFloat64; break; }
 
     default:
     {
       __MOLD_PrintErrorAndDie_badType();
     }
   }
-
-  return rv;
 }
 
-Variant_t __MOLD_sub_variant(const Variant_t *x, const Variant_t *y)
+void __MOLD_subAndAssign_variant(Variant_t *rv, const Variant_t *x, const Variant_t *y)
 {
-  Variant_t rv = { x -> type, flags: 0 };
+  ASSERT_VARIANT_PTR_ANY(rv);
+  ASSERT_VARIANT_PTR_ANY(x);
+  ASSERT_VARIANT_PTR_ANY(y);
+
+  __MOLD_VariantDestroy(rv);
+
+  rv -> type  = x -> type;
+  rv -> flags = 0;
 
   if (x -> type != y -> type)
   {
@@ -215,22 +230,27 @@ Variant_t __MOLD_sub_variant(const Variant_t *x, const Variant_t *y)
 
   switch (x -> type)
   {
-    case VARIANT_INTEGER: { rv.valueAsInt64   = x -> valueAsInt64   - y -> valueAsInt64; break; }
-    case VARIANT_FLOAT:   { rv.valueAsFloat32 = x -> valueAsFloat32 - y -> valueAsFloat32; break; }
-    case VARIANT_DOUBLE:  { rv.valueAsFloat64 = x -> valueAsFloat64 - y -> valueAsFloat64; break; }
+    case VARIANT_INTEGER: { rv -> valueAsInt64   = x -> valueAsInt64   - y -> valueAsInt64; break; }
+    case VARIANT_FLOAT:   { rv -> valueAsFloat32 = x -> valueAsFloat32 - y -> valueAsFloat32; break; }
+    case VARIANT_DOUBLE:  { rv -> valueAsFloat64 = x -> valueAsFloat64 - y -> valueAsFloat64; break; }
 
     default:
     {
       __MOLD_PrintErrorAndDie_badType();
     }
   }
-
-  return rv;
 }
 
-Variant_t __MOLD_mul_variant(const Variant_t *x, const Variant_t *y)
+void __MOLD_mulAndAssign_variant(Variant_t *rv, const Variant_t *x, const Variant_t *y)
 {
-  Variant_t rv = { x -> type, flags: 0 };
+  ASSERT_VARIANT_PTR_ANY(rv);
+  ASSERT_VARIANT_PTR_ANY(x);
+  ASSERT_VARIANT_PTR_ANY(y);
+
+  __MOLD_VariantDestroy(rv);
+
+  rv -> type  = x -> type;
+  rv -> flags = 0;
 
   if (x -> type != y -> type)
   {
@@ -239,27 +259,32 @@ Variant_t __MOLD_mul_variant(const Variant_t *x, const Variant_t *y)
 
   switch (x -> type)
   {
-    case VARIANT_INTEGER: { rv.valueAsInt64   = x -> valueAsInt64   * y -> valueAsInt64; break; }
-    case VARIANT_FLOAT:   { rv.valueAsFloat32 = x -> valueAsFloat32 * y -> valueAsFloat32; break; }
-    case VARIANT_DOUBLE:  { rv.valueAsFloat64 = x -> valueAsFloat64 * y -> valueAsFloat64; break; }
+    case VARIANT_INTEGER: { rv -> valueAsInt64   = x -> valueAsInt64   * y -> valueAsInt64; break; }
+    case VARIANT_FLOAT:   { rv -> valueAsFloat32 = x -> valueAsFloat32 * y -> valueAsFloat32; break; }
+    case VARIANT_DOUBLE:  { rv -> valueAsFloat64 = x -> valueAsFloat64 * y -> valueAsFloat64; break; }
 
     default:
     {
       __MOLD_PrintErrorAndDie_badType();
     }
   }
-
-  return rv;
 }
 
-Variant_t __MOLD_imul_variant(const Variant_t *x, const Variant_t *y)
+void __MOLD_imulAndAssign_variant(Variant_t *rv, const Variant_t *x, const Variant_t *y)
 {
-  return __MOLD_mul_variant(x, y);
+  __MOLD_mulAndAssign_variant(rv, x, y);
 }
 
-Variant_t __MOLD_div_variant(const Variant_t *x, const Variant_t *y)
+void __MOLD_divAndAssign_variant(Variant_t *rv, const Variant_t *x, const Variant_t *y)
 {
-  Variant_t rv = { VARIANT_DOUBLE };
+  ASSERT_VARIANT_PTR_ANY(rv);
+  ASSERT_VARIANT_PTR_ANY(x);
+  ASSERT_VARIANT_PTR_ANY(y);
+
+  __MOLD_VariantDestroy(rv);
+
+  rv -> type  = VARIANT_DOUBLE;
+  rv -> flags = 0;
 
   if (x -> type != y -> type)
   {
@@ -293,14 +318,19 @@ Variant_t __MOLD_div_variant(const Variant_t *x, const Variant_t *y)
     }
   }
 
-  rv.valueAsFloat64 = xValue / yValue;
-
-  return rv;
+  rv -> valueAsFloat64 = xValue / yValue;
 }
 
-Variant_t __MOLD_idiv_variant(const Variant_t *x, const Variant_t *y)
+void __MOLD_idivAndAssign_variant(Variant_t *rv, const Variant_t *x, const Variant_t *y)
 {
-  Variant_t rv = { VARIANT_INTEGER };
+  ASSERT_VARIANT_PTR_ANY(rv);
+  ASSERT_VARIANT_PTR_ANY(x);
+  ASSERT_VARIANT_PTR_ANY(y);
+
+  __MOLD_VariantDestroy(rv);
+
+  rv -> type  = VARIANT_INTEGER;
+  rv -> flags = 0;
 
   if (x -> type != y -> type)
   {
@@ -309,16 +339,56 @@ Variant_t __MOLD_idiv_variant(const Variant_t *x, const Variant_t *y)
 
   switch (x -> type)
   {
-    case VARIANT_INTEGER: { rv.value = x -> valueAsInt64 / y -> valueAsInt64; break; }
-    case VARIANT_FLOAT:   { rv.value = (int64_t) (x -> valueAsFloat32 / y -> valueAsFloat32); break; }
-    case VARIANT_DOUBLE:  { rv.value = (int64_t) (x -> valueAsFloat64 / y -> valueAsFloat64); break; }
+    case VARIANT_INTEGER: { rv -> value = x -> valueAsInt64 / y -> valueAsInt64; break; }
+    case VARIANT_FLOAT:   { rv -> value = (int64_t) (x -> valueAsFloat32 / y -> valueAsFloat32); break; }
+    case VARIANT_DOUBLE:  { rv -> value = (int64_t) (x -> valueAsFloat64 / y -> valueAsFloat64); break; }
 
     default:
     {
       __MOLD_PrintErrorAndDie_badType();
     }
   }
+}
 
+Variant_t __MOLD_neg_variant(const Variant_t *x) {
+  Variant_t rv = { 0 };
+  __MOLD_negAndAssign_variant(&rv, x);
+  return rv;
+}
+
+Variant_t __MOLD_add_variant(const Variant_t *x, const Variant_t *y) {
+  Variant_t rv = { 0 };
+  __MOLD_addAndAssign_variant(&rv, x, y);
+  return rv;
+}
+
+Variant_t __MOLD_sub_variant(const Variant_t *x, const Variant_t *y) {
+  Variant_t rv = { 0 };
+  __MOLD_subAndAssign_variant(&rv, x, y);
+  return rv;
+}
+
+Variant_t __MOLD_mul_variant(const Variant_t *x, const Variant_t *y) {
+  Variant_t rv = { 0 };
+  __MOLD_mulAndAssign_variant(&rv, x, y);
+  return rv;
+}
+
+Variant_t __MOLD_imul_variant(const Variant_t *x, const Variant_t *y) {
+  Variant_t rv = { 0 };
+  __MOLD_imulAndAssign_variant(&rv, x, y);
+  return rv;
+}
+
+Variant_t __MOLD_div_variant (const Variant_t *x, const Variant_t *y) {
+  Variant_t rv = { 0 };
+  __MOLD_divAndAssign_variant(&rv, x, y);
+  return rv;
+}
+
+Variant_t __MOLD_idiv_variant(const Variant_t *x, const Variant_t *y) {
+  Variant_t rv = { 0 };
+  __MOLD_idivAndAssign_variant(&rv, x, y);
   return rv;
 }
 

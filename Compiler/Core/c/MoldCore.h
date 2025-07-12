@@ -161,6 +161,14 @@ Variant_t __MOLD_imul_variant(const Variant_t *x, const Variant_t *y);
 Variant_t __MOLD_div_variant (const Variant_t *x, const Variant_t *y);
 Variant_t __MOLD_idiv_variant(const Variant_t *x, const Variant_t *y);
 
+void __MOLD_negAndAssign_variant (Variant_t *rv, const Variant_t *x);
+void __MOLD_addAndAssign_variant (Variant_t *rv, const Variant_t *x, const Variant_t *y);
+void __MOLD_subAndAssign_variant (Variant_t *rv, const Variant_t *x, const Variant_t *y);
+void __MOLD_mulAndAssign_variant (Variant_t *rv, const Variant_t *x, const Variant_t *y);
+void __MOLD_imulAndAssign_variant(Variant_t *rv, const Variant_t *x, const Variant_t *y);
+void __MOLD_divAndAssign_variant (Variant_t *rv, const Variant_t *x, const Variant_t *y);
+void __MOLD_idivAndAssign_variant(Variant_t *rv, const Variant_t *x, const Variant_t *y);
+
 // -----------------------------------------------------------------------------
 //                         Compare: int32 vs int32
 // -----------------------------------------------------------------------------
