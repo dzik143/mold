@@ -994,7 +994,7 @@ class CodeGeneratorC
           endfor
 
           if opcode is MIR1_OPCODE_BUILD_STRING
-            print ' ', dst, '= __MOLD_BuildString("' ~  fmt ~ '"', callList, ');'
+            print '  __MOLD_BuildString(', dstForCall, ', "' ~  fmt ~ '"', callList, ');'
           else
             print '  __MOLD_PrintFormat("' ~ fmt ~  '!"', callList, ');'
           endif
