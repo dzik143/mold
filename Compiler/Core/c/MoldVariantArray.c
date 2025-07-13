@@ -310,7 +310,6 @@ void __MOLD_VariantStoreAtIndex_variant(Variant_t *box,
   ASSERT_VARIANT_PTR_ARRAY(box);
   ASSERT_VARIANT_PTR_ANY(value);
 
-  // TODO: Handle VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE?
   Buffer_t *buf   = box -> valueAsBufferPtr;
   Array_t  *array = (Array_t *) buf -> bytesPtr;
 

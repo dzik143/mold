@@ -75,10 +75,9 @@ typedef struct Variant
 #define VARIANT_OBJECT    9
 #define VARIANT_TYPE_MAX  9
 
-#define VARIANT_FLAG_DUPLICATE_ON_FIRST_WRITE 1
-#define VARIANT_FLAG_ONE_CHARACTER            2
+#define VARIANT_FLAG_ONE_CHARACTER 1
 // Used to avoid circular references during print.
-#define VARIANT_FLAG_NODE_VISITED             4
+#define VARIANT_FLAG_NODE_VISITED  2
 
 // Size in Variant_t objects.
 #define MOLD_DEFAULT_STACK_SIZE (1024 * 64)
