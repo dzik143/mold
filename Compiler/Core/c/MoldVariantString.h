@@ -36,8 +36,8 @@ void __MOLD_VariantStringJoin(Variant_t *dst,
                               const Variant_t *x,
                               const Variant_t *y);
 
-bool32_t __MOLD_cmp_eq_string(const Variant_t *x, const Variant_t *y);
-bool32_t __MOLD_cmp_ne_string(const Variant_t *x, const Variant_t *y);
+bool32_t __MOLD_cmp_eq_string(Variant_t *x, const Variant_t *y);
+bool32_t __MOLD_cmp_ne_string(Variant_t *x, const Variant_t *y);
 
 Variant_t __MOLD_Str(Variant_t *x);
 

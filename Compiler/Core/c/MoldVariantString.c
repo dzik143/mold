@@ -97,7 +97,7 @@ void __MOLD_VariantStringRelease(Variant_t *x)
 //   0 otherwise.
 // -----------------------------------------------------------------------------
 
-bool32_t __MOLD_cmp_eq_string(const Variant_t *x, const Variant_t *y)
+bool32_t __MOLD_cmp_eq_string(Variant_t *x, const Variant_t *y)
 {
   ASSERT_VARIANT_PTR_STRING(x);
   ASSERT_VARIANT_PTR_STRING(y);
@@ -151,6 +151,22 @@ bool32_t __MOLD_cmp_eq_string(const Variant_t *x, const Variant_t *y)
     }
   }
 
+  // Handle false unequal case:
+  // - strings points to the different buffers,
+  // - but buffer contents are the same.
+  // Normalize strings to use the same buffer and avoid false unequal
+  // in the further calls (if any).
+  if (rv && (x -> valueAsInt64 != y -> valueAsInt64)) {
+    // Possible improvement: Choose more compact string if possible?
+    // Make x to use the same buffer as y (shallow copy).
+    // Possible improvement: Avoid type case.
+    __MOLD_VariantAddRef((Variant_t *) y);
+    // TODO: Review it - Why we attempt to release x twice when below
+    // line uncommented?
+    // __MOLD_VariantStringRelease(x);
+    memcpy(x, y, sizeof(Variant_t));
+  }
+
   return rv;
 }
 
@@ -169,7 +185,7 @@ bool32_t __MOLD_cmp_eq_string(const Variant_t *x, const Variant_t *y)
 //   0 otherwise.
 // -----------------------------------------------------------------------------
 
-bool32_t __MOLD_cmp_ne_string(const Variant_t *x, const Variant_t *y)
+bool32_t __MOLD_cmp_ne_string(Variant_t *x, const Variant_t *y)
 {
   return !__MOLD_cmp_eq_string(x, y);
 }

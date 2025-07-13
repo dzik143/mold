@@ -131,8 +131,9 @@ static MapBucket_t *__MOLD_FindMapBucketByKey(const Variant_t *box,
   //
   // Note: See hash key collision algorithm: "open address".
 
+  // Possible improvement: Avoid type case?
   while ((bucket -> key.type != VARIANT_UNDEFINED) &&
-         (!__MOLD_cmp_eq_string(key, &bucket -> key)))
+         (!__MOLD_cmp_eq_string((Variant_t *) key, &bucket -> key)))
   {
     bucketIdx = (bucketIdx + 1) % map -> bucketsCnt;
     bucket    = &(map -> buckets[bucketIdx]);

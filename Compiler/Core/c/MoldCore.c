@@ -448,7 +448,8 @@ bool32_t __MOLD_cmp_eq_variant(const Variant_t *x, const Variant_t *y)
 
   if (x -> type == VARIANT_STRING)
   {
-    rv = __MOLD_cmp_eq_string(x, y);
+    // Possible improvement: Avoid type case?
+    rv = __MOLD_cmp_eq_string((Variant_t *) x, y);
   }
   else
   {
