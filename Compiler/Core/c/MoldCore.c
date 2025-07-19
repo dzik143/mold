@@ -22,6 +22,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <inttypes.h>
+#include <time.h>
 
 #include "MoldCore.h"
 #include "MoldError.h"
@@ -742,6 +743,8 @@ void __MOLD_SysCall(uint32_t id, Variant_t *rv, ...)
 
     case 55: __MOLD_SubStrAndAssign(rv,x,y,z); break;
     case 57: __MOLD_GetTypeIdAndAssign(rv,x); break;
+
+    case 99: __MOLD_VariantAssign_int64(rv, clock() * 1000 / CLOCKS_PER_SEC); break;
 
     default:
     {
