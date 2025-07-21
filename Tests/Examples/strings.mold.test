@@ -147,6 +147,40 @@ EXPECTED_OUTPUT:
 abc|abc|abc|abc|abc|abc|
 -------------------------------------------------------------------------------
 
+TEST "Concatenation #9: mixed empty/single/multi"
+
+x0 = ''
+x1 = 'x'
+xn = 'XX'
+
+y0 = ''
+y1 = 'y'
+yn = 'YY'
+
+print 'empty  ~ empty  ->', x0 ~ y0, '(', len(x0 ~ y0), ')'
+print 'empty  ~ single ->', x0 ~ y1, '(', len(x0 ~ y1), ')'
+print 'empty  ~ multi  ->', x0 ~ yn, '(', len(x0 ~ yn), ')'
+
+print 'single ~ empty  ->', x1 ~ y0, '(', len(x1 ~ y0), ')'
+print 'single ~ single ->', x1 ~ y1, '(', len(x1 ~ y1), ')'
+print 'single ~ multi  ->', x1 ~ yn, '(', len(x1 ~ yn), ')'
+
+print 'multi  ~ empty  ->', xn ~ y0,  '(', len(xn ~ y0), ')'
+print 'multi  ~ single ->', xn ~ y1,  '(', len(xn ~ y1), ')'
+print 'multi  ~ multi  ->', xn ~ yn,  '(', len(xn ~ yn), ')'
+
+EXPECTED_OUTPUT:
+empty  ~ empty  ->  ( 0 )
+empty  ~ single -> y ( 1 )
+empty  ~ multi  -> YY ( 2 )
+single ~ empty  -> x ( 1 )
+single ~ single -> xy ( 2 )
+single ~ multi  -> xYY ( 3 )
+multi  ~ empty  -> XX ( 2 )
+multi  ~ single -> XXy ( 3 )
+multi  ~ multi  -> XXYY ( 4 )
+-------------------------------------------------------------------------------
+
 TEST "Embedded single quata withing double quoatas"
 print "'"
 
@@ -190,6 +224,21 @@ print x
 
 EXPECTED_OUTPUT:
 a
+-------------------------------------------------------------------------------
+
+TEST "Character access: one-char string at non 0 index"
+
+x = 'a'
+print 'x[0]        =', x[0]
+print 'x[1]        =', x[1]
+print 'x[2]        =', x[2]
+print 'x[12345678] =', x[12345678]
+
+EXPECTED_OUTPUT:
+x[0]        = a
+x[1]        = undefined
+x[2]        = undefined
+x[12345678] = undefined
 -------------------------------------------------------------------------------
 
 TEST "Character access: empty string"
@@ -635,6 +684,19 @@ foo(`x is ${x}`)
 EXPECTED_OUTPUT:
 foo( x is 1234 )
 -------------------------------------------------------------------------------
+
+TEST "Mix ordinary strings and format strings in single print"
+
+function foo(x, y)
+  print '(', `[${x}] o [${y}]`, ')'
+endfunction
+
+foo('xxx', 'yyy')
+
+EXPECTED_OUTPUT:
+( [xxx] o [yyy] )
+-------------------------------------------------------------------------------
+
 TEST "Unterminated ${...} placeholder"
 
 x = 1234
@@ -658,4 +720,309 @@ print `${y}`
 
 EXPECTED_ERROR:
 ./temp/source.mold:2:13: error: 'y' was not declared in this scope
+-------------------------------------------------------------------------------
+
+TEST "Bug: Release string twice after false unequal optimization"
+
+arr = [ ]
+
+# Enclose concatenation inside function to avoid constant folding.
+function insertToArray(arr, x, y)
+  arr[@afterlast] = x ~ y
+endfunction
+
+# Build single character strings dynamically.
+insertToArray(arr, '', 'a')
+insertToArray(arr, '', 'b')
+insertToArray(arr, '', 'c')
+
+if arr[0] is 'a'
+  print 'bingo1!'
+endif
+
+# Compare with one character literals inside loop.
+for values x in arr
+  if x is 'a'
+    print 'bingo2!'
+  endif
+endfor
+
+# Compare once again, becase strings might be optimized after the first
+# false unequal comparison.
+for values x in arr
+  if x is 'a'
+    print 'bingo3!'
+  endif
+endfor
+
+EXPECTED_OUTPUT:
+bingo1!
+bingo2!
+bingo3!
+-------------------------------------------------------------------------------
+
+TEST "built-in substring"
+
+function foo(x)
+  for startIdx in -2 .. 5
+    for length in -2 .. 5
+      # TODO: Change to str(x).substr(...) like call if ready.
+      result = __mold_syscall(55, x, startIdx, length)
+      print `substr('${x}', ${startIdx}, ${length}) = '${result}'`
+    endfor
+  endfor
+endfunction
+
+foo('')
+foo('a')
+foo('cd')
+foo('efg')
+foo('0123456789abcdef')
+
+EXPECTED_OUTPUT:
+substr('', -2, -2) = ''
+substr('', -2, -1) = ''
+substr('', -2, 0) = ''
+substr('', -2, 1) = ''
+substr('', -2, 2) = ''
+substr('', -2, 3) = ''
+substr('', -2, 4) = ''
+substr('', -1, -2) = ''
+substr('', -1, -1) = ''
+substr('', -1, 0) = ''
+substr('', -1, 1) = ''
+substr('', -1, 2) = ''
+substr('', -1, 3) = ''
+substr('', -1, 4) = ''
+substr('', 0, -2) = ''
+substr('', 0, -1) = ''
+substr('', 0, 0) = ''
+substr('', 0, 1) = ''
+substr('', 0, 2) = ''
+substr('', 0, 3) = ''
+substr('', 0, 4) = ''
+substr('', 1, -2) = ''
+substr('', 1, -1) = ''
+substr('', 1, 0) = ''
+substr('', 1, 1) = ''
+substr('', 1, 2) = ''
+substr('', 1, 3) = ''
+substr('', 1, 4) = ''
+substr('', 2, -2) = ''
+substr('', 2, -1) = ''
+substr('', 2, 0) = ''
+substr('', 2, 1) = ''
+substr('', 2, 2) = ''
+substr('', 2, 3) = ''
+substr('', 2, 4) = ''
+substr('', 3, -2) = ''
+substr('', 3, -1) = ''
+substr('', 3, 0) = ''
+substr('', 3, 1) = ''
+substr('', 3, 2) = ''
+substr('', 3, 3) = ''
+substr('', 3, 4) = ''
+substr('', 4, -2) = ''
+substr('', 4, -1) = ''
+substr('', 4, 0) = ''
+substr('', 4, 1) = ''
+substr('', 4, 2) = ''
+substr('', 4, 3) = ''
+substr('', 4, 4) = ''
+substr('a', -2, -2) = ''
+substr('a', -2, -1) = ''
+substr('a', -2, 0) = ''
+substr('a', -2, 1) = ''
+substr('a', -2, 2) = ''
+substr('a', -2, 3) = ''
+substr('a', -2, 4) = ''
+substr('a', -1, -2) = ''
+substr('a', -1, -1) = ''
+substr('a', -1, 0) = ''
+substr('a', -1, 1) = ''
+substr('a', -1, 2) = ''
+substr('a', -1, 3) = ''
+substr('a', -1, 4) = ''
+substr('a', 0, -2) = 'a'
+substr('a', 0, -1) = 'a'
+substr('a', 0, 0) = ''
+substr('a', 0, 1) = 'a'
+substr('a', 0, 2) = 'a'
+substr('a', 0, 3) = 'a'
+substr('a', 0, 4) = 'a'
+substr('a', 1, -2) = ''
+substr('a', 1, -1) = ''
+substr('a', 1, 0) = ''
+substr('a', 1, 1) = ''
+substr('a', 1, 2) = ''
+substr('a', 1, 3) = ''
+substr('a', 1, 4) = ''
+substr('a', 2, -2) = ''
+substr('a', 2, -1) = ''
+substr('a', 2, 0) = ''
+substr('a', 2, 1) = ''
+substr('a', 2, 2) = ''
+substr('a', 2, 3) = ''
+substr('a', 2, 4) = ''
+substr('a', 3, -2) = ''
+substr('a', 3, -1) = ''
+substr('a', 3, 0) = ''
+substr('a', 3, 1) = ''
+substr('a', 3, 2) = ''
+substr('a', 3, 3) = ''
+substr('a', 3, 4) = ''
+substr('a', 4, -2) = ''
+substr('a', 4, -1) = ''
+substr('a', 4, 0) = ''
+substr('a', 4, 1) = ''
+substr('a', 4, 2) = ''
+substr('a', 4, 3) = ''
+substr('a', 4, 4) = ''
+substr('cd', -2, -2) = ''
+substr('cd', -2, -1) = ''
+substr('cd', -2, 0) = ''
+substr('cd', -2, 1) = ''
+substr('cd', -2, 2) = ''
+substr('cd', -2, 3) = ''
+substr('cd', -2, 4) = ''
+substr('cd', -1, -2) = ''
+substr('cd', -1, -1) = ''
+substr('cd', -1, 0) = ''
+substr('cd', -1, 1) = ''
+substr('cd', -1, 2) = ''
+substr('cd', -1, 3) = ''
+substr('cd', -1, 4) = ''
+substr('cd', 0, -2) = 'cd'
+substr('cd', 0, -1) = 'cd'
+substr('cd', 0, 0) = ''
+substr('cd', 0, 1) = 'c'
+substr('cd', 0, 2) = 'cd'
+substr('cd', 0, 3) = 'cd'
+substr('cd', 0, 4) = 'cd'
+substr('cd', 1, -2) = 'd'
+substr('cd', 1, -1) = 'd'
+substr('cd', 1, 0) = ''
+substr('cd', 1, 1) = 'd'
+substr('cd', 1, 2) = 'd'
+substr('cd', 1, 3) = 'd'
+substr('cd', 1, 4) = 'd'
+substr('cd', 2, -2) = ''
+substr('cd', 2, -1) = ''
+substr('cd', 2, 0) = ''
+substr('cd', 2, 1) = ''
+substr('cd', 2, 2) = ''
+substr('cd', 2, 3) = ''
+substr('cd', 2, 4) = ''
+substr('cd', 3, -2) = ''
+substr('cd', 3, -1) = ''
+substr('cd', 3, 0) = ''
+substr('cd', 3, 1) = ''
+substr('cd', 3, 2) = ''
+substr('cd', 3, 3) = ''
+substr('cd', 3, 4) = ''
+substr('cd', 4, -2) = ''
+substr('cd', 4, -1) = ''
+substr('cd', 4, 0) = ''
+substr('cd', 4, 1) = ''
+substr('cd', 4, 2) = ''
+substr('cd', 4, 3) = ''
+substr('cd', 4, 4) = ''
+substr('efg', -2, -2) = ''
+substr('efg', -2, -1) = ''
+substr('efg', -2, 0) = ''
+substr('efg', -2, 1) = ''
+substr('efg', -2, 2) = ''
+substr('efg', -2, 3) = ''
+substr('efg', -2, 4) = ''
+substr('efg', -1, -2) = ''
+substr('efg', -1, -1) = ''
+substr('efg', -1, 0) = ''
+substr('efg', -1, 1) = ''
+substr('efg', -1, 2) = ''
+substr('efg', -1, 3) = ''
+substr('efg', -1, 4) = ''
+substr('efg', 0, -2) = 'efg'
+substr('efg', 0, -1) = 'efg'
+substr('efg', 0, 0) = ''
+substr('efg', 0, 1) = 'e'
+substr('efg', 0, 2) = 'ef'
+substr('efg', 0, 3) = 'efg'
+substr('efg', 0, 4) = 'efg'
+substr('efg', 1, -2) = 'fg'
+substr('efg', 1, -1) = 'fg'
+substr('efg', 1, 0) = ''
+substr('efg', 1, 1) = 'f'
+substr('efg', 1, 2) = 'fg'
+substr('efg', 1, 3) = 'fg'
+substr('efg', 1, 4) = 'fg'
+substr('efg', 2, -2) = 'g'
+substr('efg', 2, -1) = 'g'
+substr('efg', 2, 0) = ''
+substr('efg', 2, 1) = 'g'
+substr('efg', 2, 2) = 'g'
+substr('efg', 2, 3) = 'g'
+substr('efg', 2, 4) = 'g'
+substr('efg', 3, -2) = ''
+substr('efg', 3, -1) = ''
+substr('efg', 3, 0) = ''
+substr('efg', 3, 1) = ''
+substr('efg', 3, 2) = ''
+substr('efg', 3, 3) = ''
+substr('efg', 3, 4) = ''
+substr('efg', 4, -2) = ''
+substr('efg', 4, -1) = ''
+substr('efg', 4, 0) = ''
+substr('efg', 4, 1) = ''
+substr('efg', 4, 2) = ''
+substr('efg', 4, 3) = ''
+substr('efg', 4, 4) = ''
+substr('0123456789abcdef', -2, -2) = ''
+substr('0123456789abcdef', -2, -1) = ''
+substr('0123456789abcdef', -2, 0) = ''
+substr('0123456789abcdef', -2, 1) = ''
+substr('0123456789abcdef', -2, 2) = ''
+substr('0123456789abcdef', -2, 3) = ''
+substr('0123456789abcdef', -2, 4) = ''
+substr('0123456789abcdef', -1, -2) = ''
+substr('0123456789abcdef', -1, -1) = ''
+substr('0123456789abcdef', -1, 0) = ''
+substr('0123456789abcdef', -1, 1) = ''
+substr('0123456789abcdef', -1, 2) = ''
+substr('0123456789abcdef', -1, 3) = ''
+substr('0123456789abcdef', -1, 4) = ''
+substr('0123456789abcdef', 0, -2) = '0123456789abcdef'
+substr('0123456789abcdef', 0, -1) = '0123456789abcdef'
+substr('0123456789abcdef', 0, 0) = ''
+substr('0123456789abcdef', 0, 1) = '0'
+substr('0123456789abcdef', 0, 2) = '01'
+substr('0123456789abcdef', 0, 3) = '012'
+substr('0123456789abcdef', 0, 4) = '0123'
+substr('0123456789abcdef', 1, -2) = '123456789abcdef'
+substr('0123456789abcdef', 1, -1) = '123456789abcdef'
+substr('0123456789abcdef', 1, 0) = ''
+substr('0123456789abcdef', 1, 1) = '1'
+substr('0123456789abcdef', 1, 2) = '12'
+substr('0123456789abcdef', 1, 3) = '123'
+substr('0123456789abcdef', 1, 4) = '1234'
+substr('0123456789abcdef', 2, -2) = '23456789abcdef'
+substr('0123456789abcdef', 2, -1) = '23456789abcdef'
+substr('0123456789abcdef', 2, 0) = ''
+substr('0123456789abcdef', 2, 1) = '2'
+substr('0123456789abcdef', 2, 2) = '23'
+substr('0123456789abcdef', 2, 3) = '234'
+substr('0123456789abcdef', 2, 4) = '2345'
+substr('0123456789abcdef', 3, -2) = '3456789abcdef'
+substr('0123456789abcdef', 3, -1) = '3456789abcdef'
+substr('0123456789abcdef', 3, 0) = ''
+substr('0123456789abcdef', 3, 1) = '3'
+substr('0123456789abcdef', 3, 2) = '34'
+substr('0123456789abcdef', 3, 3) = '345'
+substr('0123456789abcdef', 3, 4) = '3456'
+substr('0123456789abcdef', 4, -2) = '456789abcdef'
+substr('0123456789abcdef', 4, -1) = '456789abcdef'
+substr('0123456789abcdef', 4, 0) = ''
+substr('0123456789abcdef', 4, 1) = '4'
+substr('0123456789abcdef', 4, 2) = '45'
+substr('0123456789abcdef', 4, 3) = '456'
+substr('0123456789abcdef', 4, 4) = '4567'
 -------------------------------------------------------------------------------

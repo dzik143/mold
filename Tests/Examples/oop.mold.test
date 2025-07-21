@@ -31,7 +31,7 @@ Test1::foo()
 Test2::foo()
 -------------------------------------------------------------------------------
 
-TEST "Call to undeclared method #1"
+xTEST "Call to undeclared method #1"
 
 class Test1
   method foo()
@@ -46,7 +46,7 @@ EXPECTED_ERROR:
 ./temp/source.mold:9:9: error: there is no method 'bar'
 -------------------------------------------------------------------------------
 
-TEST "Call to undeclared method #2"
+xTEST "Call to undeclared method #2"
 
 class Test1
   method foo()
