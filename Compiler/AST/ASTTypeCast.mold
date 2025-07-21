@@ -115,14 +115,14 @@ class ASTTypeCast
           # TODO: Better error handler.
           # TODO: Handle error at compilation time if possible.
           if xType is -1
-            # concrete x variant
-            this._debug('Type mismatch at arithmetic expression node #' ~ str(node.id) ~ ' (' ~ str(xType) ~ ' vs ' ~ str(yType) ~ ')')
-            children[1] = AST_TypeCast(y, xType)
+            # concrete x variant -> variant x variant
+            this._debug('Type mismatch at arithmetic expression node #' ~ str(node.id) ~ ' (' ~ str(xType) ~ ' vs ' ~ str(yType) ~ ') (use left type)')
+            children[1] = AST_TypeCast(y, -1)
 
           elif yType is -1
-            # variant x concrete
-            this._debug('Type mismatch at arithmetic expression node #' ~ str(node.id) ~ ' (' ~ str(xType) ~ ' vs ' ~ str(yType) ~ ')')
-            children[0] = AST_TypeCast(x, yType)
+            # variant x concrete -> variant x variant
+            this._debug('Type mismatch at arithmetic expression node #' ~ str(node.id) ~ ' (' ~ str(xType) ~ ' vs ' ~ str(yType) ~ ') (use right type)')
+            children[0] = AST_TypeCast(x, -1)
 
           else
             die('runtime error: implicit type conversion not supported anymore')
