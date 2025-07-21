@@ -216,7 +216,9 @@ void __MOLD_VariantLoadFromIndexAndAssign(Variant_t *rv,
       if (box -> flags & VARIANT_FLAG_ONE_CHARACTER)
       {
         // One character string - just return itself.
-        memcpy(rv, box, sizeof(Variant_t));
+        if (idx == 0) {
+          memcpy(rv, box, sizeof(Variant_t));
+        }
       }
       else
       {
