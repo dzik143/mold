@@ -56,7 +56,8 @@ class ASTOptimizerConstantFolding
       newOpcode = AST_DATA_DOUBLE
 
     elif value is string
-      newOpcode = AST_DATA_STRING
+      newOpcode      = AST_DATA_STRING
+      dst.symbolInfo = this.globals.insertLiteral(value)
 
     elif value is undefined
       newOpcode = AST_DATA_UNDEFINED
