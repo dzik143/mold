@@ -25,7 +25,7 @@ const MOLD_SYSCALL_ZERO_ARGS = 0x0000
 const MOLD_SYSCALL_ONE_ARG   = 0x1000
 const MOLD_SYSCALL_TWO_ARGS  = 0x2000
 
-USE_AST_OPCODE_BUILD_STRING = false
+USE_AST_OPCODE_BUILD_STRING = true
 
 MOLD_SYSCALL_MAP = {
   'FileOpenForRead':   MOLD_SYSCALL_ONE_ARG + 1,
@@ -507,7 +507,9 @@ class ASTPreprocessor
             if oneChar is '{'
               # The beginning of ${...} placeholder.
               # Flush already accumulated raw string.
-              tokenNodes[@afterlast] = AST_CreateNode(AST_DATA_STRING, currentToken, [])
+              if len(currentToken) > 0
+                tokenNodes[@afterlast] = AST_CreateNode(AST_DATA_STRING, currentToken, [])
+              endif
 
               # Update scanner state.
               isFmtMatched = true
