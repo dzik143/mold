@@ -35,9 +35,12 @@ typedef struct {
   uint32_t  dataSizeUsed;
   uint32_t  dataSizeFreed;
 
+  // TODO: Clean up this mess.
   uint32_t *itemOffsets;
   uint32_t  itemOffsetsUsed;
   uint32_t *itemSizes;
+  uint32_t *itemDiscardedIndexes;
+  uint32_t  itemDiscardedIndexesSize;
    int32_t *itemRefCounters;
 
   uint32_t  isWriting;

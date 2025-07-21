@@ -120,10 +120,14 @@ void __MOLD_MemoryPool_init(MoldMemoryPool_t *mmp) {
   mmp -> dataSizeFreed     = 0;
   mmp -> isWriting         = 0;
 
+  // TODO: Clean up this mess.
   mmp -> itemOffsets     = (uint32_t *) calloc(_g_defaultItemsCnt * sizeof(uint32_t), 1);
   mmp -> itemOffsetsUsed = 0;
   mmp -> itemSizes       = (uint32_t *) calloc(_g_defaultItemsCnt * sizeof(uint32_t), 1);
-  mmp -> itemRefCounters =  (int32_t *) calloc(_g_defaultItemsCnt * sizeof(uint32_t), 1);
+  mmp -> itemRefCounters = (int32_t *)  calloc(_g_defaultItemsCnt * sizeof(uint32_t), 1);
+
+  mmp -> itemDiscardedIndexes     = (uint32_t *) calloc(_g_defaultItemsCnt * sizeof(uint32_t), 1);
+  mmp -> itemDiscardedIndexesSize = 0;
 }
 
 void __MOLD_MemoryPool_addRef(MoldMemoryPool_t *mmp, uint32_t idx) {
@@ -189,12 +193,16 @@ uint32_t __MOLD_MemoryPool_create(MoldMemoryPool_t *mmp) {
   // TODO: Optimize it.
   uint32_t newId = 0;
 
-  while (mmp -> itemRefCounters[newId] != 0) {
-    assert(newId < _g_defaultItemsCnt);
-    newId++;
-  }
+  if (mmp -> itemDiscardedIndexesSize > 0) {
+    newId = mmp -> itemDiscardedIndexes[mmp -> itemDiscardedIndexesSize - 1];
+    mmp -> itemDiscardedIndexesSize--;
+    // printf("// Reuse discarded slot %d\n", newId);
 
-  mmp -> itemOffsetsUsed = MAX(mmp -> itemOffsetsUsed, newId + 1);
+  } else {
+    newId = mmp -> itemOffsetsUsed;
+    mmp -> itemOffsetsUsed++;
+    // printf("// Created new slot %d\n", newId);
+  }
 
   // printf("// [ MoldMemoryPool ] Create %d\n", newId);
 
@@ -242,11 +250,10 @@ void __MOLD_MemoryPool_print(MoldMemoryPool_t *mmp, uint32_t idx, FILE *f) {
 void __MOLD_MemoryPool_discard(MoldMemoryPool_t *mmp, uint32_t idx) {
   // TODO: Simplify it (don't duplicate size field?).
   // printf("[ MoldMemoryPool ] discard %d\n", idx);
-
-  memset(mmp -> data + mmp -> itemOffsets[idx], 'X', mmp -> itemSizes[idx]);
-
+  // memset(mmp -> data + mmp -> itemOffsets[idx], 'X', mmp -> itemSizes[idx]);
   mmp -> itemOffsets[idx] = 0;
   mmp -> itemSizes[idx]   = 0;
+  mmp -> itemDiscardedIndexes[mmp -> itemDiscardedIndexesSize++] = idx;
 }
 
 void __MOLD_MemoryPool_join(MoldMemoryPool_t *mmp, uint32_t idxDst, uint32_t idxSrc) {
