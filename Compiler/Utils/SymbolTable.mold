@@ -573,8 +573,17 @@ class SymbolTable
       'kind': SYMBOL_KIND_CONST,
       'value': value
     }
-    this.insert(name, newEntry)
+
+    # TODO: More general solution here?
+    if name is string
+      newEntry.type = 'string'
+    endif
+
     this.globalTable.insert(name, newEntry)
+
+    if this.globalTable isnt this
+      this.insert(name, newEntry)
+    endif
   endmethod
 
   method insertLiteral(text) -> literalEntry
