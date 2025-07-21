@@ -1,0 +1,19 @@
+TYPE  = SIMPLE_LIBRARY
+TITLE = LibMold
+
+ISRC  = Mold.h MoldCore.h MoldForDriver.h MoldMemory.h MoldVariantString.h
+ISRC += MoldVariantArray.h MoldVariantMap.h MoldVariantObject.h MoldError.h
+ISRC += MoldPrint.h
+ISRC += memory/MoldMemoryCore.h
+ISRC += memory/MoldMemoryPool.h
+ISRC += memory/MoldString.h
+
+CSRC  = MoldCore.c MoldForDriver.c MoldMemory.c MoldVariantArray.c
+CSRC += MoldVariantString.c MoldVariantMap.c MoldVariantObject.c MoldError.c
+CSRC += MoldPrint.c
+
+CSRC += memory/MoldMemoryCore.c
+CSRC += memory/MoldMemoryPool.c
+CSRC += memory/MoldString.c
+
+DEFINES = -Werror -Wall -Wno-strict-aliasing -O3
