@@ -137,8 +137,9 @@ class CodeGeneratorC
     this.isBufferEmitted     = {}
 
     # TODO: Build literals map at earlier stage?
-    this.literals = {}
-    this.nextLiteralId = 0
+    this.literals = { }
+    # Reserve 0-255 range for single characters.
+    this.nextLiteralId = 256
   endmethod
 
   method _escapeString(text) -> rv
@@ -275,10 +276,15 @@ class CodeGeneratorC
       print '  { VARIANT_DOUBLE, 0, valueAsFloat64:', value, '}'
 
     elif value is string
-      # TODO: Handle optimized 1 char strings?
       # TODO: Handle building literals map at the earlier stage?
-      if len(value) is 1
-        print '  { VARIANT_STRING, VARIANT_FLAG_ONE_CHARACTER,', ord(value), ' }'
+      if len(value) is 0
+        # Always map empty string to ID 0.
+        print '  { VARIANT_STRING, 0, 0 }'
+
+      elif len(value) is 1
+        # TODO: Review it.
+        # TODO: Better way to distinguish single character?
+        print '  { VARIANT_STRING, 0,', ord(value), ' }'
 
       else
         literalId = this.literals{value}
@@ -693,8 +699,8 @@ class CodeGeneratorC
 
     # Emit literals.
     print 'const char __literals[] ='
-    for keys text in this.literals
-      print '  "' ~ this._escapeString(text) ~ '\0"'
+    for keys text values id in this.literals
+      print '  "' ~ this._escapeString(text) ~ '\0"', '//', id
     endfor
     # TODO: Better way to distinguish:
     # - string separator vs end of list.
