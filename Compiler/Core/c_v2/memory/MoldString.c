@@ -29,6 +29,22 @@
 // Store all strings within one memory pool.
 static MoldMemoryPool_t _g_memPool = { 0 };
 
+static void __MOLD_String_setFromCString(MoldStringId_t id, const char *text, int32_t len) {
+  // Calculate string length if caller doesn't pass the own one.
+  if (len < 0) {
+    len = strlen(text);
+  }
+
+  // Copy string content to new allocated buffer.
+  // Hide inside helper call?
+  if (len > 0) {
+    char *ptr = __MOLD_MemoryPool_beginWrite(&_g_memPool, id);
+    memcpy(ptr, text, len);
+    ptr += len;
+    __MOLD_MemoryPool_commit(&_g_memPool, id, ptr);
+  }
+}
+
 void __MOLD_String_init() {
   __MOLD_MemoryPool_init(&_g_memPool);
 }
@@ -51,22 +67,6 @@ uint32_t __MOLD_String_importLiterals(const char *literals) {
   return baseId;
 }
 
-void __MOLD_String_setFromCString(MoldStringId_t id, const char *text, int32_t len) {
-  // Calculate string length if caller doesn't pass the own one.
-  if (len < 0) {
-    len = strlen(text);
-  }
-
-  // Copy string content to new allocated buffer.
-  // Hide inside helper call?
-  if (len > 0) {
-    char *ptr = __MOLD_MemoryPool_beginWrite(&_g_memPool, id);
-    memcpy(ptr, text, len);
-    ptr += len;
-    __MOLD_MemoryPool_commit(&_g_memPool, id, ptr);
-  }
-}
-
 MoldStringId_t __MOLD_String_createFromCString(const char *text, int32_t len) {
   // Create new memory buffer.
   MoldStringId_t newId = __MOLD_MemoryPool_create(&_g_memPool);
@@ -78,37 +78,53 @@ MoldStringId_t __MOLD_String_createFromCString(const char *text, int32_t len) {
   __MOLD_String_setFromCString(newId, text, len);
 
   // Return buffer id to the caller.
-  return newId;
+  return ENCODE_STRING_ID(newId);
 }
 
-void __MOLD_String_join(MoldStringId_t id1, MoldStringId_t id2) {
+void __MOLD_String_join(MoldStringId_t encodedId1, MoldStringId_t encodedId2) {
+  ASSERT_ENCODED_STRING_ID(encodedId1);
+  ASSERT_ENCODED_STRING_ID(encodedId2);
+  MoldStringId_t id1 = DECODE_STRING_ID(encodedId1);
+  MoldStringId_t id2 = DECODE_STRING_ID(encodedId2);
+
   __MOLD_MemoryPool_join(&_g_memPool, id1, id2);
 }
 
-MoldStringId_t __MOLD_String_join3(MoldStringId_t x, MoldStringId_t y) {
+MoldStringId_t __MOLD_String_join3(MoldStringId_t encodedX, MoldStringId_t encodedY) {
   // TODO: Optimize it.
   // printf("[ MoldString] enter join3(%d, %d)\n", x, y);
   // __MOLD_String_dumpAll();
 
+  ASSERT_ENCODED_STRING_ID(encodedX);
+  ASSERT_ENCODED_STRING_ID(encodedY);
+
   MoldStringId_t dst = __MOLD_MemoryPool_create(&_g_memPool);
-  __MOLD_String_join(dst, x);
-  __MOLD_String_join(dst, y);
+  MoldStringId_t encodedDst = ENCODE_STRING_ID(dst);
+
+  __MOLD_String_join(encodedDst, encodedX);
+  __MOLD_String_join(encodedDst, encodedY);
 
   // __MOLD_String_dumpAll();
   // printf("[ MoldString] leave join3(%d, %d)\n", x, y);
-  return dst;
+  return encodedDst;
 }
 
-void __MOLD_String_print(FILE *f, MoldStringId_t id) {
+void __MOLD_String_print(FILE *f, MoldStringId_t encodedId) {
+  ASSERT_ENCODED_STRING_ID(encodedId);
+  MoldStringId_t id = DECODE_STRING_ID(encodedId);
   __MOLD_MemoryPool_print(&_g_memPool, id, f);
 }
 
-const char *__MOLD_String_getText(MoldStringId_t id) {
+const char *__MOLD_String_getText(MoldStringId_t encodedId) {
   // TODO: Match beginXxx with endXxx ?
+  ASSERT_ENCODED_STRING_ID(encodedId);
+  MoldStringId_t id = DECODE_STRING_ID(encodedId);
   return __MOLD_MemoryPool_beginRead(&_g_memPool, id);
 }
 
-uint32_t __MOLD_String_getLength(MoldStringId_t id) {
+uint32_t __MOLD_String_getLength(MoldStringId_t encodedId) {
+  ASSERT_ENCODED_STRING_ID(encodedId);
+  MoldStringId_t id = DECODE_STRING_ID(encodedId);
   return __MOLD_MemoryPool_getLength(&_g_memPool, id);
 }
 
@@ -116,18 +132,31 @@ void __MOLD_String_dumpAll() {
   __MOLD_MemoryPool_dumpAll(&_g_memPool);
 }
 
-uint32_t __MOLD_String_cmp_eq(MoldStringId_t x, MoldStringId_t y) {
+uint32_t __MOLD_String_cmp_eq(MoldStringId_t encodedX, MoldStringId_t encodedY) {
+  ASSERT_ENCODED_STRING_ID(encodedX);
+  ASSERT_ENCODED_STRING_ID(encodedY);
+
+  MoldStringId_t x = DECODE_STRING_ID(encodedX);
+  MoldStringId_t y = DECODE_STRING_ID(encodedY);
+
   return __MOLD_MemoryPool_cmp_eq(&_g_memPool, x, y);
 }
 
-uint32_t __MOLD_String_substr(MoldStringId_t x, uint32_t idx, int32_t len) {
-  return __MOLD_MemoryPool_copyRegion(&_g_memPool, -1, x, idx, len);
+uint32_t __MOLD_String_substr(MoldStringId_t encodedX, uint32_t idx, int32_t len) {
+  ASSERT_ENCODED_STRING_ID(encodedX);
+  MoldStringId_t x = DECODE_STRING_ID(encodedX);
+  MoldStringId_t newId =  __MOLD_MemoryPool_copyRegion(&_g_memPool, -1, x, idx, len);
+  return ENCODE_STRING_ID(newId);
 }
 
-void __MOLD_String_addRef(MoldStringId_t x) {
+void __MOLD_String_addRef(MoldStringId_t encodedX) {
+  ASSERT_ENCODED_STRING_ID(encodedX);
+  MoldStringId_t x = DECODE_STRING_ID(encodedX);
   __MOLD_MemoryPool_addRef(&_g_memPool, x);
 }
 
-void __MOLD_String_release(MoldStringId_t x) {
+void __MOLD_String_release(MoldStringId_t encodedX) {
+  ASSERT_ENCODED_STRING_ID(encodedX);
+  MoldStringId_t x = DECODE_STRING_ID(encodedX);
   __MOLD_MemoryPool_release(&_g_memPool, x);
 }

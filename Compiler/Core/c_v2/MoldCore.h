@@ -75,13 +75,16 @@ typedef struct Variant
 #define VARIANT_OBJECT    9
 #define VARIANT_TYPE_MAX  9
 
-#define VARIANT_FLAG_ONE_CHARACTER 1
 // Used to avoid circular references during print.
-#define VARIANT_FLAG_NODE_VISITED  2
+#define VARIANT_FLAG_NODE_VISITED  1
 
 // Size in Variant_t objects.
 #define MOLD_DEFAULT_STACK_SIZE (1024 * 64)
 #define MOLD_DEFAULT_STACK_SIZE (1024 * 64)
+
+// String ID-s below this value are treated as one char imm.
+#define MOLD_STRING_ONE_CHAR_THRESHOLD 256
+#define MOLD_STRING_ID_EMPTY           0
 
 // -----------------------------------------------------------------------------
 //                             Global variables

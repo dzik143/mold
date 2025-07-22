@@ -664,7 +664,11 @@ uint64_t __MOLD_Len(const Variant_t *x)
 
     case VARIANT_STRING:
     {
-      if (x -> flags & VARIANT_FLAG_ONE_CHARACTER)
+      if (x -> value == 0)
+      {
+        len = 0;
+      }
+      else if (x -> value < MOLD_STRING_ONE_CHAR_THRESHOLD)
       {
         len = 1;
       }
@@ -781,7 +785,7 @@ Variant_t __MOLD_Typeof(const Variant_t *x)
   Variant_t rv =
   {
     type: VARIANT_STRING,
-    value: typeBaseId + x -> type,
+    value: ENCODE_STRING_ID(typeBaseId + x -> type),
     flags: 0
   };
 
@@ -803,7 +807,7 @@ Variant_t __MOLD_ParseInteger(const Variant_t *x)
     flags: 0
   };
 
-  if (x -> flags & VARIANT_FLAG_ONE_CHARACTER)
+  if (x -> value < MOLD_STRING_ONE_CHAR_THRESHOLD)
   {
     rv.valueAsInt64 = strtol((const char *) &x -> value, NULL, 0);
   }
@@ -838,7 +842,7 @@ float64_t __MOLD_ParseFloat(const Variant_t *x)
 {
   float64_t rv;
 
-  if (x -> flags & VARIANT_FLAG_ONE_CHARACTER)
+  if (x -> value < MOLD_STRING_ONE_CHAR_THRESHOLD)
   {
     rv = atof((const char *) &x -> value);
   }
@@ -869,7 +873,7 @@ Variant_t __MOLD_FileLoad(const Variant_t *path)
 
   char pathRaw[MAX_PATH];
 
-  if (path -> flags & VARIANT_FLAG_ONE_CHARACTER)
+  if (path -> value < MOLD_STRING_ONE_CHAR_THRESHOLD)
   {
     pathRaw[0] = path -> valueAsInt8;
     pathRaw[1] = 0;
@@ -1093,11 +1097,13 @@ void __MOLD_VariantAddRef(const Variant_t *x)
 
 void __MOLD_VariantMove(Variant_t *dst, Variant_t *src)
 {
-  // printf("[ MoldCore ] enter move\n");
-  __MOLD_VariantAddRef(src);
-  __MOLD_VariantDestroy(dst);
-  memcpy(dst, src, sizeof(Variant_t));
-  //printf("[ MoldCore ] leave move\n");
+  if (src != dst) {
+    // printf("[ MoldCore ] enter move\n");
+    __MOLD_VariantAddRef(src);
+    __MOLD_VariantDestroy(dst);
+    memcpy(dst, src, sizeof(Variant_t));
+    //printf("[ MoldCore ] leave move\n");
+  }
 }
 
 // -----------------------------------------------------------------------------

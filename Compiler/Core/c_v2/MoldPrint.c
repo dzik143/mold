@@ -190,10 +190,12 @@ static void __MOLD_PrintVariantInernal(__MOLD_PrintContext_t *ctx, Variant_t *x)
     // ------------------------------------------------------------------------
 
     case VARIANT_STRING: {
-      if (x -> flags & VARIANT_FLAG_ONE_CHARACTER) {
+      if (x -> value < MOLD_STRING_ONE_CHAR_THRESHOLD) {
         // One character string.
         // Just put single char directly.
-        ctx -> writeRawCb(ctx, &x -> valueAsChar, 1);
+        if (x -> valueAsChar) {
+          ctx -> writeRawCb(ctx, &x -> valueAsChar, 1);
+        }
 
       } else {
         // Multicharacter string.

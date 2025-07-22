@@ -214,10 +214,10 @@ void __MOLD_VariantLoadFromIndexAndAssign(Variant_t *rv,
     {
       ASSERT_VARIANT_PTR_STRING(box);
 
-      if (box -> flags & VARIANT_FLAG_ONE_CHARACTER)
+      if (box -> value < MOLD_STRING_ONE_CHAR_THRESHOLD)
       {
         // One character string - just return itself.
-        if (idx == 0) {
+        if ((idx == 0) && (box -> value != 0)) {
           memcpy(rv, box, sizeof(Variant_t));
         }
       }
@@ -231,7 +231,7 @@ void __MOLD_VariantLoadFromIndexAndAssign(Variant_t *rv,
         if (idx < len)
         {
           rv -> type  = VARIANT_STRING;
-          rv -> flags = VARIANT_FLAG_ONE_CHARACTER;
+          rv -> flags = 0;
           rv -> value = text[idx];
         }
       }

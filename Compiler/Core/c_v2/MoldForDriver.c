@@ -138,9 +138,13 @@ void __MOLD_ForDriver_IndexesAndValuesInString(Variant_t *box,
   assert(cb != NULL);
 
   iteratorValue -> type  = VARIANT_STRING;
-  iteratorValue -> flags = VARIANT_FLAG_ONE_CHARACTER;
+  iteratorValue -> flags = 0;
 
-  if (box -> flags & VARIANT_FLAG_ONE_CHARACTER)
+  if (box -> value == 0)
+  {
+   // Empty string - do nothing.
+  }
+  else if (box -> value < MOLD_STRING_ONE_CHAR_THRESHOLD)
   {
     // One character string.
     // Just pass it to caller.

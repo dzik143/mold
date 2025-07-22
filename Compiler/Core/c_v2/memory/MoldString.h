@@ -23,12 +23,14 @@
 #include <stdint.h>
 #include "MoldMemoryPool.h"
 
+#define ASSERT_ENCODED_STRING_ID(x) assert(x >= 256);
+#define ENCODE_STRING_ID(x) ((x) + 256)
+#define DECODE_STRING_ID(x) ((x) - 256)
+
 typedef uint32_t MoldStringId_t;
 
 void     __MOLD_String_init();
 uint32_t __MOLD_String_importLiterals(const char *literals);
-
-void __MOLD_String_setFromCString(MoldStringId_t id, const char *text, int32_t len);
 
 MoldStringId_t __MOLD_String_createFromCString(const char *text, int32_t len);
 

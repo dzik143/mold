@@ -48,7 +48,7 @@ uint32_t __MOLD_hashDJB2(const Variant_t *x)
 
   uint32_t hash = 5381;
 
-  if (x -> flags & VARIANT_FLAG_ONE_CHARACTER)
+  if (x -> value < MOLD_STRING_ONE_CHAR_THRESHOLD)
   {
     // One character string.
     // One hard-coded cycle is needed.

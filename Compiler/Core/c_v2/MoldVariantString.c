@@ -46,7 +46,7 @@ void __MOLD_VariantStringCreateFromCString(Variant_t *rv, const char *text)
   // TODO: Clean up this mess.
   if ((text[0] != 0) && (text[1] == 0)) {
     rv -> type  = VARIANT_STRING;
-    rv -> flags = VARIANT_FLAG_ONE_CHARACTER;
+    rv -> flags = 0;
     rv -> value = text[0];
 
   } else {
@@ -72,7 +72,7 @@ void __MOLD_VariantStringRelease(const Variant_t *x)
   ASSERT_VARIANT_PTR_STRING(x);
 
   // String - possible complex or primitive.
-  if (!(x -> flags & VARIANT_FLAG_ONE_CHARACTER))
+  if (x -> value >= MOLD_STRING_ONE_CHAR_THRESHOLD)
   {
     // Multi-character string.
     // Release the buffer.
@@ -85,7 +85,7 @@ void __MOLD_VariantStringAddRef(const Variant_t *x)
 {
   ASSERT_VARIANT_PTR_STRING(x);
 
-  if (!(x -> flags & VARIANT_FLAG_ONE_CHARACTER))
+  if (x -> value >= MOLD_STRING_ONE_CHAR_THRESHOLD)
   {
     // Multi-character string.
     // Release the buffer.
@@ -149,8 +149,9 @@ bool32_t __MOLD_cmp_eq_string(Variant_t *x, const Variant_t *y)
 
   bool32_t rv = 0;
 
-  /*
-  if (x -> valueAsInt64 == y -> valueAsInt64) {
+  // printf("// -> COMPARE (%lld,%lld)\n", x -> value, y -> value);
+
+  if (x -> value == y -> value) {
     // Both string uses the same buffer or stores the same
     // single character.
     // We still can't say anything if two strings use different
@@ -159,12 +160,10 @@ bool32_t __MOLD_cmp_eq_string(Variant_t *x, const Variant_t *y)
     //
     rv = 1;
   }
-  */
-
-  if (x -> flags & VARIANT_FLAG_ONE_CHARACTER)
+  else if (x -> value < MOLD_STRING_ONE_CHAR_THRESHOLD)
   {
     // CHAR eq ?
-    if (y -> flags & VARIANT_FLAG_ONE_CHARACTER)
+    if (y -> value < MOLD_STRING_ONE_CHAR_THRESHOLD)
     {
       // CHAR eq CHAR
       rv = (x -> value == y -> value);
@@ -174,18 +173,36 @@ bool32_t __MOLD_cmp_eq_string(Variant_t *x, const Variant_t *y)
       // CHAR eq STRING
       const char *yText = __MOLD_String_getText(y -> value);
       uint32_t yLength  = __MOLD_String_getLength(y -> value);
-      rv = (yLength == 1) && (yText[0] == x -> value);
+
+      if (x -> value != 0) {
+        // CHAR eq STRING
+        rv = (yLength == 1) && (yText[0] == x -> value);
+      }
+      else
+      {
+        // EMPTY eq STRING
+        rv = (yLength == 0);
+      }
     }
   }
   else
   {
     // STRING eq ?
-    if (y -> flags & VARIANT_FLAG_ONE_CHARACTER)
+    if (y -> value < MOLD_STRING_ONE_CHAR_THRESHOLD)
     {
       // STRING eq CHAR
       const char *xText = __MOLD_String_getText(x -> value);
       uint32_t xLength  = __MOLD_String_getLength(x -> value);
-      rv = (xLength == 1) && (xText[0] == y -> value);
+
+      if (y -> value != 0) {
+        // STRING eq CHAR
+        rv = (xLength == 1) && (xText[0] == y -> value);
+      }
+      else
+      {
+        // STRING eq EMPTY
+        rv = (xLength == 0);
+      }
     }
     else
     {
@@ -210,7 +227,7 @@ bool32_t __MOLD_cmp_eq_string(Variant_t *x, const Variant_t *y)
     memcpy(x, y, sizeof(Variant_t));
   }
 
-  // printf("// COMPARE(%llx,%llx) -> %d\n", x -> value, y -> value, rv);
+  // printf("// <- COMPARE(%lld,%lld) -> %d\n", x -> value, y -> value, rv);
 
   return rv;
 }
@@ -255,18 +272,18 @@ void __MOLD_VariantStringJoin(Variant_t *dst,
   ASSERT_VARIANT_PTR_STRING(x);
   ASSERT_VARIANT_PTR_STRING(y);
 
-  if ((dst != x) && (dst != y)) {
-    __MOLD_VariantDestroy(dst);
-  }
-
   /*
-  printf("-> STRING JOIN (%lld,%lld,%lld)\n",
+  printf("// -> STRING JOIN (%lld,%lld,%lld)\n",
          dst -> value,
          x   -> value,
          y   -> value);
   */
 
   //__MOLD_String_dumpAll();
+  if ((dst != x) && (dst != y)) {
+    __MOLD_VariantDestroy(dst);
+    memset(dst, 0, sizeof(Variant_t));
+  }
 
   // TODO: Simplify it.
   // TODO: Clean up this mess.
@@ -274,39 +291,61 @@ void __MOLD_VariantStringJoin(Variant_t *dst,
   MoldStringId_t xValue = x -> value;
   MoldStringId_t yValue = y -> value;
 
-  if (x -> flags & VARIANT_FLAG_ONE_CHARACTER) {
-    xValue = __MOLD_String_createFromCString(&x -> valueAsChar, 1);
-  }
+  if (xValue == 0) {
+    if (yValue) {
+      // empty ~ 'xyz' -> 'xyz'
+      __MOLD_VariantMove(dst, (Variant_t *) y);
 
-  if (y -> flags & VARIANT_FLAG_ONE_CHARACTER) {
-    yValue = __MOLD_String_createFromCString(&y -> valueAsChar, 1);
-  }
+    } else {
+      // empty ~ empty -> empty
+      // TODO: Use empty string constant?
+      __MOLD_VariantDestroy(dst);
+      dst -> type  = VARIANT_STRING;
+      dst -> value = __MOLD_String_createFromCString("", 0);
+      dst -> flags = 0;
+    }
 
-  dst -> type  = VARIANT_STRING;
-  dst -> flags = 0;
-
-  if (dst == x) {
-    // printf("(dst = dst ~ y) : (%lld = %lld ~ %d)\n", dst -> value, dst -> value,yValue);
-    __MOLD_String_join(dst -> value, yValue);
+  } else if (yValue == 0) {
+    // 'abc' ~ empty -> 'abc'
+    // TODO: Use empty string constant?
+    __MOLD_VariantMove(dst, (Variant_t *) x);
 
   } else {
-    // printf("(dst = x ~ y)\n");
-    dst -> value = __MOLD_String_join3(xValue, yValue);
+    // Generic: 'abc' ~ 'xyz'
+    if (x -> value < MOLD_STRING_ONE_CHAR_THRESHOLD) {
+      xValue = __MOLD_String_createFromCString(&x -> valueAsChar, 1);
+    }
+
+    if (y -> value < MOLD_STRING_ONE_CHAR_THRESHOLD) {
+      yValue = __MOLD_String_createFromCString(&y -> valueAsChar, 1);
+    }
+
+    dst -> type  = VARIANT_STRING;
+    dst -> flags = 0;
+
+    if (dst == x) {
+      // printf("(dst = dst ~ y) : (%lld = %lld ~ %d)\n", dst -> value, dst -> value,yValue);
+      __MOLD_String_join(dst -> value, yValue);
+
+    } else {
+      // printf("(dst = x ~ y)\n");
+      dst -> value = __MOLD_String_join3(xValue, yValue);
+    }
+
+    if (x -> value < MOLD_STRING_ONE_CHAR_THRESHOLD) {
+      __MOLD_String_release(xValue);
+    }
+
+    if (y -> value < MOLD_STRING_ONE_CHAR_THRESHOLD) {
+      __MOLD_String_release(yValue);
+    }
   }
 
-  if (x -> flags & VARIANT_FLAG_ONE_CHARACTER) {
-    __MOLD_String_release(xValue);
-  }
-
-  if (y -> flags & VARIANT_FLAG_ONE_CHARACTER) {
-    __MOLD_String_release(yValue);
-  }
+  // printf("// <- STRING JOIN (%lld,%lld,%lld)\n", dst -> value, x -> value, y -> value);
 
   ASSERT_VARIANT_PTR_STRING(dst);
   ASSERT_VARIANT_PTR_STRING(x);
   ASSERT_VARIANT_PTR_STRING(y);
-
-  // printf("<- STRING JOIN (%lld,%lld,%lld)\n", dst -> value, x -> value, y -> value);
 
 /*
   uint64_t xLen = 0;
@@ -432,7 +471,7 @@ void __MOLD_SubStrAndAssign(Variant_t *rv,
          lenVariant -> value);
   */
 
-  if (strVariant -> flags & VARIANT_FLAG_ONE_CHARACTER)
+  if (strVariant -> value < MOLD_STRING_ONE_CHAR_THRESHOLD)
   {
     if ((idxVariant -> value == 0) && (lenVariant -> value != 0))
     {
@@ -440,8 +479,11 @@ void __MOLD_SubStrAndAssign(Variant_t *rv,
     }
     else
     {
-      // TODO: Constant for empty string.
-      __MOLD_VariantStringCreateFromCString(rv, "");
+      // Empty string.
+      // TODO: Use empty string constant.
+      rv -> type  = VARIANT_STRING;
+      rv -> value = __MOLD_String_createFromCString("", 0);
+      rv -> flags = 0;
     }
   }
   else
@@ -591,11 +633,15 @@ uint32_t __MOLD_Ord(const Variant_t *x)
   {
     case VARIANT_STRING:
     {
-      if (x -> flags & VARIANT_FLAG_ONE_CHARACTER) {
+      if (x -> value < MOLD_STRING_ONE_CHAR_THRESHOLD)
+      {
         rv = x -> value;
-      } else {
+      }
+      else
+      {
         rv = __MOLD_String_getText(x -> value)[0];
       }
+
       break;
     }
 
@@ -638,7 +684,7 @@ Variant_t __MOLD_Asc(const Variant_t *x)
   Variant_t rv =
   {
     type: VARIANT_STRING,
-    flags: VARIANT_FLAG_ONE_CHARACTER,
+    flags: 0,
     value: x -> value
   };
 
