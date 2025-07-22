@@ -21,6 +21,7 @@
 #define _MoldVariantMap_H
 
 #include "MoldCore.h"
+#include "memory/MoldString.h"
 
 // -----------------------------------------------------------------------------
 //                                  Defines
@@ -34,7 +35,7 @@
 
 typedef struct MapBucket
 {
-  Variant_t key;
+  MoldStringId_t key;
   Variant_t value;
   struct MapBucket *nextBucket;
 } MapBucket_t;
@@ -48,6 +49,7 @@ typedef struct Map
   MapBucket_t *firstBucket;
   MapBucket_t *lastBucket;
   MapBucket_t buckets[];
+
 } Map_t;
 
 // -----------------------------------------------------------------------------
@@ -77,10 +79,10 @@ void __MOLD_VariantLoadFromKeyAndAssign_string(Variant_t *rv,
                                                Variant_t *key);
 
 void __MOLD_VariantStoreAtKey_variant(Variant_t *box, const Variant_t *key, const Variant_t *value);
-void __MOLD_VariantStoreAtKey_string(Variant_t *box, const Variant_t *key, const Variant_t *value);
-void __MOLD_VariantStoreAtKey_int32(Variant_t *box, const Variant_t *key, int32_t value);
-void __MOLD_VariantStoreAtKey_int64(Variant_t *box, const Variant_t *key, int64_t value);
+void __MOLD_VariantStoreAtKey_string (Variant_t *box, const Variant_t *key, const Variant_t *value);
+void __MOLD_VariantStoreAtKey_int32  (Variant_t *box, const Variant_t *key, int32_t value);
+void __MOLD_VariantStoreAtKey_int64  (Variant_t *box, const Variant_t *key, int64_t value);
 void __MOLD_VariantStoreAtKey_float64(Variant_t *box, const Variant_t *key, float64_t value);
-void __MOLD_VariantStoreAtKey_bool32(Variant_t *box, const Variant_t *key, bool32_t value);
+void __MOLD_VariantStoreAtKey_bool32 (Variant_t *box, const Variant_t *key, bool32_t value);
 
 #endif /* _MoldVariantMap_H */

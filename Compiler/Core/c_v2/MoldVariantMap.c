@@ -28,6 +28,9 @@
 #include "memory/MoldString.h"
 #include "MoldForDriver.h"
 
+// TODO: Distinguish empty string vs key not found.
+#define KEY_NOT_FOUND 0
+
 // #############################################################################
 //                              Internal helpers
 // #############################################################################
@@ -107,9 +110,6 @@ static MapBucket_t *__MOLD_FindMapBucketByKey(const Variant_t *box,
   // Decode map.
   Map_t *map = (Map_t *) box -> valueAsBufferPtr -> bytesPtr;
 
-  assert(map != NULL);
-  assert((uint64_t) map != 0xdeadbeef);
-
   // Calculate key hash.
   uint32_t keyHash = __MOLD_hashDJB2(key);
 
@@ -133,8 +133,8 @@ static MapBucket_t *__MOLD_FindMapBucketByKey(const Variant_t *box,
   // Note: See hash key collision algorithm: "open address".
 
   // Possible improvement: Avoid type case?
-  while ((bucket -> key.type != VARIANT_UNDEFINED) &&
-         (!__MOLD_cmp_eq_string((Variant_t *) key, &bucket -> key)))
+  while ((bucket -> key != KEY_NOT_FOUND) &&
+         (!__MOLD_String_cmp_eq(key -> valueAsInt32, bucket -> key)))
   {
     bucketIdx = (bucketIdx + 1) % map -> bucketsCnt;
     bucket    = &(map -> buckets[bucketIdx]);
@@ -172,10 +172,17 @@ static void __MOLD_ResizeMapIfNeeded(Variant_t *box)
 
     while (bucket != NULL)
     {
-      __MOLD_VariantStoreAtKey_variant(&newMap, &bucket -> key, &bucket -> value);
+      // TODO: Clean up this mess (remove temproary variant).
+      Variant_t keyAsVariant = {
+        type: VARIANT_STRING,
+        value: bucket -> key,
+        flags: 0
+      };
+
+      __MOLD_VariantStoreAtKey_variant(&newMap, &keyAsVariant, &bucket -> value);
       // Key and values are already referenced after previous insert.
       // Avoid increasing referencing twice and then memory leak.
-      __MOLD_VariantDestroy(&bucket -> key);
+      __MOLD_String_release(bucket -> key);
       __MOLD_VariantDestroy(&bucket -> value);
 
       // Go to next bucket.
@@ -327,7 +334,7 @@ void __MOLD_VariantMapRelease(Variant_t *x)
 
     while (bucket != NULL)
     {
-      __MOLD_VariantDestroy(&bucket -> key);
+      __MOLD_String_release(bucket -> key);
       __MOLD_VariantDestroy(&bucket -> value);
       bucket = bucket -> nextBucket;
     }
@@ -372,7 +379,7 @@ void __MOLD_VariantLoadFromKeyAndAssign_variant(Variant_t *rv,
   MapBucket_t *bucket = __MOLD_FindMapBucketByKey(box, key);
 
   // Load bucket value if key is found.
-  if (bucket -> key.type != VARIANT_UNDEFINED)
+  if (bucket -> key != KEY_NOT_FOUND)
   {
     memcpy(rv, &bucket -> value, sizeof(Variant_t));
 
@@ -454,10 +461,10 @@ void __MOLD_VariantStoreAtKey_variant(Variant_t *box,
   MapBucket_t *bucket = __MOLD_FindMapBucketByKey(box, key);
 
   // Conditional: Set new key if bucket is filled for the first time.
-  if (bucket -> key.type == VARIANT_UNDEFINED)
+  if (bucket -> key == KEY_NOT_FOUND)
   {
     // Set new key.
-    bucket -> key = *key;
+    bucket -> key = key -> valueAsInt32;
 
     // Increase reference counter for the key.
     __MOLD_VariantAddRef(key);
