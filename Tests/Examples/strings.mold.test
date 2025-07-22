@@ -431,6 +431,122 @@ EXPECTED_OUTPUT:
 ab
 -------------------------------------------------------------------------------
 
+TEST "Overlapped source and destination string: x = x ~ empty"
+
+x0 = ''
+x1 = 'a'
+x4 = 'abcd'
+x8 = '01234567'
+xn = 'some longer text'
+
+print 'First pass'
+print '=========='
+
+x0 = x0 ~ ''
+x1 = x1 ~ ''
+x4 = x4 ~ ''
+x8 = x8 ~ ''
+xn = xn ~ ''
+
+print x0, len(x0)
+print x1, len(x1)
+print x4, len(x4)
+print x8, len(x8)
+print xn, len(xn)
+
+print ''
+print 'Second pass'
+print '==========='
+
+x0 = x0 ~ ''
+x1 = x1 ~ ''
+x4 = x4 ~ ''
+x8 = x8 ~ ''
+xn = xn ~ ''
+
+print x0, len(x0)
+print x1, len(x1)
+print x4, len(x4)
+print x8, len(x8)
+print xn, len(xn)
+
+EXPECTED_OUTPUT:
+First pass
+==========
+ 0
+a 1
+abcd 4
+01234567 8
+some longer text 16
+
+Second pass
+===========
+ 0
+a 1
+abcd 4
+01234567 8
+some longer text 16
+-------------------------------------------------------------------------------
+
+TEST "Overlapped source and destination string: x = empty ~ x"
+
+x0 = ''
+x1 = 'a'
+x4 = 'abcd'
+x8 = '01234567'
+xn = 'some longer text'
+
+# First pass.
+print 'First pass'
+print '=========='
+
+x0 = '' ~ x0
+x1 = '' ~ x1
+x4 = '' ~ x4
+x8 = '' ~ x8
+xn = '' ~ xn
+
+print x0, len(x0)
+print x1, len(x1)
+print x4, len(x4)
+print x8, len(x8)
+print xn, len(xn)
+
+# Second pass.
+print ''
+print 'Second pass'
+print '==========='
+
+x0 = '' ~ x0
+x1 = '' ~ x1
+x4 = '' ~ x4
+x8 = '' ~ x8
+xn = '' ~ xn
+
+print x0, len(x0)
+print x1, len(x1)
+print x4, len(x4)
+print x8, len(x8)
+print xn, len(xn)
+
+EXPECTED_OUTPUT:
+First pass
+==========
+ 0
+a 1
+abcd 4
+01234567 8
+some longer text 16
+
+Second pass
+===========
+ 0
+a 1
+abcd 4
+01234567 8
+some longer text 16
+-------------------------------------------------------------------------------
+
 TEST "Store one character at array index'
 x = 'text'
 y = [x[0]]
@@ -691,10 +807,14 @@ function foo(x, y)
   print '(', `[${x}] o [${y}]`, ')'
 endfunction
 
-foo('xxx', 'yyy')
+foo(''   , '')
+foo('a'  , 'q')
+foo('bcd', 'wer')
 
 EXPECTED_OUTPUT:
-( [xxx] o [yyy] )
+( [] o [] )
+( [a] o [q] )
+( [bcd] o [wer] )
 -------------------------------------------------------------------------------
 
 TEST "Unterminated ${...} placeholder"
