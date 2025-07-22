@@ -110,22 +110,47 @@ MoldStringId_t __MOLD_String_join3(MoldStringId_t encodedX, MoldStringId_t encod
 }
 
 void __MOLD_String_print(FILE *f, MoldStringId_t encodedId) {
-  ASSERT_ENCODED_STRING_ID(encodedId);
-  MoldStringId_t id = DECODE_STRING_ID(encodedId);
-  __MOLD_MemoryPool_print(&_g_memPool, id, f);
+  if (encodedId > 256)
+  {
+    MoldStringId_t id = DECODE_STRING_ID(encodedId);
+    __MOLD_MemoryPool_print(&_g_memPool, id, f);
+  }
+  else if (encodedId > 0)
+  {
+    fputc(encodedId, f);
+  }
 }
 
 const char *__MOLD_String_getText(MoldStringId_t encodedId) {
-  // TODO: Match beginXxx with endXxx ?
-  ASSERT_ENCODED_STRING_ID(encodedId);
-  MoldStringId_t id = DECODE_STRING_ID(encodedId);
-  return __MOLD_MemoryPool_beginRead(&_g_memPool, id);
+  // TODO: Review it.
+  static char oneCharBuffer[2] = { 0 };
+  const char *rv = NULL;
+
+  if (encodedId >= 256) {
+    // TODO: Match beginXxx with endXxx ?
+    MoldStringId_t id = DECODE_STRING_ID(encodedId);
+    rv = __MOLD_MemoryPool_beginRead(&_g_memPool, id);
+
+  } else {
+    oneCharBuffer[0] = encodedId;
+    rv = oneCharBuffer;
+  }
+
+  return rv;
 }
 
 uint32_t __MOLD_String_getLength(MoldStringId_t encodedId) {
-  ASSERT_ENCODED_STRING_ID(encodedId);
-  MoldStringId_t id = DECODE_STRING_ID(encodedId);
-  return __MOLD_MemoryPool_getLength(&_g_memPool, id);
+  uint32_t rv = 0;
+
+  if (encodedId >= 256) {
+    MoldStringId_t id = DECODE_STRING_ID(encodedId);
+    rv = __MOLD_MemoryPool_getLength(&_g_memPool, id);
+
+  } else if (encodedId > 0) {
+    rv = encodedId;
+  }
+
+  return rv;
 }
 
 void __MOLD_String_dumpAll() {
@@ -133,13 +158,66 @@ void __MOLD_String_dumpAll() {
 }
 
 uint32_t __MOLD_String_cmp_eq(MoldStringId_t encodedX, MoldStringId_t encodedY) {
-  ASSERT_ENCODED_STRING_ID(encodedX);
-  ASSERT_ENCODED_STRING_ID(encodedY);
+  // TODO: Simplify it.
+  uint32_t rv = 0;
 
   MoldStringId_t x = DECODE_STRING_ID(encodedX);
   MoldStringId_t y = DECODE_STRING_ID(encodedY);
 
-  return __MOLD_MemoryPool_cmp_eq(&_g_memPool, x, y);
+  if (encodedX == encodedY)
+  {
+    // Two strings pointed to the same ID or implicit char.
+    rv = 1;
+  }
+  else if (encodedX < 256)
+  {
+    // CHAR/EMPTY vs ...
+    if (encodedY < 256) {
+      // CHAR/EMPTY vs CHAR/EMPTY
+      rv = encodedX == encodedY;
+    }
+    else
+    {
+      // CHAR/EMPTY vs STRING
+      uint32_t length  = __MOLD_MemoryPool_getLength(&_g_memPool, y);
+      const char *text = __MOLD_MemoryPool_beginRead(&_g_memPool, y);
+
+      if (encodedX > 0)
+      {
+        // CHAR vs string
+        rv = (length == 1) && (text[0] == encodedX);
+      }
+      else
+      {
+        // EMPTY vs STRING
+        rv = (length == 0);
+      }
+    }
+  }
+  else if (encodedY < 256)
+  {
+    // STRING vs CHAR/EMPTY
+    uint32_t length  = __MOLD_MemoryPool_getLength(&_g_memPool, x);
+    const char *text = __MOLD_MemoryPool_beginRead(&_g_memPool, x);
+
+    if (encodedY > 0)
+    {
+      // CHAR vs string
+      rv = (length == 1) && (text[0] == encodedY);
+    }
+    else
+    {
+      // EMPTY vs STRING
+      rv = (length == 0);
+    }
+  }
+  else
+  {
+    // STRING vs STRING
+    rv = __MOLD_MemoryPool_cmp_eq(&_g_memPool, x, y);
+  }
+
+  return rv;
 }
 
 uint32_t __MOLD_String_substr(MoldStringId_t encodedX, uint32_t idx, int32_t len) {
@@ -150,13 +228,15 @@ uint32_t __MOLD_String_substr(MoldStringId_t encodedX, uint32_t idx, int32_t len
 }
 
 void __MOLD_String_addRef(MoldStringId_t encodedX) {
-  ASSERT_ENCODED_STRING_ID(encodedX);
-  MoldStringId_t x = DECODE_STRING_ID(encodedX);
-  __MOLD_MemoryPool_addRef(&_g_memPool, x);
+  if (encodedX >= 256) {
+    MoldStringId_t x = DECODE_STRING_ID(encodedX);
+    __MOLD_MemoryPool_addRef(&_g_memPool, x);
+  }
 }
 
 void __MOLD_String_release(MoldStringId_t encodedX) {
-  ASSERT_ENCODED_STRING_ID(encodedX);
-  MoldStringId_t x = DECODE_STRING_ID(encodedX);
-  __MOLD_MemoryPool_release(&_g_memPool, x);
+  if (encodedX >= 256) {
+    MoldStringId_t x = DECODE_STRING_ID(encodedX);
+    __MOLD_MemoryPool_release(&_g_memPool, x);
+  }
 }
