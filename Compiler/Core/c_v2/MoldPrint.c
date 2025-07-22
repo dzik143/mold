@@ -116,11 +116,10 @@ static void __MOLD_ClenUpAfterPrint(Variant_t *x) {
       uint32_t bucketsUsedCnt = map -> bucketsUsedCnt;
       MapBucket_t *bucket     = map -> firstBucket;
 
-      if (bucket && bucket -> key.flags & VARIANT_FLAG_NODE_VISITED) {
+      if (bucket && bucket -> value.flags & VARIANT_FLAG_NODE_VISITED) {
         // Map was visited during print.
         // Switch back to non-visited before next print call.
         for (uint32_t idx = 0; idx < bucketsUsedCnt; idx++) {
-          __MOLD_ClenUpAfterPrint(&bucket -> key);
           __MOLD_ClenUpAfterPrint(&bucket -> value);
           bucket = bucket -> nextBucket;
         }
@@ -286,7 +285,7 @@ static void __MOLD_PrintVariantInernal(__MOLD_PrintContext_t *ctx, Variant_t *x)
       uint32_t bucketsUsedCnt = map -> bucketsUsedCnt;
       MapBucket_t *bucket     = map -> firstBucket;
 
-      if (bucket && bucket -> key.flags & VARIANT_FLAG_NODE_VISITED) {
+      if (bucket && bucket -> value.flags & VARIANT_FLAG_NODE_VISITED) {
         EMIT_LITERAL("<circular>");
 
       } else {
@@ -302,7 +301,19 @@ static void __MOLD_PrintVariantInernal(__MOLD_PrintContext_t *ctx, Variant_t *x)
 
           // Print key.
           EMIT_LITERAL("'");
-          __MOLD_PrintVariantInernal(ctx, &bucket -> key);
+
+          if (bucket -> key >= 256)
+          {
+            const char *text = __MOLD_String_getText(bucket -> key);
+            uint32_t length  = __MOLD_String_getLength(bucket -> key);
+            ctx -> writeRawCb(ctx, text, length);
+          }
+          else if (bucket -> key > 0)
+          {
+            ctx -> writeRawCb(ctx, (const char *) &bucket -> key, 1);
+          }
+
+          // OLD IMPLEMENTATION: __MOLD_PrintVariantInernal(ctx, &bucket -> key);
           EMIT_LITERAL("': ");
 
           // Print value.
