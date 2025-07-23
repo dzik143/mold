@@ -1146,3 +1146,31 @@ substr('0123456789abcdef', 4, 2) = '45'
 substr('0123456789abcdef', 4, 3) = '456'
 substr('0123456789abcdef', 4, 4) = '4567'
 -------------------------------------------------------------------------------
+
+TEST "Bug: Compare dynamically generated empty string vs imm"
+
+text = 'abcd'
+x = __mold_syscall(55, text, 10, -1)
+
+print '(', x, ') has length', len(x)
+
+if x is ''
+  print 'x is an empty string'
+else
+  print 'x is *NOT* an empty string'
+endif
+
+EXPECTED_OUTPUT:
+(  ) has length 0
+x is an empty string
+-------------------------------------------------------------------------------
+
+TEST "Bug: Single character inside build string format"
+
+x = 'x'
+result = `&${x}`
+print result
+
+EXPECTED_OUTPUT:
+&x
+-------------------------------------------------------------------------------
