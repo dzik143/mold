@@ -37,10 +37,6 @@ MoldStringId_t __MOLD_String_createFromCString(const char *text, int32_t len);
 void __MOLD_String_addRef (MoldStringId_t x);
 void __MOLD_String_release(MoldStringId_t x);
 
-//void __MOLD_String_join(MoldStringId_t dst, MoldStringId_t x);
-
-//MoldStringId_t __MOLD_String_join3(MoldStringId_t x, MoldStringId_t y);
-
 void __MOLD_String_print(FILE *f, MoldStringId_t id);
 
 const char *__MOLD_String_getText  (MoldStringId_t id);

@@ -95,36 +95,6 @@ MoldStringId_t __MOLD_String_createFromCString(const char *text, int32_t len)
   return rv;
 }
 
-/*
-void __MOLD_String_join(MoldStringId_t encodedId1, MoldStringId_t encodedId2) {
-  ASSERT_ENCODED_STRING_ID(encodedId1);
-  ASSERT_ENCODED_STRING_ID(encodedId2);
-  MoldStringId_t id1 = DECODE_STRING_ID(encodedId1);
-  MoldStringId_t id2 = DECODE_STRING_ID(encodedId2);
-
-  __MOLD_MemoryPool_join(&_g_memPool, id1, id2);
-}
-
-MoldStringId_t __MOLD_String_join3(MoldStringId_t encodedX, MoldStringId_t encodedY) {
-  // TODO: Optimize it.
-  // printf("[ MoldString] enter join3(%d, %d)\n", x, y);
-  // __MOLD_String_dumpAll();
-
-  ASSERT_ENCODED_STRING_ID(encodedX);
-  ASSERT_ENCODED_STRING_ID(encodedY);
-
-  MoldStringId_t dst = __MOLD_MemoryPool_create(&_g_memPool);
-  MoldStringId_t encodedDst = ENCODE_STRING_ID(dst);
-
-  __MOLD_String_join(encodedDst, encodedX);
-  __MOLD_String_join(encodedDst, encodedY);
-
-  // __MOLD_String_dumpAll();
-  // printf("[ MoldString] leave join3(%d, %d)\n", x, y);
-  return encodedDst;
-}
-*/
-
 void __MOLD_String_print(FILE *f, MoldStringId_t encodedId) {
   if (encodedId > 256)
   {
@@ -278,20 +248,14 @@ MoldStringId_t __MOLD_String_joinStub(MoldStringId_t encodedDstId,
   MoldStringId_t newId = __MOLD_MemoryPool_create(&_g_memPool);
   char *dstPtr = __MOLD_MemoryPool_beginWrite(&_g_memPool, newId);
 
-  //printf("// JOIN BEGIN\n");
-
   // Append first string (x).
   if (encodedX < 256) {
-    //printf("// AAA\n");
-
     if (encodedX != 0) {
       *dstPtr = encodedX;
       dstPtr++;
     }
 
   } else {
-     //printf("// BBB\n");
-
      uint32_t x    = DECODE_STRING_ID(encodedX);
      char *xSrc    = __MOLD_MemoryPool_beginRead(&_g_memPool, x);
      uint32_t xLen = __MOLD_MemoryPool_getLength(&_g_memPool, x);
@@ -303,25 +267,18 @@ MoldStringId_t __MOLD_String_joinStub(MoldStringId_t encodedDstId,
 
   // Append second string (y).
   if (encodedY < 256) {
-     //printf("// CCC\n");
-
     if (encodedY != 0) {
       *dstPtr = encodedY;
       dstPtr++;
     }
 
   } else {
-     //printf("// DDD(%d)\n", encodedY);
      uint32_t y    = DECODE_STRING_ID(encodedY);
      char *ySrc    = __MOLD_MemoryPool_beginRead(&_g_memPool, y);
      uint32_t yLen = __MOLD_MemoryPool_getLength(&_g_memPool, y);
      memcpy(dstPtr, ySrc, yLen);
      dstPtr += yLen;
-
-     //printf("// DDD PUSH (%s)(%d)\n", ySrc, yLen);
   }
-
-  // printf("// JOIN RESULT [%s][%lld]\n", originalPtr, dstPtr - originalPtr);
 
   __MOLD_MemoryPool_commit(&_g_memPool, newId, dstPtr);
 
