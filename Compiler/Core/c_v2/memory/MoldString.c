@@ -53,34 +53,49 @@ uint32_t __MOLD_String_importLiterals(const char *literals) {
   // Possible improvement: Optimize it.
   uint32_t baseId = _g_memPool.itemOffsetsUsed;
 
-  while (*literals != -1) {
-    // TODO: Clean up this mess.
-    uint32_t nextId = _g_memPool.itemOffsetsUsed++;
+  while (*literals != -1)
+  {
+    assert(literals[0] && literals[1] && "Cannot to import empty/one char strings");
 
-    uint32_t len = strlen(literals);
+   // TODO: Clean up this mess.
+    uint32_t nextId = _g_memPool.itemOffsetsUsed++;
+    uint32_t len    = strlen(literals);
 
     __MOLD_String_setFromCString(nextId, literals, len);
     __MOLD_MemoryPool_freeze(&_g_memPool, nextId);
 
     literals += len + 1;
   }
+
   return baseId;
 }
 
-MoldStringId_t __MOLD_String_createFromCString(const char *text, int32_t len) {
-  // Create new memory buffer.
-  MoldStringId_t newId = __MOLD_MemoryPool_create(&_g_memPool);
+MoldStringId_t __MOLD_String_createFromCString(const char *text, int32_t len)
+{
+  MoldStringId_t rv = 0;
 
-  // printf("Assigned new ID %d for [%s]\n", newId, text);
-  //__MOLD_String_dumpAll();
+  if ((text[0] == 0) || (text[0] == 0))
+  {
+    // Empty or single character.
+    rv = text[0];
+  }
+  else
+  {
+    // Multicharacter string.
+    // Create new memory buffer.
+    MoldStringId_t newId = __MOLD_MemoryPool_create(&_g_memPool);
 
-  // Set new content.
-  __MOLD_String_setFromCString(newId, text, len);
+    // Set new content.
+    __MOLD_String_setFromCString(newId, text, len);
 
-  // Return buffer id to the caller.
-  return ENCODE_STRING_ID(newId);
+    // Encode string id before pass to the caller.
+    rv = ENCODE_STRING_ID(newId);
+  }
+
+  return rv;
 }
 
+/*
 void __MOLD_String_join(MoldStringId_t encodedId1, MoldStringId_t encodedId2) {
   ASSERT_ENCODED_STRING_ID(encodedId1);
   ASSERT_ENCODED_STRING_ID(encodedId2);
@@ -108,6 +123,7 @@ MoldStringId_t __MOLD_String_join3(MoldStringId_t encodedX, MoldStringId_t encod
   // printf("[ MoldString] leave join3(%d, %d)\n", x, y);
   return encodedDst;
 }
+*/
 
 void __MOLD_String_print(FILE *f, MoldStringId_t encodedId) {
   if (encodedId > 256)
@@ -220,11 +236,24 @@ uint32_t __MOLD_String_cmp_eq(MoldStringId_t encodedX, MoldStringId_t encodedY) 
   return rv;
 }
 
-uint32_t __MOLD_String_substr(MoldStringId_t encodedX, uint32_t idx, int32_t len) {
-  ASSERT_ENCODED_STRING_ID(encodedX);
-  MoldStringId_t x = DECODE_STRING_ID(encodedX);
-  MoldStringId_t newId =  __MOLD_MemoryPool_copyRegion(&_g_memPool, -1, x, idx, len);
-  return ENCODE_STRING_ID(newId);
+uint32_t __MOLD_String_substr(MoldStringId_t encodedX, uint32_t idx, int32_t len)
+{
+  MoldStringId_t rv = 0;
+
+  if (encodedX >= 256)
+  {
+    // Multicharacter string.
+    MoldStringId_t x = DECODE_STRING_ID(encodedX);
+    MoldStringId_t newId = __MOLD_MemoryPool_copyRegion(&_g_memPool, -1, x, idx, len);
+    rv = ENCODE_STRING_ID(newId);
+  }
+  else if ((encodedX > 0) && (idx == 0) && (len != 0))
+  {
+    // Non-empty single character and we ask for the first char.
+    rv = encodedX;
+  }
+
+  return rv;
 }
 
 void __MOLD_String_addRef(MoldStringId_t encodedX) {
@@ -239,4 +268,99 @@ void __MOLD_String_release(MoldStringId_t encodedX) {
     MoldStringId_t x = DECODE_STRING_ID(encodedX);
     __MOLD_MemoryPool_release(&_g_memPool, x);
   }
+}
+
+MoldStringId_t __MOLD_String_joinStub(MoldStringId_t encodedDstId,
+                                      MoldStringId_t encodedX,
+                                      MoldStringId_t encodedY)
+{
+  // TODO: Reuse existing buffer if possible.
+  MoldStringId_t newId = __MOLD_MemoryPool_create(&_g_memPool);
+  char *dstPtr = __MOLD_MemoryPool_beginWrite(&_g_memPool, newId);
+
+  //printf("// JOIN BEGIN\n");
+
+  // Append first string (x).
+  if (encodedX < 256) {
+    //printf("// AAA\n");
+
+    if (encodedX != 0) {
+      *dstPtr = encodedX;
+      dstPtr++;
+    }
+
+  } else {
+     //printf("// BBB\n");
+
+     uint32_t x    = DECODE_STRING_ID(encodedX);
+     char *xSrc    = __MOLD_MemoryPool_beginRead(&_g_memPool, x);
+     uint32_t xLen = __MOLD_MemoryPool_getLength(&_g_memPool, x);
+     memcpy(dstPtr, xSrc, xLen);
+     dstPtr += xLen;
+
+     //printf("// BBB PUSH (%s)(%d)\n", xSrc, xLen);
+  }
+
+  // Append second string (y).
+  if (encodedY < 256) {
+     //printf("// CCC\n");
+
+    if (encodedY != 0) {
+      *dstPtr = encodedY;
+      dstPtr++;
+    }
+
+  } else {
+     //printf("// DDD(%d)\n", encodedY);
+     uint32_t y    = DECODE_STRING_ID(encodedY);
+     char *ySrc    = __MOLD_MemoryPool_beginRead(&_g_memPool, y);
+     uint32_t yLen = __MOLD_MemoryPool_getLength(&_g_memPool, y);
+     memcpy(dstPtr, ySrc, yLen);
+     dstPtr += yLen;
+
+     //printf("// DDD PUSH (%s)(%d)\n", ySrc, yLen);
+  }
+
+  // printf("// JOIN RESULT [%s][%lld]\n", originalPtr, dstPtr - originalPtr);
+
+  __MOLD_MemoryPool_commit(&_g_memPool, newId, dstPtr);
+
+  return ENCODE_STRING_ID(newId);
+}
+
+MoldStringId_t __MOLD_String_createForWrite(char **ptr) {
+  MoldStringId_t newId = __MOLD_MemoryPool_create(&_g_memPool);
+  *ptr = __MOLD_MemoryPool_beginWrite(&_g_memPool, newId);
+  return ENCODE_STRING_ID(newId);
+}
+
+void __MOLD_String_commit(MoldStringId_t encodedId, char *ptr) {
+  assert(encodedId >= 256);
+  assert(ptr != NULL);
+  __MOLD_MemoryPool_commit(&_g_memPool, DECODE_STRING_ID(encodedId), ptr);
+}
+
+uint32_t __MOLD_String_writeToRawBufferUnsafe(char *buf, MoldStringId_t encodedId)
+{
+  uint32_t bytesWritten = 0;
+
+  if (encodedId < 256)
+  {
+    if (encodedId > 0)
+    {
+      buf[0] = encodedId;
+      bytesWritten = 1;
+    }
+  }
+  else
+  {
+    const char *text   = __MOLD_String_getText  (encodedId);
+    uint32_t    length = __MOLD_String_getLength(encodedId);
+
+    memcpy(buf, text, length);
+
+    bytesWritten = length;
+  }
+
+  return bytesWritten;
 }

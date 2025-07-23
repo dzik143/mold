@@ -56,7 +56,7 @@ typedef struct Map
 //                                Functions
 // -----------------------------------------------------------------------------
 
-uint32_t __MOLD_hashDJB2(const Variant_t *x);
+uint32_t __MOLD_hashDJB2(MoldStringId_t x);
 
 void __MOLD_VariantMapCreate(Variant_t *dst);
 void __MOLD_VariantMapCreateWithCustomSize(Variant_t *dst, uint32_t bucketsCnt);

@@ -194,7 +194,10 @@ void __MOLD_ForDriver_KeysAndValuesInMap(Variant_t *box,
 
   for (uint32_t idx = 0; idx < bucketsUsedCnt; idx++)
   {
-    memcpy(iteratorKey  , &bucket -> key  , sizeof(Variant_t));
+    iteratorKey -> type  = VARIANT_STRING;
+    iteratorKey -> flags = 0;
+    iteratorKey -> value = bucket -> key;
+
     memcpy(iteratorValue, &bucket -> value, sizeof(Variant_t));
 
     ASSERT_VARIANT_PTR_STRING(iteratorKey);

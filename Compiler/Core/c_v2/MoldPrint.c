@@ -30,6 +30,8 @@
 
 #define __MOLD_DEFAULT_PRINT_BUFFER_SIZE 32
 
+#define INFINITE_BUFFER_SIZE 0x7fffffff
+
 // Forward declaration.
 struct __MOLD_PrintContext;
 
@@ -66,13 +68,16 @@ static void __MOLD_WriteRawToBufferCallback(__MOLD_PrintContext_t *ctx,
   assert(ctx != NULL);
   assert(ctx -> buf != NULL);
 
-  if (dataSize > 0) {
-    if (ctx -> bufSize + dataSize >= ctx -> bufCapacity) {
+  if (dataSize > 0)
+  {
+    if (ctx -> bufSize + dataSize >= ctx -> bufCapacity)
+    {
       ctx -> bufCapacity *= 2;
       ctx -> buf = realloc(ctx -> buf, ctx -> bufCapacity);
     }
 
     memcpy(ctx -> buf + ctx -> bufSize, data, dataSize);
+
     ctx -> bufSize += dataSize;
     ctx -> buf[ctx -> bufSize] = 0;
   }
@@ -137,7 +142,7 @@ static void __MOLD_ClenUpAfterPrint(Variant_t *x) {
 // x - variable to be printed (IN),
 // -----------------------------------------------------------------------------
 
-static void __MOLD_PrintVariantInernal(__MOLD_PrintContext_t *ctx, Variant_t *x) {
+static void __MOLD_PrintVariantInternal(__MOLD_PrintContext_t *ctx, Variant_t *x) {
   assert(ctx != NULL);
   assert(x != NULL);
 
@@ -238,7 +243,7 @@ static void __MOLD_PrintVariantInernal(__MOLD_PrintContext_t *ctx, Variant_t *x)
 
             // Print next item value and wrap into 'value' if needed.
             if ((array -> items[idx].type) == VARIANT_STRING) EMIT_LITERAL("'");
-            __MOLD_PrintVariantInernal(ctx, &array -> items[idx]);
+            __MOLD_PrintVariantInternal(ctx, &array -> items[idx]);
             if ((array -> items[idx].type) == VARIANT_STRING) EMIT_LITERAL("'");
           }
 
@@ -261,7 +266,7 @@ static void __MOLD_PrintVariantInernal(__MOLD_PrintContext_t *ctx, Variant_t *x)
 
           // Print next item value and wrap into 'value' if needed.
           if (oneItem.type == VARIANT_STRING) EMIT_LITERAL("'");
-          __MOLD_PrintVariantInernal(ctx, &oneItem);
+          __MOLD_PrintVariantInternal(ctx, &oneItem);
           if (oneItem.type == VARIANT_STRING) EMIT_LITERAL("'");
         }
 
@@ -302,7 +307,7 @@ static void __MOLD_PrintVariantInernal(__MOLD_PrintContext_t *ctx, Variant_t *x)
           // Print key.
           EMIT_LITERAL("'");
 
-          if (bucket -> key >= 256)
+          if (bucket -> key >= MOLD_STRING_ONE_CHAR_THRESHOLD)
           {
             const char *text = __MOLD_String_getText(bucket -> key);
             uint32_t length  = __MOLD_String_getLength(bucket -> key);
@@ -313,12 +318,12 @@ static void __MOLD_PrintVariantInernal(__MOLD_PrintContext_t *ctx, Variant_t *x)
             ctx -> writeRawCb(ctx, (const char *) &bucket -> key, 1);
           }
 
-          // OLD IMPLEMENTATION: __MOLD_PrintVariantInernal(ctx, &bucket -> key);
+          // OLD IMPLEMENTATION: __MOLD_PrintVariantInternal(ctx, &bucket -> key);
           EMIT_LITERAL("': ");
 
           // Print value.
           if (bucket -> value.type == VARIANT_STRING) EMIT_LITERAL("'");
-          __MOLD_PrintVariantInernal(ctx, &bucket -> value);
+          __MOLD_PrintVariantInternal(ctx, &bucket -> value);
           if (bucket -> value.type == VARIANT_STRING) EMIT_LITERAL("'");
 
           // Go to next bucket if any.
@@ -352,26 +357,52 @@ void __MOLD_PrintToFile_variant(FILE *f, Variant_t *x) {
   ctx.f = f;
   ctx.writeRawCb = __MOLD_WriteRawToFileCallback;
 
-  __MOLD_PrintVariantInernal(&ctx, x);
+  __MOLD_PrintVariantInternal(&ctx, x);
   __MOLD_ClenUpAfterPrint(x);
+}
+
+int __MOLD_PrintToRawBuferUnsafe(char *buf, Variant_t *x) {
+  ASSERT_VARIANT_PTR_ANY(x);
+
+  __MOLD_PrintContext_t ctx;
+
+  // Assume unbounded buffer.
+  // Caller *MUSTS* deliver own protection mechnism like page guards
+  // or ensure, that the result fits within delivered buffer.
+  ctx.buf         = buf;
+  ctx.bufCapacity = INFINITE_BUFFER_SIZE;
+  ctx.bufSize     = 0;
+  ctx.writeRawCb  = __MOLD_WriteRawToBufferCallback;
+
+  // Add zero terminator for compatibility with C functions.
+  ctx.buf[ctx.bufSize] = 0;
+
+  __MOLD_PrintVariantInternal(&ctx, x);
+  __MOLD_ClenUpAfterPrint(x);
+
+  // Pass to caller number of bytes written.
+  return ctx.bufSize;
 }
 
 void __MOLD_PrintToString_variant(Variant_t *rv, Variant_t *x) {
   ASSERT_VARIANT_PTR_ANY(rv);
+  ASSERT_VARIANT_PTR_ANY(x);
 
-  __MOLD_PrintContext_t ctx = { 0 };
+  char *dstPtr;
 
-  ctx.buf         = calloc(__MOLD_DEFAULT_PRINT_BUFFER_SIZE, 1);
-  ctx.bufCapacity = __MOLD_DEFAULT_PRINT_BUFFER_SIZE;
-  ctx.writeRawCb  = __MOLD_WriteRawToBufferCallback;
+  // Possible improvement: Reuse existing string if exists?
+  __MOLD_VariantDestroy(rv);
 
-  __MOLD_PrintVariantInernal(&ctx, x);
-  __MOLD_ClenUpAfterPrint(x);
+  rv -> type  = VARIANT_STRING;
+  rv -> flags = 0;
+  rv -> value = __MOLD_String_createForWrite(&dstPtr);
 
-  // Possible improvement: Avoid buffer copy?
-  __MOLD_VariantStringCreateFromCString(rv, ctx.buf);
+  dstPtr += __MOLD_PrintToRawBuferUnsafe(dstPtr, x);
 
-  free(ctx.buf);
+  __MOLD_String_commit(rv -> value, dstPtr);
+
+  ASSERT_VARIANT_PTR_STRING(rv);
+  ASSERT_VARIANT_PTR_ANY(x);
 }
 
 void __MOLD_PrintFormat(const char *fmt, ...) {
@@ -417,37 +448,55 @@ void __MOLD_BuildString(Variant_t *rv, const char *fmt, ...) {
   va_list ptr;
   va_start(ptr, fmt);
 
-  Variant_t nextItem = { 0 };
+  // TODO: Reuse existing string if exists?
+  char *dstPtr;
 
-  __MOLD_VariantStringCreateFromCString(rv, "");
+  rv -> type  = VARIANT_STRING;
+  rv -> flags = 0;
+  rv -> value = __MOLD_String_createForWrite(&dstPtr);
 
-  while (*fmt) {
-    switch (*fmt) {
+  while (*fmt)
+  {
+    switch (*fmt)
+    {
       // Possible improvement: Better tokens set?
       case 's':
-      case 'v': __MOLD_StrAndAssign         (&nextItem, va_arg(ptr, Variant_t *)); break;
-      case 'i': __MOLD_VariantAssign_int32  (&nextItem, va_arg(ptr, uint32_t)); break;
-      case 'I': __MOLD_VariantAssign_int64  (&nextItem, va_arg(ptr, uint64_t)); break;
-      case 'f': __MOLD_VariantAssign_float64(&nextItem, va_arg(ptr, float64_t)); break;
-      case 'b': __MOLD_VariantAssign_bool32 (&nextItem, va_arg(ptr, bool32_t)); break;
+      {
+        // String - just append to the destination buffer.
+        Variant_t *nextToken = va_arg(ptr, Variant_t*);
+        dstPtr += __MOLD_String_writeToRawBufferUnsafe(dstPtr, nextToken -> value);
+        break;
+      }
 
-      default: {
+      case 'v':
+      {
+        // Variant - render into destination buffer.
+        Variant_t *nextToken = va_arg(ptr, Variant_t*);
+        dstPtr += __MOLD_PrintToRawBuferUnsafe(dstPtr, nextToken);
+        break;
+      }
+
+      // Primitives - render into destination buffer.
+      case 'i': dstPtr += sprintf(dstPtr, "%d"   , va_arg(ptr, int32_t)); break;
+      case 'I': dstPtr += sprintf(dstPtr, "%lld" , va_arg(ptr, int64_t)); break;
+      case 'f': dstPtr += sprintf(dstPtr, "%lf"  , va_arg(ptr, float64_t)); break;
+      case 'b': dstPtr += sprintf(dstPtr         , va_arg(ptr, bool32_t) ? "true" : "false"); break;
+
+      default:
+      {
         fprintf(stderr, "runtime error: unhandled print fmt token '%c' (string mode)", *fmt);
         abort();
       }
     }
 
-  //  printf("%p nextItem=[", fmt);
-    //__MOLD_VariantPrint(&nextItem);
-//    printf("]\n");
-
-    __MOLD_StrAndAssign(&nextItem, &nextItem);
-    __MOLD_VariantStringJoin(rv, rv, &nextItem);
-
     fmt++;
   }
 
-  __MOLD_VariantDestroy(&nextItem);
+  // Add zero terminator for compatibility with C functions.
+  *dstPtr = 0;
+
+  // Commit changes to the underlying string buffer.
+  __MOLD_String_commit(rv -> value, dstPtr);
 
   va_end(ptr);
 }

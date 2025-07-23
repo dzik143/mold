@@ -61,9 +61,6 @@ static int _compareIndexes(void *ctx, const void *a, const void *b) {
 static void __MOLD_MemoryPool_vacuum(MoldMemoryPool_t *mmp) {
   uint32_t newDataSizeUsed = 0;
 
-  //printf("VACUUM BEGIN\n");
-  //__MOLD_MemoryPool_dumpAll(mmp);
-
   // REVIEW IT
   int *sortedIndexes = malloc(mmp -> itemOffsetsUsed * sizeof(mmp -> itemOffsets[0]));
   for (int i = 0; i < mmp -> itemOffsetsUsed; i++) {
@@ -81,10 +78,6 @@ static void __MOLD_MemoryPool_vacuum(MoldMemoryPool_t *mmp) {
 
   for (uint32_t iidx = 0; iidx < mmp -> itemOffsetsUsed; iidx++) {
     uint32_t idx = sortedIndexes[iidx];
-
-    //printf("str[%d] = (%d,%d,%d)'", idx, mmp -> itemOffsets[idx], mmp -> itemSizes[idx], mmp -> itemRefCounters[idx]);
-    //__MOLD_MemoryPool_print(mmp, idx, stdout);
-    //printf("'\n");
 
     memcpy(mmp -> data + newDataSizeUsed,
            mmp -> data + mmp -> itemOffsets[idx],
@@ -166,8 +159,6 @@ void *__MOLD_MemoryPool_beginRead(MoldMemoryPool_t *mmp, uint32_t idx) {
 }
 
 void *__MOLD_MemoryPool_beginWrite(MoldMemoryPool_t *mmp, uint32_t idx) {
-  // printf("BEGIN WRITE %d\n", idx);
-
   assert(idx < mmp -> itemOffsetsUsed);
   assert(mmp -> itemRefCounters[idx] >= 0);
   assert(mmp -> isWriting == 0);
@@ -183,8 +174,6 @@ void *__MOLD_MemoryPool_beginWrite(MoldMemoryPool_t *mmp, uint32_t idx) {
   } else {
     mmp -> dataSizeUsed = mmp -> itemOffsets[idx];
   }
-
-  // printf("BEGIN WRITE slot %d at offset %d\n", idx, mmp -> itemOffsets[idx]);
 
   return mmp -> data + mmp -> itemOffsets[idx];
 }
@@ -316,9 +305,6 @@ uint32_t __MOLD_MemoryPool_copyRegion(MoldMemoryPool_t *mmp,
                                      uint32_t srcStart,
                                       int32_t dstLen) {
 
-  // printf("// -> COPY to %d from %d (idx=%d, len=%d)\n", dstIdx, srcIdx, srcStart, dstLen);
-  //__MOLD_MemoryPool_dumpAll(mmp);
-
   if (dstIdx < 0) {
     dstIdx = __MOLD_MemoryPool_create(mmp);
   }
@@ -331,8 +317,6 @@ uint32_t __MOLD_MemoryPool_copyRegion(MoldMemoryPool_t *mmp,
 
   uint32_t srcLen = mmp -> itemSizes[srcIdx];
 
-  // printf("// peek %.8s... (%d-%d)\n", srcPtr, srcStart, srcLen);
-
   if ((srcLen > 0) && (srcStart < srcLen)) {
     if (dstLen < 0) {
       dstLen = srcLen - srcStart;
@@ -342,17 +326,12 @@ uint32_t __MOLD_MemoryPool_copyRegion(MoldMemoryPool_t *mmp,
 
     srcPtr += srcStart;
 
-    // printf("// memcpy %d bytes...\n", dstLen);
-
     memcpy(dstPtr, srcPtr, dstLen);
 
     dstPtr += dstLen;
   }
 
   __MOLD_MemoryPool_commit(mmp, dstIdx, dstPtr);
-
-  // printf("// <- COPY to %d from %d (idx=%d, len=%d)\n", dstIdx, srcIdx, srcStart, dstLen);
-  //__MOLD_MemoryPool_dumpAll(mmp);
 
   return dstIdx;
 }

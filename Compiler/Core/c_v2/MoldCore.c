@@ -789,8 +789,6 @@ Variant_t __MOLD_Typeof(const Variant_t *x)
     flags: 0
   };
 
-  // printf("// GOT TYPE STRING (%d + %d = %lld)\n", typeBaseId, x -> type, rv.value);
-
   return rv;
 }
 
@@ -996,8 +994,7 @@ void __MOLD_VariantDestroy(Variant_t *x)
 
     case VARIANT_STRING:
     {
-      // TODO: Clean up this mess.
-      __MOLD_VariantStringRelease(x);
+      __MOLD_String_release(x -> value);
       break;
     }
 
@@ -1068,8 +1065,7 @@ void __MOLD_VariantAddRef(const Variant_t *x)
 
     case VARIANT_STRING:
     {
-      // TODO: Clean up this mess.
-      __MOLD_VariantStringAddRef(x);
+      __MOLD_String_addRef(x -> value);
       break;
     }
 
@@ -1098,11 +1094,9 @@ void __MOLD_VariantAddRef(const Variant_t *x)
 void __MOLD_VariantMove(Variant_t *dst, Variant_t *src)
 {
   if (src != dst) {
-    // printf("[ MoldCore ] enter move\n");
     __MOLD_VariantAddRef(src);
     __MOLD_VariantDestroy(dst);
     memcpy(dst, src, sizeof(Variant_t));
-    //printf("[ MoldCore ] leave move\n");
   }
 }
 

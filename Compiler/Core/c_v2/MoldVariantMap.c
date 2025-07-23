@@ -45,25 +45,23 @@
 // RETURNS: hash value.
 // ----------------------------------------------------------------------------
 
-uint32_t __MOLD_hashDJB2(const Variant_t *x)
+uint32_t __MOLD_hashDJB2(MoldStringId_t x)
 {
-  ASSERT_VARIANT_PTR_STRING(x);
-
   uint32_t hash = 5381;
 
-  if (x -> value < MOLD_STRING_ONE_CHAR_THRESHOLD)
+  if (x < MOLD_STRING_ONE_CHAR_THRESHOLD)
   {
     // One character string.
     // One hard-coded cycle is needed.
-    hash = ((hash << 5) + hash) + x -> valueAsUInt8;
+    hash = ((hash << 5) + hash) + x;
   }
   else
   {
     // Multi character string.
     // Decode raw bytes buffer first.
     // TODO: Optimize it.
-    const char *str = __MOLD_String_getText(x -> value);
-    uint32_t len = __MOLD_String_getLength(x -> value);
+    const char *str = __MOLD_String_getText(x);
+    uint32_t len    = __MOLD_String_getLength(x);
 
     // Perform one cycle per each ascii character.
     for (uint32_t i = 0; i < len; i++) {
@@ -111,7 +109,7 @@ static MapBucket_t *__MOLD_FindMapBucketByKey(const Variant_t *box,
   Map_t *map = (Map_t *) box -> valueAsBufferPtr -> bytesPtr;
 
   // Calculate key hash.
-  uint32_t keyHash = __MOLD_hashDJB2(key);
+  uint32_t keyHash = __MOLD_hashDJB2(key -> value);
 
   // Find bucket.
   uint32_t bucketIdx = keyHash % map -> bucketsCnt;
